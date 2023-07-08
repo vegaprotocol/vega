@@ -7,7 +7,6 @@ package mocks
 import (
 	reflect "reflect"
 
-	types "code.vegaprotocol.io/vega/core/types"
 	num "code.vegaprotocol.io/vega/libs/num"
 	gomock "github.com/golang/mock/gomock"
 	decimal "github.com/shopspring/decimal"
@@ -34,34 +33,6 @@ func NewMockRiskModel(ctrl *gomock.Controller) *MockRiskModel {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockRiskModel) EXPECT() *MockRiskModelMockRecorder {
 	return m.recorder
-}
-
-// CalculateRiskFactors mocks base method.
-func (m *MockRiskModel) CalculateRiskFactors() *types.RiskFactor {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CalculateRiskFactors")
-	ret0, _ := ret[0].(*types.RiskFactor)
-	return ret0
-}
-
-// CalculateRiskFactors indicates an expected call of CalculateRiskFactors.
-func (mr *MockRiskModelMockRecorder) CalculateRiskFactors() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CalculateRiskFactors", reflect.TypeOf((*MockRiskModel)(nil).CalculateRiskFactors))
-}
-
-// DefaultRiskFactors mocks base method.
-func (m *MockRiskModel) DefaultRiskFactors() *types.RiskFactor {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DefaultRiskFactors")
-	ret0, _ := ret[0].(*types.RiskFactor)
-	return ret0
-}
-
-// DefaultRiskFactors indicates an expected call of DefaultRiskFactors.
-func (mr *MockRiskModelMockRecorder) DefaultRiskFactors() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DefaultRiskFactors", reflect.TypeOf((*MockRiskModel)(nil).DefaultRiskFactors))
 }
 
 // GetProjectionHorizon mocks base method.
