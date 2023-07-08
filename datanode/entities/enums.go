@@ -532,6 +532,8 @@ const (
 	ProposalErrorSpotNotEnabled                   = ProposalError(vega.ProposalError_PROPOSAL_ERROR_SPOT_PRODUCT_DISABLED)
 	ProposalErrorInvalidSuccessorMarket           = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_SUCCESSOR_MARKET)
 	ProposalErrorInvalidStateUpdate               = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_MARKET_STATE_UPDATE)
+	ProposalErrorInvalidSLAParams                 = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_SLA_PARAMS)
+	ProposalErrorMissingSLAParams                 = ProposalError(vega.ProposalError_PROPOSAL_ERROR_MISSING_SLA_PARAMS)
 )
 
 func (s ProposalError) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {

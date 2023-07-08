@@ -3161,6 +3161,10 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_INVALID_SUCCESSOR_MARKET
   "Validation of market state update has failed"
   PROPOSAL_ERROR_INVALID_MARKET_STATE_UPDATE
+  "Validation of liquidity provision SLA parameters has failed"
+  PROPOSAL_ERROR_MISSING_SLA_PARAMS
+  "Mandatory liquidity provision SLA parameters are missing from the proposal"
+  PROPOSAL_ERROR_INVALID_SLA_PARAMS
 }
 
 "Why the order was rejected by the core node"

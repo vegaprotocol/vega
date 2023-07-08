@@ -262,6 +262,7 @@ func newServices(
 	svcs.executionEngine = execution.NewEngine(
 		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar, svcs.marketActivityTracker, svcs.assets,
 	)
+	svcs.epochService.NotifyOnEpoch(svcs.executionEngine.OnEpochEvent, svcs.executionEngine.OnEpochRestore)
 
 	svcs.gastimator = processor.NewGastimator(svcs.executionEngine)
 

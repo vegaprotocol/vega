@@ -316,6 +316,7 @@ func buildSpotMarketFromProposal(
 		LiquidityMonitoringParameters: liquidityMonitoring,
 		LinearSlippageFactor:          num.DecimalZero(),
 		QuadraticSlippageFactor:       num.DecimalZero(),
+		LiquiditySLAParams:            definition.Changes.SLAParams,
 	}
 	if err := assignSpotRiskModel(definition.Changes, market.TradableInstrument); err != nil {
 		return nil, types.ProposalErrorUnspecified, err
@@ -513,6 +514,28 @@ func validateRiskParameters(rp interface{}) (types.ProposalError, error) {
 	}
 }
 
+func validateLPSLAParams(slaParams *types.LiquiditySLAParams) (types.ProposalError, error) {
+	if slaParams == nil {
+		return types.ProposalErrorMissingSLAParams, fmt.Errorf("liquidity provision SLA must be provided")
+	}
+	if slaParams.PriceRange.LessThanOrEqual(num.DecimalZero()) {
+		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("price range must be in range (0, 100]")
+	}
+	if slaParams.CommitmentMinTimeFraction.LessThan(num.DecimalZero()) || slaParams.CommitmentMinTimeFraction.GreaterThan(num.DecimalOne()) {
+		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("commitment min time fraction must be in range [0, 1]")
+	}
+	if slaParams.ProvidersFeeCalculationTimeStep.Seconds() < 1 {
+		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("provider fee calculation time step must be positive")
+	}
+	if slaParams.SlaCompetitionFactor.LessThan(num.DecimalZero()) || slaParams.CommitmentMinTimeFraction.GreaterThan(num.DecimalOne()) {
+		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("sla competition factor must be in range [0, 1]")
+	}
+	if slaParams.PerformanceHysteresisEpochs < 1 {
+		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("provider performance hysteresis epochs must be positive")
+	}
+	return types.ProposalErrorUnspecified, nil
+}
+
 func validateAuctionDuration(proposedDuration time.Duration, netp NetParams) (types.ProposalError, error) {
 	minAuctionDuration, _ := netp.GetDuration(netparams.MarketAuctionMinimumDuration)
 	if proposedDuration != 0 && proposedDuration < minAuctionDuration {
@@ -569,6 +592,9 @@ func validateNewSpotMarketChange(
 			fmt.Errorf("%v price monitoring triggers set, maximum allowed is 5", len(terms.Changes.PriceMonitoringParameters.Triggers) > 5)
 	}
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
+		return perr, err
+	}
+	if perr, err := validateLPSLAParams(terms.Changes.SLAParams); err != nil {
 		return perr, err
 	}
 	return types.ProposalErrorUnspecified, nil
@@ -657,6 +683,9 @@ func validateInsurancePoolFraction(frac num.Decimal) (types.ProposalError, error
 // validateUpdateMarketChange checks market update proposal terms.
 func validateUpdateSpotMarketChange(terms *types.UpdateSpotMarket) (types.ProposalError, error) {
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
+		return perr, err
+	}
+	if perr, err := validateLPSLAParams(terms.Changes.SLAParams); err != nil {
 		return perr, err
 	}
 	return types.ProposalErrorUnspecified, nil

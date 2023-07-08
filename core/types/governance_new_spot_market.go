@@ -111,6 +111,8 @@ type NewSpotMarketConfiguration struct {
 	PriceMonitoringParameters *PriceMonitoringParameters
 	TargetStakeParameters     *TargetStakeParameters
 	RiskParameters            newRiskParams
+	SLAParams                 *LiquiditySLAParams
+
 	// New market risk model parameters
 	//
 	// Types that are valid to be assigned to RiskParameters:
@@ -150,6 +152,7 @@ func (n NewSpotMarketConfiguration) IntoProto() *vegapb.NewSpotMarketConfigurati
 		Metadata:                  md,
 		PriceMonitoringParameters: priceMonitoring,
 		TargetStakeParameters:     targetStakeParameters,
+		SlaParams:                 n.SLAParams.IntoProto(),
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.NewSpotMarketConfiguration_Simple:
@@ -165,6 +168,7 @@ func (n NewSpotMarketConfiguration) DeepClone() *NewSpotMarketConfiguration {
 		DecimalPlaces:         n.DecimalPlaces,
 		PositionDecimalPlaces: n.PositionDecimalPlaces,
 		Metadata:              make([]string, len(n.Metadata)),
+		SLAParams:             n.SLAParams.DeepClone(),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -184,7 +188,7 @@ func (n NewSpotMarketConfiguration) DeepClone() *NewSpotMarketConfiguration {
 
 func (n NewSpotMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) targetStakeParameters(%s) risk(%s)",
+		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) targetStakeParameters(%s) risk(%s) slaParams(%s)",
 		n.Metadata,
 		n.DecimalPlaces,
 		n.PositionDecimalPlaces,
@@ -192,6 +196,7 @@ func (n NewSpotMarketConfiguration) String() string {
 		reflectPointerToString(n.PriceMonitoringParameters),
 		reflectPointerToString(n.TargetStakeParameters),
 		reflectPointerToString(n.RiskParameters),
+		reflectPointerToString(n.SLAParams),
 	)
 }
 
@@ -221,6 +226,7 @@ func NewSpotMarketConfigurationFromProto(p *vegapb.NewSpotMarketConfiguration) (
 		Metadata:                  md,
 		PriceMonitoringParameters: priceMonitoring,
 		TargetStakeParameters:     targetStakeParams,
+		SLAParams:                 LiquiditySLAParamsFromProto(p.SlaParams),
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

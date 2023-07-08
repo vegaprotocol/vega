@@ -207,6 +207,19 @@ message LiquidityMonitoringParameters {
   int64 auction_extension = 3;
 }
 
+message LiquiditySLAParameters {
+  string price_range = 1;
+  // Specifies the minimum fraction of time LPs must spend "on the book" providing their committed liquidity.
+  string commitment_min_time_fraction = 2;
+  // Specifies how often the quality of liquidity supplied by the LPs is evaluated and fees arising from that period are earmarked for specific parties.
+  int64 providers_fee_calculation_time_step = 3;
+  // Specifies the number of liquidity epochs over which past performance will continue to affect rewards.
+  uint64 performance_hysteresis_epochs = 4;
+  // Specifies the maximum fraction of their accrued fees an LP that meets the SLA implied by market.liquidity.commitmentMinTimeFraction will lose to liquidity providers
+  // that achieved a higher SLA performance than them.
+  string sla_competition_factor = 5;
+}
+
 // TargetStakeParameters contains parameters used in target stake calculation
 message TargetStakeParameters {
   // Specifies length of time window expressed in seconds for target stake calculation.
@@ -305,6 +318,8 @@ message Market {
   optional string insurance_pool_fraction = 16;
   // ID of the market that succeeds this market if it exists. This will be populated by the system when the successor market is enabled.
   optional string successor_market_id = 17;
+  // Liquidity SLA parameters for the market.
+  optional LiquiditySLAParameters liquidity_sla_params = 18;
 }
 
 // Time stamps for important times about creating, enacting etc the market
