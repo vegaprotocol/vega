@@ -170,8 +170,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, marketActivityTracker, execsetup.topology)
 
 	execsetup.oracleEngine = oracles.NewEngine(
-		execsetup.log, oracles.NewDefaultConfig(), execsetup.timeService, execsetup.broker,
-	)
+		execsetup.log, oracles.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
 
 	execsetup.builtinOracle = oracles.NewBuiltinOracle(execsetup.oracleEngine, execsetup.timeService)
 

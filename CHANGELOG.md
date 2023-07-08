@@ -13,6 +13,8 @@
 ### 🛠 Improvements
 
 - [8718](https://github.com/vegaprotocol/vega/issues/8718) - Emit market data event after setting mark price prior to final settlement.
+- [8590](https://github.com/vegaprotocol/vega/issues/8590) - Improved Ethereum oracle support.
+
 
 ### 🐛 Fixes
 

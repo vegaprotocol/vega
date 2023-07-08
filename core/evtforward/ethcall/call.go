@@ -6,22 +6,26 @@ import (
 	"fmt"
 	"math/big"
 
+	"code.vegaprotocol.io/vega/core/oracles/filters"
+	"code.vegaprotocol.io/vega/core/types"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"golang.org/x/crypto/sha3"
 )
 
 type Call struct {
+	spec    types.EthCallSpec
 	address common.Address
 	method  string
 	args    []byte
 	abi     abi.ABI
 	abiJSON []byte
+	filters filters.Filters
 }
 
-func NewCall(method string, args []any, address string, abiJSON []byte) (Call, error) {
-	abiJSON, err := CanonicalizeJSON(abiJSON)
+func NewCall(spec types.EthCallSpec) (Call, error) {
+	abiJSON, err := CanonicalizeJSON(spec.AbiJson)
 	if err != nil {
 		return Call{}, fmt.Errorf("unable to canonicalize abi JSON: %w", err)
 	}
@@ -32,74 +36,73 @@ func NewCall(method string, args []any, address string, abiJSON []byte) (Call, e
 		return Call{}, fmt.Errorf("unable to parse abi JSON: %w", err)
 	}
 
-	packedArgs, err := abi.Pack(method, args...)
+	args, err := JsonArgsToAny(spec.Method, spec.ArgsJson, spec.AbiJson)
+	if err != nil {
+		return Call{}, fmt.Errorf("unable to deserialize args: %w", err)
+	}
+
+	packedArgs, err := abi.Pack(spec.Method, args...)
 	if err != nil {
 		return Call{}, fmt.Errorf("failed to pack inputs: %w", err)
 	}
 
+	filters, err := filters.NewFilters(spec.Filters, true)
+	if err != nil {
+		return Call{}, fmt.Errorf("failed to create filters: %w", err)
+	}
+
 	return Call{
-		address: common.HexToAddress(address),
-		method:  method,
+		address: common.HexToAddress(spec.Address),
+		method:  spec.Method,
 		args:    packedArgs,
 		abi:     abi,
 		abiJSON: abiJSON,
+		spec:    spec,
+		filters: filters,
 	}, nil
 }
 
-func (c Call) Hash() []byte {
-	hashFunc := sha3.New256()
-	hashFunc.Write(c.address.Bytes())
-	hashFunc.Write([]byte(c.method))
-	hashFunc.Write(c.args)
-	hashFunc.Write(c.abiJSON)
-	return hashFunc.Sum(nil)
-}
-
-func (c Call) Args() ([]any, error) {
-	inputsAbi := c.abi.Methods[c.method].Inputs
-
-	if len(c.args) < 4 {
-		return nil, fmt.Errorf("invalid packed args")
-	}
-
-	args, err := inputsAbi.Unpack(c.args[4:])
-	if err != nil {
-		return nil, fmt.Errorf("failed to unpack args: %w", err)
-	}
-	return args, nil
-}
-
-func (c Call) Call(ctx context.Context, caller ethereum.ContractCaller, blockNumber *big.Int) (Result, error) {
+func (c Call) Call(ctx context.Context, ethClient EthReaderCaller, blockNumber uint64) (Result, error) {
 	// TODO: timeout?
 	msg := ethereum.CallMsg{
 		To:   &c.address,
 		Data: c.args,
 	}
 
-	output, err := caller.CallContract(ctx, msg, blockNumber)
+	n := big.NewInt(0).SetUint64(blockNumber)
+	bytes, err := ethClient.CallContract(ctx, msg, n)
 	if err != nil {
 		return Result{}, fmt.Errorf("failed to call contract: %w", err)
 	}
 
-	return Result{
-		Call:  &c,
-		Bytes: output,
-	}, nil
+	return newResult(c, bytes)
 }
 
-func (c Call) UnpackResult(bytes []byte) ([]any, error) {
-	values, err := c.abi.Unpack(c.method, bytes)
-	if err != nil {
-		return values, fmt.Errorf("failed to unpack contract call result: %w", err)
+func (c Call) triggered(prevEthBlock blockish, currentEthBlock blockish) bool {
+	switch trigger := c.spec.Trigger.(type) {
+	case types.EthTimeTrigger:
+		// Before initial?
+		if currentEthBlock.Time() < trigger.Initial {
+			return false
+		}
+
+		// Crossing initial boundary?
+		if prevEthBlock.Time() < trigger.Initial && currentEthBlock.Time() >= trigger.Initial {
+			return true
+		}
+
+		// After until?
+		if trigger.Until != 0 && currentEthBlock.Time() > trigger.Until {
+			return false
+		}
+
+		if trigger.Every == 0 {
+			return false
+		}
+		// Somewhere in the middle..
+		prevTriggerCount := (prevEthBlock.Time() - trigger.Initial) / trigger.Every
+		currentTriggerCount := (currentEthBlock.Time() - trigger.Initial) / trigger.Every
+		return currentTriggerCount > prevTriggerCount
 	}
-	return values, nil
-}
-
-type Result struct {
-	*Call
-	Bytes []byte
-}
-
-func (r Result) Values() ([]any, error) {
-	return r.UnpackResult(r.Bytes)
+	return false
 }

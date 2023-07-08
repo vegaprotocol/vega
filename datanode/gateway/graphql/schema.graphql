@@ -1611,6 +1611,8 @@ type Data {
   "properties contains all the properties sent by a data source"
   data: [Property!]
 
+  metaData: [Property]
+
   """
   List of all the data specs that matched this source data.
   When the array is empty, it means no data spec matched this source data.
@@ -2557,7 +2559,7 @@ type OrderUpdate {
   icebergOrder: IcebergOrder
 }
 
-"Response for the estimate of the margin level and, if available, collateral was provided in the request, liqudation price for the specified position"
+"Response for the estimate of the margin level and, if available, collateral was provided in the request, liquidation price for the specified position"
 type PositionEstimate {
   "Margin level range estimate for the specified position"
   margin: MarginEstimate!
@@ -3551,6 +3553,31 @@ type DataSourceSpecConfiguration {
   the product (or the risk model).
   """
   filters: [Filter!]
+}
+
+"""
+EthCallTrigger is the type of trigger used to make calls to Ethereum network.
+"""
+type EthCallTrigger {
+  trigger: TriggerKind!
+}
+
+union TriggerKind = EthTimeTrigger
+
+type EthTimeTrigger {
+  Initial: Timestamp
+  Every: Timestamp
+  Until: Timestamp
+}
+
+type EthCallSpec {
+  Address: String!
+  Abi: [String!]
+  Method: String!
+  Args: [String!]
+  Trigger: EthCallTrigger!
+  RequiredConfirmations: Int!
+  Filters: [Filter!]
 }
 
 type InstrumentConfiguration {
@@ -5029,7 +5056,7 @@ type DataSourceDefinitionInternal {
   sourceType: InternalDataSourceKind!
 }
 
-union ExternalDataSourceKind = DataSourceSpecConfiguration
+union ExternalDataSourceKind = DataSourceSpecConfiguration | EthCallSpec
 
 """
 DataSourceDefinitionExternal is the top level object used for all external data sources.

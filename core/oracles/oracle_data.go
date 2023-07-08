@@ -15,6 +15,7 @@ package oracles
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/oracles/filters"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
@@ -24,8 +25,9 @@ import (
 
 // OracleData holds normalized data coming from an oracle.
 type OracleData struct {
-	Signers []*types.Signer
-	Data    map[string]string
+	Signers  []*types.Signer
+	Data     map[string]string
+	MetaData map[string]string
 }
 
 func (d OracleData) GetUint(name string) (*num.Uint, error) {
@@ -46,7 +48,7 @@ func (d OracleData) GetInteger(propertyName string) (*num.Int, error) {
 	if !ok {
 		return num.IntZero(), errPropertyNotFound(propertyName)
 	}
-	return toInteger(value)
+	return filters.ToInteger(value)
 }
 
 // GetDecimal converts the value associated to propertyName into a decimal.
@@ -55,7 +57,7 @@ func (d OracleData) GetDecimal(propertyName string) (num.Decimal, error) {
 	if !ok {
 		return num.DecimalZero(), errPropertyNotFound(propertyName)
 	}
-	return toDecimal(value)
+	return filters.ToDecimal(value)
 }
 
 // GetBoolean converts the value associated to propertyName into a boolean.
@@ -64,7 +66,7 @@ func (d OracleData) GetBoolean(propertyName string) (bool, error) {
 	if !ok {
 		return false, errPropertyNotFound(propertyName)
 	}
-	return toBoolean(value)
+	return filters.ToBoolean(value)
 }
 
 // GetString returns the value associated to propertyName.
@@ -82,7 +84,7 @@ func (d OracleData) GetTimestamp(propertyName string) (int64, error) {
 	if !ok {
 		return 0, errPropertyNotFound(propertyName)
 	}
-	return toTimestamp(value)
+	return filters.ToTimestamp(value)
 }
 
 // FromInternalOracle returns true if the oracle data has been emitted by an

@@ -20,7 +20,6 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	cometbftdb "github.com/cometbft/cometbft-db"
@@ -400,7 +399,7 @@ func getDummyData() *types.Chunk {
 											DataSourceSpecForSettlementData: &types.DataSourceSpec{
 												ID: "o1",
 												Data: types.NewDataSourceDefinition(
-													vegapb.DataSourceDefinitionTypeExt,
+													types.DataSourceContentTypeOracle,
 												).SetOracleConfig(
 													&types.DataSourceSpecConfiguration{
 														Signers: []*types.Signer{},
@@ -411,7 +410,7 @@ func getDummyData() *types.Chunk {
 											DataSourceSpecForTradingTermination: &types.DataSourceSpec{
 												ID: "os1",
 												Data: types.NewDataSourceDefinition(
-													vegapb.DataSourceDefinitionTypeExt,
+													types.DataSourceContentTypeOracle,
 												).SetOracleConfig(
 													&types.DataSourceSpecConfiguration{
 														Signers: []*types.Signer{},

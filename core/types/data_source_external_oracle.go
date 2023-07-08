@@ -13,23 +13,6 @@ type DataSourceSpecConfiguration struct {
 	Filters []*DataSourceSpecFilter
 }
 
-func (s *DataSourceSpecConfiguration) isDataSourceType() {}
-
-func (s *DataSourceSpecConfiguration) oneOfProto() interface{} {
-	return s
-}
-
-// /
-// String returns the content of DataSourceSpecConfiguration as a string.
-func (s *DataSourceSpecConfiguration) String() string {
-	return fmt.Sprintf(
-		"signers(%v) filters(%v)",
-		s.Signers,
-		s.Filters,
-	)
-}
-
-// /
 // IntoProto tries to build the proto object from DataSourceSpecConfiguration.
 func (s *DataSourceSpecConfiguration) IntoProto() *vegapb.DataSourceSpecConfiguration {
 	signers := []*datapb.Signer{}
@@ -55,8 +38,46 @@ func (s *DataSourceSpecConfiguration) IntoProto() *vegapb.DataSourceSpecConfigur
 	return dsc
 }
 
-func (s *DataSourceSpecConfiguration) DeepClone() dataSourceType {
-	return &DataSourceSpecConfiguration{
+func (s DataSourceSpecConfiguration) ToDataSourceDefinitionProto() (*vegapb.DataSourceDefinition, error) {
+	return &vegapb.DataSourceDefinition{
+		SourceType: &vegapb.DataSourceDefinition_External{
+			External: &vegapb.DataSourceDefinitionExternal{
+				SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
+					Oracle: s.IntoProto(),
+				},
+			},
+		},
+	}, nil
+}
+
+// String returns the content of DataSourceSpecConfiguration as a string.
+func (s DataSourceSpecConfiguration) String() string {
+	signers := ""
+	for i, signer := range s.Signers {
+		if i == 0 {
+			signers = signer.String()
+		} else {
+			signers = signers + fmt.Sprintf(", %s", signer.String())
+		}
+	}
+
+	filters := ""
+	for i, filter := range s.Filters {
+		if i == 0 {
+			filters = filter.String()
+		} else {
+			filters = filters + fmt.Sprintf(", %s", filter.String())
+		}
+	}
+	return fmt.Sprintf(
+		"signers(%v) filters(%v)",
+		signers,
+		filters,
+	)
+}
+
+func (s DataSourceSpecConfiguration) DeepClone() dataSourceType {
+	return DataSourceSpecConfiguration{
 		Signers: s.Signers,
 		Filters: DeepCloneDataSourceSpecFilters(s.Filters),
 	}
@@ -64,72 +85,13 @@ func (s *DataSourceSpecConfiguration) DeepClone() dataSourceType {
 
 // DataSourceSpecConfigurationFromProto tries to build the DataSourceSpecConfiguration object
 // from the given proto object.
-func DataSourceSpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConfiguration) *DataSourceSpecConfiguration {
-	ds := &DataSourceSpecConfiguration{}
-	if protoConfig != nil {
-		// SignersFromProto returns a list of signers after checking the list length.
-		ds.Signers = SignersFromProto(protoConfig.Signers)
-		ds.Filters = DataSourceSpecFiltersFromProto(protoConfig.Filters)
+func DataSourceSpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConfiguration) DataSourceSpecConfiguration {
+	if protoConfig == nil {
+		return DataSourceSpecConfiguration{}
 	}
 
-	return ds
-}
-
-// This is the base data source.
-type DataSourceDefinitionExternalOracle struct {
-	Oracle *DataSourceSpecConfiguration
-}
-
-func (e *DataSourceDefinitionExternalOracle) isDataSourceType() {}
-
-func (e *DataSourceDefinitionExternalOracle) String() string {
-	if e.Oracle == nil {
-		return ""
+	return DataSourceSpecConfiguration{
+		Filters: DataSourceSpecFiltersFromProto(protoConfig.Filters),
+		Signers: SignersFromProto(protoConfig.Signers),
 	}
-
-	return e.Oracle.String()
-}
-
-// /
-// IntoProto tries to build the proto object from DataSourceDefinitionExternalOracle.
-func (e *DataSourceDefinitionExternalOracle) IntoProto() *vegapb.DataSourceDefinitionExternal_Oracle {
-	eds := &vegapb.DataSourceSpecConfiguration{}
-
-	if e.Oracle != nil {
-		eds = e.Oracle.IntoProto()
-	}
-
-	return &vegapb.DataSourceDefinitionExternal_Oracle{
-		Oracle: eds,
-	}
-}
-
-func (e *DataSourceDefinitionExternalOracle) oneOfProto() interface{} {
-	return e.IntoProto()
-}
-
-func (e *DataSourceDefinitionExternalOracle) DeepClone() dataSourceType {
-	if e.Oracle == nil {
-		return &DataSourceDefinitionExternalOracle{
-			Oracle: &DataSourceSpecConfiguration{},
-		}
-	}
-
-	return &DataSourceDefinitionExternalOracle{}
-}
-
-// DataSourceDefinitionExternalOracleFromProto tries to build the DataSourceDefinitionExternalOracle object
-// from the given proto object.
-func DataSourceDefinitionExternalOracleFromProto(protoConfig *vegapb.DataSourceDefinitionExternal_Oracle) *DataSourceDefinitionExternalOracle {
-	eds := &DataSourceDefinitionExternalOracle{
-		Oracle: &DataSourceSpecConfiguration{},
-	}
-
-	if protoConfig != nil {
-		if protoConfig.Oracle != nil {
-			eds.Oracle = DataSourceSpecConfigurationFromProto(protoConfig.Oracle)
-		}
-	}
-
-	return eds
 }

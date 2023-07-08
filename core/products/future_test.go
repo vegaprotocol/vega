@@ -22,7 +22,6 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -165,7 +164,7 @@ func testFuture(t *testing.T, propertyTpe datapb.PropertyKey_Type) *tstFuture {
 		QuoteName:       "ETH",
 		DataSourceSpecForTradingTermination: &types.DataSourceSpec{
 			Data: types.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
+				types.DataSourceContentTypeOracle,
 			).SetOracleConfig(
 				&types.DataSourceSpecConfiguration{
 					Signers: pubKeys,
@@ -189,7 +188,7 @@ func testFuture(t *testing.T, propertyTpe datapb.PropertyKey_Type) *tstFuture {
 
 	f.DataSourceSpecForSettlementData = &types.DataSourceSpec{
 		Data: types.NewDataSourceDefinition(
-			vegapb.DataSourceDefinitionTypeExt,
+			types.DataSourceContentTypeOracle,
 		).SetOracleConfig(
 			&types.DataSourceSpecConfiguration{
 				Signers: pubKeys,
@@ -211,12 +210,12 @@ func testFuture(t *testing.T, propertyTpe datapb.PropertyKey_Type) *tstFuture {
 	oe.EXPECT().
 		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
-		Return(subscriptionID(1), func(ctx context.Context, sid oracles.SubscriptionID) {})
+		Return(subscriptionID(1), func(ctx context.Context, sid oracles.SubscriptionID) {}, nil)
 
 	oe.EXPECT().
 		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
-		Return(subscriptionID(2), func(ctx context.Context, sid oracles.SubscriptionID) {})
+		Return(subscriptionID(2), func(ctx context.Context, sid oracles.SubscriptionID) {}, nil)
 
 	future, err := products.NewFuture(ctx, log, f, oe)
 	if err != nil {

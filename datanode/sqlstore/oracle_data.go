@@ -27,7 +27,7 @@ type OracleData struct {
 }
 
 const (
-	sqlOracleDataColumns = `signers, data, matched_spec_ids, broadcast_at, tx_hash, vega_time, seq_num`
+	sqlOracleDataColumns = `signers, data, meta_data, matched_spec_ids, broadcast_at, error, tx_hash, vega_time, seq_num`
 )
 
 var oracleDataOrdering = TableOrdering{
@@ -43,10 +43,15 @@ func NewOracleData(connectionSource *ConnectionSource) *OracleData {
 
 func (od *OracleData) Add(ctx context.Context, oracleData *entities.OracleData) error {
 	defer metrics.StartSQLQuery("OracleData", "Add")()
-	query := fmt.Sprintf("insert into oracle_data(%s) values ($1, $2, $3, $4, $5, $6, $7)", sqlOracleDataColumns)
+	query := fmt.Sprintf("insert into oracle_data(%s) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)", sqlOracleDataColumns)
 
-	if _, err := od.Connection.Exec(ctx, query, oracleData.ExternalData.Data.Signers, oracleData.ExternalData.Data.Data, oracleData.ExternalData.Data.MatchedSpecIds,
-		oracleData.ExternalData.Data.BroadcastAt, oracleData.ExternalData.Data.TxHash, oracleData.ExternalData.Data.VegaTime, oracleData.ExternalData.Data.SeqNum); err != nil {
+	if _, err := od.Connection.Exec(
+		ctx, query,
+		oracleData.ExternalData.Data.Signers, oracleData.ExternalData.Data.Data, oracleData.ExternalData.Data.MetaData,
+		oracleData.ExternalData.Data.MatchedSpecIds, oracleData.ExternalData.Data.BroadcastAt,
+		oracleData.ExternalData.Data.Error, oracleData.ExternalData.Data.TxHash,
+		oracleData.ExternalData.Data.VegaTime, oracleData.ExternalData.Data.SeqNum,
+	); err != nil {
 		err = fmt.Errorf("could not insert oracle data into database: %w", err)
 		return err
 	}
@@ -84,8 +89,10 @@ func scannedDataToOracleData(scanned []entities.Data) []entities.OracleData {
 					Data: &entities.Data{
 						Signers:        s.Signers,
 						Data:           s.Data,
+						MetaData:       s.MetaData,
 						MatchedSpecIds: s.MatchedSpecIds,
 						BroadcastAt:    s.BroadcastAt,
+						Error:          s.Error,
 						TxHash:         s.TxHash,
 						VegaTime:       s.VegaTime,
 						SeqNum:         s.SeqNum,

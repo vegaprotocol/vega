@@ -109,17 +109,11 @@ func (df DataSourceSpecFilters) String() string {
 }
 
 func DataSourceSpecFiltersFromProto(protoFilters []*datapb.Filter) []*DataSourceSpecFilter {
-	if len(protoFilters) > 0 {
-		dsf := make([]*DataSourceSpecFilter, len(protoFilters))
-		if len(protoFilters) > 0 {
-			for i, protoFilter := range protoFilters {
-				dsf[i] = DataSourceSpecFilterFromProto(protoFilter)
-			}
-		}
-
-		return dsf
+	dsf := make([]*DataSourceSpecFilter, len(protoFilters))
+	for i, protoFilter := range protoFilters {
+		dsf[i] = DataSourceSpecFilterFromProto(protoFilter)
 	}
-	return []*DataSourceSpecFilter{}
+	return dsf
 }
 
 func DeepCloneDataSourceSpecFilters(filters []*DataSourceSpecFilter) []*DataSourceSpecFilter {
@@ -219,11 +213,15 @@ func (s *DataSourceSpec) ToExternalDataSourceSpec() *ExternalDataSourceSpec {
 }
 
 func DataSourceSpecFromProto(specProto *vegapb.DataSourceSpec) *DataSourceSpec {
+	d, _ := DataSourceDefinitionFromProto(specProto.Data)
+	//if err != nil {
+	// TODO: Return err along the path above from here?
+	//}
 	return &DataSourceSpec{
 		ID:        specProto.Id,
 		CreatedAt: specProto.CreatedAt,
 		UpdatedAt: specProto.UpdatedAt,
-		Data:      DataSourceDefinitionFromProto(specProto.Data),
+		Data:      NewDataSourceDefinitionWith(d),
 		Status:    specProto.Status,
 	}
 }

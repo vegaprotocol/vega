@@ -13,6 +13,10 @@
 package types
 
 import (
+	"encoding/hex"
+	"strconv"
+
+	"code.vegaprotocol.io/vega/libs/crypto"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
@@ -75,3 +79,52 @@ func OracleSpecFromProto(specProto *vegapb.OracleSpec) *OracleSpec {
 type OracleSpecSigners = DataSourceSpecSigners
 
 type OracleSpecStatus = DataSourceSpecStatus
+
+type EthBlock struct {
+	Height uint64
+	Time   uint64
+}
+
+type EthContractCallEvent struct {
+	BlockHeight uint64
+	BlockTime   uint64
+	SpecId      string
+	Result      []byte
+	Error       *string
+}
+
+func EthereumContractCallResultFromProto(
+	qr *vegapb.EthContractCallEvent,
+) EthContractCallEvent {
+	return EthContractCallEvent{
+		SpecId:      qr.SpecId,
+		BlockHeight: qr.BlockHeight,
+		BlockTime:   qr.BlockTime,
+		Result:      qr.Result,
+		Error:       qr.Error,
+	}
+}
+
+func (q *EthContractCallEvent) IntoProto() *vegapb.EthContractCallEvent {
+	return &vegapb.EthContractCallEvent{
+		SpecId:      q.SpecId,
+		BlockHeight: q.BlockHeight,
+		BlockTime:   q.BlockTime,
+		Result:      q.Result,
+		Error:       q.Error,
+	}
+}
+
+func (q EthContractCallEvent) Hash() string {
+	blockHeight := strconv.FormatUint(q.BlockHeight, 10)
+	blockTime := strconv.FormatUint(q.BlockHeight, 10)
+	bytes := []byte(blockHeight + blockTime + q.SpecId)
+	bytes = append(bytes, q.Result...)
+	if q.Error != nil {
+		bytes = append(bytes, []byte(*q.Error)...)
+	}
+
+	return hex.EncodeToString(
+		crypto.Hash(bytes),
+	)
+}

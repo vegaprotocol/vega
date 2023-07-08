@@ -383,6 +383,10 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
 	}
 
+	if settlData.Content() == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
+	}
+
 	ext, err := settlData.IsExternal()
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
@@ -394,6 +398,10 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 
 	tterm := &future.DataSourceSpecForTradingTermination
 	if tterm == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
+	}
+
+	if tterm.Content() == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
 	}
 
@@ -691,6 +699,10 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) 
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
 	}
 
+	if settlData.Content() == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
+	}
+
 	ext, err := settlData.IsExternal()
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
@@ -702,6 +714,10 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) 
 
 	tterm := &future.DataSourceSpecForTradingTermination
 	if tterm == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
+	}
+
+	if tterm.Content() == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
 	}
 

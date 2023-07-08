@@ -40,6 +40,7 @@ func TestOracleEngine(t *testing.T) {
 	t.Run("Unsubscribing known ID from oracle engine succeeds", testOracleEngineUnsubscribingKnownIDSucceeds)
 	t.Run("Unsubscribing unknown ID from oracle engine panics", testOracleEngineUnsubscribingUnknownIDPanics)
 	t.Run("Updating current time succeeds", testOracleEngineUpdatingCurrentTimeSucceeds)
+	t.Run("Subscribing to oracle spec activation succeeds", testOracleEngineSubscribingToSpecActivationSucceeds)
 }
 
 func testOracleEngineListensToSignersSucceeds(t *testing.T) {
@@ -51,7 +52,7 @@ func testOracleEngineListensToSignersSucceeds(t *testing.T) {
 	// test oracle engine with 1 subscriber and 1 key provided
 	btcEquals42 := spec(t, "BTC", datapb.Condition_OPERATOR_EQUALS, "42")
 	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
-	_, _ = engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
+	_, _, _ = engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
 
 	// test oracle data with single PubKey
 	data := oracles.OracleData{
@@ -69,7 +70,7 @@ func testOracleEngineListensToSignersSucceeds(t *testing.T) {
 	// test oracle engine with 2 subscribers and multiple keys provided for one of them
 	ethEquals42 := spec(t, "ETH", datapb.Condition_OPERATOR_LESS_THAN, "84", "0xCAFED00X", "0xCAFED00D", "0xBEARISH7", "0xBULLISH5")
 	engine.broker.expectNewOracleSpecSubscription(currentTime, ethEquals42.spec.OriginalSpec)
-	_, _ = engine.Subscribe(ctx, ethEquals42.spec, ethEquals42.subscriber.Cb)
+	_, _, _ = engine.Subscribe(ctx, ethEquals42.spec, ethEquals42.subscriber.Cb)
 
 	signersAppend := []*types.Signer{
 		types.CreateSignerFromString("0xBEARISH7", types.DataSignerTypePubKey),
@@ -83,7 +84,7 @@ func testOracleEngineListensToSignersSucceeds(t *testing.T) {
 	// test oracle data with 3 subscribers and multiple keys for some of them
 	btcGreater21 := spec(t, "BTC", datapb.Condition_OPERATOR_GREATER_THAN, "21", "0xCAFED00D", "0xBEARISH7", "0xBULLISH5", "0xMILK123", "OxMILK456")
 	engine.broker.expectNewOracleSpecSubscription(currentTime, btcGreater21.spec.OriginalSpec)
-	_, _ = engine.Subscribe(ctx, btcGreater21.spec, btcGreater21.subscriber.Cb)
+	_, _, _ = engine.Subscribe(ctx, btcGreater21.spec, btcGreater21.subscriber.Cb)
 
 	data.Signers = append(data.Signers, types.CreateSignerFromString("0xMILK123", types.DataSignerTypePubKey))
 	result = engine.ListensToSigners(data)
@@ -99,7 +100,7 @@ func testOracleEngineListensToSignersFails(t *testing.T) {
 	// test oracle engine with single subscriber and wrong key
 	btcEquals42 := spec(t, "BTC", datapb.Condition_OPERATOR_EQUALS, "42", "0xWRONGKEY")
 	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
-	_, _ = engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
+	_, _, _ = engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
 
 	data := oracles.OracleData{
 		Signers: []*types.Signer{
@@ -109,6 +110,7 @@ func testOracleEngineListensToSignersFails(t *testing.T) {
 		Data: map[string]string{
 			"my_key": "not an integer",
 		},
+		MetaData: map[string]string{},
 	}
 
 	result := engine.ListensToSigners(data)
@@ -117,7 +119,7 @@ func testOracleEngineListensToSignersFails(t *testing.T) {
 	// test oracle engine with 2 subscribers and multiple missing keys
 	ethEquals42 := spec(t, "ETH", datapb.Condition_OPERATOR_LESS_THAN, "84", "0xBEARISH7", "0xBULLISH5")
 	engine.broker.expectNewOracleSpecSubscription(currentTime, ethEquals42.spec.OriginalSpec)
-	_, _ = engine.Subscribe(ctx, ethEquals42.spec, ethEquals42.subscriber.Cb)
+	_, _, _ = engine.Subscribe(ctx, ethEquals42.spec, ethEquals42.subscriber.Cb)
 
 	signersAppend := []*types.Signer{
 		types.CreateSignerFromString("0xMILK123", types.DataSignerTypePubKey),
@@ -142,12 +144,71 @@ func testOracleEngineSubscribingSucceeds(t *testing.T) {
 	engine.broker.expectNewOracleSpecSubscription(currentTime, ethLess84.spec.OriginalSpec)
 
 	// when
-	id1, _ := engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
-	id2, _ := engine.Subscribe(ctx, ethLess84.spec, ethLess84.subscriber.Cb)
+	id1, _, _ := engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
+	id2, _, _ := engine.Subscribe(ctx, ethLess84.spec, ethLess84.subscriber.Cb)
 
 	// then
 	assert.Equal(t, oracles.SubscriptionID(1), id1)
 	assert.Equal(t, oracles.SubscriptionID(2), id2)
+}
+
+func testOracleEngineSubscribingToSpecActivationSucceeds(t *testing.T) {
+	// given
+	btcEquals42 := spec(t, "BTC", datapb.Condition_OPERATOR_EQUALS, "42")
+	ethLess84 := spec(t, "ETH", datapb.Condition_OPERATOR_LESS_THAN, "84")
+
+	subscriber1 := dummySubscriber{}
+	subscriber2 := dummySubscriber{}
+
+	// setup
+	ctx := context.Background()
+	currentTime := time.Now()
+
+	subscriber := newTestActivationSubscriber()
+
+	engine := newEngine(ctx, t, currentTime)
+	engine.AddSpecActivationListener(subscriber)
+
+	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
+
+	id1, _, _ := engine.Subscribe(ctx, btcEquals42.spec, subscriber1.Cb)
+
+	engine.broker.expectNewOracleSpecSubscription(currentTime, ethLess84.spec.OriginalSpec)
+	id2, _, _ := engine.Subscribe(ctx, ethLess84.spec, subscriber1.Cb)
+
+	engine.broker.expectNewOracleSpecSubscription(currentTime, ethLess84.spec.OriginalSpec)
+	id3, _, _ := engine.Subscribe(ctx, ethLess84.spec, subscriber2.Cb)
+
+	assert.Equal(t, 2, len(subscriber.activeSpecs))
+
+	engine.Unsubscribe(ctx, id3)
+
+	assert.Equal(t, 2, len(subscriber.activeSpecs))
+
+	engine.broker.expectOracleSpecSubscriptionDeactivation(currentTime, ethLess84.spec.OriginalSpec)
+	engine.Unsubscribe(ctx, id2)
+	assert.Equal(t, 1, len(subscriber.activeSpecs))
+
+	engine.broker.expectOracleSpecSubscriptionDeactivation(currentTime, btcEquals42.spec.OriginalSpec)
+	engine.Unsubscribe(ctx, id1)
+	assert.Equal(t, 0, len(subscriber.activeSpecs))
+}
+
+type testActivationSubscriber struct {
+	activeSpecs map[string]types.OracleSpec
+}
+
+func newTestActivationSubscriber() testActivationSubscriber {
+	return testActivationSubscriber{activeSpecs: make(map[string]types.OracleSpec)}
+}
+
+func (t testActivationSubscriber) OnSpecActivated(ctx context.Context, oracleSpec types.OracleSpec) error {
+	t.activeSpecs[oracleSpec.ExternalDataSourceSpec.Spec.ID] = oracleSpec
+	return nil
+}
+
+func (t testActivationSubscriber) OnSpecDeactivated(ctx context.Context, oracleSpec types.OracleSpec) {
+	delete(t.activeSpecs, oracleSpec.ExternalDataSourceSpec.Spec.ID)
 }
 
 func testOracleEngineSubscribingWithoutCallbackFails(t *testing.T) {
@@ -235,13 +296,13 @@ func testOracleEngineUnsubscribingKnownIDSucceeds(t *testing.T) {
 	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
 
 	// when
-	idS1, _ := engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
+	idS1, _, _ := engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
 
 	// expect
 	engine.broker.expectNewOracleSpecSubscription(currentTime, ethEquals42.spec.OriginalSpec)
 
 	// when
-	_, _ = engine.Subscribe(ctx, ethEquals42.spec, ethEquals42.subscriber.Cb)
+	_, _, _ = engine.Subscribe(ctx, ethEquals42.spec, ethEquals42.subscriber.Cb)
 
 	// expect
 	engine.broker.expectOracleSpecSubscriptionDeactivation(currentTime, btcEquals42.spec.OriginalSpec)
@@ -335,7 +396,8 @@ func dataWithPrice(currency, price string) dataBundle {
 							Value: price,
 						},
 					},
-					Signers: types.SignersIntoProto(signers),
+					MetaData: []*datapb.Property{},
+					Signers:  types.SignersIntoProto(signers),
 				},
 			},
 		},
@@ -376,20 +438,22 @@ func spec(t *testing.T, currency string, op datapb.Condition_Operator, price str
 
 	testSpec := vegapb.NewDataSourceSpec(
 		vegapb.NewDataSourceDefinition(
-			vegapb.DataSourceDefinitionTypeExt,
+			vegapb.DataSourceContentTypeOracle,
 		).SetOracleConfig(
-			&vegapb.DataSourceSpecConfiguration{
-				Signers: signers,
-				Filters: []*datapb.Filter{
-					{
-						Key: &datapb.PropertyKey{
-							Name: fmt.Sprintf("prices.%s.value", currency),
-							Type: datapb.PropertyKey_TYPE_INTEGER,
-						},
-						Conditions: []*datapb.Condition{
-							{
-								Value:    price,
-								Operator: op,
+			&vegapb.DataSourceDefinitionExternal_Oracle{
+				Oracle: &vegapb.DataSourceSpecConfiguration{
+					Signers: signers,
+					Filters: []*datapb.Filter{
+						{
+							Key: &datapb.PropertyKey{
+								Name: fmt.Sprintf("prices.%s.value", currency),
+								Type: datapb.PropertyKey_TYPE_INTEGER,
+							},
+							Conditions: []*datapb.Condition{
+								{
+									Value:    price,
+									Operator: op,
+								},
 							},
 						},
 					},

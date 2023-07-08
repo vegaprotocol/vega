@@ -24,7 +24,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers/mocks"
 	"code.vegaprotocol.io/vega/libs/num"
 
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
@@ -50,7 +49,7 @@ func getTestMarket(termInt bool) types.Market {
 		CreatedAt: 0,
 		UpdatedAt: 0,
 		Data: types.NewDataSourceDefinition(
-			vegapb.DataSourceDefinitionTypeExt,
+			types.DataSourceContentTypeOracle,
 		).SetOracleConfig(
 			&types.DataSourceSpecConfiguration{
 				Signers: nil,
@@ -66,7 +65,7 @@ func getTestMarket(termInt bool) types.Market {
 			CreatedAt: 0,
 			UpdatedAt: 0,
 			Data: types.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeInt,
+				types.DataSourceContentTypeInternalTimeTermination,
 			).SetTimeTriggerConditionConfig(
 				[]*types.DataSourceSpecCondition{
 					{
@@ -98,7 +97,7 @@ func getTestMarket(termInt bool) types.Market {
 							CreatedAt: 0,
 							UpdatedAt: 0,
 							Data: types.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+								types.DataSourceContentTypeOracle,
 							).SetOracleConfig(
 								&types.DataSourceSpecConfiguration{
 									Signers: nil,

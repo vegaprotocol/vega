@@ -337,6 +337,10 @@ func (r *VegaResolverRoot) EpochTimestamps() EpochTimestampsResolver {
 	return (*epochTimestampsResolver)(r)
 }
 
+func (r *VegaResolverRoot) EthCallSpec() EthCallSpecResolver {
+	return (*ethCallSpecResolver)(r)
+}
+
 func (r *VegaResolverRoot) Reward() RewardResolver {
 	return (*rewardResolver)(r)
 }
@@ -2079,6 +2083,52 @@ func (m *myDataSourceSpecConfigurationResolver) Signers(_ context.Context, obj *
 
 // END: DataSourceSpecConfiguration Resolver
 
+// BEGIN: EthCallSpec Resolver.
+type ethCallSpecResolver VegaResolverRoot
+
+func (m *ethCallSpecResolver) Abi(ctx context.Context, obj *vega.EthCallSpec) ([]string, error) {
+	if obj != nil {
+		if len(obj.Abi) > 0 {
+			return []string{obj.Abi}, nil
+		}
+	}
+	return nil, errors.New("ethereum spec object is empty")
+}
+
+func (m *ethCallSpecResolver) Args(ctx context.Context, obj *vega.EthCallSpec) ([]string, error) {
+	if obj != nil {
+		if obj.Args != nil {
+			argsStr := []string{}
+			for _, arg := range obj.Args {
+				argsStr = append(argsStr, arg.String())
+			}
+			return argsStr, nil
+		}
+	}
+	return nil, errors.New("ethereum spec object is empty")
+}
+
+func (m *ethCallSpecResolver) Trigger(ctx context.Context, obj *vega.EthCallSpec) (*EthCallTrigger, error) {
+	if obj != nil {
+		if obj.Trigger != nil {
+			return &EthCallTrigger{
+				Trigger: resolveTrigger(obj.Trigger),
+			}, nil
+		}
+	}
+
+	return nil, errors.New("ethereum spec object is empty")
+}
+
+func (m *ethCallSpecResolver) RequiredConfirmations(ctx context.Context, obj *vega.EthCallSpec) (int, error) {
+	if obj != nil {
+		return int(obj.RequiredConfirmations), nil
+	}
+
+	return int(0), errors.New("ethereum spec object is empty")
+}
+
+// END: EthCallSpec resolver.
 // BEGIN: Price Level Resolver
 
 type myPriceLevelResolver VegaResolverRoot

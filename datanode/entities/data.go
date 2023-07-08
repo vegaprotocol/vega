@@ -74,8 +74,10 @@ func DeserializeSigners(data Signers) []*types.Signer {
 type Data struct {
 	Signers        Signers
 	Data           []Property
+	MetaData       []Property
 	MatchedSpecIds [][]byte // pgx automatically handles [][]byte to Postgres ByteaArray mappings
 	BroadcastAt    time.Time
+	Error          *string
 	TxHash         TxHash
 	VegaTime       time.Time
 	SeqNum         uint64
@@ -89,6 +91,7 @@ func ExternalDataFromProto(data *datapb.ExternalData, txHash TxHash, vegaTime ti
 	properties := []Property{}
 	specIDs := [][]byte{}
 	signers := Signers{}
+	var metaDataProperties []Property
 
 	if data.Data != nil {
 		properties = make([]Property, 0, len(data.Data.Data))
@@ -99,6 +102,17 @@ func ExternalDataFromProto(data *datapb.ExternalData, txHash TxHash, vegaTime ti
 				Name:  property.Name,
 				Value: property.Value,
 			})
+		}
+
+		if len(data.Data.MetaData) > 0 {
+			metaDataProperties = make([]Property, 0, len(data.Data.MetaData))
+
+			for _, m := range data.Data.MetaData {
+				metaDataProperties = append(metaDataProperties, Property{
+					Name:  m.Name,
+					Value: m.Value,
+				})
+			}
 		}
 
 		for _, specID := range data.Data.MatchedSpecIds {
@@ -121,8 +135,10 @@ func ExternalDataFromProto(data *datapb.ExternalData, txHash TxHash, vegaTime ti
 		Data: &Data{
 			Signers:        signers,
 			Data:           properties,
+			MetaData:       metaDataProperties,
 			MatchedSpecIds: specIDs,
 			BroadcastAt:    NanosToPostgresTimestamp(data.Data.BroadcastAt),
+			Error:          data.Data.Error,
 			TxHash:         txHash,
 			VegaTime:       vegaTime,
 			SeqNum:         seqNum,
@@ -134,16 +150,25 @@ func (od *ExternalData) ToProto() *datapb.ExternalData {
 	properties := []*datapb.Property{}
 	specIDs := []string{}
 	signersAsProto := []*datapb.Signer{}
+	metaDataProperties := []*datapb.Property{}
 
 	if od.Data != nil {
 		if od.Data.Data != nil {
 			properties = make([]*datapb.Property, 0, len(od.Data.Data))
 			specIDs = make([]string, 0, len(od.Data.MatchedSpecIds))
+			metaDataProperties = make([]*datapb.Property, 0, len(od.Data.MetaData))
 
 			for _, prop := range od.Data.Data {
 				properties = append(properties, &datapb.Property{
 					Name:  prop.Name,
 					Value: prop.Value,
+				})
+			}
+
+			for _, m := range od.Data.MetaData {
+				metaDataProperties = append(metaDataProperties, &datapb.Property{
+					Name:  m.Name,
+					Value: m.Value,
 				})
 			}
 
@@ -161,8 +186,10 @@ func (od *ExternalData) ToProto() *datapb.ExternalData {
 		Data: &datapb.Data{
 			Signers:        signersAsProto,
 			Data:           properties,
+			MetaData:       metaDataProperties,
 			MatchedSpecIds: specIDs,
 			BroadcastAt:    od.Data.BroadcastAt.UnixNano(),
+			Error:          od.Data.Error,
 		},
 	}
 }

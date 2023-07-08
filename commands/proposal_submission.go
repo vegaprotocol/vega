@@ -917,51 +917,92 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 		}
 
 		t := tp.Internal.GetTime()
-		if t == nil {
-			return errs.FinalAddForProperty(fmt.Sprintf("%s.%s.internal", parentProperty, name), ErrIsRequired)
-		}
+		if t != nil {
+			if len(t.Conditions) == 0 {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions", parentProperty, name), ErrIsRequired)
+			}
 
-		if len(t.Conditions) == 0 {
-			errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions", parentProperty, name), ErrIsRequired)
-		}
+			if len(t.Conditions) != 0 {
+				for j, condition := range t.Conditions {
+					if len(condition.Value) == 0 {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.value", parentProperty, name, j), ErrIsRequired)
+					}
+					if condition.Operator == datapb.Condition_OPERATOR_UNSPECIFIED {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsRequired)
+					}
 
-		if len(t.Conditions) != 0 {
-			for j, condition := range t.Conditions {
-				if len(condition.Value) == 0 {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.value", parentProperty, name, j), ErrIsRequired)
-				}
-				if condition.Operator == datapb.Condition_OPERATOR_UNSPECIFIED {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsRequired)
-				}
-
-				if _, ok := datapb.Condition_Operator_name[int32(condition.Operator)]; !ok {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsNotValid)
+					if _, ok := datapb.Condition_Operator_name[int32(condition.Operator)]; !ok {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsNotValid)
+					}
 				}
 			}
+		} else {
+			return errs.FinalAddForProperty(fmt.Sprintf("%s.%s.internal.time", parentProperty, name), ErrIsRequired)
 		}
 
 	case *vegapb.DataSourceDefinition_External:
-		// If data source type is external - check if the signers are present first.
-		o := tp.External.GetOracle()
 
-		signers := o.Signers
-		if len(signers) == 0 {
-			errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers", parentProperty, name), ErrIsRequired)
-		}
+		switch tp.External.SourceType.(type) {
+		case *vegapb.DataSourceDefinitionExternal_Oracle:
+			// If data source type is external - check if the signers are present first.
+			o := tp.External.GetOracle()
+			if o != nil {
+				signers := o.Signers
+				if len(signers) == 0 {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers", parentProperty, name), ErrIsRequired)
+				}
 
-		for i, key := range signers {
-			signer := types.SignerFromProto(key)
-			if signer.IsEmpty() {
-				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValid)
-			} else if pubkey := signer.GetSignerPubKey(); pubkey != nil && !crypto.IsValidVegaPubKey(pubkey.Key) {
-				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidVegaPubkey)
-			} else if address := signer.GetSignerETHAddress(); address != nil && !crypto.EthereumIsValidAddress(address.Address) {
-				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidEthereumAddress)
+				for i, key := range signers {
+					signer := types.SignerFromProto(key)
+					if signer.IsEmpty() {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValid)
+					} else if pubkey := signer.GetSignerPubKey(); pubkey != nil && !crypto.IsValidVegaPubKey(pubkey.Key) {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidVegaPubkey)
+					} else if address := signer.GetSignerETHAddress(); address != nil && !crypto.EthereumIsValidAddress(address.Address) {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidEthereumAddress)
+					}
+				}
+
+				filters := o.Filters
+				errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty))
+			} else {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle", parentProperty, name), ErrIsRequired)
+			}
+
+		case *vegapb.DataSourceDefinitionExternal_EthOracle:
+			ethOracle := tp.External.GetEthOracle()
+
+			if ethOracle != nil {
+				if !crypto.EthereumIsValidAddress(ethOracle.Address) {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.address", parentProperty, name), ErrIsNotValidEthereumAddress)
+				}
+
+				if len(ethOracle.Abi) == 0 {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.abi", parentProperty, name), ErrIsRequired)
+				}
+
+				if len(strings.TrimSpace(ethOracle.Method)) == 0 {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.method", parentProperty, name), ErrIsRequired)
+				}
+
+				if len(ethOracle.Normalisers) == 0 {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.normalisers", parentProperty, name), ErrIsRequired)
+				}
+
+				if ethOracle.Trigger == nil {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.trigger", parentProperty, name), ErrIsRequired)
+				}
+
+				if ethOracle.Trigger != nil &&
+					ethOracle.Trigger.GetTimeTrigger() != nil &&
+					ethOracle.Trigger.GetTimeTrigger().Initial == nil &&
+					ethOracle.Trigger.GetTimeTrigger().Every == nil {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.trigger.timetrigger.(initial|every)", parentProperty, name), ErrIsRequired)
+				}
+			} else {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle", parentProperty, name), ErrIsRequired)
 			}
 		}
-
-		filters := o.Filters
-		errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty))
 	}
 
 	return errs
@@ -1008,6 +1049,38 @@ func checkDataSourceSpecFilters(filters []*datapb.Filter, name string, parentPro
 }
 
 func isBindingMatchingSpec(spec *vegapb.DataSourceDefinition, bindingProperty string) bool {
+	if spec == nil {
+		return false
+	}
+
+	switch specType := spec.SourceType.(type) {
+	case *vegapb.DataSourceDefinition_External:
+		switch specType.External.SourceType.(type) {
+		case *vegapb.DataSourceDefinitionExternal_Oracle:
+			return isBindingMatchingSpecFilters(spec, bindingProperty)
+		case *vegapb.DataSourceDefinitionExternal_EthOracle:
+			ethOracle := specType.External.GetEthOracle()
+
+			for _, v := range ethOracle.Normalisers {
+				if v.Name == bindingProperty {
+					return true
+				}
+			}
+
+			return false
+		}
+
+	case *vegapb.DataSourceDefinition_Internal:
+		return isBindingMatchingSpecFilters(spec, bindingProperty)
+	}
+
+	return isBindingMatchingSpecFilters(spec, bindingProperty)
+}
+
+// This is the legacy oracles way of checking that the spec has a property matching the binding property by iterating
+// over the filters, but is it not possible to not have filters, or a filter that does not match the oracle property so
+// this would break?
+func isBindingMatchingSpecFilters(spec *vegapb.DataSourceDefinition, bindingProperty string) bool {
 	bindingPropertyFound := false
 	filters := []*datapb.Filter{}
 	if spec != nil {

@@ -32,8 +32,9 @@ message Snapshot {
   bytes metadata = 5;
 }
 
-// NodeHash represents an exported node from the AVL tree and contains all the data necessary to reconstruct an identical copy of the
-// AVL tree after it's been serialised
+// NodeHash represents an exported node from the AVL tree and contains all the
+// data necessary to reconstruct an identical copy of the AVL tree after it's
+// been serialised
 message NodeHash {
   // Node's full key, for example epoch.all
   string key = 3;
@@ -41,16 +42,19 @@ message NodeHash {
   string hash = 4;
   // Height of the node in the tree
   int32 height = 5;
-  // Version of that node i.e., how many times its value has changed during tree updates
+  // Version of that node i.e., how many times its value has changed during tree
+  // updates
   int64 version = 6;
-  // Whether or not the node contains a snapshot payload, only leaf nodes in the AVL contain payloads
+  // Whether or not the node contains a snapshot payload, only leaf nodes in the
+  // AVL contain payloads
   bool is_leaf = 7;
 }
 
 message Metadata {
   int64 version = 1;
   repeated string chunk_hashes = 2;
-  repeated NodeHash node_hashes = 3; // hashes used by snapshot engine, different to chunk hash if data was split up, or combined into a single chunk
+  repeated NodeHash node_hashes = 3; // hashes used by snapshot engine, different to chunk hash if data was
+  // split up, or combined into a single chunk
 }
 
 // Chunk is simply an as-is chunk belonging to a snapshot
@@ -119,6 +123,8 @@ message Payload {
     SpotLiquidityTarget spot_liquidity_target = 59;
     BankingRecurringGovernanceTransfers banking_recurring_governance_transfers = 60;
     BankingScheduledGovernanceTransfers banking_scheduled_governance_transfers = 61;
+    EthContractCallResults eth_contract_call_results = 62;
+    EthOracleVerifierLastBlock eth_oracle_verifier_last_block = 63;
   }
 }
 
@@ -169,6 +175,7 @@ message OracleDataBatch {
 message OracleData {
   repeated vega.data.v1.Signer signers = 1;
   repeated OracleDataPair data = 2;
+  repeated vega.data.v1.Property meta_data = 3;
 }
 
 message OracleDataPair {
@@ -686,6 +693,22 @@ message StakeVerifierPending {
   uint64 log_index = 6;
   string tx_id = 7;
   string id = 8;
+}
+
+message EthOracleVerifierLastBlock {
+  uint64 block_height = 1;
+  uint64 block_time = 2;
+}
+
+message EthContractCallResults {
+  repeated EthContractCallResult pending_contract_call_result = 1;
+}
+
+message EthContractCallResult {
+  uint64 block_height = 1;
+  uint64 block_time = 2;
+  string spec_id = 3;
+  bytes result = 4;
 }
 
 message PendingKeyRotation {

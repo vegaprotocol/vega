@@ -2,12 +2,16 @@ package vega
 
 import (
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
+type DataSourceContentType int32
+
 const (
-	DataSourceDefinitionTypeUspec = 0
-	DataSourceDefinitionTypeInt   = 1
-	DataSourceDefinitionTypeExt   = 2
+	DataSurceContentTypeInvalid DataSourceContentType = iota
+	DataSourceContentTypeOracle
+	DataSourceContentTypeEthOracle
+	DataSourceContentTypeInternalTimeTermination
 )
 
 func (d DataSourceDefinition) DeepClone() *DataSourceDefinition {
@@ -28,20 +32,11 @@ func (d DataSourceDefinition) DeepClone() *DataSourceDefinition {
 // GetSigners tries to get the Signers from the DataSourceDefinition object.
 func (d DataSourceDefinition) GetSigners() []*datapb.Signer {
 	signers := []*datapb.Signer{}
-
-	if d.SourceType != nil {
-		switch tp := d.SourceType.(type) {
-		case *DataSourceDefinition_External:
-			if tp.External != nil {
-				if tp.External.SourceType != nil {
-					switch etp := tp.External.SourceType.(type) {
-					case *DataSourceDefinitionExternal_Oracle:
-						if etp.Oracle != nil {
-							signers = etp.Oracle.Signers
-						}
-					}
-				}
-			}
+	cnt := d.Content()
+	if cnt != nil {
+		switch tp := cnt.(type) {
+		case *DataSourceSpecConfiguration:
+			signers = tp.Signers
 		}
 	}
 
@@ -50,67 +45,52 @@ func (d DataSourceDefinition) GetSigners() []*datapb.Signer {
 
 func (d DataSourceDefinition) GetFilters() []*datapb.Filter {
 	filters := []*datapb.Filter{}
+	cnt := d.Content()
+	if cnt != nil {
+		switch tp := cnt.(type) {
+		case *DataSourceSpecConfiguration:
+			if tp != nil {
+				return tp.Filters
+			}
 
-	if d.SourceType != nil {
-		switch tp := d.SourceType.(type) {
-		case *DataSourceDefinition_External:
-			if tp.External != nil {
-				if tp.External.SourceType != nil {
-					switch etp := tp.External.SourceType.(type) {
-					case *DataSourceDefinitionExternal_Oracle:
-						if etp.Oracle != nil {
-							filters = etp.Oracle.Filters
-						}
-					}
+		case *EthCallSpec:
+			if tp != nil {
+				if tp.Filters != nil {
+					return tp.Filters
 				}
 			}
 
-		case *DataSourceDefinition_Internal:
-			if tp.Internal != nil {
-				if tp.Internal.SourceType != nil {
-					switch itp := tp.Internal.SourceType.(type) {
-					case *DataSourceDefinitionInternal_Time:
-						if itp.Time != nil {
-							if len(itp.Time.Conditions) > 0 {
-								filters = append(filters,
-									&datapb.Filter{
-										Key: &datapb.PropertyKey{
-											Name: "vegaprotocol.builtin.timestamp",
-											Type: datapb.PropertyKey_TYPE_TIMESTAMP,
-										},
-										Conditions: []*datapb.Condition{
-											itp.Time.Conditions[0],
-										},
-									},
-								)
-							}
-						}
-					}
+		case *DataSourceSpecConfigurationTime:
+			if tp != nil { // wtf?
+				if len(tp.Conditions) > 0 {
+					filters = append(filters,
+						&datapb.Filter{
+							Key: &datapb.PropertyKey{
+								Name: "vegaprotocol.builtin.timestamp",
+								Type: datapb.PropertyKey_TYPE_TIMESTAMP,
+							},
+							Conditions: []*datapb.Condition{
+								tp.Conditions[0],
+							},
+						},
+					)
 				}
 			}
-
 		}
 	}
 
 	return filters
 }
 
-func NewDataSourceDefinition(tp int) *DataSourceDefinition {
+func NewDataSourceDefinitionWith(dst isDataSourceDefinition_SourceType) *DataSourceDefinition {
+	return &DataSourceDefinition{SourceType: dst}
+}
+
+func NewDataSourceDefinition(tp DataSourceContentType) *DataSourceDefinition {
 	ds := &DataSourceDefinition{}
 
 	switch tp {
-	case DataSourceDefinitionTypeInt:
-		ds.SourceType = &DataSourceDefinition_Internal{
-			Internal: &DataSourceDefinitionInternal{
-				SourceType: &DataSourceDefinitionInternal_Time{
-					Time: &DataSourceSpecConfigurationTime{
-						Conditions: []*datapb.Condition{},
-					},
-				},
-			},
-		}
-
-	case DataSourceDefinitionTypeExt:
+	case DataSourceContentTypeOracle:
 		ds.SourceType = &DataSourceDefinition_External{
 			External: &DataSourceDefinitionExternal{
 				SourceType: &DataSourceDefinitionExternal_Oracle{
@@ -122,6 +102,30 @@ func NewDataSourceDefinition(tp int) *DataSourceDefinition {
 			},
 		}
 
+	case DataSourceContentTypeEthOracle:
+		ds.SourceType = &DataSourceDefinition_External{
+			External: &DataSourceDefinitionExternal{
+				SourceType: &DataSourceDefinitionExternal_EthOracle{
+					EthOracle: &EthCallSpec{
+						Abi:     "",
+						Args:    []*structpb.Value{},
+						Trigger: &EthCallTrigger{},
+						Filters: []*datapb.Filter{},
+					},
+				},
+			},
+		}
+
+	case DataSourceContentTypeInternalTimeTermination:
+		ds.SourceType = &DataSourceDefinition_Internal{
+			Internal: &DataSourceDefinitionInternal{
+				SourceType: &DataSourceDefinitionInternal_Time{
+					Time: &DataSourceSpecConfigurationTime{
+						Conditions: []*datapb.Condition{},
+					},
+				},
+			},
+		}
 	}
 
 	return ds
@@ -130,35 +134,55 @@ func NewDataSourceDefinition(tp int) *DataSourceDefinition {
 // SetOracleConfig sets a given oracle config in the receiver.
 // If the receiver is not external oracle type of data source - it is not changed.
 // This method does not care about object previous contents - use with caution (currenty needed only for testing purposes).
-func (s *DataSourceDefinition) SetOracleConfig(oc *DataSourceSpecConfiguration) *DataSourceDefinition {
-	if s.SourceType != nil {
-		switch def := s.SourceType.(type) {
-		// For the case the definition source type is vegapb.DataSourceDefinition_External
-		case *DataSourceDefinition_External:
-			if def.External != nil {
-				if def.External.SourceType != nil {
-					switch def.External.SourceType.(type) {
-					// For the case the vegapb.DataSourceDefinitionExternal is not nill
-					// and its embedded object is of type vegapb.DataSourceDefinitionExternal_Oracle
-					case *DataSourceDefinitionExternal_Oracle:
-						// Set the new config only in this case
-						ds := &DataSourceDefinition{
-							SourceType: &DataSourceDefinition_External{
-								External: &DataSourceDefinitionExternal{
-									SourceType: &DataSourceDefinitionExternal_Oracle{
-										Oracle: oc,
+func (s *DataSourceDefinition) SetOracleConfig(oc isDataSourceDefinitionExternal_SourceType) *DataSourceDefinition {
+	if oc != nil {
+		cnt := NewDataSourceDefinitionWith(
+			&DataSourceDefinition_External{
+				External: &DataSourceDefinitionExternal{
+					SourceType: oc,
+				},
+			}).Content()
+		if s.SourceType != nil {
+			switch te := s.SourceType.(type) {
+			case *DataSourceDefinition_External:
+				if te.External != nil {
+					if te.External.SourceType != nil {
+						switch te.External.SourceType.(type) {
+						case *DataSourceDefinitionExternal_Oracle:
+							switch tp := cnt.(type) {
+							case *DataSourceSpecConfiguration:
+								ds := &DataSourceDefinition{
+									SourceType: &DataSourceDefinition_External{
+										External: &DataSourceDefinitionExternal{
+											SourceType: &DataSourceDefinitionExternal_Oracle{
+												Oracle: tp,
+											},
+										},
 									},
-								},
-							},
-						}
+								}
+								*s = *ds
+							}
 
-						*s = *ds
+						case *DataSourceDefinitionExternal_EthOracle:
+							switch tp := cnt.(type) {
+							case *EthCallSpec:
+								ds := &DataSourceDefinition{
+									SourceType: &DataSourceDefinition_External{
+										External: &DataSourceDefinitionExternal{
+											SourceType: &DataSourceDefinitionExternal_EthOracle{
+												EthOracle: tp,
+											},
+										},
+									},
+								}
+								*s = *ds
+							}
+						}
 					}
 				}
 			}
 		}
 	}
-
 	return s
 }
 
@@ -166,37 +190,30 @@ func (s *DataSourceDefinition) SetOracleConfig(oc *DataSourceSpecConfiguration) 
 // If the receiver is not a time triggered data source - it does not set anything to it.
 // This method does not care about object previous contents - use with caution (currenty needed only for testing purposes).
 func (s *DataSourceDefinition) SetTimeTriggerConditionConfig(c []*datapb.Condition) *DataSourceDefinition {
-	if s.SourceType != nil {
-		switch def := s.SourceType.(type) {
-		// For the case the definition source type is vegapb.DataSourceDefinition_Internal
-		case *DataSourceDefinition_Internal:
-			if def.Internal != nil {
-				if def.Internal.SourceType != nil {
-					switch def.Internal.SourceType.(type) {
-					// For the case the vegapb.DataSourceDefinitionInternal is not nill
-					// and its embedded object is of type vegapb.DataSourceDefinitionInternal_Time
-					case *DataSourceDefinitionInternal_Time:
-						// Set the new condition only in this case
-						cond := []*datapb.Condition{}
-						if len(c) > 0 {
-							cond = append(cond, c[0])
-						}
-
-						ds := &DataSourceDefinition{
-							SourceType: &DataSourceDefinition_Internal{
-								Internal: &DataSourceDefinitionInternal{
-									SourceType: &DataSourceDefinitionInternal_Time{
-										Time: &DataSourceSpecConfigurationTime{
-											Conditions: cond,
-										},
-									},
+	if c != nil {
+		cnt := s.Content()
+		if cnt != nil {
+			switch cnt.(type) {
+			// For the case the vegapb.DataSourceDefinitionInternal is not nill
+			// and its embedded object is of type vegapb.DataSourceDefinitionInternal_Time
+			case *DataSourceSpecConfigurationTime:
+				// Set the new condition only in this case
+				cond := []*datapb.Condition{}
+				if len(c) > 0 {
+					cond = append(cond, c[0])
+				}
+				ds := &DataSourceDefinition{
+					SourceType: &DataSourceDefinition_Internal{
+						Internal: &DataSourceDefinitionInternal{
+							SourceType: &DataSourceDefinitionInternal_Time{
+								Time: &DataSourceSpecConfigurationTime{
+									Conditions: cond,
 								},
 							},
-						}
-
-						*s = *ds
-					}
+						},
+					},
 				}
+				*s = *ds
 			}
 		}
 	}
@@ -217,7 +234,10 @@ func (s *DataSourceDefinition) Content() interface{} {
 								return extTp.Oracle
 							}
 
-							// The Ethereum type case will go here later.
+						case *DataSourceDefinitionExternal_EthOracle:
+							if extTp.EthOracle != nil {
+								return extTp.EthOracle
+							}
 						}
 					}
 				}

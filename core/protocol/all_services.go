@@ -16,6 +16,8 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/evtforward/ethcall"
+
 	"code.vegaprotocol.io/vega/libs/subscribers"
 
 	"code.vegaprotocol.io/vega/core/assets"
@@ -63,6 +65,16 @@ import (
 	"code.vegaprotocol.io/vega/version"
 )
 
+type EthCallEngine interface {
+	Start()
+	Stop()
+	MakeResult(specID string, bytes []byte) (ethcall.Result, error)
+	CallSpec(ctx context.Context, id string, atBlock uint64) (ethcall.Result, error)
+	OnSpecActivated(ctx context.Context, spec types.OracleSpec) error
+	OnSpecDeactivated(ctx context.Context, spec types.OracleSpec)
+	UpdatePreviousEthBlock(height uint64, timestamp uint64)
+}
+
 type allServices struct {
 	ctx             context.Context
 	log             *logging.Logger
@@ -82,29 +94,31 @@ type allServices struct {
 
 	vegaPaths paths.Paths
 
-	marketActivityTracker *common.MarketActivityTracker
-	statevar              *statevar.Engine
-	snapshot              *snapshot.Engine
-	executionEngine       *execution.Engine
-	governance            *governance.Engine
-	collateral            *collateral.Engine
-	oracle                *oracles.Engine
-	oracleAdaptors        *adaptors.Adaptors
-	netParams             *netparams.Store
-	delegation            *delegation.Engine
-	limits                *limits.Engine
-	rewards               *rewards.Engine
-	checkpoint            *checkpoint.Engine
-	spam                  *spam.Engine
-	pow                   processor.PoWEngine
-	builtinOracle         *oracles.Builtin
-	codec                 abci.Codec
+	marketActivityTracker   *common.MarketActivityTracker
+	statevar                *statevar.Engine
+	snapshot                *snapshot.Engine
+	executionEngine         *execution.Engine
+	governance              *governance.Engine
+	collateral              *collateral.Engine
+	oracle                  *oracles.Engine
+	oracleAdaptors          *adaptors.Adaptors
+	netParams               *netparams.Store
+	delegation              *delegation.Engine
+	limits                  *limits.Engine
+	rewards                 *rewards.Engine
+	checkpoint              *checkpoint.Engine
+	spam                    *spam.Engine
+	pow                     processor.PoWEngine
+	builtinOracle           *oracles.Builtin
+	codec                   abci.Codec
+	ethereumOraclesVerifier *oracles.EthereumOracleVerifier
 
 	assets                *assets.Service
 	topology              *validators.Topology
 	notary                *notary.SnapshotNotary
 	eventForwarder        *evtforward.Forwarder
 	eventForwarderEngine  EventForwarderEngine
+	ethCallEngine         EthCallEngine
 	witness               *validators.Witness
 	banking               *banking.Engine
 	genesisHandler        *genesis.Handler
@@ -175,10 +189,6 @@ func newServices(
 
 	svcs.eventService = subscribers.NewService(svcs.log, svcs.broker, svcs.conf.Broker.EventBusClientBufferSize)
 	svcs.collateral = collateral.New(svcs.log, svcs.conf.Collateral, svcs.timeService, svcs.broker)
-	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
-
-	svcs.builtinOracle = oracles.NewBuiltinOracle(svcs.oracle, svcs.timeService)
-	svcs.oracleAdaptors = oracleAdaptors.New()
 
 	svcs.limits = limits.New(svcs.log, svcs.conf.Limits, svcs.timeService, svcs.broker)
 
@@ -208,7 +218,24 @@ func newServices(
 		svcs.eventForwarderEngine = evtforward.NewNoopEngine(svcs.log, svcs.conf.EvtForward)
 	}
 
-	// this is done to go around circular deps again...
+	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
+
+	svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.ethClient, svcs.eventForwarder)
+
+	if svcs.conf.IsValidator() {
+		go svcs.ethCallEngine.Start()
+	}
+
+	svcs.ethereumOraclesVerifier = oracles.NewEthereumOracleVerifier(svcs.log, svcs.witness, svcs.timeService, svcs.broker,
+		svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations)
+
+	// Not using the activation event bus event here as on recovery the ethCallEngine needs to have all specs - is this necessary?
+	svcs.oracle.AddSpecActivationListener(svcs.ethCallEngine)
+
+	svcs.builtinOracle = oracles.NewBuiltinOracle(svcs.oracle, svcs.timeService)
+	svcs.oracleAdaptors = oracleAdaptors.New()
+
+	// this is done to go around circular deps again..s
 	svcs.erc20MultiSigTopology.SetEthereumEventSource(svcs.eventForwarderEngine)
 
 	svcs.stakingAccounts, svcs.stakeVerifier, svcs.stakeCheckpoint = staking.New(
@@ -267,7 +294,6 @@ func newServices(
 		// checkpoint have been loaded
 		// which means that genesis has been loaded as well
 		// we should be fully ready to start the event sourcing from ethereum
-		svcs.eventForwarderEngine.Start()
 	})
 
 	svcs.genesisHandler.OnGenesisAppStateLoaded(
@@ -296,7 +322,7 @@ func newServices(
 
 	svcs.snapshot.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
 		svcs.notary, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar,
-		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine)
+		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier)
 
 	if svcs.spam != nil {
 		svcs.snapshot.AddProviders(svcs.spam)
@@ -368,6 +394,8 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 		svcs.banking.OnTick,
 		svcs.assets.OnTick,
 		svcs.limits.OnTick,
+
+		svcs.ethereumOraclesVerifier.OnTick,
 	)
 }
 
@@ -375,6 +403,7 @@ func (svcs *allServices) Stop() {
 	svcs.confWatcher.Unregister(svcs.confListenerIDs)
 	svcs.eventForwarderEngine.Stop()
 	svcs.snapshot.Close()
+	svcs.ethCallEngine.Stop()
 }
 
 func (svcs *allServices) registerConfigWatchers() {

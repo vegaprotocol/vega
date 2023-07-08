@@ -39,13 +39,22 @@ type TimeService interface {
 	GetTimeNow() time.Time
 }
 
+// The verifier and filterer need to know about new spec immediately, waiting on the event will lead to spec not found issues
+//
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/spec_activations_listener.go -package mocks code.vegaprotocol.io/vega/core/oracles SpecActivationsListener
+type SpecActivationsListener interface {
+	OnSpecActivated(context.Context, types.OracleSpec) error
+	OnSpecDeactivated(context.Context, types.OracleSpec)
+}
+
 // Engine is responsible for broadcasting the OracleData to products and risk
 // models interested in it.
 type Engine struct {
-	log           *logging.Logger
-	timeService   TimeService
-	broker        Broker
-	subscriptions *specSubscriptions
+	log                     *logging.Logger
+	timeService             TimeService
+	broker                  Broker
+	subscriptions           *specSubscriptions
+	specActivationListeners []SpecActivationsListener
 }
 
 // NewEngine creates a new oracle Engine.
@@ -74,6 +83,10 @@ func (e *Engine) ListensToSigners(data OracleData) bool {
 	return e.subscriptions.hasAnySubscribers(func(spec OracleSpec) bool {
 		return spec.MatchSigners(data)
 	})
+}
+
+func (e *Engine) AddSpecActivationListener(listener SpecActivationsListener) {
+	e.specActivationListeners = append(e.specActivationListeners, listener)
 }
 
 func (e *Engine) HasMatch(data OracleData) (bool, error) {
@@ -130,15 +143,24 @@ func (e *Engine) BroadcastData(ctx context.Context, data OracleData) error {
 // OracleData matches the spec.
 // It returns a SubscriptionID that is used to Unsubscribe.
 // If cb is nil, the method panics.
-func (e *Engine) Subscribe(ctx context.Context, spec OracleSpec, cb OnMatchedOracleData) (SubscriptionID, Unsubscriber) {
+func (e *Engine) Subscribe(ctx context.Context, spec OracleSpec, cb OnMatchedOracleData) (SubscriptionID, Unsubscriber, error) {
 	if cb == nil {
 		panic(fmt.Sprintf("a callback is required for spec %v", spec))
 	}
-	updatedSubscription := e.subscriptions.addSubscriber(spec, cb, e.timeService.GetTimeNow())
+	updatedSubscription, firstSubscription := e.subscriptions.addSubscriber(spec, cb, e.timeService.GetTimeNow())
+	if firstSubscription {
+		for _, listener := range e.specActivationListeners {
+			err := listener.OnSpecActivated(ctx, *spec.OriginalSpec)
+			if err != nil {
+				return 0, nil, fmt.Errorf("failed to activate spec: %w", err)
+			}
+		}
+	}
+
 	e.sendNewOracleSpecSubscription(ctx, updatedSubscription)
 	return updatedSubscription.subscriptionID, func(ctx context.Context, id SubscriptionID) {
 		e.Unsubscribe(ctx, id)
-	}
+	}, nil
 }
 
 // Unsubscribe unregisters the callback associated to the SubscriptionID.
@@ -147,6 +169,9 @@ func (e *Engine) Unsubscribe(ctx context.Context, id SubscriptionID) {
 	updatedSubscription, hasNoMoreSubscriber := e.subscriptions.removeSubscriber(id)
 	if hasNoMoreSubscriber {
 		e.sendOracleSpecDeactivation(ctx, updatedSubscription)
+		for _, listener := range e.specActivationListeners {
+			listener.OnSpecDeactivated(ctx, updatedSubscription.spec)
+		}
 	}
 }
 
@@ -191,6 +216,14 @@ func (e *Engine) sendMatchedOracleData(ctx context.Context, data OracleData, spe
 		})
 	}
 
+	metaData := make([]*datapb.Property, 0, len(data.MetaData))
+	for name, value := range data.MetaData {
+		metaData = append(metaData, &datapb.Property{
+			Name:  name,
+			Value: value,
+		})
+	}
+
 	sort.Slice(payload, func(i, j int) bool {
 		return strings.Compare(payload[i].Name, payload[j].Name) < 0
 	})
@@ -212,6 +245,7 @@ func (e *Engine) sendMatchedOracleData(ctx context.Context, data OracleData, spe
 				Data:           payload,
 				MatchedSpecIds: ids,
 				BroadcastAt:    e.timeService.GetTimeNow().UnixNano(),
+				MetaData:       metaData,
 			},
 		},
 	}

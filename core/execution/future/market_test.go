@@ -506,7 +506,7 @@ func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuc
 						DataSourceSpecForSettlementData: &types.DataSourceSpec{
 							ID: "1",
 							Data: types.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+								types.DataSourceContentTypeOracle,
 							).SetOracleConfig(
 								&types.DataSourceSpecConfiguration{
 									Signers: pubKeys,
@@ -525,7 +525,7 @@ func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuc
 						DataSourceSpecForTradingTermination: &types.DataSourceSpec{
 							ID: "2",
 							Data: types.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+								types.DataSourceContentTypeOracle,
 							).SetOracleConfig(
 								&types.DataSourceSpecConfiguration{
 									Signers: pubKeys,
@@ -682,7 +682,7 @@ func TestMarketClosing(t *testing.T) {
 	tm.mktCfg.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination = &types.DataSourceSpec{
 		ID: "2",
 		Data: types.NewDataSourceDefinition(
-			vegapb.DataSourceDefinitionTypeExt,
+			types.DataSourceContentTypeOracle,
 		).SetOracleConfig(&types.DataSourceSpecConfiguration{
 			Signers: pubKeys,
 			Filters: []*types.DataSourceSpecFilter{

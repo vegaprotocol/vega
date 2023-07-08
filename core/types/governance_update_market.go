@@ -204,9 +204,13 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) (*U
 	md := make([]string, 0, len(p.Metadata))
 	md = append(md, p.Metadata...)
 
+	var err error
 	var instrument *UpdateInstrumentConfiguration
 	if p.Instrument != nil {
-		instrument = UpdateInstrumentConfigurationFromProto(p.Instrument)
+		instrument, err = UpdateInstrumentConfigurationFromProto(p.Instrument)
+		if err != nil {
+			return nil, fmt.Errorf("error getting update instrument configuration from proto: %s", err)
+		}
 	}
 
 	var priceMonitoring *PriceMonitoringParameters
@@ -330,23 +334,31 @@ func (i UpdateInstrumentConfigurationFuture) IntoProto() *vegapb.UpdateInstrumen
 	}
 }
 
-func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfiguration) *UpdateInstrumentConfiguration {
+func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfiguration) (*UpdateInstrumentConfiguration, error) {
 	r := &UpdateInstrumentConfiguration{
 		Code: p.Code,
 	}
 
 	switch pr := p.Product.(type) {
 	case *vegapb.UpdateInstrumentConfiguration_Future:
+		settl, err := DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForSettlementData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse settlement data source spec: %w", err)
+		}
+		term, err := DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse trading termination data source spec: %w", err)
+		}
 		r.Product = &UpdateInstrumentConfigurationFuture{
 			Future: &UpdateFutureProduct{
 				QuoteName:                           pr.Future.QuoteName,
-				DataSourceSpecForSettlementData:     *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForSettlementData),
-				DataSourceSpecForTradingTermination: *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination),
+				DataSourceSpecForSettlementData:     *NewDataSourceDefinitionWith(settl),
+				DataSourceSpecForTradingTermination: *NewDataSourceDefinitionWith(term),
 				DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
 			},
 		}
 	}
-	return r
+	return r, nil
 }
 
 type UpdateFutureProduct struct {
@@ -368,8 +380,8 @@ func (f UpdateFutureProduct) IntoProto() *vegapb.UpdateFutureProduct {
 func (f UpdateFutureProduct) DeepClone() *UpdateFutureProduct {
 	return &UpdateFutureProduct{
 		QuoteName:                           f.QuoteName,
-		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.DeepClone(),
-		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.DeepClone(),
+		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.DeepClone().(DataSourceDefinition),
+		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.DeepClone().(DataSourceDefinition),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.DeepClone(),
 	}
 }

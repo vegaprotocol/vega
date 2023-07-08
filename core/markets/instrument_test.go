@@ -24,7 +24,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/types"
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
 	"github.com/golang/mock/gomock"
@@ -75,7 +74,7 @@ func TestInstrument(t *testing.T) {
 				SettlementAsset: "Ethereum/Ether",
 				DataSourceSpecForSettlementData: &types.DataSourceSpec{
 					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						types.DataSourceContentTypeOracle,
 					).SetOracleConfig(
 						&types.DataSourceSpecConfiguration{
 							Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
@@ -93,7 +92,7 @@ func TestInstrument(t *testing.T) {
 				},
 				DataSourceSpecForTradingTermination: &types.DataSourceSpec{
 					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						types.DataSourceContentTypeOracle,
 					).SetOracleConfig(
 						&types.DataSourceSpecConfiguration{
 							Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
@@ -153,7 +152,7 @@ func getValidInstrumentProto() *types.Instrument {
 				SettlementAsset: "Ethereum/Ether",
 				DataSourceSpecForSettlementData: &types.DataSourceSpec{
 					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						types.DataSourceContentTypeOracle,
 					).SetOracleConfig(
 						&types.DataSourceSpecConfiguration{
 							Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
@@ -171,7 +170,7 @@ func getValidInstrumentProto() *types.Instrument {
 				},
 				DataSourceSpecForTradingTermination: &types.DataSourceSpec{
 					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						types.DataSourceContentTypeOracle,
 					).SetOracleConfig(
 						&types.DataSourceSpecConfiguration{
 							Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
