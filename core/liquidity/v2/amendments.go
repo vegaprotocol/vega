@@ -16,16 +16,13 @@ import (
 	"context"
 	"errors"
 
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 )
 
 var ErrPartyHaveNoLiquidityProvision = errors.New("party have no liquidity provision")
 
-func (e *Engine) AmendLiquidityProvision(
-	ctx context.Context,
-	lpa *types.LiquidityProvisionAmendment,
-	party string,
-) error {
+func (e *Engine) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string) error {
 	if err := e.CanAmend(lpa, party); err != nil {
 		return err
 	}
@@ -33,6 +30,7 @@ func (e *Engine) AmendLiquidityProvision(
 	// LP exists, checked in the previous func.
 	lp, _ := e.provisions.Get(party)
 	updatedLp := e.createAmendedProvision(lp, lpa)
+	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, updatedLp))
 
 	// add to pending provision since the change in CommitmentAmount should be reflected at the beginning of next epoch.
 	if lp.CommitmentAmount.NEQ(lpa.CommitmentAmount) {
@@ -63,10 +61,7 @@ func (e *Engine) createAmendedProvision(
 	}
 }
 
-func (e *Engine) CanAmend(
-	lps *types.LiquidityProvisionAmendment,
-	party string,
-) error {
+func (e *Engine) CanAmend(lps *types.LiquidityProvisionAmendment, party string) error {
 	if !e.IsLiquidityProvider(party) {
 		return ErrPartyHaveNoLiquidityProvision
 	}
@@ -78,7 +73,7 @@ func (e *Engine) CanAmend(
 	return nil
 }
 
-func (e *Engine) ValidateLiquidityProvisionAmendment(lp *types.LiquidityProvisionAmendment) (err error) {
+func (e *Engine) ValidateLiquidityProvisionAmendment(lp *types.LiquidityProvisionAmendment) error {
 	if lp.Fee.IsZero() && (lp.CommitmentAmount == nil || lp.CommitmentAmount.IsZero()) {
 		return errors.New("empty liquidity provision amendment content")
 	}

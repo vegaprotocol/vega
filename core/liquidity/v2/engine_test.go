@@ -85,7 +85,7 @@ func testSubmissionCreateAndCancel(t *testing.T) {
 
 	zero := num.UintZero()
 
-	te.engine.ResetSLAEpoch(ctx, now, zero, zero, num.DecimalZero())
+	te.engine.ResetSLAEpoch(now, zero, zero, num.DecimalZero())
 	te.engine.ApplyPendingProvisions(ctx, now)
 
 	got = te.engine.LiquidityProvisionByPartyID(party)
@@ -150,7 +150,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	now := tng.tsvc.GetTimeNow()
 
 	tng.engine.ApplyPendingProvisions(ctx, now)
-	tng.engine.ResetSLAEpoch(ctx, time.Now(), zero, zero, num.DecimalOne())
+	tng.engine.ResetSLAEpoch(time.Now(), zero, zero, num.DecimalOne())
 
 	suppliedStake := tng.engine.CalculateSuppliedStake()
 	require.Equal(t, lp1.CommitmentAmount, suppliedStake)
@@ -165,7 +165,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	_, err = tng.engine.SubmitLiquidityProvision(ctx, lp2, party2, idgen)
 	require.NoError(t, err)
 
-	tng.engine.ResetSLAEpoch(ctx, now, zero, zero, num.DecimalZero())
+	tng.engine.ResetSLAEpoch(now, zero, zero, num.DecimalZero())
 	tng.engine.ApplyPendingProvisions(ctx, now)
 
 	suppliedStake = tng.engine.CalculateSuppliedStake()

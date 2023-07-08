@@ -148,7 +148,7 @@ type sliceRing[T any] struct {
 	pos int
 }
 
-func NewSliceRing[T any](size uint) *sliceRing[T] {
+func NewSliceRing[T any](size uint64) *sliceRing[T] {
 	return &sliceRing[T]{
 		s:   make([]T, size),
 		pos: 0,
@@ -169,9 +169,9 @@ func (r *sliceRing[T]) Add(val T) {
 	r.pos++
 }
 
-func (r *sliceRing[T]) ModifySize(newSize uint) {
+func (r *sliceRing[T]) ModifySize(newSize uint64) {
 	currentCap := cap(r.s)
-	currentCapUint := uint(currentCap)
+	currentCapUint := uint64(currentCap)
 	if currentCapUint == newSize {
 		return
 	}

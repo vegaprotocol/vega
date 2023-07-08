@@ -23,16 +23,17 @@ import (
 const partyID = "lp-party-1"
 
 type testEngine struct {
-	ctrl         *gomock.Controller
-	marketID     string
-	tsvc         *stubs.TimeStub
-	broker       *bmocks.MockBroker
-	riskModel    *mocks.MockRiskModel
-	priceMonitor *mocks.MockPriceMonitor
-	orderbook    *mocks.MockOrderBook
-	auctionState *mmocks.MockAuctionState
-	engine       *liquidity.Engine
-	stateVar     *stubs.StateVarStub
+	ctrl             *gomock.Controller
+	marketID         string
+	tsvc             *stubs.TimeStub
+	broker           *bmocks.MockBroker
+	riskModel        *mocks.MockRiskModel
+	priceMonitor     *mocks.MockPriceMonitor
+	orderbook        *mocks.MockOrderBook
+	auctionState     *mmocks.MockAuctionState
+	engine           *liquidity.Engine
+	stateVar         *stubs.StateVarStub
+	defaultSLAParams *types.LiquiditySLAParams
 }
 
 func newTestEngine(t *testing.T) *testEngine {
@@ -56,34 +57,35 @@ func newTestEngine(t *testing.T) *testEngine {
 
 	auctionState.EXPECT().IsOpeningAuction().Return(false).AnyTimes()
 
-	targetStakeFunc := func() *num.Uint {
-		return num.UintOne()
+	defaultSLAParams := &types.LiquiditySLAParams{
+		PriceRange:                  num.DecimalFromFloat(0.2), // priceRange
+		CommitmentMinTimeFraction:   num.DecimalFromFloat(0.5), // commitmentMinTimeFraction
+		SlaCompetitionFactor:        num.DecimalFromFloat(1),   // slaCompetitionFactor,
+		PerformanceHysteresisEpochs: 4,                         // performanceHysteresisEpochs
 	}
 
 	engine := liquidity.NewEngine(liquidityConfig,
 		log, tsvc, broker, risk, monitor, orderbook, auctionState, asset, market, stateVarEngine,
 		num.NewDecimalFromFloat(1), // positionFactor
-		num.DecimalFromInt64(1),    // stakeToCcyVolume
-		num.DecimalFromFloat(0.2),  // priceRange
-		num.DecimalFromFloat(0.5),  // commitmentMinTimeFraction
-		num.DecimalFromFloat(1),    // slaCompetitionFactor
-		num.DecimalFromFloat(2),    // nonPerformanceBondPenaltySlope
-		num.DecimalFromFloat(0.5),  // nonPerformanceBondPenaltyMax
-		4,                          // performanceHysteresisEpochs
-		targetStakeFunc,
+		defaultSLAParams,
 	)
 
+	engine.OnNonPerformanceBondPenaltyMaxUpdate(num.DecimalFromFloat(0.5)) // nonPerformanceBondPenaltyMax
+	engine.OnNonPerformanceBondPenaltySlopeUpdate(num.DecimalFromFloat(2)) // nonPerformanceBondPenaltySlope
+	engine.OnStakeToCcyVolumeUpdate(num.DecimalFromInt64(1))
+
 	return &testEngine{
-		ctrl:         ctrl,
-		marketID:     market,
-		tsvc:         tsvc,
-		broker:       broker,
-		riskModel:    risk,
-		priceMonitor: monitor,
-		orderbook:    orderbook,
-		auctionState: auctionState,
-		engine:       engine,
-		stateVar:     stateVarEngine,
+		ctrl:             ctrl,
+		marketID:         market,
+		tsvc:             tsvc,
+		broker:           broker,
+		riskModel:        risk,
+		priceMonitor:     monitor,
+		orderbook:        orderbook,
+		auctionState:     auctionState,
+		engine:           engine,
+		stateVar:         stateVarEngine,
+		defaultSLAParams: defaultSLAParams,
 	}
 }
 
@@ -139,7 +141,7 @@ func TestSLAPerformanceSingleEpochFeePenalty(t *testing.T) {
 		slaCompetitionFactor        *num.Decimal
 		commitmentMinTimeFraction   *num.Decimal
 		priceRange                  *num.Decimal
-		performanceHysteresisEpochs *uint
+		performanceHysteresisEpochs *uint64
 
 		// expected result
 		expectedPenalty num.Decimal
@@ -178,7 +180,7 @@ func TestSLAPerformanceSingleEpochFeePenalty(t *testing.T) {
 		},
 		{
 			desc:                        "Meets commitment with fraction_of_time_on_book=1 and performanceHysteresisEpochs=0, 0042-LIQF-035",
-			performanceHysteresisEpochs: toPoint[uint](0),
+			performanceHysteresisEpochs: toPoint[uint64](0),
 			epochLength:                 3,
 			buyOrdersPerBlock:           [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}},
 			sellsOrdersPerBlock:         [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}},
@@ -186,7 +188,7 @@ func TestSLAPerformanceSingleEpochFeePenalty(t *testing.T) {
 		},
 		{
 			desc:                        "Does not meet commitment with fraction_of_time_on_book=0.5 and performanceHysteresisEpochs=0, 0042-LIQF-036",
-			performanceHysteresisEpochs: toPoint[uint](0),
+			performanceHysteresisEpochs: toPoint[uint64](0),
 			epochLength:                 6,
 			buyOrdersPerBlock:           [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {}, {15, 15, 17, 18, 12, 12, 12}, {}, {}, {15, 15, 17, 18, 12, 12, 12}},
 			sellsOrdersPerBlock:         [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {}, {15, 15, 17, 18, 12, 12, 12}, {}, {}, {15, 15, 17, 18, 12, 12, 12}},
@@ -205,19 +207,23 @@ func TestSLAPerformanceSingleEpochFeePenalty(t *testing.T) {
 			t.Run(desc, func(t *testing.T) {
 				te := newTestEngine(t)
 
+				slaParams := te.defaultSLAParams.DeepClone()
+
 				// set the net params
 				if tC.slaCompetitionFactor != nil {
-					te.engine.OnSlaCompetitionFactorUpdate(*tC.slaCompetitionFactor)
+					slaParams.SlaCompetitionFactor = *tC.slaCompetitionFactor
 				}
 				if tC.commitmentMinTimeFraction != nil {
-					te.engine.OnCommitmentMinTimeFractionUpdate(*tC.commitmentMinTimeFraction)
+					slaParams.CommitmentMinTimeFraction = *tC.commitmentMinTimeFraction
 				}
 				if tC.priceRange != nil {
-					te.engine.OnPriceRangeUpdate(*tC.priceRange)
+					slaParams.PriceRange = *tC.priceRange
 				}
 				if tC.performanceHysteresisEpochs != nil {
-					te.engine.OnPerformanceHysteresisEpochsUpdate(*tC.performanceHysteresisEpochs)
+					slaParams.PerformanceHysteresisEpochs = *tC.performanceHysteresisEpochs
 				}
+
+				te.engine.UpdateMarketConfig(te.riskModel, te.priceMonitor, slaParams)
 
 				idGen := &stubIDGen{}
 				ctx := context.Background()
@@ -255,7 +261,7 @@ func TestSLAPerformanceSingleEpochFeePenalty(t *testing.T) {
 				positionFactor := num.DecimalOne()
 				midPrice := num.NewUint(15)
 
-				te.engine.ResetSLAEpoch(ctx, epochStart, one, midPrice, positionFactor)
+				te.engine.ResetSLAEpoch(epochStart, one, midPrice, positionFactor)
 				te.engine.ApplyPendingProvisions(ctx, time.Now())
 
 				for i := 0; i < tC.epochLength; i++ {
@@ -307,8 +313,9 @@ func TestSLAPerformanceMultiEpochFeePenalty(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			te := newTestEngine(t)
 
-			// set the net params
-			te.engine.OnPerformanceHysteresisEpochsUpdate(4)
+			slaParams := te.defaultSLAParams.DeepClone()
+			slaParams.PerformanceHysteresisEpochs = 4
+			te.engine.UpdateMarketConfig(te.riskModel, te.priceMonitor, slaParams)
 
 			idGen := &stubIDGen{}
 			ctx := context.Background()
@@ -353,7 +360,7 @@ func TestSLAPerformanceMultiEpochFeePenalty(t *testing.T) {
 			midPrice := num.NewUint(15)
 
 			for i := 0; i < firstEpochIters; i++ {
-				te.engine.ResetSLAEpoch(ctx, epochStart, one, midPrice, positionFactor)
+				te.engine.ResetSLAEpoch(epochStart, one, midPrice, positionFactor)
 				te.engine.ApplyPendingProvisions(ctx, time.Now())
 
 				for j := 0; j < int(epochLength.Seconds()); j++ {
@@ -371,7 +378,7 @@ func TestSLAPerformanceMultiEpochFeePenalty(t *testing.T) {
 			}
 
 			for i := 0; i < secondEpochIters; i++ {
-				te.engine.ResetSLAEpoch(ctx, epochStart, one, midPrice, positionFactor)
+				te.engine.ResetSLAEpoch(epochStart, one, midPrice, positionFactor)
 				te.engine.ApplyPendingProvisions(ctx, time.Now())
 
 				for j := 0; j < int(epochLength.Seconds()); j++ {
@@ -456,11 +463,11 @@ func TestSLAPerformanceBondPenalty(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			te := newTestEngine(t)
-
-			// set the net params
+			slaParams := te.defaultSLAParams.DeepClone()
 			if tC.commitmentMinTimeFraction != nil {
-				te.engine.OnCommitmentMinTimeFractionUpdate(*tC.commitmentMinTimeFraction)
+				slaParams.CommitmentMinTimeFraction = *tC.commitmentMinTimeFraction
 			}
+			te.engine.UpdateMarketConfig(te.riskModel, te.priceMonitor, slaParams)
 			if tC.nonPerformanceBondPenaltySlope != nil {
 				te.engine.OnNonPerformanceBondPenaltySlopeUpdate(*tC.nonPerformanceBondPenaltySlope)
 			}
@@ -504,7 +511,7 @@ func TestSLAPerformanceBondPenalty(t *testing.T) {
 			positionFactor := num.DecimalOne()
 			midPrice := num.NewUint(15)
 
-			te.engine.ResetSLAEpoch(ctx, epochStart, one, midPrice, positionFactor)
+			te.engine.ResetSLAEpoch(epochStart, one, midPrice, positionFactor)
 			te.engine.ApplyPendingProvisions(ctx, time.Now())
 
 			for i := 0; i < tC.epochLength; i++ {

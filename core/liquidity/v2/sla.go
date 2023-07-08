@@ -1,7 +1,6 @@
 package liquidity
 
 import (
-	"context"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -11,7 +10,6 @@ import (
 // ResetSLAEpoch should be called at the beginning of epoch to reset per epoch performance calculations.
 // Returns a newly added/amended liquidity provisions (pending provisions are automatically applied and the start of a new epoch).
 func (e *Engine) ResetSLAEpoch(
-	ctx context.Context,
 	now time.Time,
 	markPrice *num.Uint,
 	midPrice *num.Uint,
@@ -39,16 +37,13 @@ func (e *Engine) EndBlock(markPrice *num.Uint, midPrice *num.Uint, positionFacto
 	}
 
 	for party, commitment := range e.slaPerformance {
-		meetsCommitment := e.doesLPMeetsCommitment(party, markPrice, midPrice, positionFactor)
-
-		// if LP started meeting commitment
-		if meetsCommitment {
+		if meetsCommitment := e.doesLPMeetsCommitment(party, markPrice, midPrice, positionFactor); meetsCommitment {
+			// if LP started meeting commitment
 			if commitment.start.IsZero() {
 				commitment.start = e.timeService.GetTimeNow()
 			}
 			continue
 		}
-
 		// else if LP stopped meeting commitment
 		if !commitment.start.IsZero() {
 			commitment.s += e.timeService.GetTimeNow().Sub(commitment.start)
@@ -78,7 +73,7 @@ func (e *Engine) CalculateSLAPenalties(now time.Time) SlaPenalties {
 
 		// if LP meets commitment
 		// else LP does not meet commitment
-		if timeBookFraction.LessThan(e.commitmentMinTimeFraction) {
+		if timeBookFraction.LessThan(e.slaParams.CommitmentMinTimeFraction) {
 			feePenalty = one
 			bondPenalty = e.calculateBondPenalty(timeBookFraction)
 		} else {
@@ -165,15 +160,15 @@ func (e *Engine) calculateCurrentFeePenalty(timeBookFraction num.Decimal) num.De
 
 	// p = (1-[timeBookFraction-commitmentMinTimeFraction/1-commitmentMinTimeFraction]) * slaCompetitionFactor
 	return one.Sub(
-		timeBookFraction.Sub(e.commitmentMinTimeFraction).Div(one.Sub(e.commitmentMinTimeFraction)),
-	).Mul(e.slaCompetitionFactor)
+		timeBookFraction.Sub(e.slaParams.CommitmentMinTimeFraction).Div(one.Sub(e.slaParams.CommitmentMinTimeFraction)),
+	).Mul(e.slaParams.SlaCompetitionFactor)
 }
 
 func (e *Engine) calculateBondPenalty(timeBookFraction num.Decimal) num.Decimal {
 	// min(nonPerformanceBondPenaltyMax, nonPerformanceBondPenaltySlope * (1-timeBookFraction/commitmentMinTimeFraction))
 	min := num.MinD(
 		e.nonPerformanceBondPenaltyMax,
-		e.nonPerformanceBondPenaltySlope.Mul(num.DecimalOne().Sub(timeBookFraction.Div(e.commitmentMinTimeFraction))),
+		e.nonPerformanceBondPenaltySlope.Mul(num.DecimalOne().Sub(timeBookFraction.Div(e.slaParams.CommitmentMinTimeFraction))),
 	)
 
 	// max(0, min)
