@@ -204,7 +204,7 @@ func (e *Engine) SubmitLiquidityProvision(
 		Party:            party,
 		CreatedAt:        now,
 		Fee:              lps.Fee,
-		Status:           types.LiquidityProvisionStatusActive,
+		Status:           types.LiquidityProvisionStatusPending,
 		Reference:        lps.Reference,
 		Version:          1,
 		CommitmentAmount: lps.CommitmentAmount,

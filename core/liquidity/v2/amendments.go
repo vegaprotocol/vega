@@ -30,15 +30,17 @@ func (e *Engine) AmendLiquidityProvision(ctx context.Context, lpa *types.Liquidi
 	// LP exists, checked in the previous func.
 	lp, _ := e.provisions.Get(party)
 	updatedLp := e.createAmendedProvision(lp, lpa)
-	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, updatedLp))
 
 	// add to pending provision since the change in CommitmentAmount should be reflected at the beginning of next epoch.
 	if lp.CommitmentAmount.NEQ(lpa.CommitmentAmount) {
 		e.pendingProvisions[party] = updatedLp
+		e.broker.Send(events.NewLiquidityProvisionEvent(ctx, updatedLp))
 		return nil
 	}
 
 	// we can update immediately since the commitment amount has not changed.
+	updatedLp.Status = types.LiquidityProvisionStatusActive
+	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, updatedLp))
 	e.provisions.Set(party, updatedLp)
 	return nil
 }
@@ -52,7 +54,7 @@ func (e *Engine) createAmendedProvision(
 		MarketID:         currentProvision.MarketID,
 		Party:            currentProvision.Party,
 		CreatedAt:        currentProvision.CreatedAt,
-		Status:           types.LiquidityProvisionStatusActive,
+		Status:           types.LiquidityProvisionStatusPending,
 		Fee:              amendment.Fee,
 		Reference:        amendment.Reference,
 		Version:          currentProvision.Version + 1,
