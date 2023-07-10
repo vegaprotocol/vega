@@ -19,7 +19,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/liquidity/supplied"
-	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/statevar"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -82,8 +81,6 @@ type AuctionState interface {
 	IsOpeningAuction() bool
 }
 
-type TargetStateFunc func() *num.Uint
-
 type slaPerformance struct {
 	s                 time.Duration
 	start             time.Time
@@ -122,15 +119,12 @@ type Engine struct {
 
 	// sla related net params
 	stakeToCcyVolume               num.Decimal
-	commitmentMinTimeFraction      num.Decimal
-	slaCompetitionFactor           num.Decimal
 	nonPerformanceBondPenaltySlope num.Decimal
 	nonPerformanceBondPenaltyMax   num.Decimal
 
 	openPlusPriceRange  num.Decimal
 	openMinusPriceRange num.Decimal
-
-	performanceHysteresisEpochs uint
+	slaParams           *types.LiquiditySLAParams
 
 	// fields related to SLA commitment
 	slaPerformance map[string]*slaPerformance
@@ -150,14 +144,7 @@ func NewEngine(config Config,
 	marketID string,
 	stateVarEngine StateVarEngine,
 	positionFactor num.Decimal,
-	stakeToCcyVolume num.Decimal,
-	priceRange num.Decimal,
-	commitmentMinTimeFraction num.Decimal,
-	slaCompetitionFactor num.Decimal,
-	nonPerformanceBondPenaltySlope num.Decimal,
-	nonPerformanceBondPenaltyMax num.Decimal,
-	performanceHysteresisEpochs uint,
-	getTargetStake TargetStateFunc,
+	slaParams *types.LiquiditySLAParams,
 ) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -184,14 +171,9 @@ func NewEngine(config Config,
 		// SLA commitment
 		slaPerformance: map[string]*slaPerformance{},
 
-		stakeToCcyVolume:               stakeToCcyVolume,
-		openPlusPriceRange:             one.Add(priceRange),
-		openMinusPriceRange:            one.Sub(priceRange),
-		commitmentMinTimeFraction:      commitmentMinTimeFraction,
-		slaCompetitionFactor:           slaCompetitionFactor,
-		nonPerformanceBondPenaltySlope: nonPerformanceBondPenaltySlope,
-		nonPerformanceBondPenaltyMax:   nonPerformanceBondPenaltyMax,
-		performanceHysteresisEpochs:    performanceHysteresisEpochs,
+		openPlusPriceRange:  one.Add(slaParams.PriceRange),
+		openMinusPriceRange: one.Sub(slaParams.PriceRange),
+		slaParams:           slaParams,
 	}
 	e.ResetAverageLiquidityScores() // initialise
 
@@ -222,7 +204,7 @@ func (e *Engine) SubmitLiquidityProvision(
 		Party:            party,
 		CreatedAt:        now,
 		Fee:              lps.Fee,
-		Status:           types.LiquidityProvisionStatusActive,
+		Status:           types.LiquidityProvisionStatusPending,
 		Reference:        lps.Reference,
 		Version:          1,
 		CommitmentAmount: lps.CommitmentAmount,
@@ -236,7 +218,7 @@ func (e *Engine) SubmitLiquidityProvision(
 	if e.auctionState.IsOpeningAuction() {
 		e.provisions.Set(party, provision)
 		e.slaPerformance[party] = &slaPerformance{
-			previousPenalties: NewSliceRing[*num.Decimal](e.performanceHysteresisEpochs),
+			previousPenalties: NewSliceRing[*num.Decimal](e.slaParams.PerformanceHysteresisEpochs),
 		}
 		return true, nil
 	}
@@ -264,7 +246,7 @@ func (e *Engine) ApplyPendingProvisions(ctx context.Context, now time.Time) map[
 			e.provisions.Set(party, provision)
 			if _, ok := e.slaPerformance[party]; !ok {
 				e.slaPerformance[party] = &slaPerformance{
-					previousPenalties: NewSliceRing[*num.Decimal](e.performanceHysteresisEpochs),
+					previousPenalties: NewSliceRing[*num.Decimal](e.slaParams.PerformanceHysteresisEpochs),
 				}
 			}
 		}
@@ -394,9 +376,7 @@ func (e *Engine) UpdatePartyCommitment(partyID string, newCommitment *num.Uint) 
 	}
 
 	lp.CommitmentAmount = newCommitment.Clone()
-
 	e.provisions.Set(partyID, lp)
-
 	return lp, nil
 }
 
@@ -430,11 +410,9 @@ func (e *Engine) CalculateSuppliedStake() *num.Uint {
 // Dost not include pending commitments.
 func (e *Engine) CalculateSuppliedStakeWithoutPending() *num.Uint {
 	supplied := num.UintZero()
-
 	for _, provision := range e.provisions.ProvisionsPerParty {
 		supplied.AddSum(provision.CommitmentAmount)
 	}
-
 	return supplied
 }
 
@@ -442,7 +420,8 @@ func (e *Engine) IsPoTInitialised() bool {
 	return e.suppliedEngine.IsPoTInitialised()
 }
 
-func (e *Engine) UpdateMarketConfig(model risk.Model, monitor PriceMonitor) {
+func (e *Engine) UpdateMarketConfig(model RiskModel, monitor PriceMonitor, slaParams *types.LiquiditySLAParams) {
+	e.onSLAParamsUpdate(slaParams)
 	e.suppliedEngine.UpdateMarketConfig(model, monitor)
 }
 
@@ -466,20 +445,6 @@ func (e *Engine) OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal) {
 	e.stakeToCcyVolume = stakeToCcyVolume
 }
 
-func (e *Engine) OnPriceRangeUpdate(priceRange num.Decimal) {
-	one := num.DecimalOne()
-	e.openPlusPriceRange = one.Add(priceRange)
-	e.openMinusPriceRange = one.Sub(priceRange)
-}
-
-func (e *Engine) OnCommitmentMinTimeFractionUpdate(commitmentMinTimeFraction num.Decimal) {
-	e.commitmentMinTimeFraction = commitmentMinTimeFraction
-}
-
-func (e *Engine) OnSlaCompetitionFactorUpdate(slaCompetitionFactor num.Decimal) {
-	e.slaCompetitionFactor = slaCompetitionFactor
-}
-
 func (e *Engine) OnNonPerformanceBondPenaltySlopeUpdate(nonPerformanceBondPenaltySlope num.Decimal) {
 	e.nonPerformanceBondPenaltySlope = nonPerformanceBondPenaltySlope
 }
@@ -488,10 +453,14 @@ func (e *Engine) OnNonPerformanceBondPenaltyMaxUpdate(nonPerformanceBondPenaltyM
 	e.nonPerformanceBondPenaltyMax = nonPerformanceBondPenaltyMax
 }
 
-func (e *Engine) OnPerformanceHysteresisEpochsUpdate(performanceHysteresisEpochs uint) {
-	e.performanceHysteresisEpochs = performanceHysteresisEpochs
-
-	for _, performance := range e.slaPerformance {
-		performance.previousPenalties.ModifySize(e.performanceHysteresisEpochs)
+func (e *Engine) onSLAParamsUpdate(slaParams *types.LiquiditySLAParams) {
+	one := num.DecimalOne()
+	e.openPlusPriceRange = one.Add(slaParams.PriceRange)
+	e.openMinusPriceRange = one.Sub(slaParams.PriceRange)
+	if e.slaParams.PerformanceHysteresisEpochs != slaParams.PerformanceHysteresisEpochs {
+		for _, performance := range e.slaPerformance {
+			performance.previousPenalties.ModifySize(e.slaParams.PerformanceHysteresisEpochs)
+		}
 	}
+	e.slaParams = slaParams
 }

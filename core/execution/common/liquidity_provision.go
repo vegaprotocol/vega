@@ -253,10 +253,6 @@ func (m *MarketLiquidity) OnEpochEnd(ctx context.Context, t time.Time) {
 	m.distributeFeesBonusesAndApplyPenalties(ctx, penalties)
 }
 
-func (m *MarketLiquidity) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
-	m.log.Debug("epoch restoration notification received", logging.String("epoch", epoch.String()))
-}
-
 // lp -> general per market fee account.
 func (m *MarketLiquidity) OnTick(ctx context.Context, t time.Time) {
 	// distribute liquidity fees each feeDistributionTimeStep
@@ -274,12 +270,8 @@ func (m *MarketLiquidity) OnTick(ctx context.Context, t time.Time) {
 	m.updateLiquidityScores()
 }
 
-func (m *MarketLiquidity) EndBlock() {
-	m.liquidityEngine.EndBlock()
-}
-
-func (m *MarketLiquidity) TxProcessed(txCount int, markPrice *num.Uint, positionFactor num.Decimal) {
-	m.liquidityEngine.TxProcessed(txCount, markPrice, positionFactor)
+func (m *MarketLiquidity) EndBlock(markPrice, midPrice *num.Uint, positionFactor num.Decimal) {
+	m.liquidityEngine.EndBlock(markPrice, midPrice, positionFactor)
 }
 
 func (m *MarketLiquidity) updateLiquidityScores() {
@@ -528,6 +520,16 @@ func (m *MarketLiquidity) AmendLiquidityProvision(
 	return nil
 }
 
+func (m *MarketLiquidity) CancelLiquidityProvision(ctx context.Context, party string) error {
+	return m.liquidityEngine.CancelLiquidityProvision(ctx, party)
+}
+
+func (m *MarketLiquidity) StopAllLiquidityProvision(ctx context.Context) {
+	for _, p := range m.liquidityEngine.ProvisionsPerParty().Slice() {
+		m.liquidityEngine.StopLiquidityProvision(ctx, p.Party)
+	}
+}
+
 // checks that party has enough collateral to support the commitment increase.
 func (m *MarketLiquidity) ensureAndTransferCollateral(
 	ctx context.Context, commitmentAmount *num.Uint, party string,
@@ -682,8 +684,10 @@ func (m *MarketLiquidity) validOrdersPriceRange() (*num.Uint, *num.Uint, error) 
 	return lowerBound, upperBound, nil
 }
 
-func (m *MarketLiquidity) OnPriceRange(priceRange num.Decimal) {
-	m.priceRange = priceRange
+func (m *MarketLiquidity) UpdateMarketConfig(risk liquidity.RiskModel, monitor PriceMonitor, slaParams *types.LiquiditySLAParams) {
+	m.priceRange = slaParams.PriceRange
+	m.feeDistributionTimeStep = slaParams.ProvidersFeeCalculationTimeStep
+	m.liquidityEngine.UpdateMarketConfig(risk, monitor, slaParams)
 }
 
 func (m *MarketLiquidity) OnEarlyExitPenalty(earlyExitPenalty num.Decimal) {
@@ -694,6 +698,26 @@ func (m *MarketLiquidity) OnMinLPStakeQuantumMultiple(minLPStakeQuantumMultiple 
 	m.minLPStakeQuantumMultiple = minLPStakeQuantumMultiple
 }
 
-func (m *MarketLiquidity) OnFeeDistributionTimeStep(feeDistributionTimeStep time.Duration) {
-	m.feeDistributionTimeStep = feeDistributionTimeStep
+func (m *MarketLiquidity) OnMinProbabilityOfTradingLPOrdersUpdate(v num.Decimal) {
+	m.liquidityEngine.OnMinProbabilityOfTradingLPOrdersUpdate(v)
+}
+
+func (m *MarketLiquidity) OnProbabilityOfTradingTauScalingUpdate(v num.Decimal) {
+	m.liquidityEngine.OnProbabilityOfTradingTauScalingUpdate(v)
+}
+
+func (m *MarketLiquidity) OnMaximumLiquidityFeeFactorLevelUpdate(f num.Decimal) {
+	m.liquidityEngine.OnMaximumLiquidityFeeFactorLevelUpdate(f)
+}
+
+func (m *MarketLiquidity) OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal) {
+	m.liquidityEngine.OnStakeToCcyVolumeUpdate(stakeToCcyVolume)
+}
+
+func (m *MarketLiquidity) OnNonPerformanceBondPenaltySlopeUpdate(nonPerformanceBondPenaltySlope num.Decimal) {
+	m.liquidityEngine.OnNonPerformanceBondPenaltySlopeUpdate(nonPerformanceBondPenaltySlope)
+}
+
+func (m *MarketLiquidity) OnNonPerformanceBondPenaltyMaxUpdate(nonPerformanceBondPenaltyMax num.Decimal) {
+	m.liquidityEngine.OnNonPerformanceBondPenaltyMaxUpdate(nonPerformanceBondPenaltyMax)
 }

@@ -66,7 +66,7 @@ func TestAmendments(t *testing.T) {
 
 	_, err := tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen)
 	assert.NoError(t, err)
-	tng.engine.ResetSLAEpoch(ctx, now, zero, zero, zeroD)
+	tng.engine.ResetSLAEpoch(now, zero, zero, zeroD)
 	tng.engine.ApplyPendingProvisions(ctx, now)
 	originalLp := tng.engine.LiquidityProvisionByPartyID(party)
 
@@ -96,7 +96,7 @@ func TestAmendments(t *testing.T) {
 	assert.Equal(t, originalLp.Version, lp.Version)
 
 	// amendment should take place at the start of new epoch
-	tng.engine.ResetSLAEpoch(ctx, now, zero, zero, zeroD)
+	tng.engine.ResetSLAEpoch(now, zero, zero, zeroD)
 	tng.engine.ApplyPendingProvisions(ctx, now)
 
 	lp = tng.engine.LiquidityProvisionByPartyID(party)

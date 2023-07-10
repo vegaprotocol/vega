@@ -18,7 +18,7 @@ import (
 
 var One = num.UintOne()
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/common TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine,AuctionState,LiquidityEngine,EquityLikeShares
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/common TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine,AuctionState,LiquidityEngine,EquityLikeShares,MarketLiquidityEngine
 
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network.
 const InitialOrderVersion = 1
@@ -172,15 +172,42 @@ type LiquidityEngine interface {
 	SubmitLiquidityProvision(context.Context, *types.LiquidityProvisionSubmission, string, liquidity.IDGen) (bool, error)
 	RejectLiquidityProvision(context.Context, string) error
 	AmendLiquidityProvision(context.Context, *types.LiquidityProvisionAmendment, string) error
+	CancelLiquidityProvision(context.Context, string) error
 	ValidateLiquidityProvisionAmendment(*types.LiquidityProvisionAmendment) error
+	StopLiquidityProvision(context.Context, string)
 	IsLiquidityProvider(string) bool
 	ProvisionsPerParty() liquidity.ProvisionsPerParty
 	LiquidityProvisionByPartyID(string) *types.LiquidityProvision
 	CalculateSuppliedStake() *num.Uint
 	CalculateSuppliedStakeWithoutPending() *num.Uint
 	UpdatePartyCommitment(string, *num.Uint) (*types.LiquidityProvision, error)
-	EndBlock()
-	TxProcessed(txCount int, markPrice *num.Uint, positionFactor num.Decimal)
+	EndBlock(*num.Uint, *num.Uint, num.Decimal)
+	UpdateMarketConfig(liquidity.RiskModel, PriceMonitor, *types.LiquiditySLAParams)
+	OnNonPerformanceBondPenaltySlopeUpdate(num.Decimal)
+	OnNonPerformanceBondPenaltyMaxUpdate(num.Decimal)
+	OnMinProbabilityOfTradingLPOrdersUpdate(num.Decimal)
+	OnProbabilityOfTradingTauScalingUpdate(num.Decimal)
+	OnMaximumLiquidityFeeFactorLevelUpdate(num.Decimal)
+	OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal)
+}
+
+type MarketLiquidityEngine interface {
+	OnEpochStart(context.Context, time.Time, *num.Uint, *num.Uint, num.Decimal)
+	OnEpochEnd(context.Context, time.Time)
+	OnTick(context.Context, time.Time)
+	EndBlock(*num.Uint, *num.Uint, num.Decimal)
+	SubmitLiquidityProvision(context.Context, *types.LiquidityProvisionSubmission, string, string, types.MarketState) error
+	AmendLiquidityProvision(context.Context, *types.LiquidityProvisionAmendment, string, string, types.MarketState) error
+	UpdateMarketConfig(liquidity.RiskModel, PriceMonitor, *types.LiquiditySLAParams)
+	OnEarlyExitPenalty(num.Decimal)
+	OnMinLPStakeQuantumMultiple(num.Decimal)
+	OnNonPerformanceBondPenaltySlopeUpdate(num.Decimal)
+	OnNonPerformanceBondPenaltyMaxUpdate(num.Decimal)
+	OnMinProbabilityOfTradingLPOrdersUpdate(num.Decimal)
+	OnProbabilityOfTradingTauScalingUpdate(num.Decimal)
+	OnMaximumLiquidityFeeFactorLevelUpdate(num.Decimal)
+	OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal)
+	StopAllLiquidityProvision(context.Context)
 }
 
 type EquityLikeShares interface {
