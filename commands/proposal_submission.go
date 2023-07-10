@@ -1019,6 +1019,9 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.address", parentProperty, name), ErrIsNotValidEthereumAddress)
 				}
 
+				filters := ethOracle.Filters
+				errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.ethoracle", name), parentProperty))
+
 				if len(ethOracle.Abi) == 0 {
 					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.abi", parentProperty, name), ErrIsRequired)
 				}
@@ -1102,13 +1105,15 @@ func isBindingMatchingSpec(spec *vegapb.DataSourceDefinition, bindingProperty st
 		case *vegapb.DataSourceDefinitionExternal_EthOracle:
 			ethOracle := specType.External.GetEthOracle()
 
+			isNormaliser := false
+
 			for _, v := range ethOracle.Normalisers {
 				if v.Name == bindingProperty {
-					return true
+					isNormaliser = true
 				}
 			}
 
-			return false
+			return isNormaliser || isBindingMatchingSpecFilters(spec, bindingProperty)
 		}
 
 	case *vegapb.DataSourceDefinition_Internal:
@@ -1164,6 +1169,7 @@ func checkNewOracleBinding(future *protoTypes.FutureProduct) Errors {
 
 func checkNewPerpsOracleBinding(perps *protoTypes.PerpsProduct) Errors {
 	errs := NewErrors()
+
 	if perps.DataSourceSpecBinding != nil {
 		if len(perps.DataSourceSpecBinding.SettlementDataProperty) == 0 {
 			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsRequired)
