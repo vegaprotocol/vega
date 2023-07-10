@@ -73,21 +73,19 @@ func NewMarketLiquidity(
 	feeDistributionTimeStep time.Duration,
 ) *MarketLiquidity {
 	ml := &MarketLiquidity{
-		log:                       log,
-		liquidityEngine:           liquidityEngine,
-		collateral:                collateral,
-		broker:                    broker,
-		orderBook:                 orderBook,
-		equityShares:              equityShares,
-		marketActivityTracker:     marketActivityTracker,
-		fee:                       fee,
-		marketID:                  marketID,
-		asset:                     asset,
-		minLPStakeQuantumMultiple: minLPStakeQuantumMultiple,
-		priceFactor:               priceFactor,
-		priceRange:                priceRange,
-		earlyExitPenalty:          earlyExitPenalty,
-		feeCalculationTimeStep:    feeDistributionTimeStep,
+		log:                    log,
+		liquidityEngine:        liquidityEngine,
+		collateral:             collateral,
+		broker:                 broker,
+		orderBook:              orderBook,
+		equityShares:           equityShares,
+		marketActivityTracker:  marketActivityTracker,
+		fee:                    fee,
+		marketID:               marketID,
+		asset:                  asset,
+		priceFactor:            priceFactor,
+		priceRange:             priceRange,
+		feeCalculationTimeStep: feeDistributionTimeStep,
 	}
 
 	return ml
@@ -750,4 +748,21 @@ func (m *MarketLiquidity) ProvisionsPerParty() liquidity.ProvisionsPerParty {
 
 func (m *MarketLiquidity) CalculateSuppliedStake() *num.Uint {
 	return m.liquidityEngine.CalculateSuppliedStake()
+}
+
+// TODO karel - use real snapshot
+func (m *MarketLiquidity) GetState(k string) ([]byte, []types.StateProvider, error) {
+	return nil, nil, nil
+}
+func (m *MarketLiquidity) Keys() []string {
+	return []string{}
+}
+func (m *MarketLiquidity) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
+	return nil, nil
+}
+func (m *MarketLiquidity) Namespace() types.SnapshotNamespace {
+	return ""
+}
+func (m *MarketLiquidity) Stopped() bool {
+	return false
 }

@@ -22,8 +22,8 @@ import (
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
 	"code.vegaprotocol.io/vega/core/fee"
-	"code.vegaprotocol.io/vega/core/liquidity"
 	"code.vegaprotocol.io/vega/core/liquidity/target"
+	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/core/markets"
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/monitor"
@@ -124,7 +124,18 @@ func NewMarketFromSnapshot(
 	priceFactor := num.UintZero().Exp(num.NewUint(10), num.NewUint(exp))
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
-	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, book, asset, mkt.ID, stateVarEngine, priceFactor.Clone(), positionFactor)
+	liquidityEngine := liquidity.NewEngine(
+		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel,
+		pMonitor, book, as, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams,
+	)
+
+	equityShares := common.NewEquityShares(num.DecimalZero())
+
+	marketLiquidity := common.NewMarketLiquidity(
+		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
+		feeEngine, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange,
+		mkt.LiquiditySLAParams.ProvidersFeeCalculationTimeStep,
+	)
 
 	// backward compatibility check for nil
 	stopOrders := stoporders.New(log)
@@ -156,7 +167,7 @@ func NewMarketFromSnapshot(
 		collateral:              collateralEngine,
 		broker:                  broker,
 		fee:                     feeEngine,
-		liquidity:               liqEngine,
+		liquidity:               marketLiquidity,
 		parties:                 map[string]struct{}{},
 		lMonitor:                lMonitor,
 		tsCalc:                  tsCalc,
@@ -196,7 +207,6 @@ func NewMarketFromSnapshot(
 		// ensure oracle has the settlement data
 		market.tradableInstrument.Instrument.Product.RestoreSettlementData(em.SettlementData.Clone())
 	}
-	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 
 	if mkt.State == types.MarketStateTradingTerminated {
 		market.tradableInstrument.Instrument.UnsubscribeTradingTerminated(ctx)
