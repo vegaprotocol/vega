@@ -74,11 +74,11 @@ Feature: check the insurance pool getting shared equally between all markets wit
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 10     | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 10     | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | buy  | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC19 | sell | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux   | ETH/DEC19 | buy  | 10     | 1     | 0                | TYPE_LIMIT | TIF_GTC | aux-1-19  |
+      | aux   | ETH/DEC19 | sell | 10     | 2000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | aux   | ETH/DEC19 | buy  | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | aux2  | ETH/DEC19 | sell | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |           |
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux   | ETH/DEC20 | buy  | 10     | 1     | 0                | TYPE_LIMIT | TIF_GTC |
@@ -204,13 +204,22 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | name               | value |
       | trading.terminated | true  |
     And time is updated to "2020-01-01T01:01:01Z"
+
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
+
+    And the orders should have the following status:
+      | party | reference | status        |
+      | aux   | aux-1-19  | STATUS_ACTIVE |
     Then the oracles broadcast data signed with "0xCAFECAFE19":
       | name             | value |
       | prices.ETH.value | 80    |
 
     # When a market ETH/DEC19 is closed, the insurance pool account has its outstanding funds transferred to the [network treasury]
     When the network moves ahead "3" blocks
+    And the orders should have the following status:
+      | party | reference | status         |
+      | aux   | aux-1-19  | STATUS_STOPPED |
+
     And the network treasury balance should be "1824" for the asset "USD"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "1823" for the market "ETH/DEC20"
