@@ -133,3 +133,14 @@ func (s EthCallSpec) DeepClone() dataSourceType {
 		Normalisers:           clonedNormalisers,
 	}
 }
+
+func (s EthCallSpec) IsZero() bool {
+	return s.Address == "" &&
+		s.Method == "" &&
+		s.Trigger == nil &&
+		s.RequiredConfirmations == 0 &&
+		len(s.AbiJson) == 0 &&
+		len(s.ArgsJson) == 0 &&
+		len(s.Filters) == 0 &&
+		len(s.Normalisers) == 0
+}

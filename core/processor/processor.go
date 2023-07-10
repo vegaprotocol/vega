@@ -219,6 +219,7 @@ type NetworkParameters interface {
 	Update(ctx context.Context, key, value string) error
 	DispatchChanges(ctx context.Context)
 	IsUpdateAllowed(key string) error
+	GetInt(key string) (int64, error)
 }
 
 type Oracle struct {
