@@ -61,11 +61,11 @@ func (ft FeeTransfer) TotalFeesAmountPerParty() map[string]*num.Uint {
 }
 
 func (m *MarketLiquidity) readyForFeesAllocation(now time.Time) bool {
-	return now.Sub(m.lastFeeDistribution) > m.feeDistributionTimeStep
+	return now.Sub(m.lastFeeDistribution) > m.feeCalculationTimeStep
 }
 
-// allocateFees distributes fee from a market fee account to LP fee accounts.
-func (m *MarketLiquidity) allocateFees(ctx context.Context) error {
+// AllocateFees distributes fee from a market fee account to LP fee accounts.
+func (m *MarketLiquidity) AllocateFees(ctx context.Context) error {
 	acc, err := m.collateral.GetMarketLiquidityFeeAccount(m.marketID, m.asset)
 	if err != nil {
 		return fmt.Errorf("failed to get market liquidity fee account: %w", err)

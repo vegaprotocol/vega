@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"sort"
 	"sync"
 	"time"
@@ -26,8 +27,8 @@ import (
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
 	"code.vegaprotocol.io/vega/core/fee"
 	"code.vegaprotocol.io/vega/core/idgeneration"
-	"code.vegaprotocol.io/vega/core/liquidity"
 	liquiditytarget "code.vegaprotocol.io/vega/core/liquidity/target"
+	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/core/markets"
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/metrics"
@@ -91,7 +92,8 @@ type Market struct {
 	position           *positions.SnapshotEngine
 	settlement         *settlement.SnapshotEngine
 	fee                *fee.Engine
-	liquidity          *liquidity.SnapshotEngine
+	liquidity          *common.MarketLiquidity
+	liquidityEngine    common.LiquidityEngine
 
 	// deps engines
 	collateral common.Collateral
@@ -104,7 +106,6 @@ type Market struct {
 	pMonitor common.PriceMonitor
 	lMonitor LiquidityMonitor
 
-	lpPriceRange            num.Decimal
 	linearSlippageFactor    num.Decimal
 	quadraticSlippageFactor num.Decimal
 
@@ -126,11 +127,8 @@ type Market struct {
 	marketValueWindowLength time.Duration
 
 	// Liquidity Fee
-	feeSplitter                *common.FeeSplitter
-	lpFeeDistributionTimeStep  time.Duration
-	lastEquityShareDistributed time.Time
-	equityShares               *common.EquityShares
-	minLPStakeQuantumMultiple  num.Decimal
+	feeSplitter  *common.FeeSplitter
+	equityShares *common.EquityShares
 
 	stateVarEngine        common.StateVarEngine
 	marketActivityTracker *common.MarketActivityTracker
@@ -167,7 +165,7 @@ func NewMarket(
 	mkt *types.Market,
 	timeService common.TimeService,
 	broker common.Broker,
-	as *monitor.AuctionState,
+	auctionState *monitor.AuctionState,
 	stateVarEngine common.StateVarEngine,
 	marketActivityTracker *common.MarketActivityTracker,
 	assetDetails *assets.Asset,
@@ -191,7 +189,7 @@ func NewMarket(
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not
-	book := matching.NewCachedOrderBook(log, matchingConfig, mkt.ID, as.InAuction(), peggedOrderNotify)
+	book := matching.NewCachedOrderBook(log, matchingConfig, mkt.ID, auctionState.InAuction(), peggedOrderNotify)
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 
 	riskEngine := risk.NewEngine(log,
@@ -199,7 +197,7 @@ func NewMarket(
 		tradableInstrument.MarginCalculator,
 		tradableInstrument.RiskModel,
 		book,
-		as,
+		auctionState,
 		timeService,
 		broker,
 		mkt.ID,
@@ -230,7 +228,7 @@ func NewMarket(
 
 	tsCalc := liquiditytarget.NewSnapshotEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine, mkt.ID, positionFactor)
 
-	pMonitor, err := price.NewMonitor(asset, mkt.ID, tradableInstrument.RiskModel, as, mkt.PriceMonitoringSettings, stateVarEngine, log)
+	pMonitor, err := price.NewMonitor(asset, mkt.ID, tradableInstrument.RiskModel, auctionState, mkt.PriceMonitoringSettings, stateVarEngine, log)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
@@ -238,14 +236,29 @@ func NewMarket(
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	now := timeService.GetTimeNow()
-	liqEngine := liquidity.NewSnapshotEngine(
-		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, book, asset, mkt.ID, stateVarEngine, priceFactor.Clone(), positionFactor)
+
+	liquidityEngine := liquidity.NewEngine(
+		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel,
+		pMonitor, book, auctionState, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams,
+	)
+
+	// TODO solve these
+	minLPStakeQuantumMultiple := num.DecimalOne()
+	earlyExitPenalty := num.DecimalOne()
+
+	equityShares := common.NewEquityShares(num.DecimalZero())
+
+	marketLiquidity := common.NewMarketLiquidity(
+		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
+		feeEngine, mkt.ID, asset, minLPStakeQuantumMultiple, priceFactor, mkt.LiquiditySLAParams.PriceRange, earlyExitPenalty,
+		mkt.LiquiditySLAParams.ProvidersFeeCalculationTimeStep,
+	)
 
 	// The market is initially created in a proposed state
 	mkt.State = types.MarketStateProposed
 	mkt.TradingMode = types.MarketTradingModeNoTrading
 
-	pending, open := as.GetAuctionBegin(), as.GetAuctionEnd()
+	pending, open := auctionState.GetAuctionBegin(), auctionState.GetAuctionEnd()
 	// Populate the market timestamps
 	ts := &types.MarketTimestamps{
 		Proposed: now.UnixNano(),
@@ -262,51 +275,50 @@ func NewMarket(
 	isPerp := mkt.MarketType() == types.MarketTypePerp
 
 	market := &Market{
-		log:                       log,
-		idgen:                     nil,
-		mkt:                       mkt,
-		matching:                  book,
-		tradableInstrument:        tradableInstrument,
-		risk:                      riskEngine,
-		position:                  positionEngine,
-		settlement:                settleEngine,
-		collateral:                collateralEngine,
-		timeService:               timeService,
-		broker:                    broker,
-		fee:                       feeEngine,
-		liquidity:                 liqEngine,
-		parties:                   map[string]struct{}{},
-		as:                        as,
-		pMonitor:                  pMonitor,
-		lMonitor:                  lMonitor,
-		tsCalc:                    tsCalc,
-		peggedOrders:              common.NewPeggedOrders(log, timeService),
-		expiringOrders:            common.NewExpiringOrders(),
-		feeSplitter:               common.NewFeeSplitter(),
-		equityShares:              common.NewEquityShares(num.DecimalZero()),
-		lastBestAskPrice:          num.UintZero(),
-		lastMidSellPrice:          num.UintZero(),
-		lastMidBuyPrice:           num.UintZero(),
-		lastBestBidPrice:          num.UintZero(),
-		stateVarEngine:            stateVarEngine,
-		marketActivityTracker:     marketActivityTracker,
-		priceFactor:               priceFactor,
-		minLPStakeQuantumMultiple: num.MustDecimalFromString("1"),
-		positionFactor:            positionFactor,
-		nextMTM:                   time.Time{}, // default to zero time
-		lpPriceRange:              mkt.LPPriceRange,
-		linearSlippageFactor:      mkt.LinearSlippageFactor,
-		quadraticSlippageFactor:   mkt.QuadraticSlippageFactor,
-		maxStopOrdersPerParties:   num.UintZero(),
-		stopOrders:                stoporders.New(log),
-		expiringStopOrders:        common.NewExpiringOrders(),
-		perp:                      isPerp,
+		log:                     log,
+		idgen:                   nil,
+		mkt:                     mkt,
+		matching:                book,
+		tradableInstrument:      tradableInstrument,
+		risk:                    riskEngine,
+		position:                positionEngine,
+		settlement:              settleEngine,
+		collateral:              collateralEngine,
+		timeService:             timeService,
+		broker:                  broker,
+		fee:                     feeEngine,
+		liquidity:               marketLiquidity,
+		liquidityEngine:         liquidityEngine, // TODO karel - consider not having this
+		parties:                 map[string]struct{}{},
+		as:                      auctionState,
+		pMonitor:                pMonitor,
+		lMonitor:                lMonitor,
+		tsCalc:                  tsCalc,
+		peggedOrders:            common.NewPeggedOrders(log, timeService),
+		expiringOrders:          common.NewExpiringOrders(),
+		feeSplitter:             common.NewFeeSplitter(),
+		equityShares:            equityShares,
+		lastBestAskPrice:        num.UintZero(),
+		lastMidSellPrice:        num.UintZero(),
+		lastMidBuyPrice:         num.UintZero(),
+		lastBestBidPrice:        num.UintZero(),
+		stateVarEngine:          stateVarEngine,
+		marketActivityTracker:   marketActivityTracker,
+		priceFactor:             priceFactor,
+		positionFactor:          positionFactor,
+		nextMTM:                 time.Time{}, // default to zero time
+		linearSlippageFactor:    mkt.LinearSlippageFactor,
+		quadraticSlippageFactor: mkt.QuadraticSlippageFactor,
+		maxStopOrdersPerParties: num.UintZero(),
+		stopOrders:              stoporders.New(log),
+		expiringStopOrders:      common.NewExpiringOrders(),
+		perp:                    isPerp,
 	}
 
 	assets, _ := mkt.GetAssets()
 	market.settlementAsset = assets[0]
 
-	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
+	liquidityEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 	if !isPerp {
 		market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
 		market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementData)
@@ -324,7 +336,8 @@ func (m *Market) IsSucceeded() bool {
 func (m *Market) StopSnapshots() {
 	m.matching.StopSnapshots()
 	m.position.StopSnapshots()
-	m.liquidity.StopSnapshots()
+	// TODO karel - implement the snapshots
+	// m.liquidity.StopSnapshots()
 	m.settlement.StopSnapshots()
 	m.tsCalc.StopSnapshots()
 }
@@ -387,11 +400,10 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	m.settlement.UpdateProduct(m.tradableInstrument.Instrument.Product)
 	m.tsCalc.UpdateParameters(*m.mkt.LiquidityMonitoringParameters.TargetStakeParameters)
 	m.pMonitor.UpdateSettings(m.tradableInstrument.RiskModel, m.mkt.PriceMonitoringSettings)
-	m.lpPriceRange = m.mkt.LPPriceRange
 	m.linearSlippageFactor = m.mkt.LinearSlippageFactor
 	m.quadraticSlippageFactor = m.mkt.QuadraticSlippageFactor
 	m.lMonitor.UpdateParameters(m.mkt.LiquidityMonitoringParameters)
-	m.liquidity.UpdateMarketConfig(m.tradableInstrument.RiskModel, m.pMonitor)
+	m.liquidity.UpdateMarketConfig(m.tradableInstrument.RiskModel, m.pMonitor, m.mkt.LiquiditySLAParams)
 
 	// if we're already in trading terminated, not point to listen to trading termination oracle
 	if m.perp {
@@ -526,7 +538,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		SuppliedStake:             m.getSuppliedStake().String(),
 		PriceMonitoringBounds:     bounds,
 		MarketValueProxy:          m.lastMarketValueProxy.BigInt().String(),
-		LiquidityProviderFeeShare: m.equityShares.LpsToLiquidityProviderFeeShare(m.liquidity.GetAverageLiquidityScores()),
+		LiquidityProviderFeeShare: m.equityShares.LpsToLiquidityProviderFeeShare(m.liquidityEngine.GetAverageLiquidityScores()),
 		NextMTM:                   m.nextMTM.UnixNano(),
 		MarketGrowth:              m.equityShares.GetMarketGrowth(),
 	}
@@ -583,9 +595,9 @@ func (m *Market) CanLeaveOpeningAuction() bool {
 	boundFactorsInitialised := m.pMonitor.IsBoundFactorsInitialised()
 	potInitialised := m.liquidity.IsProbabilityOfTradingInitialised()
 	riskFactorsInitialised := m.risk.IsRiskFactorInitialised()
-	canLeave := boundFactorsInitialised && potInitialised && riskFactorsInitialised
+	canLeave := boundFactorsInitialised && riskFactorsInitialised && potInitialised
 	if !canLeave {
-		m.log.Info("Cannot leave opening auction", logging.String("market", m.mkt.ID), logging.Bool("bound-factors-initialised", boundFactorsInitialised), logging.Bool("pot-initialised", potInitialised), logging.Bool("risk-factors-initialised", riskFactorsInitialised))
+		m.log.Info("Cannot leave opening auction", logging.String("market", m.mkt.ID), logging.Bool("bound-factors-initialised", boundFactorsInitialised), logging.Bool("risk-factors-initialised", riskFactorsInitialised))
 	}
 	return canLeave
 }
@@ -710,21 +722,11 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 		return false
 	}
 
-	// distribute liquidity fees each `m.lpFeeDistributionTimeStep`
-	if t.Sub(m.lastEquityShareDistributed) > m.lpFeeDistributionTimeStep {
-		m.lastEquityShareDistributed = t
-
-		if err := m.distributeLiquidityFees(ctx); err != nil {
-			m.log.Panic("liquidity fee distribution error", logging.Error(err))
-		}
-	}
-
 	// check auction, if any. If we leave auction, MTM is performed in this call
 	m.checkAuction(ctx, t, m.idgen)
 	timer.EngineTimeCounterAdd()
 
 	m.updateMarketValueProxy()
-	m.updateLiquidityScores()
 	m.updateLiquidityFee(ctx)
 	m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
 	return m.closed
@@ -757,20 +759,12 @@ func (m *Market) BlockEnd(ctx context.Context) {
 			m.confirmMTM(ctx, false)
 		}
 
-		closedWithoutLP := []events.MarketPosition{}
 		closedPositions := m.position.GetClosedPositions()
-		for _, p := range closedPositions {
-			// if the party doesn't have a potential position anymore?
-			// and it's not an LP (they could just be undeployed)
-			if !m.liquidity.IsLiquidityProvider(p.Party()) {
-				closedWithoutLP = append(closedWithoutLP, p)
-			}
-		}
 
-		if len(closedWithoutLP) > 0 {
-			m.releaseExcessMargin(ctx, closedWithoutLP...)
+		if len(closedPositions) > 0 {
+			m.releaseExcessMargin(ctx, closedPositions...)
 			// also remove all stop orders
-			m.removeAllStopOrders(ctx, closedWithoutLP...)
+			m.removeAllStopOrders(ctx, closedPositions...)
 		}
 		// last traded price should not reflect the closeout trades
 		m.lastTradedPrice = mp.Clone()
@@ -811,12 +805,13 @@ func (m *Market) updateMarketValueProxy() {
 		// m.equityShares.UpdateVirtualStake() // this should always set the vStake >= physical stake?
 	}
 
+	// TODO karel - do we still need to calculate the market value proxy????
 	// these need to happen every block
 	// but also when new LP is submitted just so we are sure we do
 	// not have a mvp of 0
-	ts := m.liquidity.ProvisionsPerParty().TotalStake()
-	m.lastMarketValueProxy = m.feeSplitter.MarketValueProxy(
-		m.marketValueWindowLength, ts)
+	// ts := m.liquidity.Stake
+	// m.lastMarketValueProxy = m.feeSplitter.MarketValueProxy(
+	// 	m.marketValueWindowLength, ts)
 }
 
 func (m *Market) removeOrders(ctx context.Context) {
@@ -872,11 +867,7 @@ func (m *Market) closeCancelledMarket(ctx context.Context) error {
 		return err
 	}
 
-	if err := m.stopAllLiquidityProvisionOnReject(ctx); err != nil {
-		m.log.Debug("could not stop all liquidity provision on market rejection",
-			logging.MarketID(m.GetID()),
-			logging.Error(err))
-	}
+	m.liquidity.StopAllLiquidityProvision(ctx)
 
 	m.closed = true
 
@@ -909,7 +900,12 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time, finalState types.
 	}
 
 	// final distribution of liquidity fees
-	m.distributeLiquidityFees(ctx)
+	// TODO karel - consider having one function for this instead of calling both AllocateFees and OnEpochEnd
+	if err := m.liquidity.AllocateFees(ctx); err != nil {
+		log.Panic(err)
+	}
+
+	m.liquidity.OnEpochEnd(ctx, t)
 
 	err = m.cleanMarketWithState(ctx, finalState)
 	if err != nil {
@@ -918,13 +914,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time, finalState types.
 
 	m.removeOrders(ctx)
 
-	for _, party := range m.liquidity.ProvisionsPerParty().Slice() {
-		// we don't care about the actual orders as they will be cancelled in the book as part of settlement anyways.
-		err := m.liquidity.StopLiquidityProvision(ctx, party.Party)
-		if err != nil {
-			return err
-		}
-	}
+	m.liquidity.StopAllLiquidityProvision(ctx)
 
 	return nil
 }
@@ -1088,9 +1078,6 @@ func (m *Market) enterAuction(ctx context.Context) {
 		updatedOrders = append(updatedOrders, order)
 	}
 
-	// now update all special orders
-	m.enterAuctionSpecialOrders(ctx, updatedOrders)
-
 	// Send an event bus update
 	m.broker.Send(event)
 
@@ -1195,7 +1182,6 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	// set the mark price here so that margins checks for special orders use the correct value
 	m.markPrice = m.getLastTradedPrice()
 
-	m.checkForReferenceMoves(ctx, updatedOrders, true)
 	m.checkLiquidity(ctx, nil, true)
 	m.commandLiquidityAuction(ctx)
 
@@ -1366,9 +1352,7 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 		}
 
 		// we can delete the party from the map here
-		if !m.liquidity.IsLiquidityProvider(pos.Party()) {
-			delete(m.parties, pos.Party())
-		}
+		delete(m.parties, pos.Party())
 	}
 	m.broker.SendBatch(evts)
 }
@@ -1659,11 +1643,6 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(
 	allUpdatedOrders := append(
 		[]*types.Order{conf.Order}, conf.PassiveOrdersAffected...)
 	allUpdatedOrders = append(allUpdatedOrders, orderUpdates...)
-
-	if !m.as.InAuction() {
-		m.checkForReferenceMoves(
-			ctx, allUpdatedOrders, false)
-	}
 
 	return conf, nil
 }
@@ -1978,7 +1957,6 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	}
 
 	m.handleConfirmationPassiveOrders(ctx, conf)
-	end := m.as.CanLeave()
 	orderUpdates := make([]*types.Order, 0, len(conf.PassiveOrdersAffected)+1)
 	orderUpdates = append(orderUpdates, conf.Order)
 	orderUpdates = append(orderUpdates, conf.PassiveOrdersAffected...)
@@ -2011,12 +1989,6 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	m.feeSplitter.AddTradeValue(tradedValue)
 	m.marketActivityTracker.AddValueTraded(m.mkt.ID, tradedValue)
 	m.broker.SendBatch(tradeEvts)
-	// check reference moves if we have order updates, and we are not in an auction (or leaving an auction)
-	// we handle reference moves in confirmMTM when leaving an auction already
-	if len(orderUpdates) > 0 && !end && !m.as.InAuction() {
-		m.checkForReferenceMoves(
-			ctx, orderUpdates, false)
-	}
 
 	return orderUpdates
 }
@@ -2038,10 +2010,6 @@ func (m *Market) confirmMTM(
 	margins := m.collateralAndRisk(ctx, settle)
 	orderUpdates := m.handleRiskEvts(ctx, margins)
 
-	// orders updated -> check reference moves
-	// force check
-	m.checkForReferenceMoves(
-		ctx, orderUpdates, false)
 	if !skipMargin {
 		// release excess margin for all positions
 		m.recheckMargin(ctx, m.position.Positions())
@@ -2110,7 +2078,7 @@ func (m *Market) handleRiskEvts(ctx context.Context, margins []events.Risk) []*t
 // the fee engine.
 func (m *Market) updateLiquidityFee(ctx context.Context) {
 	stake := m.getTargetStake()
-	fee := m.liquidity.ProvisionsPerParty().FeeForTarget(stake)
+	fee := m.liquidityEngine.ProvisionsPerParty().FeeForTarget(stake)
 	if !fee.Equals(m.getLiquidityFee()) {
 		m.fee.SetLiquidityFee(fee)
 		m.setLiquidityFee(fee)
@@ -2164,18 +2132,19 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		)
 	}
 
+	// TODO karel - maybe we want to penalize the LP for not being able to support the position??
 	// First we check for all distressed parties if they are liquidity
 	// providers, and if yea cancel their commitments
-	for _, party := range distressedParties {
-		if m.liquidity.IsLiquidityProvider(party) {
-			if err := m.cancelLiquidityProvision(ctx, party, true); err != nil {
-				m.log.Debug("could not cancel liquidity provision",
-					logging.MarketID(m.GetID()),
-					logging.PartyID(party),
-					logging.Error(err))
-			}
-		}
-	}
+	// for _, party := range distressedParties {
+	// if m.liquidity.IsLiquidityProvider(party) {
+	// 	if err := m.cancelLiquidityProvision(ctx, party, true); err != nil {
+	// 		m.log.Debug("could not cancel liquidity provision",
+	// 			logging.MarketID(m.GetID()),
+	// 			logging.PartyID(party),
+	// 			logging.Error(err))
+	// 	}
+	// }
+	// }
 
 	mktID := m.GetID()
 	// push rm orders into buf
@@ -2703,8 +2672,6 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 		cancelledOrders = append(cancelledOrders, cancellation.Order)
 	}
 
-	m.checkForReferenceMoves(ctx, cancelledOrders, false)
-
 	return cancellations, nil
 }
 
@@ -2738,10 +2705,6 @@ func (m *Market) CancelOrderWithIDGenerator(
 	conf, err := m.cancelOrder(ctx, partyID, orderID)
 	if err != nil {
 		return conf, err
-	}
-
-	if !m.as.InAuction() {
-		m.checkForReferenceMoves(ctx, []*types.Order{conf.Order}, false)
 	}
 
 	return conf, nil
@@ -2905,9 +2868,6 @@ func (m *Market) AmendOrderWithIDGenerator(
 		updatedOrders...,
 	)
 
-	if !m.as.InAuction() {
-		m.checkForReferenceMoves(ctx, allUpdatedOrders, false)
-	}
 	return conf, nil
 }
 
@@ -3500,12 +3460,6 @@ func (m *Market) removeExpiredOrders(
 		m.broker.Send(events.NewExpiredOrdersEvent(ctx, m.mkt.ID, ids))
 	}
 
-	// If we have removed an expired order, do we need to reprice any
-	// or maybe notify the liquidity engine
-	if len(expired) > 0 && !m.as.InAuction() {
-		m.checkForReferenceMoves(ctx, expired, false)
-	}
-
 	return expired
 }
 
@@ -3607,7 +3561,7 @@ func (m *Market) getTargetStake() *num.Uint {
 }
 
 func (m *Market) getSuppliedStake() *num.Uint {
-	return m.liquidity.CalculateSuppliedStake()
+	return m.liquidityEngine.CalculateSuppliedStake()
 }
 
 //nolint:unparam
@@ -3827,12 +3781,7 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 		parties = append(parties, k)
 	}
 
-	err := m.stopAllLiquidityProvisionOnReject(ctx)
-	if err != nil {
-		m.log.Debug("could not stop all liquidity provision on market rejection",
-			logging.MarketID(m.GetID()),
-			logging.Error(err))
-	}
+	m.liquidity.StopAllLiquidityProvision(ctx)
 
 	// cancel all pending orders
 	orders := m.matching.Settled()
@@ -3874,62 +3823,6 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 	}
 }
 
-func (m *Market) stopAllLiquidityProvisionOnReject(ctx context.Context) error {
-	for party := range m.liquidity.ProvisionsPerParty() {
-		// here we ignore  the list of orders that could have been
-		// created with this party liquidity provision. At this point
-		// if we are calling this function, the market is in a PENDING
-		// state, which means that liquidity provision can be submitted
-		// but orders would never be able to be deployed, so it's safe
-		// to ignorethe second return as it shall be an empty slice.
-		err := m.liquidity.StopLiquidityProvision(ctx, party)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *Market) distributeLiquidityFees(ctx context.Context) error {
-	acc, err := m.collateral.GetMarketLiquidityFeeAccount(m.mkt.GetID(), m.settlementAsset)
-	if err != nil {
-		return fmt.Errorf("failed to get market liquidity fee account: %w", err)
-	}
-
-	// We can't distribute any share when no balance.
-	if acc.Balance.IsZero() {
-		// reset next distribution period
-		m.liquidity.ResetAverageLiquidityScores()
-		return nil
-	}
-
-	shares := m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
-	if len(shares) == 0 {
-		return nil
-	}
-
-	// get liquidity scores and reset for next period
-	shares = m.updateSharesWithLiquidityScores(shares)
-
-	feeTransfer := m.fee.BuildLiquidityFeeDistributionTransfer(shares, acc)
-	if feeTransfer == nil {
-		return nil
-	}
-
-	m.marketActivityTracker.UpdateFeesFromTransfers(m.GetID(), feeTransfer.Transfers())
-	resp, err := m.collateral.TransferFees(ctx, m.GetID(), m.settlementAsset, feeTransfer)
-	if err != nil {
-		return fmt.Errorf("failed to transfer fees: %w", err)
-	}
-
-	if len(resp) > 0 {
-		m.broker.Send(events.NewLedgerMovements(ctx, resp))
-	}
-
-	return nil
-}
-
 // GetTotalOrderBookLevelCount returns the total number of levels in the order book.
 func (m *Market) GetTotalOrderBookLevelCount() uint64 {
 	return m.matching.GetOrderBookLevelCount()
@@ -3948,11 +3841,6 @@ func (m *Market) GetTotalStopOrderCount() uint64 {
 // GetTotalOpenPositionCount returns the total number of open positions.
 func (m *Market) GetTotalOpenPositionCount() uint64 {
 	return m.position.GetOpenPositionCount()
-}
-
-// GetTotalLPShapeCount returns the total number of LP shapes.
-func (m *Market) GetTotalLPShapeCount() uint64 {
-	return m.liquidity.GetLPShapeCount()
 }
 
 // we use this in a banch of places so let's inform it from here in case we want to modify it in the future.

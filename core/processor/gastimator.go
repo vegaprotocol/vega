@@ -12,15 +12,14 @@ import (
 )
 
 const (
-	batchFactor       = 0.5
-	pegCostFactor     = uint64(50)
-	stopCostFactor    = 0.2
-	lpShapeCostFactor = uint64(100)
-	positionFactor    = uint64(1)
-	levelFactor       = 0.1
-	high              = 10000
-	medium            = 100
-	low               = 1
+	batchFactor    = 0.5
+	pegCostFactor  = uint64(50)
+	stopCostFactor = 0.2
+	positionFactor = uint64(1)
+	levelFactor    = 0.1
+	high           = 10000
+	medium         = 100
+	low            = 1
 )
 
 type ExecEngine interface {
@@ -226,7 +225,6 @@ func (g *Gastimator) batchGastimate(batch *commandspb.BatchMarketInstructions) u
 }
 
 // gasOrder = network.transaction.defaultgas + peg cost factor x pegs
-// + LP shape cost factor x shapes
 // + position factor x positions
 // + level factor x levels
 // gasOrder = min(maxGas-1,gasOrder).
@@ -236,7 +234,6 @@ func (g *Gastimator) orderGastimate(marketID string) uint64 {
 			g.defaultGas+
 				uint64(stopCostFactor*float64(marketCounters.StopOrderCounter))+
 				pegCostFactor*marketCounters.PeggedOrderCounter+
-				lpShapeCostFactor*marketCounters.LPShapeCount+
 				positionFactor*marketCounters.PositionCount+
 				uint64(levelFactor*float64(marketCounters.OrderbookLevelCount))),
 			math.Max(1.0, float64(g.maxGas/g.minBlockCapacity-1))))
@@ -245,7 +242,6 @@ func (g *Gastimator) orderGastimate(marketID string) uint64 {
 }
 
 // gasCancel = network.transaction.defaultgas + peg cost factor x pegs
-// + LP shape cost factor x shapes
 // + level factor x levels
 // gasCancel = min(maxGas-1,gasCancel).
 func (g *Gastimator) cancelOrderGastimate(marketID string) uint64 {
@@ -254,15 +250,14 @@ func (g *Gastimator) cancelOrderGastimate(marketID string) uint64 {
 			g.defaultGas+
 				uint64(stopCostFactor*float64(marketCounters.StopOrderCounter))+
 				pegCostFactor*marketCounters.PeggedOrderCounter+
-				lpShapeCostFactor*marketCounters.LPShapeCount+
 				uint64(0.1*float64(marketCounters.OrderbookLevelCount))),
 			math.Max(1.0, float64(g.maxGas/g.minBlockCapacity-1))))
 	}
 	return g.defaultGas
 }
 
+// TODO karel - clarify spec
 // gasOliq = network.transaction.defaultgas + peg cost factor  x pegs
-// + LP shape cost factor x shapes
 // + position factor x positions
 // + level factor x levels
 // gasOliq = min(maxGas-1,gasOliq).
@@ -272,7 +267,6 @@ func (g *Gastimator) lpGastimate(marketID string) uint64 {
 			g.defaultGas+
 				uint64(stopCostFactor*float64(marketCounters.StopOrderCounter))+
 				pegCostFactor*marketCounters.PeggedOrderCounter+
-				lpShapeCostFactor*marketCounters.LPShapeCount+
 				positionFactor*marketCounters.PositionCount+
 				uint64(levelFactor*float64(marketCounters.OrderbookLevelCount))),
 			math.Max(1.0, float64(g.maxGas/g.minBlockCapacity-1))))

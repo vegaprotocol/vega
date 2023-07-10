@@ -18,13 +18,15 @@ const (
 	EthereumOraclesEnabled    = "ethereum.oracles.enabled"
 
 	// market related parameters.
-	MarketMarginScalingFactors                      = "market.margin.scalingFactors"
-	MarketFeeFactorsMakerFee                        = "market.fee.factors.makerFee"
-	MarketFeeFactorsInfrastructureFee               = "market.fee.factors.infrastructureFee"
-	MarketAuctionMinimumDuration                    = "market.auction.minimumDuration"
-	MarketAuctionMaximumDuration                    = "market.auction.maximumDuration"
-	MarketLiquidityBondPenaltyParameter             = "market.liquidity.bondPenaltyParameter"
-	MarketLiquidityMaximumLiquidityFeeFactorLevel   = "market.liquidity.maximumLiquidityFeeFactorLevel"
+	MarketMarginScalingFactors                    = "market.margin.scalingFactors"
+	MarketFeeFactorsMakerFee                      = "market.fee.factors.makerFee"
+	MarketFeeFactorsInfrastructureFee             = "market.fee.factors.infrastructureFee"
+	MarketAuctionMinimumDuration                  = "market.auction.minimumDuration"
+	MarketAuctionMaximumDuration                  = "market.auction.maximumDuration"
+	MarketLiquidityBondPenaltyParameter           = "market.liquidity.bondPenaltyParameter"
+	MarketLiquidityMaximumLiquidityFeeFactorLevel = "market.liquidity.maximumLiquidityFeeFactorLevel"
+
+	// TODO karel - remove
 	MarketLiquidityStakeToCCYVolume                 = "market.liquidity.stakeToCcyVolume"
 	MarketLiquidityProvidersFeeDistributionTimeStep = "market.liquidity.providers.fee.distributionTimeStep"
 	MarketLiquidityTargetStakeTriggeringRatio       = "market.liquidity.targetstake.triggering.ratio"
@@ -34,9 +36,11 @@ const (
 	MarketTargetStakeScalingFactor                  = "market.stake.target.scalingFactor"
 	MarketValueWindowLength                         = "market.value.windowLength"
 	MarketPriceMonitoringDefaultParameters          = "market.monitor.price.defaultParameters"
-	MarketLiquidityProvisionShapesMaxSize           = "market.liquidityProvision.shapes.maxSize"
-	MarketMinLpStakeQuantumMultiple                 = "market.liquidityProvision.minLpStakeQuantumMultiple"
-	MarketSuccessorLaunchWindow                     = "market.liquidity.successorLaunchWindowLength"
+
+	// TODO karel - remove
+	MarketLiquidityProvisionShapesMaxSize = "market.liquidityProvision.shapes.maxSize"
+	MarketMinLpStakeQuantumMultiple       = "market.liquidityProvision.minLpStakeQuantumMultiple"
+	MarketSuccessorLaunchWindow           = "market.liquidity.successorLaunchWindowLength"
 
 	// Parameters for liquidity framework version 2.
 	MarketLiquidityV2BondPenaltyParameter              = "market.liquidityV2.bondPenaltyParameter"

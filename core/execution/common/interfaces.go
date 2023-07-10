@@ -193,7 +193,7 @@ func (o OrderReferenceCheck) HasMoved(changes uint8) bool {
 }
 
 type LiquidityEngine interface {
-	ResetSLAEpoch(time.Time, *num.Uint, *num.Uint, num.Decimal)
+	ResetSLAEpoch(t time.Time, markPrice *num.Uint, midPrice *num.Uint, positionFactor num.Decimal)
 	ApplyPendingProvisions(ctx context.Context, now time.Time) map[string]*types.LiquidityProvision
 	PendingProvision() map[string]*types.LiquidityProvision
 	PendingProvisionByPartyID(party string) *types.LiquidityProvision
@@ -242,6 +242,7 @@ type MarketLiquidityEngine interface {
 	UpdateMarketConfig(liquidity.RiskModel, liquidity.PriceMonitor, *types.LiquiditySLAParams)
 	OnEarlyExitPenalty(num.Decimal)
 	OnMinLPStakeQuantumMultiple(num.Decimal)
+	OnBondPenaltyFactorUpdate(num.Decimal)
 	OnNonPerformanceBondPenaltySlopeUpdate(num.Decimal)
 	OnNonPerformanceBondPenaltyMaxUpdate(num.Decimal)
 	OnMinProbabilityOfTradingLPOrdersUpdate(num.Decimal)
