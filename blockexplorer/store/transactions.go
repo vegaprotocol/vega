@@ -58,30 +58,44 @@ func (s *Store) GetTransaction(ctx context.Context, txID string) (*pb.Transactio
 func (s *Store) ListTransactions(ctx context.Context,
 	filters map[string]string,
 	cmdTypes, exclCmdTypes, parties []string,
-	limit uint32,
-	before *entities.TxCursor,
+	first uint32,
 	after *entities.TxCursor,
+	last uint32,
+	before *entities.TxCursor,
 ) ([]*pb.Transaction, error) {
 	query := `SELECT * FROM tx_results`
 
 	args := []interface{}{}
 	predicates := []string{}
 
-	sortOrder := "asc"
+	// by default we want the most recent transactions so we'll set the limit to first
+	// and sort order to desc
+	limit := first
+	sortOrder := "desc"
 
+	// if we have a before cursor we want the results ordered earliest to latest
+	// so the limit will be set to last and sort order to asc
 	if before != nil {
 		block := nextBindVar(&args, before.BlockNumber)
 		index := nextBindVar(&args, before.TxIndex)
-		predicate := fmt.Sprintf("(block_id < %s OR (block_id = %s AND index < %s))", block, block, index)
+		predicate := fmt.Sprintf("(block_id > %s OR (block_id = %s AND index > %s))", block, block, index)
 		predicates = append(predicates, predicate)
-		sortOrder = "desc"
+		limit = last
+		sortOrder = "asc"
 	}
 
 	if after != nil {
 		block := nextBindVar(&args, after.BlockNumber)
 		index := nextBindVar(&args, after.TxIndex)
-		predicate := fmt.Sprintf("(block_id > %s OR (block_id = %s AND index > %s))", block, block, index)
+		predicate := fmt.Sprintf("(block_id < %s OR (block_id = %s AND index < %s))", block, block, index)
 		predicates = append(predicates, predicate)
+	}
+
+	// just in case we have no before cursor, but we want to have the last N transactions in the data set
+	// i.e. the earliest transactions, sorting ascending
+	if last > 0 && first == 0 && after == nil && before == nil {
+		limit = last
+		sortOrder = "asc"
 	}
 
 	if len(cmdTypes) > 0 {
