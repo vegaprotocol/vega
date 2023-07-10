@@ -606,7 +606,7 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 			if !ok && !restore {
 				e.rejectProposal(ctx, p, types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketDoesNotExist)
 				return nil, fmt.Errorf("%w, %v", ErrParentMarketDoesNotExist, types.ProposalErrorInvalidSuccessorMarket)
-			} else if resotre && !ok {
+			} else if restore && !ok {
 				newMarket.ClearSuccessor()
 			}
 			// proposal to succeed a market that was already succeeded
