@@ -50,7 +50,9 @@ type MarketLiquidity struct {
 	priceRange                num.Decimal
 	earlyExitPenalty          num.Decimal
 	minLPStakeQuantumMultiple num.Decimal
-	feeDistributionTimeStep   time.Duration
+	feeCalculationTimeStep    time.Duration
+
+	bondPenaltyFactor num.Decimal
 
 	lastFeeDistribution time.Time
 }
@@ -71,19 +73,21 @@ func NewMarketLiquidity(
 	feeDistributionTimeStep time.Duration,
 ) *MarketLiquidity {
 	ml := &MarketLiquidity{
-		log:                     log,
-		liquidityEngine:         liquidityEngine,
-		collateral:              collateral,
-		broker:                  broker,
-		orderBook:               orderBook,
-		equityShares:            equityShares,
-		marketActivityTracker:   marketActivityTracker,
-		fee:                     fee,
-		marketID:                marketID,
-		asset:                   asset,
-		priceFactor:             priceFactor,
-		priceRange:              priceRange,
-		feeDistributionTimeStep: feeDistributionTimeStep,
+		log:                       log,
+		liquidityEngine:           liquidityEngine,
+		collateral:                collateral,
+		broker:                    broker,
+		orderBook:                 orderBook,
+		equityShares:              equityShares,
+		marketActivityTracker:     marketActivityTracker,
+		fee:                       fee,
+		marketID:                  marketID,
+		asset:                     asset,
+		minLPStakeQuantumMultiple: minLPStakeQuantumMultiple,
+		priceFactor:               priceFactor,
+		priceRange:                priceRange,
+		earlyExitPenalty:          earlyExitPenalty,
+		feeCalculationTimeStep:    feeDistributionTimeStep,
 	}
 
 	return ml
@@ -237,7 +241,11 @@ func (m *MarketLiquidity) syncPartyCommitmentWithBondAccount(appliedLiquidityPro
 	}
 }
 
-func (m *MarketLiquidity) OnEpochStart(ctx context.Context, now time.Time, markPrice, midPrice, targetStake *num.Uint, positionFactor num.Decimal) {
+func (m *MarketLiquidity) OnEpochStart(
+	ctx context.Context, now time.Time,
+	markPrice, midPrice, targetStake *num.Uint,
+	positionFactor num.Decimal,
+) {
 	m.liquidityEngine.ResetSLAEpoch(now, markPrice, midPrice, positionFactor)
 
 	appliedProvisions := m.applyPendingProvisions(ctx, now, targetStake)
@@ -261,7 +269,7 @@ func (m *MarketLiquidity) calculateAndDistribute(ctx context.Context, t time.Tim
 func (m *MarketLiquidity) OnTick(ctx context.Context, t time.Time) {
 	// distribute liquidity fees each feeDistributionTimeStep
 	if m.readyForFeesAllocation(t) {
-		if err := m.allocateFees(ctx); err != nil {
+		if err := m.AllocateFees(ctx); err != nil {
 			m.log.Panic("liquidity fee distribution error", logging.Error(err))
 		}
 
@@ -690,12 +698,8 @@ func (m *MarketLiquidity) validOrdersPriceRange() (*num.Uint, *num.Uint, error) 
 
 func (m *MarketLiquidity) UpdateMarketConfig(risk liquidity.RiskModel, monitor liquidity.PriceMonitor, slaParams *types.LiquiditySLAParams) {
 	m.priceRange = slaParams.PriceRange
-	m.feeDistributionTimeStep = slaParams.ProvidersFeeCalculationTimeStep
+	m.feeCalculationTimeStep = slaParams.ProvidersFeeCalculationTimeStep
 	m.liquidityEngine.UpdateMarketConfig(risk, monitor, slaParams)
-}
-
-func (m *MarketLiquidity) OnEarlyExitPenalty(earlyExitPenalty num.Decimal) {
-	m.earlyExitPenalty = earlyExitPenalty
 }
 
 func (m *MarketLiquidity) OnMinLPStakeQuantumMultiple(minLPStakeQuantumMultiple num.Decimal) {
@@ -710,12 +714,8 @@ func (m *MarketLiquidity) OnProbabilityOfTradingTauScalingUpdate(v num.Decimal) 
 	m.liquidityEngine.OnProbabilityOfTradingTauScalingUpdate(v)
 }
 
-func (m *MarketLiquidity) OnMaximumLiquidityFeeFactorLevelUpdate(f num.Decimal) {
-	m.liquidityEngine.OnMaximumLiquidityFeeFactorLevelUpdate(f)
-}
-
-func (m *MarketLiquidity) OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal) {
-	m.liquidityEngine.OnStakeToCcyVolumeUpdate(stakeToCcyVolume)
+func (m *MarketLiquidity) OnBondPenaltyFactorUpdate(bondPenaltyFactor num.Decimal) {
+	m.bondPenaltyFactor = bondPenaltyFactor
 }
 
 func (m *MarketLiquidity) OnNonPerformanceBondPenaltySlopeUpdate(nonPerformanceBondPenaltySlope num.Decimal) {
@@ -724,6 +724,18 @@ func (m *MarketLiquidity) OnNonPerformanceBondPenaltySlopeUpdate(nonPerformanceB
 
 func (m *MarketLiquidity) OnNonPerformanceBondPenaltyMaxUpdate(nonPerformanceBondPenaltyMax num.Decimal) {
 	m.liquidityEngine.OnNonPerformanceBondPenaltyMaxUpdate(nonPerformanceBondPenaltyMax)
+}
+
+func (m *MarketLiquidity) OnMaximumLiquidityFeeFactorLevelUpdate(liquidityFeeFactorLevelUpdate num.Decimal) {
+	m.liquidityEngine.OnMaximumLiquidityFeeFactorLevelUpdate(liquidityFeeFactorLevelUpdate)
+}
+
+func (m *MarketLiquidity) OnEarlyExitPenalty(earlyExitPenalty num.Decimal) {
+	m.earlyExitPenalty = earlyExitPenalty
+}
+
+func (m *MarketLiquidity) OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal) {
+	m.liquidityEngine.OnStakeToCcyVolumeUpdate(stakeToCcyVolume)
 }
 
 func (m *MarketLiquidity) IsProbabilityOfTradingInitialised() bool {

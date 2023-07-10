@@ -444,7 +444,9 @@ func getDummyData() *types.Chunk {
 									},
 								},
 							},
-							LPPriceRange: num.DecimalFromFloat(0.95),
+							LiquiditySLAParams: &types.LiquiditySLAParams{
+								PriceRange: num.DecimalFromFloat(0.95),
+							},
 						},
 						PeggedOrders: &types.PeggedOrdersState{},
 						PriceMonitor: &types.PriceMonitor{},

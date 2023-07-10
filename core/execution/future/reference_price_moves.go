@@ -19,6 +19,22 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 )
 
+const (
+	// PriceMoveMid used to indicate that the mid price has moved.
+	PriceMoveMid = 1
+
+	// PriceMoveBestBid used to indicate that the best bid price has moved.
+	PriceMoveBestBid = 2
+
+	// PriceMoveBestAsk used to indicate that the best ask price has moved.
+	PriceMoveBestAsk = 4
+
+	// PriceMoveAll used to indicate everything has moved.
+	PriceMoveAll = PriceMoveMid + PriceMoveBestBid + PriceMoveBestAsk
+)
+
+type OrderReferenceCheck types.Order
+
 func (m *Market) checkForReferenceMoves(
 	ctx context.Context, orderUpdates []*types.Order, forceUpdate bool,
 ) {
@@ -75,4 +91,13 @@ func (m *Market) checkForReferenceMoves(
 	if len(orderUpdates) > 0 {
 		m.checkForReferenceMoves(ctx, orderUpdates, false)
 	}
+}
+
+func (o OrderReferenceCheck) HasMoved(changes uint8) bool {
+	return (o.PeggedOrder.Reference == types.PeggedReferenceMid &&
+		changes&PriceMoveMid > 0) ||
+		(o.PeggedOrder.Reference == types.PeggedReferenceBestBid &&
+			changes&PriceMoveBestBid > 0) ||
+		(o.PeggedOrder.Reference == types.PeggedReferenceBestAsk &&
+			changes&PriceMoveBestAsk > 0)
 }

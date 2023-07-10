@@ -555,10 +555,6 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMarketFeeFactorsInfrastructureFeeUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityStakeToCCYVolume,
-			Watcher: svcs.executionEngine.OnSuppliedStakeToObligationFactorUpdate,
-		},
-		{
 			Param:   netparams.MarketValueWindowLength,
 			Watcher: svcs.executionEngine.OnMarketValueWindowLengthUpdate,
 		},
@@ -580,14 +576,6 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.MaxPeggedOrders,
 			Watcher: svcs.executionEngine.OnMaxPeggedOrderUpdate,
-		},
-		{
-			Param:   netparams.MarketLiquidityProvidersFeeDistributionTimeStep,
-			Watcher: svcs.executionEngine.OnMarketLiquidityProvidersFeeDistributionTimeStep,
-		},
-		{
-			Param:   netparams.MarketLiquidityProvisionShapesMaxSize,
-			Watcher: svcs.executionEngine.OnMarketLiquidityProvisionShapesMaxSizeUpdate,
 		},
 		{
 			Param:   netparams.MarketMinLpStakeQuantumMultiple,

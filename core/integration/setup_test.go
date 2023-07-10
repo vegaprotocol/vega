@@ -265,20 +265,8 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Watcher: e.executionEngine.OnMarketFeeFactorsInfrastructureFeeUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityStakeToCCYVolume,
-			Watcher: e.executionEngine.OnSuppliedStakeToObligationFactorUpdate,
-		},
-		netparams.WatchParam{
 			Param:   netparams.MarketValueWindowLength,
 			Watcher: e.executionEngine.OnMarketValueWindowLengthUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityProvidersFeeDistributionTimeStep,
-			Watcher: e.executionEngine.OnMarketLiquidityProvidersFeeDistributionTimeStep,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityProvisionShapesMaxSize,
-			Watcher: e.executionEngine.OnMarketLiquidityProvisionShapesMaxSizeUpdate,
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,

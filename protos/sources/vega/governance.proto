@@ -103,6 +103,8 @@ message NewMarketConfiguration {
   string quadratic_slippage_factor = 10;
   // Successor configuration. If this proposal is meant to succeed a given market, then this should be set.
   optional SuccessorConfiguration successor = 11;
+  // Liquidity SLA parameters
+  LiquiditySLAParameters liquidity_sla_parameters = 12;
 }
 
 // New spot market on Vega
@@ -165,6 +167,8 @@ message UpdateMarketConfiguration {
   string linear_slippage_factor = 6;
   // Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume.
   string quadratic_slippage_factor = 7;
+  // Liquidity SLA parameters
+  LiquiditySLAParameters liquidity_sla_parameters = 8;
 }
 
 // Configuration to update a spot market on Vega
