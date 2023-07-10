@@ -99,7 +99,6 @@ type Engine struct {
 }
 
 type netParamsValues struct {
-	shapesMaxSize                        int64
 	feeDistributionTimeStep              time.Duration
 	marketValueWindowLength              time.Duration
 	suppliedStakeToObligationFactor      num.Decimal
@@ -122,12 +121,11 @@ type netParamsValues struct {
 	liquidityV2MaxLiquidityFee                   num.Decimal
 	liquidityV2SLANonPerformanceBondPenaltyMax   num.Decimal
 	liquidityV2SLANonPerformanceBondPenaltySlope num.Decimal
-	liquidityV2SuppliedStakeToObligationFactor   num.Decimal
+	liquidityV2StakeToCCYVolume                  num.Decimal
 }
 
 func defaultNetParamsValues() netParamsValues {
 	return netParamsValues{
-		shapesMaxSize:                   -1,
 		feeDistributionTimeStep:         -1,
 		marketValueWindowLength:         -1,
 		suppliedStakeToObligationFactor: num.DecimalFromInt64(-1),
@@ -151,7 +149,7 @@ func defaultNetParamsValues() netParamsValues {
 		liquidityV2MaxLiquidityFee:                   num.DecimalFromInt64(-1),
 		liquidityV2SLANonPerformanceBondPenaltyMax:   num.DecimalFromInt64(-1),
 		liquidityV2SLANonPerformanceBondPenaltySlope: num.DecimalFromInt64(-1),
-		liquidityV2SuppliedStakeToObligationFactor:   num.DecimalFromInt64(-1),
+		liquidityV2StakeToCCYVolume:                  num.DecimalFromInt64(-1),
 	}
 }
 
@@ -615,7 +613,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 		e.Settlement,
 		e.Matching,
 		e.Fee,
-		e.Liquidity,
+		e.LiquidityV2,
 		e.collateral,
 		e.oracle,
 		marketConfig,
@@ -789,11 +787,6 @@ func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mk
 	if e.npv.auctionMinDuration != -1 {
 		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, e.npv.auctionMinDuration)
 	}
-	if e.npv.shapesMaxSize != -1 {
-		if err := mkt.OnMarketLiquidityProvisionShapesMaxSizeUpdate(e.npv.shapesMaxSize); err != nil {
-			return err
-		}
-	}
 
 	if !e.npv.infrastructureFee.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnFeeFactorsInfrastructureFeeUpdate(ctx, e.npv.infrastructureFee)
@@ -809,16 +802,8 @@ func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mk
 		}
 	}
 
-	if e.npv.feeDistributionTimeStep != -1 {
-		mkt.OnMarketLiquidityProvidersFeeDistribitionTimeStep(e.npv.feeDistributionTimeStep)
-	}
-
 	if e.npv.marketValueWindowLength != -1 {
 		mkt.OnMarketValueWindowLengthUpdate(e.npv.marketValueWindowLength)
-	}
-
-	if !e.npv.suppliedStakeToObligationFactor.Equal(num.DecimalFromInt64(-1)) {
-		mkt.OnSuppliedStakeToObligationFactorUpdate(e.npv.suppliedStakeToObligationFactor)
 	}
 
 	if !e.npv.bondPenaltyFactor.Equal(num.DecimalFromInt64(-1)) {
@@ -833,7 +818,36 @@ func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mk
 	}
 
 	mkt.OnMarketPartiesMaximumStopOrdersUpdate(ctx, e.npv.marketPartiesMaximumStopOrdersUpdate)
+
+	e.propagateSLANetParams(ctx, mkt)
+
 	return nil
+}
+
+func (e *Engine) propagateSLANetParams(ctx context.Context, mkt *future.Market) {
+	if !e.npv.liquidityV2BondPenaltyFactor.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
+		mkt.OnLiquidityV2BondPenaltyFactorUpdate(e.npv.liquidityV2BondPenaltyFactor)
+	}
+
+	if !e.npv.liquidityV2EarlyExitPenalty.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
+		mkt.OnLiquidityV2EarlyExitPenaltyUpdate(e.npv.liquidityV2EarlyExitPenalty)
+	}
+
+	if !e.npv.liquidityV2MaxLiquidityFee.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
+		mkt.OnLiquidityV2MaxLiquidityFeeUpdate(e.npv.liquidityV2MaxLiquidityFee)
+	}
+
+	if !e.npv.liquidityV2SLANonPerformanceBondPenaltySlope.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
+		mkt.OnLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(e.npv.liquidityV2SLANonPerformanceBondPenaltySlope)
+	}
+
+	if !e.npv.liquidityV2SLANonPerformanceBondPenaltyMax.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
+		mkt.OnLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(e.npv.liquidityV2SLANonPerformanceBondPenaltyMax)
+	}
+
+	if !e.npv.liquidityV2StakeToCCYVolume.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
+		mkt.OnLiquidityV2StakeToCCYVolume(e.npv.liquidityV2StakeToCCYVolume)
+	}
 }
 
 func (e *Engine) removeMarket(mktID string) {
@@ -1522,8 +1536,8 @@ func (e *Engine) OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(_ cont
 // SLA liquidity - currently only used in spots.
 func (e *Engine) OnMarketLiquidityV2SuppliedStakeToObligationFactorUpdate(_ context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
-		e.log.Debug("update supplied stake to obligation factor (liquidity v2)",
-			logging.Decimal("factor", d),
+		e.log.Debug("update market SLA non performance bond penalty max (liquidity v2)",
+			logging.Decimal("bond-penalty-max", d),
 		)
 	}
 
@@ -1531,6 +1545,9 @@ func (e *Engine) OnMarketLiquidityV2SuppliedStakeToObligationFactorUpdate(_ cont
 		m.OnMarketLiquidityV2SuppliedStakeToObligationFactorUpdate(d)
 	}
 	e.npv.liquidityV2SuppliedStakeToObligationFactor = d
+	// TODO To propagate to spot markets.
+
+	e.npv.liquidityV2SLANonPerformanceBondPenaltyMax = d
 
 	return nil
 }
@@ -1644,6 +1661,9 @@ func (e *Engine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(_ context.Context
 
 // to be removed and replaced by its v2 counterpart. in use only for future.
 func (e *Engine) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(_ context.Context, d num.Decimal) error {
+func (e *Engine) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(
+	_ context.Context, d num.Decimal,
+) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update liquidity provision max liquidity fee factor",
 			logging.Decimal("max-liquidity-fee", d),

@@ -82,7 +82,6 @@ func testOrderSubmitAmendAndLP(t *testing.T, tx *testTx) {
 	// set some counters
 	marketCounters["1"] = &types.MarketCounters{
 		PeggedOrderCounter:  1,
-		LPShapeCount:        5,
 		PositionCount:       2,
 		OrderbookLevelCount: 10,
 	}
@@ -101,7 +100,6 @@ func testOrderSubmitAmendAndLP(t *testing.T, tx *testTx) {
 	// update counters such that now the max gas is lower than gas wanted for the order
 	marketCounters["1"] = &types.MarketCounters{
 		PeggedOrderCounter:  8,
-		LPShapeCount:        10,
 		PositionCount:       2,
 		OrderbookLevelCount: 100,
 	}
@@ -139,7 +137,6 @@ func TestCancelOrder(t *testing.T) {
 	// set some counters
 	marketCounters["1"] = &types.MarketCounters{
 		PeggedOrderCounter:  1,
-		LPShapeCount:        5,
 		PositionCount:       2,
 		OrderbookLevelCount: 10,
 	}
@@ -157,7 +154,6 @@ func TestCancelOrder(t *testing.T) {
 	// update counters such that now the max gas is lower than gasCancel
 	marketCounters["1"] = &types.MarketCounters{
 		PeggedOrderCounter:  8,
-		LPShapeCount:        10,
 		PositionCount:       2,
 		OrderbookLevelCount: 100,
 	}
@@ -203,7 +199,6 @@ func TestBatch(t *testing.T) {
 	// set some counters
 	marketCounters["1"] = &types.MarketCounters{
 		PeggedOrderCounter:  1,
-		LPShapeCount:        5,
 		PositionCount:       2,
 		OrderbookLevelCount: 10,
 	}
@@ -219,7 +214,6 @@ func TestBatch(t *testing.T) {
 	// update counters such that now the max gas is lower than gasCancel
 	marketCounters["1"] = &types.MarketCounters{
 		PeggedOrderCounter:  8,
-		LPShapeCount:        10,
 		PositionCount:       2,
 		OrderbookLevelCount: 100,
 	}

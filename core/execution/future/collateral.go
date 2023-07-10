@@ -106,16 +106,14 @@ func (m *Market) transferRecheckMargins(ctx context.Context, risk []events.Risk)
 			responses = append(responses, tr)
 		}
 		if closed != nil && !closed.MarginShortFall().IsZero() {
-			if !m.liquidity.IsPending(closed.Party()) {
-				resp, err := m.bondSlashing(ctx, closed)
-				if err != nil {
-					m.log.Panic("Bond slashing for non-distressed LP failed",
-						logging.String("party", closed.Party()),
-						logging.Error(err),
-					)
-				}
-				responses = append(responses, resp...)
+			resp, err := m.bondSlashing(ctx, closed)
+			if err != nil {
+				m.log.Panic("Bond slashing for non-distressed LP failed",
+					logging.String("party", closed.Party()),
+					logging.Error(err),
+				)
 			}
+			responses = append(responses, resp...)
 		}
 		if len(responses) > 0 {
 			evts = append(evts, events.NewLedgerMovements(ctx, responses))
@@ -143,15 +141,13 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 	}
 	// margin shortfall && liquidity provider -> bond slashing
 	if closed != nil && !closed.MarginShortFall().IsZero() {
-		// we pay the bond penalty if the order was not pending
-		if !m.liquidity.IsPending(closed.Party()) {
-			// get bond penalty
-			resp, err := m.bondSlashing(ctx, closed)
-			if err != nil {
-				return err
-			}
-			responses = append(responses, resp...)
+		// get bond penalty
+		resp, err := m.bondSlashing(ctx, closed)
+		if err != nil {
+			return err
 		}
+		responses = append(responses, resp...)
+
 	}
 	if len(responses) > 0 {
 		m.broker.Send(events.NewLedgerMovements(ctx, responses))
@@ -164,7 +160,7 @@ func (m *Market) bondSlashing(ctx context.Context, closed ...events.Margin) ([]*
 	mID := m.GetID()
 	ret := make([]*types.LedgerMovement, 0, len(closed))
 	for _, c := range closed {
-		if !m.liquidity.IsLiquidityProvider(c.Party()) {
+		if !m.liquidityEngine.IsLiquidityProvider(c.Party()) {
 			continue
 		}
 		penalty, _ := num.UintFromDecimal(

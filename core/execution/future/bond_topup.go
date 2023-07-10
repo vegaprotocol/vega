@@ -22,7 +22,7 @@ import (
 )
 
 func (m *Market) checkBondBalance(ctx context.Context) {
-	lps := m.liquidity.ProvisionsPerParty().Slice()
+	lps := m.liquidityEngine.ProvisionsPerParty().Slice()
 	mID := m.GetID()
 	transfers := make([]*types.LedgerMovement, 0, len(lps))
 	for _, lp := range lps {
