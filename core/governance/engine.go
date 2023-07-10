@@ -529,7 +529,7 @@ func (e *Engine) SubmitProposal(
 		e.startProposal(p)
 	}
 
-	return e.intoToSubmit(ctx, p, &enactmentTime{current: p.Terms.EnactmentTimestamp})
+	return e.intoToSubmit(ctx, p, &enactmentTime{current: p.Terms.EnactmentTimestamp}, false)
 }
 
 func (e *Engine) RejectProposal(
@@ -589,7 +589,7 @@ func (e *Engine) rejectProposal(ctx context.Context, p *types.Proposal, r types.
 
 // toSubmit build the return response for the SubmitProposal
 // method.
-func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enactmentTime) (*ToSubmit, error) {
+func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enactmentTime, restore bool) (*ToSubmit, error) {
 	tsb := &ToSubmit{p: p}
 
 	switch p.Terms.Change.GetTermType() {
@@ -603,9 +603,11 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 		var parent *types.Market
 		if suc := newMarket.Successor(); suc != nil {
 			pm, ok := e.markets.GetMarket(suc.ParentID, true)
-			if !ok {
+			if !ok && !restore {
 				e.rejectProposal(ctx, p, types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketDoesNotExist)
 				return nil, fmt.Errorf("%w, %v", ErrParentMarketDoesNotExist, types.ProposalErrorInvalidSuccessorMarket)
+			} else if resotre && !ok {
+				newMarket.ClearSuccessor()
 			}
 			// proposal to succeed a market that was already succeeded
 			if e.markets.IsSucceeded(suc.ParentID) {
