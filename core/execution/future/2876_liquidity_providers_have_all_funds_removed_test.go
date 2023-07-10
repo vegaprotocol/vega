@@ -43,8 +43,6 @@ func TestIssue2876(t *testing.T) {
 	addAccountWithAmount(tm, "party-3", 100000000)
 	addAccountWithAmount(tm, "party-4", 100000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(5))
-
 	orders := []*types.Order{
 		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "opening1", types.SideBuy, "party-3", 10, 3000),
 		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGFA, "opening2", types.SideBuy, "party-3", 10, 4000),

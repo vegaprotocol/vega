@@ -66,7 +66,6 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		WithAccountAndAmount("party-3", 1000000).
 		WithAccountAndAmount("party-4", 1000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 	tm.market.OnTick(ctx, now)
 
 	orderParams := []struct {
@@ -297,7 +296,6 @@ func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 		// the liquidity provider
 		WithAccountAndAmount(lpparty, 155000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 	tm.market.OnTick(ctx, now)
 
 	// Add a LPSubmission
@@ -362,7 +360,6 @@ func TestCommitmentIsDeployed(t *testing.T) {
 		// the liquidity provider
 		WithAccountAndAmount(lpparty, 90000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 	tm.market.OnTick(ctx, now)
 
 	// Add a LPSubmission

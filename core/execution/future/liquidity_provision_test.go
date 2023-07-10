@@ -224,7 +224,6 @@ func TestSubmit(t *testing.T) {
 			// the liquidity provider
 			WithAccountAndAmount(lpparty, 50000000000000)
 
-		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 		tm.market.OnTick(ctx, tm.now)
 
 		// Add a LPSubmission
@@ -732,7 +731,6 @@ func TestSubmit(t *testing.T) {
 			WithAccountAndAmount(party1, 1000000000).
 			WithAccountAndAmount(party0, 1000000000)
 
-		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(.3))
 		tm.now = now
 		tm.market.OnTick(ctx, now)
 
@@ -825,7 +823,6 @@ func TestSubmit(t *testing.T) {
 			WithAccountAndAmount(ruser2, 74490).
 			WithAccountAndAmount(ruser3, 10000000)
 
-		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(.2))
 		tm.now = now
 		tm.market.OnTick(ctx, now)
 
@@ -1027,7 +1024,6 @@ func TestSubmit(t *testing.T) {
 			WithAccountAndAmount(oth1, 500000000000).
 			WithAccountAndAmount(oth2, 500000000000)
 
-		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
 		tm.now = now
 		tm.market.OnTick(ctx, now)
 
@@ -1241,7 +1237,6 @@ func TestSubmit(t *testing.T) {
 
 		tm := newTestMarket(t, now).Run(ctx, mktCfg)
 		tm.WithAccountAndAmount(lpparty, 100000000000000)
-		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
 		tm.now = now
 		tm.market.OnTick(ctx, now)
 
@@ -1333,7 +1328,6 @@ func TestSubmit(t *testing.T) {
 			WithAccountAndAmount(lpparty, 100000000000000)
 
 		tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, 1*time.Second)
-		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.2))
 		tm.now = now
 		tm.market.OnTick(ctx, now)
 
@@ -1530,7 +1524,6 @@ func TestSubmit(t *testing.T) {
 			WithAccountAndAmount(lpparty, 100000000000000)
 
 		tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, 1*time.Second)
-		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
 		tm.now = now
 		tm.market.OnTick(ctx, now)
 
@@ -1705,7 +1698,6 @@ func TestSubmit(t *testing.T) {
 			WithAccountAndAmount(lpparty, 100000000000000)
 
 		tm.market.OnMarketValueWindowLengthUpdate(2 * time.Second)
-		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
 		tm.now = now
 		tm.market.OnTick(ctx, now)
 
@@ -1844,7 +1836,6 @@ func TestSubmit(t *testing.T) {
 			WithAccountAndAmount(lpparty, 100000000000000)
 
 		tm.market.OnMarketValueWindowLengthUpdate(2 * time.Second)
-		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
 		tm.now = now
 		tm.market.OnTick(ctx, now)
 
@@ -1979,7 +1970,6 @@ func TestSubmit(t *testing.T) {
 			WithAccountAndAmount(lpparty, 100000000000000)
 
 		tm.market.OnMarketValueWindowLengthUpdate(2 * time.Second)
-		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
 		tm.now = now
 		tm.market.OnTick(ctx, now)
 
@@ -2186,7 +2176,6 @@ func TestAmend(t *testing.T) {
 			WithAccountAndAmount(lpparty, 500000000000).
 			WithAccountAndAmount(lpparty2, 500000000000)
 
-		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 		tm.now = now
 		tm.market.OnTick(ctx, now)
 
@@ -2433,7 +2422,6 @@ func TestAmend(t *testing.T) {
 		addAccountWithAmount(tm, "party-B", 10000000)
 		addAccountWithAmount(tm, "party-C", 10000000)
 		tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.2))
 
 		tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
 		tm.mas.AuctionStarted(ctx, now)
@@ -2831,7 +2819,6 @@ func TestLpPriceRange(t *testing.T) {
 	trader2 := "party-trader-2"
 
 	tm := newTestMarket(t, time.Unix(10, 0)).Run(ctx, mktCfg)
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 	tm.market.OnTick(ctx, tm.now)
 	tm.StartOpeningAuction().
 		WithAccountAndAmount(lpParty1, 1000000).
@@ -2895,7 +2882,7 @@ func TestLpPriceRange(t *testing.T) {
 	require.Greater(t, delta, math.Min(distFromMin, distFromMax))
 
 	lpPriceRange1 := delta / float64(midPrice)
-	mktCfg.LPPriceRange = num.DecimalFromFloat(lpPriceRange1)
+	mktCfg.LiquiditySLAParams.PriceRange = num.DecimalFromFloat(lpPriceRange1)
 
 	tm.market.Update(ctx, &mktCfg, tm.oracleEngine)
 
@@ -2943,7 +2930,7 @@ func TestLpPriceRange(t *testing.T) {
 
 	// update LP price range parameter (shrink)
 	lpPriceRange2 := 0.25 * lpPriceRange1
-	mktCfg.LPPriceRange = num.DecimalFromFloat(lpPriceRange2)
+	mktCfg.LiquiditySLAParams.PriceRange = num.DecimalFromFloat(lpPriceRange2)
 	tm.market.Update(ctx, &mktCfg, tm.oracleEngine)
 	// clear events
 	tm.events = nil
@@ -2965,7 +2952,7 @@ func TestLpPriceRange(t *testing.T) {
 
 	// update LP price range parameter (expand)
 	lpPriceRange3 := 3 * lpPriceRange1
-	mktCfg.LPPriceRange = num.DecimalFromFloat(lpPriceRange3)
+	mktCfg.LiquiditySLAParams.PriceRange = num.DecimalFromFloat(lpPriceRange3)
 	tm.market.Update(ctx, &mktCfg, tm.oracleEngine)
 	// clear events
 	tm.events = nil
