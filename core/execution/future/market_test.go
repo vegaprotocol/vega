@@ -36,7 +36,7 @@ import (
 	"code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/execution/future"
 	"code.vegaprotocol.io/vega/core/fee"
-	"code.vegaprotocol.io/vega/core/liquidity"
+	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/monitor"
 	"code.vegaprotocol.io/vega/core/positions"
@@ -580,7 +580,13 @@ func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuc
 			},
 			TriggeringRatio: num.DecimalZero(),
 		},
-		LPPriceRange:            num.DecimalFromFloat(lpRange),
+		LiquiditySLAParams: &types.LiquiditySLAParams{
+			PriceRange:                      num.DecimalOne(),
+			CommitmentMinTimeFraction:       num.DecimalFromFloat(0.5),
+			SlaCompetitionFactor:            num.DecimalOne(),
+			ProvidersFeeCalculationTimeStep: time.Second * 1,
+			PerformanceHysteresisEpochs:     1,
+		},
 		LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 		QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 	}
@@ -5977,7 +5983,6 @@ func TestLPOrdersRollback(t *testing.T) {
 		WithAccountAndAmount("party-4", 1000000)
 	addAccountWithAmount(tm, "lpprov", 10000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 	tm.now = now
 	tm.market.OnTick(ctx, now)
 
@@ -6324,7 +6329,6 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 		WithAccountAndAmount("party-3", 1000000).
 		WithAccountAndAmount("party-4", 1000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 	tm.now = now
 	tm.market.OnTick(ctx, now)
 
@@ -6484,7 +6488,6 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		WithAccountAndAmount("party-3", 1000000).
 		WithAccountAndAmount("party-4", 1000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 	tm.now = now
 	tm.market.OnTick(ctx, now)
 
@@ -6797,7 +6800,6 @@ func Test2963EnsureMarketValueProxyAndEquityShareAreInMarketData(t *testing.T) {
 		WithAccountAndAmount("party-3", 1000000).
 		WithAccountAndAmount("party-4", 1000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 	tm.now = now
 	tm.market.OnTick(ctx, now)
 
@@ -6980,7 +6982,6 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		WithAccountAndAmount("party-3", 1000000).
 		WithAccountAndAmount("party-4", 1000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 	tm.now = now
 	tm.market.OnTick(ctx, now)
 
@@ -7233,8 +7234,6 @@ func TestAverageEntryValuation(t *testing.T) {
 		WithAccountAndAmount(lpparty2, 500000000000).
 		WithAccountAndAmount(lpparty3, 500000000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(.2))
-
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
@@ -7345,7 +7344,6 @@ func TestBondAccountIsReleasedItMarketRejected(t *testing.T) {
 	tm := newTestMarket(t, now).Run(ctx, mktCfg)
 	tm.WithAccountAndAmount(lpparty, 500000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.20))
 	tm.now = now
 	tm.market.OnTick(ctx, now)
 
@@ -7903,7 +7901,6 @@ func TestAmendTrade(t *testing.T) {
 		WithAccountAndAmount(p2, 500000000000)
 	addAccountWithAmount(tm, "lpprov", 10000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(.2))
 	lp := &types.LiquidityProvisionSubmission{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(55000),

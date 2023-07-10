@@ -240,15 +240,11 @@ func NewMarket(
 		pMonitor, book, auctionState, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams,
 	)
 
-	// TODO solve these
-	minLPStakeQuantumMultiple := num.DecimalOne()
-	earlyExitPenalty := num.DecimalOne()
-
 	equityShares := common.NewEquityShares(num.DecimalZero())
 
 	marketLiquidity := common.NewMarketLiquidity(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
-		feeEngine, mkt.ID, asset, minLPStakeQuantumMultiple, priceFactor, mkt.LiquiditySLAParams.PriceRange, earlyExitPenalty,
+		feeEngine, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange,
 		mkt.LiquiditySLAParams.ProvidersFeeCalculationTimeStep,
 	)
 

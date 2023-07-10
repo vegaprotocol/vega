@@ -196,7 +196,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 		e.Config.Settlement,
 		e.Config.Matching,
 		e.Config.Fee,
-		e.Config.Liquidity,
+		e.Config.LiquidityV2,
 		e.collateral,
 		e.oracle,
 		e.timeService,

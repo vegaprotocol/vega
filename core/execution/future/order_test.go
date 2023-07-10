@@ -56,7 +56,6 @@ func TestReduceOnly(t *testing.T) {
 		WithAccountAndAmount(p2, 500000000000)
 	addAccountWithAmount(tm, "lpprov", 10000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(.2))
 	lp := &types.LiquidityProvisionSubmission{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(55000),
@@ -222,7 +221,6 @@ func TestPostOnly(t *testing.T) {
 		WithAccountAndAmount(p2, 500000000000)
 	addAccountWithAmount(tm, "lpprov", 10000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(.2))
 	lp := &types.LiquidityProvisionSubmission{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(55000),
@@ -295,7 +293,6 @@ func TestAmendMarginCheckFails(t *testing.T) {
 		WithAccountAndAmount(p2, 500000000000)
 	addAccountWithAmount(tm, "lpprov", 10000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(.2))
 	lp := &types.LiquidityProvisionSubmission{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(55000),
@@ -3369,7 +3366,6 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 		WithAccountAndAmount("party-3", 1000000).
 		WithAccountAndAmount("party-4", 1000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 	tm.now = now
 	tm.market.OnTick(ctx, now)
 
