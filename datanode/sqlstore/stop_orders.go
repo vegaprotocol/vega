@@ -66,7 +66,7 @@ func (so *StopOrders) GetStopOrder(ctx context.Context, orderID string) (entitie
 	order := entities.StopOrder{}
 	id := entities.StopOrderID(orderID)
 	defer metrics.StartSQLQuery("StopOrders", "GetStopOrder")()
-	query := `select * from stop_orders where id=$1`
+	query := `select * from stop_orders_current_desc where id=$1`
 	err = pgxscan.Get(ctx, so.Connection, &order, query, id)
 
 	return order, so.wrapE(err)
