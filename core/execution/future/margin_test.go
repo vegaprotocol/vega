@@ -78,14 +78,6 @@ func TestMargins(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(500),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 
@@ -223,14 +215,6 @@ func TestPartialFillMargins(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(30000000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	now = now.Add(time.Second * 2) // opening auction is 1 second, move time ahead by 2 seconds so we leave auction
@@ -361,12 +345,6 @@ func TestMarginRequirementSkippedWhenReducingExposure(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(30000000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceMid, 400, 1),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceMid, 400, 1),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "lpprov", vgcrypto.RandomHash()))
 

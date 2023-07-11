@@ -80,10 +80,10 @@ func (esm *equityShareMarket) WithSubmittedOrder(t *testing.T, id, party string,
 	return esm
 }
 
-func (esm *equityShareMarket) WithSubmittedLiquidityProvision(t *testing.T, party, id string, amount uint64, fee string, buys, sells []*types.LiquidityOrder) *equityShareMarket {
+func (esm *equityShareMarket) WithSubmittedLiquidityProvision(t *testing.T, party, id string, amount uint64, fee string) *equityShareMarket {
 	t.Helper()
 	esm.createPartyIfMissing(t, party)
-	esm.tm.WithSubmittedLiquidityProvision(esm.t, party, amount, fee, buys, sells)
+	esm.tm.WithSubmittedLiquidityProvision(esm.t, party, amount, fee)
 	return esm
 }
 
@@ -128,17 +128,9 @@ func TestWithinMarket(t *testing.T) {
 		WithSubmittedOrder(t, "some-id-3", "party1", types.SideSell, matchingPrice).
 		WithSubmittedOrder(t, "some-id-4", "party2", types.SideBuy, matchingPrice). // Need to generate a trade to leave opening auction
 		// party1 (commitment: 2000) should get 2/3 of the fee
-		WithSubmittedLiquidityProvision(t, "party1", "lp-id-1", 2000000, "0.5", []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 11, 1),
-		}, []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 1),
-		}).
+		WithSubmittedLiquidityProvision(t, "party1", "lp-id-1", 2000000, "0.5").
 		// party2 (commitment: 1000) should get 1/3 of the fee
-		WithSubmittedLiquidityProvision(t, "party2", "lp-id-2", 1000000, "0.5", []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 10, 1),
-		}, []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 11, 1),
-		})
+		WithSubmittedLiquidityProvision(t, "party2", "lp-id-2", 1000000, "0.5")
 
 	// tm is the testMarket instance
 	var (

@@ -334,6 +334,13 @@ func getMarketConfig() *types.Market {
 				},
 			},
 		},
+		LiquiditySLAParams: &types.LiquiditySLAParams{
+			PriceRange:                      num.DecimalOne(),
+			CommitmentMinTimeFraction:       num.DecimalFromFloat(0.5),
+			SlaCompetitionFactor:            num.DecimalOne(),
+			ProvidersFeeCalculationTimeStep: time.Second * 1,
+			PerformanceHysteresisEpochs:     1,
+		},
 		State: types.MarketStateActive,
 	}
 }

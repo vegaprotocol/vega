@@ -107,25 +107,6 @@ func (g *Gastimator) CalcGasWantedForTx(tx abci.Tx) (uint64, error) {
 		}
 		// if it is a cancel for all markets
 		return g.defaultGas, nil
-	case txn.LiquidityProvisionCommand:
-		s := &commandspb.LiquidityProvisionSubmission{}
-		if err := tx.Unmarshal(s); err != nil {
-			return g.maxGas + 1, err
-		}
-		return g.lpGastimate(s.MarketId), nil
-
-	case txn.AmendLiquidityProvisionCommand:
-		s := &commandspb.LiquidityProvisionAmendment{}
-		if err := tx.Unmarshal(s); err != nil {
-			return g.maxGas + 1, err
-		}
-		return g.lpGastimate(s.MarketId), nil
-	case txn.CancelLiquidityProvisionCommand:
-		s := &commandspb.LiquidityProvisionCancellation{}
-		if err := tx.Unmarshal(s); err != nil {
-			return g.maxGas + 1, err
-		}
-		return g.lpGastimate(s.MarketId), nil
 	case txn.BatchMarketInstructions:
 		s := &commandspb.BatchMarketInstructions{}
 		if err := tx.Unmarshal(s); err != nil {
@@ -251,24 +232,6 @@ func (g *Gastimator) cancelOrderGastimate(marketID string) uint64 {
 				uint64(stopCostFactor*float64(marketCounters.StopOrderCounter))+
 				pegCostFactor*marketCounters.PeggedOrderCounter+
 				uint64(0.1*float64(marketCounters.OrderbookLevelCount))),
-			math.Max(1.0, float64(g.maxGas/g.minBlockCapacity-1))))
-	}
-	return g.defaultGas
-}
-
-// TODO karel - clarify spec
-// gasOliq = network.transaction.defaultgas + peg cost factor  x pegs
-// + position factor x positions
-// + level factor x levels
-// gasOliq = min(maxGas-1,gasOliq).
-func (g *Gastimator) lpGastimate(marketID string) uint64 {
-	if marketCounters, ok := g.marketCounters[marketID]; ok {
-		return uint64(math.Min(float64(
-			g.defaultGas+
-				uint64(stopCostFactor*float64(marketCounters.StopOrderCounter))+
-				pegCostFactor*marketCounters.PeggedOrderCounter+
-				positionFactor*marketCounters.PositionCount+
-				uint64(levelFactor*float64(marketCounters.OrderbookLevelCount))),
 			math.Max(1.0, float64(g.maxGas/g.minBlockCapacity-1))))
 	}
 	return g.defaultGas

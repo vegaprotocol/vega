@@ -64,6 +64,9 @@ func (l LiquiditySLAParams) IntoProto() *proto.LiquiditySLAParameters {
 }
 
 func LiquiditySLAParamsFromProto(l *proto.LiquiditySLAParameters) *LiquiditySLAParams {
+	if l == nil {
+		return nil
+	}
 	return &LiquiditySLAParams{
 		PriceRange:                      num.MustDecimalFromString(l.PriceRange),
 		CommitmentMinTimeFraction:       num.MustDecimalFromString(l.CommitmentMinTimeFraction),
