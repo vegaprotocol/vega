@@ -19,15 +19,25 @@ import (
 )
 
 type PostgresConnection struct {
-	Host            string `description:"hostname of postgres server"                              long:"host"`
-	Port            int    `description:"port postgres is running on"                              long:"port"`
-	Username        string `description:"username to connect with"                                 long:"username"`
-	Password        string `description:"password for user"                                        long:"password"`
-	Database        string `description:"database name"                                            long:"database"`
-	ApplicationName string `description:"identify the application to the database using this name" long:"application-name"`
+	Host            string `description:"hostname of postgres server"                                               long:"host"`
+	Port            int    `description:"port postgres is running on"                                               long:"port"`
+	Username        string `description:"username to connect with"                                                  long:"username"`
+	Password        string `description:"password for user"                                                         long:"password"`
+	Database        string `description:"database name"                                                             long:"database"`
+	SocketDir       string `description:"location of postgres UNIX socket directory (used if host is empty string)" long:"socket-dir"`
+	ApplicationName string `description:"identify the application to the database using this name"                  long:"application-name"`
 }
 
 func (conf PostgresConnection) ToConnectionString() string {
+	if conf.Host == "" {
+		//nolint:nosprintfhostport
+		return fmt.Sprintf("postgresql://%s:%s@/%s?host=%s&port=%d",
+			conf.Username,
+			conf.Password,
+			conf.Database,
+			conf.SocketDir,
+			conf.Port)
+	}
 	//nolint:nosprintfhostport
 	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
 		conf.Username,
