@@ -59,4 +59,5 @@ var (
 	ErrStopOrderSubmissionNotAllowedWithoutExistingPosition = errors.New("stop order submission not allowed without existing position")
 	ErrStopOrderSideNotClosingThePosition                   = errors.New("side used in stop order does not close the position")
 	ErrStopOrderMustBeReduceOnly                            = errors.New("stop order must be reduce only")
+	ErrStopOrderExpiryInThePast                             = errors.New("stop order expiry in the past")
 )
