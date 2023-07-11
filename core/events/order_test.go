@@ -48,7 +48,6 @@ func TestOrderDeepClone(t *testing.T) {
 			Reference: proto.PeggedReference_PEGGED_REFERENCE_MID,
 			Offset:    num.NewUint(9000),
 		},
-		LiquidityProvisionID: "LiqProvId",
 	}
 
 	oEvent := events.NewOrderEvent(ctx, o)
@@ -74,7 +73,6 @@ func TestOrderDeepClone(t *testing.T) {
 	o.BatchID = 999
 	o.PeggedOrder.Reference = proto.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED
 	o.PeggedOrder.Offset = num.NewUint(999)
-	o.LiquidityProvisionID = "Changed"
 
 	// Check things have changed
 	assert.NotEqual(t, o.ID, o2.Id)
@@ -96,5 +94,4 @@ func TestOrderDeepClone(t *testing.T) {
 	assert.NotEqual(t, o.BatchID, o2.BatchId)
 	assert.NotEqual(t, o.PeggedOrder.Reference, o2.PeggedOrder.Reference)
 	assert.NotEqual(t, o.PeggedOrder.Offset, o2.PeggedOrder.Offset)
-	assert.NotEqual(t, o.LiquidityProvisionID, o2.LiquidityProvisionId)
 }
