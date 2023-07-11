@@ -1169,6 +1169,17 @@ func testListSuccessorMarkets(t *testing.T) {
 			EndCursor:       wantEndCursor,
 		}, pageInfo)
 	})
+
+	t.Run("should list the parent market even if it has not entered continuous trading and has no successors", func(t *testing.T) {
+		got, _, err := md.ListSuccessorMarkets(ctx, "deadbeef04", false, entities.CursorPagination{})
+		require.NoError(t, err)
+		want := []entities.SuccessorMarket{
+			{
+				Market: markets[10],
+			},
+		}
+		assert.Equal(t, want, got)
+	})
 }
 
 func testGetMarketWithParentAndSuccessor(t *testing.T) {
@@ -1232,6 +1243,14 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 			TradableInstrument: &vega.TradableInstrument{},
 		},
 		ParentMarketID: successorMarketA.ID,
+	}
+
+	parentMarket2 := entities.Market{
+		ID:           entities.MarketID("deadbeef04"),
+		InstrumentID: "deadbeef04",
+		TradableInstrument: entities.TradableInstrument{
+			TradableInstrument: &vega.TradableInstrument{},
+		},
 	}
 
 	successorMarketA.SuccessorMarketID = successorMarketB.ID
@@ -1395,6 +1414,11 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 			market:      successorMarketB,
 			state:       entities.MarketStateActive,
 			tradingMode: entities.MarketTradingModeContinuous,
+		},
+		{
+			market:      parentMarket2,
+			state:       entities.MarketStatePending,
+			tradingMode: entities.MarketTradingModeOpeningAuction,
 		},
 	}
 
