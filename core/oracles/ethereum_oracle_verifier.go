@@ -147,7 +147,7 @@ func (s *EthereumOracleVerifier) ProcessEthereumContractCallResult(callEvent typ
 
 	pending := &pendingCallEvent{
 		callEvent: callEvent,
-		check:     func(ctx context.Context) error { return s.checkCallEventResult(callEvent) },
+		check:     func(ctx context.Context) error { return s.checkCallEventResult(ctx, callEvent) },
 	}
 
 	s.pendingCallEvents = append(s.pendingCallEvents, pending)
@@ -160,8 +160,7 @@ func (s *EthereumOracleVerifier) ProcessEthereumContractCallResult(callEvent typ
 		pending, s.onCallEventVerified, s.timeService.GetTimeNow().Add(24*time.Hour))
 }
 
-func (s *EthereumOracleVerifier) checkCallEventResult(callEvent types.EthContractCallEvent) error {
-	ctx := context.Background()
+func (s *EthereumOracleVerifier) checkCallEventResult(ctx context.Context, callEvent types.EthContractCallEvent) error {
 	checkResult, err := s.ethEngine.CallSpec(ctx, callEvent.SpecId, callEvent.BlockHeight)
 	if callEvent.Error != nil {
 		if err != nil {
@@ -243,7 +242,7 @@ func (s *EthereumOracleVerifier) OnTick(ctx context.Context, t time.Time) {
 				},
 			}
 
-			s.broker.Send(events.NewOracleDataEvent(context.Background(), vegapb.OracleData{ExternalData: dataProto.ExternalData}))
+			s.broker.Send(events.NewOracleDataEvent(ctx, vegapb.OracleData{ExternalData: dataProto.ExternalData}))
 		}
 	}
 
