@@ -704,6 +704,26 @@ func (b *OrderBook) RemoveOrder(id string) (*types.Order, error) {
 	return order, nil
 }
 
+func (b *OrderBook) CancelOrdersOnReject() []*types.Order {
+	buys, sells := b.getSide(types.SideBuy).getLevels(), b.getSide(types.SideSell).getLevels()
+	ret := []*types.Order{}
+	for _, lvl := range buys {
+		for _, o := range lvl.orders {
+			o, _ = b.DeleteOrder(o)
+			o.Status = types.OrderStatusCancelled
+			ret = append(ret, o)
+		}
+	}
+	for _, lvl := range sells {
+		for _, o := range lvl.orders {
+			o, _ = b.DeleteOrder(o)
+			o.Status = types.OrderStatusCancelled
+			ret = append(ret, o)
+		}
+	}
+	return ret
+}
+
 // AmendOrder amends an order which is an active order on the book.
 func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 	if originalOrder == nil {

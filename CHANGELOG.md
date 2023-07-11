@@ -25,6 +25,7 @@
 - [8748](https://github.com/vegaprotocol/vega/issues/8748) - `ListSuccessorMarkets` does not return results.
 - [8749](https://github.com/vegaprotocol/vega/issues/8749) - Ensure stop order expiry is in the future
 - [8773](https://github.com/vegaprotocol/vega/issues/8773) - Fix panic with stop orders
+- [8739](https://github.com/vegaprotocol/vega/issues/8739) - Cancel orders for rejected markets.
 
 
 ## 0.72.1
