@@ -2075,6 +2075,18 @@ func (mr *MockMarketLiquidityEngineMockRecorder) IsProbabilityOfTradingInitialis
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsProbabilityOfTradingInitialised", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).IsProbabilityOfTradingInitialised))
 }
 
+// OnBondPenaltyFactorUpdate mocks base method.
+func (m *MockMarketLiquidityEngine) OnBondPenaltyFactorUpdate(arg0 decimal.Decimal) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "OnBondPenaltyFactorUpdate", arg0)
+}
+
+// OnBondPenaltyFactorUpdate indicates an expected call of OnBondPenaltyFactorUpdate.
+func (mr *MockMarketLiquidityEngineMockRecorder) OnBondPenaltyFactorUpdate(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnBondPenaltyFactorUpdate", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).OnBondPenaltyFactorUpdate), arg0)
+}
+
 // OnEarlyExitPenalty mocks base method.
 func (m *MockMarketLiquidityEngine) OnEarlyExitPenalty(arg0 decimal.Decimal) {
 	m.ctrl.T.Helper()
