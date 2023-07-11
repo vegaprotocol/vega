@@ -1074,6 +1074,9 @@ func (m *Market) enterAuction(ctx context.Context) {
 		updatedOrders = append(updatedOrders, order)
 	}
 
+	// now update all special orders
+	m.enterAuctionSpecialOrders(ctx, updatedOrders)
+
 	// Send an event bus update
 	m.broker.Send(event)
 
@@ -1177,6 +1180,8 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	previousMarkPrice := m.getCurrentMarkPrice()
 	// set the mark price here so that margins checks for special orders use the correct value
 	m.markPrice = m.getLastTradedPrice()
+
+	m.checkForReferenceMoves(ctx, updatedOrders, true)
 
 	m.checkLiquidity(ctx, nil, true)
 	m.commandLiquidityAuction(ctx)
@@ -1640,6 +1645,10 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(
 		[]*types.Order{conf.Order}, conf.PassiveOrdersAffected...)
 	allUpdatedOrders = append(allUpdatedOrders, orderUpdates...)
 
+	if !m.as.InAuction() {
+		m.checkForReferenceMoves(ctx, allUpdatedOrders, false)
+	}
+
 	return conf, nil
 }
 
@@ -1763,7 +1772,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 
 	// if an auction was trigger, and we are a pegged order
 	// or a liquidity order, let's return now.
-	if m.as.InAuction() && (isPegged || order.IsLiquidityOrder()) {
+	if m.as.InAuction() && isPegged {
 		if isPegged {
 			m.peggedOrders.Park(order)
 		}
@@ -1986,6 +1995,13 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	m.marketActivityTracker.AddValueTraded(m.mkt.ID, tradedValue)
 	m.broker.SendBatch(tradeEvts)
 
+	// check reference moves if we have order updates, and we are not in an auction (or leaving an auction)
+	// we handle reference moves in confirmMTM when leaving an auction already
+	if len(orderUpdates) > 0 && !m.as.CanLeave() && !m.as.InAuction() {
+		m.checkForReferenceMoves(
+			ctx, orderUpdates, false)
+	}
+
 	return orderUpdates
 }
 
@@ -2005,6 +2021,10 @@ func (m *Market) confirmMTM(
 	// Only process collateral and risk once per order, not for every trade
 	margins := m.collateralAndRisk(ctx, settle)
 	orderUpdates := m.handleRiskEvts(ctx, margins)
+
+	// orders updated -> check reference moves
+	// force check
+	m.checkForReferenceMoves(ctx, orderUpdates, false)
 
 	if !skipMargin {
 		// release excess margin for all positions
@@ -2066,6 +2086,7 @@ func (m *Market) handleRiskEvts(ctx context.Context, margins []events.Risk) []*t
 	if len(upd) > 0 {
 		orderUpdates = append(orderUpdates, upd...)
 	}
+
 	m.updateLiquidityFee(ctx)
 	return orderUpdates
 }
@@ -2640,26 +2661,11 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 		return orders[i].ID < orders[j].ID
 	})
 
-	// now we extract all liquidity provision order out of the list.
-	// cancelling some order may trigger repricing, and repricing
-	// liquidity order, which also trigger cancelling...
-	// by filtering the list now, we are sure that we will
-	// never try to
-	// 1. remove a lp order
-	// 2. have invalid order referencing lp order which have been canceleld
-	okOrders := []*types.Order{}
-	for _, order := range orders {
-		if order.IsLiquidityOrder() {
-			continue
-		}
-		okOrders = append(okOrders, order)
-	}
-
 	cancellations := make([]*types.OrderCancellationConfirmation, 0, len(orders))
 
 	// now iterate over all orders and cancel one by one.
-	cancelledOrders := make([]*types.Order, 0, len(okOrders))
-	for _, order := range okOrders {
+	cancelledOrders := make([]*types.Order, 0, len(orders))
+	for _, order := range orders {
 		cancellation, err := m.cancelOrder(ctx, partyID, order.ID)
 		if err != nil {
 			return nil, err
@@ -2667,6 +2673,8 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 		cancellations = append(cancellations, cancellation)
 		cancelledOrders = append(cancelledOrders, cancellation.Order)
 	}
+
+	m.checkForReferenceMoves(ctx, cancelledOrders, false)
 
 	return cancellations, nil
 }
@@ -2693,14 +2701,13 @@ func (m *Market) CancelOrderWithIDGenerator(
 		return nil, common.ErrTradingNotAllowed
 	}
 
-	// cancelling and amending an order that is part of the LP commitment isn't allowed
-	if o, err := m.matching.GetOrderByID(orderID); err == nil && o.IsLiquidityOrder() {
-		return nil, types.ErrEditNotAllowed
-	}
-
 	conf, err := m.cancelOrder(ctx, partyID, orderID)
 	if err != nil {
 		return conf, err
+	}
+
+	if !m.as.InAuction() {
+		m.checkForReferenceMoves(ctx, []*types.Order{conf.Order}, false)
 	}
 
 	return conf, nil
@@ -2864,6 +2871,10 @@ func (m *Market) AmendOrderWithIDGenerator(
 		updatedOrders...,
 	)
 
+	if !m.as.InAuction() {
+		m.checkForReferenceMoves(ctx, allUpdatedOrders, false)
+	}
+
 	return conf, nil
 }
 
@@ -2903,10 +2914,6 @@ func (m *Market) findOrderAndEnsureOwnership(
 			logging.Order(*existingOrder),
 			logging.Error(types.ErrInvalidMarketID),
 		)
-	}
-
-	if existingOrder.IsLiquidityOrder() {
-		return nil, false, types.ErrEditNotAllowed
 	}
 
 	return existingOrder, foundOnBook, err
@@ -3454,6 +3461,12 @@ func (m *Market) removeExpiredOrders(
 	}
 	if len(ids) > 0 {
 		m.broker.Send(events.NewExpiredOrdersEvent(ctx, m.mkt.ID, ids))
+	}
+
+	// If we have removed an expired order, do we need to reprice any
+	// or maybe notify the liquidity engine
+	if len(expired) > 0 && !m.as.InAuction() {
+		m.checkForReferenceMoves(ctx, expired, false)
 	}
 
 	return expired
