@@ -401,8 +401,20 @@ func (e *Engine) RestoreMarket(ctx context.Context, marketConfig *types.Market) 
 	// attempt to restore market state from checkpoint, returns true if state (ELS) was restored
 	// error if the market doesn't exist
 	ok, err := e.restoreOwnState(ctx, marketConfig.ID)
-	if ok || err != nil {
+	if err != nil {
 		return err
+	}
+	if ok {
+		// existing state has been restored. This means a potential parent market has been succeeded
+		// the parent market may no longer be present. In that case, remove the reference to the parent market
+		if len(marketConfig.ParentMarketID) == 0 {
+			return nil
+		}
+		// check to see if the parent market can be found, remove if the parent market is gone
+		if _, ok := e.markets[marketConfig.ParentMarketID]; !ok {
+			e.markets[marketConfig.ID].ResetParentIDAndInsurancePoolFraction()
+		}
+		return nil
 	}
 	// this is a successor market, handle accordingly
 	if pid := marketConfig.ParentMarketID; len(pid) > 0 {
