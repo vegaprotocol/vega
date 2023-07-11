@@ -46,6 +46,7 @@ require (
 	github.com/adrg/xdg v0.4.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/cenkalti/backoff/v4 v4.2.0
+	github.com/cometbft/cometbft-db v0.7.0
 	github.com/cucumber/messages-go/v16 v16.0.1
 	github.com/dgraph-io/badger/v2 v2.2007.4
 	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
@@ -110,7 +111,6 @@ require (
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/pebble v0.0.0-20230209160836-829675f94811 // indirect
 	github.com/cockroachdb/redact v1.1.3 // indirect
-	github.com/cometbft/cometbft-db v0.7.0 // indirect
 	github.com/containerd/cgroups v1.1.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d // indirect

@@ -145,26 +145,40 @@ func TestStopOrders_Get(t *testing.T) {
 	defer rollback()
 
 	block := addTestBlock(t, ctx, bs)
+	block2 := addTestBlock(t, ctx, bs)
 
 	party := addTestParty(t, ctx, ps, block)
 
 	markets := helpers.GenerateMarkets(t, ctx, 1, block, ms)
 
+	orderID := helpers.GenerateID()
 	stopOrders := generateTestStopOrders(t, []testStopOrderInputs{
 		{
-			orderID:        helpers.GenerateID(),
+			orderID:        orderID,
 			vegaTime:       block.VegaTime,
 			createdAt:      block.VegaTime,
 			triggerPrice:   "100",
 			partyID:        party.ID,
 			marketID:       markets[0].ID,
-			status:         entities.StopOrderStatusUnspecified,
+			status:         entities.StopOrderStatusPending,
+			expiryStrategy: entities.StopOrderExpiryStrategyUnspecified,
+		},
+		{
+			orderID:        orderID,
+			vegaTime:       block2.VegaTime,
+			createdAt:      block.VegaTime,
+			triggerPrice:   "100",
+			partyID:        party.ID,
+			marketID:       markets[0].ID,
+			status:         entities.StopOrderStatusTriggered,
 			expiryStrategy: entities.StopOrderExpiryStrategyUnspecified,
 		},
 	})
 
-	err := so.Add(stopOrders[0])
-	require.NoError(t, err)
+	for i := range stopOrders {
+		err := so.Add(stopOrders[i])
+		require.NoError(t, err)
+	}
 
 	want, err := so.Flush(ctx)
 	require.NoError(t, err)
@@ -176,9 +190,9 @@ func TestStopOrders_Get(t *testing.T) {
 	})
 
 	t.Run("Get should return the order if the order ID does exist", func(t *testing.T) {
-		got, err := so.GetStopOrder(ctx, stopOrders[0].ID.String())
+		got, err := so.GetStopOrder(ctx, orderID)
 		require.NoError(t, err)
-		assert.Equal(t, want[0], got)
+		assert.Equal(t, want[1], got)
 	})
 }
 
