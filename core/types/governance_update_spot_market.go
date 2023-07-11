@@ -185,11 +185,16 @@ func UpdateSpotMarketConfigurationFromProto(p *vegapb.UpdateSpotMarketConfigurat
 	}
 	targetStakeParameters := TargetStakeParametersFromProto(p.TargetStakeParameters)
 
+	var slaParams *LiquiditySLAParams
+	if p.SlaParams != nil {
+		slaParams = LiquiditySLAParamsFromProto(p.SlaParams)
+	}
+
 	r := &UpdateSpotMarketConfiguration{
 		Metadata:                  md,
 		PriceMonitoringParameters: priceMonitoring,
 		TargetStakeParameters:     targetStakeParameters,
-		SLAParams:                 LiquiditySLAParamsFromProto(p.SlaParams),
+		SLAParams:                 slaParams,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

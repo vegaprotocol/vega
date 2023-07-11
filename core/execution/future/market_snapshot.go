@@ -166,6 +166,7 @@ func NewMarketFromSnapshot(
 		collateral:              collateralEngine,
 		broker:                  broker,
 		fee:                     feeEngine,
+		liquidityEngine:         liquidityEngine,
 		liquidity:               marketLiquidity,
 		parties:                 map[string]struct{}{},
 		lMonitor:                lMonitor,
@@ -206,6 +207,8 @@ func NewMarketFromSnapshot(
 		// ensure oracle has the settlement data
 		market.tradableInstrument.Instrument.Product.RestoreSettlementData(em.SettlementData.Clone())
 	}
+
+	liquidityEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 
 	if mkt.State == types.MarketStateTradingTerminated {
 		market.tradableInstrument.Instrument.UnsubscribeTradingTerminated(ctx)

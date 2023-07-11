@@ -250,6 +250,191 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	return tm
 }
 
+func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setMarkPrice bool) {
+	t.Helper()
+	var (
+		party0 = "clearing-auction-party0"
+		party1 = "clearing-auction-party1"
+		party2 = "lpprov-party"
+	)
+
+	// parties used for clearing opening auction
+	tm.WithAccountAndAmount(party0, 1000000).
+		WithAccountAndAmount(party1, 1000000).
+		WithAccountAndAmount(party2, 90000000000) // LP needs a lot of balance
+
+	auctionOrders := []*types.Order{
+		// Limit Orders
+		{
+			Type:        types.OrderTypeLimit,
+			Size:        5,
+			Remaining:   5,
+			Price:       num.NewUint(1000),
+			Side:        types.SideBuy,
+			Party:       party0,
+			TimeInForce: types.OrderTimeInForceGTC,
+		},
+		{
+			Type:        types.OrderTypeLimit,
+			Size:        5,
+			Remaining:   5,
+			Price:       num.NewUint(1000),
+			Side:        types.SideSell,
+			Party:       party1,
+			TimeInForce: types.OrderTimeInForceGTC,
+		},
+		{
+			Type:        types.OrderTypeLimit,
+			Size:        1,
+			Remaining:   1,
+			Price:       num.NewUint(900),
+			Side:        types.SideBuy,
+			Party:       party0,
+			TimeInForce: types.OrderTimeInForceGTC,
+		},
+		{
+			Type:        types.OrderTypeLimit,
+			Size:        1,
+			Remaining:   1,
+			Price:       num.NewUint(1100),
+			Side:        types.SideSell,
+			Party:       party1,
+			TimeInForce: types.OrderTimeInForceGTC,
+		},
+	}
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	// submit the auctions orders & LP
+	tm.WithSubmittedOrders(t, auctionOrders...)
+	// update the time to get out of auction
+	if setMarkPrice {
+		// now set the markprice
+		mpOrders := []*types.Order{
+			{
+				Type:        types.OrderTypeLimit,
+				Size:        1,
+				Remaining:   1,
+				Price:       num.NewUint(900),
+				Side:        types.SideSell,
+				Party:       party1,
+				TimeInForce: types.OrderTimeInForceGTC,
+			},
+			{
+				Type:        types.OrderTypeLimit,
+				Size:        1,
+				Remaining:   1,
+				Price:       num.NewUint(2500),
+				Side:        types.SideBuy,
+				Party:       party0,
+				TimeInForce: types.OrderTimeInForceGTC,
+			},
+		}
+		// submit the auctions orders
+		tm.WithSubmittedOrders(t, mpOrders...)
+	}
+
+	tm.now = auctionEnd
+	tm.market.OnTick(ctx, auctionEnd)
+
+	assert.Equal(t,
+		tm.market.GetMarketData().MarketTradingMode,
+		types.MarketTradingModeContinuous,
+	)
+}
+
+func (tm *testMarket) EndOpeningAuction2(t *testing.T, auctionEnd time.Time, setMarkPrice bool) {
+	t.Helper()
+	var (
+		party0 = "clearing-auction-party0"
+		party1 = "clearing-auction-party1"
+	)
+
+	// parties used for clearing opening auction
+	tm.WithAccountAndAmount(party0, 1000000).
+		WithAccountAndAmount(party1, 1000000)
+
+	auctionOrders := []*types.Order{
+		// Limit Orders
+		{
+			Type:        types.OrderTypeLimit,
+			Size:        5,
+			Remaining:   5,
+			Price:       num.NewUint(1000),
+			Side:        types.SideBuy,
+			Party:       party0,
+			TimeInForce: types.OrderTimeInForceGTC,
+		},
+		{
+			Type:        types.OrderTypeLimit,
+			Size:        5,
+			Remaining:   5,
+			Price:       num.NewUint(1000),
+			Side:        types.SideSell,
+			Party:       party1,
+			TimeInForce: types.OrderTimeInForceGTC,
+		},
+		{
+			Type:        types.OrderTypeLimit,
+			Size:        1,
+			Remaining:   1,
+			Price:       num.NewUint(900),
+			Side:        types.SideBuy,
+			Party:       party0,
+			TimeInForce: types.OrderTimeInForceGTC,
+		},
+		{
+			Type:        types.OrderTypeLimit,
+			Size:        1,
+			Remaining:   1,
+			Price:       num.NewUint(1200),
+			Side:        types.SideSell,
+			Party:       party1,
+			TimeInForce: types.OrderTimeInForceGTC,
+		},
+	}
+
+	// submit the auctions orders
+	tm.WithSubmittedOrders(t, auctionOrders...)
+
+	// update the time to get out of auction
+	tm.market.OnTick(context.Background(), auctionEnd)
+
+	assert.Equal(t,
+		tm.market.GetMarketData().MarketTradingMode,
+		types.MarketTradingModeContinuous,
+	)
+
+	if setMarkPrice {
+		// now set the markprice
+		mpOrders := []*types.Order{
+			{
+				Type:        types.OrderTypeLimit,
+				Size:        1,
+				Remaining:   1,
+				Price:       num.NewUint(900),
+				Side:        types.SideSell,
+				Party:       party1,
+				TimeInForce: types.OrderTimeInForceGTC,
+			},
+			{
+				Type:        types.OrderTypeLimit,
+				Size:        1,
+				Remaining:   1,
+				Price:       num.NewUint(1200),
+				Side:        types.SideBuy,
+				Party:       party0,
+				TimeInForce: types.OrderTimeInForceGTC,
+			},
+		}
+		// submit the auctions orders
+		tm.WithSubmittedOrders(t, mpOrders...)
+	}
+}
+
+func mustOrderFromProto(o *vegapb.Order) *types.Order {
+	order, _ := types.OrderFromProto(o)
+	return order
+}
+
 func (tm *testMarket) lastOrderUpdate(id string) *types.Order {
 	var order *types.Order
 	for _, e := range tm.events {
@@ -608,7 +793,7 @@ func addAccountWithAmount(market *testMarket, party string, amnt uint64) *types.
 }
 
 // WithSubmittedLiquidityProvision Submits a Liquidity Provision and asserts that it was created without errors.
-func (tm *testMarket) WithSubmittedLiquidityProvision(t *testing.T, party string, amount uint64, fee string, buys, sells []*types.LiquidityOrder) *testMarket {
+func (tm *testMarket) WithSubmittedLiquidityProvision(t *testing.T, party string, amount uint64, fee string) *testMarket {
 	t.Helper()
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
@@ -617,8 +802,6 @@ func (tm *testMarket) WithSubmittedLiquidityProvision(t *testing.T, party string
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(amount),
 		Fee:              f,
-		Buys:             buys,
-		Sells:            sells,
 	}
 
 	require.NoError(t,
@@ -994,12 +1177,6 @@ func TestLiquidityFeeWhenTargetStakeDropsDueToFlowOfTime(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: commitment1,
 		Fee:              fee1,
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lps, lp1, vgcrypto.RandomHash()))
 	lps.Fee = fee2
@@ -1729,14 +1906,6 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(500),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
@@ -1933,14 +2102,6 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(5000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction by moving time
@@ -2114,14 +2275,6 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(5000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave auction
@@ -2376,14 +2529,6 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(5000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// increase time, so we can leave opening auction
@@ -2616,14 +2761,6 @@ func TestTriggerByMarketOrder(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(5000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// now leave auction
@@ -2853,14 +2990,6 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(5000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave auction
@@ -3083,14 +3212,6 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(50000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
@@ -3195,14 +3316,6 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(500000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 20),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 23),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 20),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 23),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, lpprov, vgcrypto.RandomHash()))
 	// leave opening auction
@@ -3318,12 +3431,6 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(2475),
 		Fee:              num.DecimalFromFloat(0.05),
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
-		},
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
-		},
 	}
 
 	require.NoError(t,
@@ -3427,12 +3534,6 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
-		},
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
-		},
 	}
 
 	err = tm.market.SubmitLiquidityProvision(context.Background(), lp1, party1, vgcrypto.RandomHash())
@@ -3444,12 +3545,6 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(100),
 		Fee:              num.DecimalFromFloat(0.06),
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
-		},
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
-		},
 	}
 
 	err = tm.market.SubmitLiquidityProvision(context.Background(), lp2, party2, vgcrypto.RandomHash())
@@ -3486,12 +3581,6 @@ func TestSubmitLiquidityProvisionWithNoOrdersOnBook(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(250),
 		Fee:              num.DecimalFromFloat(0.05),
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
-		},
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
-		},
 	}
 
 	err := tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, vgcrypto.RandomHash())
@@ -3543,12 +3632,6 @@ func TestSubmitLiquidityProvisionInOpeningAuction(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(250),
 		Fee:              num.DecimalFromFloat(0.05),
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
-		},
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
-		},
 	}
 
 	require.Equal(t, types.MarketTradingModeOpeningAuction, tm.market.GetMarketData().MarketTradingMode)
@@ -3661,12 +3744,6 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(2000),
 		Fee:              num.DecimalFromFloat(0.05),
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
-		},
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
-		},
 	}
 
 	err = tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, vgcrypto.RandomHash())
@@ -4004,14 +4081,6 @@ func TestOrderBook_Crash2599(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(27500),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
@@ -4252,14 +4321,6 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(25000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	tm.now = afterOpeningAuction
@@ -4368,14 +4429,6 @@ func TestOrderBook_Crash2718(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(5000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
@@ -4595,14 +4648,6 @@ func TestOrderBook_CrashWithDistressedPartyPeggedOrderNotRemovedFromPeggedList27
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(5000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	now = now.Add(2 * time.Second)
@@ -4773,14 +4818,6 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(5000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
@@ -4879,14 +4916,6 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder2(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(5000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
@@ -4989,14 +5018,6 @@ func TestOrderBook_AmendFilledWithActiveStatus2736(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(25000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
@@ -5060,14 +5081,6 @@ func TestOrderBook_PeggedOrderReprice2748(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(12500),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
@@ -5153,14 +5166,6 @@ func TestOrderBook_AmendGFNToGTCOrGTTNotAllowed2486(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(25000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
@@ -5367,14 +5372,6 @@ func TestOrderBook_ParkPeggedOrderWhenMovingToAuction(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(25000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
@@ -5423,21 +5420,10 @@ func TestMarket_LeaveAuctionRepricePeggedOrdersShouldFailIfNoMargin(t *testing.T
 	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 
-	buys := []*types.LiquidityOrder{
-		newLiquidityOrder(types.PeggedReferenceBestBid, 10, 50),
-		newLiquidityOrder(types.PeggedReferenceBestBid, 20, 50),
-	}
-	sells := []*types.LiquidityOrder{
-		newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 50),
-		newLiquidityOrder(types.PeggedReferenceBestAsk, 20, 50),
-	}
-
 	lps := &types.LiquidityProvisionSubmission{
 		Fee:              num.DecimalFromFloat(0.01),
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(1000000000),
-		Buys:             buys,
-		Sells:            sells,
 	}
 
 	// Because we do not have enough funds to support our commitment level, we should reject this call
@@ -5478,21 +5464,10 @@ func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
 
 	require.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
 
-	buys := []*types.LiquidityOrder{
-		newLiquidityOrder(types.PeggedReferenceBestBid, 10, 50),
-		newLiquidityOrder(types.PeggedReferenceBestBid, 20, 50),
-	}
-	sells := []*types.LiquidityOrder{
-		newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 50),
-		newLiquidityOrder(types.PeggedReferenceBestAsk, 20, 50),
-	}
-
 	lps := &types.LiquidityProvisionSubmission{
 		Fee:              num.DecimalFromFloat(0.01),
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(1000000000),
-		Buys:             buys,
-		Sells:            sells,
 	}
 
 	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-C", vgcrypto.RandomHash())
@@ -5537,14 +5512,6 @@ func TestOrderBook_ParkLiquidityProvisionOrders(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2000, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1000, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1000, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 1500, 13),
-		},
 	}
 
 	require.NoError(t,
@@ -5572,14 +5539,6 @@ func TestOrderBook_RemovingLiquidityProvisionOrders(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2000, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1000, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1000, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 1500, 13),
-		},
 	}
 
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-A", vgcrypto.RandomHash()))
@@ -5647,14 +5606,6 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(500),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 25),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 3, 25),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 2, 25),
-			newLiquidityOrder(types.PeggedReferenceMid, 3, 25),
-		},
 	}
 
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, lpParty, vgcrypto.RandomHash()))
@@ -5830,14 +5781,6 @@ func TestOrderBook_PartiallyFilledMarketOrderThatWouldWashFOKBuy(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(25000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 20, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 10, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// Leave auction
@@ -6078,14 +6021,6 @@ func TestLPOrdersRollback(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(995000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceMid, 800, 22),
-			newLiquidityOrder(types.PeggedReferenceMid, 900, 64),
-		},
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceMid, 1200, 45),
-			newLiquidityOrder(types.PeggedReferenceMid, 1300, 66),
-		},
 	}
 
 	tm.events = nil
@@ -6094,14 +6029,6 @@ func TestLPOrdersRollback(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(2650725),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lpp, "lpprov", vgcrypto.RandomHash()))
 	// Leave the auction
@@ -6424,16 +6351,7 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 	lp := &types.LiquidityProvisionSubmission{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(2650725),
-		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
-	}
+		Fee:              num.DecimalFromFloat(0.01)}
 
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-2", vgcrypto.RandomHash()))
 	// Leave the auction
@@ -6586,14 +6504,6 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(2000000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-2", vgcrypto.RandomHash()))
@@ -6609,14 +6519,6 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(1000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 
 	// cleanup the events, we want to make sure our orders are created
@@ -6898,14 +6800,6 @@ func Test2963EnsureMarketValueProxyAndEquityShareAreInMarketData(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(2000000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 
 	// Leave the auction
@@ -6921,14 +6815,6 @@ func Test2963EnsureMarketValueProxyAndEquityShareAreInMarketData(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(1000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 
 	// cleanup the events, we want to make sure our orders are created
@@ -7080,14 +6966,6 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(2650725),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-2", vgcrypto.RandomHash()))
 
@@ -7103,14 +6981,6 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(1000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 
 	// cleanup the events, we want to make sure our orders are created
@@ -7242,14 +7112,6 @@ func TestAverageEntryValuation(t *testing.T) {
 		CommitmentAmount: num.NewUint(80000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
-			newLiquidityOrder(types.PeggedReferenceMid, 5, 2),
-		},
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
-		},
 	}
 
 	// submit our lp
@@ -7355,14 +7217,6 @@ func TestBondAccountIsReleasedItMarketRejected(t *testing.T) {
 		CommitmentAmount: num.NewUint(150000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
-			newLiquidityOrder(types.PeggedReferenceMid, 5, 2),
-		},
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
-		},
 	}
 
 	// submit our lp
@@ -7452,24 +7306,12 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: lp1Commitment,
 		Fee:              num.DecimalFromFloat(0.05),
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
-		},
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
-		},
 	}
 
 	lp2sub := &types.LiquidityProvisionSubmission{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: lp2Commitment,
 		Fee:              num.DecimalFromFloat(0.1),
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 1),
-		},
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 1),
-		},
 	}
 
 	require.NoError(t,
@@ -7775,12 +7617,6 @@ func TestLiquidityMonitoring_BestBidAskExistAfterAuction(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(lp1Commitment),
 		Fee:              num.DecimalFromFloat(0.05),
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
-		},
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
-		},
 	}
 
 	require.NoError(t,
@@ -7905,14 +7741,6 @@ func TestAmendTrade(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(55000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 50),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 53),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 50),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 53),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	tm.EndOpeningAuction(t, auctionEnd, false)
@@ -8009,12 +7837,6 @@ func Test_7017_UpdatingMarketDuringOpeningAuction(t *testing.T) {
 		CommitmentAmount: num.NewUint(70000),
 		Fee:              num.DecimalFromFloat(0.05),
 		Reference:        "ref-lp-submission-1",
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceMid, 1, 1),
-		},
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceMid, 1, 1),
-		},
 	}
 
 	require.NoError(t,
