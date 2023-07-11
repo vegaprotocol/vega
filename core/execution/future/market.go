@@ -1438,15 +1438,26 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 		return nil, common.ErrTradingNotAllowed
 	}
 
+	now := m.timeService.GetTimeNow()
 	orderCnt := 0
 	if fallsBelow != nil {
+		if fallsBelow.Expiry.Expires() && fallsBelow.Expiry.ExpiresAt.Before(now) {
+			rejectStopOrders(fallsBelow, risesAbove)
+			return nil, common.ErrStopOrderExpiryInThePast
+		}
 		if !fallsBelow.OrderSubmission.ReduceOnly {
+			rejectStopOrders(fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderMustBeReduceOnly
 		}
 		orderCnt++
 	}
 	if risesAbove != nil {
+		if risesAbove.Expiry.Expires() && risesAbove.Expiry.ExpiresAt.Before(now) {
+			rejectStopOrders(fallsBelow, risesAbove)
+			return nil, common.ErrStopOrderExpiryInThePast
+		}
 		if !risesAbove.OrderSubmission.ReduceOnly {
+			rejectStopOrders(fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderMustBeReduceOnly
 		}
 		orderCnt++

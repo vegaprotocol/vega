@@ -726,6 +726,14 @@ func (r RowWrapper) MustDurationSec(name string) time.Duration {
 	return time.Duration(n) * time.Second
 }
 
+func (r RowWrapper) MustDurationSec2(name string) time.Duration {
+	n := r.MustI64(name)
+	if n == 0 {
+		return 0
+	}
+	return time.Duration(n) * time.Second
+}
+
 func (r RowWrapper) DurationSec(name string) time.Duration {
 	n := r.U64(name)
 	if n == 0 {

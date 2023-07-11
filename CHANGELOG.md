@@ -23,6 +23,7 @@
 - [8729](https://github.com/vegaprotocol/vega/issues/8729) - Stop order direction not set in datanode
 - [8545](https://github.com/vegaprotocol/vega/issues/8545) - Block Explorer pagination does not order correctly.
 - [8748](https://github.com/vegaprotocol/vega/issues/8748) - `ListSuccessorMarkets` does not return results.
+- [8749](https://github.com/vegaprotocol/vega/issues/8749) - Ensure stop order expiry is in the future
 
 
 ## 0.72.1

@@ -1730,3 +1730,56 @@ Scenario: A stop order cannot be triggered by a stop order expiring during an au
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
       | party1 | 10     | -300           | -300         |
+
+
+  Scenario: A stop order expiring in the past is rejected
+
+    # setup accounts
+    Given time is updated to "2019-11-30T00:00:00Z"
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000    |
+      | party2 | BTC   | 10000    |
+      | party3 | BTC   | 10000    |
+      | aux    | BTC   | 100000   |
+      | aux2   | BTC   | 100000   |
+      | aux3   | BTC   | 100000   |
+      | lpprov | BTC   | 90000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux3   | ETH/DEC19 | sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    # setup party1 position, open a 10 long position
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1| ETH/DEC19 | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2| ETH/DEC19 | buy  | 10     | 50    | 1                | TYPE_LIMIT | TIF_GTC |
+
+    # volume for the stop trade
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3| ETH/DEC19 | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+
+    When time is updated to "2019-11-30T00:00:10Z"
+    # create party1 stop order, no trade resulting, expires in 10 secs
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only  | ra price trigger | error | reference | so expires in | so expiry strategy |
+      | party1| ETH/DEC19 | buy  | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce| 75               | stop order expiry in the past      | stop1     | -10 | EXPIRY_STRATEGY_SUBMIT |
+
+    Then the stop orders should have the following states
+      | party  | market id | status          | reference |
+      | party1 | ETH/DEC19 | STATUS_REJECTED | stop1     |
