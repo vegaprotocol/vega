@@ -101,3 +101,58 @@ func (o OrderReferenceCheck) HasMoved(changes uint8) bool {
 		(o.PeggedOrder.Reference == types.PeggedReferenceBestAsk &&
 			changes&PriceMoveBestAsk > 0)
 }
+
+func (m *Market) checkForReferenceMoves(
+	ctx context.Context, orderUpdates []*types.Order, forceUpdate bool,
+) {
+	if m.as.InAuction() {
+		return
+	}
+
+	// will be set to non-nil if a peg is missing
+	_, _, err := m.getBestStaticPricesDecimal()
+
+	newBestBid, _ := m.getBestStaticBidPrice()
+	newBestAsk, _ := m.getBestStaticAskPrice()
+	newMidBuy, _ := m.getStaticMidPrice(types.SideBuy)
+	newMidSell, _ := m.getStaticMidPrice(types.SideSell)
+
+	// Look for a move
+	var changes uint8
+	if !forceUpdate {
+		if newMidBuy.NEQ(m.lastMidBuyPrice) || newMidSell.NEQ(m.lastMidSellPrice) {
+			changes |= PriceMoveMid
+		}
+		if newBestBid.NEQ(m.lastBestBidPrice) {
+			changes |= PriceMoveBestBid
+		}
+		if newBestAsk.NEQ(m.lastBestAskPrice) {
+			changes |= PriceMoveBestAsk
+		}
+	} else {
+		changes = PriceMoveAll
+	}
+
+	// now we can start all special order repricing...
+	if err == nil {
+		orderUpdates = m.repriceAllSpecialOrders(ctx, changes, orderUpdates)
+	} else {
+		orderUpdates = nil
+	}
+
+	// Update the last price values
+	// no need to clone the prices, they're not used in calculations anywhere in this function
+	m.lastMidBuyPrice = newMidBuy
+	m.lastMidSellPrice = newMidSell
+	m.lastBestBidPrice = newBestBid
+	m.lastBestAskPrice = newBestAsk
+
+	// now we had new orderUpdates while processing those,
+	// that would means someone got distressed, so some order
+	// got uncrossed, so we need to check all these again.
+	// we do not use the forceUpdate ffield here as it's
+	// not required that prices moved though
+	if len(orderUpdates) > 0 {
+		m.checkForReferenceMoves(ctx, orderUpdates, false)
+	}
+}
