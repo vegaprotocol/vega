@@ -16,7 +16,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"sort"
 	"sync"
 	"time"
@@ -46,6 +45,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 // LiquidityMonitor.
@@ -316,6 +316,19 @@ func NewMarket(
 	return market, nil
 }
 
+func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
+	if epoch.Action == vega.EpochAction_EPOCH_ACTION_START {
+		m.liquidity.OnEpochStart(ctx, m.timeService.GetTimeNow(), m.markPrice, m.midPrice(), m.getTargetStake(), m.positionFactor)
+	} else if epoch.Action == vega.EpochAction_EPOCH_ACTION_END {
+		m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow())
+		m.updateLiquidityFee(ctx)
+	}
+}
+
+func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
+	// TODO karel - implement
+}
+
 func (m *Market) IsSucceeded() bool {
 	return m.succeeded
 }
@@ -435,6 +448,17 @@ func (m *Market) GetMarketState() types.MarketState {
 func (m *Market) priceToMarketPrecision(price *num.Uint) *num.Uint {
 	// we assume the price is cloned correctly already
 	return price.Div(price, m.priceFactor)
+}
+
+func (m *Market) midPrice() *num.Uint {
+	bestBidPrice, _, _ := m.matching.BestBidPriceAndVolume()
+	bestOfferPrice, _, _ := m.matching.BestOfferPriceAndVolume()
+	two := num.NewUint(2)
+	midPrice := num.UintZero()
+	if !bestBidPrice.IsZero() && !bestOfferPrice.IsZero() {
+		midPrice = midPrice.Div(num.Sum(bestBidPrice, bestOfferPrice), two)
+	}
+	return midPrice
 }
 
 func (m *Market) GetMarketData() types.MarketData {
@@ -705,6 +729,8 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 		return false
 	}
 
+	m.liquidity.OnTick(ctx, t)
+
 	// check auction, if any. If we leave auction, MTM is performed in this call
 	m.checkAuction(ctx, t, m.idgen)
 	timer.EngineTimeCounterAdd()
@@ -755,6 +781,8 @@ func (m *Market) BlockEnd(ctx context.Context) {
 	m.releaseExcessMargin(ctx, m.position.Positions()...)
 	// send position events
 	m.position.FlushPositionEvents(ctx)
+
+	m.liquidity.EndBlock(m.markPrice, m.midPrice(), m.positionFactor)
 }
 
 func (m *Market) removeAllStopOrders(
@@ -883,9 +911,8 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time, finalState types.
 	}
 
 	// final distribution of liquidity fees
-	// TODO karel - consider having one function for this instead of calling both AllocateFees and OnEpochEnd
 	if err := m.liquidity.AllocateFees(ctx); err != nil {
-		log.Panic(err)
+		m.log.Panic("failed to allocate liquidity provision fees", logging.Error(err))
 	}
 
 	m.liquidity.OnEpochEnd(ctx, t)
