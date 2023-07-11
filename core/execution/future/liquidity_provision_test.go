@@ -35,14 +35,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newLiquidityOrder(reference types.PeggedReference, offset uint64, proportion uint32) *types.LiquidityOrder {
-	return &types.LiquidityOrder{
-		Reference:  reference,
-		Proportion: proportion,
-		Offset:     num.NewUint(offset),
-	}
-}
-
 func TestSubmit(t *testing.T) {
 	pMonitorSettings := &types.PriceMonitoringSettings{
 		Parameters: &types.PriceMonitoringParameters{
@@ -65,22 +57,11 @@ func TestSubmit(t *testing.T) {
 		tm.mas.AuctionStarted(ctx, tm.now)
 		tm.market.EnterAuction(ctx)
 
-		buys := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 10, 50),
-			newLiquidityOrder(types.PeggedReferenceBestBid, 20, 50),
-		}
-		sells := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 50),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 20, 50),
-		}
-
 		// Submitting a zero or smaller fee should cause a reject
 		lps := &types.LiquidityProvisionSubmission{
 			Fee:              num.DecimalFromFloat(-0.50),
 			MarketID:         tm.market.GetID(),
 			CommitmentAmount: num.NewUint(1000),
-			Buys:             buys,
-			Sells:            sells,
 		}
 
 		err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
@@ -92,8 +73,6 @@ func TestSubmit(t *testing.T) {
 			Fee:              num.DecimalFromFloat(1.01),
 			MarketID:         tm.market.GetID(),
 			CommitmentAmount: num.NewUint(1000),
-			Buys:             buys,
-			Sells:            sells,
 		}
 
 		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
@@ -114,21 +93,11 @@ func TestSubmit(t *testing.T) {
 		tm.mas.AuctionStarted(ctx, tm.now)
 		tm.market.EnterAuction(ctx)
 
-		buys := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 10, 50),
-			newLiquidityOrder(types.PeggedReferenceBestBid, 20, 50),
-		}
-		sells := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 50),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 20, 50),
-		}
-
 		// Submitting a shape with no buys should cause a reject
 		lps := &types.LiquidityProvisionSubmission{
 			Fee:              num.DecimalFromFloat(0.01),
 			MarketID:         tm.market.GetID(),
 			CommitmentAmount: num.NewUint(1000),
-			Sells:            sells,
 		}
 
 		err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
@@ -140,51 +109,10 @@ func TestSubmit(t *testing.T) {
 			Fee:              num.DecimalFromFloat(0.01),
 			MarketID:         tm.market.GetID(),
 			CommitmentAmount: num.NewUint(1000),
-			Buys:             buys,
 		}
 
 		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
 		require.Error(t, err)
-		assert.Equal(t, 0, tm.market.GetLPSCount())
-	})
-
-	// We have a limit to the number of orders in each shape of a liquidity provision submission
-	// to prevent a user spaming the system. Place an LPSubmission order with too many
-	// orders in to make it reject it.
-	t.Run("check for too many shape levels", func(t *testing.T) {
-		tm := getTestMarket(t, now, nil, nil)
-
-		// Create a new party account with very little funding
-		addAccountWithAmount(tm, "party-A", 10000000)
-		tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-
-		// Start the opening auction
-		tm.mas.StartOpeningAuction(tm.now, &types.AuctionDuration{Duration: 10})
-		tm.mas.AuctionStarted(ctx, tm.now)
-		tm.market.EnterAuction(ctx)
-
-		// Create a buy side that has too many items
-		buys := make([]*types.LiquidityOrder, 200)
-		for i := 0; i < 200; i++ {
-			buys[i] = newLiquidityOrder(types.PeggedReferenceBestBid, 10+1, 1)
-		}
-
-		sells := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 50),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 20, 50),
-		}
-
-		// Submitting a correct entry
-		lps := &types.LiquidityProvisionSubmission{
-			Fee:              num.DecimalFromFloat(0.01),
-			MarketID:         tm.market.GetID(),
-			CommitmentAmount: num.NewUint(1000),
-			Buys:             buys,
-			Sells:            sells,
-		}
-
-		err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
-		require.EqualError(t, err, "SIDE_BUY shape size exceed max (5)")
 		assert.Equal(t, 0, tm.market.GetLPSCount())
 	})
 
@@ -234,14 +162,6 @@ func TestSubmit(t *testing.T) {
 			CommitmentAmount: num.NewUint(70000),
 			Fee:              num.DecimalFromFloat(-0.1),
 			Reference:        "ref-lp-submission-1",
-			Buys: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
-				newLiquidityOrder(types.PeggedReferenceMid, 5, 2),
-			},
-			Sells: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
-			},
 		}
 
 		// submit our lp
@@ -300,22 +220,11 @@ func TestSubmit(t *testing.T) {
 		require.NotNil(t, o3conf)
 		require.NoError(t, err)
 
-		buys := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 50),
-			newLiquidityOrder(types.PeggedReferenceBestBid, 2, 50),
-		}
-		sells := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 50),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 50),
-		}
-
 		// Submitting a correct entry
 		lps := &types.LiquidityProvisionSubmission{
 			Fee:              num.DecimalFromFloat(0.01),
 			MarketID:         tm.market.GetID(),
 			CommitmentAmount: num.NewUint(1000),
-			Buys:             buys,
-			Sells:            sells,
 		}
 
 		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
@@ -375,22 +284,11 @@ func TestSubmit(t *testing.T) {
 		require.NotNil(t, o31conf)
 		require.NoError(t, err)
 
-		buys := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 50),
-			newLiquidityOrder(types.PeggedReferenceMid, 6, 50),
-		}
-		sells := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 50),
-			newLiquidityOrder(types.PeggedReferenceMid, 6, 50),
-		}
-
 		// Submitting a correct entry
 		lps := &types.LiquidityProvisionSubmission{
 			Fee:              num.DecimalFromFloat(0.01),
 			MarketID:         tm.market.GetID(),
 			CommitmentAmount: num.NewUint(1000),
-			Buys:             buys,
-			Sells:            sells,
 		}
 
 		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
@@ -510,23 +408,11 @@ func TestSubmit(t *testing.T) {
 		// Check we are in price auction
 		assert.Equal(t, types.AuctionTriggerPrice, tm.market.GetMarketData().Trigger)
 
-		// Now try to submit a LP submission
-		buys := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 50),
-			newLiquidityOrder(types.PeggedReferenceMid, 2, 50),
-		}
-		sells := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 50),
-			newLiquidityOrder(types.PeggedReferenceMid, 2, 50),
-		}
-
 		// Submitting a correct entry
 		lps := &types.LiquidityProvisionSubmission{
 			Fee:              num.DecimalFromFloat(0.01),
 			MarketID:         tm.market.GetID(),
 			CommitmentAmount: num.NewUint(1000),
-			Buys:             buys,
-			Sells:            sells,
 		}
 
 		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
@@ -572,22 +458,11 @@ func TestSubmit(t *testing.T) {
 		require.NotNil(t, peggedconf)
 		require.NoError(t, err)
 
-		buys := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 50),
-			newLiquidityOrder(types.PeggedReferenceMid, 6, 50),
-		}
-		sells := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 50),
-			newLiquidityOrder(types.PeggedReferenceMid, 6, 50),
-		}
-
 		// Submitting a correct entry
 		lps := &types.LiquidityProvisionSubmission{
 			Fee:              num.DecimalFromFloat(0.01),
 			MarketID:         tm.market.GetID(),
 			CommitmentAmount: num.NewUint(1000),
-			Buys:             buys,
-			Sells:            sells,
 		}
 
 		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
@@ -652,16 +527,10 @@ func TestSubmit(t *testing.T) {
 		require.NotNil(t, o4conf)
 		require.NoError(t, err)
 
-		// Submit a LP submission
-		buys := []*types.LiquidityOrder{newLiquidityOrder(types.PeggedReferenceBestBid, 500, 50)}
-		sells := []*types.LiquidityOrder{newLiquidityOrder(types.PeggedReferenceBestAsk, 500, 50)}
-
 		lps := &types.LiquidityProvisionSubmission{
 			Fee:              num.DecimalFromFloat(0.01),
 			MarketID:         tm.market.GetID(),
 			CommitmentAmount: num.NewUint(5000),
-			Buys:             buys,
-			Sells:            sells,
 		}
 
 		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
@@ -742,14 +611,6 @@ func TestSubmit(t *testing.T) {
 			CommitmentAmount: num.NewUint(150000),
 			Fee:              num.DecimalFromFloat(0.01),
 			Reference:        "ref-lp-submission-1",
-			Buys: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
-				newLiquidityOrder(types.PeggedReferenceMid, 5, 2),
-			},
-			Sells: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
-			},
 		}
 
 		// submit our lp
@@ -834,12 +695,6 @@ func TestSubmit(t *testing.T) {
 			CommitmentAmount: num.NewUint(50490),
 			Fee:              num.DecimalFromFloat(0.01),
 			Reference:        "ref-lp-submission-1",
-			Buys: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
-			},
-			Sells: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 2),
-			},
 		}
 
 		// submit our lp
@@ -1035,15 +890,6 @@ func TestSubmit(t *testing.T) {
 			CommitmentAmount: num.NewUint(10000000),
 			Fee:              num.DecimalFromFloat(0.5),
 			Reference:        "ref-lp-submission-1",
-			Buys: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestBid, 201, 99),
-				newLiquidityOrder(types.PeggedReferenceBestBid, 200, 1),
-			},
-			Sells: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 100, 1),
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 101, 2),
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 102, 98),
-			},
 		}
 
 		// submit our lp
@@ -1248,12 +1094,6 @@ func TestSubmit(t *testing.T) {
 			CommitmentAmount: num.NewUint(10000000),
 			Fee:              num.DecimalFromFloat(0.5),
 			Reference:        "ref-lp-submission-1",
-			Buys: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestBid, 200, 1),
-			},
-			Sells: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 102, 98),
-			},
 		}
 
 		// submit our lp
@@ -1339,15 +1179,6 @@ func TestSubmit(t *testing.T) {
 			CommitmentAmount: num.NewUint(10000000),
 			Fee:              num.DecimalFromFloat(0.5),
 			Reference:        "ref-lp-submission-1",
-			Buys: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestBid, 201, 99),
-				newLiquidityOrder(types.PeggedReferenceBestBid, 200, 1),
-			},
-			Sells: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 100, 1),
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 101, 2),
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 102, 98),
-			},
 		}
 
 		// submit our lp
@@ -1535,15 +1366,6 @@ func TestSubmit(t *testing.T) {
 			CommitmentAmount: num.NewUint(10000000),
 			Fee:              num.DecimalFromFloat(0.5),
 			Reference:        "ref-lp-submission-1",
-			Buys: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestBid, 201, 99),
-				newLiquidityOrder(types.PeggedReferenceBestBid, 200, 1),
-			},
-			Sells: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 100, 1),
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 101, 2),
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 102, 98),
-			},
 		}
 
 		// submit our lp
@@ -1709,15 +1531,6 @@ func TestSubmit(t *testing.T) {
 			CommitmentAmount: num.NewUint(10000),
 			Fee:              num.DecimalFromFloat(0.5),
 			Reference:        "ref-lp-submission-1",
-			Buys: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestBid, 201, 99),
-				newLiquidityOrder(types.PeggedReferenceBestBid, 200, 1),
-			},
-			Sells: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 100, 1),
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 101, 2),
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 102, 98),
-			},
 		}
 
 		// submit our lp
@@ -1847,15 +1660,6 @@ func TestSubmit(t *testing.T) {
 			CommitmentAmount: num.NewUint(10000),
 			Fee:              num.DecimalFromFloat(0.5),
 			Reference:        "ref-lp-submission-1",
-			Buys: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestBid, 201, 99),
-				newLiquidityOrder(types.PeggedReferenceBestBid, 1500, 1),
-			},
-			Sells: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 100, 1),
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 101, 2),
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 102, 98),
-			},
 		}
 
 		// submit our lp
@@ -1978,12 +1782,6 @@ func TestSubmit(t *testing.T) {
 			CommitmentAmount: num.NewUint(10000),
 			Fee:              num.DecimalFromFloat(0.5),
 			Reference:        "ref-lp-submission-1",
-			Buys: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestBid, 10, 100),
-			},
-			Sells: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 100),
-			},
 		}
 
 		// submit our lp
@@ -2187,14 +1985,6 @@ func TestAmend(t *testing.T) {
 			CommitmentAmount: num.NewUint(70000),
 			Fee:              num.DecimalFromFloat(0.5),
 			Reference:        "ref-lp-submission-1",
-			Buys: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
-				newLiquidityOrder(types.PeggedReferenceMid, 5, 2),
-			},
-			Sells: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
-			},
 		}
 
 		// submit our lp
@@ -2227,14 +2017,6 @@ func TestAmend(t *testing.T) {
 			CommitmentAmount: num.NewUint(20000),
 			Fee:              num.DecimalFromFloat(0.1),
 			Reference:        "ref-lp-submission-1",
-			Buys: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
-				newLiquidityOrder(types.PeggedReferenceMid, 5, 2),
-			},
-			Sells: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
-			},
 		}
 
 		// submit our lp
@@ -2308,16 +2090,11 @@ func TestAmend(t *testing.T) {
 		// We shouldn't have a liquidity fee yet
 		// TODO	assert.Equal(t, 0.0, tm.market.GetLiquidityFee())
 
-		buys := []*types.LiquidityOrder{newLiquidityOrder(types.PeggedReferenceBestBid, 1, 50)}
-		sells := []*types.LiquidityOrder{newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 50)}
-
 		// Submitting a correct entry
 		lps := &types.LiquidityProvisionSubmission{
 			Fee:              num.DecimalFromFloat(0.01),
 			MarketID:         tm.market.GetID(),
 			CommitmentAmount: num.NewUint(1000),
-			Buys:             buys,
-			Sells:            sells,
 		}
 
 		err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
@@ -2378,22 +2155,11 @@ func TestAmend(t *testing.T) {
 		tm.market.LeaveAuctionWithIDGen(ctx, now.Add(time.Second*20), newTestIDGenerator())
 		// mark price is set at 10, orders on book
 
-		buys := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 10, 50),
-			newLiquidityOrder(types.PeggedReferenceBestBid, 20, 50),
-		}
-		sells := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 50),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 20, 50),
-		}
-
 		// Submitting a correct entry
 		lps := &types.LiquidityProvisionSubmission{
 			Fee:              num.DecimalFromFloat(0.01),
 			MarketID:         tm.market.GetID(),
 			CommitmentAmount: num.NewUint(1000),
-			Buys:             buys,
-			Sells:            sells,
 		}
 
 		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
@@ -2405,8 +2171,6 @@ func TestAmend(t *testing.T) {
 			Fee:              num.DecimalFromFloat(0.01),
 			MarketID:         tm.market.GetID(),
 			CommitmentAmount: num.NewUint(1),
-			Buys:             buys,
-			Sells:            sells,
 		}
 
 		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
@@ -2448,22 +2212,11 @@ func TestAmend(t *testing.T) {
 		require.NotNil(t, o31conf)
 		require.NoError(t, err)
 
-		buys := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 50),
-			newLiquidityOrder(types.PeggedReferenceBestBid, 2, 50),
-		}
-		sells := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 50),
-			newLiquidityOrder(types.PeggedReferenceMid, 2, 50),
-		}
-
 		// Submitting a correct entry
 		lps := &types.LiquidityProvisionSubmission{
 			Fee:              num.DecimalFromFloat(0.01),
 			MarketID:         tm.market.GetID(),
 			CommitmentAmount: num.NewUint(1000),
-			Buys:             buys,
-			Sells:            sells,
 		}
 
 		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
@@ -2497,11 +2250,6 @@ func TestAmend(t *testing.T) {
 		// Check we have the right amount of bond balance
 		assert.Equal(t, num.NewUint(500), tm.market.GetBondAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset))
 
-		// Change the shape of the lp submission
-		buys = []*types.LiquidityOrder{newLiquidityOrder(types.PeggedReferenceBestBid, 1, 50)}
-		sells = []*types.LiquidityOrder{newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 50)}
-		lpa.Buys = buys
-		lpa.Sells = sells
 		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 		assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
@@ -2541,22 +2289,11 @@ func TestAmend(t *testing.T) {
 		require.NotNil(t, o3conf)
 		require.NoError(t, err)
 
-		buys := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 50),
-			newLiquidityOrder(types.PeggedReferenceBestBid, 2, 50),
-		}
-		sells := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 50),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 50),
-		}
-
 		// Submitting a correct entry
 		lps := &types.LiquidityProvisionSubmission{
 			Fee:              num.DecimalFromFloat(0.01),
 			MarketID:         tm.market.GetID(),
 			CommitmentAmount: num.NewUint(1000),
-			Buys:             buys,
-			Sells:            sells,
 		}
 
 		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
@@ -2606,22 +2343,11 @@ func TestAmend(t *testing.T) {
 		tm.mas.AuctionStarted(ctx, now)
 		tm.market.EnterAuction(ctx)
 
-		buys := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 50),
-			newLiquidityOrder(types.PeggedReferenceMid, 6, 50),
-		}
-		sells := []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 50),
-			newLiquidityOrder(types.PeggedReferenceMid, 6, 50),
-		}
-
 		// Submitting a correct entry
 		lps := &types.LiquidityProvisionSubmission{
 			Fee:              num.DecimalFromFloat(0.01),
 			MarketID:         tm.market.GetID(),
 			CommitmentAmount: num.NewUint(1000),
-			Buys:             buys,
-			Sells:            sells,
 		}
 
 		err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
@@ -2703,17 +2429,12 @@ func TestAmend(t *testing.T) {
 		tm.mas.AuctionStarted(ctx, now)
 		tm.market.EnterAuction(ctx)
 
-		buys := []*types.LiquidityOrder{newLiquidityOrder(types.PeggedReferenceBestBid, 1, 50)}
-		sells := []*types.LiquidityOrder{newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 50)}
-
 		// Submitting a correct entry
 		lps := &types.LiquidityProvisionSubmission{
 			Fee:              num.DecimalFromFloat(0.01),
 			MarketID:         tm.market.GetID(),
 			CommitmentAmount: num.NewUint(1000),
 			Reference:        "ref-lp-1",
-			Buys:             buys,
-			Sells:            sells,
 		}
 
 		err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
@@ -2850,14 +2571,6 @@ func TestLpPriceRange(t *testing.T) {
 		CommitmentAmount: num.NewUint(3000),
 		Fee:              num.DecimalFromFloat(0.1),
 		Reference:        "ref-lp-submission-1",
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 1, 20),
-		},
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 30),
-			newLiquidityOrder(types.PeggedReferenceMid, 1, 15),
-		},
 	}
 
 	require.NoError(t,
@@ -2886,26 +2599,11 @@ func TestLpPriceRange(t *testing.T) {
 
 	tm.market.Update(ctx, &mktCfg, tm.oracleEngine)
 
-	bigOffset := 2 * uint32(math.Max(distFromMin, distFromMax))
-	smallOffset := uint32(3)
-
 	lps2 := &types.LiquidityProvisionSubmission{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(70000),
 		Fee:              num.DecimalFromFloat(0.05),
 		Reference:        "ref-lp-submission-2",
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 4, bigOffset),
-			newLiquidityOrder(types.PeggedReferenceBestBid, 3, smallOffset),
-			newLiquidityOrder(types.PeggedReferenceMid, 2, bigOffset),
-			newLiquidityOrder(types.PeggedReferenceMid, 1, smallOffset),
-		},
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 9, bigOffset),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 8, smallOffset),
-			newLiquidityOrder(types.PeggedReferenceMid, 7, bigOffset),
-			newLiquidityOrder(types.PeggedReferenceMid, 6, smallOffset),
-		},
 	}
 
 	require.NoError(t,

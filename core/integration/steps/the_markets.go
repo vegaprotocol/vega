@@ -269,13 +269,6 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		// update existing
 		existing.TradableInstrument = current
 	}
-	// lp price range
-	if lppr, ok := row.tryLpPriceRange(); ok {
-		lpprD := num.DecimalFromFloat(lppr)
-		update.Changes.LpPriceRange = lpprD
-		existing.LPPriceRange = lpprD
-	}
-
 	// linear slippage factor
 	if slippage, ok := row.tryLinearSlippageFactor(); ok {
 		slippageD := num.DecimalFromFloat(slippage)
@@ -329,7 +322,6 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 		panic(err)
 	}
 
-	lpPriceRange := row.lpPriceRange()
 	linearSlippageFactor := row.linearSlippageFactor()
 	quadraticSlippageFactor := row.quadraticSlippageFactor()
 
@@ -368,9 +360,16 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 		OpeningAuction:                openingAuction(row),
 		PriceMonitoringSettings:       types.PriceMonitoringSettingsFromProto(priceMonitoring),
 		LiquidityMonitoringParameters: liqMon,
-		LPPriceRange:                  num.DecimalFromFloat(lpPriceRange),
 		LinearSlippageFactor:          num.DecimalFromFloat(linearSlippageFactor),
 		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
+		// TODO karel - implement real spec data
+		LiquiditySLAParams: &types.LiquiditySLAParams{
+			PriceRange:                      num.DecimalFromFloat(0.95),
+			CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0.5),
+			ProvidersFeeCalculationTimeStep: time.Second * 5,
+			PerformanceHysteresisEpochs:     4,
+			SlaCompetitionFactor:            num.NewDecimalFromFloat(0.5),
+		},
 	}
 
 	if row.isSuccessor() {

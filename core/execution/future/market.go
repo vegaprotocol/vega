@@ -310,6 +310,8 @@ func NewMarket(
 	assets, _ := mkt.GetAssets()
 	market.settlementAsset = assets[0]
 
+	liquidityEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
+
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
 	market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementData)
 	market.assetDP = uint32(assetDetails.DecimalPlaces())

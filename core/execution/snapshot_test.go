@@ -519,6 +519,13 @@ func newMarket(ID string, pubKey *dstypes.SignerPubKey) *types.Market {
 				},
 			},
 		},
+		LiquiditySLAParams: &types.LiquiditySLAParams{
+			PriceRange:                      num.DecimalFromFloat(0.95),
+			CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0.5),
+			ProvidersFeeCalculationTimeStep: time.Second * 5,
+			PerformanceHysteresisEpochs:     4,
+			SlaCompetitionFactor:            num.NewDecimalFromFloat(0.5),
+		},
 		State: types.MarketStateActive,
 	}
 }

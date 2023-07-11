@@ -92,13 +92,6 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(1),
 		Fee:              num.DecimalFromFloat(0.1),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 1),
-			newLiquidityOrder(types.PeggedReferenceMid, 1, 1),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceMid, 1, 1),
-		},
 	}
 
 	err = tm.market.SubmitLiquidityProvision(ctx, lpsub, "someparty", vgcrypto.RandomHash())
@@ -172,14 +165,6 @@ func testCanMoveFromPendingToActiveState(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(15000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// now move to after the opening auction time
@@ -223,14 +208,6 @@ func testCanPlaceOrderInActiveState(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(15000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// now move to after the opening auction time
