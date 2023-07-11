@@ -37,6 +37,7 @@
 - [8698](https://github.com/vegaprotocol/vega/issues/8698) - Always set the `ToAccount` field when clearing fees.
 - [8711](https://github.com/vegaprotocol/vega/issues/8711) - Fix market lineage trigger.
 - [8737](https://github.com/vegaprotocol/vega/issues/8737) - Fix `GetStopOrder` errors when order has a state change.
+- [8727](https://github.com/vegaprotocol/vega/issues/8727) - Clear parent market on checkpoint restore if the parent market was already succeeded.
 
 
 ## 0.72.0

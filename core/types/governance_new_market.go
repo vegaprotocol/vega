@@ -107,6 +107,10 @@ func (n NewMarket) Successor() *SuccessorConfig {
 	return &cpy
 }
 
+func (n *NewMarket) ClearSuccessor() {
+	n.Changes.Successor = nil
+}
+
 func (n NewMarket) IntoProto() *vegapb.NewMarket {
 	var changes *vegapb.NewMarketConfiguration
 	if n.Changes != nil {
