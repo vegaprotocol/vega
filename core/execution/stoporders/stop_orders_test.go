@@ -233,7 +233,7 @@ func TestOCOStopOrders(t *testing.T) {
 	t.Run("removing when party have submitted nothing returns no error", func(t *testing.T) {
 		affectedOrders, err := pool.Cancel("p1", "a")
 		assert.Len(t, affectedOrders, 0)
-		assert.NoError(t, err)
+		assert.EqualError(t, err, stoporders.ErrStopOrderNotFound.Error())
 	})
 
 	t.Run("price update trigger OCO trailing order", func(t *testing.T) {
