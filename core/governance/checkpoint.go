@@ -102,7 +102,7 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 				enct.shouldNotVerify = true
 			}
 			enct.current = prop.Terms.EnactmentTimestamp
-			toSubmit, err := e.intoToSubmit(ctx, prop, enct)
+			toSubmit, err := e.intoToSubmit(ctx, prop, enct, true)
 			if err != nil {
 				e.log.Panic("Failed to convert proposal into market", logging.Error(err))
 			}

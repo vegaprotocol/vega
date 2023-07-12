@@ -1438,15 +1438,26 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 		return nil, common.ErrTradingNotAllowed
 	}
 
+	now := m.timeService.GetTimeNow()
 	orderCnt := 0
 	if fallsBelow != nil {
+		if fallsBelow.Expiry.Expires() && fallsBelow.Expiry.ExpiresAt.Before(now) {
+			rejectStopOrders(fallsBelow, risesAbove)
+			return nil, common.ErrStopOrderExpiryInThePast
+		}
 		if !fallsBelow.OrderSubmission.ReduceOnly {
+			rejectStopOrders(fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderMustBeReduceOnly
 		}
 		orderCnt++
 	}
 	if risesAbove != nil {
+		if risesAbove.Expiry.Expires() && risesAbove.Expiry.ExpiresAt.Before(now) {
+			rejectStopOrders(fallsBelow, risesAbove)
+			return nil, common.ErrStopOrderExpiryInThePast
+		}
 		if !risesAbove.OrderSubmission.ReduceOnly {
+			rejectStopOrders(fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderMustBeReduceOnly
 		}
 		orderCnt++
@@ -2755,7 +2766,7 @@ func (m *Market) CancelStopOrder(
 	}
 
 	stopOrders, err := m.stopOrders.Cancel(partyID, orderID)
-	if err != nil {
+	if err != nil || len(stopOrders) <= 0 { // could return just an empty slice
 		return err
 	}
 
@@ -3907,6 +3918,30 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 			logging.Error(err))
 	}
 
+	// cancel all pending orders
+	orders := m.matching.Settled()
+	// stop all parkedPeggedOrders
+	parkedPeggedOrders := m.peggedOrders.Settled()
+
+	evts := make([]events.Event, 0, len(orders)+len(parkedPeggedOrders))
+	for _, o := range append(orders, parkedPeggedOrders...) {
+		evts = append(evts, events.NewOrderEvent(ctx, o))
+	}
+	if len(evts) > 0 {
+		m.broker.SendBatch(evts)
+	}
+
+	// now we do stop orders
+	stopOrders := m.stopOrders.Settled()
+	evts = make([]events.Event, 0, len(stopOrders))
+	for _, o := range stopOrders {
+		evts = append(evts, events.NewStopOrderEvent(ctx, o))
+	}
+	if len(evts) > 0 {
+		m.broker.SendBatch(evts)
+	}
+
+	// release margin balance
 	tresps, err := m.collateral.ClearMarket(ctx, m.GetID(), m.settlementAsset, parties, false)
 	if err != nil {
 		m.log.Panic("unable to cleanup a rejected market",

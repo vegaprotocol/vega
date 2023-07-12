@@ -76,21 +76,22 @@ func (b *blockExplorerAPI) GetTransaction(ctx context.Context, req *pb.GetTransa
 
 func (b *blockExplorerAPI) ListTransactions(ctx context.Context, req *pb.ListTransactionsRequest) (*pb.ListTransactionsResponse, error) {
 	var before, after *entities.TxCursor
+	var first, last uint32
 
 	if req.First > 0 && req.Last > 0 {
 		return nil, apiError(codes.InvalidArgument, errors.New("cannot specify both first and last"))
 	}
 
-	limit := b.MaxPageSizeDefault
+	first = b.MaxPageSizeDefault
 	if req.First > 0 {
-		limit = req.First
+		first = req.First
 		if req.After == nil && req.Before != nil {
 			return nil, apiError(codes.InvalidArgument, errors.New("cannot specify before when using first"))
 		}
 	}
 
 	if req.Last > 0 {
-		limit = req.Last
+		last = req.Last
 		if req.Before == nil && req.After != nil {
 			return nil, apiError(codes.InvalidArgument, errors.New("cannot specify after when using last"))
 		}
@@ -98,7 +99,7 @@ func (b *blockExplorerAPI) ListTransactions(ctx context.Context, req *pb.ListTra
 
 	// Temporary for now, until we have fully deprecated the limit field in the request.
 	if req.Limit > 0 && req.First == 0 && req.Last == 0 {
-		limit = req.Limit
+		first = req.Limit
 	}
 
 	if req.Before != nil {
@@ -122,9 +123,10 @@ func (b *blockExplorerAPI) ListTransactions(ctx context.Context, req *pb.ListTra
 		req.CmdTypes,
 		req.ExcludeCmdTypes,
 		req.Parties,
-		limit,
-		before,
+		first,
 		after,
+		last,
+		before,
 	)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)

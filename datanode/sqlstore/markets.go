@@ -340,5 +340,20 @@ left join lineage s on l.successor_market_id = s.parent_id
 		edges = append(edges, edge)
 	}
 
+	if len(markets) == 0 {
+		// We do not have any markets in the given succession line, so we need to return the market
+		// associated with the given market ID, which should be the parent market.
+		market, err := m.GetByID(ctx, marketID)
+		if err != nil {
+			return nil, entities.PageInfo{}, err
+		}
+
+		edge := entities.SuccessorMarket{
+			Market: market,
+		}
+
+		edges = append(edges, edge)
+	}
+
 	return edges, pageInfo, nil
 }
