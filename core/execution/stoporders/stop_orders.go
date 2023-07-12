@@ -78,6 +78,19 @@ func (p *Pool) GetStopOrderCount() uint64 {
 	return uint64(len(p.orderToParty))
 }
 
+func (p *Pool) Settled() []*types.StopOrder {
+	out := []*types.StopOrder{}
+	for _, v := range p.orders {
+		for _, so := range v {
+			so.Status = types.StopOrderStatusStopped
+			out = append(out, so)
+		}
+	}
+
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out
+}
+
 func (p *Pool) PriceUpdated(newPrice *num.Uint) (triggered, cancelled []*types.StopOrder) {
 	// first update prices and get triggered orders
 	ids := append(

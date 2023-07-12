@@ -3919,10 +3919,23 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 	}
 
 	// cancel all pending orders
-	orders := m.matching.CancelOrdersOnReject()
-	evts := make([]events.Event, 0, len(orders))
-	for _, o := range orders {
+	orders := m.matching.Settled()
+	// stop all parkedPeggedOrders
+	parkedPeggedOrders := m.peggedOrders.Settled()
+
+	evts := make([]events.Event, 0, len(orders)+len(parkedPeggedOrders))
+	for _, o := range append(orders, parkedPeggedOrders...) {
 		evts = append(evts, events.NewOrderEvent(ctx, o))
+	}
+	if len(evts) > 0 {
+		m.broker.SendBatch(evts)
+	}
+
+	// now we do stop orders
+	stopOrders := m.stopOrders.Settled()
+	evts = make([]events.Event, 0, len(stopOrders))
+	for _, o := range stopOrders {
+		evts = append(evts, events.NewStopOrderEvent(ctx, o))
 	}
 	if len(evts) > 0 {
 		m.broker.SendBatch(evts)
