@@ -19,6 +19,7 @@
 
 ### 🐛 Fixes
 
+- [8417](https://github.com/vegaprotocol/vega/issues/8417) - Fix normalisation of Ethereum calls that return structures
 - [8719](https://github.com/vegaprotocol/vega/issues/8719) - Do not try to resolve iceberg order if it's not set
 - [8721](https://github.com/vegaprotocol/vega/issues/8721) - Fix panic with triggered OCO expiring
 - [8751](https://github.com/vegaprotocol/vega/issues/8751) - Fix Ethereum oracle data error event sent with incorrect sequence number  
