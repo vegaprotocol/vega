@@ -106,7 +106,7 @@ func (s *EthereumOracleVerifier) LoadState(ctx context.Context, payload *types.P
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadEthContractCallEvent:
-		return nil, s.restorePendingCallEvents(pl.EthContractCallEvent, payload)
+		return nil, s.restorePendingCallEvents(ctx, pl.EthContractCallEvent, payload)
 	case *types.PayloadEthOracleLastBlock:
 		return nil, s.restoreLastEthBlock(pl.EthOracleLastBlock, payload)
 	default:
@@ -135,7 +135,9 @@ func (s *EthereumOracleVerifier) restoreLastEthBlock(lastBlock *types.EthBlock, 
 	return nil
 }
 
-func (s *EthereumOracleVerifier) restorePendingCallEvents(results []*types.EthContractCallEvent, p *types.Payload) error {
+func (s *EthereumOracleVerifier) restorePendingCallEvents(_ context.Context,
+	results []*types.EthContractCallEvent, p *types.Payload,
+) error {
 	s.log.Debug("restoring pending call events snapshot", logging.Int("n_pending", len(results)))
 	s.pendingCallEvents = make([]*pendingCallEvent, 0, len(results))
 
@@ -147,7 +149,7 @@ func (s *EthereumOracleVerifier) restorePendingCallEvents(results []*types.EthCo
 
 		pending := &pendingCallEvent{
 			callEvent: *callEvent,
-			check:     func(ctx context.Context) error { return s.checkCallEventResult(*callEvent) },
+			check:     func(ctx context.Context) error { return s.checkCallEventResult(ctx, *callEvent) },
 		}
 
 		s.pendingCallEvents = append(s.pendingCallEvents, pending)
