@@ -3918,6 +3918,30 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 			logging.Error(err))
 	}
 
+	// cancel all pending orders
+	orders := m.matching.Settled()
+	// stop all parkedPeggedOrders
+	parkedPeggedOrders := m.peggedOrders.Settled()
+
+	evts := make([]events.Event, 0, len(orders)+len(parkedPeggedOrders))
+	for _, o := range append(orders, parkedPeggedOrders...) {
+		evts = append(evts, events.NewOrderEvent(ctx, o))
+	}
+	if len(evts) > 0 {
+		m.broker.SendBatch(evts)
+	}
+
+	// now we do stop orders
+	stopOrders := m.stopOrders.Settled()
+	evts = make([]events.Event, 0, len(stopOrders))
+	for _, o := range stopOrders {
+		evts = append(evts, events.NewStopOrderEvent(ctx, o))
+	}
+	if len(evts) > 0 {
+		m.broker.SendBatch(evts)
+	}
+
+	// release margin balance
 	tresps, err := m.collateral.ClearMarket(ctx, m.GetID(), m.settlementAsset, parties, false)
 	if err != nil {
 		m.log.Panic("unable to cleanup a rejected market",
