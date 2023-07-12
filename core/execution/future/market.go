@@ -2766,7 +2766,7 @@ func (m *Market) CancelStopOrder(
 	}
 
 	stopOrders, err := m.stopOrders.Cancel(partyID, orderID)
-	if err != nil {
+	if err != nil || len(stopOrders) <= 0 { // could return just an empty slice
 		return err
 	}
 
