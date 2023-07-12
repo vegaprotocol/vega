@@ -185,6 +185,11 @@ func (p *Pool) removeWithOCO(
 ) ([]*types.StopOrder, error) {
 	partyOrders, ok := p.orders[partyID]
 	if !ok {
+		// return an error only when trying to find a specific stop order
+		if len(orderID) > 0 {
+			return nil, ErrStopOrderNotFound
+		}
+
 		// this party have no stop orders, move on
 		return nil, nil
 	}
