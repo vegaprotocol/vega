@@ -17,6 +17,7 @@ cmd/vegawallet/vegawallet*
 cmd/vegabenchmark/vegabenchmark*
 cmd/examples/nullchain/nullchain*
 cmd/data-node/__debug_bin
+cmd/vega/__debug_bin
 data-node-amd64
 vega-amd64
 vegawallet-amd64
