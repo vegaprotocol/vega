@@ -1740,6 +1740,21 @@ func (mr *MockNetworkParametersMockRecorder) DispatchChanges(arg0 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DispatchChanges", reflect.TypeOf((*MockNetworkParameters)(nil).DispatchChanges), arg0)
 }
 
+// GetInt mocks base method.
+func (m *MockNetworkParameters) GetInt(arg0 string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInt", arg0)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInt indicates an expected call of GetInt.
+func (mr *MockNetworkParametersMockRecorder) GetInt(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInt", reflect.TypeOf((*MockNetworkParameters)(nil).GetInt), arg0)
+}
+
 // IsUpdateAllowed mocks base method.
 func (m *MockNetworkParameters) IsUpdateAllowed(arg0 string) error {
 	m.ctrl.T.Helper()

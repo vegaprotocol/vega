@@ -68,6 +68,9 @@ func defaultNetParams() map[string]value {
 		// spots
 		SpotMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
 
+		// ethereum oracles
+		EthereumOraclesEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
+
 		// markets
 		MarketMarginScalingFactors:                      NewJSON(&proto.ScalingFactors{}, checks.MarginScalingFactor(), checks.MarginScalingFactorRange(num.DecimalOne(), num.DecimalFromInt64(100))).Mutable(true).MustUpdate(`{"search_level": 1.1, "initial_margin": 1.2, "collateral_release": 1.4}`),
 		MarketFeeFactorsMakerFee:                        NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00025"),

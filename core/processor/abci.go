@@ -36,6 +36,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/genesis"
 	"code.vegaprotocol.io/vega/core/idgeneration"
+	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/processor/ratelimit"
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/core/types"
@@ -65,6 +66,7 @@ var (
 	ErrTradingDisabled                               = errors.New("trading disabled")
 	ErrMarketProposalDisabled                        = errors.New("market proposal disabled")
 	ErrAssetProposalDisabled                         = errors.New("asset proposal disabled")
+	ErrEthOraclesDisabled                            = errors.New("ethereum oracles disabled")
 	ErrAwaitingCheckpointRestore                     = errors.New("transactions not allowed while waiting for checkpoint restore")
 	ErrOracleNoSubscribers                           = errors.New("there are no subscribes to the oracle data")
 	ErrOracleDataNormalization                       = func(err error) error {
@@ -1138,10 +1140,40 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 			if !app.limits.CanProposeMarket() {
 				return ErrMarketProposalDisabled
 			}
+			return validateUseOfEthOracles(p.Terms.GetNewMarket(), app.netp)
 		case types.ProposalTermsTypeNewAsset:
 			if !app.limits.CanProposeAsset() {
 				return ErrAssetProposalDisabled
 			}
+		}
+	}
+	return nil
+}
+
+func validateUseOfEthOracles(terms *types.NewMarket, netp NetworkParameters) error {
+	if terms.Changes == nil {
+		return nil
+	}
+
+	if terms.Changes.Instrument == nil {
+		return nil
+	}
+
+	if terms.Changes.Instrument.Product == nil {
+		return nil
+	}
+
+	ethOracleEnabled, _ := netp.GetInt(netparams.EthereumOraclesEnabled)
+
+	switch product := terms.Changes.Instrument.Product.(type) {
+	case *types.InstrumentConfigurationFuture:
+		if product.Future == nil {
+			return nil
+		}
+		terminatedWithEthOracle := !product.Future.DataSourceSpecForTradingTermination.GetEthCallSpec().IsZero()
+		settledWithEthOracle := !product.Future.DataSourceSpecForSettlementData.GetEthCallSpec().IsZero()
+		if (terminatedWithEthOracle || settledWithEthOracle) && ethOracleEnabled != 1 {
+			return ErrEthOraclesDisabled
 		}
 	}
 	return nil
