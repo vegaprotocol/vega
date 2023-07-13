@@ -70,9 +70,9 @@ func TestContractCall2(t *testing.T) {
 		AbiJson:  tc.abiBytes,
 		Method:   "testy2",
 		Normalisers: map[string]string{
-			// "inside_bigint_list": `$[0][1]`, // doesn't work
-			// "inside_struct":   `$[1].Name`, // doesn't work - wants  map[string]interface{} not custom struct; work to be done
-			"static": "66",
+			"inside_bigint_list": `$[0][1]`,
+			"inside_struct":      `$[1].name`,
+			"static":             "66",
 		},
 	}
 
@@ -85,7 +85,7 @@ func TestContractCall2(t *testing.T) {
 
 	assert.Equal(t, args, res.Values)
 
-	assert.Equal(t, map[string]string{"static": "66"}, res.Normalised)
+	assert.Equal(t, map[string]string{"static": "66", "inside_struct": "test", "inside_bigint_list": "20"}, res.Normalised)
 }
 
 func TestContractFilters(t *testing.T) {
