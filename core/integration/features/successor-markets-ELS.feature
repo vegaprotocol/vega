@@ -132,8 +132,14 @@ Feature: Simple example of successor markets
       | lp3 | lpprov3 | ETH/DEC21 | 8000              | 0.1 | buy  | BID              | 10         | 100    | submission |
       | lp3 | lpprov3 | ETH/DEC21 | 8000              | 0.1 | sell | ASK              | 10         | 100    | submission |
 
-# market ETH/DEC19 is not settled yet, it still active
+    # check LP bond account after LP commitment submission
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general     | bond |
+      | lpprov1 | USD   | ETH/DEC19 | 127335 | 1999861665  | 9000 |
+      | lpprov2 | USD   | ETH/DEC20 | 0      | 19999976851 | 8000 |
+      | lpprov3 | USD   | ETH/DEC21 | 0      | 19999992000 | 8000 |
 
+# market ETH/DEC19 is not settled yet, it still active
     And the insurance pool balance should be "5077" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
     And the network treasury balance should be "0" for the asset "USD"
@@ -142,20 +148,41 @@ Feature: Simple example of successor markets
     When the successor market "ETH/DEC21" is enacted
 
     Then the parties place the following orders:
-      | party   | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | buy  | 10     | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader1 | ETH/DEC20 | sell | 10     | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader1 | ETH/DEC20 | buy  | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | sell | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | trader1 | ETH/DEC20 | buy  | 10     | 1     | 0                | TYPE_LIMIT | TIF_GTC |              |
+      | trader1 | ETH/DEC20 | sell | 10     | 2000  | 0                | TYPE_LIMIT | TIF_GTC |              |
+      | trader1 | ETH/DEC21 | buy  | 10     | 1     | 0                | TYPE_LIMIT | TIF_GTC | order1-DEC21 |
+      | trader1 | ETH/DEC21 | sell | 10     | 2000  | 0                | TYPE_LIMIT | TIF_GTC | order2-DEC21 |
+      | trader1 | ETH/DEC20 | buy  | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |              |
+      | trader2 | ETH/DEC20 | sell | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |              |
     When the opening auction period ends for market "ETH/DEC20"
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 82           | 10000          | 1             |
+
     And the last market state should be "STATE_REJECTED" for the market "ETH/DEC21"
+
+    #check assets held to support trader1's orders in market ETH/DEC21 is released
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader1 | USD   | ETH/DEC20 | 122    | 1998780 |
+      | trader1 | USD   | ETH/DEC21 | 0      | 1998780 |
+
+    #check all the orders in market ETH/DEC21 is canceled
+    And the orders should have the following status:
+      | party   | reference    | status        |
+      | trader1 | order1-DEC21 | STATUS_STOPPED |
+      | trader1 | order2-DEC21 | STATUS_STOPPED |
+
     And the insurance pool balance should be "2031" for the market "ETH/DEC19"
     And the insurance pool balance should be "3046" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the network treasury balance should be "0" for the asset "USD"
+
+    # check LP account is released after the market ETH/DEC21 is rejceted
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general     |
+      | lpprov3 | USD   | ETH/DEC21 | 0      | 20000000000 |
 
     # this is from ETH/DEC19 market
     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
