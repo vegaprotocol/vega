@@ -1,8 +1,7 @@
-# yamllint disable rule:line-length
 
 ---
 
-
+# yamllint disable rule:line-length
 name: "Project Board Automation"
 
 "on":
@@ -12,7 +11,6 @@ name: "Project Board Automation"
   pull_request_review:
     types: [submitted]
 
-# Configure the project specific variables
 env:
   ORGANIZATION: vegaprotocol
   PROJECT_NUMBER: 106
@@ -41,7 +39,6 @@ jobs:
       #######
       ## Gather data, reopen closed issues and ensure work item is on the board
       #######
-# yamllint disable rule:line-length
       - name: "Get linked issue id and state"
         id: linked-issue
         env:
