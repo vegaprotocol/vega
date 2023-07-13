@@ -15,6 +15,7 @@
 - [8718](https://github.com/vegaprotocol/vega/issues/8718) - Emit market data event after setting mark price prior to final settlement.
 - [8590](https://github.com/vegaprotocol/vega/issues/8590) - Improved Ethereum oracle support.
 - [8731](https://github.com/vegaprotocol/vega/issues/8731) - Add liquidity provision `SLA` to governance proposals for spot market.
+- [8741](https://github.com/vegaprotocol/vega/issues/8741) - Add a network parameter for disabling `Ethereum` oracles.
 
 ### 🐛 Fixes
 
