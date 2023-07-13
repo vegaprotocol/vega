@@ -37,11 +37,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
     steps:
-      #######
-      ## Gather data, reopen closed issues and ensure work item is on the board
-      #######
+    #######
+    ## Gather data, reopen closed issues and ensure work item is on the board
+    #######
+    # yamllint disable rule:line-length
       - name: "Get linked issue id and state"
-      # yamllint disable rule:line-length
         id: linked-issue
         env:
           GH_TOKEN: ${{ secrets.PROJECT_MANAGE_ACTION }}
@@ -395,4 +395,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # yamllint enable rule:line-length
-
