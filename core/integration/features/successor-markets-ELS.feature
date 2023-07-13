@@ -171,8 +171,8 @@ Feature: Simple example of successor markets
     #check all the orders in market ETH/DEC21 is canceled
     And the orders should have the following status:
       | party   | reference    | status        |
-      | trader1 | order1-DEC21 | STATUS_ACTIVE |
-      | trader1 | order2-DEC21 | STATUS_ACTIVE |
+      | trader1 | order1-DEC21 | STATUS_STOPPED |
+      | trader1 | order2-DEC21 | STATUS_STOPPED |
 
     And the insurance pool balance should be "2031" for the market "ETH/DEC19"
     And the insurance pool balance should be "3046" for the market "ETH/DEC20"
