@@ -98,8 +98,9 @@ type Market struct {
 	// deps engines
 	collateral common.Collateral
 
-	broker common.Broker
-	closed bool
+	broker               common.Broker
+	closed               bool
+	finalFeesDistributed bool
 
 	parties map[string]struct{}
 
@@ -244,7 +245,7 @@ func NewMarket(
 
 	marketLiquidity := common.NewMarketLiquidity(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
-		feeEngine, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange,
+		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange,
 		mkt.LiquiditySLAParams.ProvidersFeeCalculationTimeStep,
 	)
 
@@ -323,8 +324,9 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 		m.liquidity.OnEpochStart(ctx, m.timeService.GetTimeNow(), m.markPrice, m.midPrice(), m.getTargetStake(), m.positionFactor)
 	} else if epoch.Action == vega.EpochAction_EPOCH_ACTION_END {
 		m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow())
-		m.updateLiquidityFee(ctx)
 	}
+
+	m.updateLiquidityFee(ctx)
 }
 
 func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
@@ -912,11 +914,14 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time, finalState types.
 	}
 
 	// final distribution of liquidity fees
-	if err := m.liquidity.AllocateFees(ctx); err != nil {
-		m.log.Panic("failed to allocate liquidity provision fees", logging.Error(err))
-	}
+	if !m.finalFeesDistributed {
+		if err := m.liquidity.AllocateFees(ctx); err != nil {
+			m.log.Panic("failed to allocate liquidity provision fees", logging.Error(err))
+		}
 
-	m.liquidity.OnEpochEnd(ctx, t)
+		m.liquidity.OnEpochEnd(ctx, t)
+		m.finalFeesDistributed = true
+	}
 
 	err = m.cleanMarketWithState(ctx, finalState)
 	if err != nil {
@@ -1074,9 +1079,6 @@ func (m *Market) enterAuction(ctx context.Context) {
 	// Move into auction mode to prevent pegged order repricing
 	event := m.as.AuctionStarted(ctx, m.timeService.GetTimeNow())
 
-	// this is at least the size of the orders to be cancelled
-	updatedOrders := make([]*types.Order, 0, len(ordersToCancel))
-
 	// Cancel all the orders that were invalid
 	for _, order := range ordersToCancel {
 		_, err := m.cancelOrder(ctx, order.Party, order.ID)
@@ -1086,11 +1088,10 @@ func (m *Market) enterAuction(ctx context.Context) {
 				logging.OrderID(order.ID),
 				logging.Error(err))
 		}
-		updatedOrders = append(updatedOrders, order)
 	}
 
 	// now update all special orders
-	m.enterAuctionSpecialOrders(ctx, updatedOrders)
+	m.enterAuctionSpecialOrders(ctx)
 
 	// Send an event bus update
 	m.broker.Send(event)
@@ -3691,6 +3692,8 @@ func (m *Market) settlementData(ctx context.Context, settlementData *num.Numeric
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	fmt.Println("m.finalFeesDistributed:", m.finalFeesDistributed)
+
 	m.settlementDataInMarket = settlementData
 	settlementDataInAsset, err := m.tradableInstrument.Instrument.Product.ScaleSettlementDataToDecimalPlaces(m.settlementDataInMarket, m.assetDP)
 	if err != nil {
@@ -3698,6 +3701,7 @@ func (m *Market) settlementData(ctx context.Context, settlementData *num.Numeric
 		return
 	}
 	m.settlementDataWithLock(ctx, types.MarketStateSettled, settlementDataInAsset)
+	m.finalFeesDistributed = true
 }
 
 // NB this must be called with the lock already acquired.
@@ -3729,10 +3733,6 @@ func (m *Market) canTrade() bool {
 	return m.mkt.State == types.MarketStateActive ||
 		m.mkt.State == types.MarketStatePending ||
 		m.mkt.State == types.MarketStateSuspended
-}
-
-func (m *Market) canSubmitCommitment() bool {
-	return m.canTrade() || m.mkt.State == types.MarketStateProposed
 }
 
 // cleanupOnReject remove all resources created while the

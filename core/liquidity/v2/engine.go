@@ -314,7 +314,7 @@ func (e *Engine) stopLiquidityProvision(
 ) error {
 	lp, ok := e.provisions.Get(party)
 	if !ok {
-		return errors.New("party have no liquidity provision orders")
+		return errors.New("party is not a liquidity provider")
 	}
 
 	now := e.timeService.GetTimeNow().UnixNano()
