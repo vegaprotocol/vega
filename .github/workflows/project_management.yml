@@ -141,6 +141,7 @@ jobs:
                 }
               }
             }' -f org=$ORGANIZATION -F number=$PROJECT_NUMBER > data.json
+        # yamllint disable rule:line-length
           echo 'PROJECT_ID='$(jq '.data.organization.projectV2.id' data.json) >> $GITHUB_ENV
           echo 'STATUS_FIELD_ID='$(jq '.data.organization.projectV2.fields.nodes[] | select(.name== "Status") | .id' data.json) >> $GITHUB_ENV
           echo 'IN_PROGRESS_COLUMN='$(jq --arg in_progress ${{ env.IN_PROGRESS_COLUMN_NAME }} '.data.organization.projectV2.fields.nodes[] | select(.name== "Status") | .options[] | select(.name==$in_progress) | .id' data.json) >> $GITHUB_ENV
@@ -151,6 +152,7 @@ jobs:
           echo 'DONE_COLUMN='$(jq --arg done ${{ env.DONE_COLUMN_NAME }} '.data.organization.projectV2.fields.nodes[] | select(.name== "Status") | .options[] | select(.name==$done) | .id' data.json) >> $GITHUB_ENV
           echo 'ITERATION_FIELD_ID='$(jq --arg iteration_field_name $ITERATION_FIELD_NAME '.data.organization.projectV2.fields.nodes[] | select(.name==$iteration_field_name) | .id' data.json) >> $GITHUB_ENV
           echo 'CURRENT_ITERATION='$(jq --arg iteration_field_name $ITERATION_FIELD_NAME '.data.organization.projectV2.fields.nodes[] | select(.name==$iteration_field_name) | .configuration.iterations[0] | .id' data.json) >> $GITHUB_ENV
+      # yamllint enable rule:line-length
       - name: "Get PR state, review decision and author"
         id: pr-status
         run: |
@@ -391,4 +393,3 @@ jobs:
           checkNotification: Simple
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-# yamllint enable rule:line-length
