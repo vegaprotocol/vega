@@ -41,7 +41,8 @@ mocks_check: ## mocks: Check committed files match just-generated files
 		echo "Committed files do not match just-generated files: " $$files ; \
 		git diff ; \
 		exit 1 ; \
-	fi
+	fi;
+	echo "OK"
 
 .PHONY: build
 build: ## install the binaries in cmd/{progname}/
