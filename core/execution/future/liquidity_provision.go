@@ -52,7 +52,5 @@ func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.Liquidi
 func (m *Market) CancelLiquidityProvision(ctx context.Context, cancel *types.LiquidityProvisionCancellation, party string) (err error) {
 	defer m.onTxProcessed()
 
-	// TODO karel - implement here
-
-	return nil
+	return m.liquidity.CancelLiquidityProvision(ctx, party)
 }

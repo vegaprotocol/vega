@@ -86,6 +86,7 @@ func newMarketLiquidity(t *testing.T) *marketLiquidityTest {
 		equityShares,
 		marketTracker,
 		fees,
+		common.SpotMarketType,
 		marketID,
 		settlementAsset,
 		num.NewUint(1),

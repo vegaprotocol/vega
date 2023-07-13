@@ -24,6 +24,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/datasource"
 	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
+	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
@@ -94,6 +95,10 @@ var defaultPriceMonitorSettings = &types.PriceMonitoringSettings{
 			},
 		},
 	},
+}
+
+func newTestIDGenerator() common.IDGenerator {
+	return idgeneration.New(vgcrypto.RandomHash())
 }
 
 type marketW struct {

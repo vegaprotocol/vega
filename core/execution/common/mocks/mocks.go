@@ -490,6 +490,21 @@ func (mr *MockCollateralMockRecorder) GetOrCreateLiquidityFeesBonusDistributionA
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreateLiquidityFeesBonusDistributionAccount", reflect.TypeOf((*MockCollateral)(nil).GetOrCreateLiquidityFeesBonusDistributionAccount), arg0, arg1, arg2)
 }
 
+// GetOrCreateMarketLiquidityFeeAccount mocks base method.
+func (m *MockCollateral) GetOrCreateMarketLiquidityFeeAccount(arg0 context.Context, arg1, arg2 string) (*types.Account, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrCreateMarketLiquidityFeeAccount", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*types.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrCreateMarketLiquidityFeeAccount indicates an expected call of GetOrCreateMarketLiquidityFeeAccount.
+func (mr *MockCollateralMockRecorder) GetOrCreateMarketLiquidityFeeAccount(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreateMarketLiquidityFeeAccount", reflect.TypeOf((*MockCollateral)(nil).GetOrCreateMarketLiquidityFeeAccount), arg0, arg1, arg2)
+}
+
 // GetOrCreatePartyBondAccount mocks base method.
 func (m *MockCollateral) GetOrCreatePartyBondAccount(arg0 context.Context, arg1, arg2, arg3 string) (*types.Account, error) {
 	m.ctrl.T.Helper()

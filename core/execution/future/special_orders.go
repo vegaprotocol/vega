@@ -202,10 +202,7 @@ func (m *Market) updateMargins(ctx context.Context, partiesPos map[string]events
 	return m.updateMargin(ctx, positions), positions, marginsBefore
 }
 
-func (m *Market) enterAuctionSpecialOrders(
-	ctx context.Context,
-	updatedOrders []*types.Order,
-) {
+func (m *Market) enterAuctionSpecialOrders(ctx context.Context) {
 	// First remove all GFN orders from the peg list.
 	ordersEvts := m.peggedOrders.EnterAuction(ctx)
 	m.broker.SendBatch(ordersEvts)

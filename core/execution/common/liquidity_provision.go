@@ -30,6 +30,13 @@ import (
 
 var ErrCommitmentAmountTooLow = errors.New("commitment amount is too low")
 
+type marketType int
+
+const (
+	FutureMarketType marketType = iota
+	SpotMarketType
+)
+
 type MarketLiquidity struct {
 	log   *logging.Logger
 	idGen IDGenerator
@@ -42,8 +49,9 @@ type MarketLiquidity struct {
 	marketActivityTracker *MarketActivityTracker
 	fee                   *fee.Engine
 
-	marketID string
-	asset    string
+	marketType marketType
+	marketID   string
+	asset      string
 
 	priceFactor *num.Uint
 
@@ -66,6 +74,7 @@ func NewMarketLiquidity(
 	equityShares EquityLikeShares,
 	marketActivityTracker *MarketActivityTracker,
 	fee *fee.Engine,
+	marketType marketType,
 	marketID string,
 	asset string,
 	priceFactor *num.Uint,
@@ -81,6 +90,7 @@ func NewMarketLiquidity(
 		equityShares:           equityShares,
 		marketActivityTracker:  marketActivityTracker,
 		fee:                    fee,
+		marketType:             marketType,
 		marketID:               marketID,
 		asset:                  asset,
 		priceFactor:            priceFactor,
@@ -89,6 +99,24 @@ func NewMarketLiquidity(
 	}
 
 	return ml
+}
+
+func (m *MarketLiquidity) bondUpdate(ctx context.Context, transfer *types.Transfer) (*types.LedgerMovement, error) {
+	switch m.marketType {
+	case SpotMarketType:
+		return m.collateral.BondSpotUpdate(ctx, m.marketID, transfer)
+	default:
+		return m.collateral.BondUpdate(ctx, m.marketID, transfer)
+	}
+}
+
+func (m *MarketLiquidity) transferFees(ctx context.Context, ft events.FeesTransfer) ([]*types.LedgerMovement, error) {
+	switch m.marketType {
+	case SpotMarketType:
+		return m.collateral.TransferSpotFees(ctx, m.marketID, m.asset, ft)
+	default:
+		return m.collateral.TransferFees(ctx, m.marketID, m.asset, ft)
+	}
 }
 
 func (m *MarketLiquidity) applyPendingProvisions(
@@ -153,7 +181,7 @@ func (m *MarketLiquidity) applyPendingProvisions(
 			}
 
 			transfer := m.NewTransfer(partyID, types.TransferTypeBondHigh, commitmentVariationU)
-			bondLedgerMovement, err := m.collateral.BondSpotUpdate(ctx, m.marketID, transfer)
+			bondLedgerMovement, err := m.bondUpdate(ctx, transfer)
 			if err != nil {
 				m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
 			}
@@ -165,7 +193,7 @@ func (m *MarketLiquidity) applyPendingProvisions(
 		partyMaxPenaltyFreeReductionAmountU, _ := num.UintFromDecimal(partyMaxPenaltyFreeReductionAmount)
 
 		transfer := m.NewTransfer(partyID, types.TransferTypeBondHigh, partyMaxPenaltyFreeReductionAmountU)
-		bondLedgerMovement, err := m.collateral.BondSpotUpdate(ctx, m.marketID, transfer)
+		bondLedgerMovement, err := m.bondUpdate(ctx, transfer)
 		if err != nil {
 			m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
 		}
@@ -179,7 +207,7 @@ func (m *MarketLiquidity) applyPendingProvisions(
 		freeAmountU, _ := num.UintFromDecimal(freeAmount)
 
 		transfer = m.NewTransfer(partyID, types.TransferTypeBondHigh, freeAmountU)
-		bondLedgerMovement, err = m.collateral.BondSpotUpdate(ctx, m.marketID, transfer)
+		bondLedgerMovement, err = m.bondUpdate(ctx, transfer)
 		if err != nil {
 			m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
 		}
@@ -190,7 +218,7 @@ func (m *MarketLiquidity) applyPendingProvisions(
 		slashingAmountU, _ := num.UintFromDecimal(slashingAmount)
 
 		transfer = m.NewTransfer(partyID, types.TransferTypeBondSlashing, slashingAmountU)
-		bondLedgerMovement, err = m.collateral.BondSpotUpdate(ctx, m.marketID, transfer)
+		bondLedgerMovement, err = m.bondUpdate(ctx, transfer)
 		if err != nil {
 			m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
 		}
@@ -429,7 +457,7 @@ func (m *MarketLiquidity) makePerPartyAccountsAndTransfers(ctx context.Context, 
 		MinAmount: amount.Clone(),
 	}
 
-	tresp, err := m.collateral.BondSpotUpdate(ctx, m.marketID, transfer)
+	tresp, err := m.bondUpdate(ctx, transfer)
 	if err != nil {
 		m.log.Debug("bond update error", logging.Error(err))
 		return err
@@ -570,7 +598,7 @@ func (m *MarketLiquidity) ensureAndTransferCollateral(
 	}
 
 	// move our bond
-	tresp, err := m.collateral.BondSpotUpdate(ctx, m.marketID, transfer)
+	tresp, err := m.bondUpdate(ctx, transfer)
 	if err != nil {
 		return nil, err
 	}
@@ -602,7 +630,7 @@ func (m *MarketLiquidity) releasePendingBondCollateral(
 		MinAmount: releaseAmount.Clone(),
 	}
 
-	ledgerMovement, err := m.collateral.BondSpotUpdate(ctx, m.marketID, transfer)
+	ledgerMovement, err := m.bondUpdate(ctx, transfer)
 	if err != nil {
 		return nil, err
 	}

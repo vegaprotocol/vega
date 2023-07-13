@@ -3284,6 +3284,8 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 		e.broker.Send(events.NewAccountEvent(ctx, *makerFeeAcc))
 	}
 
+	_, err = e.GetOrCreateLiquidityFeesBonusDistributionAccount(ctx, marketID, asset)
+
 	return insuranceID, settleID, err
 }
 
