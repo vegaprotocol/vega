@@ -131,10 +131,19 @@ func TestEngineSnapshot(t *testing.T) {
 
 	// Check that the restored state is complete, and lead to the same results.
 	now := time.Now()
-	assert.Equal(t,
-		originalEngine.engine.CalculateSLAPenalties(now),
-		otherEngine.engine.CalculateSLAPenalties(now),
-	)
+
+	penalties1 := originalEngine.engine.CalculateSLAPenalties(now)
+	penalties2 := otherEngine.engine.CalculateSLAPenalties(now)
+	assert.Equal(t, penalties1.AllPartiesHaveFullFeePenalty, penalties2.AllPartiesHaveFullFeePenalty)
+	assert.Equal(t, len(penalties1.PenaltiesPerParty), len(penalties2.PenaltiesPerParty))
+
+	for k, p1 := range penalties1.PenaltiesPerParty {
+		p2, ok := penalties2.PenaltiesPerParty[k]
+		assert.True(t, ok)
+		assert.Equal(t, p1.Bond.String(), p2.Bond.String())
+		assert.Equal(t, p1.Fee.String(), p2.Fee.String())
+	}
+
 	assert.Equal(t,
 		originalEngine.engine.CalculateSuppliedStake(),
 		otherEngine.engine.CalculateSuppliedStake(),

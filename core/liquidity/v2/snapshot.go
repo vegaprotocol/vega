@@ -190,10 +190,15 @@ func (e *SnapshotEngine) serialisePerformances() ([]byte, error) {
 		}
 		registeredPenaltiesPerEpochSnapshot = registeredPenaltiesPerEpochSnapshot[0:trueLen]
 
+		var start int64
+		if partyPerformance.start != (time.Time{}) {
+			start = partyPerformance.start.UnixNano()
+		}
+
 		partyPerformanceSnapshot := &snapshotpb.LiquidityV2PerformancePerParty{
 			Party:                            party,
 			ElapsedTimeMeetingSlaDuringEpoch: int64(partyPerformance.s),
-			CommitmentStartTime:              partyPerformance.start.UnixNano(),
+			CommitmentStartTime:              start,
 			RegisteredPenaltiesPerEpoch:      registeredPenaltiesPerEpochSnapshot,
 			PositionInPenaltiesPerEpoch:      uint32(partyPerformance.previousPenalties.Position()),
 		}
@@ -329,9 +334,13 @@ func (e *SnapshotEngine) loadPerformances(performances *snapshotpb.LiquidityV2Pe
 			int(partyPerformance.PositionInPenaltiesPerEpoch),
 		)
 
+		var startTime time.Time
+		if partyPerformance.CommitmentStartTime > 0 {
+			startTime = time.Unix(0, partyPerformance.CommitmentStartTime)
+		}
 		e.Engine.slaPerformance[partyPerformance.Party] = &slaPerformance{
 			s:                 time.Duration(partyPerformance.ElapsedTimeMeetingSlaDuringEpoch),
-			start:             time.Unix(0, partyPerformance.CommitmentStartTime),
+			start:             startTime,
 			previousPenalties: previousPenalties,
 		}
 	}
