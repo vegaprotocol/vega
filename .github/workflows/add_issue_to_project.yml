@@ -6,7 +6,7 @@ name: "Add Issues To Project Board"
   issues:
     types: [opened]
 env:
-  GH_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
+  GH_TOKEN: ${{ secrets.PROJECT_MANAGE_ACTION }}
   PROJECT_ID: ${{ secrets.CORE_PROJECT_ID }}
   ISSUE_ID: ${{ github.event.issue.node_id }}
   USER: ${{ github.actor }}
