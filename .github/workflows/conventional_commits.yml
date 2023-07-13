@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out
-        uses: actions/checkout@v3.4.1
+        uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 0
       - name: Commitsar conventional commits check
