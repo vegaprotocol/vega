@@ -602,6 +602,10 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 			logging.AssetID(asset))
 	}
 
+	// ignore the response, this cannot fail as the asset
+	// is already proven to exists a few line before
+	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.ID, asset)
+
 	// create market auction state
 	mas := monitor.NewAuctionState(marketConfig, oos)
 	ad, err := e.assets.Get(asset)
@@ -645,10 +649,6 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 	e.futureMarketsCpy = append(e.futureMarketsCpy, mkt)
 	e.allMarkets[marketConfig.ID] = mkt
 	e.allMarketsCpy = append(e.allMarketsCpy, mkt)
-
-	// ignore the response, this cannot fail as the asset
-	// is already proven to exists a few line before
-	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.ID, asset)
 
 	return e.propagateInitialNetParamsToFutureMarket(ctx, mkt)
 }

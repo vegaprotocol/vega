@@ -92,7 +92,7 @@ func (m *MarketLiquidity) AllocateFees(ctx context.Context) error {
 	}
 
 	m.marketActivityTracker.UpdateFeesFromTransfers(m.marketID, feeTransfer.Transfers())
-	ledgerMovements, err := m.collateral.TransferSpotFees(ctx, m.marketID, m.asset, feeTransfer)
+	ledgerMovements, err := m.transferFees(ctx, feeTransfer)
 	if err != nil {
 		return fmt.Errorf("failed to transfer fees: %w", err)
 	}
@@ -122,7 +122,7 @@ func (m *MarketLiquidity) processBondPenalties(
 
 		transfer := m.NewTransfer(partyID, types.TransferTypeSLAPenaltyBondApply, amountUint)
 
-		bondLedgerMovement, err := m.collateral.BondSpotUpdate(ctx, m.marketID, transfer)
+		bondLedgerMovement, err := m.bondUpdate(ctx, transfer)
 		if err != nil {
 			m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
 		}
@@ -208,7 +208,7 @@ func (m *MarketLiquidity) distributeFeesAndCalculateBonuses(
 	}
 
 	// transfer all the fees.
-	ledgerMovements, err := m.collateral.TransferSpotFees(ctx, m.marketID, m.asset, allTransfers)
+	ledgerMovements, err := m.transferFees(ctx, allTransfers)
 	if err != nil {
 		m.log.Panic("failed to transfer fees from LP's fees accounts", logging.Error(err))
 	}
@@ -272,7 +272,7 @@ func (m *MarketLiquidity) distributePerformanceBonuses(
 		bonusTransfers.transfers = append(bonusTransfers.transfers, transfer)
 	}
 
-	ledgerMovements, err := m.collateral.TransferSpotFees(ctx, m.marketID, m.asset, bonusTransfers)
+	ledgerMovements, err := m.transferFees(ctx, bonusTransfers)
 	if err != nil {
 		m.log.Panic("failed to distribute SLA bonuses", logging.Error(err))
 	}

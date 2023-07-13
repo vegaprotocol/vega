@@ -133,7 +133,7 @@ func NewMarketFromSnapshot(
 
 	marketLiquidity := common.NewMarketLiquidity(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
-		feeEngine, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange,
+		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange,
 		mkt.LiquiditySLAParams.ProvidersFeeCalculationTimeStep,
 	)
 
