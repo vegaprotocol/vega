@@ -25,7 +25,7 @@ env:
   APPROVED_COLUMN_NAME: '"Approved"'
   MERGED_COLUMN_NAME: '"Merged"'
   DONE_COLUMN_NAME: '"Done"'
-  ITERATION_FIELD_NAME: 'Sprint'   See project settings (default is `Iteration`)
+  ITERATION_FIELD_NAME: 'Sprint'   # See project settings (default is `Iteration`)
   USER: ${{ github.actor }}
 
 concurrency:
