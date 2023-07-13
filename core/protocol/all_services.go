@@ -222,7 +222,7 @@ func newServices(
 
 	svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.ethClient, svcs.eventForwarder)
 
-	if svcs.conf.IsValidator() {
+	if svcs.conf.IsValidator() && ethClient != nil {
 		go svcs.ethCallEngine.Start()
 	}
 
