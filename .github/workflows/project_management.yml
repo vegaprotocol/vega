@@ -12,7 +12,7 @@ name: "Project Board Automation"
   pull_request_review:
     types: [submitted]
 
-Configure the project specific variables
+# Configure the project specific variables
 env:
   ORGANIZATION: vegaprotocol
   PROJECT_NUMBER: 106
