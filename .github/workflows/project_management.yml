@@ -24,7 +24,7 @@ env:
   APPROVED_COLUMN_NAME: '"Approved"'
   MERGED_COLUMN_NAME: '"Merged"'
   DONE_COLUMN_NAME: '"Done"'
-  ITERATION_FIELD_NAME: 'Sprint'   # See project settings (default is `Iteration`)
+  ITERATION_FIELD_NAME: 'Sprint'
   USER: ${{ github.actor }}
 
 concurrency:
@@ -37,10 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
     steps:
-    #######
-    ## Gather data, reopen closed issues and ensure work item is on the board
-    #######
-    # yamllint disable rule:line-length
+
       - name: "Get linked issue id and state"
         id: linked-issue
         env:
@@ -262,12 +259,9 @@ jobs:
                 }
               }
             }' -f clientMutationId=$AUTHOR_ID -f issueId=$LINKED_ISSUE_ID
-      # check the env vars before the update to help debugging
+
       - run: env
 
-      #######
-      ## Set the variables ready to update work item on project board
-      #######
       - name: "Set draft work item for progress column"
         id: draft-pr
         if: github.event.pull_request.draft == 'true' || env.IS_PR_DRAFT == 'true'
@@ -330,9 +324,7 @@ jobs:
         run: |
           echo 'ITEM_ID='${{  env.BOARD_ITEM_ID }} >> $GITHUB_ENV
           echo 'CURRENT_STATUS='${{ env.IN_PROGRESS_COLUMN }} >> $GITHUB_ENV
-      #######
-      ## Take the set item fields, update and move the item on the board
-      #######
+
       - name: Move project board item
         run: |
           gh api graphql -f query='
@@ -394,4 +386,4 @@ jobs:
           checkNotification: Simple
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    # yamllint enable rule:line-length
+# yamllint enable rule:line-length
