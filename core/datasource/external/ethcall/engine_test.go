@@ -109,6 +109,13 @@ func TestEngine(t *testing.T) {
 	})
 
 	e.Poll(ctx, time.Now())
+
+	// Now deactivate the spec and make sure we don't get called again
+	tc.client.Commit()
+	tc.client.Commit()
+
+	e.OnSpecDeactivated(context.Background(), oracleSpec)
+	e.Poll(ctx, time.Now())
 }
 
 func TestEngineWithErrorSpec(t *testing.T) {
