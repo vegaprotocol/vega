@@ -24,6 +24,10 @@ import (
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/assets/builtin"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
+	"code.vegaprotocol.io/vega/core/datasource"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	dsdefinition "code.vegaprotocol.io/vega/core/datasource/definition"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/governance/mocks"
@@ -1191,34 +1195,34 @@ func newAssetTerms() *types.ProposalTermsNewAsset {
 	}
 }
 
-func produceNonTimeTriggeredDataSourceSpec() (*types.DataSourceSpecFilter, *types.DataSourceSpecBindingForFuture) {
-	return &types.DataSourceSpecFilter{
-			Key: &types.DataSourceSpecPropertyKey{
+func produceNonTimeTriggeredDataSourceSpec() (*dstypes.SpecFilter, *datasource.SpecBindingForFuture) {
+	return &dstypes.SpecFilter{
+			Key: &dstypes.SpecPropertyKey{
 				Name: "trading.terminated",
 				Type: datapb.PropertyKey_TYPE_BOOLEAN,
 			},
-			Conditions: []*types.DataSourceSpecCondition{},
+			Conditions: []*dstypes.SpecCondition{},
 		},
-		&types.DataSourceSpecBindingForFuture{
+		&datasource.SpecBindingForFuture{
 			SettlementDataProperty:     "prices.ETH.value",
 			TradingTerminationProperty: "trading.terminated",
 		}
 }
 
-func produceTimeTriggeredDataSourceSpec(termTimestamp time.Time) (*types.DataSourceSpecFilter, *types.DataSourceSpecBindingForFuture) {
-	return &types.DataSourceSpecFilter{
-			Key: &types.DataSourceSpecPropertyKey{
+func produceTimeTriggeredDataSourceSpec(termTimestamp time.Time) (*dstypes.SpecFilter, *datasource.SpecBindingForFuture) {
+	return &dstypes.SpecFilter{
+			Key: &dstypes.SpecPropertyKey{
 				Name: "vegaprotocol.builtin.timestamp",
 				Type: datapb.PropertyKey_TYPE_TIMESTAMP,
 			},
-			Conditions: []*types.DataSourceSpecCondition{
+			Conditions: []*dstypes.SpecCondition{
 				{
 					Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 					Value:    strconv.FormatInt(termTimestamp.Unix(), 10),
 				},
 			},
 		},
-		&types.DataSourceSpecBindingForFuture{
+		&datasource.SpecBindingForFuture{
 			SettlementDataProperty:     "prices.ETH.value",
 			TradingTerminationProperty: "vegaprotocol.builtin.timestamp",
 		}
@@ -1235,17 +1239,17 @@ func newNetParamTerms(key, value string) *types.ProposalTermsUpdateNetworkParame
 	}
 }
 
-func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool, successor *types.SuccessorConfig) *types.ProposalTermsNewMarket {
-	var dt *types.DataSourceDefinition
+func newMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.SpecBindingForFuture, termExt bool, successor *types.SuccessorConfig) *types.ProposalTermsNewMarket {
+	var dt *dsdefinition.Definition
 	if termExt {
 		if termFilter == nil {
 			termFilter, termBinding = produceNonTimeTriggeredDataSourceSpec()
 		}
 
-		dt = types.NewDataSourceDefinition(types.DataSourceContentTypeOracle).SetOracleConfig(
-			&types.DataSourceSpecConfiguration{
-				Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-				Filters: []*types.DataSourceSpecFilter{
+		dt = datasource.NewDefinition(datasource.ContentTypeOracle).SetOracleConfig(
+			&signedoracle.SpecConfiguration{
+				Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+				Filters: []*dstypes.SpecFilter{
 					termFilter,
 				},
 			},
@@ -1256,8 +1260,8 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 			_, termBinding = produceTimeTriggeredDataSourceSpec(tm)
 		}
 
-		dt = types.NewDataSourceDefinition(types.DataSourceContentTypeInternalTimeTermination).SetTimeTriggerConditionConfig(
-			[]*types.DataSourceSpecCondition{
+		dt = datasource.NewDefinition(datasource.ContentTypeInternalTimeTermination).SetTimeTriggerConditionConfig(
+			[]*dstypes.SpecCondition{
 				{
 					Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 					Value:    fmt.Sprintf("%d", tm.UnixNano()),
@@ -1276,18 +1280,18 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 						Future: &types.FutureProduct{
 							SettlementAsset: "VUSD",
 							QuoteName:       "VUSD",
-							DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
-								types.DataSourceContentTypeOracle,
+							DataSourceSpecForSettlementData: *datasource.NewDefinition(
+								datasource.ContentTypeOracle,
 							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
-									Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-									Filters: []*types.DataSourceSpecFilter{
+								&signedoracle.SpecConfiguration{
+									Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+									Filters: []*dstypes.SpecFilter{
 										{
-											Key: &types.DataSourceSpecPropertyKey{
+											Key: &dstypes.SpecPropertyKey{
 												Name: "prices.ETH.value",
 												Type: datapb.PropertyKey_TYPE_INTEGER,
 											},
-											Conditions: []*types.DataSourceSpecCondition{
+											Conditions: []*dstypes.SpecCondition{
 												{
 													Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 													Value:    "0",
@@ -1376,27 +1380,27 @@ func newSpotMarketTerms() *types.ProposalTermsNewSpotMarket {
 	}
 }
 
-func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool) *types.ProposalTermsUpdateMarket {
-	var dt *types.DataSourceDefinition
+func updateMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.SpecBindingForFuture, termExt bool) *types.ProposalTermsUpdateMarket {
+	var dt *dsdefinition.Definition
 	if termExt {
 		if termFilter == nil {
-			termFilter = &types.DataSourceSpecFilter{
-				Key: &types.DataSourceSpecPropertyKey{
+			termFilter = &dstypes.SpecFilter{
+				Key: &dstypes.SpecPropertyKey{
 					Name: "trading.terminated",
 					Type: datapb.PropertyKey_TYPE_BOOLEAN,
 				},
-				Conditions: []*types.DataSourceSpecCondition{},
+				Conditions: []*dstypes.SpecCondition{},
 			}
 
-			termBinding = &types.DataSourceSpecBindingForFuture{
+			termBinding = &datasource.SpecBindingForFuture{
 				SettlementDataProperty:     "prices.ETH.value",
 				TradingTerminationProperty: "trading.terminated",
 			}
 		}
-		dt = types.NewDataSourceDefinition(types.DataSourceContentTypeOracle).SetOracleConfig(
-			&types.DataSourceSpecConfiguration{
-				Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-				Filters: []*types.DataSourceSpecFilter{
+		dt = datasource.NewDefinition(datasource.ContentTypeOracle).SetOracleConfig(
+			&signedoracle.SpecConfiguration{
+				Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+				Filters: []*dstypes.SpecFilter{
 					termFilter,
 				},
 			},
@@ -1407,8 +1411,8 @@ func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *type
 			_, termBinding = produceTimeTriggeredDataSourceSpec(tm)
 		}
 
-		dt = types.NewDataSourceDefinition(types.DataSourceContentTypeInternalTimeTermination).SetTimeTriggerConditionConfig(
-			[]*types.DataSourceSpecCondition{
+		dt = datasource.NewDefinition(datasource.ContentTypeInternalTimeTermination).SetTimeTriggerConditionConfig(
+			[]*dstypes.SpecCondition{
 				{
 					Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 					Value:    fmt.Sprintf("%d", tm.UnixNano()),
@@ -1426,18 +1430,18 @@ func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *type
 					Product: &types.UpdateInstrumentConfigurationFuture{
 						Future: &types.UpdateFutureProduct{
 							QuoteName: "VUSD",
-							DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
-								types.DataSourceContentTypeOracle,
+							DataSourceSpecForSettlementData: *datasource.NewDefinition(
+								datasource.ContentTypeOracle,
 							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
-									Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-									Filters: []*types.DataSourceSpecFilter{
+								&signedoracle.SpecConfiguration{
+									Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+									Filters: []*dstypes.SpecFilter{
 										{
-											Key: &types.DataSourceSpecPropertyKey{
+											Key: &dstypes.SpecPropertyKey{
 												Name: "prices.ETH.value",
 												Type: datapb.PropertyKey_TYPE_INTEGER,
 											},
-											Conditions: []*types.DataSourceSpecCondition{},
+											Conditions: []*dstypes.SpecCondition{},
 										},
 									},
 								},
@@ -1508,7 +1512,7 @@ func (e *tstEngine) newProposalID() string {
 	return fmt.Sprintf("proposal-id-%d", e.proposalCounter)
 }
 
-func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time, termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool) types.Proposal {
+func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time, termFilter *dstypes.SpecFilter, termBinding *datasource.SpecBindingForFuture, termExt bool) types.Proposal {
 	id := e.newProposalID()
 	return types.Proposal{
 		ID:        id,
@@ -1527,7 +1531,7 @@ func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time, termF
 	}
 }
 
-func (e *tstEngine) newProposalForSuccessorMarket(partyID string, now time.Time, termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool, successor *types.SuccessorConfig) types.Proposal {
+func (e *tstEngine) newProposalForSuccessorMarket(partyID string, now time.Time, termFilter *dstypes.SpecFilter, termBinding *datasource.SpecBindingForFuture, termExt bool, successor *types.SuccessorConfig) types.Proposal {
 	id := e.newProposalID()
 	return types.Proposal{
 		ID:        id,
@@ -1584,7 +1588,7 @@ func (e *tstEngine) newProposalForNewSpotMarket(partyID string, now time.Time) t
 	}
 }
 
-func (e *tstEngine) newProposalForMarketUpdate(marketID, partyID string, now time.Time, termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool) types.Proposal {
+func (e *tstEngine) newProposalForMarketUpdate(marketID, partyID string, now time.Time, termFilter *dstypes.SpecFilter, termBinding *datasource.SpecBindingForFuture, termExt bool) types.Proposal {
 	id := e.newProposalID()
 	prop := types.Proposal{
 		ID:        id,

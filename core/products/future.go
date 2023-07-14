@@ -17,7 +17,9 @@ import (
 	"fmt"
 	"strings"
 
-	"code.vegaprotocol.io/vega/core/oracles"
+	"code.vegaprotocol.io/vega/core/datasource"
+	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
@@ -64,9 +66,9 @@ func (f *Future) Unsubscribe(ctx context.Context) {
 }
 
 type oracle struct {
-	settlementDataSubscriptionID    oracles.SubscriptionID
-	tradingTerminatedSubscriptionID oracles.SubscriptionID
-	unsubscribe                     oracles.Unsubscriber
+	settlementDataSubscriptionID    spec.SubscriptionID
+	tradingTerminatedSubscriptionID spec.SubscriptionID
+	unsubscribe                     spec.Unsubscriber
 	binding                         oracleBinding
 	data                            oracleData
 }
@@ -173,7 +175,7 @@ func (f *Future) GetAsset() string {
 	return f.SettlementAsset
 }
 
-func (f *Future) updateTradingTerminated(ctx context.Context, data oracles.OracleData) error {
+func (f *Future) updateTradingTerminated(ctx context.Context, data dscommon.Data) error {
 	if f.log.GetLevel() == logging.DebugLevel {
 		f.log.Debug("new oracle data received", data.Debug()...)
 	}
@@ -183,7 +185,7 @@ func (f *Future) updateTradingTerminated(ctx context.Context, data oracles.Oracl
 	return f.setTradingTerminated(ctx, tradingTerminated, err)
 }
 
-func (f *Future) updateTradingTerminatedByTimestamp(ctx context.Context, data oracles.OracleData) error {
+func (f *Future) updateTradingTerminatedByTimestamp(ctx context.Context, data dscommon.Data) error {
 	if f.log.GetLevel() == logging.DebugLevel {
 		f.log.Debug("new oracle data received", data.Debug()...)
 	}
@@ -191,7 +193,7 @@ func (f *Future) updateTradingTerminatedByTimestamp(ctx context.Context, data or
 	var tradingTerminated bool
 	var err error
 
-	if _, err = data.GetTimestamp(oracles.BuiltinOracleTimestamp); err == nil {
+	if _, err = data.GetTimestamp(spec.BuiltinTimestamp); err == nil {
 		// we have received a trading termination timestamp from the internal vega time oracle
 		tradingTerminated = true
 	}
@@ -215,7 +217,7 @@ func (f *Future) setTradingTerminated(ctx context.Context, tradingTerminated boo
 	return nil
 }
 
-func (f *Future) updateSettlementData(ctx context.Context, data oracles.OracleData) error {
+func (f *Future) updateSettlementData(ctx context.Context, data dscommon.Data) error {
 	if f.log.GetLevel() == logging.DebugLevel {
 		f.log.Debug("new oracle data received", data.Debug()...)
 	}
@@ -274,9 +276,9 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		return nil, err
 	}
 
-	dSrcSpec := f.DataSourceSpecForSettlementData.Data.GetDataSourceSpecConfiguration()
+	dSrcSpec := f.DataSourceSpecForSettlementData.GetDefinition()
 
-	for _, f := range dSrcSpec.Filters {
+	for _, f := range dSrcSpec.GetFilters() {
 		// Oracle specs with more than one unique filter names are not allowed to exists, so we do not have to make that check here.
 		// We are good to only check if the type is `PropertyKey_TYPE_DECIMAL` or `PropertyKey_TYPE_INTEGER`, because we take decimals
 		// into consideration only in those cases.
@@ -297,7 +299,7 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 	}
 
 	// Oracle spec for settlement data.
-	oracleSpecForSettlementData, err := oracles.NewOracleSpec(*f.DataSourceSpecForSettlementData.ToExternalDataSourceSpec())
+	oracleSpecForSettlementData, err := spec.New(*datasource.SpecFromDefinition(*f.DataSourceSpecForSettlementData.Data))
 	if err != nil {
 		return nil, err
 	}
@@ -329,14 +331,14 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 	}
 
 	// Oracle spec for trading termination.
-	oracleSpecForTerminatedMarket, err := oracles.NewOracleSpec(*f.DataSourceSpecForTradingTermination.ToExternalDataSourceSpec())
+	oracleSpecForTerminatedMarket, err := spec.New(*datasource.SpecFromDefinition(*f.DataSourceSpecForTradingTermination.Data))
 	if err != nil {
 		return nil, err
 	}
 
 	var tradingTerminationPropType datapb.PropertyKey_Type
-	var tradingTerminationCb oracles.OnMatchedOracleData
-	if oracleBinding.tradingTerminationProperty == oracles.BuiltinOracleTimestamp {
+	var tradingTerminationCb spec.OnMatchedData
+	if oracleBinding.tradingTerminationProperty == spec.BuiltinTimestamp {
 		tradingTerminationPropType = datapb.PropertyKey_TYPE_TIMESTAMP
 		tradingTerminationCb = future.updateTradingTerminatedByTimestamp
 	} else {

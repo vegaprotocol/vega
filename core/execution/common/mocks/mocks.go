@@ -10,10 +10,11 @@ import (
 	time "time"
 
 	assets "code.vegaprotocol.io/vega/core/assets"
+	common "code.vegaprotocol.io/vega/core/datasource/common"
+	spec "code.vegaprotocol.io/vega/core/datasource/spec"
 	events "code.vegaprotocol.io/vega/core/events"
-	common "code.vegaprotocol.io/vega/core/execution/common"
+	common0 "code.vegaprotocol.io/vega/core/execution/common"
 	liquidity "code.vegaprotocol.io/vega/core/liquidity/v2"
-	oracles "code.vegaprotocol.io/vega/core/oracles"
 	types "code.vegaprotocol.io/vega/core/types"
 	statevar "code.vegaprotocol.io/vega/core/types/statevar"
 	num "code.vegaprotocol.io/vega/libs/num"
@@ -814,7 +815,7 @@ func (m *MockOracleEngine) EXPECT() *MockOracleEngineMockRecorder {
 }
 
 // ListensToSigners mocks base method.
-func (m *MockOracleEngine) ListensToSigners(arg0 oracles.OracleData) bool {
+func (m *MockOracleEngine) ListensToSigners(arg0 common.Data) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListensToSigners", arg0)
 	ret0, _ := ret[0].(bool)
@@ -828,11 +829,11 @@ func (mr *MockOracleEngineMockRecorder) ListensToSigners(arg0 interface{}) *gomo
 }
 
 // Subscribe mocks base method.
-func (m *MockOracleEngine) Subscribe(arg0 context.Context, arg1 oracles.OracleSpec, arg2 oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber, error) {
+func (m *MockOracleEngine) Subscribe(arg0 context.Context, arg1 spec.Spec, arg2 spec.OnMatchedData) (spec.SubscriptionID, spec.Unsubscriber, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Subscribe", arg0, arg1, arg2)
-	ret0, _ := ret[0].(oracles.SubscriptionID)
-	ret1, _ := ret[1].(oracles.Unsubscriber)
+	ret0, _ := ret[0].(spec.SubscriptionID)
+	ret1, _ := ret[1].(spec.Unsubscriber)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
@@ -844,7 +845,7 @@ func (mr *MockOracleEngineMockRecorder) Subscribe(arg0, arg1, arg2 interface{}) 
 }
 
 // Unsubscribe mocks base method.
-func (m *MockOracleEngine) Unsubscribe(arg0 context.Context, arg1 oracles.SubscriptionID) {
+func (m *MockOracleEngine) Unsubscribe(arg0 context.Context, arg1 spec.SubscriptionID) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Unsubscribe", arg0, arg1)
 }
@@ -1706,7 +1707,7 @@ func (mr *MockLiquidityEngineMockRecorder) UpdateAverageLiquidityScores(arg0, ar
 }
 
 // UpdateMarketConfig mocks base method.
-func (m *MockLiquidityEngine) UpdateMarketConfig(arg0 liquidity.RiskModel, arg1 common.PriceMonitor, arg2 *types.LiquiditySLAParams) {
+func (m *MockLiquidityEngine) UpdateMarketConfig(arg0 liquidity.RiskModel, arg1 common0.PriceMonitor, arg2 *types.LiquiditySLAParams) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "UpdateMarketConfig", arg0, arg1, arg2)
 }
@@ -2003,7 +2004,7 @@ func (mr *MockMarketLiquidityEngineMockRecorder) SubmitLiquidityProvision(arg0, 
 }
 
 // UpdateMarketConfig mocks base method.
-func (m *MockMarketLiquidityEngine) UpdateMarketConfig(arg0 liquidity.RiskModel, arg1 common.PriceMonitor, arg2 *types.LiquiditySLAParams) {
+func (m *MockMarketLiquidityEngine) UpdateMarketConfig(arg0 liquidity.RiskModel, arg1 common0.PriceMonitor, arg2 *types.LiquiditySLAParams) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "UpdateMarketConfig", arg0, arg1, arg2)
 }

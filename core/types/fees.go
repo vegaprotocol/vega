@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -98,7 +99,7 @@ func (f Fees) DeepClone() *Fees {
 func (f Fees) String() string {
 	return fmt.Sprintf(
 		"factors(%s)",
-		reflectPointerToString(f.Factors),
+		stringer.ReflectPointerToString(f.Factors),
 	)
 }
 
@@ -127,9 +128,9 @@ func (f Fee) Clone() *Fee {
 func (f *Fee) String() string {
 	return fmt.Sprintf(
 		"makerFee(%s) liquidityFee(%s) infrastructureFee(%s)",
-		uintPointerToString(f.MakerFee),
-		uintPointerToString(f.LiquidityFee),
-		uintPointerToString(f.InfrastructureFee),
+		stringer.UintPointerToString(f.MakerFee),
+		stringer.UintPointerToString(f.LiquidityFee),
+		stringer.UintPointerToString(f.InfrastructureFee),
 	)
 }
 

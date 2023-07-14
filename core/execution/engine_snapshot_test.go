@@ -25,10 +25,14 @@ import (
 
 	"code.vegaprotocol.io/vega/core/assets"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
+	"code.vegaprotocol.io/vega/core/datasource"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
+
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/common/mocks"
-	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -106,7 +110,7 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	collateralService.EXPECT().GetMarketLiquidityFeeAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
 	collateralService.EXPECT().GetInsurancePoolBalance(gomock.Any(), gomock.Any()).AnyTimes().Return(num.UintZero(), true)
 	oracleService := mocks.NewMockOracleEngine(ctrl)
-	oracleService.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(oracles.SubscriptionID(0), func(_ context.Context, _ oracles.SubscriptionID) {}, nil)
+	oracleService.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(spec.SubscriptionID(0), func(_ context.Context, _ spec.SubscriptionID) {}, nil)
 	oracleService.EXPECT().Unsubscribe(gomock.Any(), gomock.Any()).AnyTimes()
 
 	statevar := mocks.NewMockStateVarEngine(ctrl)
@@ -141,8 +145,8 @@ func TestEmptyMarkets(t *testing.T) {
 }
 
 func getMarketConfig() *types.Market {
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
 
 	return &types.Market{
@@ -195,45 +199,45 @@ func getMarketConfig() *types.Market {
 				Product: &types.InstrumentFuture{
 					Future: &types.Future{
 						SettlementAsset: "Ethereum/Ether",
-						DataSourceSpecForSettlementData: &types.DataSourceSpec{
+						DataSourceSpecForSettlementData: &datasource.Spec{
 							ID: "1",
-							Data: types.NewDataSourceDefinition(
-								types.DataSourceContentTypeOracle,
+							Data: datasource.NewDefinition(
+								datasource.ContentTypeOracle,
 							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
+								&signedoracle.SpecConfiguration{
 									Signers: pubKeys,
-									Filters: []*types.DataSourceSpecFilter{
+									Filters: []*dstypes.SpecFilter{
 										{
-											Key: &types.DataSourceSpecPropertyKey{
+											Key: &dstypes.SpecPropertyKey{
 												Name: "prices.ETH.value",
 												Type: datapb.PropertyKey_TYPE_INTEGER,
 											},
-											Conditions: []*types.DataSourceSpecCondition{},
+											Conditions: []*dstypes.SpecCondition{},
 										},
 									},
 								},
 							),
 						},
-						DataSourceSpecForTradingTermination: &types.DataSourceSpec{
+						DataSourceSpecForTradingTermination: &datasource.Spec{
 							ID: "2",
-							Data: types.NewDataSourceDefinition(
-								types.DataSourceContentTypeOracle,
+							Data: datasource.NewDefinition(
+								datasource.ContentTypeOracle,
 							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
+								&signedoracle.SpecConfiguration{
 									Signers: pubKeys,
-									Filters: []*types.DataSourceSpecFilter{
+									Filters: []*dstypes.SpecFilter{
 										{
-											Key: &types.DataSourceSpecPropertyKey{
+											Key: &dstypes.SpecPropertyKey{
 												Name: "trading.terminated",
 												Type: datapb.PropertyKey_TYPE_BOOLEAN,
 											},
-											Conditions: []*types.DataSourceSpecCondition{},
+											Conditions: []*dstypes.SpecCondition{},
 										},
 									},
 								},
 							),
 						},
-						DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
+						DataSourceSpecBinding: &datasource.SpecBindingForFuture{
 							SettlementDataProperty:     "prices.ETH.value",
 							TradingTerminationProperty: "trading.terminated",
 						},
@@ -392,26 +396,26 @@ func TestValidSettledMarketSnapshot(t *testing.T) {
 	// ensure CP state doesn't get invalidated the moment the market is settled
 	engine.OnSuccessorMarketTimeWindowUpdate(ctx, time.Hour)
 	// now let's set up the settlement and trading terminated callbacks
-	var ttCB, sCB oracles.OnMatchedOracleData
-	ttData := oracles.OracleData{
+	var ttCB, sCB spec.OnMatchedData
+	ttData := dstypes.Data{
 		Signers: marketConfig.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination.Data.GetSigners(),
 		Data: map[string]string{
 			"trading.terminated": "true",
 		},
 	}
-	sData := oracles.OracleData{
+	sData := dstypes.Data{
 		Signers: marketConfig.TradableInstrument.Instrument.GetFuture().DataSourceSpecForSettlementData.Data.GetSigners(),
 		Data: map[string]string{
 			"prices.ETH.value": "100000",
 		},
 	}
-	engine.oracle.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(_ context.Context, spec oracles.OracleSpec, cb oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber, error) {
-		if ok, _ := spec.MatchData(ttData); ok {
+	engine.oracle.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(_ context.Context, s spec.Spec, cb spec.OnMatchedData) (spec.SubscriptionID, spec.Unsubscriber, error) {
+		if ok, _ := s.MatchData(ttData); ok {
 			ttCB = cb
-		} else if ok, _ := spec.MatchData(sData); ok {
+		} else if ok, _ := s.MatchData(sData); ok {
 			sCB = cb
 		}
-		return oracles.SubscriptionID(0), func(_ context.Context, _ oracles.SubscriptionID) {}, nil
+		return spec.SubscriptionID(0), func(_ context.Context, _ spec.SubscriptionID) {}, nil
 	})
 	defer engine.ctrl.Finish()
 	assert.NotNil(t, engine)

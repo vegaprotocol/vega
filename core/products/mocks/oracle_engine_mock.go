@@ -8,7 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	oracles "code.vegaprotocol.io/vega/core/oracles"
+	common "code.vegaprotocol.io/vega/core/datasource/common"
+	spec "code.vegaprotocol.io/vega/core/datasource/spec"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -36,7 +37,7 @@ func (m *MockOracleEngine) EXPECT() *MockOracleEngineMockRecorder {
 }
 
 // ListensToSigners mocks base method.
-func (m *MockOracleEngine) ListensToSigners(arg0 oracles.OracleData) bool {
+func (m *MockOracleEngine) ListensToSigners(arg0 common.Data) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListensToSigners", arg0)
 	ret0, _ := ret[0].(bool)
@@ -50,11 +51,11 @@ func (mr *MockOracleEngineMockRecorder) ListensToSigners(arg0 interface{}) *gomo
 }
 
 // Subscribe mocks base method.
-func (m *MockOracleEngine) Subscribe(arg0 context.Context, arg1 oracles.OracleSpec, arg2 oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber, error) {
+func (m *MockOracleEngine) Subscribe(arg0 context.Context, arg1 spec.Spec, arg2 spec.OnMatchedData) (spec.SubscriptionID, spec.Unsubscriber, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Subscribe", arg0, arg1, arg2)
-	ret0, _ := ret[0].(oracles.SubscriptionID)
-	ret1, _ := ret[1].(oracles.Unsubscriber)
+	ret0, _ := ret[0].(spec.SubscriptionID)
+	ret1, _ := ret[1].(spec.Unsubscriber)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
@@ -66,7 +67,7 @@ func (mr *MockOracleEngineMockRecorder) Subscribe(arg0, arg1, arg2 interface{}) 
 }
 
 // Unsubscribe mocks base method.
-func (m *MockOracleEngine) Unsubscribe(arg0 context.Context, arg1 oracles.SubscriptionID) {
+func (m *MockOracleEngine) Unsubscribe(arg0 context.Context, arg1 spec.SubscriptionID) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Unsubscribe", arg0, arg1)
 }

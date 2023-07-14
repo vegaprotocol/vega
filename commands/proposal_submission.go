@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"code.vegaprotocol.io/vega/core/types"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -953,7 +953,7 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 				}
 
 				for i, key := range signers {
-					signer := types.SignerFromProto(key)
+					signer := dstypes.SignerFromProto(key)
 					if signer.IsEmpty() {
 						errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValid)
 					} else if pubkey := signer.GetSignerPubKey(); pubkey != nil && !crypto.IsValidVegaPubKey(pubkey.Key) {

@@ -19,8 +19,8 @@ import (
 
 	"github.com/cucumber/godog"
 
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
-	"code.vegaprotocol.io/vega/core/types"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -30,7 +30,7 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 	pubKeys := StrSlice(rawPubKeys, ",")
 	pubKeysSigners := make([]*datav1.Signer, len(pubKeys))
 	for i, s := range pubKeys {
-		pks := types.CreateSignerFromString(s, types.DataSignerTypePubKey)
+		pks := dstypes.CreateSignerFromString(s, dstypes.SignerTypePubKey)
 		pubKeysSigners[i] = pks.IntoProto()
 	}
 

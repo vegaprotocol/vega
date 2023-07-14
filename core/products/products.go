@@ -16,7 +16,8 @@ import (
 	"context"
 	"errors"
 
-	"code.vegaprotocol.io/vega/core/oracles"
+	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
@@ -34,9 +35,9 @@ var (
 //
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_engine_mock.go -package mocks code.vegaprotocol.io/vega/core/products OracleEngine
 type OracleEngine interface {
-	ListensToSigners(oracles.OracleData) bool
-	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber, error)
-	Unsubscribe(context.Context, oracles.SubscriptionID)
+	ListensToSigners(dscommon.Data) bool
+	Subscribe(context.Context, spec.Spec, spec.OnMatchedData) (spec.SubscriptionID, spec.Unsubscriber, error)
+	Unsubscribe(context.Context, spec.SubscriptionID)
 }
 
 // Product is the interface provided by all product in vega.

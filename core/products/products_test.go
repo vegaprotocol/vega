@@ -16,7 +16,10 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/vega/core/oracles"
+	"code.vegaprotocol.io/vega/core/datasource"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/products/mocks"
 	"code.vegaprotocol.io/vega/core/types"
@@ -45,47 +48,47 @@ func getValidInstrumentProto() *types.Instrument {
 			Future: &types.Future{
 				QuoteName:       "USD",
 				SettlementAsset: SettlementAssetStr,
-				DataSourceSpecForSettlementData: &types.DataSourceSpec{
-					Data: types.NewDataSourceDefinition(
-						types.DataSourceContentTypeOracle,
+				DataSourceSpecForSettlementData: &datasource.Spec{
+					Data: datasource.NewDefinition(
+						datasource.ContentTypeOracle,
 					).SetOracleConfig(
-						&types.DataSourceSpecConfiguration{
-							Signers: []*types.Signer{
-								types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+						&signedoracle.SpecConfiguration{
+							Signers: []*dstypes.Signer{
+								dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 							},
-							Filters: []*types.DataSourceSpecFilter{
+							Filters: []*dstypes.SpecFilter{
 								{
-									Key: &types.DataSourceSpecPropertyKey{
+									Key: &dstypes.SpecPropertyKey{
 										Name: "prices.ETH.value",
 										Type: datapb.PropertyKey_TYPE_INTEGER,
 									},
-									Conditions: []*types.DataSourceSpecCondition{},
+									Conditions: []*dstypes.SpecCondition{},
 								},
 							},
 						},
 					),
 				},
-				DataSourceSpecForTradingTermination: &types.DataSourceSpec{
-					Data: types.NewDataSourceDefinition(
-						types.DataSourceContentTypeOracle,
+				DataSourceSpecForTradingTermination: &datasource.Spec{
+					Data: datasource.NewDefinition(
+						datasource.ContentTypeOracle,
 					).SetOracleConfig(
-						&types.DataSourceSpecConfiguration{
-							Signers: []*types.Signer{
-								types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+						&signedoracle.SpecConfiguration{
+							Signers: []*dstypes.Signer{
+								dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 							},
-							Filters: []*types.DataSourceSpecFilter{
+							Filters: []*dstypes.SpecFilter{
 								{
-									Key: &types.DataSourceSpecPropertyKey{
+									Key: &dstypes.SpecPropertyKey{
 										Name: "trading.terminated",
 										Type: datapb.PropertyKey_TYPE_BOOLEAN,
 									},
-									Conditions: []*types.DataSourceSpecCondition{},
+									Conditions: []*dstypes.SpecCondition{},
 								},
 							},
 						},
 					),
 				},
-				DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
+				DataSourceSpecBinding: &datasource.SpecBindingForFuture{
 					SettlementDataProperty:     "prices.ETH.value",
 					TradingTerminationProperty: "trading.terminated",
 				},
@@ -99,12 +102,12 @@ func TestFutureSettlement(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	oe := mocks.NewMockOracleEngine(ctrl)
 
-	sid1 := oracles.SubscriptionID(1)
+	sid1 := spec.SubscriptionID(1)
 	oe.EXPECT().Unsubscribe(ctx, sid1).AnyTimes()
 	oe.EXPECT().
 		Subscribe(ctx, gomock.Any(), gomock.Any()).
 		Times(2).
-		Return(sid1, func(ctx context.Context, sid oracles.SubscriptionID) {
+		Return(sid1, func(ctx context.Context, sid spec.SubscriptionID) {
 			oe.Unsubscribe(ctx, sid)
 		}, nil)
 

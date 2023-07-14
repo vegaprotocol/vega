@@ -15,6 +15,7 @@ package types_test
 import (
 	"testing"
 
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/types"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -35,7 +36,7 @@ var testFilter1 = &datapb.Filter{
 }
 
 func TestMarketFromIntoProto(t *testing.T) {
-	pk := types.CreateSignerFromString("pubkey", types.DataSignerTypePubKey)
+	pk := dstypes.CreateSignerFromString("pubkey", dstypes.SignerTypePubKey)
 
 	pMarket := &vegapb.Market{
 		Id: "foo",

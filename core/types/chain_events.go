@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
@@ -31,7 +32,7 @@ type WithdrawExt struct {
 func (x *WithdrawExt) String() string {
 	return fmt.Sprintf(
 		"ext(%s)",
-		reflectPointerToString(x.Ext),
+		stringer.ReflectPointerToString(x.Ext),
 	)
 }
 
@@ -86,7 +87,7 @@ func (x *WithdrawExtErc20) isWithdrawExtExt() {}
 func (x *WithdrawExtErc20) String() string {
 	return fmt.Sprintf(
 		"erc20(%s)",
-		reflectPointerToString(x.Erc20),
+		stringer.ReflectPointerToString(x.Erc20),
 	)
 }
 
@@ -248,7 +249,7 @@ func (d *Deposit) String() string {
 		d.Status.String(),
 		d.PartyID,
 		d.Asset,
-		uintPointerToString(d.Amount),
+		stringer.UintPointerToString(d.Amount),
 		d.TxHash,
 		d.CreditDate,
 		d.CreationDate,
@@ -293,7 +294,7 @@ func (c ChainEventERC20) IntoProto() *commandspb.ChainEvent_Erc20 {
 func (c ChainEventERC20) String() string {
 	return fmt.Sprintf(
 		"erc20(%s)",
-		reflectPointerToString(c.ERC20),
+		stringer.ReflectPointerToString(c.ERC20),
 	)
 }
 
@@ -335,7 +336,7 @@ func (b BuiltinAssetDeposit) String() string {
 		"party(%s) vegaAssetID(%s) amount(%s)",
 		b.PartyID,
 		b.VegaAssetID,
-		uintPointerToString(b.Amount),
+		stringer.UintPointerToString(b.Amount),
 	)
 }
 
@@ -381,7 +382,7 @@ func (b BuiltinAssetWithdrawal) String() string {
 		"partyID(%s) vegaAssetID(%s) amount(%s)",
 		b.PartyID,
 		b.VegaAssetID,
-		uintPointerToString(b.Amount),
+		stringer.UintPointerToString(b.Amount),
 	)
 }
 
@@ -413,7 +414,7 @@ func (c ChainEventBuiltin) IntoProto() *commandspb.ChainEvent_Builtin {
 func (c ChainEventBuiltin) String() string {
 	return fmt.Sprintf(
 		"builtin(%s)",
-		reflectPointerToString(c.Builtin),
+		stringer.ReflectPointerToString(c.Builtin),
 	)
 }
 
@@ -462,7 +463,7 @@ func (c BuiltinAssetEvent) IntoProto() *vegapb.BuiltinAssetEvent {
 func (c BuiltinAssetEvent) String() string {
 	return fmt.Sprintf(
 		"action(%s)",
-		reflectPointerToString(c.Action),
+		stringer.ReflectPointerToString(c.Action),
 	)
 }
 
@@ -473,7 +474,7 @@ type BuiltinAssetEventDeposit struct {
 func (b BuiltinAssetEventDeposit) String() string {
 	return fmt.Sprintf(
 		"deposit(%s)",
-		reflectPointerToString(b.Deposit),
+		stringer.ReflectPointerToString(b.Deposit),
 	)
 }
 
@@ -507,7 +508,7 @@ type BuiltinAssetEventWithdrawal struct {
 func (b BuiltinAssetEventWithdrawal) String() string {
 	return fmt.Sprintf(
 		"withdrawal(%s)",
-		reflectPointerToString(b.Withdrawal),
+		stringer.ReflectPointerToString(b.Withdrawal),
 	)
 }
 
@@ -622,7 +623,7 @@ func (e ERC20Event) String() string {
 		"index(%v) block(%v) action(%s)",
 		e.Index,
 		e.Block,
-		reflectPointerToString(e.Action),
+		stringer.ReflectPointerToString(e.Action),
 	)
 }
 
@@ -633,7 +634,7 @@ type ERC20EventAssetDelist struct {
 func (e ERC20EventAssetDelist) String() string {
 	return fmt.Sprintf(
 		"assetDelist(%s)",
-		reflectPointerToString(e.AssetDelist),
+		stringer.ReflectPointerToString(e.AssetDelist),
 	)
 }
 
@@ -689,7 +690,7 @@ func (e ERC20EventAssetList) oneOfProto() interface{} {
 func (e ERC20EventAssetList) String() string {
 	return fmt.Sprintf(
 		"assetList(%s)",
-		reflectPointerToString(e.AssetList),
+		stringer.ReflectPointerToString(e.AssetList),
 	)
 }
 
@@ -749,7 +750,7 @@ func (e ERC20EventWithdrawal) oneOfProto() interface{} {
 func (e ERC20EventWithdrawal) String() string {
 	return fmt.Sprintf(
 		"withdrawal(%s)",
-		reflectPointerToString(e.Withdrawal),
+		stringer.ReflectPointerToString(e.Withdrawal),
 	)
 }
 
@@ -810,7 +811,7 @@ type ERC20EventDeposit struct {
 func (e ERC20EventDeposit) String() string {
 	return fmt.Sprintf(
 		"deposit(%s)",
-		reflectPointerToString(e.Deposit),
+		stringer.ReflectPointerToString(e.Deposit),
 	)
 }
 
@@ -878,7 +879,7 @@ func (e ERC20Deposit) String() string {
 		"vegaAssetID(%s) targetPartyID(%s) amount(%s) sourceEthereumAddress(%s)",
 		e.VegaAssetID,
 		e.TargetPartyID,
-		uintPointerToString(e.Amount),
+		stringer.UintPointerToString(e.Amount),
 		e.SourceEthereumAddress,
 	)
 }
@@ -900,7 +901,7 @@ func (e ERC20EventAssetLimitsUpdated) oneOfProto() interface{} {
 func (e ERC20EventAssetLimitsUpdated) String() string {
 	return fmt.Sprintf(
 		"assetLimitsUpdated(%s)",
-		reflectPointerToString(e.AssetLimitsUpdated),
+		stringer.ReflectPointerToString(e.AssetLimitsUpdated),
 	)
 }
 
@@ -948,8 +949,8 @@ func (e ERC20AssetLimitsUpdated) String() string {
 		"vegaAssetID(%s) sourceEthereumAddress(%s) lifetimeLimits(%s) withdrawThreshold(%s)",
 		e.VegaAssetID,
 		e.SourceEthereumAddress,
-		uintPointerToString(e.LifetimeLimits),
-		uintPointerToString(e.WithdrawThreshold),
+		stringer.UintPointerToString(e.LifetimeLimits),
+		stringer.UintPointerToString(e.WithdrawThreshold),
 	)
 }
 

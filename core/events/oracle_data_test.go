@@ -16,8 +16,8 @@ import (
 	"context"
 	"testing"
 
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/types"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
@@ -25,15 +25,15 @@ import (
 
 func TestOracleDataDeepClone(t *testing.T) {
 	ctx := context.Background()
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("PK1", types.DataSignerTypePubKey),
-		types.CreateSignerFromString("PK2", types.DataSignerTypePubKey),
-		types.CreateSignerFromString("PK3", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("PK1", dstypes.SignerTypePubKey),
+		dstypes.CreateSignerFromString("PK2", dstypes.SignerTypePubKey),
+		dstypes.CreateSignerFromString("PK3", dstypes.SignerTypePubKey),
 	}
 
 	od := datapb.ExternalData{
 		Data: &datapb.Data{
-			Signers: types.SignersIntoProto(pubKeys),
+			Signers: dstypes.SignersIntoProto(pubKeys),
 			Data: []*datapb.Property{
 				{
 					Name:  "Name",
@@ -52,9 +52,9 @@ func TestOracleDataDeepClone(t *testing.T) {
 	od2 := odEvent.OracleData()
 
 	// Change the original values
-	pk1 := types.CreateSignerFromString("Changed1", types.DataSignerTypePubKey)
-	pk2 := types.CreateSignerFromString("Changed2", types.DataSignerTypePubKey)
-	pk3 := types.CreateSignerFromString("Changed3", types.DataSignerTypePubKey)
+	pk1 := dstypes.CreateSignerFromString("Changed1", dstypes.SignerTypePubKey)
+	pk2 := dstypes.CreateSignerFromString("Changed2", dstypes.SignerTypePubKey)
+	pk3 := dstypes.CreateSignerFromString("Changed3", dstypes.SignerTypePubKey)
 
 	od.Data.Signers[0] = pk1.IntoProto()
 	od.Data.Signers[1] = pk2.IntoProto()

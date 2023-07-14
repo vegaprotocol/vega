@@ -19,6 +19,7 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -193,11 +194,11 @@ func (o Order) String() string {
 		o.CreatedAt,
 		o.UpdatedAt,
 		o.ExpiresAt,
-		uintPointerToString(o.OriginalPrice),
-		reflectPointerToString(o.PeggedOrder),
+		stringer.UintPointerToString(o.OriginalPrice),
+		stringer.ReflectPointerToString(o.PeggedOrder),
 		o.PostOnly,
 		o.ReduceOnly,
-		reflectPointerToString(o.IcebergOrder),
+		stringer.ReflectPointerToString(o.IcebergOrder),
 	)
 }
 
@@ -393,7 +394,7 @@ func (p PeggedOrder) String() string {
 	return fmt.Sprintf(
 		"reference(%s) offset(%s)",
 		p.Reference.String(),
-		uintPointerToString(p.Offset),
+		stringer.UintPointerToString(p.Offset),
 	)
 }
 
@@ -531,8 +532,8 @@ func (t Trade) String() string {
 		"ID(%s) marketID(%s) price(%s) marketPrice(%s) size(%v) buyer(%s) seller(%s) aggressor(%s) buyOrder(%s) sellOrder(%s) timestamp(%v) type(%s) buyerAuctionBatch(%v) sellerAuctionBatch(%v) buyerFee(%s) sellerFee(%s)",
 		t.ID,
 		t.MarketID,
-		uintPointerToString(t.Price),
-		uintPointerToString(t.MarketPrice),
+		stringer.UintPointerToString(t.Price),
+		stringer.UintPointerToString(t.MarketPrice),
 		t.Size,
 		t.Buyer,
 		t.Seller,
@@ -543,8 +544,8 @@ func (t Trade) String() string {
 		t.Type.String(),
 		t.BuyerAuctionBatch,
 		t.SellerAuctionBatch,
-		reflectPointerToString(t.SellerFee),
-		reflectPointerToString(t.BuyerFee),
+		stringer.ReflectPointerToString(t.SellerFee),
+		stringer.ReflectPointerToString(t.BuyerFee),
 	)
 }
 

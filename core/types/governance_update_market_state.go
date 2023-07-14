@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -18,7 +19,7 @@ type UpdateMarketState struct {
 func (a ProposalTermsUpdateMarketState) String() string {
 	return fmt.Sprintf(
 		"updateMarketState(%s)",
-		reflectPointerToString(a.UpdateMarketState),
+		stringer.ReflectPointerToString(a.UpdateMarketState),
 	)
 }
 
@@ -89,7 +90,7 @@ func (c UpdateMarketState) IntoProto() *vegapb.UpdateMarketState {
 func (c UpdateMarketState) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		reflectPointerToString(c.Changes),
+		stringer.ReflectPointerToString(c.Changes),
 	)
 }
 
@@ -123,5 +124,5 @@ type MarketStateUpdateConfiguration struct {
 }
 
 func (c MarketStateUpdateConfiguration) String() string {
-	return fmt.Sprintf("marketID(%s), updateType(%d), settlementPrice(%s)", c.MarketID, c.UpdateType, reflectPointerToString(c.SettlementPrice))
+	return fmt.Sprintf("marketID(%s), updateType(%d), settlementPrice(%s)", c.MarketID, c.UpdateType, stringer.ReflectPointerToString(c.SettlementPrice))
 }

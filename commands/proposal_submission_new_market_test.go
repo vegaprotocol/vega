@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/commands"
-	"code.vegaprotocol.io/vega/core/types"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -1497,9 +1497,9 @@ func testNewFutureMarketChangeSubmissionWithoutPubKeysFails(t *testing.T) {
 }
 
 func testNewFutureMarketChangeSubmissionWithWrongPubKeysFails(t *testing.T) {
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
-		types.CreateSignerFromString("", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
+		dstypes.CreateSignerFromString("", dstypes.SignerTypePubKey),
 	}
 
 	testCases := []struct {
@@ -1508,10 +1508,10 @@ func testNewFutureMarketChangeSubmissionWithWrongPubKeysFails(t *testing.T) {
 	}{
 		{
 			msg:   "with empty signers",
-			value: types.SignersIntoProto(pubKeys),
+			value: dstypes.SignersIntoProto(pubKeys),
 		}, {
 			msg:   "with blank signers",
-			value: types.SignersIntoProto(pubKeys),
+			value: dstypes.SignersIntoProto(pubKeys),
 		},
 	}
 	for _, tc := range testCases {
@@ -1548,11 +1548,11 @@ func testNewFutureMarketChangeSubmissionWithWrongPubKeysFails(t *testing.T) {
 }
 
 func testNewFutureMarketChangeSubmissionWithBadPubKeysOrderAddressFail(t *testing.T) {
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
-		types.CreateSignerFromString("0xCAFEDUDE", types.DataSignerTypePubKey),
-		types.CreateSignerFromString("0xCAFEDUDE", types.DataSignerTypeEthAddress),
-		types.CreateSignerFromString("36393436346533356263623865386132393030636130663837616361663235326435306366326162326663373336393438343561313662376338613064633666", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
+		dstypes.CreateSignerFromString("0xCAFEDUDE", dstypes.SignerTypePubKey),
+		dstypes.CreateSignerFromString("0xCAFEDUDE", dstypes.SignerTypeEthAddress),
+		dstypes.CreateSignerFromString("36393436346533356263623865386132393030636130663837616361663235326435306366326162326663373336393438343561313662376338613064633666", dstypes.SignerTypePubKey),
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
@@ -1568,7 +1568,7 @@ func testNewFutureMarketChangeSubmissionWithBadPubKeysOrderAddressFail(t *testin
 									).SetOracleConfig(
 										&vegapb.DataSourceDefinitionExternal_Oracle{
 											Oracle: &vegapb.DataSourceSpecConfiguration{
-												Signers: types.SignersIntoProto(pubKeys),
+												Signers: dstypes.SignersIntoProto(pubKeys),
 											},
 										},
 									),
@@ -1577,7 +1577,7 @@ func testNewFutureMarketChangeSubmissionWithBadPubKeysOrderAddressFail(t *testin
 									).SetOracleConfig(
 										&vegapb.DataSourceDefinitionExternal_Oracle{
 											Oracle: &vegapb.DataSourceSpecConfiguration{
-												Signers: types.SignersIntoProto(pubKeys),
+												Signers: dstypes.SignersIntoProto(pubKeys),
 											},
 										},
 									),
@@ -1601,9 +1601,9 @@ func testNewFutureMarketChangeSubmissionWithBadPubKeysOrderAddressFail(t *testin
 }
 
 func testNewFutureMarketChangeSubmissionWithGoodPubKeysOrderAddressSucceed(t *testing.T) {
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0x8565a19c49bcD6Fa7b6EB0221a50606F9c9cC683", types.DataSignerTypeEthAddress),
-		types.CreateSignerFromString("bd069246503a57271375f1995c46e03db88c4e1a564077b33a9872f905650dc4", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0x8565a19c49bcD6Fa7b6EB0221a50606F9c9cC683", dstypes.SignerTypeEthAddress),
+		dstypes.CreateSignerFromString("bd069246503a57271375f1995c46e03db88c4e1a564077b33a9872f905650dc4", dstypes.SignerTypePubKey),
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
@@ -1619,7 +1619,7 @@ func testNewFutureMarketChangeSubmissionWithGoodPubKeysOrderAddressSucceed(t *te
 									).SetOracleConfig(
 										&vegapb.DataSourceDefinitionExternal_Oracle{
 											Oracle: &vegapb.DataSourceSpecConfiguration{
-												Signers: types.SignersIntoProto(pubKeys),
+												Signers: dstypes.SignersIntoProto(pubKeys),
 											},
 										},
 									),
@@ -1628,7 +1628,7 @@ func testNewFutureMarketChangeSubmissionWithGoodPubKeysOrderAddressSucceed(t *te
 									).SetOracleConfig(
 										&vegapb.DataSourceDefinitionExternal_Oracle{
 											Oracle: &vegapb.DataSourceSpecConfiguration{
-												Signers: types.SignersIntoProto(pubKeys),
+												Signers: dstypes.SignersIntoProto(pubKeys),
 											},
 										},
 									),
@@ -3678,9 +3678,9 @@ func testFutureMarketSubmissionWithExternalTradingSettlementBuiltInKeyNoPublicKe
 }
 
 func testFutureMarketSubmissionWithExternalTradingSettlementTimestampKeySucceeds(t *testing.T) {
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
-		types.CreateSignerFromString("", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
+		dstypes.CreateSignerFromString("", dstypes.SignerTypePubKey),
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
@@ -3696,7 +3696,7 @@ func testFutureMarketSubmissionWithExternalTradingSettlementTimestampKeySucceeds
 									).SetOracleConfig(
 										&vegapb.DataSourceDefinitionExternal_Oracle{
 											Oracle: &vegapb.DataSourceSpecConfiguration{
-												Signers: types.SignersIntoProto(pubKeys),
+												Signers: dstypes.SignersIntoProto(pubKeys),
 												Filters: []*datapb.Filter{
 													{
 														Key: &datapb.PropertyKey{
@@ -3740,8 +3740,8 @@ func testFutureMarketSubmissionWithExternalTradingSettlementTimestampKeySucceeds
 }
 
 func testFutureMarketSubmissionWithExternalTradingTerminationBuiltInKeySucceeds(t *testing.T) {
-	pubKey := []*types.Signer{
-		types.CreateSignerFromString("bd069246503a57271375f1995c46e03db88c4e1a564077b33a9872f905650dc4", types.DataSignerTypePubKey),
+	pubKey := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("bd069246503a57271375f1995c46e03db88c4e1a564077b33a9872f905650dc4", dstypes.SignerTypePubKey),
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
@@ -3757,7 +3757,7 @@ func testFutureMarketSubmissionWithExternalTradingTerminationBuiltInKeySucceeds(
 									).SetOracleConfig(
 										&vegapb.DataSourceDefinitionExternal_Oracle{
 											Oracle: &vegapb.DataSourceSpecConfiguration{
-												Signers: types.SignersIntoProto(pubKey),
+												Signers: dstypes.SignersIntoProto(pubKey),
 												Filters: []*datapb.Filter{
 													{
 														Key: &datapb.PropertyKey{
@@ -3779,7 +3779,7 @@ func testFutureMarketSubmissionWithExternalTradingTerminationBuiltInKeySucceeds(
 									).SetOracleConfig(
 										&vegapb.DataSourceDefinitionExternal_Oracle{
 											Oracle: &vegapb.DataSourceSpecConfiguration{
-												Signers: types.SignersIntoProto(pubKey),
+												Signers: dstypes.SignersIntoProto(pubKey),
 												Filters: []*datapb.Filter{
 													{
 														Key: &datapb.PropertyKey{
@@ -3811,8 +3811,8 @@ func testFutureMarketSubmissionWithExternalTradingTerminationBuiltInKeySucceeds(
 }
 
 func testFutureMarketSubmissionWithExternalTradingTerminationNoSignerFails(t *testing.T) {
-	pubKey := []*types.Signer{
-		types.CreateSignerFromString("bd069246503a57271375f1995c46e03db88c4e1a564077b33a9872f905650dc4", types.DataSignerTypePubKey),
+	pubKey := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("bd069246503a57271375f1995c46e03db88c4e1a564077b33a9872f905650dc4", dstypes.SignerTypePubKey),
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
@@ -3828,7 +3828,7 @@ func testFutureMarketSubmissionWithExternalTradingTerminationNoSignerFails(t *te
 									).SetOracleConfig(
 										&vegapb.DataSourceDefinitionExternal_Oracle{
 											Oracle: &vegapb.DataSourceSpecConfiguration{
-												Signers: types.SignersIntoProto(pubKey),
+												Signers: dstypes.SignersIntoProto(pubKey),
 												Filters: []*datapb.Filter{
 													{
 														Key: &datapb.PropertyKey{
@@ -3876,8 +3876,8 @@ func testFutureMarketSubmissionWithExternalTradingTerminationNoSignerFails(t *te
 }
 
 func testFutureMarketSubmissionWithExternalSettlementDataNoSignerFails(t *testing.T) {
-	pubKey := []*types.Signer{
-		types.CreateSignerFromString("bd069246503a57271375f1995c46e03db88c4e1a564077b33a9872f905650dc4", types.DataSignerTypePubKey),
+	pubKey := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("bd069246503a57271375f1995c46e03db88c4e1a564077b33a9872f905650dc4", dstypes.SignerTypePubKey),
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
@@ -3914,7 +3914,7 @@ func testFutureMarketSubmissionWithExternalSettlementDataNoSignerFails(t *testin
 									).SetOracleConfig(
 										&vegapb.DataSourceDefinitionExternal_Oracle{
 											Oracle: &vegapb.DataSourceSpecConfiguration{
-												Signers: types.SignersIntoProto(pubKey),
+												Signers: dstypes.SignersIntoProto(pubKey),
 												Filters: []*datapb.Filter{
 													{
 														Key: &datapb.PropertyKey{
@@ -3941,8 +3941,8 @@ func testFutureMarketSubmissionWithExternalSettlementDataNoSignerFails(t *testin
 }
 
 func testFutureMarketSubmissionWithInternalSettlementDataFails(t *testing.T) {
-	pubKey := []*types.Signer{
-		types.CreateSignerFromString("bd069246503a57271375f1995c46e03db88c4e1a564077b33a9872f905650dc4", types.DataSignerTypePubKey),
+	pubKey := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("bd069246503a57271375f1995c46e03db88c4e1a564077b33a9872f905650dc4", dstypes.SignerTypePubKey),
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
@@ -3968,7 +3968,7 @@ func testFutureMarketSubmissionWithInternalSettlementDataFails(t *testing.T) {
 									).SetOracleConfig(
 										&vegapb.DataSourceDefinitionExternal_Oracle{
 											Oracle: &vegapb.DataSourceSpecConfiguration{
-												Signers: types.SignersIntoProto(pubKey),
+												Signers: dstypes.SignersIntoProto(pubKey),
 												Filters: []*datapb.Filter{
 													{
 														Key: &datapb.PropertyKey{

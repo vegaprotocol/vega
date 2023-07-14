@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -51,7 +51,7 @@ func TestMarketSuccession(t *testing.T) {
 	exec.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	exec.collateral.EXPECT().AssetExists(gomock.Any()).AnyTimes().Return(true)
 	exec.collateral.EXPECT().CreateMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	exec.oracle.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(oracles.SubscriptionID(0), func(_ context.Context, _ oracles.SubscriptionID) {}, nil)
+	exec.oracle.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(spec.SubscriptionID(0), func(_ context.Context, _ spec.SubscriptionID) {}, nil)
 	exec.statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	exec.statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 

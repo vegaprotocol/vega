@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/types"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
@@ -227,8 +227,8 @@ func testGetOracleDataByTxHash(t *testing.T) {
 }
 
 func getTestOracleData() []*vegapb.OracleData {
-	pk1 := types.CreateSignerFromString("b105f00d", types.DataSignerTypePubKey)
-	pk2 := types.CreateSignerFromString("baddcafe", types.DataSignerTypePubKey)
+	pk1 := dstypes.CreateSignerFromString("b105f00d", dstypes.SignerTypePubKey)
+	pk2 := dstypes.CreateSignerFromString("baddcafe", dstypes.SignerTypePubKey)
 	testError := "testError"
 
 	return []*vegapb.OracleData{

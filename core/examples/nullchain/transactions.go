@@ -17,8 +17,8 @@ import (
 	"strconv"
 	"time"
 
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/examples/nullchain/config"
-	"code.vegaprotocol.io/vega/core/types"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -30,7 +30,7 @@ func MarketProposalTxn(now time.Time, oraclePubkey string) (*walletpb.SubmitTran
 	reference := "ref-" + vgrand.RandomStr(10)
 	asset := config.NormalAsset
 
-	pubKey := types.CreateSignerFromString(oraclePubkey, types.DataSignerTypePubKey)
+	pubKey := dstypes.CreateSignerFromString(oraclePubkey, dstypes.SignerTypePubKey)
 	cmd := &walletpb.SubmitTransactionRequest_ProposalSubmission{
 		ProposalSubmission: &v1.ProposalSubmission{
 			Reference: reference,

@@ -18,20 +18,20 @@ import (
 
 	"github.com/cucumber/godog"
 
-	"code.vegaprotocol.io/vega/core/oracles"
-	"code.vegaprotocol.io/vega/core/types"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 )
 
 func OraclesBroadcastDataSignedWithKeys(
-	oracleEngine *oracles.Engine,
+	oracleEngine *spec.Engine,
 	rawPubKeys string,
 	rawProperties *godog.Table,
 ) error {
 	pubKeys := parseOracleDataSigners(rawPubKeys)
-	pubKeysSigners := make([]*types.Signer, len(pubKeys))
+	pubKeysSigners := make([]*dstypes.Signer, len(pubKeys))
 	for i, s := range pubKeys {
-		pubKeysSigners[i] = types.CreateSignerFromString(s, types.DataSignerTypePubKey)
+		pubKeysSigners[i] = dstypes.CreateSignerFromString(s, dstypes.SignerTypePubKey)
 	}
 
 	properties, err := parseOracleDataProperties(rawProperties)
@@ -41,7 +41,7 @@ func OraclesBroadcastDataSignedWithKeys(
 
 	// we need a traceID here in case of final MTM settlement -> an idgen is required
 	ctx := vgcontext.WithTraceID(context.Background(), "deadbeef")
-	return oracleEngine.BroadcastData(ctx, oracles.OracleData{
+	return oracleEngine.BroadcastData(ctx, dstypes.Data{
 		Signers: pubKeysSigners,
 		Data:    properties,
 	})

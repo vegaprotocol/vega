@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/types"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
@@ -45,8 +45,8 @@ func TestDataSourceDefinitionGetOracle(t *testing.T) {
 				).SetOracleConfig(
 					&vega.DataSourceDefinitionExternal_Oracle{
 						Oracle: &vegapb.DataSourceSpecConfiguration{
-							Signers: types.SignersIntoProto(
-								[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
+							Signers: dstypes.SignersIntoProto(
+								[]*dstypes.Signer{dstypes.CreateSignerFromString("0xTESTSIGN", dstypes.SignerTypePubKey)},
 							),
 							Filters: []*datapb.Filter{
 								{
@@ -182,8 +182,8 @@ func TestDataSourceDefinitionGetInternalTimeTrigger(t *testing.T) {
 			).SetOracleConfig(
 				&vega.DataSourceDefinitionExternal_Oracle{
 					Oracle: &vegapb.DataSourceSpecConfiguration{
-						Signers: types.SignersIntoProto(
-							[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
+						Signers: dstypes.SignersIntoProto(
+							[]*dstypes.Signer{dstypes.CreateSignerFromString("0xTESTSIGN", dstypes.SignerTypePubKey)},
 						),
 						Filters: []*datapb.Filter{
 							{
@@ -263,8 +263,8 @@ func TestDataSourceDefinitionGetSigners(t *testing.T) {
 			).SetOracleConfig(
 				&vega.DataSourceDefinitionExternal_Oracle{
 					Oracle: &vegapb.DataSourceSpecConfiguration{
-						Signers: types.SignersIntoProto(
-							[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
+						Signers: dstypes.SignersIntoProto(
+							[]*dstypes.Signer{dstypes.CreateSignerFromString("0xTESTSIGN", dstypes.SignerTypePubKey)},
 						),
 						Filters: []*datapb.Filter{
 							{
@@ -342,8 +342,8 @@ func TestDataSourceDefinitionGetFilters(t *testing.T) {
 			).SetOracleConfig(
 				&vega.DataSourceDefinitionExternal_Oracle{
 					Oracle: &vegapb.DataSourceSpecConfiguration{
-						Signers: types.SignersIntoProto(
-							[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
+						Signers: dstypes.SignersIntoProto(
+							[]*dstypes.Signer{dstypes.CreateSignerFromString("0xTESTSIGN", dstypes.SignerTypePubKey)},
 						),
 						Filters: []*datapb.Filter{
 							{
@@ -423,8 +423,8 @@ func TestDataSourceDefinitionGetConditions(t *testing.T) {
 			).SetOracleConfig(
 				&vega.DataSourceDefinitionExternal_Oracle{
 					Oracle: &vegapb.DataSourceSpecConfiguration{
-						Signers: types.SignersIntoProto(
-							[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
+						Signers: dstypes.SignersIntoProto(
+							[]*dstypes.Signer{dstypes.CreateSignerFromString("0xTESTSIGN", dstypes.SignerTypePubKey)},
 						),
 						Filters: []*datapb.Filter{
 							{
@@ -502,8 +502,8 @@ func TestDataSourceDefinitionFromProto(t *testing.T) {
 			).SetOracleConfig(
 				&vega.DataSourceDefinitionExternal_Oracle{
 					Oracle: &vegapb.DataSourceSpecConfiguration{
-						Signers: types.SignersIntoProto(
-							[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
+						Signers: dstypes.SignersIntoProto(
+							[]*dstypes.Signer{dstypes.CreateSignerFromString("0xTESTSIGN", dstypes.SignerTypePubKey)},
 						),
 						Filters: []*datapb.Filter{
 							{

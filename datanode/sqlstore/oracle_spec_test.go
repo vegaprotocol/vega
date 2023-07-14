@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/types"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
@@ -158,8 +158,8 @@ func testGetSpecByTxHash(t *testing.T) {
 }
 
 func getTestSpecs() []*vegapb.OracleSpec {
-	pk1 := types.CreateSignerFromString("b105f00d", types.DataSignerTypePubKey)
-	pk2 := types.CreateSignerFromString("0x124dd8a6044ef048614aea0aac86643a8ae1312d", types.DataSignerTypeEthAddress)
+	pk1 := dstypes.CreateSignerFromString("b105f00d", dstypes.SignerTypePubKey)
+	pk2 := dstypes.CreateSignerFromString("0x124dd8a6044ef048614aea0aac86643a8ae1312d", dstypes.SignerTypeEthAddress)
 
 	return []*vegapb.OracleSpec{
 		{
@@ -306,7 +306,7 @@ func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *s
 	block := addTestBlockForTime(t, ctx, bs, time.Now().Truncate(time.Second))
 
 	for i := 0; i < 10; i++ {
-		pubKey := types.CreateSignerFromString(helpers.GenerateID(), types.DataSignerTypePubKey)
+		pubKey := dstypes.CreateSignerFromString(helpers.GenerateID(), dstypes.SignerTypePubKey)
 
 		spec := entities.OracleSpec{
 			ExternalDataSourceSpec: &entities.ExternalDataSourceSpec{

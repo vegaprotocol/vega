@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	"code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
@@ -28,7 +29,7 @@ type ProposalTermsNewTransfer struct {
 func (a ProposalTermsNewTransfer) String() string {
 	return fmt.Sprintf(
 		"newTransfer(%s)",
-		reflectPointerToString(a.NewTransfer),
+		stringer.ReflectPointerToString(a.NewTransfer),
 	)
 }
 
@@ -101,7 +102,7 @@ func (n NewTransfer) DeepClone() *NewTransfer {
 func (n NewTransfer) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		reflectPointerToString(n.Changes),
+		stringer.ReflectPointerToString(n.Changes),
 	)
 }
 

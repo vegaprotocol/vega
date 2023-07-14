@@ -18,6 +18,7 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -123,7 +124,7 @@ func (a AssetDetails) String() string {
 		a.Symbol,
 		a.Quantum.String(),
 		a.Decimals,
-		reflectPointerToString(a.Source),
+		stringer.ReflectPointerToString(a.Source),
 	)
 }
 
@@ -225,7 +226,7 @@ type AssetDetailsBuiltinAsset struct {
 func (a AssetDetailsBuiltinAsset) String() string {
 	return fmt.Sprintf(
 		"builtinAsset(%s)",
-		reflectPointerToString(a.BuiltinAsset),
+		stringer.ReflectPointerToString(a.BuiltinAsset),
 	)
 }
 
@@ -283,7 +284,7 @@ type BuiltinAsset struct {
 func (a BuiltinAsset) String() string {
 	return fmt.Sprintf(
 		"maxFaucetAmountMint(%s)",
-		uintPointerToString(a.MaxFaucetAmountMint),
+		stringer.UintPointerToString(a.MaxFaucetAmountMint),
 	)
 }
 
@@ -294,7 +295,7 @@ type AssetDetailsErc20 struct {
 func (a AssetDetailsErc20) String() string {
 	return fmt.Sprintf(
 		"erc20(%s)",
-		reflectPointerToString(a.ERC20),
+		stringer.ReflectPointerToString(a.ERC20),
 	)
 }
 
@@ -399,7 +400,7 @@ func (e ERC20) String() string {
 	return fmt.Sprintf(
 		"contractAddress(%s) lifetimeLimit(%s) withdrawThreshold(%s)",
 		e.ContractAddress,
-		uintPointerToString(e.LifetimeLimit),
-		uintPointerToString(e.WithdrawThreshold),
+		stringer.UintPointerToString(e.LifetimeLimit),
+		stringer.UintPointerToString(e.WithdrawThreshold),
 	)
 }

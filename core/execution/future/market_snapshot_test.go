@@ -19,6 +19,8 @@ import (
 
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/collateral"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/execution/future"
@@ -26,7 +28,6 @@ import (
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/liquidity"
 	"code.vegaprotocol.io/vega/core/matching"
-	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/risk"
@@ -49,9 +50,9 @@ func TestRestoreSettledMarket(t *testing.T) {
 	oracleEngine := mocks.NewMockOracleEngine(ctrl)
 
 	var unsubs uint64
-	unsubscribe := func(_ context.Context, id oracles.SubscriptionID) { unsubs++ }
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(1), unsubscribe, nil)
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(2), unsubscribe, nil)
+	unsubscribe := func(_ context.Context, id spec.SubscriptionID) { unsubs++ }
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(1), unsubscribe, nil)
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(2), unsubscribe, nil)
 
 	snap, err := newMarketFromSnapshot(t, ctrl, em, oracleEngine)
 	require.NoError(t, err)
@@ -73,13 +74,13 @@ func TestRestoreTerminatedMarket(t *testing.T) {
 	oracleEngine := mocks.NewMockOracleEngine(ctrl)
 
 	var termUnsub bool
-	unsubscribe := func(_ context.Context, id oracles.SubscriptionID) {
-		if id == oracles.SubscriptionID(2) {
+	unsubscribe := func(_ context.Context, id spec.SubscriptionID) {
+		if id == spec.SubscriptionID(2) {
 			termUnsub = true
 		}
 	}
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(1), unsubscribe, nil)
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(2), unsubscribe, nil)
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(1), unsubscribe, nil)
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(2), unsubscribe, nil)
 
 	snap, err := newMarketFromSnapshot(t, ctrl, em, oracleEngine)
 	require.NoError(t, err)
@@ -105,10 +106,10 @@ func TestRestoreNilLastTradedPrice(t *testing.T) {
 	defer ctrl.Finish()
 	oracleEngine := mocks.NewMockOracleEngine(ctrl)
 
-	unsubscribe := func(_ context.Context, id oracles.SubscriptionID) {
+	unsubscribe := func(_ context.Context, id spec.SubscriptionID) {
 	}
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(1), unsubscribe, nil)
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(2), unsubscribe, nil)
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(1), unsubscribe, nil)
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(2), unsubscribe, nil)
 
 	snap, err := newMarketFromSnapshot(t, ctrl, em, oracleEngine)
 	require.NoError(t, err)
@@ -121,8 +122,8 @@ func TestRestoreNilLastTradedPrice(t *testing.T) {
 
 func getTerminatedMarket(t *testing.T) *testMarket {
 	t.Helper()
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
 
 	now := time.Unix(10, 0)
@@ -130,7 +131,7 @@ func getTerminatedMarket(t *testing.T) *testMarket {
 	defer tm.ctrl.Finish()
 
 	// terminate the market
-	err := tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+	err := tm.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
 		Signers: pubKeys,
 		Data: map[string]string{
 			"trading.terminated": "true",
@@ -147,11 +148,11 @@ func getSettledMarket(t *testing.T) *testMarket {
 
 	tm := getTerminatedMarket(t)
 
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
 
-	err := tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+	err := tm.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
 		Signers: pubKeys,
 		Data: map[string]string{
 			"prices.ETH.value": "100",

@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -52,9 +53,9 @@ type PriceMonitoringBounds struct {
 func (p PriceMonitoringBounds) String() string {
 	return fmt.Sprintf(
 		"minValidPrice(%s) maxValidPrice(%s) trigger(%s) referencePrice(%s)",
-		uintPointerToString(p.MinValidPrice),
-		uintPointerToString(p.MaxValidPrice),
-		reflectPointerToString(p.Trigger),
+		stringer.UintPointerToString(p.MinValidPrice),
+		stringer.UintPointerToString(p.MaxValidPrice),
+		stringer.ReflectPointerToString(p.Trigger),
 		p.ReferencePrice.String(),
 	)
 }
@@ -76,7 +77,7 @@ func (p PriceMonitoringSettings) DeepClone() *PriceMonitoringSettings {
 }
 
 func (p PriceMonitoringSettings) String() string {
-	return fmt.Sprintf("parameters(%s)", reflectPointerToString(p.Parameters))
+	return fmt.Sprintf("parameters(%s)", stringer.ReflectPointerToString(p.Parameters))
 }
 
 func PriceMonitoringSettingsFromProto(pr *proto.PriceMonitoringSettings) *PriceMonitoringSettings {

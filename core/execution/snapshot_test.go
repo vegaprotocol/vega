@@ -21,11 +21,14 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/collateral"
+	"code.vegaprotocol.io/vega/core/datasource"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/epochtime"
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
-	"code.vegaprotocol.io/vega/core/oracles"
 	snp "code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
@@ -42,7 +45,7 @@ import (
 
 type snapshotTestData struct {
 	engine         *execution.Engine
-	oracleEngine   *oracles.Engine
+	oracleEngine   *spec.Engine
 	snapshotEngine *snp.Engine
 	timeService    *stubs.TimeStub
 }
@@ -55,8 +58,8 @@ type stubIDGen struct {
 func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 	now := time.Now()
 	exec := getEngine(t, now)
-	pubKey := &types.SignerPubKey{
-		PubKey: &types.PubKey{
+	pubKey := &dstypes.SignerPubKey{
+		PubKey: &dstypes.PubKey{
 			Key: "0xDEADBEEF",
 		},
 	}
@@ -85,16 +88,16 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, types.MarketStateActive, mktState)
 
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString(pubKey.PubKey.Key, types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString(pubKey.PubKey.Key, dstypes.SignerTypePubKey),
 	}
 
-	exec.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+	exec.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
 		Signers: pubKeys,
 		Data:    map[string]string{"trading.terminated": "true"},
 	})
 
-	exec2.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+	exec2.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
 		Signers: pubKeys,
 		Data:    map[string]string{"trading.terminated": "true"},
 	})
@@ -106,12 +109,12 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 	require.Equal(t, types.MarketStateTradingTerminated, marketState1)
 	require.Equal(t, types.MarketStateTradingTerminated, marketState2)
 
-	exec.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+	exec.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
 		Signers: pubKeys,
 		Data:    map[string]string{"prices.ETH.value": "100"},
 	})
 
-	exec2.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+	exec2.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
 		Signers: pubKeys,
 		Data:    map[string]string{"prices.ETH.value": "100"},
 	})
@@ -130,8 +133,8 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 func TestSnapshotOraclesTerminatingMarketSettleAfterSnapshot(t *testing.T) {
 	now := time.Now()
 	exec := getEngineWithParties(t, now, num.NewUint(1000000000), "lp", "p1", "p2", "p3", "p4")
-	pubKey := &types.SignerPubKey{
-		PubKey: &types.PubKey{
+	pubKey := &dstypes.SignerPubKey{
+		PubKey: &dstypes.PubKey{
 			Key: "0xDEADBEEF",
 		},
 	}
@@ -210,13 +213,13 @@ func TestSnapshotOraclesTerminatingMarketSettleAfterSnapshot(t *testing.T) {
 	// We probably need to add a hash to this context
 	vgctx = vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("1deadbeef")))
 	exec.engine.OnTick(vgctx, now)
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString(pubKey.PubKey.Key, types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString(pubKey.PubKey.Key, dstypes.SignerTypePubKey),
 	}
 
 	// provide settlement data for first market
 	vgctx = vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("2deadbeef")))
-	exec.oracleEngine.BroadcastData(vgctx, oracles.OracleData{
+	exec.oracleEngine.BroadcastData(vgctx, dstypes.Data{
 		Signers: pubKeys,
 		Data:    map[string]string{"prices.ETH.value": "100"},
 	})
@@ -234,12 +237,12 @@ func TestSnapshotOraclesTerminatingMarketSettleAfterSnapshot(t *testing.T) {
 	require.True(t, bytes.Equal(state, state2))
 
 	vgctx = vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("3deadbeef")))
-	exec.oracleEngine.BroadcastData(vgctx, oracles.OracleData{
+	exec.oracleEngine.BroadcastData(vgctx, dstypes.Data{
 		Signers: pubKeys,
 		Data:    map[string]string{"trading.terminated": "true"},
 	})
 
-	exec2.oracleEngine.BroadcastData(vgctx, oracles.OracleData{
+	exec2.oracleEngine.BroadcastData(vgctx, dstypes.Data{
 		Signers: pubKeys,
 		Data:    map[string]string{"trading.terminated": "true"},
 	})
@@ -257,13 +260,13 @@ func TestSnapshotOraclesTerminatingMarketSettleAfterSnapshot(t *testing.T) {
 // Then a snapshot is taken and another node is restored from this snapshot. Finally trading termination data is received and both markets
 // are expected to get settled.
 func TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementData(t *testing.T) {
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
 
 	now := time.Now()
 	exec := getEngine(t, now)
-	mkt := newMarket("MarketID", pubKeys[0].Signer.(*types.SignerPubKey))
+	mkt := newMarket("MarketID", pubKeys[0].Signer.(*dstypes.SignerPubKey))
 	err := exec.engine.SubmitMarket(context.Background(), mkt, "", time.Now())
 	require.NoError(t, err)
 
@@ -276,7 +279,7 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementData(t *test
 	// set up market to get to continuous trading
 
 	// settlement data arrives first
-	exec.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+	exec.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
 		Signers: pubKeys,
 		Data:    map[string]string{"prices.ETH.value": "100"},
 	})
@@ -295,12 +298,12 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementData(t *test
 	require.True(t, bytes.Equal(state, state2))
 
 	// terminate the market to lead to settlement
-	exec.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+	exec.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
 		Signers: pubKeys,
 		Data:    map[string]string{"trading.terminated": "true"},
 	})
 
-	exec2.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+	exec2.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
 		Signers: pubKeys,
 		Data:    map[string]string{"trading.terminated": "true"},
 	})
@@ -321,16 +324,16 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
 	ctx = vgcontext.WithChainID(ctx, "chainid")
 
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
-		types.CreateSignerFromString("0xDEADBEFF", types.DataSignerTypePubKey),
-		types.CreateSignerFromString("0xDEADBFFF", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
+		dstypes.CreateSignerFromString("0xDEADBEFF", dstypes.SignerTypePubKey),
+		dstypes.CreateSignerFromString("0xDEADBFFF", dstypes.SignerTypePubKey),
 	}
 	marketIDs := []string{"market1", "market2", "market3"}
 
 	// submit and terminate all markets
 	for i := 0; i < 3; i++ {
-		mkt := newMarket(marketIDs[i], pubKeys[i].Signer.(*types.SignerPubKey))
+		mkt := newMarket(marketIDs[i], pubKeys[i].Signer.(*dstypes.SignerPubKey))
 		err := exec.engine.SubmitMarket(ctx, mkt, "", time.Now())
 		require.NoError(t, err)
 
@@ -346,8 +349,8 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 		require.Equal(t, marketState, types.MarketStateActive)
 
 		// terminate all markets
-		exec.oracleEngine.BroadcastData(ctx, oracles.OracleData{
-			Signers: []*types.Signer{pubKeys[i]},
+		exec.oracleEngine.BroadcastData(ctx, dstypes.Data{
+			Signers: []*dstypes.Signer{pubKeys[i]},
 			Data:    map[string]string{"trading.terminated": "true"},
 		})
 
@@ -384,12 +387,12 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 
 	// settle the markets
 	for i := 0; i < 3; i++ {
-		exec.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
-			Signers: []*types.Signer{pubKeys[i]},
+		exec.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
+			Signers: []*dstypes.Signer{pubKeys[i]},
 			Data:    map[string]string{"prices.ETH.value": "100"},
 		})
-		exec2.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
-			Signers: []*types.Signer{pubKeys[i]},
+		exec2.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
+			Signers: []*dstypes.Signer{pubKeys[i]},
 			Data:    map[string]string{"prices.ETH.value": "100"},
 		})
 
@@ -408,7 +411,7 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 	}
 }
 
-func newMarket(ID string, pubKey *types.SignerPubKey) *types.Market {
+func newMarket(ID string, pubKey *dstypes.SignerPubKey) *types.Market {
 	return &types.Market{
 		ID: ID, // ID will be generated
 		PriceMonitoringSettings: &types.PriceMonitoringSettings{
@@ -459,45 +462,45 @@ func newMarket(ID string, pubKey *types.SignerPubKey) *types.Market {
 				Product: &types.InstrumentFuture{
 					Future: &types.Future{
 						SettlementAsset: "Ethereum/Ether",
-						DataSourceSpecForSettlementData: &types.DataSourceSpec{
+						DataSourceSpecForSettlementData: &datasource.Spec{
 							ID: hex.EncodeToString(crypto.Hash([]byte(ID + "price"))),
-							Data: types.NewDataSourceDefinition(
-								types.DataSourceContentTypeOracle,
+							Data: datasource.NewDefinition(
+								datasource.ContentTypeOracle,
 							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
-									Signers: []*types.Signer{types.CreateSignerFromString(pubKey.PubKey.Key, types.DataSignerTypePubKey)},
-									Filters: []*types.DataSourceSpecFilter{
+								&signedoracle.SpecConfiguration{
+									Signers: []*dstypes.Signer{dstypes.CreateSignerFromString(pubKey.PubKey.Key, dstypes.SignerTypePubKey)},
+									Filters: []*dstypes.SpecFilter{
 										{
-											Key: &types.DataSourceSpecPropertyKey{
+											Key: &dstypes.SpecPropertyKey{
 												Name: "prices.ETH.value",
 												Type: datapb.PropertyKey_TYPE_INTEGER,
 											},
-											Conditions: []*types.DataSourceSpecCondition{},
+											Conditions: []*dstypes.SpecCondition{},
 										},
 									},
 								},
 							),
 						},
-						DataSourceSpecForTradingTermination: &types.DataSourceSpec{
+						DataSourceSpecForTradingTermination: &datasource.Spec{
 							ID: hex.EncodeToString(crypto.Hash([]byte(ID + "tt"))),
-							Data: types.NewDataSourceDefinition(
-								types.DataSourceContentTypeOracle,
+							Data: datasource.NewDefinition(
+								datasource.ContentTypeOracle,
 							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
-									Signers: []*types.Signer{types.CreateSignerFromString(pubKey.PubKey.Key, types.DataSignerTypePubKey)},
-									Filters: []*types.DataSourceSpecFilter{
+								&signedoracle.SpecConfiguration{
+									Signers: []*dstypes.Signer{dstypes.CreateSignerFromString(pubKey.PubKey.Key, dstypes.SignerTypePubKey)},
+									Filters: []*dstypes.SpecFilter{
 										{
-											Key: &types.DataSourceSpecPropertyKey{
+											Key: &dstypes.SpecPropertyKey{
 												Name: "trading.terminated",
 												Type: datapb.PropertyKey_TYPE_BOOLEAN,
 											},
-											Conditions: []*types.DataSourceSpecCondition{},
+											Conditions: []*dstypes.SpecCondition{},
 										},
 									},
 								},
 							),
 						},
-						DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
+						DataSourceSpecBinding: &datasource.SpecBindingForFuture{
 							SettlementDataProperty:     "prices.ETH.value",
 							TradingTerminationProperty: "trading.terminated",
 						},
@@ -529,7 +532,7 @@ func getEngine(t *testing.T, now time.Time) *snapshotTestData {
 	timeService := stubs.NewTimeStub()
 	timeService.SetTime(now)
 	collateralEngine := collateral.New(log, collateral.NewDefaultConfig(), timeService, broker)
-	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), timeService, broker)
+	oracleEngine := spec.NewEngine(log, spec.NewDefaultConfig(), timeService, broker)
 
 	epochEngine := epochtime.NewService(log, epochtime.NewDefaultConfig(), broker)
 	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
@@ -579,7 +582,7 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 	timeService := stubs.NewTimeStub()
 	timeService.SetTime(now)
 	collateralEngine := collateral.New(log, collateral.NewDefaultConfig(), timeService, broker)
-	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), timeService, broker)
+	oracleEngine := spec.NewEngine(log, spec.NewDefaultConfig(), timeService, broker)
 
 	epochEngine := epochtime.NewService(log, epochtime.NewDefaultConfig(), broker)
 	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)

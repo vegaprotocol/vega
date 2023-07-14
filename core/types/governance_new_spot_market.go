@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -26,7 +27,7 @@ type ProposalTermsNewSpotMarket struct {
 func (a ProposalTermsNewSpotMarket) String() string {
 	return fmt.Sprintf(
 		"newSpotMarket(%s)",
-		reflectPointerToString(a.NewSpotMarket),
+		stringer.ReflectPointerToString(a.NewSpotMarket),
 	)
 }
 
@@ -99,7 +100,7 @@ func (n NewSpotMarket) DeepClone() *NewSpotMarket {
 func (n NewSpotMarket) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		reflectPointerToString(n.Changes),
+		stringer.ReflectPointerToString(n.Changes),
 	)
 }
 
@@ -192,11 +193,11 @@ func (n NewSpotMarketConfiguration) String() string {
 		n.Metadata,
 		n.DecimalPlaces,
 		n.PositionDecimalPlaces,
-		reflectPointerToString(n.Instrument),
-		reflectPointerToString(n.PriceMonitoringParameters),
-		reflectPointerToString(n.TargetStakeParameters),
-		reflectPointerToString(n.RiskParameters),
-		reflectPointerToString(n.SLAParams),
+		stringer.ReflectPointerToString(n.Instrument),
+		stringer.ReflectPointerToString(n.PriceMonitoringParameters),
+		stringer.ReflectPointerToString(n.TargetStakeParameters),
+		stringer.ReflectPointerToString(n.RiskParameters),
+		stringer.ReflectPointerToString(n.SLAParams),
 	)
 }
 
@@ -246,7 +247,7 @@ type NewSpotMarketConfigurationSimple struct {
 func (n NewSpotMarketConfigurationSimple) String() string {
 	return fmt.Sprintf(
 		"simple(%s)",
-		reflectPointerToString(n.Simple),
+		stringer.ReflectPointerToString(n.Simple),
 	)
 }
 
@@ -301,7 +302,7 @@ func (n NewSpotMarketConfigurationLogNormal) newRiskParamsIntoProto() interface{
 func (n NewSpotMarketConfigurationLogNormal) String() string {
 	return fmt.Sprintf(
 		"logNormal(%s)",
-		reflectPointerToString(n.LogNormal),
+		stringer.ReflectPointerToString(n.LogNormal),
 	)
 }
 
@@ -322,7 +323,7 @@ type InstrumentConfigurationSpot struct {
 func (i InstrumentConfigurationSpot) String() string {
 	return fmt.Sprintf(
 		"spot(%s)",
-		reflectPointerToString(i.Spot),
+		stringer.ReflectPointerToString(i.Spot),
 	)
 }
 
