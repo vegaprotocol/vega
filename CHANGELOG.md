@@ -18,11 +18,12 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
-## 0.72.3
+## 0.72.4
 
 ### 🐛 Fixes
 
 - [8800](https://github.com/vegaprotocol/vega/issues/8800) - `expiresAt` is always null in the Stop Orders `API`.
+- [8796](https://github.com/vegaprotocol/vega/issues/8796) - Avoid updating active proposals slice while iterating over it.
 
 
 ## 0.72.3

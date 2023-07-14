@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -54,6 +55,8 @@ func TestProposalForSuccessorMarket(t *testing.T) {
 	t.Run("Reject successor markets with an invalid insurance pool fraction", testRejectSuccessorInvalidInsurancePoolFraction)
 	t.Run("Reject successor market proposal if the product is incompatible", testRejectSuccessorProductMismatch)
 	t.Run("Reject successor market if the parent market does not exist", testRejectSuccessorNoParent)
+
+	t.Run("Remove proposals for an already succeeded market", testRemoveSuccessorsForSucceeded)
 }
 
 func testSubmittingProposalForNewMarketSucceeds(t *testing.T) {
@@ -76,6 +79,69 @@ func testSubmittingProposalForNewMarketSucceeds(t *testing.T) {
 	require.NotNil(t, toSubmit)
 	assert.True(t, toSubmit.IsNewMarket())
 	require.NotNil(t, toSubmit.NewMarket().Market())
+}
+
+func testRemoveSuccessorsForSucceeded(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	suc := types.SuccessorConfig{
+		ParentID:              "parentID",
+		InsurancePoolFraction: num.DecimalFromFloat(.5),
+	}
+	// add 3 proposals for the same parent
+	eng.markets.EXPECT().IsSucceeded(suc.ParentID).Times(3).Return(false)
+	filter, binding := produceTimeTriggeredDataSourceSpec(time.Now())
+	proposals := []types.Proposal{
+		eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow(), filter, binding, true, &suc),
+		eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow(), filter, binding, true, &suc),
+		eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), filter, binding, true), // non successor just because
+		eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow(), filter, binding, true, &suc),
+	}
+	first := proposals[0]
+	pFuture := first.NewMarket().Changes.GetFuture()
+	eng.ensureAllAssetEnabled(t)
+	for _, p := range proposals {
+		eng.expectOpenProposalEvent(t, party.Id, p.ID)
+	}
+	eng.markets.EXPECT().GetMarket(suc.ParentID, true).Times(6).Return(
+		types.Market{
+			TradableInstrument: &types.TradableInstrument{
+				Instrument: &types.Instrument{
+					Product: &types.InstrumentFuture{
+						Future: &types.Future{
+							SettlementAsset: pFuture.Future.SettlementAsset,
+							QuoteName:       pFuture.Future.SettlementAsset,
+						},
+					},
+				},
+			},
+		}, true)
+
+	// submit all proposals
+	for _, p := range proposals {
+		toSubmit, err := eng.submitProposal(t, p)
+
+		// then
+		require.NoError(t, err)
+		require.NotNil(t, toSubmit)
+		assert.True(t, toSubmit.IsNewMarket())
+		require.NotNil(t, toSubmit.NewMarket().Market())
+	}
+	// all proposals will be in the active proposals slice, so let's make sure all of them are removed
+	first.State = types.ProposalStateEnacted
+	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
+		require.Equal(t, 3, len(evts))
+		for _, e := range evts {
+			require.Equal(t, events.ProposalEvent, e.Type())
+			pe, ok := e.(*events.Proposal)
+			require.True(t, ok)
+			require.NotNil(t, pe.Proposal().ErrorDetails)
+		}
+	})
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	eng.FinaliseEnactment(context.Background(), &first)
 }
 
 func testSubmittingProposalForFullSuccessorMarketSucceeds(t *testing.T) {
