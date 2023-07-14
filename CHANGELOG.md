@@ -113,6 +113,7 @@
 - [8504](https://github.com/vegaprotocol/vega/issues/8504) - Add market liquidity common layer for spot market.
 - [8415](https://github.com/vegaprotocol/vega/issues/8415) - Allow to terminate, suspend/resume market via governance
 - [8690](https://github.com/vegaprotocol/vega/issues/8690) - Add gas estimation for stop orders.
+- [8505](https://github.com/vegaprotocol/vega/issues/8505) - Add snapshots to liquidity engine version 2.
 
 ### 🐛 Fixes
 

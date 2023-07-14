@@ -34,6 +34,7 @@ type Snapshot struct {
 	Hash   []byte    // the hash of the snapshot (the root hash of the AVL tree)
 	Meta   *Metadata // the AVL tree metadata
 	// Metadata []byte     // the above metadata serialised
+
 	Nodes []*Payload // the snapshot payloads in the tree (always leaf nodes)
 
 	// Chunk stuff
@@ -318,6 +319,26 @@ type PayloadLiquidityProvisions struct {
 
 type PayloadLiquidityTarget struct {
 	Target *snapshot.LiquidityTarget
+}
+
+type PayloadLiquidityV2Provisions struct {
+	Provisions *snapshot.LiquidityV2Provisions
+}
+
+type PayloadLiquidityV2PendingProvisions struct {
+	PendingProvisions *snapshot.LiquidityV2PendingProvisions
+}
+
+type PayloadLiquidityV2Performances struct {
+	Performances *snapshot.LiquidityV2Performances
+}
+
+type PayloadLiquidityV2Supplied struct {
+	Supplied *snapshot.LiquidityV2Supplied
+}
+
+type PayloadLiquidityV2Scores struct {
+	Scores *snapshot.LiquidityV2Scores
 }
 
 type PayloadSpotLiquidityTarget struct {
@@ -833,6 +854,16 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadLiquiditySuppliedFromProto(dt)
 	case *snapshot.Payload_LiquidityTarget:
 		ret.Data = PayloadLiquidityTargetFromProto(dt)
+	case *snapshot.Payload_LiquidityV2Provisions:
+		ret.Data = PayloadLiquidityV2ProvisionsFromProto(dt)
+	case *snapshot.Payload_LiquidityV2PendingProvisions:
+		ret.Data = PayloadLiquidityV2PendingProvisionsFromProto(dt)
+	case *snapshot.Payload_LiquidityV2Performances:
+		ret.Data = PayloadLiquidityV2PerformancesFromProto(dt)
+	case *snapshot.Payload_LiquidityV2Supplied:
+		ret.Data = PayloadLiquidityV2SuppliedFromProto(dt)
+	case *snapshot.Payload_LiquidityV2Scores:
+		ret.Data = PayloadLiquidityV2ScoresFromProto(dt)
 	case *snapshot.Payload_SpotLiquidityTarget:
 		ret.Data = PayloadSpotLiquidityTargetFromProto(dt)
 	case *snapshot.Payload_FloatingPointConsensus:
@@ -971,6 +1002,16 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_LiquidityProvisions:
 		ret.Data = dt
 	case *snapshot.Payload_LiquiditySupplied:
+		ret.Data = dt
+	case *snapshot.Payload_LiquidityV2Provisions:
+		ret.Data = dt
+	case *snapshot.Payload_LiquidityV2PendingProvisions:
+		ret.Data = dt
+	case *snapshot.Payload_LiquidityV2Scores:
+		ret.Data = dt
+	case *snapshot.Payload_LiquidityV2Performances:
+		ret.Data = dt
+	case *snapshot.Payload_LiquidityV2Supplied:
 		ret.Data = dt
 	case *snapshot.Payload_NetworkParameters:
 		ret.Data = dt
@@ -1152,6 +1193,116 @@ func (*PayloadLiquidityTarget) Namespace() SnapshotNamespace {
 
 func (p *PayloadLiquidityTarget) Key() string {
 	return fmt.Sprintf("target:%v", p.Target.MarketId)
+}
+
+func PayloadLiquidityV2ProvisionsFromProto(s *snapshot.Payload_LiquidityV2Provisions) *PayloadLiquidityV2Provisions {
+	return &PayloadLiquidityV2Provisions{
+		Provisions: s.LiquidityV2Provisions,
+	}
+}
+
+func (*PayloadLiquidityV2Provisions) isPayload() {}
+
+func (p *PayloadLiquidityV2Provisions) plToProto() interface{} {
+	return &snapshot.Payload_LiquidityV2Provisions{
+		LiquidityV2Provisions: p.Provisions,
+	}
+}
+
+func (*PayloadLiquidityV2Provisions) Namespace() SnapshotNamespace {
+	return LiquidityV2Snapshot
+}
+
+func (p *PayloadLiquidityV2Provisions) Key() string {
+	return fmt.Sprintf("provisions:%v", p.Provisions.MarketId)
+}
+
+func PayloadLiquidityV2PendingProvisionsFromProto(s *snapshot.Payload_LiquidityV2PendingProvisions) *PayloadLiquidityV2PendingProvisions {
+	return &PayloadLiquidityV2PendingProvisions{
+		PendingProvisions: s.LiquidityV2PendingProvisions,
+	}
+}
+
+func (*PayloadLiquidityV2PendingProvisions) isPayload() {}
+
+func (p *PayloadLiquidityV2PendingProvisions) plToProto() interface{} {
+	return &snapshot.Payload_LiquidityV2PendingProvisions{
+		LiquidityV2PendingProvisions: p.PendingProvisions,
+	}
+}
+
+func (*PayloadLiquidityV2PendingProvisions) Namespace() SnapshotNamespace {
+	return LiquidityV2Snapshot
+}
+
+func (p *PayloadLiquidityV2PendingProvisions) Key() string {
+	return fmt.Sprintf("pendingProvisions:%v", p.PendingProvisions.MarketId)
+}
+
+func PayloadLiquidityV2PerformancesFromProto(s *snapshot.Payload_LiquidityV2Performances) *PayloadLiquidityV2Performances {
+	return &PayloadLiquidityV2Performances{
+		Performances: s.LiquidityV2Performances,
+	}
+}
+
+func (*PayloadLiquidityV2Performances) isPayload() {}
+
+func (p *PayloadLiquidityV2Performances) plToProto() interface{} {
+	return &snapshot.Payload_LiquidityV2Performances{
+		LiquidityV2Performances: p.Performances,
+	}
+}
+
+func (*PayloadLiquidityV2Performances) Namespace() SnapshotNamespace {
+	return LiquidityV2Snapshot
+}
+
+func (p *PayloadLiquidityV2Performances) Key() string {
+	return fmt.Sprintf("performances:%v", p.Performances.MarketId)
+}
+
+func PayloadLiquidityV2SuppliedFromProto(s *snapshot.Payload_LiquidityV2Supplied) *PayloadLiquidityV2Supplied {
+	return &PayloadLiquidityV2Supplied{
+		Supplied: s.LiquidityV2Supplied,
+	}
+}
+
+func (*PayloadLiquidityV2Supplied) isPayload() {}
+
+func (p *PayloadLiquidityV2Supplied) plToProto() interface{} {
+	return &snapshot.Payload_LiquidityV2Supplied{
+		LiquidityV2Supplied: p.Supplied,
+	}
+}
+
+func (*PayloadLiquidityV2Supplied) Namespace() SnapshotNamespace {
+	return LiquidityV2Snapshot
+}
+
+func (p *PayloadLiquidityV2Supplied) Key() string {
+	return fmt.Sprintf("supplied:%v", p.Supplied.MarketId)
+}
+
+func PayloadLiquidityV2ScoresFromProto(s *snapshot.Payload_LiquidityV2Scores) *PayloadLiquidityV2Scores {
+	return &PayloadLiquidityV2Scores{
+		Scores: s.LiquidityV2Scores,
+	}
+}
+
+func (*PayloadLiquidityV2Scores) isPayload() {}
+
+func (p *PayloadLiquidityV2Scores) plToProto() interface{} {
+	return &snapshot.Payload_LiquidityV2Scores{
+		LiquidityV2Scores: p.Scores,
+	}
+}
+
+func (*PayloadLiquidityV2Scores) Namespace() SnapshotNamespace {
+	return LiquidityV2Snapshot
+}
+
+func (p *PayloadLiquidityV2Scores) Key() string {
+	return fmt.Sprintf("scores:%v", p.Scores.MarketId)
 }
 
 func PayloadSpotLiquidityTargetFromProto(s *snapshot.Payload_SpotLiquidityTarget) *PayloadSpotLiquidityTarget {

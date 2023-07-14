@@ -125,6 +125,11 @@ message Payload {
     BankingScheduledGovernanceTransfers banking_scheduled_governance_transfers = 61;
     EthContractCallResults eth_contract_call_results = 62;
     EthOracleVerifierLastBlock eth_oracle_verifier_last_block = 63;
+    LiquidityV2Provisions liquidity_v2_provisions = 64;
+    LiquidityV2PendingProvisions liquidity_v2_pending_provisions = 65;
+    LiquidityV2Performances liquidity_v2_performances = 66;
+    LiquidityV2Supplied liquidity_v2_supplied = 67;
+    LiquidityV2Scores liquidity_v2_scores = 68;
   }
 }
 
@@ -834,6 +839,55 @@ message LiquidityScores {
 message LiquidityScore {
   string score = 1;
   string party_id = 2;
+}
+
+message LiquidityV2Provisions {
+  // Market ID these liquidity parameters apply to. Required for key generation
+  string market_id = 1;
+
+  repeated vega.LiquidityProvision liquidity_provisions = 2;
+}
+
+message LiquidityV2PendingProvisions {
+  // Market ID these liquidity parameters apply to. Required for key generation
+  string market_id = 1;
+
+  repeated vega.LiquidityProvision pending_liquidity_provisions = 2;
+}
+
+message LiquidityV2Performances {
+  // Market ID these liquidity parameters apply to. Required for key generation
+  string market_id = 1;
+
+  int64 epoch_start_time = 2;
+
+  repeated LiquidityV2PerformancePerParty performance_per_party = 3;
+}
+
+message LiquidityV2PerformancePerParty {
+  string party = 1;
+
+  int64 elapsed_time_meeting_sla_during_epoch = 2;
+  int64 commitment_start_time = 3;
+  repeated string registered_penalties_per_epoch = 4;
+  uint32 position_in_penalties_per_epoch = 5;
+}
+
+message LiquidityV2Scores {
+  // Market ID these liquidity parameters apply to. Required for key generation
+  string market_id = 1;
+
+  int32 running_average_counter = 2;
+  repeated LiquidityScore scores = 3;
+}
+
+message LiquidityV2Supplied {
+  // Market ID these liquidity parameters apply to. Required for key generation
+  string market_id = 1;
+
+  bool consensus_reached = 2;
+  repeated LiquidityOffsetProbabilityPair bid_cache = 3;
+  repeated LiquidityOffsetProbabilityPair ask_cache = 4;
 }
 
 // Snapshot payload for floating point consensus
