@@ -49,6 +49,41 @@ func TestContractCall(t *testing.T) {
 	assert.Equal(t, map[string]string{"badger": "42", "static": "66"}, res.Normalised)
 }
 
+func TestContractCallWithStaticBool(t *testing.T) {
+	ctx := context.Background()
+	tc, err := NewToyChain()
+	require.NoError(t, err)
+
+	args := []any{
+		int64(42),
+		big.NewInt(42),
+		"hello",
+		true,
+		common.HexToAddress("0xb794f5ea0ba39494ce839613fffba74279579268"),
+	}
+
+	argsJson, err := ethcall.AnyArgsToJson(args)
+	require.NoError(t, err)
+
+	spec := ethcallcommon.Spec{
+		ArgsJson:    argsJson,
+		Address:     tc.contractAddr.Hex(),
+		AbiJson:     tc.abiBytes,
+		Method:      "testy1",
+		Normalisers: map[string]string{"badger": `$[0]`, "static": "true"},
+	}
+
+	call, err := ethcall.NewCall(spec)
+	require.NoError(t, err)
+
+	res, err := call.Call(ctx, tc.client, 1)
+	require.NoError(t, err)
+	assert.NotEmpty(t, res.Bytes)
+
+	assert.Equal(t, []any{int64(42), big.NewInt(42), "hello", true, common.HexToAddress("0xb794f5ea0ba39494ce839613fffba74279579268")}, res.Values)
+	assert.Equal(t, map[string]string{"badger": "42", "static": "true"}, res.Normalised)
+}
+
 func TestContractCall2(t *testing.T) {
 	ctx := context.Background()
 	tc, err := NewToyChain()
