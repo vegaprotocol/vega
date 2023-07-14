@@ -1,4 +1,7 @@
+# yamllint disable rule:line-length
+
 ---
+
 
 name: "Project Board Automation"
 
@@ -30,7 +33,6 @@ concurrency:
 
 jobs:
   project-board-automation:
-  # yamllint disable rule:line-length
     name: "Linked Issues & Project Board Automation"
     runs-on: ubuntu-latest
     permissions: write-all
@@ -384,4 +386,4 @@ jobs:
           checkNotification: Simple
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  # yamllint enable rule:line-length
+# yamllint enable rule:line-length
