@@ -29,8 +29,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # yamllint disable rule:line-length
   project-board-automation:
+  # yamllint disable rule:line-length
     name: "Linked Issues & Project Board Automation"
     runs-on: ubuntu-latest
     permissions: write-all
