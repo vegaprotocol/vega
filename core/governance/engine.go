@@ -554,22 +554,19 @@ func (e *Engine) FinaliseEnactment(ctx context.Context, prop *types.Proposal) {
 		if nm := prop.NewMarket(); nm != nil {
 			// we have a successor market
 			if pid, ok := nm.ParentMarketID(); ok {
-				toRM := []*proposal{}
+				toRM := []*types.Proposal{}
 				for _, pp := range e.activeProposals {
 					if pp.SucceedsMarket(pid) {
-						toRM = append(toRM, pp)
+						toRM = append(toRM, pp.Proposal)
 					}
 				}
-				evts := make([]events.Event, 0, len(toRM))
-				for _, pp := range toRM {
-					e.rejectProposal(ctx, p, types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketAlreadySucceeded)
-					evts = append(evts, events.NewProposalEvent(ctx, *p))
-				}
-				if len(evts) > 0 {
+				if len(toRM) > 0 {
+					evts := make([]events.Event, 0, len(toRM))
+					for _, p := range toRM {
+						e.rejectProposal(ctx, p, types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketAlreadySucceeded)
+						evts = append(evts, events.NewProposalEvent(ctx, *p))
+					}
 					e.broker.SendBatch(evts)
-					for _, id := range toRM {
-						e.removeProposal(ctx, id)
-					}
 				}
 			}
 		}
