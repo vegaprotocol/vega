@@ -3,7 +3,8 @@ package entities
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/core/types"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	ethcallcommon "code.vegaprotocol.io/vega/core/datasource/external/ethcall/common"
 	"code.vegaprotocol.io/vega/protos/vega"
 
 	"google.golang.org/protobuf/encoding/protojson"
@@ -32,7 +33,7 @@ func (s *DataSourceDefinition) GetOracle() (*DataSourceSpecConfiguration, error)
 	if data != nil {
 		switch tp := data.(type) {
 		case *vega.DataSourceSpecConfiguration:
-			signers, err := SerializeSigners(types.SignersFromProto(tp.GetSigners()))
+			signers, err := SerializeSigners(dstypes.SignersFromProto(tp.GetSigners()))
 			if err != nil {
 				return nil, err
 			}
@@ -62,11 +63,11 @@ func (s *DataSourceDefinition) GetEthOracle() (*EthCallSpec, error) {
 				}
 				ds.ArgsJson = append(ds.ArgsJson, string(jsonArg))
 			}
-			trigger, err := types.EthCallTriggerFromProto(tp.Trigger)
+			trigger, err := ethcallcommon.TriggerFromProto(tp.Trigger)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get trigger from proto: %w", err)
 			}
-			ds.Trigger = EthCallTrigger{EthCallTrigger: trigger}
+			ds.Trigger = EthCallTrigger{Trigger: trigger}
 			ds.RequiredConfirmations = tp.RequiredConfirmations
 			ds.Filters = s.GetFilters()
 		}
@@ -101,7 +102,7 @@ func (s *DataSourceDefinition) GetSigners() (Signers, error) {
 		switch tp := data.(type) {
 		case *vega.DataSourceSpecConfiguration:
 			var err error
-			signers, err = SerializeSigners(types.SignersFromProto(tp.GetSigners()))
+			signers, err = SerializeSigners(dstypes.SignersFromProto(tp.GetSigners()))
 			if err != nil {
 				return nil, err
 			}
@@ -155,7 +156,7 @@ type DataSourceSpecConfiguration struct {
 }
 
 type EthCallTrigger struct {
-	types.EthCallTrigger
+	ethcallcommon.Trigger
 }
 
 type EthCallSpec struct {

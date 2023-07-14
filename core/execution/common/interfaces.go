@@ -5,11 +5,12 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
+	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	lmon "code.vegaprotocol.io/vega/core/monitor/liquidity"
 	"code.vegaprotocol.io/vega/core/monitor/price"
-	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/statevar"
@@ -25,9 +26,9 @@ const InitialOrderVersion = 1
 
 // OracleEngine ...
 type OracleEngine interface {
-	ListensToSigners(oracles.OracleData) bool
-	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber, error)
-	Unsubscribe(context.Context, oracles.SubscriptionID)
+	ListensToSigners(dscommon.Data) bool
+	Subscribe(context.Context, spec.Spec, spec.OnMatchedData) (spec.SubscriptionID, spec.Unsubscriber, error)
+	Unsubscribe(context.Context, spec.SubscriptionID)
 }
 
 // PriceMonitor interface to handle price monitoring/auction triggers

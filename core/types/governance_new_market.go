@@ -17,7 +17,10 @@ import (
 	"fmt"
 	"strings"
 
+	"code.vegaprotocol.io/vega/core/datasource"
+	dsdefinition "code.vegaprotocol.io/vega/core/datasource/definition"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -40,7 +43,7 @@ type ProposalTermsNewMarket struct {
 func (a ProposalTermsNewMarket) String() string {
 	return fmt.Sprintf(
 		"newMarket(%s)",
-		reflectPointerToString(a.NewMarket),
+		stringer.ReflectPointerToString(a.NewMarket),
 	)
 }
 
@@ -132,7 +135,7 @@ func (n NewMarket) DeepClone() *NewMarket {
 func (n NewMarket) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		reflectPointerToString(n.Changes),
+		stringer.ReflectPointerToString(n.Changes),
 	)
 }
 
@@ -243,10 +246,10 @@ func (n NewMarketConfiguration) String() string {
 		n.Metadata,
 		n.DecimalPlaces,
 		n.PositionDecimalPlaces,
-		reflectPointerToString(n.Instrument),
-		reflectPointerToString(n.PriceMonitoringParameters),
-		reflectPointerToString(n.LiquidityMonitoringParameters),
-		reflectPointerToString(n.RiskParameters),
+		stringer.ReflectPointerToString(n.Instrument),
+		stringer.ReflectPointerToString(n.PriceMonitoringParameters),
+		stringer.ReflectPointerToString(n.LiquidityMonitoringParameters),
+		stringer.ReflectPointerToString(n.RiskParameters),
 		n.LpPriceRange.String(),
 		n.LinearSlippageFactor.String(),
 		n.QuadraticSlippageFactor.String(),
@@ -376,7 +379,7 @@ type NewMarketConfigurationSimple struct {
 func (n NewMarketConfigurationSimple) String() string {
 	return fmt.Sprintf(
 		"simple(%s)",
-		reflectPointerToString(n.Simple),
+		stringer.ReflectPointerToString(n.Simple),
 	)
 }
 
@@ -431,7 +434,7 @@ func (n NewMarketConfigurationLogNormal) newRiskParamsIntoProto() interface{} {
 func (n NewMarketConfigurationLogNormal) String() string {
 	return fmt.Sprintf(
 		"logNormal(%s)",
-		reflectPointerToString(n.LogNormal),
+		stringer.ReflectPointerToString(n.LogNormal),
 	)
 }
 
@@ -461,7 +464,7 @@ type InstrumentConfigurationFuture struct {
 func (i InstrumentConfigurationFuture) String() string {
 	return fmt.Sprintf(
 		"future(%s)",
-		reflectPointerToString(i.Future),
+		stringer.ReflectPointerToString(i.Future),
 	)
 }
 
@@ -521,7 +524,7 @@ func (i InstrumentConfiguration) String() string {
 		"name(%s) code(%s) product(%s)",
 		i.Name,
 		i.Code,
-		reflectPointerToString(i.Product),
+		stringer.ReflectPointerToString(i.Product),
 	)
 }
 
@@ -535,12 +538,12 @@ func InstrumentConfigurationFromProto(
 
 	switch pr := p.Product.(type) {
 	case *vegapb.InstrumentConfiguration_Future:
-		settl, err := DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForSettlementData)
+		settl, err := datasource.DefinitionFromProto(pr.Future.DataSourceSpecForSettlementData)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse settlement data source spec: %w", err)
 		}
 
-		term, err := DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination)
+		term, err := datasource.DefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse trading termination data source spec: %w", err)
 		}
@@ -548,9 +551,9 @@ func InstrumentConfigurationFromProto(
 			Future: &FutureProduct{
 				SettlementAsset:                     pr.Future.SettlementAsset,
 				QuoteName:                           pr.Future.QuoteName,
-				DataSourceSpecForSettlementData:     *NewDataSourceDefinitionWith(settl),
-				DataSourceSpecForTradingTermination: *NewDataSourceDefinitionWith(term),
-				DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
+				DataSourceSpecForSettlementData:     *datasource.NewDefinitionWith(settl),
+				DataSourceSpecForTradingTermination: *datasource.NewDefinitionWith(term),
+				DataSourceSpecBinding:               datasource.SpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
 			},
 		}
 	case *vegapb.InstrumentConfiguration_Spot:
@@ -580,9 +583,9 @@ func (InstrumentConfigurationFuture) isInstrumentConfigurationProduct() {}
 type FutureProduct struct {
 	SettlementAsset                     string
 	QuoteName                           string
-	DataSourceSpecForSettlementData     DataSourceDefinition
-	DataSourceSpecForTradingTermination DataSourceDefinition
-	DataSourceSpecBinding               *DataSourceSpecBindingForFuture
+	DataSourceSpecForSettlementData     dsdefinition.Definition
+	DataSourceSpecForTradingTermination dsdefinition.Definition
+	DataSourceSpecBinding               *datasource.SpecBindingForFuture
 }
 
 func (f FutureProduct) IntoProto() *vegapb.FutureProduct {
@@ -596,13 +599,11 @@ func (f FutureProduct) IntoProto() *vegapb.FutureProduct {
 }
 
 func (f FutureProduct) DeepClone() *FutureProduct {
-	settlData := f.DataSourceSpecForSettlementData.DeepClone()
-	termData := f.DataSourceSpecForTradingTermination.DeepClone()
 	return &FutureProduct{
 		SettlementAsset:                     f.SettlementAsset,
 		QuoteName:                           f.QuoteName,
-		DataSourceSpecForSettlementData:     settlData.(DataSourceDefinition),
-		DataSourceSpecForTradingTermination: termData.(DataSourceDefinition),
+		DataSourceSpecForSettlementData:     *f.DataSourceSpecForSettlementData.DeepClone().(*dsdefinition.Definition),
+		DataSourceSpecForTradingTermination: *f.DataSourceSpecForTradingTermination.DeepClone().(*dsdefinition.Definition),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.DeepClone(),
 	}
 }
@@ -612,9 +613,9 @@ func (f FutureProduct) String() string {
 		"quote(%s) settlementAsset(%s) settlementData(%s) tradingTermination(%s) binding(%s)",
 		f.QuoteName,
 		f.SettlementAsset,
-		reflectPointerToString(f.DataSourceSpecForSettlementData),
-		reflectPointerToString(f.DataSourceSpecForTradingTermination),
-		reflectPointerToString(f.DataSourceSpecBinding),
+		stringer.ReflectPointerToString(f.DataSourceSpecForSettlementData),
+		stringer.ReflectPointerToString(f.DataSourceSpecForTradingTermination),
+		stringer.ReflectPointerToString(f.DataSourceSpecBinding),
 	)
 }
 

@@ -17,6 +17,7 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -94,7 +95,7 @@ func (a Account) String() string {
 		"ID(%s) owner(%s) balance(%s) asset(%s) marketID(%s) type(%s)",
 		a.ID,
 		a.Owner,
-		uintPointerToString(a.Balance),
+		stringer.UintPointerToString(a.Balance),
 		a.Asset,
 		a.MarketID,
 		a.Type.String(),

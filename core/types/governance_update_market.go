@@ -15,7 +15,10 @@ package types
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/datasource"
+	dsdefinition "code.vegaprotocol.io/vega/core/datasource/definition"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -26,7 +29,7 @@ type ProposalTermsUpdateMarket struct {
 func (a ProposalTermsUpdateMarket) String() string {
 	return fmt.Sprintf(
 		"updateMarket(%s)",
-		reflectPointerToString(a.UpdateMarket),
+		stringer.ReflectPointerToString(a.UpdateMarket),
 	)
 }
 
@@ -85,7 +88,7 @@ func (n UpdateMarket) String() string {
 	return fmt.Sprintf(
 		"marketID(%s) changes(%s)",
 		n.MarketID,
-		reflectPointerToString(n.Changes),
+		stringer.ReflectPointerToString(n.Changes),
 	)
 }
 
@@ -130,11 +133,11 @@ type UpdateMarketConfiguration struct {
 func (n UpdateMarketConfiguration) String() string {
 	return fmt.Sprintf(
 		"instrument(%s) metadata(%v) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) lpPriceRange(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s)",
-		reflectPointerToString(n.Instrument),
+		stringer.ReflectPointerToString(n.Instrument),
 		MetadataList(n.Metadata).String(),
-		reflectPointerToString(n.PriceMonitoringParameters),
-		reflectPointerToString(n.LiquidityMonitoringParameters),
-		reflectPointerToString(n.RiskParameters),
+		stringer.ReflectPointerToString(n.PriceMonitoringParameters),
+		stringer.ReflectPointerToString(n.LiquidityMonitoringParameters),
+		stringer.ReflectPointerToString(n.RiskParameters),
 		n.LpPriceRange.String(),
 		n.LinearSlippageFactor.String(),
 		n.QuadraticSlippageFactor.String(),
@@ -291,7 +294,7 @@ func (i UpdateInstrumentConfiguration) String() string {
 	return fmt.Sprintf(
 		"code(%s) product(%s)",
 		i.Code,
-		reflectPointerToString(i.Product),
+		stringer.ReflectPointerToString(i.Product),
 	)
 }
 
@@ -324,7 +327,7 @@ func (i UpdateInstrumentConfigurationFuture) DeepClone() updateInstrumentConfigu
 func (i UpdateInstrumentConfigurationFuture) String() string {
 	return fmt.Sprintf(
 		"future(%s)",
-		reflectPointerToString(i.Future),
+		stringer.ReflectPointerToString(i.Future),
 	)
 }
 
@@ -341,20 +344,20 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 
 	switch pr := p.Product.(type) {
 	case *vegapb.UpdateInstrumentConfiguration_Future:
-		settl, err := DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForSettlementData)
+		settl, err := datasource.DefinitionFromProto(pr.Future.DataSourceSpecForSettlementData)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse settlement data source spec: %w", err)
 		}
-		term, err := DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination)
+		term, err := datasource.DefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse trading termination data source spec: %w", err)
 		}
 		r.Product = &UpdateInstrumentConfigurationFuture{
 			Future: &UpdateFutureProduct{
 				QuoteName:                           pr.Future.QuoteName,
-				DataSourceSpecForSettlementData:     *NewDataSourceDefinitionWith(settl),
-				DataSourceSpecForTradingTermination: *NewDataSourceDefinitionWith(term),
-				DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
+				DataSourceSpecForSettlementData:     *datasource.NewDefinitionWith(settl),
+				DataSourceSpecForTradingTermination: *datasource.NewDefinitionWith(term),
+				DataSourceSpecBinding:               datasource.SpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
 			},
 		}
 	}
@@ -363,9 +366,9 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 
 type UpdateFutureProduct struct {
 	QuoteName                           string
-	DataSourceSpecForSettlementData     DataSourceDefinition
-	DataSourceSpecForTradingTermination DataSourceDefinition
-	DataSourceSpecBinding               *DataSourceSpecBindingForFuture
+	DataSourceSpecForSettlementData     dsdefinition.Definition
+	DataSourceSpecForTradingTermination dsdefinition.Definition
+	DataSourceSpecBinding               *datasource.SpecBindingForFuture
 }
 
 func (f UpdateFutureProduct) IntoProto() *vegapb.UpdateFutureProduct {
@@ -380,8 +383,8 @@ func (f UpdateFutureProduct) IntoProto() *vegapb.UpdateFutureProduct {
 func (f UpdateFutureProduct) DeepClone() *UpdateFutureProduct {
 	return &UpdateFutureProduct{
 		QuoteName:                           f.QuoteName,
-		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.DeepClone().(DataSourceDefinition),
-		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.DeepClone().(DataSourceDefinition),
+		DataSourceSpecForSettlementData:     *f.DataSourceSpecForSettlementData.DeepClone().(*dsdefinition.Definition),
+		DataSourceSpecForTradingTermination: *f.DataSourceSpecForTradingTermination.DeepClone().(*dsdefinition.Definition),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.DeepClone(),
 	}
 }
@@ -390,9 +393,9 @@ func (f UpdateFutureProduct) String() string {
 	return fmt.Sprintf(
 		"quoteName(%s) settlementData(%s) tradingTermination(%s) binding(%s)",
 		f.QuoteName,
-		reflectPointerToString(f.DataSourceSpecForSettlementData),
-		reflectPointerToString(f.DataSourceSpecForTradingTermination),
-		reflectPointerToString(f.DataSourceSpecBinding),
+		stringer.ReflectPointerToString(f.DataSourceSpecForSettlementData),
+		stringer.ReflectPointerToString(f.DataSourceSpecForTradingTermination),
+		stringer.ReflectPointerToString(f.DataSourceSpecBinding),
 	)
 }
 
@@ -403,7 +406,7 @@ type UpdateMarketConfigurationSimple struct {
 func (n UpdateMarketConfigurationSimple) String() string {
 	return fmt.Sprintf(
 		"simple(%s)",
-		reflectPointerToString(n.Simple),
+		stringer.ReflectPointerToString(n.Simple),
 	)
 }
 
@@ -439,7 +442,7 @@ type UpdateMarketConfigurationLogNormal struct {
 func (n UpdateMarketConfigurationLogNormal) String() string {
 	return fmt.Sprintf(
 		"logNormal(%s)",
-		reflectPointerToString(n.LogNormal),
+		stringer.ReflectPointerToString(n.LogNormal),
 	)
 }
 

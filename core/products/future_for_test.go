@@ -15,13 +15,12 @@ package products
 import (
 	"context"
 
+	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/libs/num"
-
-	"code.vegaprotocol.io/vega/core/oracles"
 )
 
 func (f *Future) SetSettlementData(ctx context.Context, priceName string, settlementData *num.Numeric) {
-	od := oracles.OracleData{Data: map[string]string{}}
+	od := dscommon.Data{Data: map[string]string{}}
 	if settlementData.IsUint() {
 		od.Data[priceName] = settlementData.Uint().String()
 	} else {

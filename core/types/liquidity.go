@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
@@ -210,7 +211,7 @@ func (l LiquidityProvisionSubmission) String() string {
 		"marketID(%s) reference(%s) commitmentAmount(%s) fee(%s) sells(%s) buys(%s)",
 		l.MarketID,
 		l.Reference,
-		uintPointerToString(l.CommitmentAmount),
+		stringer.UintPointerToString(l.CommitmentAmount),
 		l.Fee.String(),
 		LiquidityOrders(l.Sells).String(),
 		LiquidityOrders(l.Buys).String(),
@@ -254,7 +255,7 @@ func (l LiquidityProvision) String() string {
 		l.Party,
 		l.Status.String(),
 		l.Reference,
-		uintPointerToString(l.CommitmentAmount),
+		stringer.UintPointerToString(l.CommitmentAmount),
 		l.Fee.String(),
 		LiquidityOrderReferences(l.Sells).String(),
 		LiquidityOrderReferences(l.Buys).String(),
@@ -358,7 +359,7 @@ func (l LiquidityOrderReference) String() string {
 	return fmt.Sprintf(
 		"orderID(%s) liquidityOrder(%s)",
 		l.OrderID,
-		reflectPointerToString(l.LiquidityOrder),
+		stringer.ReflectPointerToString(l.LiquidityOrder),
 	)
 }
 
@@ -412,7 +413,7 @@ func (l LiquidityOrder) String() string {
 		"reference(%s) proportion(%v) offset(%s)",
 		l.Reference.String(),
 		l.Proportion,
-		uintPointerToString(l.Offset),
+		stringer.UintPointerToString(l.Offset),
 	)
 }
 
@@ -483,7 +484,7 @@ func (l LiquidityMonitoringParameters) String() string {
 		"auctionExtension(%v) trigerringRatio(%s) targetStake(%s)",
 		l.AuctionExtension,
 		l.TriggeringRatio.String(),
-		reflectPointerToString(l.TargetStakeParameters),
+		stringer.ReflectPointerToString(l.TargetStakeParameters),
 	)
 }
 
@@ -622,7 +623,7 @@ func (a LiquidityProvisionAmendment) String() string {
 		"marketID(%s) reference(%s) commitmentAmount(%s) fee(%s) sells(%v) buys(%v)",
 		a.MarketID,
 		a.Reference,
-		uintPointerToString(a.CommitmentAmount),
+		stringer.UintPointerToString(a.CommitmentAmount),
 		a.Fee.String(),
 		LiquidityOrders(a.Sells).String(),
 		LiquidityOrders(a.Buys).String(),

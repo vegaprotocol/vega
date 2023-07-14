@@ -17,6 +17,7 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
@@ -347,7 +348,7 @@ func (p Proposal) String() string {
 		p.Party,
 		p.State.String(),
 		p.Timestamp,
-		reflectPointerToString(p.Terms),
+		stringer.ReflectPointerToString(p.Terms),
 		p.Reason.String(),
 		p.ErrorDetails,
 		p.RequiredMajority.String(),
@@ -535,7 +536,7 @@ func (p ProposalTerms) String() string {
 		p.ValidationTimestamp,
 		p.ClosingTimestamp,
 		p.EnactmentTimestamp,
-		reflectPointerToString(p.Change),
+		stringer.ReflectPointerToString(p.Change),
 	)
 }
 

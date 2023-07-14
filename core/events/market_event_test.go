@@ -16,6 +16,9 @@ import (
 	"context"
 	"testing"
 
+	"code.vegaprotocol.io/vega/core/datasource"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -25,18 +28,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func changeOracleSpec(spec *types.DataSourceSpec) {
+func changeOracleSpec(spec *datasource.Spec) {
 	spec.ID = "Changed"
 	spec.CreatedAt = 999
 	spec.UpdatedAt = 999
 
-	filters := []*types.DataSourceSpecFilter{
+	filters := []*dstypes.SpecFilter{
 		{
-			Key: &types.DataSourceSpecPropertyKey{
+			Key: &dstypes.SpecPropertyKey{
 				Name: "Changed",
 				Type: datapb.PropertyKey_TYPE_UNSPECIFIED,
 			},
-			Conditions: []*types.DataSourceSpecCondition{
+			Conditions: []*dstypes.SpecCondition{
 				{
 					Operator: datapb.Condition_OPERATOR_UNSPECIFIED,
 					Value:    "Changed",
@@ -46,8 +49,8 @@ func changeOracleSpec(spec *types.DataSourceSpec) {
 	}
 
 	spec.Data.SetOracleConfig(
-		&types.DataSourceSpecConfiguration{
-			Signers: []*types.Signer{types.CreateSignerFromString("Changed", types.DataSignerTypePubKey)},
+		&signedoracle.SpecConfiguration{
+			Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("Changed", dstypes.SignerTypePubKey)},
 			Filters: filters,
 		},
 	)
@@ -55,7 +58,7 @@ func changeOracleSpec(spec *types.DataSourceSpec) {
 	spec.Status = vegapb.DataSourceSpec_STATUS_UNSPECIFIED
 }
 
-func assertSpecsNotEqual(t *testing.T, spec1 *types.DataSourceSpec, spec2 *types.DataSourceSpec) {
+func assertSpecsNotEqual(t *testing.T, spec1 *datasource.Spec, spec2 *datasource.Spec) {
 	t.Helper()
 	assert.NotEqual(t, spec1.ID, spec2.ID)
 	assert.NotEqual(t, spec1.CreatedAt, spec2.CreatedAt)
@@ -70,8 +73,8 @@ func assertSpecsNotEqual(t *testing.T, spec1 *types.DataSourceSpec, spec2 *types
 
 func TestMarketDeepClone(t *testing.T) {
 	ctx := context.Background()
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("PubKey", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("PubKey", dstypes.SignerTypePubKey),
 	}
 
 	pme := vegapb.Market{
@@ -97,7 +100,7 @@ func TestMarketDeepClone(t *testing.T) {
 									External: &vegapb.DataSourceDefinitionExternal{
 										SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
 											Oracle: &vegapb.DataSourceSpecConfiguration{
-												Signers: types.SignersIntoProto(pubKeys),
+												Signers: dstypes.SignersIntoProto(pubKeys),
 												Filters: []*datapb.Filter{
 													{
 														Key: &datapb.PropertyKey{
@@ -128,7 +131,7 @@ func TestMarketDeepClone(t *testing.T) {
 									External: &vegapb.DataSourceDefinitionExternal{
 										SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
 											Oracle: &vegapb.DataSourceSpecConfiguration{
-												Signers: types.SignersIntoProto(pubKeys),
+												Signers: dstypes.SignersIntoProto(pubKeys),
 												Filters: []*datapb.Filter{
 													{
 														Key: &datapb.PropertyKey{

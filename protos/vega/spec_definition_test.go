@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/types"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
@@ -107,7 +107,7 @@ func TestGetFilters(t *testing.T) {
 									{
 										Key: &datapb.PropertyKey{
 											Name: "test-key-name-0",
-											Type: types.DataSourceSpecPropertyKeyType(2),
+											Type: dstypes.SpecPropertyKeyType(2),
 										},
 									},
 								},
@@ -225,10 +225,10 @@ func TestSetOracleConfig(t *testing.T) {
 		udsd := dsd.SetOracleConfig(
 			&vegapb.DataSourceDefinitionExternal_Oracle{
 				Oracle: &vegapb.DataSourceSpecConfiguration{
-					Signers: types.SignersIntoProto(
-						[]*types.Signer{
-							types.CreateSignerFromString("0xSOMEKEYX", types.DataSignerTypePubKey),
-							types.CreateSignerFromString("0xSOMEKEYY", types.DataSignerTypePubKey),
+					Signers: dstypes.SignersIntoProto(
+						[]*dstypes.Signer{
+							dstypes.CreateSignerFromString("0xSOMEKEYX", dstypes.SignerTypePubKey),
+							dstypes.CreateSignerFromString("0xSOMEKEYY", dstypes.SignerTypePubKey),
 						}),
 					Filters: []*datapb.Filter{
 						{
@@ -631,10 +631,10 @@ func TestContent(t *testing.T) {
 					External: &vegapb.DataSourceDefinitionExternal{
 						SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
 							Oracle: &vegapb.DataSourceSpecConfiguration{
-								Signers: types.SignersIntoProto(
-									[]*types.Signer{
-										types.CreateSignerFromString("0xSOMEKEYX", types.DataSignerTypePubKey),
-										types.CreateSignerFromString("0xSOMEKEYY", types.DataSignerTypePubKey),
+								Signers: dstypes.SignersIntoProto(
+									[]*dstypes.Signer{
+										dstypes.CreateSignerFromString("0xSOMEKEYX", dstypes.SignerTypePubKey),
+										dstypes.CreateSignerFromString("0xSOMEKEYY", dstypes.SignerTypePubKey),
 									}),
 							},
 						},

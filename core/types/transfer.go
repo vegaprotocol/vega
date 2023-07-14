@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -80,7 +81,7 @@ func (f FinancialAmount) String() string {
 	return fmt.Sprintf(
 		"asset(%s) amount(%s)",
 		f.Asset,
-		uintPointerToString(f.Amount),
+		stringer.UintPointerToString(f.Amount),
 	)
 }
 
@@ -137,9 +138,9 @@ func (t *Transfer) String() string {
 	return fmt.Sprintf(
 		"owner(%s) amount(%s) type(%s) minAmount(%s)",
 		t.Owner,
-		reflectPointerToString(t.Amount),
+		stringer.ReflectPointerToString(t.Amount),
 		t.Type.String(),
-		uintPointerToString(t.MinAmount),
+		stringer.UintPointerToString(t.MinAmount),
 	)
 }
 

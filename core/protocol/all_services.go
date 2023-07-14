@@ -16,7 +16,9 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/core/evtforward/ethcall"
+	"code.vegaprotocol.io/vega/core/datasource"
+	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
+	"code.vegaprotocol.io/vega/core/datasource/external/ethverifier"
 
 	"code.vegaprotocol.io/vega/libs/subscribers"
 
@@ -31,6 +33,9 @@ import (
 	ethclient "code.vegaprotocol.io/vega/core/client/eth"
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
+	"code.vegaprotocol.io/vega/core/datasource/spec/adaptors"
+	oracleAdaptors "code.vegaprotocol.io/vega/core/datasource/spec/adaptors"
 	"code.vegaprotocol.io/vega/core/delegation"
 	"code.vegaprotocol.io/vega/core/epochtime"
 	"code.vegaprotocol.io/vega/core/evtforward"
@@ -44,9 +49,6 @@ import (
 	"code.vegaprotocol.io/vega/core/netparams/dispatch"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/notary"
-	"code.vegaprotocol.io/vega/core/oracles"
-	"code.vegaprotocol.io/vega/core/oracles/adaptors"
-	oracleAdaptors "code.vegaprotocol.io/vega/core/oracles/adaptors"
 	"code.vegaprotocol.io/vega/core/pow"
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/protocolupgrade"
@@ -70,8 +72,8 @@ type EthCallEngine interface {
 	Stop()
 	MakeResult(specID string, bytes []byte) (ethcall.Result, error)
 	CallSpec(ctx context.Context, id string, atBlock uint64) (ethcall.Result, error)
-	OnSpecActivated(ctx context.Context, spec types.OracleSpec) error
-	OnSpecDeactivated(ctx context.Context, spec types.OracleSpec)
+	OnSpecActivated(ctx context.Context, spec datasource.Spec) error
+	OnSpecDeactivated(ctx context.Context, spec datasource.Spec)
 	UpdatePreviousEthBlock(height uint64, timestamp uint64)
 }
 
@@ -100,7 +102,7 @@ type allServices struct {
 	executionEngine         *execution.Engine
 	governance              *governance.Engine
 	collateral              *collateral.Engine
-	oracle                  *oracles.Engine
+	oracle                  *spec.Engine
 	oracleAdaptors          *adaptors.Adaptors
 	netParams               *netparams.Store
 	delegation              *delegation.Engine
@@ -109,9 +111,9 @@ type allServices struct {
 	checkpoint              *checkpoint.Engine
 	spam                    *spam.Engine
 	pow                     processor.PoWEngine
-	builtinOracle           *oracles.Builtin
+	builtinOracle           *spec.Builtin
 	codec                   abci.Codec
-	ethereumOraclesVerifier *oracles.EthereumOracleVerifier
+	ethereumOraclesVerifier *ethverifier.Verifier
 
 	assets                *assets.Service
 	topology              *validators.Topology
@@ -218,7 +220,7 @@ func newServices(
 		svcs.eventForwarderEngine = evtforward.NewNoopEngine(svcs.log, svcs.conf.EvtForward)
 	}
 
-	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
+	svcs.oracle = spec.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
 
 	svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.ethClient, svcs.eventForwarder)
 
@@ -226,13 +228,13 @@ func newServices(
 		go svcs.ethCallEngine.Start()
 	}
 
-	svcs.ethereumOraclesVerifier = oracles.NewEthereumOracleVerifier(svcs.log, svcs.witness, svcs.timeService, svcs.broker,
+	svcs.ethereumOraclesVerifier = ethverifier.New(svcs.log, svcs.witness, svcs.timeService, svcs.broker,
 		svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations)
 
 	// Not using the activation event bus event here as on recovery the ethCallEngine needs to have all specs - is this necessary?
 	svcs.oracle.AddSpecActivationListener(svcs.ethCallEngine)
 
-	svcs.builtinOracle = oracles.NewBuiltinOracle(svcs.oracle, svcs.timeService)
+	svcs.builtinOracle = spec.NewBuiltin(svcs.oracle, svcs.timeService)
 	svcs.oracleAdaptors = oracleAdaptors.New()
 
 	// this is done to go around circular deps again..s

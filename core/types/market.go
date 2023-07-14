@@ -19,7 +19,9 @@ import (
 	"fmt"
 	"strings"
 
+	"code.vegaprotocol.io/vega/core/datasource"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -317,9 +319,9 @@ func (t TradableInstrument) GetLogNormalRiskModel() *LogNormalRiskModel {
 func (t TradableInstrument) String() string {
 	return fmt.Sprintf(
 		"instrument(%s) marginCalculator(%s) riskModel(%s)",
-		reflectPointerToString(t.Instrument),
-		reflectPointerToString(t.MarginCalculator),
-		reflectPointerToString(t.RiskModel),
+		stringer.ReflectPointerToString(t.Instrument),
+		stringer.ReflectPointerToString(t.MarginCalculator),
+		stringer.ReflectPointerToString(t.RiskModel),
 	)
 }
 
@@ -346,7 +348,7 @@ func (InstrumentSpot) Type() ProductType {
 func (i InstrumentSpot) String() string {
 	return fmt.Sprintf(
 		"spot(%s)",
-		reflectPointerToString(i.Spot),
+		stringer.ReflectPointerToString(i.Spot),
 	)
 }
 
@@ -391,25 +393,25 @@ func (InstrumentFuture) Type() ProductType {
 func (i InstrumentFuture) String() string {
 	return fmt.Sprintf(
 		"future(%s)",
-		reflectPointerToString(i.Future),
+		stringer.ReflectPointerToString(i.Future),
 	)
 }
 
 type Future struct {
 	SettlementAsset                     string
 	QuoteName                           string
-	DataSourceSpecForSettlementData     *DataSourceSpec
-	DataSourceSpecForTradingTermination *DataSourceSpec
-	DataSourceSpecBinding               *DataSourceSpecBindingForFuture
+	DataSourceSpecForSettlementData     *datasource.Spec
+	DataSourceSpecForTradingTermination *datasource.Spec
+	DataSourceSpecBinding               *datasource.SpecBindingForFuture
 }
 
 func FutureFromProto(f *proto.Future) *Future {
 	return &Future{
 		SettlementAsset:                     f.SettlementAsset,
 		QuoteName:                           f.QuoteName,
-		DataSourceSpecForSettlementData:     DataSourceSpecFromProto(f.DataSourceSpecForSettlementData),
-		DataSourceSpecForTradingTermination: DataSourceSpecFromProto(f.DataSourceSpecForTradingTermination),
-		DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(f.DataSourceSpecBinding),
+		DataSourceSpecForSettlementData:     datasource.SpecFromProto(f.DataSourceSpecForSettlementData),
+		DataSourceSpecForTradingTermination: datasource.SpecFromProto(f.DataSourceSpecForTradingTermination),
+		DataSourceSpecBinding:               datasource.SpecBindingForFutureFromProto(f.DataSourceSpecBinding),
 	}
 }
 
@@ -428,9 +430,9 @@ func (f Future) String() string {
 		"quoteName(%s) settlementAsset(%s) dataSourceSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
 		f.QuoteName,
 		f.SettlementAsset,
-		reflectPointerToString(f.DataSourceSpecForSettlementData),
-		reflectPointerToString(f.DataSourceSpecForTradingTermination),
-		reflectPointerToString(f.DataSourceSpecBinding),
+		stringer.ReflectPointerToString(f.DataSourceSpecForSettlementData),
+		stringer.ReflectPointerToString(f.DataSourceSpecForTradingTermination),
+		stringer.ReflectPointerToString(f.DataSourceSpecBinding),
 	)
 }
 
@@ -615,8 +617,8 @@ func (i Instrument) String() string {
 		i.ID,
 		i.Name,
 		i.Code,
-		reflectPointerToString(i.Product),
-		reflectPointerToString(i.Metadata),
+		stringer.ReflectPointerToString(i.Product),
+		stringer.ReflectPointerToString(i.Metadata),
 	)
 }
 
@@ -722,24 +724,24 @@ func (m MarketData) IntoProto() *proto.MarketData {
 func (m MarketData) String() string {
 	return fmt.Sprintf(
 		"markPrice(%s) lastTradedPrice(%s) bestBidPrice(%s) bestBidVolume(%v) bestOfferPrice(%s) bestOfferVolume(%v) bestStaticBidPrice(%s) bestStaticBidVolume(%v) bestStaticOfferPrice(%s) bestStaticOfferVolume(%v) midPrice(%s) staticMidPrice(%s) market(%s) timestamp(%v) openInterest(%v) auctionEnd(%v) auctionStart(%v) indicativePrice(%s) indicativeVolume(%v) marketTradingMode(%s) marketState(%s) trigger(%s) extensionTrigger(%s) targetStake(%s) suppliedStake(%s) priceMonitoringBounds(%s) marketValueProxy(%s) liquidityProviderFeeShare(%v) nextMTM(%v) marketGrowth(%v)",
-		uintPointerToString(m.MarkPrice),
-		uintPointerToString(m.LastTradedPrice),
+		stringer.UintPointerToString(m.MarkPrice),
+		stringer.UintPointerToString(m.LastTradedPrice),
 		m.BestBidPrice.String(),
 		m.BestBidVolume,
-		uintPointerToString(m.BestOfferPrice),
+		stringer.UintPointerToString(m.BestOfferPrice),
 		m.BestOfferVolume,
-		uintPointerToString(m.BestStaticBidPrice),
+		stringer.UintPointerToString(m.BestStaticBidPrice),
 		m.BestStaticBidVolume,
-		uintPointerToString(m.BestStaticOfferPrice),
+		stringer.UintPointerToString(m.BestStaticOfferPrice),
 		m.BestStaticOfferVolume,
-		uintPointerToString(m.MidPrice),
-		uintPointerToString(m.StaticMidPrice),
+		stringer.UintPointerToString(m.MidPrice),
+		stringer.UintPointerToString(m.StaticMidPrice),
 		m.Market,
 		m.Timestamp,
 		m.OpenInterest,
 		m.AuctionEnd,
 		m.AuctionStart,
-		uintPointerToString(m.IndicativePrice),
+		stringer.UintPointerToString(m.IndicativePrice),
 		m.IndicativeVolume,
 		m.MarketTradingMode.String(),
 		m.MarketState.String(),
@@ -888,16 +890,16 @@ func (m Market) String() string {
 	return fmt.Sprintf(
 		"ID(%s) tradableInstrument(%s) decimalPlaces(%v) positionDecimalPlaces(%v) fees(%s) openingAuction(%s) priceMonitoringSettings(%s) liquidityMonitoringParameters(%s) tradingMode(%s) state(%s) marketTimestamps(%s)",
 		m.ID,
-		reflectPointerToString(m.TradableInstrument),
+		stringer.ReflectPointerToString(m.TradableInstrument),
 		m.DecimalPlaces,
 		m.PositionDecimalPlaces,
-		reflectPointerToString(m.Fees),
-		reflectPointerToString(m.OpeningAuction),
-		reflectPointerToString(m.PriceMonitoringSettings),
-		reflectPointerToString(m.LiquidityMonitoringParameters),
+		stringer.ReflectPointerToString(m.Fees),
+		stringer.ReflectPointerToString(m.OpeningAuction),
+		stringer.ReflectPointerToString(m.PriceMonitoringSettings),
+		stringer.ReflectPointerToString(m.LiquidityMonitoringParameters),
 		m.TradingMode.String(),
 		m.State.String(),
-		reflectPointerToString(m.MarketTimestamps),
+		stringer.ReflectPointerToString(m.MarketTimestamps),
 	)
 }
 

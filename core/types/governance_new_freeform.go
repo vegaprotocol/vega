@@ -15,6 +15,7 @@ package types
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -25,7 +26,7 @@ type ProposalTermsNewFreeform struct {
 func (f ProposalTermsNewFreeform) String() string {
 	return fmt.Sprintf(
 		"newFreeForm(%s)",
-		reflectPointerToString(f.NewFreeform),
+		stringer.ReflectPointerToString(f.NewFreeform),
 	)
 }
 

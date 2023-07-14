@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/types"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -39,7 +39,7 @@ type Property struct {
 	Value string
 }
 
-func SerializeSigners(signers []*types.Signer) (Signers, error) {
+func SerializeSigners(signers []*dstypes.Signer) (Signers, error) {
 	if len(signers) > 0 {
 		sigList := Signers{}
 
@@ -57,11 +57,11 @@ func SerializeSigners(signers []*types.Signer) (Signers, error) {
 	return Signers{}, nil
 }
 
-func DeserializeSigners(data Signers) []*types.Signer {
+func DeserializeSigners(data Signers) []*dstypes.Signer {
 	if len(data) > 0 {
-		signers := []*types.Signer{}
+		signers := []*dstypes.Signer{}
 		for _, s := range data {
-			signer := types.DeserializeSigner(s)
+			signer := dstypes.DeserializeSigner(s)
 			signers = append(signers, signer)
 		}
 
@@ -125,7 +125,7 @@ func ExternalDataFromProto(data *datapb.ExternalData, txHash TxHash, vegaTime ti
 		}
 
 		var err error
-		signers, err = SerializeSigners(types.SignersFromProto(data.Data.Signers))
+		signers, err = SerializeSigners(dstypes.SignersFromProto(data.Data.Signers))
 		if err != nil {
 			return nil, err
 		}
@@ -179,7 +179,7 @@ func (od *ExternalData) ToProto() *datapb.ExternalData {
 		}
 
 		signers := DeserializeSigners(od.Data.Signers)
-		signersAsProto = types.SignersIntoProto(signers)
+		signersAsProto = dstypes.SignersIntoProto(signers)
 	}
 
 	return &datapb.ExternalData{

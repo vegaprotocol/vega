@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
@@ -142,9 +143,9 @@ func (o OrderAmendment) String() string {
 		o.SizeDelta,
 		o.TimeInForce.String(),
 		o.PeggedReference.String(),
-		uintPointerToString(o.Price),
-		int64PointerToString(o.ExpiresAt),
-		uintPointerToString(o.PeggedOffset),
+		stringer.UintPointerToString(o.Price),
+		stringer.Int64PointerToString(o.ExpiresAt),
+		stringer.UintPointerToString(o.PeggedOffset),
 	)
 }
 

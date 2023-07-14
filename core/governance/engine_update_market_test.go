@@ -18,6 +18,11 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/datasource"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	dsdefinition "code.vegaprotocol.io/vega/core/datasource/definition"
+	dserrors "code.vegaprotocol.io/vega/core/datasource/errors"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
@@ -116,10 +121,10 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeSetllingFails(t *testi
 	tm := time.Now().Add(time.Hour * 24 * 365)
 	_, termBinding := produceTimeTriggeredDataSourceSpec(tm)
 
-	termination := types.NewDataSourceDefinition(
-		types.DataSourceContentTypeInternalTimeTermination,
+	termination := datasource.NewDefinition(
+		datasource.ContentTypeInternalTimeTermination,
 	).SetTimeTriggerConditionConfig(
-		[]*types.DataSourceSpecCondition{
+		[]*dstypes.SpecCondition{
 			{
 				Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 				Value:    fmt.Sprintf("%d", tm.UnixNano()),
@@ -145,10 +150,10 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeSetllingFails(t *testi
 							Product: &types.UpdateInstrumentConfigurationFuture{
 								Future: &types.UpdateFutureProduct{
 									QuoteName: "VUSD",
-									DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
-										types.DataSourceContentTypeOracle,
+									DataSourceSpecForSettlementData: *datasource.NewDefinition(
+										datasource.ContentTypeOracle,
 									).SetTimeTriggerConditionConfig(
-										[]*types.DataSourceSpecCondition{
+										[]*dstypes.SpecCondition{
 											{
 												Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 												Value:    fmt.Sprintf("%d", tm.UnixNano()),
@@ -214,27 +219,27 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationWithLessTha
 
 	_, termBinding := produceTimeTriggeredDataSourceSpec(tm)
 
-	settl := types.NewDataSourceDefinition(
-		types.DataSourceContentTypeOracle,
+	settl := datasource.NewDefinition(
+		datasource.ContentTypeOracle,
 	).SetOracleConfig(
-		&types.DataSourceSpecConfiguration{
-			Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-			Filters: []*types.DataSourceSpecFilter{
+		&signedoracle.SpecConfiguration{
+			Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+			Filters: []*dstypes.SpecFilter{
 				{
-					Key: &types.DataSourceSpecPropertyKey{
+					Key: &dstypes.SpecPropertyKey{
 						Name: "prices.ETH.value",
 						Type: datapb.PropertyKey_TYPE_INTEGER,
 					},
-					Conditions: []*types.DataSourceSpecCondition{},
+					Conditions: []*dstypes.SpecCondition{},
 				},
 			},
 		},
 	)
 
-	term := types.NewDataSourceDefinition(
-		types.DataSourceContentTypeInternalTimeTermination,
+	term := datasource.NewDefinition(
+		datasource.ContentTypeInternalTimeTermination,
 	).SetTimeTriggerConditionConfig(
-		[]*types.DataSourceSpecCondition{
+		[]*dstypes.SpecCondition{
 			{
 				Operator: datapb.Condition_OPERATOR_LESS_THAN,
 				Value:    fmt.Sprintf("%d", tm.UnixNano()),
@@ -306,13 +311,13 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationWithLessTha
 	toSubmit, err := eng.submitProposal(t, proposal)
 
 	// then
-	assert.Error(t, err, types.ErrDataSourceSpecHasInvalidTimeCondition)
+	assert.Error(t, err, dserrors.ErrDataSourceSpecHasInvalidTimeCondition)
 	require.Nil(t, toSubmit)
 
-	term = types.NewDataSourceDefinition(
-		types.DataSourceContentTypeOracle,
+	term = datasource.NewDefinition(
+		datasource.ContentTypeOracle,
 	).SetTimeTriggerConditionConfig(
-		[]*types.DataSourceSpecCondition{
+		[]*dstypes.SpecCondition{
 			{
 				Operator: datapb.Condition_OPERATOR_LESS_THAN_OR_EQUAL,
 				Value:    fmt.Sprintf("%d", tm.UnixNano()),
@@ -372,7 +377,7 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationWithLessTha
 	toSubmit, err = eng.submitProposal(t, proposal)
 
 	// then
-	assert.Error(t, err, types.ErrDataSourceSpecHasInvalidTimeCondition)
+	assert.Error(t, err, dserrors.ErrDataSourceSpecHasInvalidTimeCondition)
 
 	require.Nil(t, toSubmit)
 }
@@ -413,10 +418,10 @@ func testSubmittingProposalForMarketUpdateWithEmptySettlementDataFails(t *testin
 	now := eng.tsvc.GetTimeNow()
 	tm := time.Now().Add(time.Hour * 24 * 365)
 	_, binding := produceTimeTriggeredDataSourceSpec(time.Now())
-	term := types.NewDataSourceDefinition(
-		types.DataSourceContentTypeInternalTimeTermination,
+	term := datasource.NewDefinition(
+		datasource.ContentTypeInternalTimeTermination,
 	).SetTimeTriggerConditionConfig(
-		[]*types.DataSourceSpecCondition{
+		[]*dstypes.SpecCondition{
 			{
 				Operator: datapb.Condition_OPERATOR_LESS_THAN,
 				Value:    fmt.Sprintf("%d", tm.UnixNano()),
@@ -453,7 +458,7 @@ func testSubmittingProposalForMarketUpdateWithEmptySettlementDataFails(t *testin
 							Product: &types.UpdateInstrumentConfigurationFuture{
 								Future: &types.UpdateFutureProduct{
 									QuoteName:                           "VUSD",
-									DataSourceSpecForSettlementData:     types.DataSourceDefinition{},
+									DataSourceSpecForSettlementData:     dsdefinition.Definition{},
 									DataSourceSpecForTradingTermination: *term,
 									DataSourceSpecBinding:               binding,
 								},
@@ -499,18 +504,18 @@ func testSubmittingProposalForMarketUpdateWithEmptyTerminationDataFails(t *testi
 	id := eng.newProposalID()
 	now := eng.tsvc.GetTimeNow()
 	_, binding := produceTimeTriggeredDataSourceSpec(time.Now())
-	settl := types.NewDataSourceDefinition(
-		types.DataSourceContentTypeOracle,
+	settl := datasource.NewDefinition(
+		datasource.ContentTypeOracle,
 	).SetOracleConfig(
-		&types.DataSourceSpecConfiguration{
-			Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-			Filters: []*types.DataSourceSpecFilter{
+		&signedoracle.SpecConfiguration{
+			Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+			Filters: []*dstypes.SpecFilter{
 				{
-					Key: &types.DataSourceSpecPropertyKey{
+					Key: &dstypes.SpecPropertyKey{
 						Name: "prices.ETH.value",
 						Type: datapb.PropertyKey_TYPE_INTEGER,
 					},
-					Conditions: []*types.DataSourceSpecCondition{},
+					Conditions: []*dstypes.SpecCondition{},
 				},
 			},
 		},
@@ -546,7 +551,7 @@ func testSubmittingProposalForMarketUpdateWithEmptyTerminationDataFails(t *testi
 								Future: &types.UpdateFutureProduct{
 									QuoteName:                           "VUSD",
 									DataSourceSpecForSettlementData:     *settl,
-									DataSourceSpecForTradingTermination: types.DataSourceDefinition{},
+									DataSourceSpecForTradingTermination: dsdefinition.Definition{},
 									DataSourceSpecBinding:               binding,
 								},
 							},
@@ -593,13 +598,13 @@ func testSubmittingProposalForMarketUpdateWithEarlyTerminationSucceeds(t *testin
 	marketID := proposal.MarketUpdate().MarketID
 
 	proposal.Terms.Change.(*types.ProposalTermsUpdateMarket).UpdateMarket.Changes.Instrument.Product.(*types.UpdateInstrumentConfigurationFuture).Future.DataSourceSpecForTradingTermination.UpdateFilters(
-		[]*types.DataSourceSpecFilter{
+		[]*dstypes.SpecFilter{
 			{
-				Key: &types.DataSourceSpecPropertyKey{
+				Key: &dstypes.SpecPropertyKey{
 					Name: "vegaprotocol.builtin.timestamp",
 					Type: datapb.PropertyKey_TYPE_TIMESTAMP,
 				},
-				Conditions: []*types.DataSourceSpecCondition{
+				Conditions: []*dstypes.SpecCondition{
 					{
 						Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 						Value:    "0", // change to internal timestamp that is in the past

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
@@ -17,8 +18,8 @@ import (
 func TestVerifyUpdateMarketState(t *testing.T) {
 	now := time.Now()
 	exec := getEngine(t, now)
-	pubKey := &types.SignerPubKey{
-		PubKey: &types.PubKey{
+	pubKey := &dstypes.SignerPubKey{
+		PubKey: &dstypes.PubKey{
 			Key: "0xDEADBEEF",
 		},
 	}
@@ -40,8 +41,8 @@ func TestVerifyUpdateMarketState(t *testing.T) {
 func TestTerminateMarketViaGovernance(t *testing.T) {
 	now := time.Now()
 	exec := getEngine(t, now)
-	pubKey := &types.SignerPubKey{
-		PubKey: &types.PubKey{
+	pubKey := &dstypes.SignerPubKey{
+		PubKey: &dstypes.PubKey{
 			Key: "0xDEADBEEF",
 		},
 	}
@@ -67,8 +68,8 @@ func TestSuspendMarketViaGovernance(t *testing.T) {
 	ctx = vgcontext.WithChainID(ctx, "chainid")
 	now := time.Now()
 	exec := getEngine(t, now)
-	pubKey := &types.SignerPubKey{
-		PubKey: &types.PubKey{
+	pubKey := &dstypes.SignerPubKey{
+		PubKey: &dstypes.PubKey{
 			Key: "0xDEADBEEF",
 		},
 	}

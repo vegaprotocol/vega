@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
-	"code.vegaprotocol.io/vega/core/types"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	gql "code.vegaprotocol.io/vega/datanode/gateway/graphql"
 	"code.vegaprotocol.io/vega/datanode/gateway/graphql/mocks"
@@ -84,7 +84,7 @@ func TestNewResolverRoot_QueryResolver(t *testing.T) {
 }
 
 func getTestMarket(termType protoTypes.DataSourceContentType) *protoTypes.Market {
-	pk := types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)
+	pk := dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)
 
 	term := &protoTypes.DataSourceSpec{}
 	switch termType {

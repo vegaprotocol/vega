@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -23,7 +24,7 @@ type ProposalTermsUpdateAsset struct {
 func (a ProposalTermsUpdateAsset) String() string {
 	return fmt.Sprintf(
 		"updateAsset(%v)",
-		reflectPointerToString(a.UpdateAsset),
+		stringer.ReflectPointerToString(a.UpdateAsset),
 	)
 }
 
@@ -104,7 +105,7 @@ func (a UpdateAsset) String() string {
 	return fmt.Sprintf(
 		"assetID(%s) changes(%s)",
 		a.AssetID,
-		reflectPointerToString(a.Changes),
+		stringer.ReflectPointerToString(a.Changes),
 	)
 }
 
@@ -142,7 +143,7 @@ func (a AssetDetailsUpdate) String() string {
 	return fmt.Sprintf(
 		"quantum(%s) (%s)",
 		a.Quantum.String(),
-		reflectPointerToString(a.Source),
+		stringer.ReflectPointerToString(a.Source),
 	)
 }
 
@@ -228,7 +229,7 @@ type AssetDetailsUpdateERC20 struct {
 func (a AssetDetailsUpdateERC20) String() string {
 	return fmt.Sprintf(
 		"erc20Update(%s)",
-		reflectPointerToString(a.ERC20Update),
+		stringer.ReflectPointerToString(a.ERC20Update),
 	)
 }
 
@@ -334,7 +335,7 @@ func (e ERC20Update) DeepClone() *ERC20Update {
 func (e ERC20Update) String() string {
 	return fmt.Sprintf(
 		"lifetimeLimit(%s) withdrawThreshold(%s)",
-		uintPointerToString(e.LifetimeLimit),
-		uintPointerToString(e.WithdrawThreshold),
+		stringer.UintPointerToString(e.LifetimeLimit),
+		stringer.UintPointerToString(e.WithdrawThreshold),
 	)
 }

@@ -16,6 +16,9 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/datasource"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
 	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -396,29 +399,29 @@ func getDummyData() *types.Chunk {
 										Future: &types.Future{
 											SettlementAsset: "AST",
 											QuoteName:       "AST",
-											DataSourceSpecForSettlementData: &types.DataSourceSpec{
+											DataSourceSpecForSettlementData: &datasource.Spec{
 												ID: "o1",
-												Data: types.NewDataSourceDefinition(
-													types.DataSourceContentTypeOracle,
+												Data: datasource.NewDefinition(
+													datasource.ContentTypeOracle,
 												).SetOracleConfig(
-													&types.DataSourceSpecConfiguration{
-														Signers: []*types.Signer{},
-														Filters: []*types.DataSourceSpecFilter{},
+													&signedoracle.SpecConfiguration{
+														Signers: []*dstypes.Signer{},
+														Filters: []*dstypes.SpecFilter{},
 													},
 												),
 											},
-											DataSourceSpecForTradingTermination: &types.DataSourceSpec{
+											DataSourceSpecForTradingTermination: &datasource.Spec{
 												ID: "os1",
-												Data: types.NewDataSourceDefinition(
-													types.DataSourceContentTypeOracle,
+												Data: datasource.NewDefinition(
+													datasource.ContentTypeOracle,
 												).SetOracleConfig(
-													&types.DataSourceSpecConfiguration{
-														Signers: []*types.Signer{},
-														Filters: []*types.DataSourceSpecFilter{},
+													&signedoracle.SpecConfiguration{
+														Signers: []*dstypes.Signer{},
+														Filters: []*dstypes.SpecFilter{},
 													},
 												),
 											},
-											DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{},
+											DataSourceSpecBinding: &datasource.SpecBindingForFuture{},
 										},
 									},
 								},

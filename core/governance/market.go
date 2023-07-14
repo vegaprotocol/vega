@@ -18,8 +18,9 @@ import (
 	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/datasource"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/netparams"
-	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	proto "code.vegaprotocol.io/vega/protos/vega"
@@ -82,8 +83,8 @@ func assignProduct(
 			Future: &types.Future{
 				SettlementAsset:                     product.Future.SettlementAsset,
 				QuoteName:                           product.Future.QuoteName,
-				DataSourceSpecForSettlementData:     product.Future.DataSourceSpecForSettlementData.ToDataSourceSpec(),
-				DataSourceSpecForTradingTermination: product.Future.DataSourceSpecForTradingTermination.ToDataSourceSpec(),
+				DataSourceSpecForSettlementData:     datasource.SpecFromDefinition(product.Future.DataSourceSpecForSettlementData),
+				DataSourceSpecForTradingTermination: datasource.SpecFromDefinition(product.Future.DataSourceSpecForTradingTermination),
 				DataSourceSpecBinding:               product.Future.DataSourceSpecBinding,
 			},
 		}
@@ -431,7 +432,7 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 	}
 
 	// ensure the oracle spec for settlement data can be constructed
-	ospec, err := oracles.NewOracleSpec(*future.DataSourceSpecForSettlementData.ToExternalDataSourceSpec())
+	ospec, err := spec.New(*datasource.SpecFromDefinition(future.DataSourceSpecForSettlementData))
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
@@ -450,13 +451,13 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 	}
 
 	// ensure the oracle spec for market termination can be constructed
-	ospec, err = oracles.NewOracleSpec(*future.DataSourceSpecForTradingTermination.ToExternalDataSourceSpec())
+	ospec, err = spec.New(*datasource.SpecFromDefinition(future.DataSourceSpecForTradingTermination))
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
 
 	switch future.DataSourceSpecBinding.TradingTerminationProperty {
-	case oracles.BuiltinOracleTimestamp:
+	case spec.BuiltinTimestamp:
 		if err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.TradingTerminationProperty, datapb.PropertyKey_TYPE_TIMESTAMP); err != nil {
 			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
 		}
@@ -777,7 +778,7 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) 
 	}
 
 	// ensure the oracle spec for settlement data can be constructed
-	ospec, err := oracles.NewOracleSpec(*future.DataSourceSpecForSettlementData.ToExternalDataSourceSpec())
+	ospec, err := spec.New(*datasource.SpecFromDefinition(future.DataSourceSpecForSettlementData))
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
@@ -796,13 +797,13 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) 
 	}
 
 	// ensure the oracle spec for market termination can be constructed
-	ospec, err = oracles.NewOracleSpec(*future.DataSourceSpecForTradingTermination.ToExternalDataSourceSpec())
+	ospec, err = spec.New(*datasource.SpecFromDefinition(future.DataSourceSpecForTradingTermination))
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
 
 	switch future.DataSourceSpecBinding.TradingTerminationProperty {
-	case oracles.BuiltinOracleTimestamp:
+	case spec.BuiltinTimestamp:
 		if err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.TradingTerminationProperty, datapb.PropertyKey_TYPE_TIMESTAMP); err != nil {
 			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
 		}

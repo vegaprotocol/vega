@@ -15,6 +15,7 @@ package types
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -25,7 +26,7 @@ type ProposalTermsNewAsset struct {
 func (a ProposalTermsNewAsset) String() string {
 	return fmt.Sprintf(
 		"newAsset(%v)",
-		reflectPointerToString(a.NewAsset),
+		stringer.ReflectPointerToString(a.NewAsset),
 	)
 }
 
@@ -114,7 +115,7 @@ func (n NewAsset) IntoProto() *vegapb.NewAsset {
 func (n NewAsset) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		reflectPointerToString(n.Changes),
+		stringer.ReflectPointerToString(n.Changes),
 	)
 }
 

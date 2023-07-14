@@ -19,10 +19,11 @@ import (
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/broker"
+	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/governance"
-	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -229,17 +230,17 @@ type Oracle struct {
 }
 
 type OraclesEngine interface {
-	BroadcastData(context.Context, oracles.OracleData) error
-	ListensToSigners(oracles.OracleData) bool
-	HasMatch(data oracles.OracleData) (bool, error)
+	BroadcastData(context.Context, dscommon.Data) error
+	ListensToSigners(dscommon.Data) bool
+	HasMatch(data dscommon.Data) (bool, error)
 }
 
 type OracleAdaptors interface {
-	Normalise(crypto.PublicKey, commandspb.OracleDataSubmission) (*oracles.OracleData, error)
+	Normalise(crypto.PublicKey, commandspb.OracleDataSubmission) (*dscommon.Data, error)
 }
 
 type EthereumOracleVerifier interface {
-	ProcessEthereumContractCallResult(callEvent types.EthContractCallEvent) error
+	ProcessEthereumContractCallResult(callEvent ethcall.ContractCallEvent) error
 }
 
 type Limits interface {

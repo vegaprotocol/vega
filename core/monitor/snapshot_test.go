@@ -17,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/datasource"
 	"code.vegaprotocol.io/vega/core/monitor"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -50,7 +51,7 @@ func getMarket(openingAuctionDuration *types.AuctionDuration) types.Market {
 					Future: &types.Future{
 						SettlementAsset: "ETH",
 						QuoteName:       "USD",
-						DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
+						DataSourceSpecBinding: &datasource.SpecBindingForFuture{
 							SettlementDataProperty:     "prices.ETH.value",
 							TradingTerminationProperty: "trading.terminated",
 						},

@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -230,12 +231,17 @@ type PayloadStakeVerifierRemoved struct {
 	StakeVerifierRemoved []*StakeRemoved
 }
 
+type EthBlock struct {
+	Height uint64
+	Time   uint64
+}
+
 type PayloadEthOracleLastBlock struct {
 	EthOracleLastBlock *EthBlock
 }
 
 type PayloadEthContractCallEvent struct {
-	EthContractCallEvent []*EthContractCallEvent
+	EthContractCallEvent []*ethcall.ContractCallEvent
 }
 
 type PayloadEpoch struct {
@@ -3985,10 +3991,10 @@ func (*PayloadNotary) Namespace() SnapshotNamespace {
 }
 
 func PayloadEthContractCallEventFromProto(svd *snapshot.Payload_EthContractCallResults) *PayloadEthContractCallEvent {
-	pending := make([]*EthContractCallEvent, 0, len(svd.EthContractCallResults.PendingContractCallResult))
+	pending := make([]*ethcall.ContractCallEvent, 0, len(svd.EthContractCallResults.PendingContractCallResult))
 
 	for _, pr := range svd.EthContractCallResults.PendingContractCallResult {
-		result := &EthContractCallEvent{
+		result := &ethcall.ContractCallEvent{
 			BlockHeight: pr.BlockHeight,
 			BlockTime:   pr.BlockTime,
 			SpecId:      pr.SpecId,

@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -89,7 +90,7 @@ func (l LogNormalRiskModel) String() string {
 		"tau(%s) riskAversionParameter(%s) params(%s)",
 		l.Tau.String(),
 		l.RiskAversionParameter.String(),
-		reflectPointerToString(l.Params),
+		stringer.ReflectPointerToString(l.Params),
 	)
 }
 
@@ -100,7 +101,7 @@ type TradableInstrumentLogNormalRiskModel struct {
 func (t TradableInstrumentLogNormalRiskModel) String() string {
 	return fmt.Sprintf(
 		"logNormalRiskModel(%s)",
-		reflectPointerToString(t.LogNormalRiskModel),
+		stringer.ReflectPointerToString(t.LogNormalRiskModel),
 	)
 }
 
@@ -217,10 +218,10 @@ func (m MarginLevels) String() string {
 		m.MarketID,
 		m.Asset,
 		m.Party,
-		uintPointerToString(m.InitialMargin),
-		uintPointerToString(m.MaintenanceMargin),
-		uintPointerToString(m.CollateralReleaseLevel),
-		uintPointerToString(m.SearchLevel),
+		stringer.UintPointerToString(m.InitialMargin),
+		stringer.UintPointerToString(m.MaintenanceMargin),
+		stringer.UintPointerToString(m.CollateralReleaseLevel),
+		stringer.UintPointerToString(m.SearchLevel),
 		m.Timestamp,
 	)
 }
@@ -251,7 +252,7 @@ func (m MarginCalculator) IntoProto() *proto.MarginCalculator {
 func (m MarginCalculator) String() string {
 	return fmt.Sprintf(
 		"scalingFactors(%s)",
-		reflectPointerToString(m.ScalingFactors),
+		stringer.ReflectPointerToString(m.ScalingFactors),
 	)
 }
 
@@ -339,7 +340,7 @@ type TradableInstrumentSimpleRiskModel struct {
 func (t TradableInstrumentSimpleRiskModel) String() string {
 	return fmt.Sprintf(
 		"simpleRiskModel(%s)",
-		reflectPointerToString(t.SimpleRiskModel),
+		stringer.ReflectPointerToString(t.SimpleRiskModel),
 	)
 }
 
@@ -410,7 +411,7 @@ func (s SimpleRiskModel) IntoProto() *proto.SimpleRiskModel {
 func (s SimpleRiskModel) String() string {
 	return fmt.Sprintf(
 		"params(%s)",
-		reflectPointerToString(s.Params),
+		stringer.ReflectPointerToString(s.Params),
 	)
 }
 

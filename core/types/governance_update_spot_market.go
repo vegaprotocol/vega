@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -26,7 +27,7 @@ type ProposalTermsUpdateSpotMarket struct {
 func (a ProposalTermsUpdateSpotMarket) String() string {
 	return fmt.Sprintf(
 		"updateSpotMarket(%s)",
-		reflectPointerToString(a.UpdateSpotMarket),
+		stringer.ReflectPointerToString(a.UpdateSpotMarket),
 	)
 }
 
@@ -82,7 +83,7 @@ func (n UpdateSpotMarket) String() string {
 	return fmt.Sprintf(
 		"marketID(%s) changes(%s)",
 		n.MarketID,
-		reflectPointerToString(n.Changes),
+		stringer.ReflectPointerToString(n.Changes),
 	)
 }
 
@@ -119,12 +120,12 @@ type UpdateSpotMarketConfiguration struct {
 func (n UpdateSpotMarketConfiguration) String() string {
 	return fmt.Sprintf(
 		"instrument(%s) metadata(%v) priceMonitoring(%s) targetStakeParameters(%s) risk(%s) slaParams(%s)",
-		reflectPointerToString(n.Instrument),
+		stringer.ReflectPointerToString(n.Instrument),
 		MetadataList(n.Metadata).String(),
-		reflectPointerToString(n.PriceMonitoringParameters),
-		reflectPointerToString(n.TargetStakeParameters),
-		reflectPointerToString(n.RiskParameters),
-		reflectPointerToString(n.SLAParams),
+		stringer.ReflectPointerToString(n.PriceMonitoringParameters),
+		stringer.ReflectPointerToString(n.TargetStakeParameters),
+		stringer.ReflectPointerToString(n.RiskParameters),
+		stringer.ReflectPointerToString(n.SLAParams),
 	)
 }
 
@@ -208,7 +209,7 @@ type UpdateSpotMarketConfigurationSimple struct {
 func (n UpdateSpotMarketConfigurationSimple) String() string {
 	return fmt.Sprintf(
 		"simple(%s)",
-		reflectPointerToString(n.Simple),
+		stringer.ReflectPointerToString(n.Simple),
 	)
 }
 
@@ -244,7 +245,7 @@ type UpdateSpotMarketConfigurationLogNormal struct {
 func (n UpdateSpotMarketConfigurationLogNormal) String() string {
 	return fmt.Sprintf(
 		"logNormal(%s)",
-		reflectPointerToString(n.LogNormal),
+		stringer.ReflectPointerToString(n.LogNormal),
 	)
 }
 
