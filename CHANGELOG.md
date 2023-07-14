@@ -23,7 +23,7 @@
 - [8417](https://github.com/vegaprotocol/vega/issues/8417) - Fix normalisation of Ethereum calls that return structures
 - [8719](https://github.com/vegaprotocol/vega/issues/8719) - Do not try to resolve iceberg order if it's not set
 - [8721](https://github.com/vegaprotocol/vega/issues/8721) - Fix panic with triggered OCO expiring
-- [8751](https://github.com/vegaprotocol/vega/issues/8751) - Fix Ethereum oracle data error event sent with incorrect sequence number  
+- [8751](https://github.com/vegaprotocol/vega/issues/8751) - Fix Ethereum oracle data error event sent with incorrect sequence number
 - [8729](https://github.com/vegaprotocol/vega/issues/8729) - Stop order direction not set in datanode
 - [8545](https://github.com/vegaprotocol/vega/issues/8545) - Block Explorer pagination does not order correctly.
 - [8748](https://github.com/vegaprotocol/vega/issues/8748) - `ListSuccessorMarkets` does not return results.
@@ -31,6 +31,7 @@
 - [8773](https://github.com/vegaprotocol/vega/issues/8773) - Fix panic with stop orders
 - [8792](https://github.com/vegaprotocol/vega/issues/8792) - Fix panic when starting null block chain node.
 - [8739](https://github.com/vegaprotocol/vega/issues/8739) - Cancel orders for rejected markets.
+- [8800](https://github.com/vegaprotocol/vega/issues/8800) - `expiresAt` is always null in the Stop Orders `API`.
 
 
 ## 0.72.1
