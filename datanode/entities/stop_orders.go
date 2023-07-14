@@ -172,6 +172,10 @@ func StopOrderFromProto(so *pbevents.StopOrderEvent, vegaTime time.Time, seqNum 
 		ocoLinkID = StopOrderID(*so.StopOrder.OcoLinkId)
 	}
 
+	if so.StopOrder.ExpiresAt != nil {
+		expiresAt = ptr.From(NanosToPostgresTimestamp(*so.StopOrder.ExpiresAt))
+	}
+
 	if so.StopOrder.ExpiryStrategy != nil {
 		expiryStrategy = StopOrderExpiryStrategy(*so.StopOrder.ExpiryStrategy)
 	}
