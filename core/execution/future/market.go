@@ -569,7 +569,7 @@ func (m *Market) onTxProcessed() {
 // CanLeaveOpeningAuction checks if the market can leave the opening auction based on whether floating point consensus has been reached on all 3 vars.
 func (m *Market) CanLeaveOpeningAuction() bool {
 	boundFactorsInitialised := m.pMonitor.IsBoundFactorsInitialised()
-	potInitialised := m.liquidity.IsPoTInitialised()
+	potInitialised := m.liquidity.IsProbabilityOfTradingInitialised()
 	riskFactorsInitialised := m.risk.IsRiskFactorInitialised()
 	canLeave := boundFactorsInitialised && potInitialised && riskFactorsInitialised
 	if !canLeave {
@@ -1201,44 +1201,6 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	}
 }
 
-func (m *Market) validatePeggedOrder(order *types.Order) types.OrderError {
-	if order.Type != types.OrderTypeLimit {
-		// All pegged orders must be LIMIT orders
-		return types.ErrPeggedOrderMustBeLimitOrder
-	}
-
-	if order.TimeInForce != types.OrderTimeInForceGTT && order.TimeInForce != types.OrderTimeInForceGTC && order.TimeInForce != types.OrderTimeInForceGFN {
-		// Pegged orders can only be GTC or GTT
-		return types.ErrPeggedOrderMustBeGTTOrGTC
-	}
-
-	if order.PeggedOrder.Reference == types.PeggedReferenceUnspecified {
-		// We must specify a valid reference
-		return types.ErrPeggedOrderWithoutReferencePrice
-	}
-
-	if order.Side == types.SideBuy {
-		switch order.PeggedOrder.Reference {
-		case types.PeggedReferenceBestAsk:
-			return types.ErrPeggedOrderBuyCannotReferenceBestAskPrice
-		case types.PeggedReferenceMid:
-			if order.PeggedOrder.Offset.IsZero() {
-				return types.ErrPeggedOrderOffsetMustBeGreaterThanZero
-			}
-		}
-	} else {
-		switch order.PeggedOrder.Reference {
-		case types.PeggedReferenceBestBid:
-			return types.ErrPeggedOrderSellCannotReferenceBestBidPrice
-		case types.PeggedReferenceMid:
-			if order.PeggedOrder.Offset.IsZero() {
-				return types.ErrPeggedOrderOffsetMustBeGreaterThanZero
-			}
-		}
-	}
-	return types.OrderErrorUnspecified
-}
-
 func (m *Market) validateOrder(ctx context.Context, order *types.Order) (err error) {
 	defer func() {
 		if err != nil {
@@ -1301,7 +1263,7 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) (err err
 
 	// Validate pegged orders
 	if order.PeggedOrder != nil {
-		if reason := m.validatePeggedOrder(order); reason != types.OrderErrorUnspecified {
+		if reason := order.ValidatePeggedOrder(); reason != types.OrderErrorUnspecified {
 			order.Reason = reason
 			if m.log.GetLevel() == logging.DebugLevel {
 				m.log.Debug("Failed to validate pegged order details",
@@ -2989,7 +2951,7 @@ func (m *Market) amendOrder(
 		return nil, nil, err
 	}
 
-	amendedOrder, err := m.applyOrderAmendment(existingOrder, orderAmendment)
+	amendedOrder, err := existingOrder.ApplyOrderAmendment(orderAmendment, m.timeService.GetTimeNow().UnixNano(), m.priceFactor)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -3250,118 +3212,6 @@ func (m *Market) validateOrderAmendment(
 		return types.OrderErrorUnableToAmendPriceOnPeggedOrder
 	}
 	return nil
-}
-
-// applyOrderAmendmentSizeIceberg update the orders reservedRemaining fields of an iceberg order
-// given the delta change.
-func applyOrderAmendmentSizeIceberg(order *types.Order, delta int64) {
-	// handle increase in size
-	if delta > 0 {
-		order.Size += uint64(delta)
-		order.IcebergOrder.ReservedRemaining += uint64(delta)
-		return
-	}
-
-	// handle decrease in size
-	dec := uint64(-delta)
-	order.Size -= dec
-
-	if order.IcebergOrder.ReservedRemaining >= dec {
-		order.IcebergOrder.ReservedRemaining -= dec
-		return
-	}
-
-	diff := dec - order.IcebergOrder.ReservedRemaining
-	if order.Remaining > diff {
-		order.Remaining -= dec - order.IcebergOrder.ReservedRemaining
-	} else {
-		order.Remaining = 0
-	}
-	order.IcebergOrder.ReservedRemaining = 0
-}
-
-// applyOrderAmendmentSizeDelta update the orders size/remaining fields based on the size an direction of the given delta.
-func applyOrderAmendmentSizeDelta(order *types.Order, delta int64) {
-	if order.IcebergOrder != nil {
-		applyOrderAmendmentSizeIceberg(order, delta)
-		return
-	}
-
-	// handle size increase
-	if delta > 0 {
-		order.Size += uint64(delta)
-		order.Remaining += uint64(delta)
-		return
-	}
-
-	// handle size decrease
-	dec := uint64(-delta)
-	order.Size -= dec
-	if order.Remaining > dec {
-		order.Remaining -= dec
-	} else {
-		order.Remaining = 0
-	}
-}
-
-// this function assume the amendment have been validated before.
-func (m *Market) applyOrderAmendment(
-	existingOrder *types.Order,
-	amendment *types.OrderAmendment,
-) (order *types.Order, err error) {
-	order = existingOrder.Clone()
-	order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
-	order.Version++
-
-	if existingOrder.PeggedOrder != nil {
-		order.PeggedOrder = &types.PeggedOrder{
-			Reference: existingOrder.PeggedOrder.Reference,
-			Offset:    existingOrder.PeggedOrder.Offset,
-		}
-	}
-
-	var amendPrice *num.Uint
-	if amendment.Price != nil {
-		amendPrice = amendment.Price.Clone()
-		amendPrice.Mul(amendPrice, m.priceFactor)
-	}
-	// apply price changes
-	if amendment.Price != nil && existingOrder.Price.NEQ(amendPrice) {
-		order.Price = amendPrice.Clone()
-		order.OriginalPrice = amendment.Price.Clone()
-	}
-
-	// apply size changes
-	if delta := amendment.SizeDelta; delta != 0 {
-		applyOrderAmendmentSizeDelta(order, delta)
-	}
-
-	// apply tif
-	if amendment.TimeInForce != types.OrderTimeInForceUnspecified {
-		order.TimeInForce = amendment.TimeInForce
-		if amendment.TimeInForce != types.OrderTimeInForceGTT {
-			order.ExpiresAt = 0
-		}
-	}
-	if amendment.ExpiresAt != nil {
-		order.ExpiresAt = *amendment.ExpiresAt
-	}
-
-	// apply pegged order values
-	if order.PeggedOrder != nil {
-		if amendment.PeggedOffset != nil {
-			order.PeggedOrder.Offset = amendment.PeggedOffset.Clone()
-		}
-
-		if amendment.PeggedReference != types.PeggedReferenceUnspecified {
-			order.PeggedOrder.Reference = amendment.PeggedReference
-		}
-		if verr := m.validatePeggedOrder(order); verr != types.OrderErrorUnspecified {
-			err = verr
-		}
-	}
-
-	return order, err
 }
 
 func (m *Market) orderCancelReplace(
@@ -4081,4 +3931,31 @@ func (m *Market) getLastTradedPrice() *num.Uint {
 		return num.UintZero()
 	}
 	return m.lastTradedPrice.Clone()
+}
+
+func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
+	// TODO when liquidity engine is integrated
+	// if epoch.Action == vega.EpochAction_EPOCH_ACTION_START {
+	// 	m.liquidity.OnEpochStart(ctx, m.timeService.GetTimeNow(), m.markPrice, m.midPrice(), m.getTargetStake(), m.positionFactor)
+	// } else if epoch.Action == vega.EpochAction_EPOCH_ACTION_END {
+	// 	m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow())
+	// 	m.updateLiquidityFee(ctx)
+	// }
+}
+
+func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
+}
+
+func (m *Market) GetAssetForProposerBonus() string {
+	return m.settlementAsset
+}
+
+func (m *Market) GetMarketCounters() *types.MarketCounters {
+	return &types.MarketCounters{
+		StopOrderCounter:    m.GetTotalStopOrderCount(),
+		PeggedOrderCounter:  m.GetTotalPeggedOrderCount(),
+		OrderbookLevelCount: m.GetTotalOrderBookLevelCount(),
+		PositionCount:       m.GetTotalOpenPositionCount(),
+		LPShapeCount:        m.GetTotalLPShapeCount(),
+	}
 }

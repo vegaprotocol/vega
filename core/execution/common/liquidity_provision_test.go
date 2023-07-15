@@ -88,12 +88,13 @@ func newMarketLiquidity(t *testing.T) *marketLiquidityTest {
 		fees,
 		marketID,
 		settlementAsset,
-		num.DecimalOne(),
 		num.NewUint(1),
 		num.NewDecimalFromFloat(0.5),
-		num.NewDecimalFromFloat(1),
 		time.Second*3,
 	)
+
+	marketLiquidity.OnMinLPStakeQuantumMultiple(num.DecimalOne())
+	marketLiquidity.OnEarlyExitPenalty(num.DecimalOne())
 
 	return &marketLiquidityTest{
 		ctrl:             ctrl,
@@ -257,12 +258,12 @@ func TestLiquidityProvisionsFeeDistribution(t *testing.T) {
 		return provisionsPerParty
 	}).AnyTimes()
 
-	testLiquidity.liquidityEngine.EXPECT().ResetSLAEpoch(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	testLiquidity.liquidityEngine.EXPECT().ResetSLAEpoch(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	// start epoch.
 	now := time.Now()
 
-	testLiquidity.marketLiquidity.OnEpochStart(testLiquidity.ctx, now, uintOne, uintOne, decimalOne)
+	testLiquidity.marketLiquidity.OnEpochStart(testLiquidity.ctx, now, uintOne, uintOne, uintOne, decimalOne)
 
 	testLiquidity.liquidityEngine.EXPECT().ResetAverageLiquidityScores()
 
@@ -369,5 +370,5 @@ func TestLiquidityProvisionsFeeDistribution(t *testing.T) {
 
 	testLiquidity.equityShares.EXPECT().SetPartyStake(gomock.Any(), gomock.Any()).AnyTimes()
 	testLiquidity.equityShares.EXPECT().AllShares().AnyTimes()
-	testLiquidity.marketLiquidity.OnEpochStart(testLiquidity.ctx, now, uintOne, uintOne, decimalOne)
+	testLiquidity.marketLiquidity.OnEpochStart(testLiquidity.ctx, now, uintOne, uintOne, uintOne, decimalOne)
 }

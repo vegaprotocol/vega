@@ -53,3 +53,17 @@ func TestLimitSnapshotGenesisState(t *testing.T) {
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(s1, s2))
 }
+
+func TestSnapshotRoundTrip(t *testing.T) {
+	gs := &limits.GenesisState{}
+	lmt := getLimitsTest(t)
+	lmt.loadGenesisState(t, gs)
+	lmt.OnLimitsProposeSpotMarketEnabledFromUpdate(context.Background(), 1)
+
+	s1, _, err := lmt.GetState(allKey)
+	require.Nil(t, err)
+
+	s2, _, err := lmt.GetState(allKey)
+	require.Nil(t, err)
+	require.True(t, bytes.Equal(s1, s2))
+}

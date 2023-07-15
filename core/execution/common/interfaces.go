@@ -151,18 +151,48 @@ type Collateral interface {
 	GetInsurancePoolBalance(marketID, asset string) (*num.Uint, bool)
 	AssetExists(string) bool
 	CreateMarketAccounts(context.Context, string, string) (string, string, error)
+	CreateSpotMarketAccounts(ctx context.Context, marketID, quoteAsset string) error
 	SuccessorInsuranceFraction(ctx context.Context, successor, parent, asset string, fraction num.Decimal) *types.LedgerMovement
 	ClearInsurancepool(ctx context.Context, marketID string, asset string, clearFees bool) ([]*types.LedgerMovement, error)
+	TransferToHoldingAccount(ctx context.Context, transfer *types.Transfer) (*types.LedgerMovement, error)
+	ReleaseFromHoldingAccount(ctx context.Context, transfer *types.Transfer) (*types.LedgerMovement, error)
+	ClearSpotMarket(ctx context.Context, mktID, quoteAsset string) ([]*types.LedgerMovement, error)
+	PartyHasSufficientBalance(asset, partyID string, amount *num.Uint) error
+	TransferSpot(ctx context.Context, partyID, toPartyID, asset string, quantity *num.Uint) (*types.LedgerMovement, error)
 	GetOrCreatePartyLiquidityFeeAccount(ctx context.Context, partyID, marketID, asset string) (*types.Account, error)
 	GetPartyLiquidityFeeAccount(market, partyID, asset string) (*types.Account, error)
 	GetLiquidityFeesBonusDistributionAccount(marketID, asset string) (*types.Account, error)
-	CreateSpotMarketAccounts(ctx context.Context, marketID, quoteAsset string) error
 	CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) (string, error)
 	GetOrCreateLiquidityFeesBonusDistributionAccount(ctx context.Context, marketID, asset string) (*types.Account, error)
 }
 
+type OrderReferenceCheck types.Order
+
+const (
+	// PriceMoveMid used to indicate that the mid price has moved.
+	PriceMoveMid = 1
+
+	// PriceMoveBestBid used to indicate that the best bid price has moved.
+	PriceMoveBestBid = 2
+
+	// PriceMoveBestAsk used to indicate that the best ask price has moved.
+	PriceMoveBestAsk = 4
+
+	// PriceMoveAll used to indicate everything has moved.
+	PriceMoveAll = PriceMoveMid + PriceMoveBestBid + PriceMoveBestAsk
+)
+
+func (o OrderReferenceCheck) HasMoved(changes uint8) bool {
+	return (o.PeggedOrder.Reference == types.PeggedReferenceMid &&
+		changes&PriceMoveMid > 0) ||
+		(o.PeggedOrder.Reference == types.PeggedReferenceBestBid &&
+			changes&PriceMoveBestBid > 0) ||
+		(o.PeggedOrder.Reference == types.PeggedReferenceBestAsk &&
+			changes&PriceMoveBestAsk > 0)
+}
+
 type LiquidityEngine interface {
-	ResetSLAEpoch(t time.Time, markPrice *num.Uint, positionFactor num.Decimal)
+	ResetSLAEpoch(time.Time, *num.Uint, *num.Uint, num.Decimal)
 	ApplyPendingProvisions(ctx context.Context, now time.Time) map[string]*types.LiquidityProvision
 	PendingProvision() map[string]*types.LiquidityProvision
 	PendingProvisionByPartyID(party string) *types.LiquidityProvision
@@ -175,7 +205,7 @@ type LiquidityEngine interface {
 	AmendLiquidityProvision(context.Context, *types.LiquidityProvisionAmendment, string) error
 	CancelLiquidityProvision(context.Context, string) error
 	ValidateLiquidityProvisionAmendment(*types.LiquidityProvisionAmendment) error
-	StopLiquidityProvision(context.Context, string)
+	StopLiquidityProvision(context.Context, string) error
 	IsLiquidityProvider(string) bool
 	ProvisionsPerParty() liquidity.ProvisionsPerParty
 	LiquidityProvisionByPartyID(string) *types.LiquidityProvision
@@ -183,23 +213,32 @@ type LiquidityEngine interface {
 	CalculateSuppliedStakeWithoutPending() *num.Uint
 	UpdatePartyCommitment(string, *num.Uint) (*types.LiquidityProvision, error)
 	EndBlock(*num.Uint, *num.Uint, num.Decimal)
-	UpdateMarketConfig(liquidity.RiskModel, PriceMonitor, *types.LiquiditySLAParams)
+	UpdateMarketConfig(liquidity.RiskModel, liquidity.PriceMonitor, *types.LiquiditySLAParams)
 	OnNonPerformanceBondPenaltySlopeUpdate(num.Decimal)
 	OnNonPerformanceBondPenaltyMaxUpdate(num.Decimal)
 	OnMinProbabilityOfTradingLPOrdersUpdate(num.Decimal)
 	OnProbabilityOfTradingTauScalingUpdate(num.Decimal)
 	OnMaximumLiquidityFeeFactorLevelUpdate(num.Decimal)
 	OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal)
+	IsProbabilityOfTradingInitialised() bool
+
+	Namespace() types.SnapshotNamespace
+	Keys() []string
+	GetState(k string) ([]byte, []types.StateProvider, error)
+	LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error)
+	Stopped() bool
+	StopSnapshots()
 }
 
 type MarketLiquidityEngine interface {
-	OnEpochStart(context.Context, time.Time, *num.Uint, *num.Uint, num.Decimal)
+	OnEpochStart(context.Context, time.Time, *num.Uint, *num.Uint, *num.Uint, num.Decimal)
 	OnEpochEnd(context.Context, time.Time)
 	OnTick(context.Context, time.Time)
 	EndBlock(*num.Uint, *num.Uint, num.Decimal)
 	SubmitLiquidityProvision(context.Context, *types.LiquidityProvisionSubmission, string, string, types.MarketState) error
 	AmendLiquidityProvision(context.Context, *types.LiquidityProvisionAmendment, string, string, types.MarketState) error
-	UpdateMarketConfig(liquidity.RiskModel, PriceMonitor, *types.LiquiditySLAParams)
+	CancelLiquidityProvision(context.Context, string) error
+	UpdateMarketConfig(liquidity.RiskModel, liquidity.PriceMonitor, *types.LiquiditySLAParams)
 	OnEarlyExitPenalty(num.Decimal)
 	OnMinLPStakeQuantumMultiple(num.Decimal)
 	OnNonPerformanceBondPenaltySlopeUpdate(num.Decimal)
@@ -209,9 +248,56 @@ type MarketLiquidityEngine interface {
 	OnMaximumLiquidityFeeFactorLevelUpdate(num.Decimal)
 	OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal)
 	StopAllLiquidityProvision(context.Context)
+	IsProbabilityOfTradingInitialised() bool
+	GetAverageLiquidityScores() map[string]num.Decimal
+	ProvisionsPerParty() liquidity.ProvisionsPerParty
+	OnMarketClosed(context.Context, time.Time)
+	CalculateSuppliedStake() *num.Uint
 }
 
 type EquityLikeShares interface {
 	AllShares() map[string]num.Decimal
 	SetPartyStake(id string, newStakeU *num.Uint)
+}
+
+type CommonMarket interface {
+	GetID() string
+	Hash() []byte
+	Reject(context.Context) error
+	GetMarketData() types.MarketData
+	StartOpeningAuction(context.Context) error
+	GetEquityShares() *EquityShares
+	IntoType() types.Market
+	OnEpochEvent(ctx context.Context, epoch types.Epoch)
+	OnEpochRestore(ctx context.Context, epoch types.Epoch)
+	GetAssetForProposerBonus() string
+	GetMarketCounters() *types.MarketCounters
+	GetMarketState() types.MarketState
+	BlockEnd(context.Context)
+	UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error
+
+	// network param updates
+	OnMarketPartiesMaximumStopOrdersUpdate(context.Context, *num.Uint)
+	OnMarketMinLpStakeQuantumMultipleUpdate(context.Context, num.Decimal)
+	OnMarketMinProbabilityOfTradingLPOrdersUpdate(context.Context, num.Decimal)
+	OnMarketProbabilityOfTradingTauScalingUpdate(context.Context, num.Decimal)
+	OnMarketValueWindowLengthUpdate(time.Duration)
+	OnFeeFactorsInfrastructureFeeUpdate(context.Context, num.Decimal)
+	OnFeeFactorsMakerFeeUpdate(context.Context, num.Decimal)
+	OnMarkPriceUpdateMaximumFrequency(context.Context, time.Duration)
+	OnMarketAuctionMinimumDurationUpdate(context.Context, time.Duration)
+
+	// liquidity provision
+	CancelLiquidityProvision(context.Context, *types.LiquidityProvisionCancellation, string) error
+	AmendLiquidityProvision(context.Context, *types.LiquidityProvisionAmendment, string, string) error
+	SubmitLiquidityProvision(context.Context, *types.LiquidityProvisionSubmission, string, string) error
+
+	// order management
+	SubmitOrderWithIDGeneratorAndOrderID(context.Context, *types.OrderSubmission, string, IDGenerator, string, bool) (*types.OrderConfirmation, error)
+	AmendOrderWithIDGenerator(context.Context, *types.OrderAmendment, string, IDGenerator) (*types.OrderConfirmation, error)
+	CancelAllOrders(context.Context, string) ([]*types.OrderCancellationConfirmation, error)
+	CancelOrderWithIDGenerator(context.Context, string, string, IDGenerator) (*types.OrderCancellationConfirmation, error)
+	CancelAllStopOrders(context.Context, string) error
+	CancelStopOrder(context.Context, string, string) error
+	SubmitStopOrdersWithIDGeneratorAndOrderIDs(context.Context, *types.StopOrdersSubmission, string, IDGenerator, *string, *string) (*types.OrderConfirmation, error)
 }

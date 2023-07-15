@@ -130,11 +130,12 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 		}
 		switch acc.Type {
 		case types.AccountTypeMargin, types.AccountTypeGeneral, types.AccountTypeBond, types.AccountTypeFeesLiquidity,
-			types.AccountTypeInsurance, types.AccountTypeGlobalReward,
+			types.AccountTypeInsurance, types.AccountTypeGlobalReward, types.AccountTypeLiquidityFeesBonusDistribution, types.AccountTypeLPLiquidityFees,
 			types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward,
 			types.AccountTypeMarketProposerReward, types.AccountTypeFeesInfrastructure, types.AccountTypePendingTransfers:
 			owner := acc.Owner
 			// NB: market insurance accounts funds will flow implicitly using this logic into the network treasury for the asset
+			// similarly LP Fee bonus distribution bonus account would fall over into the network treasury of the asset.
 			if owner == systemOwner {
 				for k, v := range partyOverrides {
 					if acc.Type == v {

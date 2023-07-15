@@ -2959,6 +2959,12 @@ func (e *Engine) GetPartyMarginAccount(market, party, asset string) (*types.Acco
 	return e.GetAccountByID(margin)
 }
 
+// GetPartyHoldingAccount returns a holding account given the partyID and market.
+func (e *Engine) GetPartyHoldingAccount(party, asset string) (*types.Account, error) {
+	margin := e.accountID(noMarket, party, asset, types.AccountTypeHolding)
+	return e.GetAccountByID(margin)
+}
+
 // GetPartyGeneralAccount returns a general account given the partyID.
 func (e *Engine) GetPartyGeneralAccount(partyID, asset string) (*types.Account, error) {
 	generalID := e.accountID(noMarket, partyID, asset, types.AccountTypeGeneral)
@@ -3735,7 +3741,7 @@ func (e *Engine) CreateSpotMarketAccounts(ctx context.Context, marketID, quoteAs
 
 // PartyHasSufficientBalance checks if the party has sufficient amount in the general account.
 func (e *Engine) PartyHasSufficientBalance(asset, partyID string, amount *num.Uint) error {
-	acc, err := e.GetPartyGeneralAccount(asset, partyID)
+	acc, err := e.GetPartyGeneralAccount(partyID, asset)
 	if err != nil {
 		return err
 	}

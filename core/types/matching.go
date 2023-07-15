@@ -357,6 +357,151 @@ func (o *Order) HasTraded() bool {
 	return o.Size != o.Remaining
 }
 
+func (o *Order) applyOrderAmendmentSizeIceberg(delta int64) {
+	// handle increase in size
+	if delta > 0 {
+		o.Size += uint64(delta)
+		o.IcebergOrder.ReservedRemaining += uint64(delta)
+		return
+	}
+
+	// handle decrease in size
+	dec := uint64(-delta)
+	o.Size -= dec
+
+	if o.IcebergOrder.ReservedRemaining >= dec {
+		o.IcebergOrder.ReservedRemaining -= dec
+		return
+	}
+
+	diff := dec - o.IcebergOrder.ReservedRemaining
+	if o.Remaining > diff {
+		o.Remaining -= dec - o.IcebergOrder.ReservedRemaining
+	} else {
+		o.Remaining = 0
+	}
+	o.IcebergOrder.ReservedRemaining = 0
+}
+
+// applyOrderAmendmentSizeDelta update the orders size/remaining fields based on the size an direction of the given delta.
+func (o *Order) applyOrderAmendmentSizeDelta(delta int64) {
+	if o.IcebergOrder != nil {
+		o.applyOrderAmendmentSizeIceberg(delta)
+		return
+	}
+
+	// handle size increase
+	if delta > 0 {
+		o.Size += uint64(delta)
+		o.Remaining += uint64(delta)
+		return
+	}
+
+	// handle size decrease
+	dec := uint64(-delta)
+	o.Size -= dec
+	if o.Remaining > dec {
+		o.Remaining -= dec
+	} else {
+		o.Remaining = 0
+	}
+}
+
+// ApplyOrderAmendment assumes the amendment have been validated before.
+func (o *Order) ApplyOrderAmendment(amendment *OrderAmendment, updatedAtNano int64, priceFactor *num.Uint) (order *Order, err error) {
+	order = o.Clone()
+	order.UpdatedAt = updatedAtNano
+	order.Version++
+
+	if o.PeggedOrder != nil {
+		order.PeggedOrder = &PeggedOrder{
+			Reference: o.PeggedOrder.Reference,
+			Offset:    o.PeggedOrder.Offset,
+		}
+	}
+
+	var amendPrice *num.Uint
+	if amendment.Price != nil {
+		amendPrice = amendment.Price.Clone()
+		amendPrice.Mul(amendPrice, priceFactor)
+	}
+	// apply price changes
+	if amendment.Price != nil && o.Price.NEQ(amendPrice) {
+		order.Price = amendPrice.Clone()
+		order.OriginalPrice = amendment.Price.Clone()
+	}
+
+	// apply size changes
+	if delta := amendment.SizeDelta; delta != 0 {
+		order.applyOrderAmendmentSizeDelta(delta)
+	}
+
+	// apply tif
+	if amendment.TimeInForce != OrderTimeInForceUnspecified {
+		order.TimeInForce = amendment.TimeInForce
+		if amendment.TimeInForce != OrderTimeInForceGTT {
+			order.ExpiresAt = 0
+		}
+	}
+	if amendment.ExpiresAt != nil {
+		order.ExpiresAt = *amendment.ExpiresAt
+	}
+
+	// apply pegged order values
+	if order.PeggedOrder != nil {
+		if amendment.PeggedOffset != nil {
+			order.PeggedOrder.Offset = amendment.PeggedOffset.Clone()
+		}
+
+		if amendment.PeggedReference != PeggedReferenceUnspecified {
+			order.PeggedOrder.Reference = amendment.PeggedReference
+		}
+		if verr := order.ValidatePeggedOrder(); verr != OrderErrorUnspecified {
+			err = verr
+		}
+	}
+
+	return order, err
+}
+
+func (order *Order) ValidatePeggedOrder() OrderError {
+	if order.Type != OrderTypeLimit {
+		// All pegged orders must be LIMIT orders
+		return ErrPeggedOrderMustBeLimitOrder
+	}
+
+	if order.TimeInForce != OrderTimeInForceGTT && order.TimeInForce != OrderTimeInForceGTC && order.TimeInForce != OrderTimeInForceGFN {
+		// Pegged orders can only be GTC or GTT
+		return ErrPeggedOrderMustBeGTTOrGTC
+	}
+
+	if order.PeggedOrder.Reference == PeggedReferenceUnspecified {
+		// We must specify a valid reference
+		return ErrPeggedOrderWithoutReferencePrice
+	}
+
+	if order.Side == SideBuy {
+		switch order.PeggedOrder.Reference {
+		case PeggedReferenceBestAsk:
+			return ErrPeggedOrderBuyCannotReferenceBestAskPrice
+		case PeggedReferenceMid:
+			if order.PeggedOrder.Offset.IsZero() {
+				return ErrPeggedOrderOffsetMustBeGreaterThanZero
+			}
+		}
+	} else {
+		switch order.PeggedOrder.Reference {
+		case PeggedReferenceBestBid:
+			return ErrPeggedOrderSellCannotReferenceBestBidPrice
+		case PeggedReferenceMid:
+			if order.PeggedOrder.Offset.IsZero() {
+				return ErrPeggedOrderOffsetMustBeGreaterThanZero
+			}
+		}
+	}
+	return OrderErrorUnspecified
+}
+
 type PeggedOrder struct {
 	Reference PeggedReference
 	Offset    *num.Uint

@@ -1,0 +1,7 @@
+{
+    "price_range": "0.05",
+    "commitment_min_time_fraction": "0.5",
+    "providers_fee_calculation_time_step": 1,
+    "performance_hysteresis_epochs": 1,
+    "sla_competition_factor": "1"
+}

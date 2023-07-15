@@ -20,8 +20,7 @@ import (
 
 func NewExpiringOrdersFromState(orders []*types.Order) *ExpiringOrders {
 	eo := &ExpiringOrders{
-		orders:        btree.New(2),
-		ordersChanged: true,
+		orders: btree.New(2),
 	}
 
 	for _, o := range orders {
@@ -32,7 +31,7 @@ func NewExpiringOrdersFromState(orders []*types.Order) *ExpiringOrders {
 }
 
 func (a ExpiringOrders) Changed() bool {
-	return a.ordersChanged
+	return true
 }
 
 func (a *ExpiringOrders) GetState() []*types.Order {
@@ -50,6 +49,5 @@ func (a *ExpiringOrders) GetState() []*types.Order {
 		return true
 	})
 
-	a.ordersChanged = false
 	return orders
 }

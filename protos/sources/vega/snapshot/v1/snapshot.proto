@@ -130,7 +130,19 @@ message Payload {
     LiquidityV2Performances liquidity_v2_performances = 66;
     LiquidityV2Supplied liquidity_v2_supplied = 67;
     LiquidityV2Scores liquidity_v2_scores = 68;
+    HoldingAccountTracker holding_account_tracker = 69;
   }
+}
+
+message OrderHoldingQuantities {
+  string id = 1;
+  string quantity = 2;
+  string fee = 3;
+}
+
+message HoldingAccountTracker {
+  string market_id = 1;
+  repeated OrderHoldingQuantities order_holding = 2;
 }
 
 message TimestampedTotalStake {
@@ -454,6 +466,8 @@ message SpotMarket {
   string last_traded_price = 16;
   repeated string parties = 17;
   bool closed = 18;
+  StopOrders stop_orders = 19;
+  repeated vega.Order expiring_stop_orders = 20;
 }
 
 message Market {
@@ -525,6 +539,7 @@ message ExecutionMarkets {
   repeated SpotMarket spot_markets = 2;
   repeated vega.checkpoint.v1.MarketState settled_markets = 3;
   repeated Successors successors = 4;
+  repeated string market_ids = 5;
 }
 
 message Successors {
@@ -627,6 +642,7 @@ message LimitState {
   bool propose_asset_enabled = 6;
   int64 propose_market_enabled_from = 7;
   int64 propose_asset_enabled_from = 8;
+  bool propose_spot_market_enabled = 9;
 }
 
 message VoteSpamPolicy {

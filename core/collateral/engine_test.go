@@ -3055,7 +3055,7 @@ func TestPartyHasSufficientBalance(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// first check when general account of the source does not exist
-	err := eng.PartyHasSufficientBalance("zohar", "BTC", num.NewUint(1000))
+	err := eng.PartyHasSufficientBalance("BTC", "zohar", num.NewUint(1000))
 	require.Error(t, err)
 
 	ctx := context.Background()
@@ -3066,11 +3066,11 @@ func TestPartyHasSufficientBalance(t *testing.T) {
 	// topup the source general account
 	require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(1000)))
 
-	err = eng.PartyHasSufficientBalance("zohar", "BTC", num.NewUint(1001))
+	err = eng.PartyHasSufficientBalance("BTC", "zohar", num.NewUint(1001))
 	require.Error(t, err)
-	err = eng.PartyHasSufficientBalance("zohar", "BTC", num.NewUint(1000))
+	err = eng.PartyHasSufficientBalance("BTC", "zohar", num.NewUint(1000))
 	require.NoError(t, err)
-	err = eng.PartyHasSufficientBalance("zohar", "BTC", num.NewUint(900))
+	err = eng.PartyHasSufficientBalance("BTC", "zohar", num.NewUint(900))
 	require.NoError(t, err)
 }
 
@@ -3081,7 +3081,7 @@ func TestCreatePartyHoldingAccount(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	ctx := context.Background()
 
-	_, err := eng.CreatePartyHoldingAccount(ctx, "zohar", "BTC2")
+	_, err := eng.CreatePartyHoldingAccount(ctx, "BTC2", "zohar")
 	// asset does not exist
 	require.Error(t, err)
 
