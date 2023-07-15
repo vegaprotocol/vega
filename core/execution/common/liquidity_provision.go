@@ -558,7 +558,16 @@ func (m *MarketLiquidity) AmendLiquidityProvision(
 }
 
 func (m *MarketLiquidity) CancelLiquidityProvision(ctx context.Context, party string) error {
-	return m.liquidityEngine.CancelLiquidityProvision(ctx, party)
+	if err := m.liquidityEngine.CancelLiquidityProvision(ctx, party); err != nil {
+		return err
+	}
+
+	// now we can setup our party stake to calculate equities
+	m.equityShares.SetPartyStake(party, num.UintZero())
+	// force update of shares so they are updated for all
+	_ = m.equityShares.AllShares()
+
+	return nil
 }
 
 func (m *MarketLiquidity) StopAllLiquidityProvision(ctx context.Context) {

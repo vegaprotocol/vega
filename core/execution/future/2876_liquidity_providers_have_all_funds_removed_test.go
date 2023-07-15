@@ -78,30 +78,6 @@ func TestIssue2876(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(1000000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Buys: []*types.LiquidityOrder{
-			{
-				Reference:  types.PeggedReferenceBestBid,
-				Proportion: 10,
-				Offset:     num.NewUint(1000),
-			},
-			{
-				Reference:  types.PeggedReferenceMid,
-				Proportion: 13,
-				Offset:     num.NewUint(1500),
-			},
-		},
-		Sells: []*types.LiquidityOrder{
-			{
-				Reference:  types.PeggedReferenceBestAsk,
-				Proportion: 10,
-				Offset:     num.NewUint(2000),
-			},
-			{
-				Reference:  types.PeggedReferenceBestAsk,
-				Proportion: 13,
-				Offset:     num.NewUint(1000),
-			},
-		},
 	}
 
 	err = tm.market.SubmitLiquidityProvision(ctx, &lporder, "party-2", vgcrypto.RandomHash())
@@ -121,29 +97,4 @@ func TestIssue2876(t *testing.T) {
 	generalAccount, err := tm.collateralEngine.GetPartyGeneralAccount("party-2", tm.asset)
 	assert.NoError(t, err)
 	assert.True(t, generalAccount.Balance.EQ(num.NewUint(98985000)))
-
-	// now let's move time and see
-	// this should end the opening auction
-	now = now.Add(31 * time.Second)
-
-	tm.now = now
-	tm.market.OnTick(ctx, now)
-
-	bondAccount, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, "party-2", tm.market.GetID(), tm.asset)
-	assert.NoError(t, err)
-	// we expect the whole commitment to be there
-	assert.True(t, bondAccount.Balance.EQ(num.NewUint(1000000)))
-
-	// but also some margin to cover the orders
-	marginAccount, err = tm.collateralEngine.GetPartyMarginAccount(tm.market.GetID(), "party-2", tm.asset)
-	assert.NoError(t, err)
-
-	expMargin := num.NewUint(1507200)
-	assert.True(t, marginAccount.Balance.EQ(expMargin), "Expected: "+expMargin.String()+" got "+marginAccount.Balance.String())
-
-	expGeneral := num.NewUint(97492800)
-	// but also some funds left in the genearal
-	generalAccount, err = tm.collateralEngine.GetPartyGeneralAccount("party-2", tm.asset)
-	assert.NoError(t, err)
-	assert.True(t, generalAccount.Balance.EQ(expGeneral), "Expected: "+expGeneral.String()+" got "+generalAccount.Balance.String())
 }

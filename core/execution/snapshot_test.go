@@ -44,10 +44,11 @@ import (
 )
 
 type snapshotTestData struct {
-	engine         *execution.Engine
-	oracleEngine   *spec.Engine
-	snapshotEngine *snp.Engine
-	timeService    *stubs.TimeStub
+	engine           *execution.Engine
+	oracleEngine     *spec.Engine
+	snapshotEngine   *snp.Engine
+	timeService      *stubs.TimeStub
+	collateralEngine *collateral.Engine
 }
 
 type stubIDGen struct {
@@ -67,12 +68,20 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 	err := exec.engine.SubmitMarket(context.Background(), mkt, "", time.Now())
 	require.NoError(t, err)
 
-	state, _, _ := exec.engine.GetState("")
+	marketState, _, _ := exec.engine.GetState("")
 
 	exec2 := getEngine(t, now)
-	snap := &snapshot.Payload{}
-	proto.Unmarshal(state, snap)
-	_, _ = exec2.engine.LoadState(context.Background(), types.PayloadFromProto(snap))
+	marketSnap := &snapshot.Payload{}
+	proto.Unmarshal(marketState, marketSnap)
+
+	_, _ = exec2.engine.LoadState(context.Background(), types.PayloadFromProto(marketSnap))
+
+	// restore collateral
+	accountsState, _, _ := exec.collateralEngine.GetState("accounts")
+	accountsSnap := &snapshot.Payload{}
+	proto.Unmarshal(accountsState, accountsSnap)
+
+	_, _ = exec2.collateralEngine.LoadState(context.Background(), types.PayloadFromProto(accountsSnap))
 
 	state2, _, _ := exec2.engine.GetState("")
 
@@ -125,7 +134,7 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 	require.Equal(t, types.MarketStateSettled, marketState1)
 	require.Equal(t, types.MarketStateSettled, marketState2)
 
-	require.True(t, bytes.Equal(state, state2))
+	require.True(t, bytes.Equal(marketState, state2))
 }
 
 // TestSnapshotOraclesTerminatingMarketSettleAfterSnapshot tests that market loaded from snapshot can be terminated with its oracle.
@@ -236,6 +245,13 @@ func TestSnapshotOraclesTerminatingMarketSettleAfterSnapshot(t *testing.T) {
 	// the states should match
 	require.True(t, bytes.Equal(state, state2))
 
+	// restore collateral
+	accountsState, _, _ := exec.collateralEngine.GetState("accounts")
+	accountsSnap := &snapshot.Payload{}
+	proto.Unmarshal(accountsState, accountsSnap)
+
+	_, _ = exec2.collateralEngine.LoadState(context.Background(), types.PayloadFromProto(accountsSnap))
+
 	vgctx = vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("3deadbeef")))
 	exec.oracleEngine.BroadcastData(vgctx, dstypes.Data{
 		Signers: pubKeys,
@@ -296,6 +312,13 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementData(t *test
 	// take a snapshot on the loaded engine
 	state2, _, _ := exec2.engine.GetState("")
 	require.True(t, bytes.Equal(state, state2))
+
+	// restore collateral
+	accountsState, _, _ := exec.collateralEngine.GetState("accounts")
+	accountsSnap := &snapshot.Payload{}
+	proto.Unmarshal(accountsState, accountsSnap)
+
+	_, _ = exec2.collateralEngine.LoadState(context.Background(), types.PayloadFromProto(accountsSnap))
 
 	// terminate the market to lead to settlement
 	exec.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
@@ -373,6 +396,13 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 	exec2.snapshotEngine.ReceiveSnapshot(snap1)
 	exec2.snapshotEngine.ApplySnapshot(ctx)
 	exec2.snapshotEngine.CheckLoaded()
+
+	// restore collateral
+	accountsState, _, _ := exec.collateralEngine.GetState("accounts")
+	accountsSnap := &snapshot.Payload{}
+	proto.Unmarshal(accountsState, accountsSnap)
+
+	_, _ = exec2.collateralEngine.LoadState(context.Background(), types.PayloadFromProto(accountsSnap))
 
 	// progress time to trigger any side effect on time ticks
 	exec.timeService.SetTime(now.Add(2 * time.Second))
@@ -573,10 +603,11 @@ func getEngine(t *testing.T, now time.Time) *snapshotTestData {
 	snapshotEngine.ClearAndInitialise()
 
 	return &snapshotTestData{
-		engine:         eng,
-		oracleEngine:   oracleEngine,
-		snapshotEngine: snapshotEngine,
-		timeService:    timeService,
+		engine:           eng,
+		oracleEngine:     oracleEngine,
+		snapshotEngine:   snapshotEngine,
+		timeService:      timeService,
+		collateralEngine: collateralEngine,
 	}
 }
 
@@ -626,10 +657,11 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 	snapshotEngine.ClearAndInitialise()
 
 	return &snapshotTestData{
-		engine:         eng,
-		oracleEngine:   oracleEngine,
-		snapshotEngine: snapshotEngine,
-		timeService:    timeService,
+		engine:           eng,
+		oracleEngine:     oracleEngine,
+		snapshotEngine:   snapshotEngine,
+		timeService:      timeService,
+		collateralEngine: collateralEngine,
 	}
 }
 
