@@ -105,9 +105,10 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 	require.Equal(t, types.MarketTradingModeContinuous, mktData.MarketTradingMode)
 }
 
+const lpprov = "lpprov-party"
+
 func addSimpleLP(t *testing.T, mkt *testMarket, amt uint64) {
 	t.Helper()
-	lpprov := "lpprov-party"
 
 	lps := &types.LiquidityProvisionSubmission{
 		Fee:              num.DecimalFromFloat(0.01),
@@ -131,6 +132,7 @@ func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
 
 	asset := tm.asset
 
+	addAccountWithAmount(tm, lpprov, 50000000)
 	addSimpleLP(t, tm, 5000000)
 	// end opening auction
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
@@ -181,6 +183,7 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 
 	asset := tm.asset
 
+	addAccountWithAmount(tm, lpprov, 5000000)
 	addSimpleLP(t, tm, 5000000)
 	// end opening auction
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
