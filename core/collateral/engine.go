@@ -1795,6 +1795,14 @@ func (e *Engine) getFeeTransferRequest(
 		return acc, nil
 	}
 
+	partyLiquidityFeeAccount := func() (*types.Account, error) {
+		return getAccount(marketID, t.Owner, types.AccountTypeLPLiquidityFees)
+	}
+
+	bonusDistributionAccount := func() (*types.Account, error) {
+		return getAccount(marketID, systemOwner, types.AccountTypeLiquidityFeesBonusDistribution)
+	}
+
 	marginAccount := func() (*types.Account, error) {
 		return getAccount(marketID, t.Owner, types.AccountTypeMargin)
 	}
@@ -1849,6 +1857,61 @@ func (e *Engine) getFeeTransferRequest(
 		treq.FromAccount = []*types.Account{makerFee}
 		treq.ToAccount = []*types.Account{general}
 		return treq, nil
+	case types.TransferTypeLiquidityFeeAllocate:
+		partyLiquidityFee, err := partyLiquidityFeeAccount()
+		if err != nil {
+			return nil, err
+		}
+
+		treq.FromAccount = []*types.Account{liquiFee}
+		treq.ToAccount = []*types.Account{partyLiquidityFee}
+		return treq, nil
+	case types.TransferTypeLiquidityFeeNetDistribute:
+		partyLiquidityFee, err := partyLiquidityFeeAccount()
+		if err != nil {
+			return nil, err
+		}
+
+		treq.FromAccount = []*types.Account{partyLiquidityFee}
+		treq.ToAccount = []*types.Account{general}
+		return treq, nil
+	case types.TransferTypeLiquidityFeeUnpaidCollect:
+		partyLiquidityFee, err := partyLiquidityFeeAccount()
+		if err != nil {
+			return nil, err
+		}
+		bonusDistribution, err := bonusDistributionAccount()
+		if err != nil {
+			return nil, err
+		}
+
+		treq.FromAccount = []*types.Account{partyLiquidityFee}
+		treq.ToAccount = []*types.Account{bonusDistribution}
+		return treq, nil
+	case types.TransferTypeSlaPerformanceBonusDistribute:
+		bonusDistribution, err := bonusDistributionAccount()
+		if err != nil {
+			return nil, err
+		}
+
+		treq.FromAccount = []*types.Account{bonusDistribution}
+		treq.ToAccount = []*types.Account{general}
+		return treq, nil
+	case types.TransferTypeSLAPenaltyLpFeeApply:
+		partyLiquidityFee, err := partyLiquidityFeeAccount()
+		if err != nil {
+			return nil, err
+		}
+
+		insurancePool, err := e.GetMarketInsurancePoolAccount(marketID, assetID)
+		if err != nil {
+			return nil, err
+		}
+
+		treq.FromAccount = []*types.Account{partyLiquidityFee}
+		treq.ToAccount = []*types.Account{insurancePool}
+		return treq, nil
+
 	default:
 		return nil, ErrInvalidTransferTypeForFeeRequest
 	}

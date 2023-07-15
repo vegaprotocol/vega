@@ -3723,8 +3723,6 @@ func (m *Market) settlementData(ctx context.Context, settlementData *num.Numeric
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	fmt.Println("m.finalFeesDistributed:", m.finalFeesDistributed)
-
 	m.settlementDataInMarket = settlementData
 	settlementDataInAsset, err := m.tradableInstrument.Instrument.Product.ScaleSettlementDataToDecimalPlaces(m.settlementDataInMarket, m.assetDP)
 	if err != nil {
@@ -3732,7 +3730,6 @@ func (m *Market) settlementData(ctx context.Context, settlementData *num.Numeric
 		return
 	}
 	m.settlementDataWithLock(ctx, types.MarketStateSettled, settlementDataInAsset)
-	m.finalFeesDistributed = true
 }
 
 func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Numeric) {
