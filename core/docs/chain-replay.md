@@ -62,11 +62,11 @@ Instead of a backup, which effectively replays the full chain from genesis, you 
 
 ## References
 
-- https://github.com/tendermint/tendermint/blob/master/docs/introduction/quick-start.md
+- https://github.com/cometbft/cometbft/blob/master/docs/introduction/quick-start.md
 - https://docs.tendermint.com/master/spec/abci/apps.html
 - https://github.com/tendermint/spec/blob/master/spec/abci/README.md
 - https://docs.tendermint.com/master/spec/abci/apps.html#state-sync
 
 [wallet]: https://github.com/vegaprotocol/vega#configuration
 [gcloud]: https://cloud.google.com/sdk/docs/install
-[tendermint]: https://github.com/tendermint/tendermint/blob/master/docs/introduction/install.md
+[tendermint]: https://github.com/cometbft/cometbft/blob/master/docs/introduction/install.md

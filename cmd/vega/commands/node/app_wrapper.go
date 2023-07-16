@@ -12,7 +12,11 @@
 
 package node
 
-import "github.com/tendermint/tendermint/abci/types"
+import (
+	"context"
+
+	"github.com/cometbft/cometbft/abci/types"
+)
 
 type appW struct {
 	// this is the application currently in use
@@ -29,71 +33,65 @@ func newAppW(app types.Application) *appW {
 	}
 }
 
-func (app *appW) Info(req types.RequestInfo) types.ResponseInfo {
-	return app.impl.Info(req)
+func (app *appW) Info(ctx context.Context, req *types.RequestInfo) (*types.ResponseInfo, error) {
+	return app.impl.Info(ctx, req)
 }
 
-func (app *appW) DeliverTx(req types.RequestDeliverTx) types.ResponseDeliverTx {
-	return app.impl.DeliverTx(req)
+func (app *appW) CheckTx(ctx context.Context, req *types.RequestCheckTx) (*types.ResponseCheckTx, error) {
+	return app.impl.CheckTx(ctx, req)
 }
 
-func (app *appW) CheckTx(req types.RequestCheckTx) types.ResponseCheckTx {
-	return app.impl.CheckTx(req)
-}
-
-func (app *appW) Commit() types.ResponseCommit {
-	resp := app.impl.Commit()
+func (app *appW) Commit(ctx context.Context, req *types.RequestCommit) (*types.ResponseCommit, error) {
+	resp, err := app.impl.Commit(ctx, req)
 	// if we are scheduled for an upgrade of the protocol
 	// let's do it now.
 	if app.update != nil {
 		app.impl = app.update
 		app.update = nil
 	}
-	return resp
+	return resp, err
 }
 
-func (app *appW) Query(req types.RequestQuery) types.ResponseQuery {
-	return app.impl.Query(req)
+func (app *appW) Query(ctx context.Context, req *types.RequestQuery) (*types.ResponseQuery, error) {
+	return app.impl.Query(ctx, req)
 }
 
-func (app *appW) InitChain(req types.RequestInitChain) types.ResponseInitChain {
-	return app.impl.InitChain(req)
+func (app *appW) InitChain(ctx context.Context, req *types.RequestInitChain) (*types.ResponseInitChain, error) {
+	return app.impl.InitChain(ctx, req)
 }
 
-func (app *appW) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock {
-	return app.impl.BeginBlock(req)
+func (app *appW) ListSnapshots(ctx context.Context, req *types.RequestListSnapshots) (*types.ResponseListSnapshots, error) {
+	return app.impl.ListSnapshots(ctx, req)
 }
 
-func (app *appW) EndBlock(req types.RequestEndBlock) types.ResponseEndBlock {
-	return app.impl.EndBlock(req)
+func (app *appW) OfferSnapshot(ctx context.Context, req *types.RequestOfferSnapshot) (*types.ResponseOfferSnapshot, error) {
+	return app.impl.OfferSnapshot(ctx, req)
 }
 
-func (app *appW) ListSnapshots(
-	req types.RequestListSnapshots,
-) types.ResponseListSnapshots {
-	return app.impl.ListSnapshots(req)
+func (app *appW) LoadSnapshotChunk(ctx context.Context, req *types.RequestLoadSnapshotChunk) (*types.ResponseLoadSnapshotChunk, error) {
+	return app.impl.LoadSnapshotChunk(ctx, req)
 }
 
-func (app *appW) OfferSnapshot(
-	req types.RequestOfferSnapshot,
-) types.ResponseOfferSnapshot {
-	return app.impl.OfferSnapshot(req)
+func (app *appW) ApplySnapshotChunk(ctx context.Context, req *types.RequestApplySnapshotChunk) (*types.ResponseApplySnapshotChunk, error) {
+	return app.impl.ApplySnapshotChunk(ctx, req)
 }
 
-func (app *appW) LoadSnapshotChunk(
-	req types.RequestLoadSnapshotChunk,
-) types.ResponseLoadSnapshotChunk {
-	return app.impl.LoadSnapshotChunk(req)
+func (app *appW) PrepareProposal(ctx context.Context, proposal *types.RequestPrepareProposal) (*types.ResponsePrepareProposal, error) {
+	return app.impl.PrepareProposal(ctx, proposal)
 }
 
-func (app *appW) ApplySnapshotChunk(
-	req types.RequestApplySnapshotChunk,
-) types.ResponseApplySnapshotChunk {
-	return app.impl.ApplySnapshotChunk(req)
+func (app *appW) ProcessProposal(ctx context.Context, proposal *types.RequestProcessProposal) (*types.ResponseProcessProposal, error) {
+	return app.impl.ProcessProposal(ctx, proposal)
 }
 
-func (app *appW) SetOption(
-	req types.RequestSetOption,
-) types.ResponseSetOption {
-	return app.impl.SetOption(req)
+func (app *appW) FinalizeBlock(ctx context.Context, req *types.RequestFinalizeBlock) (*types.ResponseFinalizeBlock, error) {
+	return app.impl.FinalizeBlock(ctx, req)
+}
+
+func (app *appW) ExtendVote(ctx context.Context, req *types.RequestExtendVote) (*types.ResponseExtendVote, error) {
+	return app.impl.ExtendVote(ctx, req)
+}
+
+func (app *appW) VerifyVoteExtension(ctx context.Context, req *types.RequestVerifyVoteExtension) (*types.ResponseVerifyVoteExtension, error) {
+	return app.impl.VerifyVoteExtension(ctx, req)
 }

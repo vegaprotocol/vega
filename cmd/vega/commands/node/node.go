@@ -39,8 +39,8 @@ import (
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/version"
 
-	"github.com/tendermint/tendermint/abci/types"
-	tmtypes "github.com/tendermint/tendermint/types"
+	"github.com/cometbft/cometbft/abci/types"
+	tmtypes "github.com/cometbft/cometbft/types"
 	"google.golang.org/grpc"
 )
 
@@ -307,7 +307,7 @@ func (n *Command) startBlockchain(log *logging.Logger, tmHome, network, networkU
 			return err
 		}
 		// n.blockchainClient = blockchain.NewClient(client)
-		n.blockchainClient.Set(client)
+		n.blockchainClient.Set(client, n.tmNode.MempoolSize)
 	case blockchain.ProviderNullChain:
 		// nullchain acts as both the client and the server because its does everything
 		n.nullBlockchain = nullchain.NewClient(
@@ -318,7 +318,7 @@ func (n *Command) startBlockchain(log *logging.Logger, tmHome, network, networkU
 		n.nullBlockchain.SetABCIApp(n.abciApp)
 		n.blockchainServer = blockchain.NewServer(n.Log, n.nullBlockchain)
 		// n.blockchainClient = blockchain.NewClient(n.nullBlockchain)
-		n.blockchainClient.Set(n.nullBlockchain)
+		n.blockchainClient.Set(n.nullBlockchain, 100*1024*1024)
 
 	default:
 		return ErrUnknownChainProvider

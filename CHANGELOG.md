@@ -68,6 +68,7 @@
 - [8117](https://github.com/vegaprotocol/vega/issues/8117) - Added spots governance implementation
 - [8259](https://github.com/vegaprotocol/vega/issues/8259) - Proto definitions for successor markets.
 - [8201](https://github.com/vegaprotocol/vega/issues/8201) - Add support for successor markets.
+- [8051](https://github.com/vegaprotocol/vega/issues/8051) - Upgrade to comet `0.38.rc3`
 - [8339](https://github.com/vegaprotocol/vega/issues/8339) - Target stake for spots
 - [8337](https://github.com/vegaprotocol/vega/issues/8337) - ELS for spots
 - [8359](https://github.com/vegaprotocol/vega/issues/8359) - Add proto definitions for iceberg orders

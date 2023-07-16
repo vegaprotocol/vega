@@ -15,7 +15,7 @@ package tendermint
 import (
 	"fmt"
 
-	tmjson "github.com/tendermint/tendermint/libs/json"
+	tmjson "github.com/cometbft/cometbft/libs/json"
 )
 
 func Prettify(v interface{}) (string, error) {

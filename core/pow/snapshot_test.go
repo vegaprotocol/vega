@@ -18,29 +18,29 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/api/mocks"
+	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+	"code.vegaprotocol.io/vega/core/pow/mocks"
 	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )
 
 func TestConversions(t *testing.T) {
 	p := &types.PayloadProofOfWork{
-		BlockHeight:   []uint64{100, 101, 102},
-		BlockHash:     []string{"94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", "DC911C0EA95545441F3E1182DD25D973764395A7E75CBDBC086F1C6F7075AED6", "2E4F2967AA904F9A952BB4813EC6BBB3730B9FFFEC44106B89F0A1958547733C"},
-		HeightToTx:    map[uint64][]string{100: {"1", "2"}, 101: {"3"}},
-		HeightToTid:   map[uint64][]string{100: {"100", "200"}, 101: {"300"}},
-		BannedParties: map[string]int64{"party1": 105, "party2": 104},
+		BlockHeight: []uint64{100, 101, 102},
+		BlockHash:   []string{"94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", "DC911C0EA95545441F3E1182DD25D973764395A7E75CBDBC086F1C6F7075AED6", "2E4F2967AA904F9A952BB4813EC6BBB3730B9FFFEC44106B89F0A1958547733C"},
+		HeightToTx:  map[uint64][]string{100: {"1", "2"}, 101: {"3"}},
+		HeightToTid: map[uint64][]string{100: {"100", "200"}, 101: {"300"}},
 	}
 
 	pp := p.IntoProto()
@@ -66,10 +66,6 @@ func TestConversions(t *testing.T) {
 	require.Equal(t, "100", pp.ProofOfWork.TidAtHeight[0].Transactions[0])
 	require.Equal(t, "200", pp.ProofOfWork.TidAtHeight[0].Transactions[1])
 	require.Equal(t, "300", pp.ProofOfWork.TidAtHeight[1].Transactions[0])
-	require.Equal(t, "party1", pp.ProofOfWork.Banned[0].Party)
-	require.Equal(t, int64(105), pp.ProofOfWork.Banned[0].Until)
-	require.Equal(t, "party2", pp.ProofOfWork.Banned[1].Party)
-	require.Equal(t, int64(104), pp.ProofOfWork.Banned[1].Until)
 
 	ppp := types.PayloadProofOfWorkFromProto(pp)
 
@@ -93,24 +89,22 @@ func TestConversions(t *testing.T) {
 	require.Equal(t, 1, len(ppp.HeightToTid[101]))
 	require.Equal(t, "3", ppp.HeightToTx[101][0])
 	require.Equal(t, "300", ppp.HeightToTid[101][0])
-	require.Equal(t, int64(105), ppp.BannedParties["party1"])
-	require.Equal(t, int64(104), ppp.BannedParties["party2"])
 }
 
 func TestSnapshot(t *testing.T) {
 	ts := mocks.NewMockTimeService(gomock.NewController(t))
 	ts.EXPECT().GetTimeNow().AnyTimes().Return(time.Now())
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), ts)
-	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(1))
+	e := New(logging.NewTestLogger(), NewDefaultConfig())
+	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(100))
 	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
 	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
 	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
 	e.UpdateSpamPoWIncreasingDifficulty(context.Background(), num.NewUint(1))
 
-	e.BeginBlock(100, "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4")
+	e.BeginBlock(100, "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4", []abci.Tx{})
 
-	// add a new set of configuration which becomes active at block 101
-	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(5))
+	// add a new set of configuration which becomes active at block 100
+	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(200))
 	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(25))
 	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
 	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(2))
@@ -118,18 +112,20 @@ func TestSnapshot(t *testing.T) {
 
 	party := crypto.RandomHash()
 
-	require.NoError(t, e.DeliverTx(&testTx{txID: "1", party: party, blockHeight: 100, powTxID: "DFE522E234D67E6AE3F017859F898E576B3928EA57310B765398615A0D3FDE2F", powNonce: 424517}))
-	require.NoError(t, e.DeliverTx(&testTx{txID: "2", party: party, blockHeight: 100, powTxID: "5B0E1EB96CCAC120E6D824A5F4C4007EABC59573B861BD84B1EF09DFB376DC84", powNonce: 4031737}))
-	require.NoError(t, e.DeliverTx(&testTx{txID: "3", party: party, blockHeight: 100, powTxID: "94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", powNonce: 431336}))
+	txs := []abci.Tx{
+		&testTx{txID: "1", party: party, blockHeight: 100, powTxID: "DFE522E234D67E6AE3F017859F898E576B3928EA57310B765398615A0D3FDE2F", powNonce: 424517},
+		&testTx{txID: "2", party: party, blockHeight: 100, powTxID: "5B0E1EB96CCAC120E6D824A5F4C4007EABC59573B861BD84B1EF09DFB376DC84", powNonce: 4031737},
+		&testTx{txID: "3", party: party, blockHeight: 100, powTxID: "94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", powNonce: 431336},
+	}
 
-	e.BeginBlock(101, "2E289FB9CEF7234E2C08F34CCD66B330229067CE47E22F76EF0595B3ABA9968F")
-	e.BeginBlock(102, "2E289FB9CEF7234E2C08F34CCD66B330229067CE47E22F76EF0595B3ABA9968F")
+	e.BeginBlock(101, "2E289FB9CEF7234E2C08F34CCD66B330229067CE47E22F76EF0595B3ABA9968F", txs)
+	e.BeginBlock(102, "2E289FB9CEF7234E2C08F34CCD66B330229067CE47E22F76EF0595B3ABA9968F", []abci.Tx{})
 
 	key := (&types.PayloadProofOfWork{}).Key()
 	state1, _, err := e.GetState(key)
 	require.NoError(t, err)
 
-	eLoaded := New(logging.NewTestLogger(), NewDefaultConfig(), mocks.NewMockTimeService(gomock.NewController(t)))
+	eLoaded := New(logging.NewTestLogger(), NewDefaultConfig())
 	eLoaded.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(1))
 	eLoaded.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
 	eLoaded.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
@@ -149,7 +145,7 @@ func TestSnapshot(t *testing.T) {
 func TestSnapshotViaEngine(t *testing.T) {
 	ts := mocks.NewMockTimeService(gomock.NewController(t))
 	ts.EXPECT().GetTimeNow().AnyTimes().Return(time.Now())
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), ts)
+	e := New(logging.NewTestLogger(), NewDefaultConfig())
 	now := time.Now()
 	log := logging.NewTestLogger()
 	timeService := stubs.NewTimeStub()
@@ -168,20 +164,21 @@ func TestSnapshotViaEngine(t *testing.T) {
 	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
 	e.UpdateSpamPoWIncreasingDifficulty(context.Background(), num.NewUint(1))
 
-	e.BeginBlock(99, "377EEAC9847D751A4FAFD3F2896E99C1A03363EBDA3036C33940CFE578E196D1")
-	e.BeginBlock(100, "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4")
+	e.BeginBlock(99, "377EEAC9847D751A4FAFD3F2896E99C1A03363EBDA3036C33940CFE578E196D1", []abci.Tx{})
+	e.BeginBlock(100, "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4", []abci.Tx{})
 
 	party := crypto.RandomHash()
 
-	require.NoError(t, e.DeliverTx(&testTx{txID: "1", party: party, blockHeight: 100, powTxID: "DFE522E234D67E6AE3F017859F898E576B3928EA57310B765398615A0D3FDE2F", powNonce: 424517}))
-	require.NoError(t, e.DeliverTx(&testTx{txID: "2", party: party, blockHeight: 100, powTxID: "5B0E1EB96CCAC120E6D824A5F4C4007EABC59573B861BD84B1EF09DFB376DC84", powNonce: 4031737}))
-	require.NoError(t, e.DeliverTx(&testTx{txID: "3", party: party, blockHeight: 100, powTxID: "94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", powNonce: 431336}))
+	txs := []abci.Tx{
+		&testTx{txID: "1", party: party, blockHeight: 100, powTxID: "DFE522E234D67E6AE3F017859F898E576B3928EA57310B765398615A0D3FDE2F", powNonce: 424517},
+		&testTx{txID: "2", party: party, blockHeight: 100, powTxID: "5B0E1EB96CCAC120E6D824A5F4C4007EABC59573B861BD84B1EF09DFB376DC84", powNonce: 4031737},
+		&testTx{txID: "3", party: party, blockHeight: 100, powTxID: "94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", powNonce: 431336},
+		// add another transaction from the same party with reduced difficulty but from another block
+		&testTx{txID: "4", party: party, blockHeight: 99, powTxID: "4633a4d29f543cdd9afe7555c352179063d1ead0c778d246fabfc4c6f8adf031", powNonce: 2646611},
+	}
 
-	// add another transaction from the same party with reduced difficulty but from another block
-	require.NoError(t, e.DeliverTx(&testTx{txID: "4", party: party, blockHeight: 99, powTxID: "4633a4d29f543cdd9afe7555c352179063d1ead0c778d246fabfc4c6f8adf031", powNonce: 2646611}))
-
-	e.BeginBlock(101, "2E289FB9CEF7234E2C08F34CCD66B330229067CE47E22F76EF0595B3ABA9968F")
-	e.BeginBlock(102, "2E289FB9CEF7234E2C08F34CCD66B330229067CE47E22F76EF0595B3ABA9968F")
+	e.BeginBlock(101, "2E289FB9CEF7234E2C08F34CCD66B330229067CE47E22F76EF0595B3ABA9968F", txs)
+	e.BeginBlock(102, "2E289FB9CEF7234E2C08F34CCD66B330229067CE47E22F76EF0595B3ABA9968F", []abci.Tx{})
 
 	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(2))
 	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(25))
@@ -199,7 +196,7 @@ func TestSnapshotViaEngine(t *testing.T) {
 
 	tsLoaded := mocks.NewMockTimeService(gomock.NewController(t))
 	tsLoaded.EXPECT().GetTimeNow().AnyTimes().Return(time.Now())
-	eLoaded := New(logging.NewTestLogger(), NewDefaultConfig(), tsLoaded)
+	eLoaded := New(logging.NewTestLogger(), NewDefaultConfig())
 	timeServiceLoaded := stubs.NewTimeStub()
 	timeServiceLoaded.SetTime(now)
 	snapLoad, _ := snapshot.New(context.Background(), &paths.DefaultPaths{}, config, log, timeServiceLoaded, statsData.Blockchain)

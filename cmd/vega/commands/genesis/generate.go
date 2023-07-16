@@ -25,8 +25,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 
+	tmtypes "github.com/cometbft/cometbft/types"
 	"github.com/jessevdk/go-flags"
-	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 type generateCmd struct {

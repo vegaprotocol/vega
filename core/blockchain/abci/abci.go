@@ -13,23 +13,24 @@
 package abci
 
 import (
+	"context"
 	"encoding/hex"
-	"errors"
+	"strconv"
 
 	"code.vegaprotocol.io/vega/core/blockchain"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 
-	"github.com/tendermint/tendermint/abci/types"
+	"github.com/cometbft/cometbft/abci/types"
 )
 
-func (app *App) Info(req types.RequestInfo) types.ResponseInfo {
+func (app *App) Info(ctx context.Context, req *types.RequestInfo) (*types.ResponseInfo, error) {
 	if fn := app.OnInfo; fn != nil {
-		return fn(req)
+		return fn(ctx, req)
 	}
-	return app.BaseApplication.Info(req)
+	return app.BaseApplication.Info(ctx, req)
 }
 
-func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitChain) {
+func (app *App) InitChain(_ context.Context, req *types.RequestInitChain) (*types.ResponseInitChain, error) {
 	_, err := LoadGenesisState(req.AppStateBytes)
 	if err != nil {
 		panic(err)
@@ -38,42 +39,80 @@ func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitCh
 	if fn := app.OnInitChain; fn != nil {
 		return fn(req)
 	}
-	return
+	return &types.ResponseInitChain{}, nil
 }
 
-func (app *App) BeginBlock(req types.RequestBeginBlock) (resp types.ResponseBeginBlock) {
-	if fn := app.OnBeginBlock; fn != nil {
-		app.ctx, resp = fn(req)
+// PrepareProposal will take the given transactions from the mempool and attempts to prepare a
+// proposal from them when it's our turn to do so while keeping the size, gas, pow, and spam constraints.
+func (app *App) PrepareProposal(_ context.Context, req *types.RequestPrepareProposal) (*types.ResponsePrepareProposal, error) {
+	txs := make([]Tx, 0, len(req.Txs))
+	rawTxs := make([][]byte, 0, len(req.Txs))
+	for _, v := range req.Txs {
+		tx, _, err := app.getTx(v)
+		// ignore transactions we can't verify
+		if err != nil {
+			continue
+		}
+		// ignore transactions we don't know to handle
+		if _, ok := app.deliverTxs[tx.Command()]; !ok {
+			continue
+		}
+		txs = append(txs, tx)
+		rawTxs = append(rawTxs, v)
 	}
-	return
+
+	// let the application decide on the order and the number of transactions it wants to pick up for this block
+	res := &types.ResponsePrepareProposal{Txs: app.OnPrepareProposal(txs, rawTxs)}
+	return res, nil
 }
 
-func (app *App) EndBlock(req types.RequestEndBlock) (resp types.ResponseEndBlock) {
-	if fn := app.OnEndBlock; fn != nil {
-		app.ctx, resp = fn(req)
+// ProcessProposal implements part of the Application interface.
+// It accepts any proposal that does not contain a malformed transaction.
+// NB: processProposal will not be called if the node is fast-sync-ing so no state change is allowed here!!!.
+func (app *App) ProcessProposal(_ context.Context, req *types.RequestProcessProposal) (*types.ResponseProcessProposal, error) {
+	// check transaction signatures if any is wrong, reject the block
+	txs := make([]Tx, 0, len(req.Txs))
+	for _, v := range req.Txs {
+		tx, _, err := app.getTx(v)
+		if err != nil {
+			// if there's a transaction we can't decode or verify, reject it
+			return &types.ResponseProcessProposal{Status: types.ResponseProcessProposal_REJECT}, err
+		}
+		// if there's no handler for a transaction, reject it
+		if _, ok := app.deliverTxs[tx.Command()]; !ok {
+			return &types.ResponseProcessProposal{Status: types.ResponseProcessProposal_REJECT}, nil
+		}
+		txs = append(txs, tx)
 	}
-	return
+	// let the application verify the block
+	if !app.OnProcessProposal(txs) {
+		return &types.ResponseProcessProposal{Status: types.ResponseProcessProposal_REJECT}, nil
+	}
+	return &types.ResponseProcessProposal{Status: types.ResponseProcessProposal_ACCEPT}, nil
 }
 
-func (app *App) Commit() (resp types.ResponseCommit) {
+func (app *App) Commit(_ context.Context, req *types.RequestCommit) (*types.ResponseCommit, error) {
 	if fn := app.OnCommit; fn != nil {
 		return fn()
 	}
-	return
+	return &types.ResponseCommit{}, nil
 }
 
-func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
+func (app *App) CheckTx(_ context.Context, req *types.RequestCheckTx) (*types.ResponseCheckTx, error) {
 	// first, only decode the transaction but don't validate
 	tx, code, err := app.getTx(req.GetTx())
+	var resp *types.ResponseCheckTx
 	if err != nil {
-		return blockchain.NewResponseCheckTxError(code, err)
+		// TODO I think we need to return error in this case as now the API allows for it
+		// return blockchain.NewResponseCheckTxError(code, err), err
+		return blockchain.NewResponseCheckTxError(code, err), nil
 	}
 
 	// check for spam and replay
 	if fn := app.OnCheckTxSpam; fn != nil {
-		resp = fn(tx)
+		resp := fn(tx)
 		if resp.IsErr() {
-			return AddCommonCheckTxEvents(resp, tx)
+			return AddCommonCheckTxEvents(&resp, tx), nil
 		}
 	}
 
@@ -81,14 +120,14 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	if fn := app.OnCheckTx; fn != nil {
 		ctx, resp = fn(ctx, req, tx)
 		if resp.IsErr() {
-			return AddCommonCheckTxEvents(resp, tx)
+			return AddCommonCheckTxEvents(resp, tx), nil
 		}
 	}
 
 	// Lookup for check tx, skip if not found
 	if fn, ok := app.checkTxs[tx.Command()]; ok {
 		if err := fn(ctx, tx); err != nil {
-			return AddCommonCheckTxEvents(blockchain.NewResponseCheckTxError(blockchain.AbciTxnInternalError, err), tx)
+			return AddCommonCheckTxEvents(blockchain.NewResponseCheckTxError(blockchain.AbciTxnInternalError, err), tx), nil
 		}
 	}
 
@@ -97,99 +136,99 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	if resp.IsOK() {
 		app.cacheTx(req.Tx, tx)
 	}
-
-	return AddCommonCheckTxEvents(resp, tx)
+	return AddCommonCheckTxEvents(resp, tx), nil
 }
 
-func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDeliverTx) {
-	// first, only decode the transaction but don't validate
-	tx, code, err := app.getTx(req.GetTx())
-	if err != nil {
-		return blockchain.NewResponseDeliverTxError(code, err)
-	}
-	app.removeTxFromCache(req.GetTx())
+// FinalizeBlock lets the application process a whole block end to end.
+func (app *App) FinalizeBlock(_ context.Context, req *types.RequestFinalizeBlock) (*types.ResponseFinalizeBlock, error) {
+	blockHeight := uint64(req.Height)
+	blockTime := req.Time
 
-	// check for spam and replay
-	if fn := app.OnDeliverTxSpam; fn != nil {
-		resp = fn(app.ctx, tx)
-		if resp.IsErr() {
-			return AddCommonDeliverTxEvents(resp, tx)
-		}
+	txs := make([]Tx, 0, len(req.Txs))
+	for _, rtx := range req.Txs {
+		// getTx can't fail at this point as we've verified on processProposal
+		tx, _, _ := app.getTx(rtx)
+		app.removeTxFromCache(rtx)
+		txs = append(txs, tx)
 	}
 
-	// It's been validated by CheckTx so we can skip the validation here
-	ctx := app.ctx
-	if fn := app.OnDeliverTx; fn != nil {
-		ctx, resp = fn(ctx, req, tx)
-		if resp.IsErr() {
-			return AddCommonDeliverTxEvents(resp, tx)
-		}
-	}
+	app.ctx = app.OnBeginBlock(blockHeight, hex.EncodeToString(req.Hash), blockTime, hex.EncodeToString(req.ProposerAddress), txs)
+	results := make([]*types.ExecTxResult, 0, len(req.Txs))
+	events := []types.Event{}
 
-	// Lookup for deliver tx, fail if not found
-	fn := app.deliverTxs[tx.Command()]
-	if fn == nil {
-		return AddCommonDeliverTxEvents(
-			blockchain.NewResponseDeliverTxError(blockchain.AbciUnknownCommandError, errors.New("invalid vega command")), tx,
-		)
-	}
-
-	txHash := hex.EncodeToString(tx.Hash())
-	ctx = vgcontext.WithTxHash(ctx, txHash)
-
-	if err := fn(ctx, tx); err != nil {
-		if perr, ok := err.(MaybePartialError); ok {
-			if perr.IsPartial() {
-				return AddCommonDeliverTxEvents(
-					blockchain.NewResponseDeliverTxError(blockchain.AbciTxnPartialProcessingError, err), tx,
-				)
+	for _, tx := range txs {
+		// there must be a handling function at this point
+		fn := app.deliverTxs[tx.Command()]
+		txHash := hex.EncodeToString(tx.Hash())
+		ctx := vgcontext.WithTxHash(app.ctx, txHash)
+		// process the transaction and handle errors
+		if err := fn(ctx, tx); err != nil {
+			if perr, ok := err.(MaybePartialError); ok && perr.IsPartial() {
+				results = append(results, blockchain.NewResponseDeliverTxError(blockchain.AbciTxnPartialProcessingError, err))
+			} else {
+				results = append(results, blockchain.NewResponseDeliverTxError(blockchain.AbciTxnInternalError, err))
 			}
+		} else {
+			results = append(results, blockchain.NewResponseDeliverTx(types.CodeTypeOK, ""))
 		}
-
-		return AddCommonDeliverTxEvents(
-			blockchain.NewResponseDeliverTxError(blockchain.AbciTxnInternalError, err), tx,
-		)
+		events = append(events, getBaseTxEvents(tx)...)
 	}
-
-	return AddCommonDeliverTxEvents(
-		blockchain.NewResponseDeliverTx(types.CodeTypeOK, ""), tx,
+	valUpdates, consensusUpdates := app.OnEndBlock(blockHeight)
+	events = append(events, types.Event{
+		Type: "val_updates",
+		Attributes: []types.EventAttribute{
+			{
+				Key:   "size",
+				Value: strconv.Itoa(valUpdates.Len()),
+			},
+			{
+				Key:   "height",
+				Value: strconv.Itoa(int(req.Height)),
+			},
+		},
+	},
 	)
+
+	hash := app.OnFinalize()
+	println("finished processing block", blockHeight, "with block hash", hex.EncodeToString(hash))
+	return &types.ResponseFinalizeBlock{
+		TxResults:             results,
+		ValidatorUpdates:      valUpdates,
+		ConsensusParamUpdates: &consensusUpdates,
+		AppHash:               hash,
+		Events:                events,
+	}, nil
 }
 
-func (app *App) ListSnapshots(req types.RequestListSnapshots) (resp types.ResponseListSnapshots) {
+func (app *App) ListSnapshots(ctx context.Context, req *types.RequestListSnapshots) (*types.ResponseListSnapshots, error) {
 	if app.OnListSnapshots != nil {
-		resp = app.OnListSnapshots(req)
+		return app.OnListSnapshots(ctx, req)
 	}
-	return
+	return &types.ResponseListSnapshots{}, nil
 }
 
-func (app *App) OfferSnapshot(req types.RequestOfferSnapshot) (resp types.ResponseOfferSnapshot) {
+func (app *App) OfferSnapshot(ctx context.Context, req *types.RequestOfferSnapshot) (*types.ResponseOfferSnapshot, error) {
 	if app.OnOfferSnapshot != nil {
-		resp = app.OnOfferSnapshot(req)
+		return app.OnOfferSnapshot(ctx, req)
 	}
-	return
+	return &types.ResponseOfferSnapshot{}, nil
 }
 
-func (app *App) LoadSnapshotChunk(req types.RequestLoadSnapshotChunk) (resp types.ResponseLoadSnapshotChunk) {
+func (app *App) LoadSnapshotChunk(ctx context.Context, req *types.RequestLoadSnapshotChunk) (*types.ResponseLoadSnapshotChunk, error) {
 	if app.OnLoadSnapshotChunk != nil {
-		resp = app.OnLoadSnapshotChunk(req)
+		return app.OnLoadSnapshotChunk(ctx, req)
 	}
-	return
+	return &types.ResponseLoadSnapshotChunk{}, nil
 }
 
-func (app *App) ApplySnapshotChunk(req types.RequestApplySnapshotChunk) (resp types.ResponseApplySnapshotChunk) {
+func (app *App) ApplySnapshotChunk(_ context.Context, req *types.RequestApplySnapshotChunk) (*types.ResponseApplySnapshotChunk, error) {
 	if app.OnApplySnapshotChunk != nil {
-		resp = app.OnApplySnapshotChunk(app.ctx, req)
+		return app.OnApplySnapshotChunk(app.ctx, req)
 	}
-	return
+	return &types.ResponseApplySnapshotChunk{}, nil
 }
 
-func AddCommonCheckTxEvents(resp types.ResponseCheckTx, tx Tx) types.ResponseCheckTx {
-	resp.Events = getBaseTxEvents(tx)
-	return resp
-}
-
-func AddCommonDeliverTxEvents(resp types.ResponseDeliverTx, tx Tx) types.ResponseDeliverTx {
+func AddCommonCheckTxEvents(resp *types.ResponseCheckTx, tx Tx) *types.ResponseCheckTx {
 	resp.Events = getBaseTxEvents(tx)
 	return resp
 }
@@ -200,8 +239,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 			Type: "tx",
 			Attributes: []types.EventAttribute{
 				{
-					Key:   []byte("submitter"),
-					Value: []byte(tx.PubKeyHex()),
+					Key:   "submitter",
+					Value: tx.PubKeyHex(),
 					Index: true,
 				},
 			},
@@ -210,8 +249,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 			Type: "command",
 			Attributes: []types.EventAttribute{
 				{
-					Key:   []byte("type"),
-					Value: []byte(tx.Command().String()),
+					Key:   "type",
+					Value: tx.Command().String(),
 					Index: true,
 				},
 			},
@@ -234,8 +273,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 	}
 	if len(market) > 0 {
 		commandAttributes = append(commandAttributes, types.EventAttribute{
-			Key:   []byte("market"),
-			Value: []byte(market),
+			Key:   "market",
+			Value: market,
 			Index: true,
 		})
 	}
@@ -249,8 +288,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 	}
 	if len(asset) > 0 {
 		commandAttributes = append(commandAttributes, types.EventAttribute{
-			Key:   []byte("asset"),
-			Value: []byte(asset),
+			Key:   "asset",
+			Value: asset,
 			Index: true,
 		})
 	}
@@ -261,8 +300,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 	}
 	if len(reference) > 0 {
 		commandAttributes = append(commandAttributes, types.EventAttribute{
-			Key:   []byte("reference"),
-			Value: []byte(reference),
+			Key:   "reference",
+			Value: reference,
 			Index: true,
 		})
 	}
@@ -273,8 +312,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 	}
 	if len(proposal) > 0 {
 		commandAttributes = append(commandAttributes, types.EventAttribute{
-			Key:   []byte("proposal"),
-			Value: []byte(proposal),
+			Key:   "proposal",
+			Value: proposal,
 			Index: true,
 		})
 	}

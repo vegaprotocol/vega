@@ -17,11 +17,11 @@ import (
 	"os"
 	"path/filepath"
 
+	tmcmd "github.com/cometbft/cometbft/cmd/cometbft/commands"
+	tmdebug "github.com/cometbft/cometbft/cmd/cometbft/commands/debug"
+	tmcfg "github.com/cometbft/cometbft/config"
+	tmcli "github.com/cometbft/cometbft/libs/cli"
 	"github.com/jessevdk/go-flags"
-	tmcmd "github.com/tendermint/tendermint/cmd/cometbft/commands"
-	tmdebug "github.com/tendermint/tendermint/cmd/cometbft/commands/debug"
-	tmcfg "github.com/tendermint/tendermint/config"
-	tmcli "github.com/tendermint/tendermint/libs/cli"
 )
 
 func Tm(_ context.Context, parser *flags.Parser) error {

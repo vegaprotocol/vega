@@ -29,8 +29,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
+	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/pkg/errors"
-	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/processor TimeService,EpochService,DelegationEngine,ExecutionEngine,GovernanceEngine,Stats,Assets,ValidatorTopology,Notary,EvtForwarder,Witness,Banking,NetworkParameters,OraclesEngine,OracleAdaptors,Limits,StakeVerifier,StakingAccounts,ERC20MultiSigTopology,Checkpoint
@@ -159,7 +159,7 @@ type ValidatorTopology interface {
 	IsValidator() bool
 	AddKeyRotate(ctx context.Context, nodeID string, currentBlockHeight uint64, kr *commandspb.KeyRotateSubmission) error
 	ProcessEthereumKeyRotation(ctx context.Context, nodeID string, kr *commandspb.EthereumKeyRotateSubmission, verify func(message, signature []byte, hexAddress string) error) error
-	BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlock)
+	BeginBlock(ctx context.Context, blockHeight uint64, proposer string)
 	GetValidatorPowerUpdates() []abcitypes.ValidatorUpdate
 	ProcessAnnounceNode(ctx context.Context, nr *commandspb.AnnounceNode) error
 	ProcessValidatorHeartbeat(context.Context, *commandspb.ValidatorHeartbeat, func(message, signature, pubkey []byte) error, func(message, signature []byte, hexAddress string) error) error

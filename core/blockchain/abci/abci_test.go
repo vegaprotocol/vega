@@ -21,8 +21,8 @@ import (
 	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/txn"
+	"github.com/cometbft/cometbft/abci/types"
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/tendermint/abci/types"
 )
 
 type testTx struct {
@@ -36,6 +36,7 @@ type testTx struct {
 	powTxID     string
 }
 
+func (tx *testTx) GetLength() int              { return 0 }
 func (tx *testTx) Unmarshal(interface{}) error { return nil }
 func (tx *testTx) GetPoWTID() string           { return tx.powTxID }
 func (tx *testTx) GetVersion() uint32          { return 2 }
@@ -94,9 +95,8 @@ func TestABCICheckTx(t *testing.T) {
 			return errors.New("boom")
 		})
 
-	app.OnCheckTx = func(ctx context.Context, req types.RequestCheckTx, _ abci.Tx) (context.Context, types.ResponseCheckTx) {
-		resp := types.ResponseCheckTx{}
-		return context.WithValue(ctx, testKey, "val"), resp
+	app.OnCheckTx = func(ctx context.Context, _ *types.RequestCheckTx, _ abci.Tx) (context.Context, *types.ResponseCheckTx) {
+		return context.WithValue(ctx, testKey, "val"), &types.ResponseCheckTx{}
 	}
 
 	t.Run("CommandWithNoError", func(t *testing.T) {
@@ -106,7 +106,7 @@ func TestABCICheckTx(t *testing.T) {
 		})
 
 		req := types.RequestCheckTx{Tx: tx}
-		resp := app.CheckTx(req)
+		resp, _ := app.CheckTx(context.Background(), &req)
 		require.True(t, resp.IsOK())
 	})
 
@@ -117,7 +117,7 @@ func TestABCICheckTx(t *testing.T) {
 		})
 
 		req := types.RequestCheckTx{Tx: tx}
-		resp := app.CheckTx(req)
+		resp, _ := app.CheckTx(context.Background(), &req)
 		require.True(t, resp.IsErr())
 		require.Equal(t, blockchain.AbciTxnInternalError, resp.Code)
 	})
@@ -126,7 +126,7 @@ func TestABCICheckTx(t *testing.T) {
 		tx := []byte("tx-not-registered-on-the-codec")
 
 		req := types.RequestCheckTx{Tx: tx}
-		resp := app.CheckTx(req)
+		resp, _ := app.CheckTx(context.Background(), &req)
 		require.True(t, resp.IsErr())
 		require.Equal(t, blockchain.AbciTxnDecodingFailure, resp.Code)
 	})

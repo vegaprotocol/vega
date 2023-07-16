@@ -340,6 +340,7 @@ type testTx struct {
 	unmarshaller func(interface{}) error
 }
 
+func (tx *testTx) GetLength() int                { return 0 }
 func (tx *testTx) Unmarshal(i interface{}) error { return tx.unmarshaller(i) }
 func (tx *testTx) GetPoWTID() string             { return "" }
 func (tx *testTx) GetVersion() uint32            { return 2 }

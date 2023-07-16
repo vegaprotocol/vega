@@ -9,8 +9,8 @@ import (
 	reflect "reflect"
 
 	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	gomock "github.com/golang/mock/gomock"
-	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 // MockChain is a mock of Chain interface.

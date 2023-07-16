@@ -3,6 +3,7 @@ package nullchain
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -15,8 +16,7 @@ import (
 	"code.vegaprotocol.io/vega/core/blockchain"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/proto/tendermint/types"
+	abci "github.com/cometbft/cometbft/abci/types"
 )
 
 var ErrReplayFileIsRequired = errors.New("replay-file is required when replay/record is enabled")
@@ -59,8 +59,8 @@ func NewNullChainReplayer(app ApplicationService, cfg blockchain.ReplayConfig, l
 	}, nil
 }
 
-func (r *Replayer) InitChain(req abci.RequestInitChain) (resp abci.ResponseInitChain) {
-	return r.app.InitChain(req)
+func (r *Replayer) InitChain(req abci.RequestInitChain) (*abci.ResponseInitChain, error) {
+	return r.app.InitChain(context.Background(), &req)
 }
 
 func (r *Replayer) Stop() error {
@@ -71,14 +71,12 @@ func (r *Replayer) Stop() error {
 
 // startBlock saves in memory all the transactions in the block, we do not write until saveBlock us called
 // with a potential appHash.
-func (r *Replayer) startBlock(height, now int64, txs []*abci.RequestDeliverTx) {
+func (r *Replayer) startBlock(height, now int64, txs [][]byte) {
 	r.current = &blockData{
 		Height: height,
 		Time:   now,
 	}
-	for _, tx := range txs {
-		r.current.Txs = append(r.current.Txs, tx.Tx)
-	}
+	r.current.Txs = append(r.current.Txs, txs...)
 }
 
 // saveBlock writes to the replay file the details of the current block adding the appHash to it.
@@ -108,7 +106,7 @@ func readLine(r *bufio.Reader) ([]byte, error) {
 
 // replayChain sends all the recorded per-block transactions into the protocol returning the block-height and block-time it reached
 // appHeight is the block-height the application will process next, any blocks less than this will not be replayed.
-func (r *Replayer) replayChain(appHeight int64, chainID string) (int64, time.Time, error) {
+func (r *Replayer) replayChain(appHeight int64) (int64, time.Time, error) {
 	var replayedHeight int64
 	var replayedTime time.Time
 
@@ -143,29 +141,15 @@ func (r *Replayer) replayChain(appHeight int64, chainID string) (int64, time.Tim
 		}
 
 		r.log.Info("replaying block", logging.Int64("height", data.Height), logging.Int("ntxns", len(data.Txs)))
-		r.app.BeginBlock(
-			abci.RequestBeginBlock{
-				Header: types.Header{
-					Time:    time.Unix(0, data.Time),
-					Height:  data.Height,
-					ChainID: chainID,
-				},
-				Hash: vgcrypto.Hash([]byte(strconv.FormatInt(data.Height+data.Time, 10))),
-			},
-		)
 
-		// deliever all the txns in that block
-		for _, tx := range data.Txs {
-			r.app.DeliverTx(abci.RequestDeliverTx{Tx: tx})
-		}
+		resp, _ := r.app.FinalizeBlock(context.Background(), &abci.RequestFinalizeBlock{
+			Height: data.Height,
+			Time:   time.Unix(0, data.Time),
+			Hash:   vgcrypto.Hash([]byte(strconv.FormatInt(data.Height+data.Time, 10))),
+			Txs:    data.Txs,
+		})
 
-		r.app.EndBlock(
-			abci.RequestEndBlock{
-				Height: data.Height,
-			},
-		)
-		resp := r.app.Commit()
-
+		r.app.Commit(context.Background(), &abci.RequestCommit{})
 		if len(data.AppHash) == 0 {
 			// we've replayed a block which when recorded must have panicked so we do not have a apphash
 			// somehow we've made it through this time, maybe someone is testing a fix so we skip the hash check and log it as strange
@@ -173,8 +157,8 @@ func (r *Replayer) replayChain(appHeight int64, chainID string) (int64, time.Tim
 			continue
 		}
 
-		if !bytes.Equal(data.AppHash, resp.Data) {
-			return replayedHeight, replayedTime, fmt.Errorf("appHash mismatch on replay, expected %s got %s", hex.EncodeToString(data.AppHash), hex.EncodeToString(resp.Data))
+		if !bytes.Equal(data.AppHash, resp.AppHash) {
+			return replayedHeight, replayedTime, fmt.Errorf("appHash mismatch on replay, expected %s got %s", hex.EncodeToString(data.AppHash), hex.EncodeToString(resp.AppHash))
 		}
 	}
 

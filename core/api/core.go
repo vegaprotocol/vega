@@ -38,9 +38,9 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 
+	"github.com/cometbft/cometbft/libs/bytes"
+	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/pkg/errors"
-	"github.com/tendermint/tendermint/libs/bytes"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"google.golang.org/grpc/codes"
 )
 
@@ -657,14 +657,14 @@ func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.Su
 			if txResult != nil {
 				return &protoapi.SubmitRawTransactionResponse{
 					Success: false,
-					Code:    txResult.DeliverTx.Code,
-					Data:    string(txResult.DeliverTx.Data),
-					Log:     txResult.DeliverTx.Log,
+					Code:    txResult.TxResult.Code,
+					Data:    string(txResult.TxResult.Data),
+					Log:     txResult.TxResult.Log,
 				}, s.handleSubmitRawTxTMError(err)
 			}
 			return nil, s.handleSubmitRawTxTMError(err)
 		}
-		setResponseBasisContent(successResponse, txResult.DeliverTx.Code, txResult.DeliverTx.Log, txResult.DeliverTx.Data, txResult.Hash)
+		setResponseBasisContent(successResponse, txResult.TxResult.Code, txResult.TxResult.Log, txResult.TxResult.Data, txResult.Hash)
 		successResponse.Height = txResult.Height
 
 	default:

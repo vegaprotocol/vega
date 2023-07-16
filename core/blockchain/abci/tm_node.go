@@ -6,20 +6,22 @@ import (
 	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 
+	"github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/config"
+	bftconfig "github.com/cometbft/cometbft/config"
+	"github.com/cometbft/cometbft/libs/service"
+	nm "github.com/cometbft/cometbft/node"
+	"github.com/cometbft/cometbft/p2p"
+	"github.com/cometbft/cometbft/privval"
+	"github.com/cometbft/cometbft/proxy"
+	tmtypes "github.com/cometbft/cometbft/types"
 	"github.com/spf13/viper"
-	"github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/libs/service"
-	nm "github.com/tendermint/tendermint/node"
-	"github.com/tendermint/tendermint/p2p"
-	"github.com/tendermint/tendermint/privval"
-	"github.com/tendermint/tendermint/proxy"
-	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 type TmNode struct {
-	conf blockchain.Config
-	node service.Service
+	conf        blockchain.Config
+	node        service.Service
+	MempoolSize int64
 }
 
 const namedLogger = "tendermint"
@@ -86,7 +88,7 @@ func NewTmNode(
 		nodeKey,
 		proxy.NewLocalClientCreator(app),
 		genesisDocProvider,
-		nm.DefaultDBProvider,
+		bftconfig.DefaultDBProvider,
 		nm.DefaultMetricsProvider(config.Instrumentation),
 		logger)
 	if err != nil {
@@ -99,7 +101,7 @@ func NewTmNode(
 	// 	return nil, fmt.Errorf("creating tendermint node: %v", err)
 	// }
 
-	return &TmNode{conf, node}, nil
+	return &TmNode{conf, node, config.Mempool.MaxTxsBytes}, nil
 }
 
 func (*TmNode) ReloadConf(cfg blockchain.Config) {
@@ -141,9 +143,7 @@ func loadConfig(homeDir string) (*config.Config, error) {
 func overwriteConfig(config *config.Config) {
 	config.Consensus.TimeoutCommit = 0
 	config.Consensus.CreateEmptyBlocks = true
-	// enforce using priority mempool
-	config.Mempool.Version = "v1"
-	// ensure transactions are continuously checked
+	// ensure rechecking tx is enabled
 	config.Mempool.Recheck = true
 	// enforce compatibility
 	config.P2P.MaxPacketMsgPayloadSize = 16384

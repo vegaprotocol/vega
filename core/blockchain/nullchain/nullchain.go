@@ -29,12 +29,11 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/p2p"
-	"github.com/tendermint/tendermint/proto/tendermint/crypto"
-	"github.com/tendermint/tendermint/proto/tendermint/types"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
-	tmtypes "github.com/tendermint/tendermint/types"
+	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/p2p"
+	"github.com/cometbft/cometbft/proto/tendermint/crypto"
+	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
+	tmtypes "github.com/cometbft/cometbft/types"
 )
 
 const namedLogger = "nullchain"
@@ -51,12 +50,10 @@ type TimeService interface {
 }
 
 type ApplicationService interface {
-	InitChain(res abci.RequestInitChain) (resp abci.ResponseInitChain)
-	BeginBlock(req abci.RequestBeginBlock) (resp abci.ResponseBeginBlock)
-	EndBlock(req abci.RequestEndBlock) (resp abci.ResponseEndBlock)
-	Commit() (resp abci.ResponseCommit)
-	DeliverTx(req abci.RequestDeliverTx) (resp abci.ResponseDeliverTx)
-	Info(req abci.RequestInfo) (resp abci.ResponseInfo)
+	InitChain(context.Context, *abci.RequestInitChain) (*abci.ResponseInitChain, error)
+	FinalizeBlock(context.Context, *abci.RequestFinalizeBlock) (*abci.ResponseFinalizeBlock, error)
+	Commit(context.Context, *abci.RequestCommit) (*abci.ResponseCommit, error)
+	Info(context.Context, *abci.RequestInfo) (*abci.ResponseInfo, error)
 }
 
 // nullGenesis is a subset of a tendermint genesis file, just the bits we need to run the nullblockchain.
@@ -78,7 +75,7 @@ type NullBlockchain struct {
 
 	now         time.Time
 	blockHeight int64
-	pending     []*abci.RequestDeliverTx
+	pending     [][]byte
 
 	mu        sync.Mutex
 	replaying atomic.Bool
@@ -101,7 +98,7 @@ func NewClient(
 		transactionsPerBlock: cfg.TransactionsPerBlock,
 		blockDuration:        cfg.BlockDuration.Duration,
 		blockHeight:          1,
-		pending:              make([]*abci.RequestDeliverTx, 0),
+		pending:              make([][]byte, 0),
 	}
 
 	return n
@@ -134,7 +131,7 @@ func (n *NullBlockchain) StartChain() error {
 		return err
 	}
 
-	if r := n.app.Info(abci.RequestInfo{}); r.LastBlockHeight > 0 {
+	if r, _ := n.app.Info(context.Background(), &abci.RequestInfo{}); r.LastBlockHeight > 0 {
 		n.log.Info("protocol loaded from snapshot", logging.Int64("height", r.LastBlockHeight))
 		n.blockHeight = r.LastBlockHeight + 1
 		n.now = n.timeService.GetTimeNow().Add(n.blockDuration)
@@ -160,7 +157,7 @@ func (n *NullBlockchain) StartChain() error {
 	if n.cfg.Replay.Replay {
 		n.log.Info("nullchain is replaying chain", logging.String("replay-file", n.cfg.Replay.ReplayFile))
 		n.replaying.Store(true)
-		blockHeight, blockTime, err := r.replayChain(n.blockHeight, n.genesis.ChainID)
+		blockHeight, blockTime, err := r.replayChain(n.blockHeight)
 		if err != nil {
 			return err
 		}
@@ -186,20 +183,22 @@ func (n *NullBlockchain) processBlock() {
 		n.log.Debugf("processing block %d with %d transactions", n.blockHeight, len(n.pending))
 	}
 
-	resp := abci.ResponseCommit{}
+	resp := &abci.ResponseFinalizeBlock{}
 	if n.replayer != nil && n.cfg.Replay.Record {
 		n.replayer.startBlock(n.blockHeight, n.now.UnixNano(), n.pending)
-		defer func() { n.replayer.saveBlock(resp.Data) }()
+		defer func() {
+			n.replayer.saveBlock(resp.AppHash)
+		}()
 	}
 
-	n.BeginBlock()
-	for _, tx := range n.pending {
-		n.app.DeliverTx(*tx)
-	}
+	resp, _ = n.app.FinalizeBlock(context.Background(), &abci.RequestFinalizeBlock{
+		Height: n.blockHeight,
+		Time:   n.now,
+		Hash:   vgcrypto.Hash([]byte(strconv.FormatInt(n.blockHeight+n.now.UnixNano(), 10))),
+		Txs:    n.pending,
+	})
 	n.pending = n.pending[:0]
-
-	n.EndBlock()
-	resp = n.app.Commit()
+	n.app.Commit(context.Background(), &abci.RequestCommit{})
 
 	// Increment time, blockheight, ready to start a new block
 	n.blockHeight++
@@ -210,7 +209,7 @@ func (n *NullBlockchain) handleTransaction(tx []byte) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	n.pending = append(n.pending, &abci.RequestDeliverTx{Tx: tx})
+	n.pending = append(n.pending, tx)
 	if n.log.GetLevel() <= logging.DebugLevel {
 		n.log.Debugf("transaction added to block: %d of %d", len(n.pending), n.transactionsPerBlock)
 	}
@@ -305,8 +304,8 @@ func (n *NullBlockchain) InitChain() error {
 		logging.String("time", n.now.String()),
 		logging.Int("n_validators", len(validators)),
 	)
-	n.app.InitChain(
-		abci.RequestInitChain{
+	n.app.InitChain(context.Background(),
+		&abci.RequestInitChain{
 			Time:          n.now,
 			ChainId:       n.genesis.ChainID,
 			InitialHeight: n.blockHeight,
@@ -315,38 +314,6 @@ func (n *NullBlockchain) InitChain() error {
 		},
 	)
 	return nil
-}
-
-func (n *NullBlockchain) BeginBlock() *NullBlockchain {
-	if n.log.GetLevel() <= logging.DebugLevel {
-		n.log.Debug("sending BeginBlock",
-			logging.Int64("height", n.blockHeight),
-			logging.String("time", n.now.String()),
-		)
-	}
-
-	r := abci.RequestBeginBlock{
-		Header: types.Header{
-			Time:    n.now,
-			Height:  n.blockHeight,
-			ChainID: n.genesis.ChainID,
-		},
-		Hash: vgcrypto.Hash([]byte(strconv.FormatInt(n.blockHeight+n.now.UnixNano(), 10))),
-	}
-	n.app.BeginBlock(r)
-	return n
-}
-
-func (n *NullBlockchain) EndBlock() *NullBlockchain {
-	if n.log.GetLevel() <= logging.DebugLevel {
-		n.log.Debug("sending EndBlock", logging.Int64("blockHeight", n.blockHeight))
-	}
-	n.app.EndBlock(
-		abci.RequestEndBlock{
-			Height: n.blockHeight,
-		},
-	)
-	return n
 }
 
 func (n *NullBlockchain) GetGenesisTime(context.Context) (time.Time, error) {
@@ -360,7 +327,7 @@ func (n *NullBlockchain) GetChainID(context.Context) (string, error) {
 func (n *NullBlockchain) GetStatus(context.Context) (*tmctypes.ResultStatus, error) {
 	return &tmctypes.ResultStatus{
 		NodeInfo: p2p.DefaultNodeInfo{
-			Version: "0.34.20",
+			Version: "0.38.0",
 		},
 		SyncInfo: tmctypes.SyncInfo{
 			CatchingUp: n.replaying.Load(),

@@ -72,12 +72,12 @@ func TraceIDFromContext(ctx context.Context) (context.Context, string) {
 	return ctx, stID
 }
 
-func BlockHeightFromContext(ctx context.Context) (int64, error) {
+func BlockHeightFromContext(ctx context.Context) (uint64, error) {
 	hv := ctx.Value(blockHeightKey)
 	if hv == nil {
 		return 0, ErrBlockHeightMissing
 	}
-	h, ok := hv.(int64)
+	h, ok := hv.(uint64)
 	if !ok {
 		return 0, ErrBlockHeightMissing
 	}
@@ -118,7 +118,7 @@ func WithTraceID(ctx context.Context, tID string) context.Context {
 	return context.WithValue(ctx, traceIDKey, tID)
 }
 
-func WithBlockHeight(ctx context.Context, h int64) context.Context {
+func WithBlockHeight(ctx context.Context, h uint64) context.Context {
 	return context.WithValue(ctx, blockHeightKey, h)
 }
 

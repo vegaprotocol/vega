@@ -5,11 +5,12 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 	time "time"
 
+	types "github.com/cometbft/cometbft/abci/types"
 	gomock "github.com/golang/mock/gomock"
-	types "github.com/tendermint/tendermint/abci/types"
 )
 
 // MockTimeService is a mock of TimeService interface.
@@ -72,86 +73,62 @@ func (m *MockApplicationService) EXPECT() *MockApplicationServiceMockRecorder {
 	return m.recorder
 }
 
-// BeginBlock mocks base method.
-func (m *MockApplicationService) BeginBlock(arg0 types.RequestBeginBlock) types.ResponseBeginBlock {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BeginBlock", arg0)
-	ret0, _ := ret[0].(types.ResponseBeginBlock)
-	return ret0
-}
-
-// BeginBlock indicates an expected call of BeginBlock.
-func (mr *MockApplicationServiceMockRecorder) BeginBlock(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginBlock", reflect.TypeOf((*MockApplicationService)(nil).BeginBlock), arg0)
-}
-
 // Commit mocks base method.
-func (m *MockApplicationService) Commit() types.ResponseCommit {
+func (m *MockApplicationService) Commit(arg0 context.Context, arg1 *types.RequestCommit) (*types.ResponseCommit, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Commit")
-	ret0, _ := ret[0].(types.ResponseCommit)
-	return ret0
+	ret := m.ctrl.Call(m, "Commit", arg0, arg1)
+	ret0, _ := ret[0].(*types.ResponseCommit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Commit indicates an expected call of Commit.
-func (mr *MockApplicationServiceMockRecorder) Commit() *gomock.Call {
+func (mr *MockApplicationServiceMockRecorder) Commit(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Commit", reflect.TypeOf((*MockApplicationService)(nil).Commit))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Commit", reflect.TypeOf((*MockApplicationService)(nil).Commit), arg0, arg1)
 }
 
-// DeliverTx mocks base method.
-func (m *MockApplicationService) DeliverTx(arg0 types.RequestDeliverTx) types.ResponseDeliverTx {
+// FinalizeBlock mocks base method.
+func (m *MockApplicationService) FinalizeBlock(arg0 context.Context, arg1 *types.RequestFinalizeBlock) (*types.ResponseFinalizeBlock, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeliverTx", arg0)
-	ret0, _ := ret[0].(types.ResponseDeliverTx)
-	return ret0
+	ret := m.ctrl.Call(m, "FinalizeBlock", arg0, arg1)
+	ret0, _ := ret[0].(*types.ResponseFinalizeBlock)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// DeliverTx indicates an expected call of DeliverTx.
-func (mr *MockApplicationServiceMockRecorder) DeliverTx(arg0 interface{}) *gomock.Call {
+// FinalizeBlock indicates an expected call of FinalizeBlock.
+func (mr *MockApplicationServiceMockRecorder) FinalizeBlock(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeliverTx", reflect.TypeOf((*MockApplicationService)(nil).DeliverTx), arg0)
-}
-
-// EndBlock mocks base method.
-func (m *MockApplicationService) EndBlock(arg0 types.RequestEndBlock) types.ResponseEndBlock {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EndBlock", arg0)
-	ret0, _ := ret[0].(types.ResponseEndBlock)
-	return ret0
-}
-
-// EndBlock indicates an expected call of EndBlock.
-func (mr *MockApplicationServiceMockRecorder) EndBlock(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndBlock", reflect.TypeOf((*MockApplicationService)(nil).EndBlock), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalizeBlock", reflect.TypeOf((*MockApplicationService)(nil).FinalizeBlock), arg0, arg1)
 }
 
 // Info mocks base method.
-func (m *MockApplicationService) Info(arg0 types.RequestInfo) types.ResponseInfo {
+func (m *MockApplicationService) Info(arg0 context.Context, arg1 *types.RequestInfo) (*types.ResponseInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Info", arg0)
-	ret0, _ := ret[0].(types.ResponseInfo)
-	return ret0
+	ret := m.ctrl.Call(m, "Info", arg0, arg1)
+	ret0, _ := ret[0].(*types.ResponseInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Info indicates an expected call of Info.
-func (mr *MockApplicationServiceMockRecorder) Info(arg0 interface{}) *gomock.Call {
+func (mr *MockApplicationServiceMockRecorder) Info(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Info", reflect.TypeOf((*MockApplicationService)(nil).Info), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Info", reflect.TypeOf((*MockApplicationService)(nil).Info), arg0, arg1)
 }
 
 // InitChain mocks base method.
-func (m *MockApplicationService) InitChain(arg0 types.RequestInitChain) types.ResponseInitChain {
+func (m *MockApplicationService) InitChain(arg0 context.Context, arg1 *types.RequestInitChain) (*types.ResponseInitChain, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InitChain", arg0)
-	ret0, _ := ret[0].(types.ResponseInitChain)
-	return ret0
+	ret := m.ctrl.Call(m, "InitChain", arg0, arg1)
+	ret0, _ := ret[0].(*types.ResponseInitChain)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // InitChain indicates an expected call of InitChain.
-func (mr *MockApplicationServiceMockRecorder) InitChain(arg0 interface{}) *gomock.Call {
+func (mr *MockApplicationServiceMockRecorder) InitChain(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitChain", reflect.TypeOf((*MockApplicationService)(nil).InitChain), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitChain", reflect.TypeOf((*MockApplicationService)(nil).InitChain), arg0, arg1)
 }

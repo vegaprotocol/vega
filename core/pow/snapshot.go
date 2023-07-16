@@ -15,7 +15,6 @@ package pow
 import (
 	"context"
 	"sort"
-	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
@@ -36,20 +35,15 @@ func (e *Engine) Stopped() bool {
 
 // get the serialised form and hash of the given key.
 func (e *Engine) serialise() ([]byte, error) {
-	bannedParties := map[string]int64{}
-	for k, t := range e.bannedParties {
-		bannedParties[k] = t.UnixNano()
+	payloadProofOfWork := &types.PayloadProofOfWork{
+		BlockHeight:  e.blockHeight[:ringSize],
+		BlockHash:    e.blockHash[:ringSize],
+		HeightToTx:   e.heightToTx,
+		HeightToTid:  e.heightToTid,
+		ActiveParams: e.paramsToSnapshotParams(),
+		ActiveStates: e.statesToSnapshotStates(),
 	}
 
-	payloadProofOfWork := &types.PayloadProofOfWork{
-		BlockHeight:   e.blockHeight[:ringSize],
-		BlockHash:     e.blockHash[:ringSize],
-		HeightToTx:    e.heightToTx,
-		HeightToTid:   e.heightToTid,
-		BannedParties: bannedParties,
-		ActiveParams:  e.paramsToSnapshotParams(),
-		ActiveStates:  e.statesToSnapshotStates(),
-	}
 	payload := types.Payload{
 		Data: payloadProofOfWork,
 	}
@@ -164,10 +158,6 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 	pl := p.Data.(*types.PayloadProofOfWork)
-	e.bannedParties = make(map[string]time.Time, len(pl.BannedParties))
-	for k, v := range pl.BannedParties {
-		e.bannedParties[k] = time.Unix(0, v)
-	}
 	copy(e.blockHash[:], pl.BlockHash[:ringSize])
 	copy(e.blockHeight[:], pl.BlockHeight[:ringSize])
 	e.heightToTx = pl.HeightToTx

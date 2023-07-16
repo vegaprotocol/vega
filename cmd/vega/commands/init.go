@@ -26,13 +26,13 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 
+	tmcfg "github.com/cometbft/cometbft/config"
+	tmos "github.com/cometbft/cometbft/libs/os"
+	tmrand "github.com/cometbft/cometbft/libs/rand"
+	"github.com/cometbft/cometbft/p2p"
+	"github.com/cometbft/cometbft/privval"
+	"github.com/cometbft/cometbft/types"
 	"github.com/jessevdk/go-flags"
-	tmcfg "github.com/tendermint/tendermint/config"
-	tmos "github.com/tendermint/tendermint/libs/os"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	"github.com/tendermint/tendermint/p2p"
-	"github.com/tendermint/tendermint/privval"
-	"github.com/tendermint/tendermint/types"
 )
 
 type InitCmd struct {

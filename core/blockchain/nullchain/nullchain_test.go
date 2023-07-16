@@ -28,11 +28,10 @@ import (
 	"code.vegaprotocol.io/vega/core/blockchain/nullchain/mocks"
 	"code.vegaprotocol.io/vega/libs/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 const (
@@ -75,18 +74,14 @@ func testTransactionsCreateBlock(t *testing.T) {
 
 	// Expected BeginBlock to be called with time shuffled forward by a block
 	now, _ := testChain.chain.GetGenesisTime(ctx)
-	r := abci.RequestBeginBlock{Header: types.Header{Time: now, ChainID: chainID, Height: 1}}
+	// r := abci.RequestBeginBlock{Header: types.Header{Time: now, ChainID: chainID, Height: 1}}
 
 	// One round of block processing calls
-	testChain.app.EXPECT().BeginBlock(gomock.Any()).Do(func(rr abci.RequestBeginBlock) {
-		require.Equal(t, rr.Header, r.Header)
+	testChain.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).Do(func(_ context.Context, rr *abci.RequestFinalizeBlock) {
+		require.Equal(t, now, rr.Time)
+		require.Equal(t, int64(1), rr.Height)
 	}).Times(1)
-	testChain.app.EXPECT().EndBlock(gomock.Any()).Times(1)
-	testChain.app.EXPECT().Commit().Times(1)
-
-	// Expect only two of the three transactions to be delivered
-	testChain.app.EXPECT().DeliverTx(gomock.Any()).Times(2)
-
+	testChain.app.EXPECT().Commit(gomock.Any(), gomock.Any()).Times(1)
 	// Send in three transactions, two gets delivered in the block, one left over
 	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
 	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
@@ -114,14 +109,12 @@ func testTimeForwardingCreatesBlocks(t *testing.T) {
 	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
 
 	// One round of block processing calls
-	testChain.app.EXPECT().BeginBlock(gomock.Any()).Times(10).Do(func(r abci.RequestBeginBlock) {
-		beginBlockTime = r.Header.Time
-	})
-	testChain.app.EXPECT().EndBlock(gomock.Any()).Times(10).Do(func(r abci.RequestEndBlock) {
+
+	testChain.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).Times(10).Do(func(_ context.Context, r *abci.RequestFinalizeBlock) {
+		beginBlockTime = r.Time
 		height = int(r.Height)
 	})
-	testChain.app.EXPECT().Commit().Times(10)
-	testChain.app.EXPECT().DeliverTx(gomock.Any()).Times(3)
+	testChain.app.EXPECT().Commit(gomock.Any(), gomock.Any()).Times(10)
 
 	testChain.chain.ForwardTime(step)
 	assert.True(t, beginBlockTime.Equal(now.Add(18*time.Second))) // the start of the next block will take us to +20 seconds
@@ -191,17 +184,15 @@ func testReplayWithSnapshotRestore(t *testing.T) {
 	// pretend the protocol restores to block height 10
 	restoredBlockTime := time.Unix(10000, 15)
 	restoreBlockHeight := int64(10)
-	testChain.app.EXPECT().Info(gomock.Any()).Times(1).Return(
-		abci.ResponseInfo{
+	testChain.app.EXPECT().Info(gomock.Any(), gomock.Any()).Times(1).Return(
+		&abci.ResponseInfo{
 			LastBlockHeight: restoreBlockHeight,
-		},
+		}, nil,
 	)
 
 	// we'll replay 5 blocks
-	testChain.app.EXPECT().BeginBlock(gomock.Any()).Times(5)
-	testChain.app.EXPECT().DeliverTx(gomock.Any()).Times(10)
-	testChain.app.EXPECT().EndBlock(gomock.Any()).Times(5)
-	testChain.app.EXPECT().Commit().Times(5)
+	testChain.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).Times(5)
+	testChain.app.EXPECT().Commit(gomock.Any(), gomock.Any()).Times(5)
 	testChain.ts.EXPECT().GetTimeNow().Times(1).Return(restoredBlockTime)
 
 	// start the nullchain from a snapshot
@@ -209,15 +200,13 @@ func testReplayWithSnapshotRestore(t *testing.T) {
 	require.NoError(t, err)
 
 	// continue the chain and check we're at the right block height and stuff
-	testChain.app.EXPECT().DeliverTx(gomock.Any()).Times(2)
-	testChain.app.EXPECT().EndBlock(gomock.Any()).Times(1)
-	testChain.app.EXPECT().Commit().Times(1)
-
 	// the next begin block should be at block height 16 (restored to 10, replayed 5, starting the next)
-	req := abci.RequestBeginBlock{}
-	testChain.app.EXPECT().BeginBlock(gomock.Any()).Times(1).Do(func(r abci.RequestBeginBlock) {
+	req := &abci.RequestFinalizeBlock{}
+	testChain.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, r *abci.RequestFinalizeBlock) (*abci.ResponseFinalizeBlock, error) {
 		req = r
-	})
+		return &abci.ResponseFinalizeBlock{}, nil
+	}).AnyTimes()
+	testChain.app.EXPECT().Commit(gomock.Any(), gomock.Any()).Times(1)
 
 	// fill the block
 	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
@@ -225,9 +214,8 @@ func testReplayWithSnapshotRestore(t *testing.T) {
 
 	genesis, err := testChain.chain.GetGenesisTime(ctx)
 	require.NoError(t, err)
-	require.Equal(t, int64(16), req.Header.Height)
-	require.Equal(t, genesis.Add(15*time.Second).UnixNano(), req.Header.Time.UnixNano())
-	require.Equal(t, chainID, req.Header.ChainID)
+	require.Equal(t, int64(16), req.Height)
+	require.Equal(t, genesis.Add(15*time.Second).UnixNano(), req.Time.UnixNano())
 }
 
 func testReplayFromGenesis(t *testing.T) {
@@ -243,18 +231,16 @@ func testReplayFromGenesis(t *testing.T) {
 	defer newChain.ctrl.Finish()
 
 	// protocol is starting from 0
-	newChain.app.EXPECT().Info(gomock.Any()).Times(1).Return(
-		abci.ResponseInfo{
+	newChain.app.EXPECT().Info(gomock.Any(), gomock.Any()).Times(1).Return(
+		&abci.ResponseInfo{
 			LastBlockHeight: 0,
-		},
+		}, nil,
 	)
 
 	// we'll replay 15 blocks
-	newChain.app.EXPECT().InitChain(gomock.Any()).Times(1)
-	newChain.app.EXPECT().BeginBlock(gomock.Any()).Times(15)
-	newChain.app.EXPECT().DeliverTx(gomock.Any()).Times(30)
-	newChain.app.EXPECT().EndBlock(gomock.Any()).Times(15)
-	newChain.app.EXPECT().Commit().Times(15)
+	newChain.app.EXPECT().InitChain(gomock.Any(), gomock.Any()).Times(1)
+	newChain.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).Times(15).Return(&abci.ResponseFinalizeBlock{}, nil)
+	newChain.app.EXPECT().Commit(gomock.Any(), gomock.Any()).Times(15)
 
 	// start the nullchain from genesis
 	err := newChain.chain.StartChain()
@@ -271,14 +257,11 @@ func testReplayPanicBlock(t *testing.T) {
 	generateChain(t, testChain, 5)
 
 	// send in a single transaction that works
-	testChain.app.EXPECT().BeginBlock(gomock.Any()).Times(1)
-	testChain.app.EXPECT().DeliverTx(gomock.Any()).Times(1)
-	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
 
-	// the next transaction will panic
-	testChain.app.EXPECT().DeliverTx(gomock.Any()).Do(func(rr abci.RequestDeliverTx) {
+	testChain.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).Do(func(_ context.Context, rr *abci.RequestFinalizeBlock) {
 		panic("ah panic processing transaction")
 	}).Times(1)
+	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
 
 	require.Panics(t, func() {
 		testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
@@ -292,18 +275,16 @@ func testReplayPanicBlock(t *testing.T) {
 	defer newChain.ctrl.Finish()
 
 	// protocol is starting from 0
-	newChain.app.EXPECT().Info(gomock.Any()).Times(1).Return(
-		abci.ResponseInfo{
+	newChain.app.EXPECT().Info(gomock.Any(), gomock.Any()).Times(1).Return(
+		&abci.ResponseInfo{
 			LastBlockHeight: 0,
-		},
+		}, nil,
 	)
 
 	// we'll replay 5 full blocks, and process the 6th "panic" block ready to start the 7th
-	newChain.app.EXPECT().InitChain(gomock.Any()).Times(1)
-	newChain.app.EXPECT().BeginBlock(gomock.Any()).Times(6)
-	newChain.app.EXPECT().DeliverTx(gomock.Any()).Times(12)
-	newChain.app.EXPECT().EndBlock(gomock.Any()).Times(6)
-	newChain.app.EXPECT().Commit().Times(6)
+	newChain.app.EXPECT().InitChain(gomock.Any(), gomock.Any()).Times(1)
+	newChain.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).Times(6)
+	newChain.app.EXPECT().Commit(gomock.Any(), gomock.Any()).Times(6)
 
 	// start the nullchain from genesis
 	err := newChain.chain.StartChain()
@@ -352,8 +333,8 @@ func getTestNullChain(t *testing.T, txnPerBlock uint64, d time.Duration) *testNu
 	t.Helper()
 	nc := getTestUnstartedNullChain(t, txnPerBlock, d, nil)
 
-	nc.app.EXPECT().Info(gomock.Any()).Times(1)
-	nc.app.EXPECT().InitChain(gomock.Any()).Times(1)
+	nc.app.EXPECT().Info(gomock.Any(), gomock.Any()).Times(1).Return(&abci.ResponseInfo{}, nil)
+	nc.app.EXPECT().InitChain(gomock.Any(), gomock.Any()).Times(1)
 
 	err := nc.chain.StartChain()
 	require.NoError(t, err)
@@ -379,15 +360,13 @@ func generateChain(t *testing.T, nc *testNullBlockChain, height int) {
 	nTxns := int(nc.cfg.TransactionsPerBlock) * height
 
 	ctx := context.Background()
-	nc.app.EXPECT().InitChain(gomock.Any()).Times(1)
-	nc.app.EXPECT().BeginBlock(gomock.Any()).Times(height)
-	nc.app.EXPECT().DeliverTx(gomock.Any()).Times(nTxns)
-	nc.app.EXPECT().EndBlock(gomock.Any()).Times(height)
-	nc.app.EXPECT().Commit().Times(height)
-	nc.app.EXPECT().Info(gomock.Any()).Times(1).Return(
-		abci.ResponseInfo{
+	nc.app.EXPECT().InitChain(gomock.Any(), gomock.Any()).Times(1)
+	nc.app.EXPECT().FinalizeBlock(gomock.Any(), gomock.Any()).Times(height).Return(&abci.ResponseFinalizeBlock{}, nil)
+	nc.app.EXPECT().Commit(gomock.Any(), gomock.Any()).Times(height)
+	nc.app.EXPECT().Info(gomock.Any(), gomock.Any()).Times(1).Return(
+		&abci.ResponseInfo{
 			LastBlockHeight: 0,
-		},
+		}, nil,
 	)
 
 	// start the nullchain

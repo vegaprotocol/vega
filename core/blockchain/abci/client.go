@@ -20,13 +20,13 @@ import (
 	"sync"
 	"time"
 
-	cmtjson "github.com/tendermint/tendermint/libs/json"
-	tmlog "github.com/tendermint/tendermint/libs/log"
-	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
-	tmclihttp "github.com/tendermint/tendermint/rpc/client/http"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
-	"github.com/tendermint/tendermint/types"
-	tmtypes "github.com/tendermint/tendermint/types"
+	cmtjson "github.com/cometbft/cometbft/libs/json"
+	tmlog "github.com/cometbft/cometbft/libs/log"
+	tmquery "github.com/cometbft/cometbft/libs/pubsub/query"
+	tmclihttp "github.com/cometbft/cometbft/rpc/client/http"
+	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
+	"github.com/cometbft/cometbft/types"
+	tmtypes "github.com/cometbft/cometbft/types"
 )
 
 var ErrEmptyClientAddr = errors.New("abci client addr is empty in config")
@@ -153,7 +153,7 @@ func (c *Client) GenesisValidators(ctx context.Context) ([]*tmtypes.Validator, e
 	return validators, nil
 }
 
-// Subscribe subscribes to any event matching query (https://godoc.org/github.com/tendermint/tendermint/types#pkg-constants).
+// Subscribe subscribes to any event matching query (https://godoc.org/github.com/cometbft/cometbft/types#pkg-constants).
 // Subscribe will call fn each time it receives an event from the node.
 // The function returns nil when the context is canceled or when fn returns an error.
 func (c *Client) Subscribe(ctx context.Context, fn func(tmctypes.ResultEvent) error, queries ...string) error {

@@ -28,20 +28,23 @@ func NewNoop() *NoopEngine {
 	return &NoopEngine{}
 }
 
-func (e *NoopEngine) BeginBlock(blockHeight uint64, blockHash string) {
+func (e *NoopEngine) BeginBlock(blockHeight uint64, blockHash string, txs []abci.Tx) {
 	e.blockHeight = blockHeight
 	e.blockHash = blockHash
 }
 
+func (e *NoopEngine) OnFinalize() {}
 func (e *NoopEngine) EndOfBlock() {}
 func (e *NoopEngine) Commit()     {}
 func (e *NoopEngine) CheckTx(tx abci.Tx) error {
 	return nil
 }
 
-func (e *NoopEngine) DeliverTx(tx abci.Tx) error {
-	return nil
+func (e *NoopEngine) ProcessProposal([]abci.Tx) bool { return false }
+func (e *NoopEngine) CheckBlockTx(tx abci.Tx) (ValidationResult, *uint) {
+	return ValidationResultSuccess, nil
 }
+func (e *NoopEngine) EndPrepareProposal([]ValidationEntry) {}
 
 func (e *NoopEngine) IsReady() bool                     { return true }
 func (e *NoopEngine) SpamPoWNumberOfPastBlocks() uint32 { return uint32(0) }

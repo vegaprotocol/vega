@@ -6,7 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/proto"
 
-	tmtypes "github.com/tendermint/tendermint/abci/types"
+	tmtypes "github.com/cometbft/cometbft/abci/types"
 )
 
 type Adapter interface {

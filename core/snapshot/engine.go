@@ -36,8 +36,8 @@ import (
 	"golang.org/x/exp/slices"
 
 	cometbftdb "github.com/cometbft/cometbft-db"
+	tmtypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/iavl"
-	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
 const (
@@ -581,7 +581,7 @@ func (e *Engine) applySnap(ctx context.Context) error {
 	e.wrap = ordered[types.AppSnapshot][0].GetAppState()
 	e.app = e.wrap.AppState
 	// set the context with the height + block + chainid
-	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, int64(e.app.Height)), e.app.Block)
+	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, e.app.Height), e.app.Block)
 	ctx = vegactx.WithChainID(ctx, e.app.ChainID)
 
 	// we're done restoring, now save the snapshot locally, so we can provide it moving forwards
@@ -860,9 +860,9 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, error
 		e.avlLock.Unlock()
 		return nil, err
 	}
-	if height != int64(e.app.Height) {
+	if height != e.app.Height {
 		appUpdate = true
-		e.app.Height = uint64(height)
+		e.app.Height = height
 	}
 	_, block := vegactx.TraceIDFromContext(ctx)
 	if block != e.app.Block {
@@ -916,7 +916,7 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, error
 		save()
 	}
 
-	e.log.Info("snapshot taken", logging.Int64("height", height), logging.String("hash", hex.EncodeToString(snapshot)))
+	e.log.Info("snapshot taken", logging.Uint64("height", height), logging.String("hash", hex.EncodeToString(snapshot)))
 	return snapshot, nil
 }
 

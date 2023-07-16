@@ -28,7 +28,7 @@ import (
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"code.vegaprotocol.io/vega/libs/proto"
-	tmtypes "github.com/tendermint/tendermint/abci/types"
+	tmtypes "github.com/cometbft/cometbft/abci/types"
 )
 
 var (
@@ -317,7 +317,7 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology, p *typ
 		t.log.Panic("failed to restore current block-height from context", logging.Error(err))
 	}
 
-	t.currentBlockHeight = uint64(bh)
+	t.currentBlockHeight = bh
 	t.validatorPowerUpdates = vUpdates
 	t.chainValidators = topology.ChainValidators[:]
 	t.restorePendingKeyRotations(topology.PendingPubKeyRotations)

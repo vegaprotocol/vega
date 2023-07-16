@@ -21,7 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 
-	"github.com/tendermint/tendermint/crypto/sr25519"
+	"github.com/cometbft/cometbft/crypto/sr25519"
 )
 
 var (

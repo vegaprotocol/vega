@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	tmTypes "github.com/tendermint/tendermint/abci/types"
+	tmTypes "github.com/cometbft/cometbft/abci/types"
 	"google.golang.org/protobuf/proto"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -87,8 +87,8 @@ func extractAttribute(r *tmTypes.TxResult, eType, key string) string {
 	for _, e := range r.Result.Events {
 		if e.Type == eType {
 			for _, a := range e.Attributes {
-				if string(a.Key) == key {
-					return string(a.Value)
+				if a.Key == key {
+					return a.Value
 				}
 			}
 		}

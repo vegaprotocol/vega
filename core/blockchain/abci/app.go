@@ -19,8 +19,8 @@ import (
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/core/types"
 
+	abci "github.com/cometbft/cometbft/abci/types"
 	lru "github.com/hashicorp/golang-lru"
-	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 type (
@@ -37,16 +37,17 @@ type App struct {
 	codec Codec
 
 	// handlers
-	OnInitChain  OnInitChainHandler
-	OnBeginBlock OnBeginBlockHandler
-	OnEndBlock   OnEndBlockHandler
-	OnCheckTx    OnCheckTxHandler
-	OnDeliverTx  OnDeliverTxHandler
-	OnCommit     OnCommitHandler
+	OnPrepareProposal PrepareProposalHandler
+	OnProcessProposal ProcessProposalHandler
+	OnInitChain       OnInitChainHandler
+	OnCheckTx         OnCheckTxHandler
+	OnCommit          OnCommitHandler
+	OnBeginBlock      OnBeginBlockHandler
+	OnEndBlock        OnEndBlockHandler
+	OnFinalize        FinalizeHandler
 
 	// spam check
-	OnCheckTxSpam   OnCheckTxSpamHandler
-	OnDeliverTxSpam OnDeliverTxSpamHandler
+	OnCheckTxSpam OnCheckTxSpamHandler
 
 	// snapshot stuff
 

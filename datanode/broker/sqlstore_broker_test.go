@@ -579,7 +579,7 @@ func (t *testSQLBrokerSubscriber) Types() []events.Type {
 
 type blockEventSource struct {
 	vegaTime    time.Time
-	blockHeight int64
+	blockHeight uint64
 }
 
 func newBlockEventSource() *blockEventSource {
@@ -594,7 +594,7 @@ func (s *blockEventSource) NextBeginBlockEvent() *events.BeginBlock {
 	ctx = vgcontext.WithBlockHeight(ctx, s.blockHeight)
 
 	event := events.NewBeginBlock(ctx, eventsv1.BeginBlock{
-		Height:    uint64(s.blockHeight),
+		Height:    s.blockHeight,
 		Timestamp: s.vegaTime.UnixNano(),
 	})
 
@@ -606,7 +606,7 @@ func (s *blockEventSource) NextEndBlockEvent() *events.EndBlock {
 	ctx = vgcontext.WithBlockHeight(ctx, s.blockHeight)
 
 	event := events.NewEndBlock(ctx, eventsv1.EndBlock{
-		Height: uint64(s.blockHeight),
+		Height: s.blockHeight,
 	})
 
 	s.vegaTime = s.vegaTime.Add(1 * time.Second)

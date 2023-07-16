@@ -35,8 +35,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	abcitypes "github.com/tendermint/tendermint/abci/types"
-	types1 "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 var tmPubKey = "tm-pub-key"
@@ -697,7 +695,7 @@ func testBeginBlockSuccess(t *testing.T) {
 	assert.NoError(t, err)
 
 	// when
-	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 11}})
+	top.BeginBlock(ctx, 11, "")
 	// then
 	data1 := top.Get("vega-master-pubkey-1")
 	assert.NotNil(t, data1)
@@ -713,7 +711,7 @@ func testBeginBlockSuccess(t *testing.T) {
 	assert.Equal(t, hex.EncodeToString([]byte("vega-key-4")), data4.VegaPubKey)
 
 	// when
-	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 13}})
+	top.BeginBlock(ctx, 13, "")
 	// then
 	data3 = top.Get("vega-master-pubkey-3")
 	assert.NotNil(t, data3)
@@ -771,7 +769,7 @@ func testBeginBlockNotifyKeyChange(t *testing.T) {
 	top.NotifyOnKeyChange(c1.Call, c2.Call)
 
 	// when
-	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 11}})
+	top.BeginBlock(ctx, 11, "")
 
 	// then
 	c1.AssertExpectations(t)

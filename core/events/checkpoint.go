@@ -34,7 +34,7 @@ func NewCheckpointEvent(ctx context.Context, snap *types.CheckpointState) *Check
 		data: eventspb.CheckpointEvent{
 			Hash:        hex.EncodeToString(snap.Hash),
 			BlockHash:   block,
-			BlockHeight: uint64(height),
+			BlockHeight: height,
 		},
 	}
 }

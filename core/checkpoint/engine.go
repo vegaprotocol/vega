@@ -251,7 +251,7 @@ func (e *Engine) makeCheckpoint(ctx context.Context) *types.CheckpointState {
 	}
 	// add block height to checkpoint
 	h, _ := vegactx.BlockHeightFromContext(ctx)
-	if err := cp.SetBlockHeight(h); err != nil {
+	if err := cp.SetBlockHeight(int64(h)); err != nil {
 		e.log.Panic("could not set block height", logging.Error(err))
 	}
 	cpState := &types.CheckpointState{}
@@ -260,7 +260,7 @@ func (e *Engine) makeCheckpoint(ctx context.Context) *types.CheckpointState {
 		panic(fmt.Errorf("checkpoint could not be created: %w", err))
 	}
 
-	e.log.Debug("checkpoint taken", logging.Int64("block-height", h))
+	e.log.Debug("checkpoint taken", logging.Uint64("block-height", h))
 	return cpState
 }
 

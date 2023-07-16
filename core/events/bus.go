@@ -354,7 +354,7 @@ func newBase(ctx context.Context, t Type) *Base {
 		traceID: tID,
 		chainID: cID,
 		txHash:  txHash,
-		blockNr: h,
+		blockNr: int64(h),
 		et:      t,
 	}
 }

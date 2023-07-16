@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
-	"github.com/tendermint/tendermint/libs/service"
-	nm "github.com/tendermint/tendermint/node"
-	"github.com/tendermint/tendermint/rpc/client/local"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
-	tmtypes "github.com/tendermint/tendermint/types"
+	tmquery "github.com/cometbft/cometbft/libs/pubsub/query"
+	"github.com/cometbft/cometbft/libs/service"
+	nm "github.com/cometbft/cometbft/node"
+	"github.com/cometbft/cometbft/rpc/client/local"
+	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
+	tmtypes "github.com/cometbft/cometbft/types"
 )
 
 type LocalClient struct {
@@ -124,7 +124,7 @@ func (c *LocalClient) GenesisValidators(ctx context.Context) ([]*tmtypes.Validat
 	return validators, nil
 }
 
-// Subscribe subscribes to any event matching query (https://godoc.org/github.com/tendermint/tendermint/types#pkg-constants).
+// Subscribe subscribes to any event matching query (https://godoc.org/github.com/cometbft/cometbft/types#pkg-constants).
 // Subscribe will call fn each time it receives an event from the node.
 // The function returns nil when the context is canceled or when fn returns an error.
 func (c *LocalClient) Subscribe(ctx context.Context, fn func(tmctypes.ResultEvent) error, queries ...string) error {

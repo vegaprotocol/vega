@@ -570,7 +570,7 @@ func TestUpdateInterval(t *testing.T) {
 	require.NoError(t, e.OnSnapshotIntervalUpdate(context.Background(), 1))
 	for i := 0; i < 5; i++ {
 		ctx = vegactx.WithChainID(context.Background(), "chain-id")
-		ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, 31+int64(i)), "0xDEADBEEF")
+		ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, 31+uint64(i)), "0xDEADBEEF")
 		e.time.EXPECT().GetTimeNow().Times(1).Return(time.Now())
 		b, error := e.Snapshot(ctx)
 		require.NotNil(t, b)
