@@ -91,6 +91,8 @@ func normaliseValues(values []any, rules map[string]string) (map[string]string, 
 			res[key] = strconv.FormatInt(v, 10)
 		case string:
 			res[key] = v
+		case bool:
+			res[key] = strconv.FormatBool(v)
 		default:
 			return nil, fmt.Errorf("unable to normalise key %v of type %T", key, value)
 		}
