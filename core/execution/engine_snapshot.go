@@ -18,7 +18,10 @@ import (
 	"sort"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/future"
+	"code.vegaprotocol.io/vega/core/execution/spot"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
@@ -27,7 +30,7 @@ import (
 var marketsKey = (&types.PayloadExecutionMarkets{}).Key()
 
 func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider) {
-	mkts := len(e.marketsCpy)
+	mkts := len(e.futureMarketsCpy)
 	if mkts == 0 {
 		return nil, nil
 	}
@@ -36,9 +39,9 @@ func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider) {
 		mkts -= prev
 	}
 	e.newGeneratedProviders = make([]types.StateProvider, 0, mkts*5)
-	for _, m := range e.marketsCpy {
+	for _, m := range e.futureMarketsCpy {
 		// ensure the next MTM timestamp is set correctly:
-		am := e.markets[m.Mkt().ID]
+		am := e.futureMarkets[m.Mkt().ID]
 		m.SetNextMTM(am.GetNextMTM())
 		e.log.Debug("serialising market", logging.String("id", m.Mkt().ID))
 		mks = append(mks, m.GetState())
@@ -50,6 +53,105 @@ func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider) {
 	}
 
 	return mks, e.newGeneratedProviders
+}
+
+func (e *Engine) spotMarketsStates() ([]*types.ExecSpotMarket, []types.StateProvider) {
+	mkts := len(e.spotMarketsCpy)
+	if mkts == 0 {
+		return nil, nil
+	}
+	mks := make([]*types.ExecSpotMarket, 0, mkts)
+
+	// we don't really know how many new markets there are so don't bother with the calculation
+	e.newGeneratedProviders = []types.StateProvider{}
+	for _, m := range e.spotMarketsCpy {
+		e.log.Debug("serialising spot market", logging.String("id", m.Mkt().ID))
+		mks = append(mks, m.GetState())
+		if _, ok := e.generatedProviders[m.GetID()]; !ok {
+			e.newGeneratedProviders = append(e.newGeneratedProviders, m.GetNewStateProviders()...)
+			e.generatedProviders[m.GetID()] = struct{}{}
+		}
+	}
+
+	return mks, e.newGeneratedProviders
+}
+
+func (e *Engine) restoreSpotMarket(ctx context.Context, em *types.ExecSpotMarket) (*spot.Market, error) {
+	marketConfig := em.Market
+	if len(marketConfig.ID) == 0 {
+		return nil, ErrNoMarketID
+	}
+
+	// ensure the asset for this new market exists
+	asts, err := marketConfig.GetAssets()
+	if err != nil {
+		return nil, err
+	}
+
+	assetDetatils := []*assets.Asset{}
+	for _, asset := range asts {
+		if !e.collateral.AssetExists(asset) {
+			return nil, fmt.Errorf(
+				"unable to restore a spot market %q with an invalid %q asset",
+				marketConfig.ID,
+				asset,
+			)
+		}
+		ad, err := e.assets.Get(asset)
+		if err != nil {
+			e.log.Error("Failed to restore a market, unknown asset",
+				logging.MarketID(marketConfig.ID),
+				logging.String("asset-id", asset),
+				logging.Error(err),
+			)
+			return nil, err
+		}
+		assetDetatils = append(assetDetatils, ad)
+	}
+
+	nextMTM := time.Unix(0, em.NextMTM)
+	// create market auction state
+	e.log.Info("restoring market", logging.String("id", em.Market.ID))
+	mkt, err := spot.NewMarketFromSnapshot(
+		ctx,
+		e.log,
+		em,
+		e.Config.Risk,
+		e.Config.Position,
+		e.Config.Settlement,
+		e.Config.Matching,
+		e.Config.Fee,
+		e.Config.LiquidityV2,
+		e.collateral,
+		e.oracle,
+		e.timeService,
+		e.broker,
+		e.stateVarEngine,
+		assetDetatils[0],
+		assetDetatils[1],
+		e.marketActivityTracker,
+		e.peggedOrderCountUpdated,
+	)
+	if err != nil {
+		e.log.Error("failed to instantiate market",
+			logging.MarketID(marketConfig.ID),
+			logging.Error(err),
+		)
+		return nil, err
+	}
+
+	e.spotMarkets[marketConfig.ID] = mkt
+	e.spotMarketsCpy = append(e.spotMarketsCpy, mkt)
+	e.allMarkets[marketConfig.ID] = mkt
+
+	if err := e.propagateSpotInitialNetParams(ctx, mkt); err != nil {
+		return nil, err
+	}
+	// ensure this is set correctly
+	mkt.SetNextMTM(nextMTM)
+
+	e.publishNewMarketInfos(ctx, mkt.GetMarketData(), *mkt.Mkt())
+	return mkt, nil
 }
 
 func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*future.Market, error) {
@@ -115,8 +217,9 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 		mkt.SetSucceeded()
 	}
 
-	e.markets[marketConfig.ID] = mkt
-	e.marketsCpy = append(e.marketsCpy, mkt)
+	e.futureMarkets[marketConfig.ID] = mkt
+	e.futureMarketsCpy = append(e.futureMarketsCpy, mkt)
+	e.allMarkets[marketConfig.ID] = mkt
 
 	if err := e.propagateInitialNetParamsToFutureMarket(ctx, mkt); err != nil {
 		return nil, err
@@ -124,18 +227,37 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 	// ensure this is set correctly
 	mkt.SetNextMTM(nextMTM)
 
-	e.publishNewMarketInfos(ctx, mkt)
+	e.publishNewMarketInfos(ctx, mkt.GetMarketData(), *mkt.Mkt())
 	return mkt, nil
 }
 
 func (e *Engine) restoreMarketsStates(ctx context.Context, ems []*types.ExecMarket) ([]types.StateProvider, error) {
-	e.markets = map[string]*future.Market{}
+	e.futureMarkets = map[string]*future.Market{}
 
 	pvds := make([]types.StateProvider, 0, len(ems)*4)
 	for _, em := range ems {
 		m, err := e.restoreMarket(ctx, em)
 		if err != nil {
 			return nil, fmt.Errorf("failed to restore market: %w", err)
+		}
+
+		pvds = append(pvds, m.GetNewStateProviders()...)
+
+		// so that we don't return them again the next state change
+		e.generatedProviders[m.GetID()] = struct{}{}
+	}
+
+	return pvds, nil
+}
+
+func (e *Engine) restoreSpotMarketsStates(ctx context.Context, ems []*types.ExecSpotMarket) ([]types.StateProvider, error) {
+	e.spotMarkets = map[string]*spot.Market{}
+
+	pvds := make([]types.StateProvider, 0, len(ems)*4)
+	for _, em := range ems {
+		m, err := e.restoreSpotMarket(ctx, em)
+		if err != nil {
+			return nil, fmt.Errorf("failed to restore spot market: %w", err)
 		}
 
 		pvds = append(pvds, m.GetNewStateProviders()...)
@@ -171,12 +293,21 @@ func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, 
 		return successors[i].ParentMarket > successors[j].ParentMarket
 	})
 
+	spotMkts, spotPvds := e.spotMarketsStates()
+
+	allMarketIDs := make([]string, 0, len(e.allMarketsCpy))
+	for _, cm := range e.allMarketsCpy {
+		allMarketIDs = append(allMarketIDs, cm.GetID())
+	}
+
 	pl := types.Payload{
 		Data: &types.PayloadExecutionMarkets{
 			ExecutionMarkets: &types.ExecutionMarkets{
 				Markets:        mkts,
+				SpotMarkets:    spotMkts,
 				SettledMarkets: cpStates,
 				Successors:     successors,
+				AllMarketIDs:   allMarketIDs,
 			},
 		},
 	}
@@ -187,7 +318,7 @@ func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, 
 	}
 	e.snapshotSerialised = s
 
-	return s, pvds, nil
+	return s, append(pvds, spotPvds...), nil
 }
 
 func (e *Engine) Namespace() types.SnapshotNamespace {
@@ -225,7 +356,17 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 		}
 		e.restoreSuccessorMaps(pl.ExecutionMarkets.Successors)
 		e.snapshotSerialised, err = proto.Marshal(payload.IntoProto())
-		return providers, err
+		if err != nil {
+			return nil, err
+		}
+		spotProviders, err := e.restoreSpotMarketsStates(ctx, pl.ExecutionMarkets.SpotMarkets)
+		e.allMarketsCpy = make([]common.CommonMarket, 0, len(e.allMarkets))
+		for _, v := range pl.ExecutionMarkets.AllMarketIDs {
+			if mkt, ok := e.allMarkets[v]; ok {
+				e.allMarketsCpy = append(e.allMarketsCpy, mkt)
+			}
+		}
+		return append(providers, spotProviders...), err
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
@@ -241,7 +382,7 @@ func (e *Engine) restoreSuccessorMaps(successors []*types.Successors) {
 }
 
 func (e *Engine) OnStateLoaded(ctx context.Context) error {
-	for _, m := range e.markets {
+	for _, m := range e.futureMarkets {
 		if err := m.PostRestore(ctx); err != nil {
 			return err
 		}
@@ -249,7 +390,7 @@ func (e *Engine) OnStateLoaded(ctx context.Context) error {
 	// use the time as restored by the snapshot
 	t := e.timeService.GetTimeNow()
 	// restore marketCPStates through marketsCpy to ensure the order is preserved
-	for _, m := range e.marketsCpy {
+	for _, m := range e.futureMarketsCpy {
 		if !m.IsSucceeded() {
 			cps := m.GetCPState()
 			cps.TTL = t.Add(e.successorWindow)

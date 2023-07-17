@@ -61,7 +61,7 @@ func (probabilityOfTradingConverter) InterfaceToBundle(res statevar.StateVariabl
 	}
 }
 
-func (e *Engine) IsPoTInitialised() bool {
+func (e *Engine) IsProbabilityOfTradingInitialised() bool {
 	return e.potInitialised
 }
 

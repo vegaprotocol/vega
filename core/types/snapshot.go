@@ -89,6 +89,7 @@ const (
 	PoWSnapshot                    SnapshotNamespace = "pow"
 	ProtocolUpgradeSnapshot        SnapshotNamespace = "protocolUpgradeProposals"
 	SettlementSnapshot             SnapshotNamespace = "settlement"
+	HoldingAccountTrackerSnapshot  SnapshotNamespace = "holdingAccountTracker"
 	EthereumOracleVerifierSnapshot SnapshotNamespace = "ethereumoracleverifier"
 
 	MaxChunkSize   = 16 * 1000 * 1000 // technically 16 * 1024 * 1024, but you know

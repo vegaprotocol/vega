@@ -17,8 +17,7 @@ import (
 )
 
 type ExpiringOrders struct {
-	orders        *btree.BTree
-	ordersChanged bool
+	orders *btree.BTree
 }
 
 type ordersAtTS struct {
@@ -33,8 +32,7 @@ func (a *ordersAtTS) Less(b btree.Item) bool {
 
 func NewExpiringOrders() *ExpiringOrders {
 	return &ExpiringOrders{
-		orders:        btree.New(2),
-		ordersChanged: true,
+		orders: btree.New(2),
 	}
 }
 
@@ -49,12 +47,10 @@ func (a *ExpiringOrders) Insert(
 	item := &ordersAtTS{ts: ts}
 	if item := a.orders.Get(item); item != nil {
 		item.(*ordersAtTS).orders = append(item.(*ordersAtTS).orders, orderID)
-		a.ordersChanged = true
 		return
 	}
 	item.orders = []string{orderID}
 	a.orders.ReplaceOrInsert(item)
-	a.ordersChanged = true
 }
 
 func (a *ExpiringOrders) RemoveOrder(expiresAt int64, orderID string) bool {
@@ -68,7 +64,6 @@ func (a *ExpiringOrders) RemoveOrder(expiresAt int64, orderID string) bool {
 				// if the slice is empty, remove the parent container
 				if len(oat.orders) == 0 {
 					a.orders.Delete(item)
-					a.ordersChanged = true
 				}
 				return true
 			}
@@ -96,10 +91,6 @@ func (a *ExpiringOrders) Expire(ts int64) []string {
 	for _, v := range toDelete {
 		item.ts = v
 		a.orders.Delete(item)
-	}
-
-	if len(toDelete) > 0 {
-		a.ordersChanged = true
 	}
 
 	return orders

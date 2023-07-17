@@ -48,6 +48,15 @@ func (u *Unmarshaler) UnmarshalPriceMonitoring(r io.Reader) (*vegapb.PriceMonito
 	return proto, nil
 }
 
+func (u *Unmarshaler) UnmarshalLliquiditySLAParams(r io.Reader) (*vegapb.LiquiditySLAParameters, error) {
+	proto := &vegapb.LiquiditySLAParameters{}
+	err := u.unmarshaler.Unmarshal(r, proto)
+	if err != nil {
+		return nil, err
+	}
+	return proto, nil
+}
+
 func (u *Unmarshaler) UnmarshalLiquidityMonitoring(r io.Reader) (*vegapb.LiquidityMonitoringParameters, error) {
 	proto := &vegapb.LiquidityMonitoringParameters{}
 	if err := u.unmarshaler.Unmarshal(r, proto); err != nil {

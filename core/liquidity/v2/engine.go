@@ -416,8 +416,8 @@ func (e *Engine) CalculateSuppliedStakeWithoutPending() *num.Uint {
 	return supplied
 }
 
-func (e *Engine) IsPoTInitialised() bool {
-	return e.suppliedEngine.IsPoTInitialised()
+func (e *Engine) IsProbabilityOfTradingInitialised() bool {
+	return e.suppliedEngine.IsProbabilityOfTradingInitialised()
 }
 
 func (e *Engine) UpdateMarketConfig(model RiskModel, monitor PriceMonitor, slaParams *types.LiquiditySLAParams) {

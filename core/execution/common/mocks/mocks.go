@@ -13,7 +13,6 @@ import (
 	common "code.vegaprotocol.io/vega/core/datasource/common"
 	spec "code.vegaprotocol.io/vega/core/datasource/spec"
 	events "code.vegaprotocol.io/vega/core/events"
-	common0 "code.vegaprotocol.io/vega/core/execution/common"
 	liquidity "code.vegaprotocol.io/vega/core/liquidity/v2"
 	types "code.vegaprotocol.io/vega/core/types"
 	statevar "code.vegaprotocol.io/vega/core/types/statevar"
@@ -295,6 +294,21 @@ func (m *MockCollateral) ClearPartyMarginAccount(arg0 context.Context, arg1, arg
 func (mr *MockCollateralMockRecorder) ClearPartyMarginAccount(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearPartyMarginAccount", reflect.TypeOf((*MockCollateral)(nil).ClearPartyMarginAccount), arg0, arg1, arg2, arg3)
+}
+
+// ClearSpotMarket mocks base method.
+func (m *MockCollateral) ClearSpotMarket(arg0 context.Context, arg1, arg2 string) ([]*types.LedgerMovement, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClearSpotMarket", arg0, arg1, arg2)
+	ret0, _ := ret[0].([]*types.LedgerMovement)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ClearSpotMarket indicates an expected call of ClearSpotMarket.
+func (mr *MockCollateralMockRecorder) ClearSpotMarket(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearSpotMarket", reflect.TypeOf((*MockCollateral)(nil).ClearSpotMarket), arg0, arg1, arg2)
 }
 
 // CreateMarketAccounts mocks base method.
@@ -658,6 +672,35 @@ func (mr *MockCollateralMockRecorder) MarkToMarket(arg0, arg1, arg2, arg3 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkToMarket", reflect.TypeOf((*MockCollateral)(nil).MarkToMarket), arg0, arg1, arg2, arg3)
 }
 
+// PartyHasSufficientBalance mocks base method.
+func (m *MockCollateral) PartyHasSufficientBalance(arg0, arg1 string, arg2 *num.Uint) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PartyHasSufficientBalance", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PartyHasSufficientBalance indicates an expected call of PartyHasSufficientBalance.
+func (mr *MockCollateralMockRecorder) PartyHasSufficientBalance(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PartyHasSufficientBalance", reflect.TypeOf((*MockCollateral)(nil).PartyHasSufficientBalance), arg0, arg1, arg2)
+}
+
+// ReleaseFromHoldingAccount mocks base method.
+func (m *MockCollateral) ReleaseFromHoldingAccount(arg0 context.Context, arg1 *types.Transfer) (*types.LedgerMovement, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReleaseFromHoldingAccount", arg0, arg1)
+	ret0, _ := ret[0].(*types.LedgerMovement)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ReleaseFromHoldingAccount indicates an expected call of ReleaseFromHoldingAccount.
+func (mr *MockCollateralMockRecorder) ReleaseFromHoldingAccount(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReleaseFromHoldingAccount", reflect.TypeOf((*MockCollateral)(nil).ReleaseFromHoldingAccount), arg0, arg1)
+}
+
 // RemoveBondAccount mocks base method.
 func (m *MockCollateral) RemoveBondAccount(arg0, arg1, arg2 string) error {
 	m.ctrl.T.Helper()
@@ -746,6 +789,21 @@ func (mr *MockCollateralMockRecorder) TransferFeesContinuousTrading(arg0, arg1, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferFeesContinuousTrading", reflect.TypeOf((*MockCollateral)(nil).TransferFeesContinuousTrading), arg0, arg1, arg2, arg3)
 }
 
+// TransferSpot mocks base method.
+func (m *MockCollateral) TransferSpot(arg0 context.Context, arg1, arg2, arg3 string, arg4 *num.Uint) (*types.LedgerMovement, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TransferSpot", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(*types.LedgerMovement)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TransferSpot indicates an expected call of TransferSpot.
+func (mr *MockCollateralMockRecorder) TransferSpot(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferSpot", reflect.TypeOf((*MockCollateral)(nil).TransferSpot), arg0, arg1, arg2, arg3, arg4)
+}
+
 // TransferSpotFees mocks base method.
 func (m *MockCollateral) TransferSpotFees(arg0 context.Context, arg1, arg2 string, arg3 events.FeesTransfer) ([]*types.LedgerMovement, error) {
 	m.ctrl.T.Helper()
@@ -774,6 +832,21 @@ func (m *MockCollateral) TransferSpotFeesContinuousTrading(arg0 context.Context,
 func (mr *MockCollateralMockRecorder) TransferSpotFeesContinuousTrading(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferSpotFeesContinuousTrading", reflect.TypeOf((*MockCollateral)(nil).TransferSpotFeesContinuousTrading), arg0, arg1, arg2, arg3)
+}
+
+// TransferToHoldingAccount mocks base method.
+func (m *MockCollateral) TransferToHoldingAccount(arg0 context.Context, arg1 *types.Transfer) (*types.LedgerMovement, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TransferToHoldingAccount", arg0, arg1)
+	ret0, _ := ret[0].(*types.LedgerMovement)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TransferToHoldingAccount indicates an expected call of TransferToHoldingAccount.
+func (mr *MockCollateralMockRecorder) TransferToHoldingAccount(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferToHoldingAccount", reflect.TypeOf((*MockCollateral)(nil).TransferToHoldingAccount), arg0, arg1)
 }
 
 // Withdraw mocks base method.
@@ -1487,6 +1560,22 @@ func (mr *MockLiquidityEngineMockRecorder) GetAverageLiquidityScores() *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAverageLiquidityScores", reflect.TypeOf((*MockLiquidityEngine)(nil).GetAverageLiquidityScores))
 }
 
+// GetState mocks base method.
+func (m *MockLiquidityEngine) GetState(arg0 string) ([]byte, []types.StateProvider, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetState", arg0)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].([]types.StateProvider)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetState indicates an expected call of GetState.
+func (mr *MockLiquidityEngineMockRecorder) GetState(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetState", reflect.TypeOf((*MockLiquidityEngine)(nil).GetState), arg0)
+}
+
 // IsLiquidityProvider mocks base method.
 func (m *MockLiquidityEngine) IsLiquidityProvider(arg0 string) bool {
 	m.ctrl.T.Helper()
@@ -1501,6 +1590,34 @@ func (mr *MockLiquidityEngineMockRecorder) IsLiquidityProvider(arg0 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsLiquidityProvider", reflect.TypeOf((*MockLiquidityEngine)(nil).IsLiquidityProvider), arg0)
 }
 
+// IsProbabilityOfTradingInitialised mocks base method.
+func (m *MockLiquidityEngine) IsProbabilityOfTradingInitialised() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsProbabilityOfTradingInitialised")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsProbabilityOfTradingInitialised indicates an expected call of IsProbabilityOfTradingInitialised.
+func (mr *MockLiquidityEngineMockRecorder) IsProbabilityOfTradingInitialised() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsProbabilityOfTradingInitialised", reflect.TypeOf((*MockLiquidityEngine)(nil).IsProbabilityOfTradingInitialised))
+}
+
+// Keys mocks base method.
+func (m *MockLiquidityEngine) Keys() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Keys")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// Keys indicates an expected call of Keys.
+func (mr *MockLiquidityEngineMockRecorder) Keys() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Keys", reflect.TypeOf((*MockLiquidityEngine)(nil).Keys))
+}
+
 // LiquidityProvisionByPartyID mocks base method.
 func (m *MockLiquidityEngine) LiquidityProvisionByPartyID(arg0 string) *types.LiquidityProvision {
 	m.ctrl.T.Helper()
@@ -1513,6 +1630,35 @@ func (m *MockLiquidityEngine) LiquidityProvisionByPartyID(arg0 string) *types.Li
 func (mr *MockLiquidityEngineMockRecorder) LiquidityProvisionByPartyID(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LiquidityProvisionByPartyID", reflect.TypeOf((*MockLiquidityEngine)(nil).LiquidityProvisionByPartyID), arg0)
+}
+
+// LoadState mocks base method.
+func (m *MockLiquidityEngine) LoadState(arg0 context.Context, arg1 *types.Payload) ([]types.StateProvider, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LoadState", arg0, arg1)
+	ret0, _ := ret[0].([]types.StateProvider)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LoadState indicates an expected call of LoadState.
+func (mr *MockLiquidityEngineMockRecorder) LoadState(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadState", reflect.TypeOf((*MockLiquidityEngine)(nil).LoadState), arg0, arg1)
+}
+
+// Namespace mocks base method.
+func (m *MockLiquidityEngine) Namespace() types.SnapshotNamespace {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Namespace")
+	ret0, _ := ret[0].(types.SnapshotNamespace)
+	return ret0
+}
+
+// Namespace indicates an expected call of Namespace.
+func (mr *MockLiquidityEngineMockRecorder) Namespace() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Namespace", reflect.TypeOf((*MockLiquidityEngine)(nil).Namespace))
 }
 
 // OnMaximumLiquidityFeeFactorLevelUpdate mocks base method.
@@ -1656,27 +1802,55 @@ func (mr *MockLiquidityEngineMockRecorder) ResetAverageLiquidityScores() *gomock
 }
 
 // ResetSLAEpoch mocks base method.
-func (m *MockLiquidityEngine) ResetSLAEpoch(arg0 time.Time, arg1 *num.Uint, arg2 decimal.Decimal) {
+func (m *MockLiquidityEngine) ResetSLAEpoch(arg0 time.Time, arg1, arg2 *num.Uint, arg3 decimal.Decimal) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ResetSLAEpoch", arg0, arg1, arg2)
+	m.ctrl.Call(m, "ResetSLAEpoch", arg0, arg1, arg2, arg3)
 }
 
 // ResetSLAEpoch indicates an expected call of ResetSLAEpoch.
-func (mr *MockLiquidityEngineMockRecorder) ResetSLAEpoch(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockLiquidityEngineMockRecorder) ResetSLAEpoch(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetSLAEpoch", reflect.TypeOf((*MockLiquidityEngine)(nil).ResetSLAEpoch), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetSLAEpoch", reflect.TypeOf((*MockLiquidityEngine)(nil).ResetSLAEpoch), arg0, arg1, arg2, arg3)
 }
 
 // StopLiquidityProvision mocks base method.
-func (m *MockLiquidityEngine) StopLiquidityProvision(arg0 context.Context, arg1 string) {
+func (m *MockLiquidityEngine) StopLiquidityProvision(arg0 context.Context, arg1 string) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "StopLiquidityProvision", arg0, arg1)
+	ret := m.ctrl.Call(m, "StopLiquidityProvision", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // StopLiquidityProvision indicates an expected call of StopLiquidityProvision.
 func (mr *MockLiquidityEngineMockRecorder) StopLiquidityProvision(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StopLiquidityProvision", reflect.TypeOf((*MockLiquidityEngine)(nil).StopLiquidityProvision), arg0, arg1)
+}
+
+// StopSnapshots mocks base method.
+func (m *MockLiquidityEngine) StopSnapshots() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "StopSnapshots")
+}
+
+// StopSnapshots indicates an expected call of StopSnapshots.
+func (mr *MockLiquidityEngineMockRecorder) StopSnapshots() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StopSnapshots", reflect.TypeOf((*MockLiquidityEngine)(nil).StopSnapshots))
+}
+
+// Stopped mocks base method.
+func (m *MockLiquidityEngine) Stopped() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Stopped")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Stopped indicates an expected call of Stopped.
+func (mr *MockLiquidityEngineMockRecorder) Stopped() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stopped", reflect.TypeOf((*MockLiquidityEngine)(nil).Stopped))
 }
 
 // SubmitLiquidityProvision mocks base method.
@@ -1707,7 +1881,7 @@ func (mr *MockLiquidityEngineMockRecorder) UpdateAverageLiquidityScores(arg0, ar
 }
 
 // UpdateMarketConfig mocks base method.
-func (m *MockLiquidityEngine) UpdateMarketConfig(arg0 liquidity.RiskModel, arg1 common0.PriceMonitor, arg2 *types.LiquiditySLAParams) {
+func (m *MockLiquidityEngine) UpdateMarketConfig(arg0 liquidity.RiskModel, arg1 liquidity.PriceMonitor, arg2 *types.LiquiditySLAParams) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "UpdateMarketConfig", arg0, arg1, arg2)
 }
@@ -1833,6 +2007,34 @@ func (mr *MockMarketLiquidityEngineMockRecorder) AmendLiquidityProvision(arg0, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendLiquidityProvision", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).AmendLiquidityProvision), arg0, arg1, arg2, arg3, arg4)
 }
 
+// CalculateSuppliedStake mocks base method.
+func (m *MockMarketLiquidityEngine) CalculateSuppliedStake() *num.Uint {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CalculateSuppliedStake")
+	ret0, _ := ret[0].(*num.Uint)
+	return ret0
+}
+
+// CalculateSuppliedStake indicates an expected call of CalculateSuppliedStake.
+func (mr *MockMarketLiquidityEngineMockRecorder) CalculateSuppliedStake() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CalculateSuppliedStake", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).CalculateSuppliedStake))
+}
+
+// CancelLiquidityProvision mocks base method.
+func (m *MockMarketLiquidityEngine) CancelLiquidityProvision(arg0 context.Context, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CancelLiquidityProvision", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CancelLiquidityProvision indicates an expected call of CancelLiquidityProvision.
+func (mr *MockMarketLiquidityEngineMockRecorder) CancelLiquidityProvision(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelLiquidityProvision", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).CancelLiquidityProvision), arg0, arg1)
+}
+
 // EndBlock mocks base method.
 func (m *MockMarketLiquidityEngine) EndBlock(arg0, arg1 *num.Uint, arg2 decimal.Decimal) {
 	m.ctrl.T.Helper()
@@ -1843,6 +2045,34 @@ func (m *MockMarketLiquidityEngine) EndBlock(arg0, arg1 *num.Uint, arg2 decimal.
 func (mr *MockMarketLiquidityEngineMockRecorder) EndBlock(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndBlock", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).EndBlock), arg0, arg1, arg2)
+}
+
+// GetAverageLiquidityScores mocks base method.
+func (m *MockMarketLiquidityEngine) GetAverageLiquidityScores() map[string]decimal.Decimal {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAverageLiquidityScores")
+	ret0, _ := ret[0].(map[string]decimal.Decimal)
+	return ret0
+}
+
+// GetAverageLiquidityScores indicates an expected call of GetAverageLiquidityScores.
+func (mr *MockMarketLiquidityEngineMockRecorder) GetAverageLiquidityScores() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAverageLiquidityScores", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).GetAverageLiquidityScores))
+}
+
+// IsProbabilityOfTradingInitialised mocks base method.
+func (m *MockMarketLiquidityEngine) IsProbabilityOfTradingInitialised() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsProbabilityOfTradingInitialised")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsProbabilityOfTradingInitialised indicates an expected call of IsProbabilityOfTradingInitialised.
+func (mr *MockMarketLiquidityEngineMockRecorder) IsProbabilityOfTradingInitialised() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsProbabilityOfTradingInitialised", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).IsProbabilityOfTradingInitialised))
 }
 
 // OnEarlyExitPenalty mocks base method.
@@ -1870,15 +2100,27 @@ func (mr *MockMarketLiquidityEngineMockRecorder) OnEpochEnd(arg0, arg1 interface
 }
 
 // OnEpochStart mocks base method.
-func (m *MockMarketLiquidityEngine) OnEpochStart(arg0 context.Context, arg1 time.Time, arg2, arg3 *num.Uint, arg4 decimal.Decimal) {
+func (m *MockMarketLiquidityEngine) OnEpochStart(arg0 context.Context, arg1 time.Time, arg2, arg3, arg4 *num.Uint, arg5 decimal.Decimal) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "OnEpochStart", arg0, arg1, arg2, arg3, arg4)
+	m.ctrl.Call(m, "OnEpochStart", arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
 // OnEpochStart indicates an expected call of OnEpochStart.
-func (mr *MockMarketLiquidityEngineMockRecorder) OnEpochStart(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+func (mr *MockMarketLiquidityEngineMockRecorder) OnEpochStart(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnEpochStart", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).OnEpochStart), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnEpochStart", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).OnEpochStart), arg0, arg1, arg2, arg3, arg4, arg5)
+}
+
+// OnMarketClosed mocks base method.
+func (m *MockMarketLiquidityEngine) OnMarketClosed(arg0 context.Context, arg1 time.Time) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "OnMarketClosed", arg0, arg1)
+}
+
+// OnMarketClosed indicates an expected call of OnMarketClosed.
+func (mr *MockMarketLiquidityEngineMockRecorder) OnMarketClosed(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnMarketClosed", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).OnMarketClosed), arg0, arg1)
 }
 
 // OnMaximumLiquidityFeeFactorLevelUpdate mocks base method.
@@ -1977,6 +2219,20 @@ func (mr *MockMarketLiquidityEngineMockRecorder) OnTick(arg0, arg1 interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnTick", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).OnTick), arg0, arg1)
 }
 
+// ProvisionsPerParty mocks base method.
+func (m *MockMarketLiquidityEngine) ProvisionsPerParty() liquidity.ProvisionsPerParty {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProvisionsPerParty")
+	ret0, _ := ret[0].(liquidity.ProvisionsPerParty)
+	return ret0
+}
+
+// ProvisionsPerParty indicates an expected call of ProvisionsPerParty.
+func (mr *MockMarketLiquidityEngineMockRecorder) ProvisionsPerParty() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProvisionsPerParty", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).ProvisionsPerParty))
+}
+
 // StopAllLiquidityProvision mocks base method.
 func (m *MockMarketLiquidityEngine) StopAllLiquidityProvision(arg0 context.Context) {
 	m.ctrl.T.Helper()
@@ -2004,7 +2260,7 @@ func (mr *MockMarketLiquidityEngineMockRecorder) SubmitLiquidityProvision(arg0, 
 }
 
 // UpdateMarketConfig mocks base method.
-func (m *MockMarketLiquidityEngine) UpdateMarketConfig(arg0 liquidity.RiskModel, arg1 common0.PriceMonitor, arg2 *types.LiquiditySLAParams) {
+func (m *MockMarketLiquidityEngine) UpdateMarketConfig(arg0 liquidity.RiskModel, arg1 liquidity.PriceMonitor, arg2 *types.LiquiditySLAParams) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "UpdateMarketConfig", arg0, arg1, arg2)
 }
