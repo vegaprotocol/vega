@@ -74,6 +74,15 @@ func IntFromBig(b *big.Int) (*Int, bool) {
 	}, false
 }
 
+// IntFromDecimal returns a decimal version of the Uint, setting the bool to true if overflow occurred.
+func IntFromDecimal(d Decimal) (*Int, bool) {
+	u, ok := d.Uint()
+	return &Int{
+		U: &Uint{*u},
+		s: d.IsPositive(),
+	}, ok
+}
+
 // IsNegative tests if the stored value is negative
 // true if < 0
 // false if >= 0.
@@ -166,6 +175,22 @@ func (i Int) Int64() int64 {
 	}
 
 	return val
+}
+
+// Min returns the smallest of the 2 numbers.
+func MinI(a, b *Int) *Int {
+	if a.LT(b) {
+		return a.Clone()
+	}
+	return b.Clone()
+}
+
+// Max returns the largest of the 2 numbers.
+func MaxI(a, b *Int) *Int {
+	if a.GT(b) {
+		return a.Clone()
+	}
+	return b.Clone()
 }
 
 // String returns a string version of the number.

@@ -15,6 +15,7 @@ package products_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/products/mocks"
@@ -78,10 +79,11 @@ func TestEqualInternalAndExternalPrices(t *testing.T) {
 
 	// set of the data points such that difference in averages is 0
 	points := getTestDataPoints(t)
+	st, nd := points[0].t, points[len(points)-1].t
 
 	// tell the perpetual that we are ready to accept settlement stuff
 	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
-	perp.perpetual.OnLeaveOpeningAuction(ctx, 1000)
+	perp.perpetual.OnLeaveOpeningAuction(ctx, st)
 
 	// send in some data points
 	perp.broker.EXPECT().Send(gomock.Any()).Times(len(points) * 2)
@@ -99,7 +101,7 @@ func TestEqualInternalAndExternalPrices(t *testing.T) {
 	perp.perpetual.SetSettlementListener(fn)
 
 	perp.broker.EXPECT().Send(gomock.Any()).Times(4)
-	perp.perpetual.PromptSettlementCue(ctx, 1040)
+	perp.perpetual.PromptSettlementCue(ctx, nd)
 	assert.NotNil(t, fundingPayment)
 	assert.True(t, fundingPayment.IsInt())
 	assert.Equal(t, "0", fundingPayment.String())
@@ -112,10 +114,11 @@ func TestConstantDifferenceLongPaysShort(t *testing.T) {
 
 	// test data
 	points := getTestDataPoints(t)
+	st, nd := points[0].t, points[len(points)-1].t
 
 	// when: the funding period starts at 1000
 	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
-	perp.perpetual.OnLeaveOpeningAuction(ctx, 1000)
+	perp.perpetual.OnLeaveOpeningAuction(ctx, st)
 
 	// and: the difference in external/internal prices are a constant -10
 	submitDataWithDifference(t, perp, points, -10)
@@ -128,7 +131,7 @@ func TestConstantDifferenceLongPaysShort(t *testing.T) {
 	perp.perpetual.SetSettlementListener(fn)
 
 	perp.broker.EXPECT().Send(gomock.Any()).Times(4)
-	perp.perpetual.PromptSettlementCue(ctx, 1040)
+	perp.perpetual.PromptSettlementCue(ctx, nd)
 	assert.NotNil(t, fundingPayment)
 	assert.True(t, fundingPayment.IsInt())
 	assert.Equal(t, "-10", fundingPayment.String())
@@ -141,15 +144,15 @@ func TestDataPointsOutsidePeriod(t *testing.T) {
 
 	// set of the data points such that difference in averages is 0
 	points := getTestDataPoints(t)
-
+	st, nd := points[0].t, points[len(points)-1].t
 	// tell the perpetual that we are ready to accept settlement stuff
 	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
-	perp.perpetual.OnLeaveOpeningAuction(ctx, 1000)
+	perp.perpetual.OnLeaveOpeningAuction(ctx, st)
 
 	// add data-points from the past, they will just be ignored
 	perp.broker.EXPECT().Send(gomock.Any()).Times(2)
 	require.NoError(t, perp.perpetual.SubmitDataPoint(ctx, num.UintOne(), 890))
-	perp.perpetual.AddTestExternalPoint(ctx, num.UintZero(), 900)
+	perp.perpetual.AddTestExternalPoint(ctx, num.UintZero(), st-100)
 
 	// send in some data points
 	perp.broker.EXPECT().Send(gomock.Any()).Times(len(points) * 2)
@@ -162,8 +165,8 @@ func TestDataPointsOutsidePeriod(t *testing.T) {
 	// add some data-points in the future from when we will cue the end of the funding period
 	// they should not affect the funding payment of this period
 	perp.broker.EXPECT().Send(gomock.Any()).Times(2)
-	require.NoError(t, perp.perpetual.SubmitDataPoint(ctx, num.UintOne(), 2000))
-	perp.perpetual.AddTestExternalPoint(ctx, num.UintZero(), 2020)
+	require.NoError(t, perp.perpetual.SubmitDataPoint(ctx, num.UintOne(), nd+1000))
+	perp.perpetual.AddTestExternalPoint(ctx, num.UintZero(), nd+1020)
 
 	// ask for the funding payment
 	var fundingPayment *num.Numeric
@@ -187,10 +190,10 @@ func TestDataPointsNotOnBoundary(t *testing.T) {
 
 	// set of the data points such that difference in averages is 0
 	points := getTestDataPoints(t)
-
+	st, nd := points[0].t, points[len(points)-1].t
 	// start time is *after* our first data points
 	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
-	perp.perpetual.OnLeaveOpeningAuction(ctx, 1005)
+	perp.perpetual.OnLeaveOpeningAuction(ctx, st+5)
 
 	// send in some data points
 	submitDataWithDifference(t, perp, points, 10)
@@ -204,7 +207,7 @@ func TestDataPointsNotOnBoundary(t *testing.T) {
 
 	// period end is *after* our last point
 	perp.broker.EXPECT().Send(gomock.Any()).Times(4)
-	perp.perpetual.PromptSettlementCue(ctx, 1050)
+	perp.perpetual.PromptSettlementCue(ctx, nd+20)
 	assert.NotNil(t, fundingPayment)
 	assert.True(t, fundingPayment.IsInt())
 	assert.Equal(t, "10", fundingPayment.String())
@@ -230,6 +233,35 @@ func submitDataWithDifference(t *testing.T, perp *tstPerp, points []*testDataPoi
 	}
 }
 
+func TestFundingPaymentWithClamping(t *testing.T) {
+	perp := testPerpetualWithClamping(t, "0.1", "-11", "-9")
+	defer perp.ctrl.Finish()
+	ctx := context.Background()
+
+	// test data
+	points := getTestDataPoints(t)
+	st, nd := points[0].t, points[len(points)-1].t
+	// when: the funding period starts at 1000
+	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
+	perp.perpetual.OnLeaveOpeningAuction(ctx, st)
+
+	// and: the difference in external/internal prices are a constant -10
+	submitDataWithDifference(t, perp, points, 10)
+
+	// funding payment will be zero so no transfers
+	var fundingPayment *num.Numeric
+	fn := func(_ context.Context, fp *num.Numeric) {
+		fundingPayment = fp
+	}
+	perp.perpetual.SetSettlementListener(fn)
+
+	perp.broker.EXPECT().Send(gomock.Any()).Times(4)
+	perp.perpetual.PromptSettlementCue(ctx, nd+int64(time.Second))
+	assert.NotNil(t, fundingPayment)
+	assert.True(t, fundingPayment.IsInt())
+	assert.Equal(t, "-10", fundingPayment.String())
+}
+
 type testDataPoint struct {
 	price *num.Uint
 	t     int64
@@ -237,22 +269,24 @@ type testDataPoint struct {
 
 func getTestDataPoints(t *testing.T) []*testDataPoint {
 	t.Helper()
+	st := time.Unix(0, 1000)
+	year := time.Duration(31536000000000000)
 	return []*testDataPoint{
 		{
 			price: num.UintFromUint64(110),
-			t:     1000,
+			t:     st.UnixNano(),
 		},
 		{
 			price: num.UintFromUint64(120),
-			t:     1010,
+			t:     st.Add(1 * year).UnixNano(),
 		},
 		{
 			price: num.UintFromUint64(120),
-			t:     1020,
+			t:     st.Add(2 * year).UnixNano(),
 		},
 		{
 			price: num.UintFromUint64(100),
-			t:     1030,
+			t:     st.Add(3 * year).UnixNano(),
 		},
 	}
 }
@@ -267,14 +301,26 @@ type tstPerp struct {
 func testPerpetual(t *testing.T) *tstPerp {
 	t.Helper()
 
+	return testPerpetualWithClamping(t, "0", "0", "0")
+}
+
+func testPerpetualWithClamping(t *testing.T, interestRate, lowerBound, upperBound string) *tstPerp {
+	t.Helper()
+
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	oe := mocks.NewMockOracleEngine(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
 
 	factor, _ := num.DecimalFromString("0.5")
+	r, _ := num.DecimalFromString(interestRate)
+	upper, _ := num.IntFromString(upperBound, 10)
+	lower, _ := num.IntFromString(lowerBound, 10)
 	perp := &types.Perpetual{
 		MarginFundingFactor: &factor,
+		InterestRate:        &r,
+		ClampUpperBound:     upper,
+		ClampLowerBound:     lower,
 	}
 
 	perpetual, err := products.NewPerpetual(context.Background(), log, perp, oe, broker)

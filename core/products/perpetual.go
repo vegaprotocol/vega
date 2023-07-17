@@ -14,6 +14,7 @@ package products
 
 import (
 	"context"
+	"fmt"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
@@ -51,6 +52,9 @@ type Perpetual struct {
 	SettlementAsset     string
 	QuoteName           string
 	MarginFundingFactor *num.Decimal
+	InterestRate        *num.Decimal
+	ClampUpperBound     *num.Int
+	ClampLowerBound     *num.Int
 	// oracle                 oracle
 	settlementDataListener func(context.Context, *num.Numeric)
 	broker                 Broker
@@ -75,6 +79,9 @@ func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perpetual, 
 		log:                 log,
 		broker:              broker,
 		MarginFundingFactor: p.MarginFundingFactor,
+		InterestRate:        p.InterestRate,
+		ClampUpperBound:     p.ClampUpperBound,
+		ClampLowerBound:     p.ClampLowerBound,
 	}, nil
 }
 
@@ -307,6 +314,19 @@ func (p *Perpetual) calculateFundingPayment(t int64) (*num.Int, *num.Decimal) {
 
 	// the funding payment is the difference between the two, the sign representing the direction of cash flow
 	fundingPayment := num.IntFromUint(internalTWAP, true).Sub(num.IntFromUint(externalTWAP, true))
+	p.log.Info("funding payment calculated",
+		logging.MarketID(p.id),
+		logging.Uint64("seq", p.seq),
+		logging.String("funding-payment", fundingPayment.String()))
+
+	// should we add clamping
+	if !p.InterestRate.IsZero() {
+		delta := t - p.internal[0].t
+		p.log.Info("applying interest-rate with clamping", logging.String("funding-payment", fundingPayment.String()), logging.Int64("delta", delta))
+		clamped := p.calculateClamping(externalTWAP, internalTWAP, delta)
+		fundingPayment.Add(clamped)
+	}
+
 	fundingRate := num.DecimalFromInt(fundingPayment).Div(num.DecimalFromUint(externalTWAP))
 	p.log.Info("funding payment calculated",
 		logging.MarketID(p.id),
@@ -315,6 +335,36 @@ func (p *Perpetual) calculateFundingPayment(t int64) (*num.Int, *num.Decimal) {
 		logging.String("funding-rate", fundingRate.String()))
 
 	return fundingPayment, &fundingRate
+}
+
+// calculateClamping calculates the clamped interest term to add to the funding payment if the perpetual's interest rate is non-zero
+func (p *Perpetual) calculateClamping(externalTWAP, internalTWAP *num.Uint, delta int64) *num.Int {
+	// a year in nanoseconds, used to get delta in terms of years
+	year, _ := num.DecimalFromString("31536000000000000")
+	td := num.DecimalFromInt64(delta).Div(year)
+
+	// convert into num types we need
+	sTWAP := num.DecimalFromUint(externalTWAP)
+	fTWAP := num.IntFromUint(internalTWAP, true)
+	fmt.Println("r * t", p.InterestRate.Mul(td).String())
+	fmt.Println("1 + r * t", num.DecimalOne().Add(p.InterestRate.Mul(td)))
+	fmt.Println("stwap", sTWAP)
+	// interest = (1 + r * td) * s_swap - f_swap
+	interest, _ := num.IntFromDecimal(num.DecimalOne().Add(p.InterestRate.Mul(td)).Mul(sTWAP))
+	fmt.Println("interest", num.DecimalOne().Add(p.InterestRate.Mul(td)).Mul(sTWAP).String())
+	interest = interest.Sub(fTWAP)
+
+	clampedInterest := num.MinI(p.ClampUpperBound, num.MaxI(p.ClampLowerBound, interest))
+	p.log.Info("clamped interest and bounds",
+		logging.MarketID(p.id),
+		logging.String("interest", interest.String()),
+		logging.String("upper-bound", p.ClampUpperBound.String()),
+		logging.String("clamped-interest", clampedInterest.String()),
+		logging.String("lower-bound", p.ClampLowerBound.String()),
+	)
+
+	// funding_payment += min(clamp_lower_bound, max(interest, clamp_lower_bound))
+	return num.MinI(p.ClampUpperBound, num.MaxI(p.ClampLowerBound, interest))
 }
 
 // Calculates the twap of the given settlement data points over the given interval.

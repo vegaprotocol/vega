@@ -388,6 +388,9 @@ type InstrumentPerpetual struct {
 
 type Perpetual struct {
 	MarginFundingFactor *num.Decimal
+	InterestRate        *num.Decimal
+	ClampUpperBound     *num.Int
+	ClampLowerBound     *num.Int
 	// TODO the plumbing
 	// https://github.com/vegaprotocol/vega/issues/8756
 	// https://github.com/vegaprotocol/vega/issues/8753
