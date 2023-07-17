@@ -24,12 +24,7 @@ func TestNewDefinitionWith(t *testing.T) {
 			assert.IsType(t, &definition.Definition{}, nds)
 			assert.Nil(t, nds.Content())
 		})
-	})
-
-	t.Run("ethereum oracle", func(t *testing.T) {
-	})
-
-	t.Run("internal time termination", func(t *testing.T) {
+		// Non-empty cases are tested implicitly by TestDefinitionIntoProto
 	})
 }
 
