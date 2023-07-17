@@ -14,7 +14,7 @@ func (e *Engine) Name() types.CheckpointName {
 }
 
 func (e *Engine) Checkpoint() ([]byte, error) {
-	for id, mkt := range e.markets {
+	for id, mkt := range e.futureMarkets {
 		state := mkt.GetCPState()
 		e.marketCPStates[id] = state
 	}

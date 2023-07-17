@@ -35,12 +35,6 @@ func TestLiquidityProvisionSubmission(t *testing.T) {
 				CommitmentAmount: "100",
 				Fee:              "abcd",
 				MarketId:         "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
-				Sells: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: "10", Proportion: 1},
-				},
-				Buys: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: "10", Proportion: 1},
-				},
 			},
 			errString: "liquidity_provision_submission.fee (is not a valid value)",
 		},
@@ -49,12 +43,6 @@ func TestLiquidityProvisionSubmission(t *testing.T) {
 				CommitmentAmount: "100",
 				Fee:              "-1",
 				MarketId:         "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
-				Sells: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: "10", Proportion: 1},
-				},
-				Buys: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: "10", Proportion: 1},
-				},
 			},
 			errString: "liquidity_provision_submission.fee (must be positive)",
 		},
@@ -62,127 +50,16 @@ func TestLiquidityProvisionSubmission(t *testing.T) {
 			lp: commandspb.LiquidityProvisionSubmission{
 				CommitmentAmount: "100",
 				Fee:              "0.1",
-				Sells: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: "10", Proportion: 1},
-				},
-				Buys: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: "10", Proportion: 1},
-				},
 			},
 			errString: "liquidity_provision_submission.market_id (is required)",
 		},
+
 		{
 			lp: commandspb.LiquidityProvisionSubmission{
 				CommitmentAmount: "100",
 				Fee:              "0.1",
 				MarketId:         "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
-				Sells: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: "10"},
-				},
-				Buys: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: "10", Proportion: 1},
-				},
 			},
-			errString: "liquidity_provision_submission.sells.0.proportion (order in shape without a proportion)",
-		},
-		{
-			lp: commandspb.LiquidityProvisionSubmission{
-				CommitmentAmount: "100",
-				Fee:              "0.1",
-				MarketId:         "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
-				Sells: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: "10", Proportion: 1},
-				},
-				Buys: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: "10"},
-				},
-			},
-			errString: "liquidity_provision_submission.buys.0.proportion (order in shape without a proportion)",
-		},
-		{
-			lp: commandspb.LiquidityProvisionSubmission{
-				CommitmentAmount: "100",
-				Fee:              "0.1",
-				MarketId:         "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
-				Sells: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: "0", Proportion: 1},
-				},
-				Buys: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: "0", Proportion: 1},
-				},
-			},
-		},
-		{
-			lp: commandspb.LiquidityProvisionSubmission{
-				CommitmentAmount: "100",
-				Fee:              "0.1",
-				MarketId:         "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
-				Sells: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: "10", Proportion: 1},
-				},
-				Buys: []*types.LiquidityOrder{},
-			},
-			errString: "liquidity_provision_submission.buys (empty shape)",
-		},
-		{
-			lp: commandspb.LiquidityProvisionSubmission{
-				CommitmentAmount: "100",
-				Fee:              "0.1",
-				MarketId:         "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
-				Sells:            []*types.LiquidityOrder{},
-				Buys: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: "10", Proportion: 1},
-				},
-			},
-			errString: "liquidity_provision_submission.sells (empty shape)",
-		},
-		{
-			lp: commandspb.LiquidityProvisionSubmission{
-				CommitmentAmount: "100",
-				Fee:              "0.1",
-				MarketId:         "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
-				Sells: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: "10", Proportion: 1},
-				},
-				Buys: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: "10", Proportion: 1},
-				},
-			},
-			errString: "liquidity_provision_submission.buys.0.reference (order in buy side shape with best ask price reference), liquidity_provision_submission.sells.0.offset (order in sell side shape with best bid price reference)",
-		},
-		{
-			lp: commandspb.LiquidityProvisionSubmission{
-				CommitmentAmount: "100",
-				Fee:              "0.1",
-				MarketId:         "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
-				Sells: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: "0", Proportion: 1},
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: "0", Proportion: 1},
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: "-1", Proportion: 1},
-				},
-				Buys: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: "0", Proportion: 1},
-				},
-			},
-			errString: "liquidity_provision_submission.buys.0.offset (order in buy side shape offset must be > 0), liquidity_provision_submission.sells.0.offset (order in sell shape offset must be > 0), liquidity_provision_submission.sells.1.offset (order in sell side shape with best bid price reference), liquidity_provision_submission.sells.2.offset (order in sell shape offset must be >= 0)",
-		},
-		{
-			lp:        commandspb.LiquidityProvisionSubmission{},
-			errString: "liquidity_provision_submission.buys (empty shape), liquidity_provision_submission.commitment_amount (is required), liquidity_provision_submission.fee (is required), liquidity_provision_submission.market_id (is required), liquidity_provision_submission.sells (empty shape)",
-		},
-		{
-			lp: commandspb.LiquidityProvisionSubmission{
-				CommitmentAmount: "100",
-				Fee:              "0.1",
-				MarketId:         "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
-				Sells: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: "0", Proportion: 1},
-				},
-				Buys: []*types.LiquidityOrder{
-					{Reference: types.PeggedReference(186), Offset: "0", Proportion: 1},
-				},
-			},
-			errString: "liquidity_provision_submission.buys.0.reference (is not a valid value)",
 		},
 	}
 
@@ -290,81 +167,6 @@ func TestCheckLiquidityProvisionAmendment(t *testing.T) {
 			},
 			wantErr:   assert.Error,
 			errString: "liquidity_provision_amendment (is required)",
-		},
-		{
-			name: "Should return no errors if amendment buys and sells are balanced",
-			args: args{
-				cmd: &commandspb.LiquidityProvisionAmendment{
-					MarketId: "abcd",
-					Sells: []*types.LiquidityOrder{
-						{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: "10", Proportion: 1},
-					},
-					Buys: []*types.LiquidityOrder{
-						{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: "10", Proportion: 1},
-					},
-				},
-			},
-			wantErr: assert.NoError,
-		},
-		{
-			name: "Should not return an error if sell side shape is provided with no buy side shape",
-			args: args{
-				cmd: &commandspb.LiquidityProvisionAmendment{
-					MarketId: "abcd",
-					Sells: []*types.LiquidityOrder{
-						{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: "10", Proportion: 1},
-					},
-					Buys: []*types.LiquidityOrder{},
-				},
-			},
-			wantErr: assert.NoError,
-		},
-		{
-			name: "Should not return an error if buy side shape is provided with no sell side shape",
-			args: args{
-				cmd: &commandspb.LiquidityProvisionAmendment{
-					MarketId: "abcd",
-					Sells:    []*types.LiquidityOrder{},
-					Buys: []*types.LiquidityOrder{
-						{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: "10", Proportion: 1},
-					},
-				},
-			},
-			wantErr: assert.NoError,
-		},
-		{
-			name: "Should return errors if shapes are provided with invalid reference prices",
-			args: args{
-				cmd: &commandspb.LiquidityProvisionAmendment{
-					MarketId: "abcd",
-					Sells: []*types.LiquidityOrder{
-						{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: "10", Proportion: 1},
-					},
-					Buys: []*types.LiquidityOrder{
-						{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: "10", Proportion: 1},
-					},
-				},
-			},
-			wantErr:   assert.Error,
-			errString: "liquidity_provision_submission.buys.0.reference (order in buy side shape with best ask price reference), liquidity_provision_submission.sells.0.offset (order in sell side shape with best bid price reference)",
-		},
-		{
-			name: "Liquidity Provision shapes with multiple errors should return all errors found",
-			args: args{
-				cmd: &commandspb.LiquidityProvisionAmendment{
-					MarketId: "abcd",
-					Sells: []*types.LiquidityOrder{
-						{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: "0", Proportion: 1},
-						{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: "0", Proportion: 1},
-						{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: "10", Proportion: 1},
-					},
-					Buys: []*types.LiquidityOrder{
-						{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: "0", Proportion: 1},
-					},
-				},
-			},
-			wantErr:   assert.Error,
-			errString: "liquidity_provision_submission.buys.0.offset (order in buy side shape offset must be > 0), liquidity_provision_submission.sells.0.offset (order in sell shape offset must be > 0), liquidity_provision_submission.sells.1.offset (order in sell side shape with best bid price reference)",
 		},
 	}
 

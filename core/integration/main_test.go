@@ -143,6 +143,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`the price monitoring named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.ThePriceMonitoring(marketConfig, name, table)
 	})
+	s.Step(`the liquidity sla params named "([^"]*)":$`, func(name string, table *godog.Table) error {
+		return steps.TheLiquiditySLAPArams(marketConfig, name, table)
+	})
 	s.Step(`the liquidity monitoring parameters:$`, func(table *godog.Table) error {
 		return steps.TheLiquidityMonitoring(marketConfig, table)
 	})
@@ -151,6 +154,11 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^the markets:$`, func(table *godog.Table) error {
 		markets, err := steps.TheMarkets(marketConfig, execsetup.executionEngine, execsetup.collateralEngine, execsetup.netParams, execsetup.timeService.GetTimeNow(), table)
+		execsetup.markets = markets
+		return err
+	})
+	s.Step(`^the spot markets:$`, func(table *godog.Table) error {
+		markets, err := steps.TheSpotMarkets(marketConfig, execsetup.executionEngine, execsetup.collateralEngine, execsetup.netParams, execsetup.timeService.GetTimeNow(), table)
 		execsetup.markets = markets
 		return err
 	})
@@ -354,6 +362,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^"([^"]*)" should have general account balance of "([^"]*)" for asset "([^"]*)"$`, func(party, balance, asset string) error {
 		return steps.PartyShouldHaveGeneralAccountBalanceForAsset(execsetup.broker, party, asset, balance)
+	})
+	s.Step(`^"([^"]*)" should have holding account balance of "([^"]*)" for asset "([^"]*)"$`, func(party, balance, asset string) error {
+		return steps.PartyShouldHaveHoldingAccountBalanceForAsset(execsetup.broker, party, asset, balance)
 	})
 	s.Step(`^the reward account of type "([^"]*)" should have balance of "([^"]*)" for asset "([^"]*)"$`, func(accountType, balance, asset string) error {
 		return steps.RewardAccountBalanceForAssetShouldMatch(execsetup.broker, accountType, asset, balance)

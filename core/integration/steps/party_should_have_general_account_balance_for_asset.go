@@ -37,3 +37,22 @@ func PartyShouldHaveGeneralAccountBalanceForAsset(
 
 	return nil
 }
+
+func PartyShouldHaveHoldingAccountBalanceForAsset(
+	broker *stubs.BrokerStub,
+	party, asset, rawBalance string,
+) error {
+	balance, _ := strconv.ParseUint(rawBalance, 10, 0)
+	acc, err := broker.GetPartyHoldingAccount(party, asset)
+	if err != nil {
+		return err
+	}
+
+	if stringToU64(acc.Balance) != balance {
+		return fmt.Errorf("invalid holding account balance for asset(%s) for party(%s), expected(%d) got(%s)",
+			asset, party, balance, acc.Balance,
+		)
+	}
+
+	return nil
+}

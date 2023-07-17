@@ -69,7 +69,6 @@ type Markets interface {
 	RestoreMarket(ctx context.Context, marketConfig *types.Market) error
 	StartOpeningAuction(ctx context.Context, marketID string) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
-	SpotsMarketsEnabled() bool
 	IsSucceeded(mktID string) bool
 }
 
@@ -291,7 +290,7 @@ func (e *Engine) preVoteClosedProposal(p *proposal) *VoteClosed {
 		p: p.Proposal,
 	}
 	switch p.Terms.Change.GetTermType() {
-	case types.ProposalTermsTypeNewMarket:
+	case types.ProposalTermsTypeNewMarket, types.ProposalTermsTypeNewSpotMarket:
 		startAuction := true
 		if p.State != types.ProposalStatePassed {
 			startAuction = false
@@ -632,14 +631,10 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 			m: mkt,
 		}
 	case types.ProposalTermsTypeNewSpotMarket:
-		closeTime := e.timeService.GetTimeNow().Truncate(time.Second)
+		closeTime := time.Unix(p.Terms.ClosingTimestamp, 0)
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 		newMarket := p.Terms.GetNewSpotMarket()
 		auctionDuration := enactTime.Sub(closeTime)
-		if !e.markets.SpotsMarketsEnabled() {
-			e.rejectProposal(ctx, p, types.ProposalErrorSpotNotEnabled, ErrSpotsNotEnabled)
-			return nil, fmt.Errorf("%w, %v", ErrSpotsNotEnabled, types.ProposalErrorSpotNotEnabled)
-		}
 		if perr, err := validateNewSpotMarketChange(newMarket, e.assets, true, e.netp, auctionDuration, enct); err != nil {
 			e.rejectProposal(ctx, p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
@@ -1028,9 +1023,6 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 	case types.ProposalTermsTypeUpdateMarketState:
 		return e.validateMarketUpdateState(terms.GetMarketStateUpdate().Changes)
 	case types.ProposalTermsTypeNewSpotMarket:
-		if !e.markets.SpotsMarketsEnabled() {
-			return types.ProposalErrorSpotNotEnabled, ErrSpotsNotEnabled
-		}
 		closeTime := time.Unix(terms.ClosingTimestamp, 0)
 		return validateNewSpotMarketChange(terms.GetNewSpotMarket(), e.assets, true, e.netp, enactTime.Sub(closeTime), enct)
 	case types.ProposalTermsTypeUpdateSpotMarket:

@@ -934,8 +934,8 @@ func (e *Engine) getAllActiveOrders(party string) []*types.Order {
 	return orders
 }
 
-func (e *Engine) IsPoTInitialised() bool {
-	return e.suppliedEngine.IsPoTInitialised()
+func (e *Engine) IsProbabilityOfTradingInitialised() bool {
+	return e.suppliedEngine.IsProbabilityOfTradingInitialised()
 }
 
 func (e *Engine) UpdateMarketConfig(model risk.Model, monitor PriceMonitor) {

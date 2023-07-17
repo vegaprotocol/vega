@@ -172,6 +172,7 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.MatchingSnapshot,               // this requires a market
 	types.PositionsSnapshot,              // again, needs a market
 	types.SettlementSnapshot,             // needs the market to exist, too
+	types.HoldingAccountTrackerSnapshot,
 	types.LiquiditySnapshot,
 	types.LiquidityTargetSnapshot,
 	types.StakingSnapshot,
@@ -1068,7 +1069,7 @@ func worker(e *Engine, nsInputChan chan nsInput, resChan chan<- nsSnapResult, wg
 				}
 			}
 		}
-		e.log.Debug("State updated",
+		e.log.Info("State updated",
 			logging.String("node-key", treeKeyStr),
 			logging.String("hash", hex.EncodeToString(crypto.Hash(v))),
 			logging.Float64("took", time.Since(t0).Seconds()),
