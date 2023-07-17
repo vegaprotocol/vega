@@ -3569,9 +3569,6 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	require.Greater(t, lpOrderVolumeOffer, lpOrderVolumeOfferPrev)
 
 	lpOrderVolumeBidPrev = lpOrderVolumeBid
-	// Submit another limit order that fills partially on submission
-	// Modify LP order, so it's not on the best offer
-	lp1.Sells[0].Offset.AddSum(num.NewUint(1))
 	err = tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, vgcrypto.RandomHash())
 	require.NoError(t, err)
 

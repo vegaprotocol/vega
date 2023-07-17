@@ -588,13 +588,10 @@ func TestAmend(t *testing.T) {
 		assert.Equal(t, num.NewUint(1000), tm.market.GetBondAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset))
 
 		// Amend the commitment
-
 		lpa := &types.LiquidityProvisionAmendment{
 			Fee:              lps.Fee,
 			MarketID:         lps.MarketID,
 			CommitmentAmount: num.NewUint(2000),
-			Buys:             lps.Buys,
-			Sells:            lps.Sells,
 		}
 		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
@@ -724,8 +721,6 @@ func TestAmend(t *testing.T) {
 		lpa := &types.LiquidityProvisionAmendment{
 			MarketID:         lps.MarketID,
 			CommitmentAmount: lps.CommitmentAmount,
-			Buys:             lps.Buys,
-			Sells:            lps.Sells,
 		}
 
 		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
@@ -734,8 +729,6 @@ func TestAmend(t *testing.T) {
 		// Now attempt to amend the LP submission with empty fee and commitment amount
 		lpa = &types.LiquidityProvisionAmendment{
 			MarketID: lps.MarketID,
-			Buys:     lps.Buys,
-			Sells:    lps.Sells,
 		}
 
 		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
@@ -746,8 +739,6 @@ func TestAmend(t *testing.T) {
 			Fee:              lps.Fee,
 			MarketID:         lps.MarketID,
 			CommitmentAmount: lps.CommitmentAmount,
-			Buys:             nil,
-			Sells:            lps.Sells,
 		}
 
 		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
@@ -758,8 +749,6 @@ func TestAmend(t *testing.T) {
 			Fee:              num.DecimalZero(),
 			MarketID:         lps.MarketID,
 			CommitmentAmount: num.UintZero(),
-			Buys:             nil,
-			Sells:            nil,
 		}
 
 		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
@@ -770,8 +759,6 @@ func TestAmend(t *testing.T) {
 			Fee:              num.DecimalZero(),
 			MarketID:         lps.MarketID,
 			CommitmentAmount: num.UintZero(),
-			Buys:             []*types.LiquidityOrder{},
-			Sells:            []*types.LiquidityOrder{},
 		}
 
 		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
