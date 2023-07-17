@@ -48,7 +48,7 @@ type (
 	OnDeliverTxHandler        func(context.Context, types.RequestDeliverTx, Tx) (context.Context, types.ResponseDeliverTx)
 	OnCommitHandler           func() types.ResponseCommit
 	ListSnapshotsHandler      func(types.RequestListSnapshots) types.ResponseListSnapshots
-	OffserSnapshotHandler     func(types.RequestOfferSnapshot) types.ResponseOfferSnapshot
+	OfferSnapshotHandler      func(types.RequestOfferSnapshot) types.ResponseOfferSnapshot
 	LoadSnapshotChunkHandler  func(types.RequestLoadSnapshotChunk) types.ResponseLoadSnapshotChunk
 	ApplySnapshotChunkHandler func(context.Context, types.RequestApplySnapshotChunk) types.ResponseApplySnapshotChunk
 	InfoHandler               func(types.RequestInfo) types.ResponseInfo

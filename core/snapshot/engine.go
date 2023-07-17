@@ -45,7 +45,10 @@ const (
 	numWorkers  = 1000
 )
 
-var ErrCouldNotCleanlyCloseDatabases = errors.New("could not cleanly close the databases")
+var (
+	ErrCannotReceiveSnapshotFromStateSync = errors.New("cannot receive snapshots from state-sync when reloading from local storage")
+	ErrCouldNotCleanlyCloseDatabases      = errors.New("could not cleanly close the databases")
+)
 
 type StateProviderT interface {
 	// Namespace this provider operates in, basically a prefix for the keys
@@ -87,6 +90,7 @@ type MetadataDatabase interface {
 	Load(int64) (*tmtypes.Snapshot, error)
 	Close() error
 	Clear() error
+	ContainsMetadata() bool
 }
 
 type Database interface {
@@ -140,6 +144,13 @@ type Engine struct {
 
 	lock    sync.RWMutex // lock for all the maps and stuff while concurrently constructing the new snapshot
 	avlLock sync.Mutex   // lock on the avl tree for reading/writing to the AVL tree
+
+	// reloadFromLocalStorage indicates whether the snapshot engine is restarting
+	// using the local storage, or not. If it is not reloading from local storage,
+	// then it means we are going to load from state-sync.
+	// This is used as a guard to prevent the node from mixing loading from
+	// state-sync and local storage.
+	reloadFromLocalStorage bool
 }
 
 // order in which snapshots are to be restored.
@@ -220,6 +231,12 @@ func New(ctx context.Context, vegaPath paths.Paths, conf Config, log *logging.Lo
 		return nil, fmt.Errorf("could not initialize databases: %w", err)
 	}
 
+	if eng.metadb.ContainsMetadata() {
+		eng.reloadFromLocalStorage = true
+	} else {
+		eng.reloadFromLocalStorage = false
+	}
+
 	return eng, nil
 }
 
@@ -268,6 +285,13 @@ func (e *Engine) ListMeta() ([]*tmtypes.Snapshot, error) {
 		snapshots = append(snapshots, snap)
 	}
 	return snapshots, nil
+}
+
+// IsWillingToAcceptSnapshotFromStateSync tell the snapshot engine won't accept
+// snapshots from state-sync because it reloaded the state from the local storage.
+// Reloading from local storage takes precedence on the state-sync.
+func (e *Engine) IsWillingToAcceptSnapshotFromStateSync() bool {
+	return !e.reloadFromLocalStorage
 }
 
 // List returns all snapshots available.
@@ -366,11 +390,10 @@ func (e *Engine) CheckLoaded() (bool, error) {
 	versions := e.avl.AvailableVersions()
 	startHeight := e.StartHeight
 
-	if startHeight < 0 && len(versions) == 0 {
+	if startHeight < 0 && len(versions) == 0 { // && NO STATE-SYNC
 		// we have no snapshots, and so this is a new chain there is nothing to load
 		return false, nil
 	}
-
 	if startHeight == 0 && len(versions) == 0 {
 		// forced a replay. but there are no snapshots anyway so theres nothing to do
 		return false, nil
@@ -498,8 +521,12 @@ func (e *Engine) applySnapshotFromLocalStore(ctx context.Context) error {
 }
 
 func (e *Engine) ReceiveSnapshot(snap *types.Snapshot) error {
+	if e.reloadFromLocalStorage {
+		return ErrCannotReceiveSnapshotFromStateSync
+	}
+
 	if e.StartHeight > 0 && snap.Height != uint64(e.StartHeight) {
-		return fmt.Errorf("received snapshot height does not equal config height: %d != %d", snap.Height, e.StartHeight)
+		return fmt.Errorf("the block height of the received snapshot (%d) does not match the expected one (%d)", snap.Height, e.StartHeight)
 	}
 
 	if e.snapshot != nil {
@@ -509,6 +536,7 @@ func (e *Engine) ReceiveSnapshot(snap *types.Snapshot) error {
 		}
 		return e.snapshot.ValidateMeta(snap)
 	}
+
 	e.snapshot = snap
 	return nil
 }
@@ -527,7 +555,11 @@ func (e *Engine) RejectSnapshot() error {
 
 // ApplySnapshot takes the snapshot data sent over via tendermint and reconstructs the AVL
 // tree from the data. This call does *not* restore the state into the providers.
-func (e *Engine) ApplySnapshot(ctx context.Context) error {
+func (e *Engine) ApplySnapshot(_ context.Context) error {
+	if e.reloadFromLocalStorage {
+		return ErrCannotReceiveSnapshotFromStateSync
+	}
+
 	// remove all existing snapshot and create an initial empty tree
 	if err := e.ClearAndInitialise(); err != nil {
 		return err
@@ -546,7 +578,7 @@ func (e *Engine) ApplySnapshot(ctx context.Context) error {
 
 func (e *Engine) applySnap(ctx context.Context) error {
 	if e.snapshot == nil {
-		return types.ErrUnknownSnapshot
+		return types.ErrNoSnapshotToApply
 	}
 	// this is the current version
 	version := e.snapshot.Meta.Version
@@ -627,8 +659,12 @@ func (e *Engine) applySnap(ctx context.Context) error {
 }
 
 func (e *Engine) ApplySnapshotChunk(chunk *types.RawChunk) (bool, error) {
+	if e.reloadFromLocalStorage {
+		return false, ErrCannotReceiveSnapshotFromStateSync
+	}
+
 	if e.snapshot == nil {
-		return false, types.ErrUnknownSnapshot
+		return false, types.ErrNoSnapshotToApply
 	}
 	if err := e.snapshot.LoadChunk(chunk); err != nil {
 		return false, err

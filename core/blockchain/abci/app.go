@@ -51,7 +51,7 @@ type App struct {
 	// snapshot stuff
 
 	OnListSnapshots      ListSnapshotsHandler
-	OnOfferSnapshot      OffserSnapshotHandler
+	OnOfferSnapshot      OfferSnapshotHandler
 	OnLoadSnapshotChunk  LoadSnapshotChunkHandler
 	OnApplySnapshotChunk ApplySnapshotChunkHandler
 	OnInfo               InfoHandler
