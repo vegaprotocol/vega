@@ -2685,7 +2685,7 @@ func getTestEngine(t *testing.T) *testEngine {
 	broker := bmocks.NewMockBroker(ctrl)
 	conf := collateral.NewDefaultConfig()
 	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
-	broker.EXPECT().Send(gomock.Any()).Times(22)
+	broker.EXPECT().Send(gomock.Any()).Times(23)
 	// system accounts created
 
 	eng := collateral.New(logging.NewTestLogger(), conf, timeSvc, broker)
@@ -2921,7 +2921,7 @@ func TestHash(t *testing.T) {
 
 	hash := eng.Hash()
 	require.Equal(t,
-		"589c48274f3ab644f725d9abc4de9cb07b6ea9069dd3bd8f41f35dc55d062550",
+		"e08a22ead1a1f0171178d8cf8109e8cdc80f4737056ea7c45c9bf119b9422bdc",
 		hex.EncodeToString(hash),
 		"It should match against the known hash",
 	)

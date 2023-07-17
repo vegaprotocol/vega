@@ -32,9 +32,9 @@ Feature: Confirm automatic adjustments to LP orders as specified in 0038-OLIQ
       | lp    | USD   | 1000000000000000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 139    | submission |
-      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 3000   | submission |
+      | id  | party | market id | commitment amount | fee | lp type    |
+      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | submission |
+      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | submission |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -163,9 +163,9 @@ Feature: Confirm automatic adjustments to LP orders as specified in 0038-OLIQ
       | lp    | USD   | 1000000000000000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 139    | submission |
-      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 3000   | submission |
+      | id  | party | market id | commitment amount | fee | lp type    |
+      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | submission |
+      | lp1 | lp    | ETH/DEC19 | 90000             | 0.1 | submission |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |

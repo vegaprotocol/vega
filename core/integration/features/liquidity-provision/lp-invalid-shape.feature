@@ -80,8 +80,8 @@ Feature: Test LP orders invalid shapes
       | market.liquidityProvision.shapes.maxSize | 4     |
 
     Then the liquidity provisions should have the following states:
-      | id  | party   | market    | commitment amount | status         | buy shape | sell shape |
-      | lp2 | lpprov2 | ETH/DEC19 | 900000            | STATUS_PENDING | 10        | 1          |
+      | id  | party   | market    | commitment amount | status        
+      | lp2 | lpprov2 | ETH/DEC19 | 900000            | STATUS_PENDING
 
     # now that max shape is 4 expect an error trying to submit shape > 4
     And the parties submit the following liquidity provision:
@@ -165,8 +165,8 @@ Feature: Test LP orders invalid shapes
       | market.liquidityProvision.shapes.maxSize | 4     |
 
     Then the liquidity provisions should have the following states:
-      | id  | party   | market    | commitment amount | status         | buy shape | sell shape |
-      | lp2 | lpprov2 | ETH/DEC19 | 900000            | STATUS_PENDING | 1         | 10         |
+      | id  | party   | market    | commitment amount | status        
+      | lp2 | lpprov2 | ETH/DEC19 | 900000            | STATUS_PENDING
 
     # now that max shape is 4 expect an error trying to submit shape > 4
     And the parties submit the following liquidity provision:

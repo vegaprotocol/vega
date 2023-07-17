@@ -14,6 +14,7 @@ package governance
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -102,6 +103,9 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 				enct.shouldNotVerify = true
 			}
 			enct.current = prop.Terms.EnactmentTimestamp
+
+			fmt.Printf("proposal: %+v\n", prop)
+
 			toSubmit, err := e.intoToSubmit(ctx, prop, enct, true)
 			if err != nil {
 				e.log.Panic("Failed to convert proposal into market", logging.Error(err))

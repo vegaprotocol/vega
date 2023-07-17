@@ -3359,17 +3359,10 @@ func TestMissingLP(t *testing.T) {
 	assert.True(t, tm.mas.InAuction())
 
 	// Send LP order
-
 	lps := &types.LiquidityProvisionSubmission{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(10000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: num.NewUint(10000)},
-		},
-		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: num.NewUint(10000)},
-		},
 	}
 
 	tm.market.SubmitLiquidityProvision(ctx, lps, party1, vgcrypto.RandomHash())
