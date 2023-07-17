@@ -1355,7 +1355,7 @@ func newSpotMarketTerms() *types.ProposalTermsNewSpotMarket {
 						},
 					},
 				},
-				RiskParameters: &types.NewMarketConfigurationLogNormal{
+				RiskParameters: &types.NewSpotMarketConfigurationLogNormal{
 					LogNormal: &types.LogNormalRiskModel{
 						RiskAversionParameter: num.DecimalFromFloat(0.01),
 						Tau:                   num.DecimalFromFloat(0.00011407711613050422),

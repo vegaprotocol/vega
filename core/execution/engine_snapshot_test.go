@@ -35,6 +35,7 @@ import (
 	"code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
@@ -109,6 +110,11 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	collateralService.EXPECT().CreateMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	collateralService.EXPECT().GetMarketLiquidityFeeAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
 	collateralService.EXPECT().GetInsurancePoolBalance(gomock.Any(), gomock.Any()).AnyTimes().Return(num.UintZero(), true)
+	collateralService.EXPECT().CreateSpotMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	collateralService.EXPECT().GetAssetQuantum("ETH").AnyTimes().Return(num.DecimalFromInt64(1), nil)
+	collateralService.EXPECT().GetOrCreatePartyBondAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
+	collateralService.EXPECT().GetOrCreatePartyLiquidityFeeAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	collateralService.EXPECT().BondSpotUpdate(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.LedgerMovement{}, nil)
 	oracleService := mocks.NewMockOracleEngine(ctrl)
 	oracleService.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(spec.SubscriptionID(0), func(_ context.Context, _ spec.SubscriptionID) {}, nil)
 	oracleService.EXPECT().Unsubscribe(gomock.Any(), gomock.Any()).AnyTimes()
@@ -142,6 +148,78 @@ func TestEmptyMarkets(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, bytes)
 	assert.Empty(t, providers)
+}
+
+func getSpotMarketConfig() *types.Market {
+	return &types.Market{
+		ID: "SpotMarketID", // ID will be generated
+		PriceMonitoringSettings: &types.PriceMonitoringSettings{
+			Parameters: &types.PriceMonitoringParameters{
+				Triggers: []*types.PriceMonitoringTrigger{
+					{
+						Horizon:          1000,
+						HorizonDec:       num.DecimalFromFloat(1000.0),
+						Probability:      num.DecimalFromFloat(0.3),
+						AuctionExtension: 10000,
+					},
+				},
+			},
+		},
+		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
+			TargetStakeParameters: &types.TargetStakeParameters{
+				TimeWindow:    101,
+				ScalingFactor: num.DecimalFromFloat(1.0),
+			},
+			TriggeringRatio:  num.DecimalZero(),
+			AuctionExtension: 0,
+		},
+		Fees: &types.Fees{
+			Factors: &types.FeeFactors{
+				MakerFee:          num.DecimalFromFloat(0.1),
+				InfrastructureFee: num.DecimalFromFloat(0.1),
+				LiquidityFee:      num.DecimalFromFloat(0.1),
+			},
+		},
+		LiquiditySLAParams: &types.LiquiditySLAParams{
+			PriceRange:                      num.DecimalFromFloat(0.05),
+			CommitmentMinTimeFraction:       num.DecimalFromFloat(0.5),
+			SlaCompetitionFactor:            num.DecimalFromFloat(0.5),
+			ProvidersFeeCalculationTimeStep: time.Second,
+			PerformanceHysteresisEpochs:     1,
+		},
+		TradableInstrument: &types.TradableInstrument{
+			Instrument: &types.Instrument{
+				ID:   "Crypto/BTC/ETH",
+				Code: "SPOT:BTC/ETH",
+				Name: "BTC/ETH SPOT",
+				Metadata: &types.InstrumentMetadata{
+					Tags: []string{
+						"asset_class:spot/crypto",
+						"product:spot",
+					},
+				},
+				Product: &types.InstrumentSpot{
+					Spot: &types.Spot{
+						BaseAsset:  "BTC",
+						QuoteAsset: "ETH",
+						Name:       "BTC/ETH",
+					},
+				},
+			},
+			RiskModel: &types.TradableInstrumentLogNormalRiskModel{
+				LogNormalRiskModel: &types.LogNormalRiskModel{
+					RiskAversionParameter: num.DecimalFromFloat(0.01),
+					Tau:                   num.DecimalFromFloat(1.0 / 365.25 / 24),
+					Params: &types.LogNormalModelParams{
+						Mu:    num.DecimalZero(),
+						R:     num.DecimalFromFloat(0.016),
+						Sigma: num.DecimalFromFloat(0.09),
+					},
+				},
+			},
+		},
+		State: types.MarketStateActive,
+	}
 }
 
 func getMarketConfig() *types.Market {
@@ -368,6 +446,85 @@ func TestValidMarketSnapshot(t *testing.T) {
 	m2, ok := engine2.GetMarket(marketConfig2.ID, false)
 	require.True(t, ok)
 	require.NotEmpty(t, marketConfig2.ParentMarketID, m2.ParentMarketID)
+}
+
+func TestValidSpotMarketSnapshot(t *testing.T) {
+	ctx := context.Background()
+	engine, ctrl := createEngine(t)
+	defer ctrl.Finish()
+	assert.NotNil(t, engine)
+
+	marketConfig := getSpotMarketConfig()
+	err := engine.SubmitSpotMarket(ctx, marketConfig, "", time.Now())
+	assert.NoError(t, err)
+
+	err = engine.SubmitLiquidityProvision(ctx, &types.LiquidityProvisionSubmission{
+		MarketID:         marketConfig.ID,
+		CommitmentAmount: num.NewUint(1000),
+		Fee:              num.DecimalFromFloat(0.5),
+	}, "zohar", crypto.RandomHash())
+	require.NoError(t, err)
+
+	keys := engine.Keys()
+	require.Equal(t, 1, len(keys))
+	key := keys[0]
+
+	// Take the snapshot and hash
+	b, providers, err := engine.GetState(key)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, b)
+	assert.Len(t, providers, 4)
+
+	// Turn the bytes back into a payload and restore to a new engine
+	engine2, ctrl := createEngine(t)
+
+	defer ctrl.Finish()
+	assert.NotNil(t, engine2)
+	snap := &snapshot.Payload{}
+	err = proto.Unmarshal(b, snap)
+	assert.NoError(t, err)
+
+	loadStateProviders, err := engine2.LoadState(ctx, types.PayloadFromProto(snap))
+	assert.Len(t, loadStateProviders, 4)
+	assert.NoError(t, err)
+
+	providerMap := map[string]map[string]types.StateProvider{}
+	for _, p := range loadStateProviders {
+		providerMap[p.Namespace().String()] = map[string]types.StateProvider{}
+		for _, k := range p.Keys() {
+			providerMap[p.Namespace().String()][k] = p
+		}
+	}
+
+	// Check the hashes are the same
+	state2, _, err := engine2.GetState(key)
+	assert.NoError(t, err)
+	assert.True(t, bytes.Equal(b, state2))
+
+	snap = &snapshot.Payload{}
+	err = proto.Unmarshal(state2, snap)
+	assert.NoError(t, err)
+	_, ok := snap.Data.(*snapshot.Payload_ExecutionMarkets)
+	require.True(t, ok)
+
+	// now load the providers state
+	for _, p := range providers {
+		for _, k := range p.Keys() {
+			b, _, err := p.GetState(k)
+			require.NoError(t, err)
+
+			snap := &snapshot.Payload{}
+			err = proto.Unmarshal(b, snap)
+			assert.NoError(t, err)
+
+			toRestore := providerMap[p.Namespace().String()][k]
+			_, err = toRestore.LoadState(ctx, types.PayloadFromProto(snap))
+			require.NoError(t, err)
+			b2, _, err := toRestore.GetState(k)
+			require.NoError(t, err)
+			assert.True(t, bytes.Equal(b, b2))
+		}
+	}
 }
 
 func TestValidSettledMarketSnapshot(t *testing.T) {

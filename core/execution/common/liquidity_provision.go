@@ -66,28 +66,24 @@ func NewMarketLiquidity(
 	fee *fee.Engine,
 	marketID string,
 	asset string,
-	minLPStakeQuantumMultiple num.Decimal,
 	priceFactor *num.Uint,
 	priceRange num.Decimal,
-	earlyExitPenalty num.Decimal,
 	feeDistributionTimeStep time.Duration,
 ) *MarketLiquidity {
 	ml := &MarketLiquidity{
-		log:                       log,
-		liquidityEngine:           liquidityEngine,
-		collateral:                collateral,
-		broker:                    broker,
-		orderBook:                 orderBook,
-		equityShares:              equityShares,
-		marketActivityTracker:     marketActivityTracker,
-		fee:                       fee,
-		marketID:                  marketID,
-		asset:                     asset,
-		minLPStakeQuantumMultiple: minLPStakeQuantumMultiple,
-		priceFactor:               priceFactor,
-		priceRange:                priceRange,
-		earlyExitPenalty:          earlyExitPenalty,
-		feeDistributionTimeStep:   feeDistributionTimeStep,
+		log:                     log,
+		liquidityEngine:         liquidityEngine,
+		collateral:              collateral,
+		broker:                  broker,
+		orderBook:               orderBook,
+		equityShares:            equityShares,
+		marketActivityTracker:   marketActivityTracker,
+		fee:                     fee,
+		marketID:                marketID,
+		asset:                   asset,
+		priceFactor:             priceFactor,
+		priceRange:              priceRange,
+		feeDistributionTimeStep: feeDistributionTimeStep,
 	}
 
 	return ml
@@ -241,14 +237,22 @@ func (m *MarketLiquidity) syncPartyCommitmentWithBondAccount(appliedLiquidityPro
 	}
 }
 
-func (m *MarketLiquidity) OnEpochStart(ctx context.Context, now time.Time, markPrice, targetStake *num.Uint, positionFactor num.Decimal) {
-	m.liquidityEngine.ResetSLAEpoch(now, markPrice, positionFactor)
+func (m *MarketLiquidity) OnEpochStart(ctx context.Context, now time.Time, markPrice, midPrice, targetStake *num.Uint, positionFactor num.Decimal) {
+	m.liquidityEngine.ResetSLAEpoch(now, markPrice, midPrice, positionFactor)
 
 	appliedProvisions := m.applyPendingProvisions(ctx, now, targetStake)
 	m.syncPartyCommitmentWithBondAccount(appliedProvisions)
 }
 
 func (m *MarketLiquidity) OnEpochEnd(ctx context.Context, t time.Time) {
+	m.calculateAndDistribute(ctx, t)
+}
+
+func (m *MarketLiquidity) OnMarketClosed(ctx context.Context, t time.Time) {
+	m.calculateAndDistribute(ctx, t)
+}
+
+func (m *MarketLiquidity) calculateAndDistribute(ctx context.Context, t time.Time) {
 	penalties := m.liquidityEngine.CalculateSLAPenalties(t)
 	m.distributeFeesBonusesAndApplyPenalties(ctx, penalties)
 }
@@ -396,10 +400,10 @@ func (m *MarketLiquidity) makePerPartyAccountsAndTransfers(ctx context.Context, 
 		return err
 	}
 
-	_, err = m.collateral.CreatePartyMarginAccount(ctx, party, m.marketID, m.asset)
-	if err != nil {
-		return err
-	}
+	// _, err = m.collateral.CreatePartyMarginAccount(ctx, party, m.marketID, m.asset)
+	// if err != nil {
+	// 	return err
+	// }
 
 	_, err = m.collateral.GetOrCreatePartyLiquidityFeeAccount(ctx, party, m.marketID, m.asset)
 	if err != nil {
@@ -684,7 +688,7 @@ func (m *MarketLiquidity) validOrdersPriceRange() (*num.Uint, *num.Uint, error) 
 	return lowerBound, upperBound, nil
 }
 
-func (m *MarketLiquidity) UpdateMarketConfig(risk liquidity.RiskModel, monitor PriceMonitor, slaParams *types.LiquiditySLAParams) {
+func (m *MarketLiquidity) UpdateMarketConfig(risk liquidity.RiskModel, monitor liquidity.PriceMonitor, slaParams *types.LiquiditySLAParams) {
 	m.priceRange = slaParams.PriceRange
 	m.feeDistributionTimeStep = slaParams.ProvidersFeeCalculationTimeStep
 	m.liquidityEngine.UpdateMarketConfig(risk, monitor, slaParams)
@@ -720,4 +724,20 @@ func (m *MarketLiquidity) OnNonPerformanceBondPenaltySlopeUpdate(nonPerformanceB
 
 func (m *MarketLiquidity) OnNonPerformanceBondPenaltyMaxUpdate(nonPerformanceBondPenaltyMax num.Decimal) {
 	m.liquidityEngine.OnNonPerformanceBondPenaltyMaxUpdate(nonPerformanceBondPenaltyMax)
+}
+
+func (m *MarketLiquidity) IsProbabilityOfTradingInitialised() bool {
+	return m.liquidityEngine.IsProbabilityOfTradingInitialised()
+}
+
+func (m *MarketLiquidity) GetAverageLiquidityScores() map[string]num.Decimal {
+	return m.liquidityEngine.GetAverageLiquidityScores()
+}
+
+func (m *MarketLiquidity) ProvisionsPerParty() liquidity.ProvisionsPerParty {
+	return m.liquidityEngine.ProvisionsPerParty()
+}
+
+func (m *MarketLiquidity) CalculateSuppliedStake() *num.Uint {
+	return m.liquidityEngine.CalculateSuppliedStake()
 }

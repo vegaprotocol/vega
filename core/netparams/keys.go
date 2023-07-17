@@ -13,7 +13,7 @@
 package netparams
 
 const (
-	SpotMarketTradingEnabled = "spot.market.trading.enabled"
+	SpotMarketTradingEnabled = "limits.markets.proposeSpotEnabled"
 	EthereumOraclesEnabled   = "ethereum.oracles.enabled"
 
 	// market related parameters.

@@ -162,14 +162,13 @@ func TestSubmittingProposalForNewSpotMarketWithOutOfRangeRiskParameterFails(t *t
 	// now all risk params are valid
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
-	eng.markets.EXPECT().SpotsMarketsEnabled().AnyTimes()
 
 	// given
 	party := eng.newValidParty("a-valid-party", 1)
 	eng.ensureAllAssetEnabled(t)
 
 	proposal := eng.newProposalForNewSpotMarket(party.Id, eng.tsvc.GetTimeNow())
-	proposal.Terms.GetNewSpotMarket().Changes.RiskParameters = &types.NewMarketConfigurationLogNormal{LogNormal: lnm}
+	proposal.Terms.GetNewSpotMarket().Changes.RiskParameters = &types.NewSpotMarketConfigurationLogNormal{LogNormal: lnm}
 
 	// setup
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -178,7 +177,7 @@ func TestSubmittingProposalForNewSpotMarketWithOutOfRangeRiskParameterFails(t *t
 	_, err := eng.submitProposal(t, proposal)
 
 	// then
-	require.Equal(t, "spot trading not enabled", err.Error())
+	require.NoError(t, err)
 }
 
 func testRejectingProposalForNewSpotMarketSucceeds(t *testing.T) {

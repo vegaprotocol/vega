@@ -183,6 +183,14 @@ func TestCheckPointWithUndistributedLPFees(t *testing.T) {
 	require.NoError(t, err)
 	e.IncrementBalance(context.Background(), marginAccount3, num.NewUint(500000))
 
+	_, err = e.GetOrCreateLiquidityFeesBonusDistributionAccount(context.Background(), "market1", "MYASSET1")
+	require.NoError(t, err)
+
+	partyLiquidityFeeAccountID, err := e.CreatePartyLiquidityFeeAccount(context.Background(), "zohar", "market1", "MYASSET1")
+	require.NoError(t, err)
+
+	e.IncrementBalance(context.Background(), partyLiquidityFeeAccountID, num.NewUint(1234))
+
 	// setup some balance on the LP fee pay account for MYASSET1/market1
 	lpTransfers := &types.Transfer{
 		Owner: "zohar",
@@ -193,6 +201,19 @@ func TestCheckPointWithUndistributedLPFees(t *testing.T) {
 		Type: types.TransferTypeLiquidityFeePay,
 	}
 	_, err = e.TransferFees(context.Background(), "market1", "MYASSET1", &feesTransfer{transfers: []*types.Transfer{lpTransfers}})
+	require.NoError(t, err)
+
+	// artificially fill the LP fee account for spots to demonstrate that the unpaid collected goes to the network treasury and what's left
+	// on the party LP fee account goes to the general party account
+	lpSpotTransfers := &types.Transfer{
+		Owner: "zohar",
+		Amount: &types.FinancialAmount{
+			Asset:  "MYASSET1",
+			Amount: num.NewUint(1230),
+		},
+		Type: types.TransferTypeLiquidityFeeUnpaidCollect,
+	}
+	_, err = e.TransferSpotFees(context.Background(), "market1", "MYASSET1", &feesTransfer{transfers: []*types.Transfer{lpSpotTransfers}})
 	require.NoError(t, err)
 
 	// setup some balance on the LP fee pay account for MYASSET1/market2
@@ -227,9 +248,14 @@ func TestCheckPointWithUndistributedLPFees(t *testing.T) {
 
 	netTreasury1, err := e.GetGlobalRewardAccount("MYASSET1")
 	require.NoError(t, err)
-	require.Equal(t, "5000", netTreasury1.Balance.String())
+	require.Equal(t, "6230", netTreasury1.Balance.String())
 
 	netTreasury2, err := e.GetGlobalRewardAccount("MYASSET2")
 	require.NoError(t, err)
 	require.Equal(t, "7000", netTreasury2.Balance.String())
+
+	// 1000000 - 5000 + 4
+	acc, err := e.GetPartyGeneralAccount("zohar", "MYASSET1")
+	require.NoError(t, err)
+	require.Equal(t, "995004", acc.Balance.String())
 }

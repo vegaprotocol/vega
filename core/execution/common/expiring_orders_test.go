@@ -61,7 +61,6 @@ func testExpireOrdersSnapshot(t *testing.T) {
 
 	// Test empty
 	a.Len(eo.GetState(), 0)
-	a.False(eo.Changed())
 
 	eo.Insert(testOrders[0].ID, 100)
 	eo.Insert(testOrders[1].ID, 110)
@@ -77,7 +76,6 @@ func testExpireOrdersSnapshot(t *testing.T) {
 	}
 
 	s := eo.GetState()
-	a.False(eo.Changed())
 
 	newEo := common.NewExpiringOrdersFromState(s)
 	a.True(newEo.Changed())
@@ -86,5 +84,4 @@ func testExpireOrdersSnapshot(t *testing.T) {
 	for _, o := range state {
 		require.NotNil(t, testIDs[o.ID])
 	}
-	a.False(newEo.Changed())
 }

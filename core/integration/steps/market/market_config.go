@@ -24,6 +24,7 @@ type Config struct {
 	PriceMonitoring     *priceMonitoring
 	MarginCalculators   *marginCalculators
 	LiquidityMonitoring *liquidityMonitoring
+	LiquiditySLAParams  *slaParams
 }
 
 type SuccessorConfig struct {
@@ -48,6 +49,7 @@ func NewMarketConfig() *Config {
 		PriceMonitoring:     newPriceMonitoring(unmarshaler),
 		MarginCalculators:   newMarginCalculators(unmarshaler),
 		LiquidityMonitoring: newLiquidityMonitoring(unmarshaler),
+		LiquiditySLAParams:  newLiquiditySLAParams(unmarshaler),
 	}
 }
 
