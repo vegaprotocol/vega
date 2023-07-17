@@ -105,26 +105,26 @@ func (m *Market) OnMarketPartiesMaximumStopOrdersUpdate(ctx context.Context, u *
 	m.maxStopOrdersPerParties = u.Clone()
 }
 
-func (m *Market) OnLiquidityV2BondPenaltyFactorUpdate(liquidityV2BondPenaltyFactor num.Decimal) {
+func (m *Market) OnMarketLiquidityV2BondPenaltyFactorUpdate(liquidityV2BondPenaltyFactor num.Decimal) {
 	m.liquidity.OnBondPenaltyFactorUpdate(liquidityV2BondPenaltyFactor)
 }
 
-func (m *Market) OnLiquidityV2EarlyExitPenaltyUpdate(liquidityV2EarlyExitPenalty num.Decimal) {
-	m.liquidity.OnEarlyExitPenalty(liquidityV2EarlyExitPenalty)
+func (m *Market) OnMarketLiquidityV2EarlyExitPenaltyUpdate(d num.Decimal) {
+	m.liquidity.OnEarlyExitPenalty(d)
 }
 
-func (m *Market) OnLiquidityV2MaxLiquidityFeeUpdate(liquidityV2MaxLiquidityFee num.Decimal) {
-	m.liquidity.OnMaximumLiquidityFeeFactorLevelUpdate(liquidityV2MaxLiquidityFee)
+func (m *Market) OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate(d num.Decimal) {
+	m.liquidity.OnMaximumLiquidityFeeFactorLevelUpdate(d)
 }
 
-func (m *Market) OnLiquidityV2StakeToCCYVolume(stakeToCcyVolumeUpdate num.Decimal) {
-	m.liquidity.OnStakeToCcyVolumeUpdate(stakeToCcyVolumeUpdate)
+func (m *Market) OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(d num.Decimal) {
+	m.liquidity.OnNonPerformanceBondPenaltySlopeUpdate(d)
 }
 
-func (m *Market) OnLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(liquidityV2SLANonPerformanceBondPenaltySlope num.Decimal) {
-	m.liquidity.OnNonPerformanceBondPenaltySlopeUpdate(liquidityV2SLANonPerformanceBondPenaltySlope)
+func (m *Market) OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(d num.Decimal) {
+	m.liquidity.OnNonPerformanceBondPenaltyMaxUpdate(d)
 }
 
-func (m *Market) OnLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(liquidityV2SLANonPerformanceBondPenaltyMax num.Decimal) {
-	m.liquidity.OnNonPerformanceBondPenaltyMaxUpdate(liquidityV2SLANonPerformanceBondPenaltyMax)
+func (m *Market) OnMarketLiquidityV2StakeToCCYVolume(d num.Decimal) {
+	m.liquidity.OnStakeToCcyVolumeUpdate(d)
 }

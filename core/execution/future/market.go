@@ -238,7 +238,7 @@ func NewMarket(
 
 	now := timeService.GetTimeNow()
 
-	liquidityEngine := liquidity.NewEngine(
+	liquidityEngine := liquidity.NewSnapshotEngine(
 		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel,
 		pMonitor, book, auctionState, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams,
 	)
@@ -3933,6 +3933,5 @@ func (m *Market) GetMarketCounters() *types.MarketCounters {
 		PeggedOrderCounter:  m.GetTotalPeggedOrderCount(),
 		OrderbookLevelCount: m.GetTotalOrderBookLevelCount(),
 		PositionCount:       m.GetTotalOpenPositionCount(),
-		LPShapeCount:        m.GetTotalLPShapeCount(),
 	}
 }

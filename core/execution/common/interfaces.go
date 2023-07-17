@@ -288,6 +288,11 @@ type CommonMarket interface {
 	OnFeeFactorsMakerFeeUpdate(context.Context, num.Decimal)
 	OnMarkPriceUpdateMaximumFrequency(context.Context, time.Duration)
 	OnMarketAuctionMinimumDurationUpdate(context.Context, time.Duration)
+	OnMarketLiquidityV2EarlyExitPenaltyUpdate(num.Decimal)
+	OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate(num.Decimal)
+	OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(num.Decimal)
+	OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(num.Decimal)
+	OnMarketLiquidityV2StakeToCCYVolume(d num.Decimal)
 
 	// liquidity provision
 	CancelLiquidityProvision(context.Context, *types.LiquidityProvisionCancellation, string) error

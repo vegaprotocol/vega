@@ -297,10 +297,6 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
 			Watcher: e.executionEngine.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate,
 		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityBondPenaltyParameter,
-			Watcher: e.executionEngine.OnMarketLiquidityBondPenaltyUpdate,
-		},
 		// Liquidity version 2.
 		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityV2BondPenaltyParameter,

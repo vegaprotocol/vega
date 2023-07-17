@@ -703,7 +703,7 @@ func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Marke
 		e.log,
 		e.Matching,
 		e.Fee,
-		e.LiquidityV2,
+		e.Liquidity,
 		e.collateral,
 		marketConfig,
 		e.timeService,
@@ -776,8 +776,8 @@ func (e *Engine) propagateSpotInitialNetParams(ctx context.Context, mkt *spot.Ma
 		mkt.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(e.npv.liquidityV2SLANonPerformanceBondPenaltyMax)
 	}
 
-	if !e.npv.liquidityV2SuppliedStakeToObligationFactor.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
-		mkt.OnMarketLiquidityV2SuppliedStakeToObligationFactorUpdate(e.npv.liquidityV2SuppliedStakeToObligationFactor)
+	if !e.npv.liquidityV2StakeToCCYVolume.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
+		mkt.OnMarketLiquidityV2StakeToCCYVolume(e.npv.liquidityV2StakeToCCYVolume)
 	}
 	return nil
 }
@@ -834,27 +834,27 @@ func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mk
 
 func (e *Engine) propagateSLANetParams(ctx context.Context, mkt *future.Market) {
 	if !e.npv.liquidityV2BondPenaltyFactor.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
-		mkt.OnLiquidityV2BondPenaltyFactorUpdate(e.npv.liquidityV2BondPenaltyFactor)
+		mkt.OnMarketLiquidityV2BondPenaltyFactorUpdate(e.npv.liquidityV2BondPenaltyFactor)
 	}
 
 	if !e.npv.liquidityV2EarlyExitPenalty.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
-		mkt.OnLiquidityV2EarlyExitPenaltyUpdate(e.npv.liquidityV2EarlyExitPenalty)
+		mkt.OnMarketLiquidityV2EarlyExitPenaltyUpdate(e.npv.liquidityV2EarlyExitPenalty)
 	}
 
 	if !e.npv.liquidityV2MaxLiquidityFee.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
-		mkt.OnLiquidityV2MaxLiquidityFeeUpdate(e.npv.liquidityV2MaxLiquidityFee)
+		mkt.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate(e.npv.liquidityV2MaxLiquidityFee)
 	}
 
 	if !e.npv.liquidityV2SLANonPerformanceBondPenaltySlope.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
-		mkt.OnLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(e.npv.liquidityV2SLANonPerformanceBondPenaltySlope)
+		mkt.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(e.npv.liquidityV2SLANonPerformanceBondPenaltySlope)
 	}
 
 	if !e.npv.liquidityV2SLANonPerformanceBondPenaltyMax.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
-		mkt.OnLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(e.npv.liquidityV2SLANonPerformanceBondPenaltyMax)
+		mkt.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(e.npv.liquidityV2SLANonPerformanceBondPenaltyMax)
 	}
 
 	if !e.npv.liquidityV2StakeToCCYVolume.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
-		mkt.OnLiquidityV2StakeToCCYVolume(e.npv.liquidityV2StakeToCCYVolume)
+		mkt.OnMarketLiquidityV2StakeToCCYVolume(e.npv.liquidityV2StakeToCCYVolume)
 	}
 }
 
@@ -1447,32 +1447,17 @@ func (e *Engine) OnMarkPriceUpdateMaximumFrequency(ctx context.Context, d time.D
 	return nil
 }
 
-// to be removed and replaced by its v2 counterpart. in use only for future.
-func (e *Engine) OnMarketLiquidityBondPenaltyUpdate(ctx context.Context, d num.Decimal) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update market liquidity bond penalty",
-			logging.Decimal("bond-penalty-factor", d),
-		)
-	}
-
-	for _, mkt := range e.futureMarketsCpy {
-		mkt.BondPenaltyFactorUpdate(ctx, d)
-	}
-
-	e.npv.bondPenaltyFactor = d
-
-	return nil
-}
-
 // SLA liquidity - currently only used in spots.
-func (e *Engine) OnMarketLiquidityV2BondPenaltyUpdate(ctx context.Context, d num.Decimal) error {
+func (e *Engine) OnMarketLiquidityV2BondPenaltyUpdate(_ context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update market liquidity bond penalty (liquidity v2)",
 			logging.Decimal("bond-penalty-factor", d),
 		)
 	}
 
-	// NB: this is not relevant for spots, TODO wire to futures market when implemented @karel
+	for _, m := range e.futureMarketsCpy {
+		m.OnMarketLiquidityV2BondPenaltyFactorUpdate(d)
+	}
 	e.npv.liquidityV2BondPenaltyFactor = d
 
 	return nil
@@ -1486,7 +1471,7 @@ func (e *Engine) OnMarketLiquidityV2EarlyExitPenaltyUpdate(_ context.Context, d 
 		)
 	}
 
-	for _, m := range e.spotMarketsCpy {
+	for _, m := range e.allMarketsCpy {
 		m.OnMarketLiquidityV2EarlyExitPenaltyUpdate(d)
 	}
 	e.npv.liquidityV2EarlyExitPenalty = d
@@ -1501,7 +1486,7 @@ func (e *Engine) OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate(_ conte
 		)
 	}
 
-	for _, m := range e.spotMarketsCpy {
+	for _, m := range e.allMarketsCpy {
 		m.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate(d)
 	}
 	e.npv.liquidityV2MaxLiquidityFee = d
@@ -1517,7 +1502,7 @@ func (e *Engine) OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(_ co
 		)
 	}
 
-	for _, m := range e.spotMarketsCpy {
+	for _, m := range e.allMarketsCpy {
 		m.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(d)
 	}
 	e.npv.liquidityV2SLANonPerformanceBondPenaltySlope = d
@@ -1533,7 +1518,7 @@ func (e *Engine) OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(_ cont
 		)
 	}
 
-	for _, m := range e.spotMarketsCpy {
+	for _, m := range e.allMarketsCpy {
 		m.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(d)
 	}
 	e.npv.liquidityV2SLANonPerformanceBondPenaltyMax = d
@@ -1542,21 +1527,17 @@ func (e *Engine) OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(_ cont
 }
 
 // SLA liquidity - currently only used in spots.
-func (e *Engine) OnMarketLiquidityV2SuppliedStakeToObligationFactorUpdate(_ context.Context, d num.Decimal) error {
+func (e *Engine) OnMarketLiquidityV2StakeToCCYVolumeUpdate(_ context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update market SLA non performance bond penalty max (liquidity v2)",
 			logging.Decimal("bond-penalty-max", d),
 		)
 	}
 
-	for _, m := range e.spotMarketsCpy {
-		m.OnMarketLiquidityV2SuppliedStakeToObligationFactorUpdate(d)
+	for _, m := range e.allMarketsCpy {
+		m.OnMarketLiquidityV2StakeToCCYVolume(d)
 	}
-	e.npv.liquidityV2SuppliedStakeToObligationFactor = d
-	// TODO To propagate to spot markets.
-
-	e.npv.liquidityV2SLANonPerformanceBondPenaltyMax = d
-
+	e.npv.suppliedStakeToObligationFactor = d
 	return nil
 }
 
@@ -1608,21 +1589,6 @@ func (e *Engine) OnMarketFeeFactorsInfrastructureFeeUpdate(ctx context.Context, 
 	return nil
 }
 
-// to be removed and replaced by its v2 counterpart. in use only for future.
-func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(_ context.Context, d num.Decimal) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update supplied stake to obligation factor",
-			logging.Decimal("factor", d),
-		)
-	}
-
-	for _, mkt := range e.futureMarketsCpy {
-		mkt.OnSuppliedStakeToObligationFactorUpdate(d)
-	}
-	e.npv.suppliedStakeToObligationFactor = d
-	return nil
-}
-
 func (e *Engine) OnMarketValueWindowLengthUpdate(_ context.Context, d time.Duration) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update market value window length",
@@ -1638,40 +1604,7 @@ func (e *Engine) OnMarketValueWindowLengthUpdate(_ context.Context, d time.Durat
 }
 
 // to be removed and replaced by its v2 counterpart. in use only for future.
-func (e *Engine) OnMarketLiquidityProvidersFeeDistributionTimeStep(_ context.Context, d time.Duration) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update liquidity providers fee distribution time step",
-			logging.Duration("time-window", d),
-		)
-	}
-
-	for _, mkt := range e.futureMarketsCpy {
-		mkt.OnMarketLiquidityProvidersFeeDistribitionTimeStep(d)
-	}
-	e.npv.feeDistributionTimeStep = d
-	return nil
-}
-
-// to be removed and replaced by its v2 counterpart. in use only for future.
-func (e *Engine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(_ context.Context, v int64) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update liquidity provision max shape",
-			logging.Int64("max-shape", v),
-		)
-	}
-
-	for _, mkt := range e.futureMarketsCpy {
-		_ = mkt.OnMarketLiquidityProvisionShapesMaxSizeUpdate(v)
-	}
-	e.npv.shapesMaxSize = v
-	return nil
-}
-
-// to be removed and replaced by its v2 counterpart. in use only for future.
 func (e *Engine) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(_ context.Context, d num.Decimal) error {
-func (e *Engine) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(
-	_ context.Context, d num.Decimal,
-) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update liquidity provision max liquidity fee factor",
 			logging.Decimal("max-liquidity-fee", d),

@@ -124,7 +124,7 @@ func NewMarketFromSnapshot(
 	priceFactor := num.UintZero().Exp(num.NewUint(10), num.NewUint(exp))
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
-	liquidityEngine := liquidity.NewEngine(
+	liquidityEngine := liquidity.NewSnapshotEngine(
 		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel,
 		pMonitor, book, as, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams,
 	)
