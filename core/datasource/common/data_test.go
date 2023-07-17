@@ -23,27 +23,27 @@ import (
 )
 
 func TestOracleData(t *testing.T) {
-	t.Run("Getting integer when not present fails", testOracleDataGetMissingIntegerFails)
-	t.Run("Getting decimal when not present fails", testOracleDataGetMissingDecimalFails)
-	t.Run("Getting boolean when not present fails", testOracleDataGetMissingBooleanFails)
-	t.Run("Getting timestamp when not present fails", testOracleDataGetMissingTimestampFails)
-	t.Run("Getting string when not present fails", testOracleDataGetMissingStringFails)
-	t.Run("Getting integer when not an integer fails", testOracleDataGetIntegerFails)
-	t.Run("Getting decimal when not a decimal fails", testOracleDataGetDecimalFails)
-	t.Run("Getting boolean when not a boolean fails", testOracleDataGetBooleanFails)
-	t.Run("Getting timestamp when not a timestamp fails", testOracleDataGetTimestampFails)
-	t.Run("Getting integer succeeds", testOracleDataGetIntegerSucceeds)
-	t.Run("Getting decimal succeeds", testOracleDataGetDecimalSucceeds)
-	t.Run("Getting boolean succeeds", testOracleDataGetBooleanSucceeds)
-	t.Run("Getting timestamp succeeds", testOracleDataGetTimestampSucceeds)
-	t.Run("Getting string succeeds", testOracleDataGetStringSucceeds)
-	t.Run("Getting uint when not present fails", testOracleDataGetMissingUintFails)
-	t.Run("Getting uint when not a uint fails", testOracleDataGetUintFails)
-	t.Run("Getting uint succeeds", testOracleDataGetUintSucceeds)
-	t.Run("Determining the origin succeeds", testOracleDataDeterminingOriginSucceeds)
+	t.Run("Getting integer when not present fails", testDataGetMissingIntegerFails)
+	t.Run("Getting decimal when not present fails", testDataGetMissingDecimalFails)
+	t.Run("Getting boolean when not present fails", testDataGetMissingBooleanFails)
+	t.Run("Getting timestamp when not present fails", testDataGetMissingTimestampFails)
+	t.Run("Getting string when not present fails", testDataGetMissingStringFails)
+	t.Run("Getting integer when not an integer fails", testDataGetIntegerFails)
+	t.Run("Getting decimal when not a decimal fails", testDataGetDecimalFails)
+	t.Run("Getting boolean when not a boolean fails", testDataGetBooleanFails)
+	t.Run("Getting timestamp when not a timestamp fails", testDataGetTimestampFails)
+	t.Run("Getting integer succeeds", testDataGetIntegerSucceeds)
+	t.Run("Getting decimal succeeds", testDataGetDecimalSucceeds)
+	t.Run("Getting boolean succeeds", testDataGetBooleanSucceeds)
+	t.Run("Getting timestamp succeeds", testDataGetTimestampSucceeds)
+	t.Run("Getting string succeeds", testDataGetStringSucceeds)
+	t.Run("Getting uint when not present fails", testDataGetMissingUintFails)
+	t.Run("Getting uint when not a uint fails", testDataGetUintFails)
+	t.Run("Getting uint succeeds", testDataGetUintSucceeds)
+	t.Run("Determining the origin succeeds", testDataDeterminingOriginSucceeds)
 }
 
-func testOracleDataGetMissingUintFails(t *testing.T) {
+func testDataGetMissingUintFails(t *testing.T) {
 	// given
 	data := common.Data{
 		Signers: []*common.Signer{
@@ -62,7 +62,7 @@ func testOracleDataGetMissingUintFails(t *testing.T) {
 	assert.Equal(t, "property \"my_other_key\" not found", err.Error())
 }
 
-func testOracleDataGetUintFails(t *testing.T) {
+func testDataGetUintFails(t *testing.T) {
 	// given
 	data := common.Data{
 		Signers: []*common.Signer{
@@ -81,7 +81,7 @@ func testOracleDataGetUintFails(t *testing.T) {
 	assert.Equal(t, "could not parse value 'not an integer' for property 'my_key'", err.Error())
 }
 
-func testOracleDataGetUintSucceeds(t *testing.T) {
+func testDataGetUintSucceeds(t *testing.T) {
 	expect := num.NewUint(123)
 	// given
 	data := common.Data{
@@ -101,7 +101,7 @@ func testOracleDataGetUintSucceeds(t *testing.T) {
 	require.True(t, expect.EQ(value))
 }
 
-func testOracleDataGetMissingIntegerFails(t *testing.T) {
+func testDataGetMissingIntegerFails(t *testing.T) {
 	// given
 	data := common.Data{
 		Signers: []*common.Signer{
@@ -120,7 +120,7 @@ func testOracleDataGetMissingIntegerFails(t *testing.T) {
 	assert.Equal(t, "property \"my_other_key\" not found", err.Error())
 }
 
-func testOracleDataGetMissingDecimalFails(t *testing.T) {
+func testDataGetMissingDecimalFails(t *testing.T) {
 	// given
 	data := common.Data{
 		Signers: []*common.Signer{
@@ -139,7 +139,7 @@ func testOracleDataGetMissingDecimalFails(t *testing.T) {
 	assert.Equal(t, "property \"my_other_key\" not found", err.Error())
 }
 
-func testOracleDataGetMissingBooleanFails(t *testing.T) {
+func testDataGetMissingBooleanFails(t *testing.T) {
 	// given
 	data := common.Data{
 		Signers: []*common.Signer{
@@ -158,7 +158,7 @@ func testOracleDataGetMissingBooleanFails(t *testing.T) {
 	assert.Equal(t, "property \"my_other_key\" not found", err.Error())
 }
 
-func testOracleDataGetMissingTimestampFails(t *testing.T) {
+func testDataGetMissingTimestampFails(t *testing.T) {
 	// given
 	data := common.Data{
 		Signers: []*common.Signer{
@@ -177,7 +177,7 @@ func testOracleDataGetMissingTimestampFails(t *testing.T) {
 	assert.Equal(t, "property \"my_other_key\" not found", err.Error())
 }
 
-func testOracleDataGetMissingStringFails(t *testing.T) {
+func testDataGetMissingStringFails(t *testing.T) {
 	// given
 	data := common.Data{
 		Signers: []*common.Signer{
@@ -196,7 +196,7 @@ func testOracleDataGetMissingStringFails(t *testing.T) {
 	assert.Equal(t, "property \"my_other_key\" not found", err.Error())
 }
 
-func testOracleDataGetIntegerFails(t *testing.T) {
+func testDataGetIntegerFails(t *testing.T) {
 	// given
 	data := common.Data{
 		Signers: []*common.Signer{
@@ -214,7 +214,7 @@ func testOracleDataGetIntegerFails(t *testing.T) {
 	require.Error(t, err)
 }
 
-func testOracleDataGetDecimalFails(t *testing.T) {
+func testDataGetDecimalFails(t *testing.T) {
 	// given
 	data := common.Data{
 		Signers: []*common.Signer{
@@ -232,7 +232,7 @@ func testOracleDataGetDecimalFails(t *testing.T) {
 	require.Error(t, err)
 }
 
-func testOracleDataGetBooleanFails(t *testing.T) {
+func testDataGetBooleanFails(t *testing.T) {
 	// given
 	data := common.Data{
 		Signers: []*common.Signer{
@@ -250,7 +250,7 @@ func testOracleDataGetBooleanFails(t *testing.T) {
 	require.Error(t, err)
 }
 
-func testOracleDataGetTimestampFails(t *testing.T) {
+func testDataGetTimestampFails(t *testing.T) {
 	// given
 	data := common.Data{
 		Signers: []*common.Signer{
@@ -268,7 +268,7 @@ func testOracleDataGetTimestampFails(t *testing.T) {
 	require.Error(t, err)
 }
 
-func testOracleDataGetIntegerSucceeds(t *testing.T) {
+func testDataGetIntegerSucceeds(t *testing.T) {
 	// given
 	data := common.Data{
 		Signers: []*common.Signer{
@@ -287,7 +287,7 @@ func testOracleDataGetIntegerSucceeds(t *testing.T) {
 	assert.True(t, num.NewInt(42).EQ(value))
 }
 
-func testOracleDataGetDecimalSucceeds(t *testing.T) {
+func testDataGetDecimalSucceeds(t *testing.T) {
 	// given
 	data := common.Data{
 		Signers: []*common.Signer{
@@ -306,7 +306,7 @@ func testOracleDataGetDecimalSucceeds(t *testing.T) {
 	assert.True(t, num.DecimalFromFloat(1.2).Equal(value))
 }
 
-func testOracleDataGetBooleanSucceeds(t *testing.T) {
+func testDataGetBooleanSucceeds(t *testing.T) {
 	// given
 	data := common.Data{
 		Signers: []*common.Signer{
@@ -325,7 +325,7 @@ func testOracleDataGetBooleanSucceeds(t *testing.T) {
 	assert.True(t, value)
 }
 
-func testOracleDataGetTimestampSucceeds(t *testing.T) {
+func testDataGetTimestampSucceeds(t *testing.T) {
 	// given
 	data := common.Data{
 		Signers: []*common.Signer{
@@ -344,7 +344,7 @@ func testOracleDataGetTimestampSucceeds(t *testing.T) {
 	assert.EqualValues(t, 10000000, value)
 }
 
-func testOracleDataGetStringSucceeds(t *testing.T) {
+func testDataGetStringSucceeds(t *testing.T) {
 	// given
 	data := common.Data{
 		Signers: []*common.Signer{
@@ -363,7 +363,7 @@ func testOracleDataGetStringSucceeds(t *testing.T) {
 	assert.Equal(t, "hello", value)
 }
 
-func testOracleDataDeterminingOriginSucceeds(t *testing.T) {
+func testDataDeterminingOriginSucceeds(t *testing.T) {
 	tcs := []struct {
 		name                 string
 		pubkeys              []*common.Signer
