@@ -7,12 +7,13 @@ import (
 )
 
 type Numeric struct {
+	asInt     *Int
 	asUint    *Uint
 	asDecimal *Decimal
 }
 
 func (n *Numeric) Clone() *Numeric {
-	if n.asUint != nil {
+	if n.asUint != nil || n.asInt != nil {
 		nn := n
 		return nn
 	}
@@ -32,6 +33,9 @@ func (n *Numeric) String() string {
 	}
 	if n.asDecimal != nil {
 		return n.asDecimal.String()
+	}
+	if n.asInt != nil {
+		return n.asInt.String()
 	}
 
 	return ""
@@ -60,6 +64,13 @@ func NumericFromString(s string) (*Numeric, error) {
 		}
 		return &Numeric{
 			asDecimal: &d,
+		}, nil
+	}
+
+	if strings.HasPrefix(s, "-") {
+		in, _ := IntFromString(s, 10)
+		return &Numeric{
+			asInt: in,
 		}, nil
 	}
 
@@ -107,16 +118,24 @@ func (n *Numeric) SupportDecimalPlaces(dp int64) bool {
 	return true
 }
 
+func (n *Numeric) SetInt(in *Int) *Numeric {
+	n.asInt = in
+	n.asDecimal = nil
+	n.asUint = nil
+	return n
+}
+
 func (n *Numeric) SetUint(u *Uint) *Numeric {
 	n.asUint = u
 	n.asDecimal = nil
+	n.asInt = nil
 	return n
 }
 
 func (n *Numeric) SetDecimal(d *Decimal) *Numeric {
 	n.asDecimal = d
 	n.asUint = nil
-
+	n.asInt = nil
 	return n
 }
 
@@ -136,10 +155,22 @@ func (n *Numeric) Uint() *Uint {
 	return &u
 }
 
+func (n *Numeric) Int() *Int {
+	if n.asInt == nil {
+		return nil
+	}
+	in := *n.asInt
+	return &in
+}
+
 func (n *Numeric) IsDecimal() bool {
 	return n.asDecimal != nil
 }
 
 func (n *Numeric) IsUint() bool {
 	return n.asUint != nil
+}
+
+func (n *Numeric) IsInt() bool {
+	return n.asInt != nil
 }

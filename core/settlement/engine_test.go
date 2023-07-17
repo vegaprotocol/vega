@@ -70,11 +70,64 @@ func TestMarkToMarket(t *testing.T) {
 	// add this test case because we had a runtime panic on the trades map earlier
 	t.Run("Trade adds new party, immediately closing out with themselves", testAddNewPartySelfTrade)
 	t.Run("Test MTM settle when the network is closed out", testMTMNetworkZero)
+
+	t.Run("Test settling a funding period", TestSettlingAFundingPeriod)
 }
 
 func TestMTMWinDistribution(t *testing.T) {
 	t.Run("A MTM loss party with a loss of value 1, with several parties needing a win", testMTMWinOneExcess)
 	t.Run("Distribute win excess in a scenario where no transfer amount is < 1", testMTMWinNoZero)
+}
+
+func TestSettlingAFundingPeriod(t *testing.T) {
+	engine := getTestEngine(t)
+	defer engine.Finish()
+	ctx := context.Background()
+
+	testPositions := []testPos{
+		{
+			party: "party1",
+			size:  10,
+		},
+		{
+			party: "party2",
+			size:  -10,
+		},
+		{
+			party: "party3",
+			size:  0,
+		},
+	}
+	positions := make([]events.MarketPosition, 0, len(testPositions))
+	for _, p := range testPositions {
+		positions = append(positions, p)
+	}
+
+	// 0 funding paymenet produces 0 transfers
+	assert.Len(t, engine.SettleFundingPeriod(ctx, positions, num.IntZero()), 0)
+
+	// no positions produces no transfers
+
+	// positive funding payement, shorts pay long
+	fundingPayment, _ := num.IntFromString("10", 10)
+	transfers := engine.SettleFundingPeriod(ctx, positions, fundingPayment)
+	require.Len(t, transfers, 2)
+	assert.Equal(t, "100", transfers[0].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypeMTMLoss, transfers[0].Transfer().Type)
+	assert.Equal(t, "100", transfers[1].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypeMTMWin, transfers[1].Transfer().Type)
+
+	// negative funding payement, long pays short
+	fundingPayment, _ = num.IntFromString("-10", 10)
+	transfers = engine.SettleFundingPeriod(ctx, positions, fundingPayment)
+	require.Len(t, transfers, 2)
+	assert.Equal(t, "100", transfers[0].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypeMTMWin, transfers[0].Transfer().Type)
+	assert.Equal(t, "100", transfers[1].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypeMTMLoss, transfers[1].Transfer().Type)
+
+	// no positions produces no transfers
+	assert.Len(t, engine.SettleFundingPeriod(ctx, []events.MarketPosition{}, fundingPayment), 0)
 }
 
 func testMTMWinNoZero(t *testing.T) {

@@ -178,7 +178,7 @@ func NewMarket(
 
 	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(mkt.PositionDecimalPlaces))
 
-	tradableInstrument, err := markets.NewTradableInstrument(ctx, log, mkt.TradableInstrument, oracleEngine)
+	tradableInstrument, err := markets.NewTradableInstrument(ctx, log, mkt.TradableInstrument, oracleEngine, broker)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}
@@ -372,7 +372,7 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	} else {
 		m.tradableInstrument.Instrument.Unsubscribe(ctx)
 	}
-	if err := m.tradableInstrument.UpdateInstrument(ctx, m.log, m.mkt.TradableInstrument, oracleEngine); err != nil {
+	if err := m.tradableInstrument.UpdateInstrument(ctx, m.log, m.mkt.TradableInstrument, oracleEngine, m.broker); err != nil {
 		return err
 	}
 	m.risk.UpdateModel(m.stateVarEngine, m.tradableInstrument.MarginCalculator, m.tradableInstrument.RiskModel)
@@ -2054,6 +2054,11 @@ func (m *Market) confirmMTM(
 	evts := m.position.UpdateMarkPrice(mp)
 	settle := m.settlement.SettleMTM(ctx, mp, evts)
 	orderUpdates := []*types.Order{}
+
+	// let the product know about the mark-price, incase its the sort of product that cares
+	if m.markPrice != nil {
+		m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, mp, m.timeService.GetTimeNow().UnixNano())
+	}
 
 	// Only process collateral and risk once per order, not for every trade
 	margins := m.collateralAndRisk(ctx, settle)

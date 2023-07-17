@@ -108,6 +108,13 @@ type oracleBinding struct {
 	tradingTerminationProperty string
 }
 
+func (f *Future) SubmitDataPoint(_ context.Context, _ *num.Uint, _ int64) error {
+	return nil
+}
+
+func (f *Future) OnLeaveOpeningAuction(_ context.Context, _ int64) {
+}
+
 func (f *Future) NotifyOnSettlementData(listener func(context.Context, *num.Numeric)) {
 	f.settlementDataListener = listener
 }
