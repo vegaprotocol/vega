@@ -590,10 +590,6 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityBondPenaltyParameter,
-			Watcher: svcs.executionEngine.OnMarketLiquidityBondPenaltyUpdate,
-		},
-		{
 			Param:   netparams.MarketAuctionMinimumDuration,
 			Watcher: svcs.executionEngine.OnMarketAuctionMinimumDurationUpdate,
 		},
@@ -628,7 +624,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		},
 		{
 			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
-			Watcher: svcs.executionEngine.OnMarketLiquidityV2SuppliedStakeToObligationFactorUpdate,
+			Watcher: svcs.executionEngine.OnMarketLiquidityV2StakeToCCYVolumeUpdate,
 		},
 		// End of liquidity version 2.
 		{

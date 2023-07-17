@@ -208,7 +208,7 @@ func NewMarket(
 	mkt.MarketTimestamps = ts
 	liquidity := liquidity.NewSnapshotEngine(liquidityConfig, log, timeService, broker, riskModel, pMonitor, book, as, quoteAsset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams)
 	els := common.NewEquityShares(num.DecimalZero())
-	marketLiquidity := common.NewMarketLiquidity(log, liquidity, collateralEngine, broker, book, els, marketActivityTracker, feeEngine, mkt.ID, quoteAsset, priceFactor, mkt.LiquiditySLAParams.PriceRange, mkt.LiquiditySLAParams.ProvidersFeeCalculationTimeStep)
+	marketLiquidity := common.NewMarketLiquidity(log, liquidity, collateralEngine, broker, book, els, marketActivityTracker, feeEngine, common.SpotMarketType, mkt.ID, quoteAsset, priceFactor, mkt.LiquiditySLAParams.PriceRange, mkt.LiquiditySLAParams.ProvidersFeeCalculationTimeStep)
 	market := &Market{
 		log:                       log,
 		idgen:                     nil,
@@ -2847,7 +2847,6 @@ func (m *Market) GetMarketCounters() *types.MarketCounters {
 		PeggedOrderCounter:  m.GetTotalPeggedOrderCount(),
 		OrderbookLevelCount: m.GetTotalOrderBookLevelCount(),
 		PositionCount:       0,
-		LPShapeCount:        0,
 	}
 }
 
