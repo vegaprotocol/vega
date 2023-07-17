@@ -187,7 +187,7 @@ func (e *Engine) OnSpecDeactivated(ctx context.Context, spec datasource.Spec) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	switch spec.Data.Content().(type) {
-	case *common.Spec:
+	case common.Spec:
 		id := spec.ID
 		delete(e.calls, id)
 	}
