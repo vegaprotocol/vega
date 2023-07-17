@@ -391,17 +391,8 @@ func (e *Engine) CheckLoaded() (bool, error) {
 	versions := e.avl.AvailableVersions()
 	startHeight := e.StartHeight
 
-	if startHeight < 0 && len(versions) == 0 { // && NO STATE-SYNC
-		// we have no snapshots, and so this is a new chain there is nothing to load
-		return false, nil
-	}
-	if startHeight == 0 && len(versions) == 0 {
-		// forced a replay. but there are no snapshots anyway so theres nothing to do
-		return false, nil
-	}
-
-	if startHeight == 0 {
-		// forced chain replay, we need to remove all old snapshots and start again
+	if len(versions) == 0 && startHeight == 0 {
+		// forced a replay, as there are no snapshots.
 		e.initialised = false
 		return false, e.ClearAndInitialise()
 	}
@@ -410,7 +401,7 @@ func (e *Engine) CheckLoaded() (bool, error) {
 
 	e.log.Info("loading snapshot for height", logging.Int64("height", startHeight))
 	// setup AVL tree from local store
-	if startHeight < 0 {
+	if startHeight == 0 {
 		return true, e.applySnapshotFromLocalStore(e.ctx)
 	}
 
