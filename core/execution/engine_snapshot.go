@@ -121,7 +121,7 @@ func (e *Engine) restoreSpotMarket(ctx context.Context, em *types.ExecSpotMarket
 		e.Config.Settlement,
 		e.Config.Matching,
 		e.Config.Fee,
-		e.Config.LiquidityV2,
+		e.Config.Liquidity,
 		e.collateral,
 		e.oracle,
 		e.timeService,

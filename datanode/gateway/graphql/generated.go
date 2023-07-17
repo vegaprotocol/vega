@@ -2272,7 +2272,6 @@ type NewMarketResolver interface {
 	PriceMonitoringParameters(ctx context.Context, obj *vega.NewMarket) (*PriceMonitoringParameters, error)
 	LiquidityMonitoringParameters(ctx context.Context, obj *vega.NewMarket) (*LiquidityMonitoringParameters, error)
 	PositionDecimalPlaces(ctx context.Context, obj *vega.NewMarket) (int, error)
-	LpPriceRange(ctx context.Context, obj *vega.NewMarket) (string, error)
 	LinearSlippageFactor(ctx context.Context, obj *vega.NewMarket) (string, error)
 	QuadraticSlippageFactor(ctx context.Context, obj *vega.NewMarket) (string, error)
 	SuccessorConfiguration(ctx context.Context, obj *vega.NewMarket) (*vega.SuccessorConfiguration, error)

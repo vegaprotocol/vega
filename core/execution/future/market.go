@@ -236,7 +236,7 @@ func NewMarket(
 
 	now := timeService.GetTimeNow()
 
-	liquidityEngine := liquidity.NewEngine(
+	liquidityEngine := liquidity.NewSnapshotEngine(
 		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel,
 		pMonitor, book, auctionState, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams,
 	)
@@ -3854,19 +3854,6 @@ func (m *Market) getLastTradedPrice() *num.Uint {
 	return m.lastTradedPrice.Clone()
 }
 
-func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
-	// TODO when liquidity engine is integrated
-	// if epoch.Action == vega.EpochAction_EPOCH_ACTION_START {
-	// 	m.liquidity.OnEpochStart(ctx, m.timeService.GetTimeNow(), m.markPrice, m.midPrice(), m.getTargetStake(), m.positionFactor)
-	// } else if epoch.Action == vega.EpochAction_EPOCH_ACTION_END {
-	// 	m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow())
-	// 	m.updateLiquidityFee(ctx)
-	// }
-}
-
-func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
-}
-
 func (m *Market) GetAssetForProposerBonus() string {
 	return m.settlementAsset
 }
@@ -3877,6 +3864,5 @@ func (m *Market) GetMarketCounters() *types.MarketCounters {
 		PeggedOrderCounter:  m.GetTotalPeggedOrderCount(),
 		OrderbookLevelCount: m.GetTotalOrderBookLevelCount(),
 		PositionCount:       m.GetTotalOpenPositionCount(),
-		LPShapeCount:        m.GetTotalLPShapeCount(),
 	}
 }
