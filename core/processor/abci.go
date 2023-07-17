@@ -113,6 +113,7 @@ type Snapshot interface {
 	GetMissingChunks() []uint32
 	ApplySnapshot(ctx context.Context) error
 	LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.RawChunk, error)
+	IsWillingToAcceptSnapshotFromStateSync() bool
 }
 
 type StateVarEngine interface {
@@ -596,6 +597,14 @@ func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseLi
 
 func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.ResponseOfferSnapshot {
 	app.log.Debug("ABCI service OfferSnapshot start")
+
+	if !app.snapshot.IsWillingToAcceptSnapshotFromStateSync() {
+		app.log.Warn("the snapshot engine refused the snapshot from state-sync since it started from the local snapshots")
+		return tmtypes.ResponseOfferSnapshot{
+			Result: tmtypes.ResponseOfferSnapshot_ABORT,
+		}
+	}
+
 	snap, err := types.SnapshotFromTM(req.Snapshot)
 	if err != nil {
 		app.log.Error("failed to convert snapshot", logging.Error(err))
@@ -634,6 +643,14 @@ func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.Response
 
 func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApplySnapshotChunk) tmtypes.ResponseApplySnapshotChunk {
 	app.log.Debug("ABCI service ApplySnapshotChunk start")
+
+	if !app.snapshot.IsWillingToAcceptSnapshotFromStateSync() {
+		app.log.Warn("the snapshot engine refused the snapshot chunk from state-sync since it started from the local snapshots")
+		return tmtypes.ResponseApplySnapshotChunk{
+			Result: tmtypes.ResponseApplySnapshotChunk_ABORT,
+		}
+	}
+
 	chunk := types.RawChunk{
 		Nr:   req.Index,
 		Data: req.Chunk,
@@ -880,6 +897,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 
 	// call checkpoint _first_ so the snapshot contains the correct checkpoint state.
 	cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp)
+
 	t0 := time.Now()
 
 	var snapHash []byte
@@ -902,7 +920,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 
 	t1 := time.Now()
 	if len(snapHash) > 0 {
-		app.log.Info("#### snapshot took ", logging.Float64("time", t1.Sub(t0).Seconds()))
+		app.log.Info("State has been snapshotted", logging.Float64("duration", t1.Sub(t0).Seconds()))
 	}
 	resp.Data = snapHash
 

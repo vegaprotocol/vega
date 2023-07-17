@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"code.vegaprotocol.io/vega/paths"
+	cometbftdb "github.com/cometbft/cometbft-db"
 	"github.com/syndtr/goleveldb/leveldb/opt"
-	db "github.com/tendermint/tm-db"
 )
 
 const metaDBName = "snapshot_meta"
@@ -15,7 +15,7 @@ type LevelDBAdapter struct {
 	dbFile      string
 	dbDirectory string
 
-	underlyingAdapter *db.GoLevelDB
+	underlyingAdapter *cometbftdb.GoLevelDB
 }
 
 func (a *LevelDBAdapter) Save(version []byte, state []byte) error {
@@ -32,6 +32,12 @@ func (a *LevelDBAdapter) Load(version []byte) ([]byte, error) {
 
 func (a *LevelDBAdapter) Close() error {
 	return a.underlyingAdapter.Close()
+}
+
+func (a *LevelDBAdapter) ContainsMetadata() bool {
+	iter := a.underlyingAdapter.DB().NewIterator(nil, nil)
+	defer iter.Release()
+	return iter.Next()
 }
 
 func (a *LevelDBAdapter) Clear() error {
@@ -70,8 +76,8 @@ func NewLevelDBAdapter(vegaPaths paths.Paths) (*LevelDBAdapter, error) {
 	}, nil
 }
 
-func initializeUnderlyingAdapter(dbDirectory string) (*db.GoLevelDB, error) {
-	underlyingAdapter, err := db.NewGoLevelDBWithOpts(
+func initializeUnderlyingAdapter(dbDirectory string) (*cometbftdb.GoLevelDB, error) {
+	underlyingAdapter, err := cometbftdb.NewGoLevelDBWithOpts(
 		metaDBName,
 		dbDirectory,
 		&opt.Options{

@@ -13,6 +13,8 @@
 package snapshot
 
 import (
+	"errors"
+
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
@@ -23,12 +25,17 @@ const (
 	InMemoryDB = "memory"
 )
 
+var (
+	ErrStartHeightCannotBeNegative      = errors.New("the value for \"load-from-block-height\" must be positive, or zero")
+	ErrKeepRecentMustBeHigherOrEqualTo1 = errors.New("the value for \"snapshot-keep-recent\" must higher or equal to 1")
+)
+
 type Config struct {
-	Level       encoding.LogLevel `choice:"debug"                                                                                                                                                                    choice:"info"                 choice:"warning"                  choice:"error" choice:"panic" choice:"fatal" description:"Logging level (default: info)" long:"log-level"`
-	KeepRecent  uint              `description:"Number of historic snapshots to keep on disk. Limited to the 10 most recent ones"                                                                                    long:"snapshot-keep-recent"`
-	RetryLimit  uint              `description:"Maximum number of times to try and apply snapshot chunk"                                                                                                             long:"max-retries"`
-	Storage     string            `choice:"GOLevelDB"                                                                                                                                                                choice:"memory"               description:"Storage type to use" long:"storage"`
-	StartHeight int64             `description:"Load from a snapshot at the given block-height. Setting to -1 will load from the latest snapshot available, 0 will force the chain to replay if not using statesync" long:"load-from-block-height"`
+	Level       encoding.LogLevel `choice:"debug"                                                                                                                                                                                                                                                                                            choice:"info"                 choice:"warning"                  choice:"error" choice:"panic" choice:"fatal" description:"Logging level (default: info)" long:"log-level"`
+	KeepRecent  uint              `description:"Number of historic snapshots to keep on disk. The minimum value is 1."                                                                                                                                                                                                                       long:"snapshot-keep-recent"`
+	RetryLimit  uint              `description:"Maximum number of times to try and apply snapshot chunk"                                                                                                                                                                                                                                     long:"max-retries"`
+	Storage     string            `choice:"GOLevelDB"                                                                                                                                                                                                                                                                                        choice:"memory"               description:"Storage type to use" long:"storage"`
+	StartHeight int64             `description:"If there are local snapshots, load the one matching the specified block height. If there is no local snapshot, and state-sync is enabled, the node waits for a snapshot to match the specified block height to be offered by the network peers. If set to 0, the latest snapshot is loaded." long:"load-from-block-height"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -39,16 +46,18 @@ func NewDefaultConfig() Config {
 		KeepRecent:  10,
 		RetryLimit:  5,
 		Storage:     LevelDB,
-		StartHeight: -1,
+		StartHeight: 0,
 	}
 }
 
 // Validate checks the values in the config file are sensible.
 func (c *Config) Validate() error {
-	// default to min 1 version, just so we don't have to account for nil slice.
-	// A single version kept in memory is pretty harmless.
 	if c.KeepRecent < 1 {
-		c.KeepRecent = 1
+		return ErrKeepRecentMustBeHigherOrEqualTo1
+	}
+
+	if c.StartHeight < 0 {
+		return ErrStartHeightCannotBeNegative
 	}
 
 	switch c.Storage {

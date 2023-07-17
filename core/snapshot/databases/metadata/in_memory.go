@@ -26,6 +26,10 @@ func (a *InMemoryAdapter) Clear() error {
 	return nil
 }
 
+func (a *InMemoryAdapter) ContainsMetadata() bool {
+	return len(a.store) > 0
+}
+
 func NewInMemoryAdapter() *InMemoryAdapter {
 	return &InMemoryAdapter{
 		store: map[string][]byte{},
