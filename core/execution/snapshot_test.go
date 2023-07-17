@@ -166,12 +166,6 @@ func TestSnapshotOraclesTerminatingMarketSettleAfterSnapshot(t *testing.T) {
 		CommitmentAmount: num.NewUint(1000000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "lp1",
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceMid, 10, 5),
-		},
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceMid, 10, 5),
-		},
 	}
 	// submit LP
 	vgctx := vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("0deadbeef")))
@@ -687,12 +681,4 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 func (s *stubIDGen) NextID() string {
 	s.calls++
 	return hex.EncodeToString([]byte(fmt.Sprintf("deadb33f%d", s.calls)))
-}
-
-func newLiquidityOrder(reference types.PeggedReference, offset uint64, proportion uint32) *types.LiquidityOrder {
-	return &types.LiquidityOrder{
-		Reference:  reference,
-		Proportion: proportion,
-		Offset:     num.NewUint(offset),
-	}
 }

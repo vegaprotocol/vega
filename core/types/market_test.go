@@ -14,6 +14,7 @@ package types_test
 
 import (
 	"testing"
+	"time"
 
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/types"
@@ -153,7 +154,13 @@ func TestMarketFromIntoProto(t *testing.T) {
 			Open:     2,
 			Close:    360,
 		},
-		LpPriceRange:            "0.95",
+		LiquiditySlaParams: &vegapb.LiquiditySLAParameters{
+			PriceRange:                      "0.95",
+			CommitmentMinTimeFraction:       "0.5",
+			ProvidersFeeCalculationTimeStep: time.Duration(time.Second * 5).Nanoseconds(),
+			PerformanceHysteresisEpochs:     4,
+			SlaCompetitionFactor:            "0.5",
+		},
 		LinearSlippageFactor:    "0.1",
 		QuadraticSlippageFactor: "0.1",
 	}
