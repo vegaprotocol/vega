@@ -35,6 +35,7 @@
 - [8800](https://github.com/vegaprotocol/vega/issues/8800) - `expiresAt` is always null in the Stop Orders `API`.
 - [8796](https://github.com/vegaprotocol/vega/issues/8796) - Avoid updating active proposals slice while iterating over it.
 - [8679](https://github.com/vegaprotocol/vega/issues/8679) - Disallow snapshot state-sync if local snapshots exist
+- [8836](https://github.com/vegaprotocol/vega/issues/8836) - Fix enactment of market update state
 
 
 ## 0.72.1
