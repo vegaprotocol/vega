@@ -382,7 +382,7 @@ func (e *Engine) restoreSuccessorMaps(successors []*types.Successors) {
 }
 
 func (e *Engine) OnStateLoaded(ctx context.Context) error {
-	for _, m := range e.futureMarkets {
+	for _, m := range e.allMarkets {
 		if err := m.PostRestore(ctx); err != nil {
 			return err
 		}

@@ -300,4 +300,6 @@ type CommonMarket interface {
 	CancelAllStopOrders(context.Context, string) error
 	CancelStopOrder(context.Context, string, string) error
 	SubmitStopOrdersWithIDGeneratorAndOrderIDs(context.Context, *types.StopOrdersSubmission, string, IDGenerator, *string, *string) (*types.OrderConfirmation, error)
+
+	PostRestore(context.Context) error
 }
