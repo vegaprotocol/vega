@@ -99,3 +99,12 @@ Feature: Spot market
     And the parties amend the following orders:
       | party  | reference     | price | size delta | tif     | error                                                              |
       | party1 | party-order11 | 200   | 0          | TIF_GTC | party does not have sufficient balance to cover the trade and fees |
+
+    # example for changing the target stake params
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.2              | 20s         | 1.5            |
+    
+    When the spot markets are updated:
+      | id      | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | BTC/ETH | updated-lqm-params   | 0.5                    | 0.5                       |

@@ -26,6 +26,48 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
+func TheSpotMarketsUpdated(
+	config *market.Config,
+	executionEngine Execution,
+	existing []types.Market,
+	netparams *netparams.Store,
+	table *godog.Table,
+) ([]types.Market, error) {
+	rows := parseMarketsUpdateTable(table)
+	// existing markets to update
+	validByID := make(map[string]*types.Market, len(existing))
+	for i := range existing {
+		m := existing[i]
+		validByID[m.ID] = &existing[i]
+	}
+	updates := make([]types.UpdateSpotMarket, 0, len(rows))
+	updated := make([]*types.Market, 0, len(rows))
+	for _, row := range rows {
+		upd := spotMarketUpdateRow{row: row}
+		// check if market exists
+		current, ok := validByID[upd.id()]
+		if !ok {
+			return nil, fmt.Errorf("unknown market id %s", upd.id())
+		}
+		updates = append(updates, spotMarketUpdate(config, current, upd))
+		updated = append(updated, current)
+	}
+	if err := updateSpotMarkets(updated, updates, executionEngine); err != nil {
+		return nil, err
+	}
+	// we have been using pointers internally, so we should be returning the accurate state here.
+	return existing, nil
+}
+
+func updateSpotMarkets(markets []*types.Market, updates []types.UpdateSpotMarket, executionEngine Execution) error {
+	for i, mkt := range markets {
+		if err := executionEngine.UpdateSpotMarket(context.Background(), mkt); err != nil {
+			return fmt.Errorf("couldn't update market(%s) - updates %#v: %+v", mkt.ID, updates[i], err)
+		}
+	}
+	return nil
+}
+
 func TheSpotMarkets(config *market.Config, executionEngine Execution, collateralEngine *collateral.Engine, netparams *netparams.Store, now time.Time, table *godog.Table) ([]types.Market, error) {
 	rows := parseSpotMarketsTable(table)
 	markets := make([]types.Market, 0, len(rows))
@@ -170,6 +212,67 @@ func newSpotMarket(config *market.Config, netparams *netparams.Store, row spotMa
 	return m
 }
 
+func spotMarketUpdate(config *market.Config, existing *types.Market, row spotMarketUpdateRow) types.UpdateSpotMarket {
+	update := types.UpdateSpotMarket{
+		MarketID: existing.ID,
+		Changes:  &types.UpdateSpotMarketConfiguration{},
+	}
+	// price monitoring
+	if pm, ok := row.priceMonitoring(); ok {
+		priceMonitoring, err := config.PriceMonitoring.Get(pm)
+		if err != nil {
+			panic(err)
+		}
+		pmt := types.PriceMonitoringSettingsFromProto(priceMonitoring)
+		// update existing
+		existing.PriceMonitoringSettings.Parameters = pmt.Parameters
+		update.Changes.PriceMonitoringParameters = pmt.Parameters
+	}
+	// liquidity monitoring
+	if lm, ok := row.liquidityMonitoring(); ok {
+		liqMon, err := config.LiquidityMonitoring.GetType(lm)
+		if err != nil {
+			panic(err)
+		}
+		existing.LiquidityMonitoringParameters = liqMon
+		update.Changes.TargetStakeParameters = liqMon.TargetStakeParameters
+	}
+
+	if sla, ok := row.slaParams(); ok {
+		slaParams, err := config.LiquiditySLAParams.Get(sla)
+		if err != nil {
+			panic(err)
+		}
+		existing.LiquiditySLAParams = types.LiquiditySLAParamsFromProto(slaParams)
+		update.Changes.SLAParams = types.LiquiditySLAParamsFromProto(slaParams)
+	}
+
+	// risk model
+	if rm, ok := row.riskModel(); ok {
+		tip := existing.TradableInstrument.IntoProto()
+		if err := config.RiskModels.LoadModel(rm, tip); err != nil {
+			panic(err)
+		}
+		current := types.TradableInstrumentFromProto(tip)
+		// find the correct params:
+		switch {
+		case current.GetSimpleRiskModel() != nil:
+			update.Changes.RiskParameters = types.UpdateMarketConfigurationSimple{
+				Simple: current.GetSimpleRiskModel().Params,
+			}
+		case current.GetLogNormalRiskModel() != nil:
+			update.Changes.RiskParameters = types.UpdateMarketConfigurationLogNormal{
+				LogNormal: current.GetLogNormalRiskModel(),
+			}
+		default:
+			panic("Unsupported risk model parameters")
+		}
+		// update existing
+		existing.TradableInstrument = current
+	}
+	return update
+}
+
 func spotOpeningAuction(row spotMarketRow) *types.AuctionDuration {
 	auction := &types.AuctionDuration{
 		Duration: row.auctionDuration(),
@@ -250,4 +353,44 @@ func (r spotMarketRow) auctionDuration() int64 {
 
 func (r spotMarketRow) slaParams() string {
 	return r.row.MustStr("sla params")
+}
+
+type spotMarketUpdateRow struct {
+	row RowWrapper
+}
+
+func (r spotMarketUpdateRow) id() string {
+	return r.row.MustStr("id")
+}
+
+func (r spotMarketUpdateRow) priceMonitoring() (string, bool) {
+	if r.row.HasColumn("price monitoring") {
+		pm := r.row.MustStr("price monitoring")
+		return pm, true
+	}
+	return "", false
+}
+
+func (r spotMarketUpdateRow) riskModel() (string, bool) {
+	if r.row.HasColumn("risk model") {
+		rm := r.row.MustStr("risk model")
+		return rm, true
+	}
+	return "", false
+}
+
+func (r spotMarketUpdateRow) liquidityMonitoring() (string, bool) {
+	if r.row.HasColumn("liquidity monitoring") {
+		lm := r.row.MustStr("liquidity monitoring")
+		return lm, true
+	}
+	return "", false
+}
+
+func (r spotMarketUpdateRow) slaParams() (string, bool) {
+	if r.row.HasColumn("sla params") {
+		lm := r.row.MustStr("sla params")
+		return lm, true
+	}
+	return "", false
 }
