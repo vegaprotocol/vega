@@ -13,23 +13,23 @@ import "vega/vega.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega/events/v1";
 
-// Event notifying the details of a funding interval of a perpetuals market
+// Event notifying on the details of a funding interval for a perpetuals market.
 message FundingPeriod {
   // ID of the market for which this funding period relates to.
   string market_id = 1;
-  // Sequence number of the funding period
+  // Sequence number of the funding period.
   uint64 seq = 2;
   // Time in Unix nanosecond when the funding period started.
   int64 start = 3;
   // Time in Unix nanosecond when the funding period ended.
   optional int64 end = 4;
-  // Funding payment for this period as the difference between the time-weighted-average-price of the external and internal data point.
+  // Funding payment for this period as the difference between the time-weighted average price of the external and internal data point.
   optional string funding_payment = 5;
-  // Percentage difference between the time-weighted-average-price of the external and internal data point.
+  // Percentage difference between the time-weighted average price of the external and internal data point.
   optional string funding_rate = 6;
 }
 
-// Event notifying a data-point for a funding period.
+// Event notifying a data point for a funding period.
 message FundingPeriodDataPoint {
   enum Source {
     // Default value
@@ -931,7 +931,7 @@ message BusEvent {
     StopOrderEvent stop_order = 158;
     // Start or end of a funding period.
     FundingPeriod funding_period = 159;
-    // Data point withint a funding period.
+    // Data point within a funding period.
     FundingPeriodDataPoint funding_period_data_point = 160;
 
     // Market tick events
