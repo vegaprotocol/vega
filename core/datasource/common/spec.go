@@ -18,10 +18,157 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
+
+type TimeTrigger struct {
+	// this is optional to reflect the proto
+	// but it's actually always gonna be set by the governance
+	From               *time.Time
+	RepeatEverySeconds int64
+	nextTrigger        *time.Time
+}
+
+func (t TimeTrigger) String() string {
+	return fmt.Sprintf(
+		"from(%v) repeatEvery(%d) nextTrigger(%v)",
+		t.From,
+		t.RepeatEverySeconds,
+		t.nextTrigger,
+	)
+}
+
+func (t TimeTrigger) IntoProto() *vegapb.InternalTimeTrigger {
+	var from *int64
+	var every int64
+	if t.From != nil {
+		from = ptr.From(t.From.Unix())
+	}
+
+	return &vegapb.InternalTimeTrigger{
+		Initial: from,
+		Every:   every,
+	}
+}
+
+func (t *TimeTrigger) DeepClone() *TimeTrigger {
+	var from *time.Time
+	if from != nil {
+		from = ptr.From(*t.From)
+	}
+	var lastTrigger *time.Time
+	if t.nextTrigger != nil {
+		lastTrigger = ptr.From(*t.nextTrigger)
+	}
+
+	return &TimeTrigger{
+		From:               from,
+		RepeatEverySeconds: t.RepeatEverySeconds,
+		nextTrigger:        lastTrigger,
+	}
+}
+
+func TimeTriggerFromProto(
+	protoTrigger *vegapb.InternalTimeTrigger,
+	timeNow time.Time,
+) *TimeTrigger {
+	var from *time.Time
+	if protoTrigger.Initial != nil {
+		from = ptr.From(time.Unix(*protoTrigger.Initial, 0))
+	}
+	tt := &TimeTrigger{
+		From:               from,
+		RepeatEverySeconds: protoTrigger.Every,
+	}
+
+	tt.setNextTrigger(timeNow)
+	return tt
+}
+
+func (t *TimeTrigger) IsTriggered(timeNow time.Time) bool {
+	if t.nextTrigger.Before(timeNow) {
+		t.nextTrigger.Add(time.Duration(t.RepeatEverySeconds) * time.Second)
+		return true
+	}
+
+	return false
+}
+
+func (t *TimeTrigger) setNextTrigger(timeNow time.Time) {
+	if t.From == nil {
+		panic("from time is nil")
+	}
+
+	t.nextTrigger = ptr.From(*t.From)
+
+	// if from > now, we never been triggered, so we can set
+	// nextTrigger to the from
+	if t.From.After(timeNow) {
+		return
+	}
+
+	// if from is in the past though, that means that we
+	// have been triggered already, and we need to find
+	// when is the next trigger
+	for t.nextTrigger.Before(timeNow) {
+		t.nextTrigger.Add(time.Duration(t.RepeatEverySeconds) * time.Second)
+	}
+
+}
+
+type TimeTriggers []*TimeTrigger
+
+func (t TimeTriggers) IntoProto() []*vegapb.InternalTimeTrigger {
+	protos := make([]*vegapb.InternalTimeTrigger, 0, len(t))
+	for _, v := range t {
+		protos = append(protos, v.IntoProto())
+	}
+
+	return protos
+}
+
+func (t TimeTriggers) AnyTriggered(timeNow time.Time) bool {
+	var ret bool
+	for _, v := range t {
+		ret = ret || v.IsTriggered(timeNow)
+	}
+
+	return ret
+}
+
+func (sc TimeTriggers) String() string {
+	if sc == nil {
+		return "[]"
+	}
+	strs := []string{}
+	for _, c := range sc {
+		strs = append(strs, c.String())
+	}
+	return "[" + strings.Join(strs, ", ") + "]"
+}
+
+func TimeTriggersFromProto(
+	protos []*vegapb.InternalTimeTrigger,
+	timeNow time.Time,
+) []*TimeTrigger {
+	triggers := make([]*TimeTrigger, 0, len(protos))
+	for _, v := range protos {
+		triggers = append(triggers, TimeTriggerFromProto(v, timeNow))
+	}
+	return triggers
+}
+
+func DeepCloneTimeTriggers(protos []*TimeTrigger) []*TimeTrigger {
+	oth := make([]*TimeTrigger, 0, len(protos))
+	for _, v := range protos {
+		oth = append(oth, v.DeepClone())
+	}
+	return oth
+}
 
 type SpecConditionOperator = datapb.Condition_Operator
 

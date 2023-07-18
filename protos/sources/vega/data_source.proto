@@ -22,6 +22,19 @@ message DataSourceDefinition {
 message DataSourceSpecConfigurationTime {
   // Conditions that the timestamps should meet in order to be considered.
   repeated vega.data.v1.Condition conditions = 1;
+  // An internal time trigger
+  repeated InternalTimeTrigger triggers = 2;
+}
+
+
+// Trigger for an internal time data source.
+message InternalTimeTrigger {
+  // Trigger when the vega time is greater or equal to this time, in Unix
+  // seconds.
+  optional int64 initial = 1;
+  // Repeat the trigger every n seconds after the initial. If no time for
+  // initial was specified, begin repeating immediately.
+  int64 every = 2;
 }
 
 // Top level object used for all internal data sources.
@@ -114,6 +127,7 @@ message EthTimeTrigger {
   // seconds. If not set, then repeat indefinitely.
   optional uint64 until = 3;
 }
+
 
 // Data source spec describes the data source base that a product or a risk
 // model wants to get from the data source engine. This message contains

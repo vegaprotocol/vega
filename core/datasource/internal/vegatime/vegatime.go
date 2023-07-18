@@ -16,6 +16,7 @@ package vegatime
 
 import (
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/datasource/common"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
@@ -24,19 +25,23 @@ import (
 
 // SpecConfiguration is used internally.
 type SpecConfiguration struct {
-	Conditions []*common.SpecCondition
+	Conditions   []*common.SpecCondition
+	TimeTriggers []*common.TimeTrigger
 }
 
 // String returns the content of DataSourceSpecConfigurationTime as a string.
 func (s SpecConfiguration) String() string {
 	return fmt.Sprintf(
-		"conditions(%s)", common.SpecConditions(s.Conditions).String(),
+		"conditions(%s) timeTriggers(%v) lastTrigger(%v)",
+		common.SpecConditions(s.Conditions).String(),
+		common.TimeTriggers(s.TimeTriggers).String(),
 	)
 }
 
 func (s SpecConfiguration) IntoProto() *vegapb.DataSourceSpecConfigurationTime {
 	return &vegapb.DataSourceSpecConfigurationTime{
 		Conditions: common.SpecConditions(s.Conditions).IntoProto(),
+		Triggers:   common.TimeTriggers(s.TimeTriggers).IntoProto(),
 	}
 }
 
@@ -45,8 +50,17 @@ func (s SpecConfiguration) DeepClone() common.DataSourceType {
 	conditions = append(conditions, s.Conditions...)
 
 	return SpecConfiguration{
-		Conditions: conditions,
+		Conditions:   conditions,
+		TimeTriggers: common.DeepCloneTimeTriggers(s.TimeTriggers),
 	}
+}
+
+func (s SpecConfiguration) IsTriggered(t time.Time) bool {
+	if len(s.TimeTriggers) <= 0 {
+		return true
+	}
+
+	return common.TimeTriggers(s.TimeTriggers).AnyTriggered(t)
 }
 
 func (s SpecConfiguration) GetFilters() []*common.SpecFilter {
@@ -72,13 +86,17 @@ func (s SpecConfiguration) GetFilters() []*common.SpecFilter {
 	return filters
 }
 
-func SpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConfigurationTime) SpecConfiguration {
+func SpecConfigurationFromProto(
+	protoConfig *vegapb.DataSourceSpecConfigurationTime,
+	timeNow time.Time,
+) SpecConfiguration {
 	if protoConfig == nil {
 		return SpecConfiguration{}
 	}
 
 	return SpecConfiguration{
-		Conditions: common.SpecConditionsFromProto(protoConfig.Conditions),
+		Conditions:   common.SpecConditionsFromProto(protoConfig.Conditions),
+		TimeTriggers: common.TimeTriggersFromProto(protoConfig.Triggers, timeNow),
 	}
 }
 

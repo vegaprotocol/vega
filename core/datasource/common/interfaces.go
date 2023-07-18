@@ -15,6 +15,8 @@
 package common
 
 import (
+	"time"
+
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -23,6 +25,7 @@ type DataSourceType interface {
 	DeepClone() DataSourceType
 	ToDefinitionProto() (*vegapb.DataSourceDefinition, error)
 	GetFilters() []*SpecFilter
+	IsTriggered(time.Time) bool
 }
 
 type signer interface {

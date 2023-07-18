@@ -58,7 +58,7 @@ func TestSpecConfigurationIntoProto(t *testing.T) {
 func TestSpecConfigurationString(t *testing.T) {
 	t.Run("non-empty time source with empty lists", func(t *testing.T) {
 		ds := datasource.NewDefinitionWith(vegatime.SpecConfiguration{}).String()
-		assert.Equal(t, "conditions([])", ds)
+		assert.Equal(t, "conditions([]) timeTriggers([])", ds)
 	})
 
 	t.Run("non-empty time source with data", func(t *testing.T) {
@@ -76,7 +76,7 @@ func TestSpecConfigurationString(t *testing.T) {
 			},
 		}).String()
 
-		assert.Equal(t, "conditions([value() operator(OPERATOR_UNSPECIFIED), value(14) operator(OPERATOR_EQUALS), value(9) operator(OPERATOR_GREATER_THAN)])", ds)
+		assert.Equal(t, "conditions([value() operator(OPERATOR_UNSPECIFIED), value(14) operator(OPERATOR_EQUALS), value(9) operator(OPERATOR_GREATER_THAN)]) timeTriggers([])", ds)
 	})
 }
 
