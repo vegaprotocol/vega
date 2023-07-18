@@ -162,6 +162,9 @@ func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, 
 	})
 	successors := make([]*types.Successors, 0, len(e.successors))
 	for pid, ids := range e.successors {
+		if _, ok := e.GetMarket(pid, true); !ok {
+			continue
+		}
 		successors = append(successors, &types.Successors{
 			ParentMarket:     pid,
 			SuccessorMarkets: ids,
