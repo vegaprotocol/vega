@@ -655,7 +655,7 @@ func (ERC20MultiSigSignerEvent_Type) EnumDescriptor() ([]byte, []int) {
 	return file_vega_events_v1_events_proto_rawDescGZIP(), []int{12, 0}
 }
 
-// Event notifying the details of a funding interval of a perpetuals market
+// Event notifying on the details of a funding interval for a perpetuals market.
 type FundingPeriod struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -663,15 +663,15 @@ type FundingPeriod struct {
 
 	// ID of the market for which this funding period relates to.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Sequence number of the funding period
+	// Sequence number of the funding period.
 	Seq uint64 `protobuf:"varint,2,opt,name=seq,proto3" json:"seq,omitempty"`
 	// Time in Unix nanosecond when the funding period started.
 	Start int64 `protobuf:"varint,3,opt,name=start,proto3" json:"start,omitempty"`
 	// Time in Unix nanosecond when the funding period ended.
 	End *int64 `protobuf:"varint,4,opt,name=end,proto3,oneof" json:"end,omitempty"`
-	// Funding payment for this period as the difference between the time-weighted-average-price of the external and internal data point.
+	// Funding payment for this period as the difference between the time-weighted average price of the external and internal data point.
 	FundingPayment *string `protobuf:"bytes,5,opt,name=funding_payment,json=fundingPayment,proto3,oneof" json:"funding_payment,omitempty"`
-	// Percentage difference between the time-weighted-average-price of the external and internal data point.
+	// Percentage difference between the time-weighted average price of the external and internal data point.
 	FundingRate *string `protobuf:"bytes,6,opt,name=funding_rate,json=fundingRate,proto3,oneof" json:"funding_rate,omitempty"`
 }
 
@@ -749,7 +749,7 @@ func (x *FundingPeriod) GetFundingRate() string {
 	return ""
 }
 
-// Event notifying a data-point for a funding period.
+// Event notifying a data point for a funding period.
 type FundingPeriodDataPoint struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -5864,7 +5864,7 @@ type BusEvent_FundingPeriod struct {
 }
 
 type BusEvent_FundingPeriodDataPoint struct {
-	// Data point withint a funding period.
+	// Data point within a funding period.
 	FundingPeriodDataPoint *FundingPeriodDataPoint `protobuf:"bytes,160,opt,name=funding_period_data_point,json=fundingPeriodDataPoint,proto3,oneof"`
 }
 
