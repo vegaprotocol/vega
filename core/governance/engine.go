@@ -336,19 +336,10 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 
 	now := t.Unix()
 
-	// use slice for deterministic behaviour and event order
-	// succeededMarkets := []string{}
-	// use map internally for O(1) lookups
-	ignoreSuccession := map[string]struct{}{}
 	for _, proposal := range e.activeProposals {
-		if proposal.IsSuccessorMarket() {
-			if _, ok := e.markets.GetMarket(proposal.ID, false); !ok {
-				// successor proposal for a successor market which cannot be enacted anymore -> remove the proposal
-				proposal.FailWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketAlreadySucceeded)
-				// ensure the event is sent
-				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
-			}
-		}
+		// do not check parent market, the market was either rejected when the parent was succeeded
+		// or, if the parent market state is gone (ie succession window has expired), the proposal simply
+		// loses its parent market reference
 		if proposal.ShouldClose(now) {
 			e.closeProposal(ctx, proposal)
 			voteClosed = append(voteClosed, e.preVoteClosedProposal(proposal))
@@ -358,19 +349,6 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 			toBeRemoved = append(toBeRemoved, proposal.ID)
 		} else if proposal.IsPassed() && (e.isAutoEnactableProposal(proposal.Proposal) || proposal.IsTimeToEnact(now)) {
 			enact, perr, err := e.preEnactProposal(ctx, proposal)
-			if err == nil && proposal.IsSuccessorMarket() {
-				parentID, _ := proposal.NewMarket().ParentMarketID()
-				if _, ok := ignoreSuccession[parentID]; ok {
-					// @TODO we have a successor market ready, other proposals should not go through
-					// perhaps we ought to not set the errors here, but rather wait until
-					// we are sure the successor market went through
-					err = ErrParentMarketAlreadySucceeded
-					perr = types.ProposalErrorInvalidSuccessorMarket // @TODO proposal Error types
-				} else {
-					ignoreSuccession[parentID] = struct{}{}
-					// succeededMarkets = append(succeededMarkets, sucP.Changes.ParentID)
-				}
-			}
 			if err != nil {
 				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
 				toBeRemoved = append(toBeRemoved, proposal.ID)
