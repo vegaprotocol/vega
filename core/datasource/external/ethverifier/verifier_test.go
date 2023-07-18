@@ -246,7 +246,7 @@ func testProcessEthereumOracleQueryOK(t *testing.T) {
 	oracleData := common.Data{
 		Signers:  nil,
 		Data:     okResult().Normalised,
-		MetaData: map[string]string{"eth-block-height": "1"},
+		MetaData: map[string]string{"eth-block-height": "1", "eth-block-time": "100"},
 	}
 
 	eov.oracleBroadcaster.EXPECT().BroadcastData(gomock.Any(), oracleData)
