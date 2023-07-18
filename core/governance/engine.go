@@ -281,6 +281,8 @@ func (e *Engine) preEnactProposal(ctx context.Context, p *proposal) (te *ToEnact
 		te.t = &ToEnactTransfer{}
 	case types.ProposalTermsTypeCancelTransfer:
 		te.c = &ToEnactCancelTransfer{}
+	case types.ProposalTermsTypeUpdateMarketState:
+		te.msu = &ToEnactMarketStateUpdate{}
 	}
 	return //nolint:nakedret
 }
