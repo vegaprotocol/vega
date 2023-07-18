@@ -36,7 +36,8 @@ Feature: Spot market
     Given the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.2              | 20s         | 1.5            |
-    When the markets are updated:
+
+    When the spot markets are updated:
       | id      | liquidity monitoring | linear slippage factor | quadratic slippage factor |
       | BTC/ETH | updated-lqm-params   | 0.5                    | 0.5                       |
 
