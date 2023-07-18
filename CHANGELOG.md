@@ -36,6 +36,7 @@
 - [8796](https://github.com/vegaprotocol/vega/issues/8796) - Avoid updating active proposals slice while iterating over it.
 - [8679](https://github.com/vegaprotocol/vega/issues/8679) - Disallow snapshot state-sync if local snapshots exist
 - [8827](https://github.com/vegaprotocol/vega/issues/8827) - Add block height validation to validator initiated transactions and pruning to the `pow` engine cache
+- [8836](https://github.com/vegaprotocol/vega/issues/8836) - Fix enactment of market update state
 
 
 ## 0.72.1
@@ -48,6 +49,7 @@
 - [8711](https://github.com/vegaprotocol/vega/issues/8711) - Fix market lineage trigger.
 - [8737](https://github.com/vegaprotocol/vega/issues/8737) - Fix `GetStopOrder` errors when order has a state change.
 - [8727](https://github.com/vegaprotocol/vega/issues/8727) - Clear parent market on checkpoint restore if the parent market was already succeeded.
+- [8835](https://github.com/vegaprotocol/vega/issues/8835) - Spot snapshot fixes
 
 
 ## 0.72.0
