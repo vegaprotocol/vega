@@ -150,6 +150,7 @@ func TestSnapshotViaEngine(t *testing.T) {
 	ts := mocks.NewMockTimeService(gomock.NewController(t))
 	ts.EXPECT().GetTimeNow().AnyTimes().Return(time.Now())
 	e := New(logging.NewTestLogger(), NewDefaultConfig(), ts)
+	e.lastPruningBlock = 50
 	now := time.Now()
 	log := logging.NewTestLogger()
 	timeService := stubs.NewTimeStub()
