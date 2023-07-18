@@ -95,7 +95,7 @@ func NewMarketFromSnapshot(
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate risk model: %w", err)
 	}
-	pMonitor, err := price.NewMonitor(quoteAsset, mkt.ID, riskModel, as, mkt.PriceMonitoringSettings, stateVarEngine, log)
+	pMonitor, err := price.NewMonitorFromSnapshot(mkt.ID, quoteAsset, em.PriceMonitor, mkt.PriceMonitoringSettings, riskModel, as, stateVarEngine, log)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
