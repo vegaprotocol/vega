@@ -251,9 +251,12 @@ func (s *Verifier) OnTick(ctx context.Context, t time.Time) {
 			}
 
 			s.oracleEngine.BroadcastData(ctx, common.Data{
-				Signers:  nil,
-				Data:     result.Normalised,
-				MetaData: map[string]string{"eth-block-height": strconv.FormatUint(callResult.BlockHeight, 10)},
+				Signers: nil,
+				Data:    result.Normalised,
+				MetaData: map[string]string{
+					"eth-block-height": strconv.FormatUint(callResult.BlockHeight, 10),
+					"eth-block-time":   strconv.FormatUint(callResult.BlockTime, 10),
+				},
 			})
 		} else {
 			dataProto := vegapb.OracleData{
