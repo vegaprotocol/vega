@@ -40,6 +40,7 @@ var (
 	ErrIsNotValidVegaPubkey                            = errors.New("is not a valid vega public key")
 	ErrIsNotValidEthereumAddress                       = errors.New("is not a valid ethereum address")
 	ErrMustBeWithinRange01                             = errors.New("must be between 0 and 1")
+	ErrMustBeWithinRange11                             = errors.New("must be between -1 and 1")
 	ErrMustBeLTE1                                      = errors.New("must be less than or equal to 1")
 	ErrMustBeReduceOnly                                = errors.New("must be reduce only")
 	ErrExpiryStrategyRequiredWhenExpiresAtSet          = errors.New("expiry strategy required when expires_at set")
@@ -48,6 +49,7 @@ var (
 	ErrFallsBelowAndRiseAboveMarketIDMustBeTheSame     = errors.New("market ID for falls below and rises above must be the same")
 	ErrTrailingPercentOffsetMinimalIncrementNotReached = errors.New("trailing percent offset minimal increment must be >= 0.001")
 	ErrMustBeEmpty                                     = errors.New("must be empty")
+	ErrMustBeSuperiorOrEqualToClampLowerBound          = errors.New("must be superior or equal to clamp lower bound")
 )
 
 type Errors map[string][]error

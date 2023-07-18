@@ -5139,3 +5139,250 @@ func testNewPerpsMarketChangeSubmissionWithSettlementDataPropertySucceeds(t *tes
 
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property"), commands.ErrIsRequired)
 }
+
+func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
+	cases := []struct {
+		product vegapb.PerpsProduct
+		err     error
+		path    string
+		desc    string
+	}{
+		// margin_funding_factor
+		{
+			product: vegapb.PerpsProduct{
+				MarginFundingFactor: "",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor",
+			err:  commands.ErrIsRequired,
+			desc: "margin_funding_factor is empty",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				MarginFundingFactor: "nope",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor",
+			err:  commands.ErrIsNotValidNumber,
+			desc: "margin_funding_factor is not a valid number",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				MarginFundingFactor: "-10",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor",
+			err:  commands.ErrMustBeWithinRange01,
+			desc: "margin_funding_factor is not within range (< 0)",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				MarginFundingFactor: "10",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor",
+			err:  commands.ErrMustBeWithinRange01,
+			desc: "margin_funding_factor is not within range (> 1)",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				MarginFundingFactor: "0.5",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor",
+			desc: "margin_funding_factor is valid",
+		},
+		// interest_rate
+		{
+			product: vegapb.PerpsProduct{
+				InterestRate: "",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
+			err:  commands.ErrIsRequired,
+			desc: "interest_rate is empty",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				InterestRate: "nope",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
+			err:  commands.ErrIsNotValidNumber,
+			desc: "interest_rate is not a valid number",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				InterestRate: "-10",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "interest_rate is not within range (< -1)",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				InterestRate: "10",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "interest_rate is not within range (> 1)",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				InterestRate: "0.5",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
+			desc: "interest_rate is valid",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				InterestRate: "-0.5",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
+			desc: "interest_rate is valid",
+		},
+		// clamp_lower_bound
+		{
+			product: vegapb.PerpsProduct{
+				ClampLowerBound: "",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
+			err:  commands.ErrIsRequired,
+			desc: "clamp_lower_bound is empty",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampLowerBound: "nope",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
+			err:  commands.ErrIsNotValidNumber,
+			desc: "clamp_lower_bound is not a valid number",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampLowerBound: "-10",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "clamp_lower_bound is not within range (< -1)",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampLowerBound: "10",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "clamp_lower_bound is not within range (> 1)",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampLowerBound: "0.5",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
+			desc: "clamp_lower_bound is valid",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampLowerBound: "-0.5",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
+			desc: "clamp_lower_bound is valid",
+		},
+		// clamp_upper_bound
+		{
+			product: vegapb.PerpsProduct{
+				ClampUpperBound: "",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrIsRequired,
+			desc: "clamp_upper_bound is empty",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampUpperBound: "nope",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrIsNotValidNumber,
+			desc: "clamp_upper_bound is not a valid number",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampUpperBound: "-10",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "clamp_upper_bound is not within range (< -1)",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampUpperBound: "10",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "clamp_upper_bound is not within range (> 1)",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampUpperBound: "0.5",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
+			desc: "clamp_upper_bound is valid",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampUpperBound: "-0.5",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
+			desc: "clamp_upper_bound is valid",
+		},
+		// clamp lower and upper
+		{
+			product: vegapb.PerpsProduct{
+				ClampLowerBound: "0.5",
+				ClampUpperBound: "0.5",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
+			desc: "clamp_upper_bound == clamp_lower_bound is valid",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampLowerBound: "0.4",
+				ClampUpperBound: "0.5",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
+			desc: "clamp_upper_bound > clamp_lower_bound is valid",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampLowerBound: "0.5",
+				ClampUpperBound: "0.4",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrMustBeSuperiorOrEqualToClampLowerBound,
+			desc: "clamp_upper_bound < clamp_lower_bound is invalid",
+		},
+	}
+
+	for _, v := range cases {
+		t.Run(v.desc, func(t *testing.T) {
+			err := checkProposalSubmission(&commandspb.ProposalSubmission{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								Instrument: &vegapb.InstrumentConfiguration{
+									Product: &vegapb.InstrumentConfiguration_Perps{
+										Perps: &v.product,
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+
+			errs := err.Get(v.path)
+
+			// no errors expected
+			if v.err == nil {
+				assert.Len(t, errs, 0, v.desc)
+				return
+			}
+
+			assert.Contains(t, errs, v.err, v.desc)
+		})
+	}
+}
