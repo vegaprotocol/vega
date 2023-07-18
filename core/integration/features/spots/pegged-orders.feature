@@ -89,3 +89,8 @@ Feature: Set up a spot market, with an opening auction, then uncross the book. M
             | buy  | 970000  | 1      |
             | buy  | 969900  | 1      |
             | buy  | 984900  | 1      |
+
+        # example for submitting LP for spots
+        When the parties submit the following liquidity provision:
+            | id  | party  | market id | commitment amount | fee | lp type    |
+            | lp1 | party1 | BTC/ETH   | 1000              | 0.1 | submission |
