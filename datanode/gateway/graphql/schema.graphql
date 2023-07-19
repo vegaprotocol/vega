@@ -831,6 +831,8 @@ type RecurringGovernanceTransfer {
   startEpoch: Int!
   "An optional epoch at which this transfer will stop"
   endEpoch: Int
+  "An optional dispatch strategy for the recurring transfer"
+  dispatchStrategy: DispatchStrategy
 }
 
 "The specific details for a one-off transfer"

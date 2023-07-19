@@ -186,6 +186,34 @@ func (e *Engine) processGovernanceTransfer(
 		to = "*"
 	}
 
+	if gTransfer.Config.RecurringTransferConfig != nil && gTransfer.Config.RecurringTransferConfig.DispatchStrategy != nil {
+		var resps []*types.LedgerMovement
+		marketScores := e.getMarketScores(gTransfer.Config.RecurringTransferConfig.DispatchStrategy, gTransfer.Config.Asset, from)
+		for _, fms := range marketScores {
+			amt, _ := num.UintFromDecimal(transferAmount.ToDecimal().Mul(fms.Score))
+			if amt.IsZero() {
+				continue
+			}
+
+			fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, fms.Market, transferAmount)
+			transfers := []*types.Transfer{fromTransfer, toTransfer}
+			accountTypes := []types.AccountType{gTransfer.Config.SourceType, gTransfer.Config.DestinationType}
+			references := []string{gTransfer.Reference, gTransfer.Reference}
+			tresps, err := e.col.GovernanceTransferFunds(ctx, transfers, accountTypes, references)
+			if err != nil {
+				e.log.Error("error transferring governance transfer funds", logging.Error(err))
+				return num.UintZero(), err
+			}
+
+			if gTransfer.Config.RecurringTransferConfig.DispatchStrategy.Metric == vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE && fms.Score.IsPositive() {
+				e.marketActivityTracker.MarkPaidProposer(fms.Market, gTransfer.Config.Asset, gTransfer.Config.RecurringTransferConfig.DispatchStrategy.Markets, from)
+			}
+			resps = append(resps, tresps...)
+		}
+		e.broker.Send(events.NewLedgerMovements(ctx, resps))
+		return transferAmount, nil
+	}
+
 	fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, toMarket, transferAmount)
 	transfers := []*types.Transfer{fromTransfer, toTransfer}
 	accountTypes := []types.AccountType{gTransfer.Config.SourceType, gTransfer.Config.DestinationType}
@@ -260,6 +288,13 @@ func (e *Engine) VerifyGovernanceTransfer(transfer *types.NewTransferConfigurati
 	// check asset is not empty
 	if len(transfer.Asset) == 0 {
 		return errors.New("missing asset for governance transfer")
+	}
+
+	if transfer.RecurringTransferConfig != nil && transfer.RecurringTransferConfig.DispatchStrategy != nil {
+		if len(transfer.RecurringTransferConfig.DispatchStrategy.AssetForMetric) > 0 {
+			_, err := e.assets.Get(transfer.RecurringTransferConfig.DispatchStrategy.AssetForMetric)
+			return fmt.Errorf("could not transfer funds, invalid asset for metric: %w", err)
+		}
 	}
 
 	// check source account exists

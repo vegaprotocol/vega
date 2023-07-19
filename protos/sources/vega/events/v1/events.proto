@@ -114,6 +114,7 @@ message RecurringTransfer {
 message RecurringGovernanceTransfer {
   uint64 start_epoch = 1;
   optional uint64 end_epoch = 2;
+  optional DispatchStrategy dispatch_strategy = 3;
 }
 
 // StakeLinking - an event notifying of stake being deposited or removed for a given party
