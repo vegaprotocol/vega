@@ -173,6 +173,7 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.PositionsSnapshot,              // again, needs a market
 	types.SettlementSnapshot,             // needs the market to exist, too
 	types.HoldingAccountTrackerSnapshot,
+	types.EthereumOracleVerifierSnapshot,
 	types.LiquiditySnapshot,
 	types.LiquidityTargetSnapshot,
 	types.StakingSnapshot,
