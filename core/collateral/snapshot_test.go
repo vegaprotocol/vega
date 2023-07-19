@@ -120,6 +120,16 @@ func TestCheckpoint(t *testing.T) {
 	err = eng.Engine.UpdateBalance(ctx, marketBonusReward2.ID, num.NewUint(88888))
 	require.NoError(t, err)
 
+	treasury, err := eng.Engine.GetNetworkTreasuryAccount("VOTE")
+	require.NoError(t, err)
+	err = eng.Engine.UpdateBalance(ctx, treasury.ID, num.NewUint(99999))
+	require.NoError(t, err)
+
+	ins, err := eng.Engine.GetGlobalInsuranceAccount("VOTE")
+	require.NoError(t, err)
+	err = eng.Engine.UpdateBalance(ctx, ins.ID, num.NewUint(100900))
+	require.NoError(t, err)
+
 	rewardAccounts := []*types.Account{makerReceivedFeeReward1, makerReceivedFeeReward2, makerPaidFeeReward1, makerPaidFeeReward2, lpFeeReward1, lpFeeReward2, marketBonusReward1, marketBonusReward2}
 
 	checkpoint, err := eng.Checkpoint()
@@ -148,9 +158,14 @@ func TestCheckpoint(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, bal, loadedPartyAcc.Balance)
 
-	loadedGlobRewardPool, err := loadEng.GetGlobalRewardAccount(testMarketAsset)
+	loadedIns, err := loadEng.GetGlobalInsuranceAccount(testMarketAsset)
 	require.NoError(t, err)
-	require.Equal(t, insBal, loadedGlobRewardPool.Balance)
+	require.Equal(t, insBal, loadedIns.Balance)
+
+	loadedTreasury, err := loadEng.GetNetworkTreasuryAccount("VOTE")
+	require.NoError(t, err)
+	require.Equal(t, num.NewUint(99999), loadedTreasury.Balance)
+
 	loadedReward, err := loadEng.GetGlobalRewardAccount("VOTE")
 	require.NoError(t, err)
 	require.Equal(t, num.NewUint(10000), loadedReward.Balance)

@@ -238,7 +238,7 @@ Feature: Position resolution case 5 lognormal risk model
 
     When the network moves ahead "3" blocks
     # When a market is closed, the insurance pool account has its outstanding funds transferred to the [network treasury]
-    Then the network treasury balance should be "5470" for the asset "USD"
+    Then the global insurance pool balance should be "5470" for the asset "USD"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
   Scenario: 002 create a suicidal trade from "designatedLoser" to get closeout immediately after trade 

@@ -18,6 +18,7 @@
 - [8731](https://github.com/vegaprotocol/vega/issues/8731) - Add liquidity provision `SLA` to governance proposals for spot market.
 - [8741](https://github.com/vegaprotocol/vega/issues/8741) - Add a network parameter for disabling `Ethereum` oracles.
 - [8600](https://github.com/vegaprotocol/vega/issues/8600) - Clean and refactor data source packages.
+- [8845](https://github.com/vegaprotocol/vega/issues/8845) - Add support for network treasury and global insurance accounts.
 
 ### 🐛 Fixes
 

@@ -12,6 +12,26 @@ import (
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
+var (
+	validSources = map[types.AccountType]struct{}{
+		types.AccountTypeInsurance:       {},
+		types.AccountTypeGlobalInsurance: {},
+		types.AccountTypeGlobalReward:    {},
+		types.AccountTypeNetworkTreasury: {},
+	}
+	validDestinations = map[types.AccountType]struct{}{
+		types.AccountTypeInsurance:              {},
+		types.AccountTypeGlobalInsurance:        {},
+		types.AccountTypeGlobalReward:           {},
+		types.AccountTypeNetworkTreasury:        {},
+		types.AccountTypeGeneral:                {},
+		types.AccountTypeMakerPaidFeeReward:     {},
+		types.AccountTypeMakerReceivedFeeReward: {},
+		types.AccountTypeMarketProposerReward:   {},
+		types.AccountTypeLPFeeReward:            {},
+	}
+)
+
 func (e *Engine) distributeScheduledGovernanceTransfers(ctx context.Context) {
 	timepoints := []int64{}
 	now := e.timeService.GetTimeNow()
@@ -228,15 +248,12 @@ func (e *Engine) VerifyGovernanceTransfer(transfer *types.NewTransferConfigurati
 	}
 
 	// check source type is valid
-	if transfer.SourceType != types.AccountTypeInsurance &&
-		transfer.SourceType != types.AccountTypeGlobalReward {
+	if _, ok := validSources[transfer.SourceType]; !ok {
 		return errors.New("invalid source type for governance transfer")
 	}
 
 	// check destination type is valid
-	if transfer.DestinationType != types.AccountTypeGeneral &&
-		transfer.DestinationType != types.AccountTypeGlobalReward &&
-		transfer.DestinationType != types.AccountTypeInsurance {
+	if _, ok := validDestinations[transfer.DestinationType]; !ok {
 		return errors.New("invalid destination for governance transfer")
 	}
 
