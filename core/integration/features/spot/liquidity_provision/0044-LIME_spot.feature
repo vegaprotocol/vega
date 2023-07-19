@@ -26,6 +26,7 @@ Feature: Spot market
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | market.liquidityV2.earlyExitPenalty     | 0.02  |
       | market.stake.target.timeWindow          | 2s    |
+      | market.stake.target.scalingFactor       | 0.5   |
 
     And the spot markets:
       | id      | name    | base asset | quote asset | risk model             | auction duration | fees          | price monitoring   | sla params    |
@@ -39,14 +40,6 @@ Feature: Spot market
       | lpprov | BTC   | 50     |
 
     And the average block duration is "1"
-
-    Given the liquidity monitoring parameters:
-      | name               | triggering ratio | time window | scaling factor |
-      | updated-lqm-params | 0.2              | 20s         | 1.5            |
-
-    When the spot markets are updated:
-      | id      | liquidity monitoring | linear slippage factor | quadratic slippage factor |
-      | BTC/ETH | updated-lqm-params   | 0.5                    | 0.5                       |
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
@@ -80,12 +73,21 @@ Feature: Spot market
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type   |
-      | lp1 | lpprov | BTC/ETH   | 20                | 0.1 | amendment |
+      | lp1 | lpprov | BTC/ETH   | 1000              | 0.1 | amendment |
 
     Then the network moves ahead "1" blocks
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake |
-      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 0            | 1000           |
+      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 0            | 2000           |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type   |
+      | lp1 | lpprov | BTC/ETH   | 1001              | 0.1 | amendment |
+
+    Then the network moves ahead "1" blocks
+    Then the market data for the market "BTC/ETH" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake |
+      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 0            | 1001           |
 
 
 
