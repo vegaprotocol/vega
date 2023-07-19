@@ -669,7 +669,7 @@ const (
 	AccountType_ACCOUNT_TYPE_EXTERNAL AccountType = 10
 	// Global insurance account for the asset
 	AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE AccountType = 11
-	// Staking reward account for the asset
+	// Global reward account for the asset
 	AccountType_ACCOUNT_TYPE_GLOBAL_REWARD AccountType = 12
 	// Per asset account used to store pending transfers (if any)
 	AccountType_ACCOUNT_TYPE_PENDING_TRANSFERS AccountType = 13
