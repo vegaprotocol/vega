@@ -340,8 +340,7 @@ func (m *Market) IsSucceeded() bool {
 func (m *Market) StopSnapshots() {
 	m.matching.StopSnapshots()
 	m.position.StopSnapshots()
-	// TODO karel - implement the snapshots
-	// m.liquidity.StopSnapshots()
+	m.liquidityEngine.StopSnapshots()
 	m.settlement.StopSnapshots()
 	m.tsCalc.StopSnapshots()
 }
@@ -2022,9 +2021,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	return orderUpdates
 }
 
-func (m *Market) confirmMTM(
-	ctx context.Context, skipMargin bool,
-) {
+func (m *Market) confirmMTM(ctx context.Context, skipMargin bool) {
 	// now let's get the transfers for MTM settlement
 	mp := m.getCurrentMarkPrice()
 	evts := m.position.UpdateMarkPrice(mp)
@@ -2130,9 +2127,8 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	now := m.timeService.GetTimeNow()
 	// this is going to be run after the closed out routines
 	// are finished, in order to notify the liquidity engine of
-	// any changes in the book / orders owned by the lp providers
+	// any changes in the book
 	orderUpdates := []*types.Order{}
-	distressedParties := []string{}
 
 	distressedPos := make([]events.MarketPosition, 0, len(distressedMarginEvts))
 	for _, v := range distressedMarginEvts {
@@ -2142,29 +2138,14 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 				logging.MarketID(m.GetID()))
 		}
 		distressedPos = append(distressedPos, v)
-		distressedParties = append(distressedParties, v.Party())
 	}
-	// cancel pending orders for parties
+
 	rmorders, err := m.matching.RemoveDistressedOrders(distressedPos)
 	if err != nil {
 		m.log.Panic("Failed to remove distressed parties from the orderbook",
 			logging.Error(err),
 		)
 	}
-
-	// TODO karel - maybe we want to penalize the LP for not being able to support the position??
-	// First we check for all distressed parties if they are liquidity
-	// providers, and if yea cancel their commitments
-	// for _, party := range distressedParties {
-	// if m.liquidity.IsLiquidityProvider(party) {
-	// 	if err := m.cancelLiquidityProvision(ctx, party, true); err != nil {
-	// 		m.log.Debug("could not cancel liquidity provision",
-	// 			logging.MarketID(m.GetID()),
-	// 			logging.PartyID(party),
-	// 			logging.Error(err))
-	// 	}
-	// }
-	// }
 
 	mktID := m.GetID()
 	// push rm orders into buf
