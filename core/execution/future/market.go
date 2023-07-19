@@ -3934,6 +3934,9 @@ func (m *Market) getLastTradedPrice() *num.Uint {
 }
 
 func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
+	if m.closed {
+		return
+	}
 	// TODO when liquidity engine is integrated
 	// if epoch.Action == vega.EpochAction_EPOCH_ACTION_START {
 	// 	m.liquidity.OnEpochStart(ctx, m.timeService.GetTimeNow(), m.markPrice, m.midPrice(), m.getTargetStake(), m.positionFactor)

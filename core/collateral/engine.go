@@ -3686,25 +3686,9 @@ func (e *Engine) CreateSpotMarketAccounts(ctx context.Context, marketID, quoteAs
 		return ErrInvalidAssetID
 	}
 
-	insuranceID := e.accountID(marketID, "", quoteAsset, types.AccountTypeInsurance)
-	_, ok := e.accs[insuranceID]
-	if !ok {
-		insAcc := &types.Account{
-			ID:       insuranceID,
-			Asset:    quoteAsset,
-			Owner:    systemOwner,
-			Balance:  num.UintZero(),
-			MarketID: marketID,
-			Type:     types.AccountTypeInsurance,
-		}
-		e.accs[insuranceID] = insAcc
-		e.addAccountToHashableSlice(insAcc)
-		e.broker.Send(events.NewAccountEvent(ctx, *insAcc))
-	}
-
 	// these are fee related account only
 	liquidityFeeID := e.accountID(marketID, "", quoteAsset, types.AccountTypeFeesLiquidity)
-	_, ok = e.accs[liquidityFeeID]
+	_, ok := e.accs[liquidityFeeID]
 	if !ok {
 		liquidityFeeAcc := &types.Account{
 			ID:       liquidityFeeID,

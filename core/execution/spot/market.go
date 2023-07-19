@@ -2828,6 +2828,9 @@ func (m *Market) closeSpotMarket(ctx context.Context) {
 }
 
 func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
+	if m.closed {
+		return
+	}
 	if epoch.Action == vega.EpochAction_EPOCH_ACTION_START {
 		m.liquidity.OnEpochStart(ctx, m.timeService.GetTimeNow(), m.markPrice, m.midPrice(), m.getTargetStake(), m.positionFactor)
 	} else if epoch.Action == vega.EpochAction_EPOCH_ACTION_END {
