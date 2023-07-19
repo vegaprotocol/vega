@@ -25,26 +25,6 @@ import (
 // ErrBondSlashing - just indicates that we had to penalize the party due to insufficient funds, and as such, we have to cancel their LP.
 var ErrBondSlashing = errors.New("bond slashing")
 
-// this will transfer funds calculated for a party amending a liquidity
-// provision during auction.
-func (m *Market) transferMarginsLiquidityProvisionAmendAuction(
-	ctx context.Context, risk events.Risk,
-) error {
-	market := m.GetID()
-	// This is ultimately the same behaviour than update on order
-	// all or nothing of margin needsto be transferred
-	tsfr, _, err := m.collateral.MarginUpdateOnOrder(ctx, market, risk)
-	if err != nil {
-		return err
-	}
-
-	if len(tsfr.Entries) > 0 {
-		m.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{tsfr}))
-	}
-
-	return nil
-}
-
 func (m *Market) transferMargins(ctx context.Context, risk []events.Risk, closed []events.MarketPosition) error {
 	if m.as.InAuction() {
 		return m.transferMarginsAuction(ctx, risk, closed)
