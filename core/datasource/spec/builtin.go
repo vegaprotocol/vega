@@ -22,8 +22,9 @@ import (
 )
 
 const (
-	BuiltinPrefix    = "vegaprotocol.builtin"
-	BuiltinTimestamp = BuiltinPrefix + ".timestamp"
+	BuiltinPrefix      = "vegaprotocol.builtin"
+	BuiltinTimestamp   = BuiltinPrefix + ".timestamp"
+	BuiltinTimeTrigger = BuiltinPrefix + ".timetrigger"
 )
 
 type Builtin struct {

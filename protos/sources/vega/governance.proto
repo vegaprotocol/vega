@@ -510,6 +510,8 @@ enum ProposalError {
   PROPOSAL_ERROR_INVALID_SLA_PARAMS = 53;
   // Mandatory liquidity provision SLA parameters are missing
   PROPOSAL_ERROR_MISSING_SLA_PARAMS = 54;
+  // Market proposal market contained invalid product definition
+  PROPOSAL_ERROR_INVALID_PERPS_PRODUCT = 55;
 }
 
 // Governance vote
@@ -629,6 +631,7 @@ message OneOffTransfer {
 // Specific details for a recurring transfer
 message RecurringTransfer {
   // First epoch from which this transfer shall be paid.
+
   uint64 start_epoch = 1;
   // Last epoch at which this transfer shall be paid.
   optional uint64 end_epoch = 2;

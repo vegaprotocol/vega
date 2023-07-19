@@ -910,6 +910,8 @@ func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration)
 	switch product := instrument.Product.(type) {
 	case *protoTypes.UpdateInstrumentConfiguration_Future:
 		errs.Merge(checkUpdateFuture(product.Future))
+	case *protoTypes.UpdateInstrumentConfiguration_Perps:
+		errs.Merge(checkUpdatePerps(product.Perps))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product", ErrIsNotValid)
 	}
@@ -954,7 +956,6 @@ func checkNewPerps(perps *protoTypes.PerpsProduct) Errors {
 
 	if len(perps.MarginFundingFactor) <= 0 {
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor", ErrIsRequired)
-
 	} else {
 		mff, err := num.DecimalFromString(perps.MarginFundingFactor)
 		if err != nil {
@@ -966,7 +967,6 @@ func checkNewPerps(perps *protoTypes.PerpsProduct) Errors {
 
 	if len(perps.InterestRate) <= 0 {
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate", ErrIsRequired)
-
 	} else {
 		mff, err := num.DecimalFromString(perps.InterestRate)
 		if err != nil {
@@ -984,7 +984,6 @@ func checkNewPerps(perps *protoTypes.PerpsProduct) Errors {
 
 	if len(perps.ClampLowerBound) <= 0 {
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound", ErrIsRequired)
-
 	} else {
 		clampLowerBound, err = num.DecimalFromString(perps.ClampLowerBound)
 		if err != nil {
@@ -998,7 +997,6 @@ func checkNewPerps(perps *protoTypes.PerpsProduct) Errors {
 
 	if len(perps.ClampUpperBound) <= 0 {
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound", ErrIsRequired)
-
 	} else {
 		clampUpperBound, err = num.DecimalFromString(perps.ClampUpperBound)
 		if err != nil {
@@ -1015,6 +1013,7 @@ func checkNewPerps(perps *protoTypes.PerpsProduct) Errors {
 	}
 
 	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true))
+	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementSchedule, "data_source_spec_for_settlement_schedule", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true))
 	errs.Merge(checkNewPerpsOracleBinding(perps))
 
 	return errs
@@ -1060,20 +1059,20 @@ func checkUpdateFuture(future *protoTypes.UpdateFutureProduct) Errors {
 	return errs
 }
 
-func checkUpdatePerps(future *protoTypes.UpdateFutureProduct) Errors {
+func checkUpdatePerps(perps *protoTypes.UpdatePerpsProduct) Errors {
 	errs := NewErrors()
 
-	if future == nil {
+	if perps == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future", ErrIsRequired)
 	}
 
-	if len(future.QuoteName) == 0 {
+	if len(perps.QuoteName) == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
-	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future", true))
-	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.update_market.changes.instrument.product.future", false))
-	errs.Merge(checkUpdateOracleBinding(future))
+	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future", true))
+	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementSchedule, "data_source_spec_for_settlement_schedule", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true))
+	errs.Merge(checkUpdatePerpsOracleBinding(perps))
 
 	return errs
 }
@@ -1124,6 +1123,20 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 			spl := strings.Split(parentProperty, ".")
 			if spl[len(spl)-1] == "future" {
 				errs.AddForProperty(fmt.Sprintf("%s.%s.internal.timetrigger", parentProperty, name), ErrIsNotValid)
+			}
+
+			t := tp.Internal.GetTimeTrigger()
+			if len(t.Triggers) != 1 {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.internal.timetrigger", parentProperty, name), ErrOneTimeTriggerAllowedMax)
+			} else {
+				for i, v := range t.Triggers {
+					if v.Initial != nil && *v.Initial <= 0 {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.internal.timetrigger.triggers.%d.initial", parentProperty, name, i), ErrIsNotValid)
+					}
+					if v.Every <= 0 {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.internal.timetrigger.triggers.%d.every", parentProperty, name, i), ErrIsNotValid)
+					}
+				}
 			}
 		}
 	case *vegapb.DataSourceDefinition_External:

@@ -269,6 +269,14 @@ func (n NewMarketConfiguration) GetFuture() *InstrumentConfigurationFuture {
 	return nil
 }
 
+func (n NewMarketConfiguration) GetPerps() *InstrumentConfigurationPerps {
+	if n.ProductType() == ProductTypePerps {
+		p, _ := n.Instrument.Product.(*InstrumentConfigurationPerps)
+		return p
+	}
+	return nil
+}
+
 func (n NewMarketConfiguration) GetSpot() *InstrumentConfigurationSpot {
 	if n.ProductType() == ProductTypeSpot {
 		f, _ := n.Instrument.Product.(*InstrumentConfigurationSpot)

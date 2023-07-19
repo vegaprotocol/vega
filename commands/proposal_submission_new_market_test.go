@@ -9,6 +9,8 @@ import (
 
 	"code.vegaprotocol.io/vega/commands"
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/libs/ptr"
+	"code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -161,7 +163,6 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a perps market change with a mismatch between binding property name and filter fails", testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingFails)
 	t.Run("Submitting a perps market change with match between binding property name and filter succeeds", testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingSucceeds)
 	t.Run("Submitting a perps market change with settlement data and trading termination properties succeeds", testNewPerpsMarketChangeSubmissionWithSettlementDataPropertySucceeds)
-
 }
 
 func testNewMarketChangeSubmissionWithoutNewMarketFails(t *testing.T) {
@@ -5389,15 +5390,168 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 	}
 }
 
+func TestNewPerpsMarketChangeSubmissionSettlementSchedule(t *testing.T) {
+	cases := []struct {
+		product vegapb.PerpsProduct
+		err     error
+		path    string
+		desc    string
+	}{
+		{
+			product: vegapb.PerpsProduct{
+				DataSourceSpecForSettlementSchedule: &vegapb.DataSourceDefinition{
+					SourceType: &vegapb.DataSourceDefinition_Internal{
+						Internal: &vega.DataSourceDefinitionInternal{
+							SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+								TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
+									Triggers: []*datapb.InternalTimeTrigger{
+										{
+											Initial: nil,
+											Every:   0,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_schedule.internal.timetrigger.triggers.0.every",
+			err:  commands.ErrIsNotValid,
+			desc: "not a valid every",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				DataSourceSpecForSettlementSchedule: &vegapb.DataSourceDefinition{
+					SourceType: &vegapb.DataSourceDefinition_Internal{
+						Internal: &vega.DataSourceDefinitionInternal{
+							SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+								TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
+									Triggers: []*datapb.InternalTimeTrigger{
+										{
+											Initial: nil,
+											Every:   -1,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_schedule.internal.timetrigger.triggers.0.every",
+			err:  commands.ErrIsNotValid,
+			desc: "not a valid every",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				DataSourceSpecForSettlementSchedule: &vegapb.DataSourceDefinition{
+					SourceType: &vegapb.DataSourceDefinition_Internal{
+						Internal: &vega.DataSourceDefinitionInternal{
+							SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+								TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
+									Triggers: []*datapb.InternalTimeTrigger{
+										{
+											Initial: ptr.From(int64(-1)),
+											Every:   100,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_schedule.internal.timetrigger.triggers.0.initial",
+			err:  commands.ErrIsNotValid,
+			desc: "not a valid every",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				DataSourceSpecForSettlementSchedule: &vegapb.DataSourceDefinition{
+					SourceType: &vegapb.DataSourceDefinition_Internal{
+						Internal: &vega.DataSourceDefinitionInternal{
+							SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+								TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
+									Triggers: []*datapb.InternalTimeTrigger{
+										{
+											Initial: nil,
+											Every:   100,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_schedule.internal.timetrigger",
+			desc: "valid with initial nil",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				DataSourceSpecForSettlementSchedule: &vegapb.DataSourceDefinition{
+					SourceType: &vegapb.DataSourceDefinition_Internal{
+						Internal: &vega.DataSourceDefinitionInternal{
+							SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+								TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
+									Triggers: []*datapb.InternalTimeTrigger{
+										{
+											Initial: ptr.From(int64(100)),
+											Every:   100,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_schedule.internal.timetrigger",
+			desc: "valid",
+		},
+	}
+
+	for _, v := range cases {
+		t.Run(v.desc, func(t *testing.T) {
+			err := checkProposalSubmission(&commandspb.ProposalSubmission{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								Instrument: &vegapb.InstrumentConfiguration{
+									Product: &vegapb.InstrumentConfiguration_Perps{
+										Perps: &v.product,
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+
+			errs := err.Get(v.path)
+
+			// no errors expected
+			if v.err == nil {
+				assert.Len(t, errs, 0, v.desc)
+				return
+			}
+
+			assert.Contains(t, errs, v.err, v.desc)
+		})
+	}
+}
+
 func testFutureMarketSubmissionWithInternalTimeTriggerTerminationDataFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -5452,13 +5606,13 @@ func testFutureMarketSubmissionWithInternalTimeTriggerTerminationDataFails(t *te
 
 func testFutureMarketSubmissionWithInternalTimeTriggerSettlementDataFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeInternalTimeTriggerTermination,
 									).SetTimeTriggerConditionConfig(

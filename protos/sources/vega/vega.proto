@@ -1151,6 +1151,8 @@ message NetworkLimits {
   int64 propose_asset_enabled_from = 9;
   // Are spot market proposals allowed at this point in time.
   bool can_propose_spot_market = 10;
+  // Are perps market proposals allowed at this point in time.
+  bool can_propose_perps_market = 11;
 }
 
 // Represents a liquidity order

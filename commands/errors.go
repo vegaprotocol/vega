@@ -50,6 +50,7 @@ var (
 	ErrTrailingPercentOffsetMinimalIncrementNotReached = errors.New("trailing percent offset minimal increment must be >= 0.001")
 	ErrMustBeEmpty                                     = errors.New("must be empty")
 	ErrMustBeSuperiorOrEqualToClampLowerBound          = errors.New("must be superior or equal to clamp lower bound")
+	ErrOneTimeTriggerAllowedMax                        = errors.New("maximum one time trigger allowed")
 )
 
 type Errors map[string][]error
