@@ -433,11 +433,6 @@ func (m *MarketLiquidity) makePerPartyAccountsAndTransfers(ctx context.Context, 
 		return err
 	}
 
-	// _, err = m.collateral.CreatePartyMarginAccount(ctx, party, m.marketID, m.asset)
-	// if err != nil {
-	// 	return err
-	// }
-
 	_, err = m.collateral.GetOrCreatePartyLiquidityFeeAccount(ctx, party, m.marketID, m.asset)
 	if err != nil {
 		return err
@@ -557,6 +552,8 @@ func (m *MarketLiquidity) AmendLiquidityProvision(
 	return nil
 }
 
+// TODO karel - cancelling should not be just applied right away.
+// It should use similar mechanism as amendment to 0.
 func (m *MarketLiquidity) CancelLiquidityProvision(ctx context.Context, party string) error {
 	if err := m.liquidityEngine.CancelLiquidityProvision(ctx, party); err != nil {
 		return err
@@ -786,21 +783,4 @@ func (m *MarketLiquidity) ProvisionsPerParty() liquidity.ProvisionsPerParty {
 
 func (m *MarketLiquidity) CalculateSuppliedStake() *num.Uint {
 	return m.liquidityEngine.CalculateSuppliedStake()
-}
-
-// TODO karel - use real snapshot
-func (m *MarketLiquidity) GetState(k string) ([]byte, []types.StateProvider, error) {
-	return nil, nil, nil
-}
-func (m *MarketLiquidity) Keys() []string {
-	return []string{}
-}
-func (m *MarketLiquidity) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
-	return nil, nil
-}
-func (m *MarketLiquidity) Namespace() types.SnapshotNamespace {
-	return ""
-}
-func (m *MarketLiquidity) Stopped() bool {
-	return false
 }

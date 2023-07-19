@@ -328,11 +328,11 @@ type ComplexityRoot struct {
 	}
 
 	Data struct {
-		BroadcastAt         func(childComplexity int) int
-		Data                func(childComplexity int) int
-		EthereumBlockHeight func(childComplexity int) int
-		MatchedSpecIds      func(childComplexity int) int
-		Signers             func(childComplexity int) int
+		BroadcastAt    func(childComplexity int) int
+		Data           func(childComplexity int) int
+		MatchedSpecIds func(childComplexity int) int
+		MetaData       func(childComplexity int) int
+		Signers        func(childComplexity int) int
 	}
 
 	DataSourceDefinition struct {
@@ -862,7 +862,6 @@ type ComplexityRoot struct {
 		LinearSlippageFactor          func(childComplexity int) int
 		LiquidityMonitoringParameters func(childComplexity int) int
 		LiquidityProvisionsConnection func(childComplexity int, partyID *string, live *bool, pagination *v2.Pagination) int
-		LpPriceRange                  func(childComplexity int) int
 		MarketTimestamps              func(childComplexity int) int
 		OpeningAuction                func(childComplexity int) int
 		OrdersConnection              func(childComplexity int, pagination *v2.Pagination, filter *OrderByPartyIdsFilter) int
@@ -1019,7 +1018,6 @@ type ComplexityRoot struct {
 		Instrument                    func(childComplexity int) int
 		LinearSlippageFactor          func(childComplexity int) int
 		LiquidityMonitoringParameters func(childComplexity int) int
-		LpPriceRange                  func(childComplexity int) int
 		Metadata                      func(childComplexity int) int
 		PositionDecimalPlaces         func(childComplexity int) int
 		PriceMonitoringParameters     func(childComplexity int) int
@@ -3425,19 +3423,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Data.Data(childComplexity), true
 
-	case "Data.ethereumBlockHeight":
-		if e.complexity.Data.EthereumBlockHeight == nil {
-			break
-		}
-
-		return e.complexity.Data.EthereumBlockHeight(childComplexity), true
-
 	case "Data.matchedSpecIds":
 		if e.complexity.Data.MatchedSpecIds == nil {
 			break
 		}
 
 		return e.complexity.Data.MatchedSpecIds(childComplexity), true
+
+	case "Data.metaData":
+		if e.complexity.Data.MetaData == nil {
+			break
+		}
+
+		return e.complexity.Data.MetaData(childComplexity), true
 
 	case "Data.signers":
 		if e.complexity.Data.Signers == nil {
@@ -5520,13 +5518,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Market.LiquidityProvisionsConnection(childComplexity, args["partyId"].(*string), args["live"].(*bool), args["pagination"].(*v2.Pagination)), true
 
-	case "Market.lpPriceRange":
-		if e.complexity.Market.LpPriceRange == nil {
-			break
-		}
-
-		return e.complexity.Market.LpPriceRange(childComplexity), true
-
 	case "Market.marketTimestamps":
 		if e.complexity.Market.MarketTimestamps == nil {
 			break
@@ -6229,13 +6220,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NewMarket.LiquidityMonitoringParameters(childComplexity), true
-
-	case "NewMarket.lpPriceRange":
-		if e.complexity.NewMarket.LpPriceRange == nil {
-			break
-		}
-
-		return e.complexity.NewMarket.LpPriceRange(childComplexity), true
 
 	case "NewMarket.metadata":
 		if e.complexity.NewMarket.Metadata == nil {
@@ -13700,8 +13684,6 @@ func (ec *executionContext) fieldContext_AccountBalance_market(ctx context.Conte
 				return ec.fieldContext_Market_marketTimestamps(ctx, field)
 			case "riskFactors":
 				return ec.fieldContext_Market_riskFactors(ctx, field)
-			case "lpPriceRange":
-				return ec.fieldContext_Market_lpPriceRange(ctx, field)
 			case "linearSlippageFactor":
 				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
 			case "quadraticSlippageFactor":
@@ -14300,8 +14282,6 @@ func (ec *executionContext) fieldContext_AccountEvent_market(ctx context.Context
 				return ec.fieldContext_Market_marketTimestamps(ctx, field)
 			case "riskFactors":
 				return ec.fieldContext_Market_riskFactors(ctx, field)
-			case "lpPriceRange":
-				return ec.fieldContext_Market_lpPriceRange(ctx, field)
 			case "linearSlippageFactor":
 				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
 			case "quadraticSlippageFactor":
@@ -18492,8 +18472,8 @@ func (ec *executionContext) fieldContext_Data_data(ctx context.Context, field gr
 	return fc, nil
 }
 
-func (ec *executionContext) _Data_ethereumBlockHeight(ctx context.Context, field graphql.CollectedField, obj *Data) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Data_ethereumBlockHeight(ctx, field)
+func (ec *executionContext) _Data_metaData(ctx context.Context, field graphql.CollectedField, obj *Data) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Data_metaData(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -18506,7 +18486,7 @@ func (ec *executionContext) _Data_ethereumBlockHeight(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.EthereumBlockHeight, nil
+		return obj.MetaData, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -18515,19 +18495,25 @@ func (ec *executionContext) _Data_ethereumBlockHeight(ctx context.Context, field
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.([]*v12.Property)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐProperty(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Data_ethereumBlockHeight(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Data_metaData(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Data",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_Property_name(ctx, field)
+			case "value":
+				return ec.fieldContext_Property_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Property", field.Name)
 		},
 	}
 	return fc, nil
@@ -22628,8 +22614,6 @@ func (ec *executionContext) fieldContext_Entities_markets(ctx context.Context, f
 				return ec.fieldContext_Market_marketTimestamps(ctx, field)
 			case "riskFactors":
 				return ec.fieldContext_Market_riskFactors(ctx, field)
-			case "lpPriceRange":
-				return ec.fieldContext_Market_lpPriceRange(ctx, field)
 			case "linearSlippageFactor":
 				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
 			case "quadraticSlippageFactor":
@@ -26136,8 +26120,8 @@ func (ec *executionContext) fieldContext_ExternalData_data(ctx context.Context, 
 				return ec.fieldContext_Data_signers(ctx, field)
 			case "data":
 				return ec.fieldContext_Data_data(ctx, field)
-			case "ethereumBlockHeight":
-				return ec.fieldContext_Data_ethereumBlockHeight(ctx, field)
+			case "metaData":
+				return ec.fieldContext_Data_metaData(ctx, field)
 			case "matchedSpecIds":
 				return ec.fieldContext_Data_matchedSpecIds(ctx, field)
 			case "broadcastAt":
@@ -29682,8 +29666,6 @@ func (ec *executionContext) fieldContext_LiquidityProvision_market(ctx context.C
 				return ec.fieldContext_Market_marketTimestamps(ctx, field)
 			case "riskFactors":
 				return ec.fieldContext_Market_riskFactors(ctx, field)
-			case "lpPriceRange":
-				return ec.fieldContext_Market_lpPriceRange(ctx, field)
 			case "linearSlippageFactor":
 				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
 			case "quadraticSlippageFactor":
@@ -31627,8 +31609,6 @@ func (ec *executionContext) fieldContext_MarginLevels_market(ctx context.Context
 				return ec.fieldContext_Market_marketTimestamps(ctx, field)
 			case "riskFactors":
 				return ec.fieldContext_Market_riskFactors(ctx, field)
-			case "lpPriceRange":
-				return ec.fieldContext_Market_lpPriceRange(ctx, field)
 			case "linearSlippageFactor":
 				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
 			case "quadraticSlippageFactor":
@@ -33474,50 +33454,6 @@ func (ec *executionContext) fieldContext_Market_riskFactors(ctx context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _Market_lpPriceRange(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Market_lpPriceRange(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LpPriceRange, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Market_lpPriceRange(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Market",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Market_linearSlippageFactor(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Market_linearSlippageFactor(ctx, field)
 	if err != nil {
@@ -33912,8 +33848,6 @@ func (ec *executionContext) fieldContext_MarketData_market(ctx context.Context, 
 				return ec.fieldContext_Market_marketTimestamps(ctx, field)
 			case "riskFactors":
 				return ec.fieldContext_Market_riskFactors(ctx, field)
-			case "lpPriceRange":
-				return ec.fieldContext_Market_lpPriceRange(ctx, field)
 			case "linearSlippageFactor":
 				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
 			case "quadraticSlippageFactor":
@@ -35681,8 +35615,6 @@ func (ec *executionContext) fieldContext_MarketDepth_market(ctx context.Context,
 				return ec.fieldContext_Market_marketTimestamps(ctx, field)
 			case "riskFactors":
 				return ec.fieldContext_Market_riskFactors(ctx, field)
-			case "lpPriceRange":
-				return ec.fieldContext_Market_lpPriceRange(ctx, field)
 			case "linearSlippageFactor":
 				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
 			case "quadraticSlippageFactor":
@@ -36126,8 +36058,6 @@ func (ec *executionContext) fieldContext_MarketDepthUpdate_market(ctx context.Co
 				return ec.fieldContext_Market_marketTimestamps(ctx, field)
 			case "riskFactors":
 				return ec.fieldContext_Market_riskFactors(ctx, field)
-			case "lpPriceRange":
-				return ec.fieldContext_Market_lpPriceRange(ctx, field)
 			case "linearSlippageFactor":
 				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
 			case "quadraticSlippageFactor":
@@ -36410,8 +36340,6 @@ func (ec *executionContext) fieldContext_MarketEdge_node(ctx context.Context, fi
 				return ec.fieldContext_Market_marketTimestamps(ctx, field)
 			case "riskFactors":
 				return ec.fieldContext_Market_riskFactors(ctx, field)
-			case "lpPriceRange":
-				return ec.fieldContext_Market_lpPriceRange(ctx, field)
 			case "linearSlippageFactor":
 				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
 			case "quadraticSlippageFactor":
@@ -37994,50 +37922,6 @@ func (ec *executionContext) fieldContext_NewMarket_positionDecimalPlaces(ctx con
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _NewMarket_lpPriceRange(ctx context.Context, field graphql.CollectedField, obj *vega.NewMarket) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_NewMarket_lpPriceRange(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.NewMarket().LpPriceRange(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_NewMarket_lpPriceRange(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "NewMarket",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -43732,8 +43616,6 @@ func (ec *executionContext) fieldContext_Order_market(ctx context.Context, field
 				return ec.fieldContext_Market_marketTimestamps(ctx, field)
 			case "riskFactors":
 				return ec.fieldContext_Market_riskFactors(ctx, field)
-			case "lpPriceRange":
-				return ec.fieldContext_Market_lpPriceRange(ctx, field)
 			case "linearSlippageFactor":
 				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
 			case "quadraticSlippageFactor":
@@ -47896,8 +47778,6 @@ func (ec *executionContext) fieldContext_Position_market(ctx context.Context, fi
 				return ec.fieldContext_Market_marketTimestamps(ctx, field)
 			case "riskFactors":
 				return ec.fieldContext_Market_riskFactors(ctx, field)
-			case "lpPriceRange":
-				return ec.fieldContext_Market_lpPriceRange(ctx, field)
 			case "linearSlippageFactor":
 				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
 			case "quadraticSlippageFactor":
@@ -54302,8 +54182,6 @@ func (ec *executionContext) fieldContext_Query_market(ctx context.Context, field
 				return ec.fieldContext_Market_marketTimestamps(ctx, field)
 			case "riskFactors":
 				return ec.fieldContext_Market_riskFactors(ctx, field)
-			case "lpPriceRange":
-				return ec.fieldContext_Market_lpPriceRange(ctx, field)
 			case "linearSlippageFactor":
 				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
 			case "quadraticSlippageFactor":
@@ -63291,8 +63169,6 @@ func (ec *executionContext) fieldContext_SuccessorMarket_market(ctx context.Cont
 				return ec.fieldContext_Market_marketTimestamps(ctx, field)
 			case "riskFactors":
 				return ec.fieldContext_Market_riskFactors(ctx, field)
-			case "lpPriceRange":
-				return ec.fieldContext_Market_lpPriceRange(ctx, field)
 			case "linearSlippageFactor":
 				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
 			case "quadraticSlippageFactor":
@@ -63979,8 +63855,6 @@ func (ec *executionContext) fieldContext_Trade_market(ctx context.Context, field
 				return ec.fieldContext_Market_marketTimestamps(ctx, field)
 			case "riskFactors":
 				return ec.fieldContext_Market_riskFactors(ctx, field)
-			case "lpPriceRange":
-				return ec.fieldContext_Market_lpPriceRange(ctx, field)
 			case "linearSlippageFactor":
 				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
 			case "quadraticSlippageFactor":
@@ -68008,8 +67882,6 @@ func (ec *executionContext) fieldContext_UpdateMarketState_market(ctx context.Co
 				return ec.fieldContext_Market_marketTimestamps(ctx, field)
 			case "riskFactors":
 				return ec.fieldContext_Market_riskFactors(ctx, field)
-			case "lpPriceRange":
-				return ec.fieldContext_Market_lpPriceRange(ctx, field)
 			case "linearSlippageFactor":
 				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
 			case "quadraticSlippageFactor":
@@ -73912,9 +73784,9 @@ func (ec *executionContext) _Data(ctx context.Context, sel ast.SelectionSet, obj
 
 			out.Values[i] = ec._Data_data(ctx, field, obj)
 
-		case "ethereumBlockHeight":
+		case "metaData":
 
-			out.Values[i] = ec._Data_ethereumBlockHeight(ctx, field, obj)
+			out.Values[i] = ec._Data_metaData(ctx, field, obj)
 
 		case "matchedSpecIds":
 
@@ -78260,13 +78132,6 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 				return innerFunc(ctx)
 
 			})
-		case "lpPriceRange":
-
-			out.Values[i] = ec._Market_lpPriceRange(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "linearSlippageFactor":
 
 			out.Values[i] = ec._Market_linearSlippageFactor(ctx, field, obj)
@@ -79654,26 +79519,6 @@ func (ec *executionContext) _NewMarket(ctx context.Context, sel ast.SelectionSet
 					}
 				}()
 				res = ec._NewMarket_positionDecimalPlaces(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
-		case "lpPriceRange":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._NewMarket_lpPriceRange(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -96490,6 +96335,47 @@ func (ec *executionContext) marshalOPriceMonitoringTrigger2ᚕᚖcodeᚗvegaprot
 	return ret
 }
 
+func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐProperty(ctx context.Context, sel ast.SelectionSet, v []*v12.Property) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOProperty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐProperty(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
 func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐPropertyᚄ(ctx context.Context, sel ast.SelectionSet, v []*v12.Property) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -96535,6 +96421,13 @@ func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋve
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalOProperty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐProperty(ctx context.Context, sel ast.SelectionSet, v *v12.Property) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Property(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v []*vega.GovernanceData) graphql.Marshaler {
