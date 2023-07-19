@@ -12,84 +12,100 @@
 
 //lint:file-ignore ST1003 Ignore underscores in names, this is straigh copied from the proto package to ease introducing the domain types
 
-package vegatime
+package timetrigger
 
 import (
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/errors"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
-const VegaTimeKey = "vegaprotocol.builtin.timestamp"
+const InternalTimeTriggerKey = "vegaprotocol.builtin.timetrigger"
 
-// SpecConfiguration is used internally.
 type SpecConfiguration struct {
+	Triggers   common.InternalTimeTriggers
 	Conditions []*common.SpecCondition
 }
 
-// String returns the content of DataSourceSpecConfigurationTime as a string.
 func (s SpecConfiguration) String() string {
 	return fmt.Sprintf(
-		"conditions(%s)", common.SpecConditions(s.Conditions).String(),
+		"trigger(%s), conditions(%s)",
+		s.Triggers.String(),
+		common.SpecConditions(s.Conditions).String(),
 	)
 }
 
-func (s SpecConfiguration) IntoProto() *vegapb.DataSourceSpecConfigurationTime {
-	return &vegapb.DataSourceSpecConfigurationTime{
+func (s SpecConfiguration) IntoProto() *vegapb.DataSourceSpecConfigurationTimeTrigger {
+	return &vegapb.DataSourceSpecConfigurationTimeTrigger{
+		Triggers:   s.Triggers.IntoProto(),
 		Conditions: common.SpecConditions(s.Conditions).IntoProto(),
 	}
 }
 
 func (s SpecConfiguration) DeepClone() common.DataSourceType {
-	conditions := []*common.SpecCondition{}
-	conditions = append(conditions, s.Conditions...)
-
 	return SpecConfiguration{
-		Conditions: conditions,
+		Triggers:   s.Triggers.DeepClone(),
+		Conditions: s.Conditions,
 	}
 }
 
 func (s SpecConfiguration) GetFilters() []*common.SpecFilter {
 	filters := []*common.SpecFilter{}
-	// For the case the internal data source is time based
-	// (https://github.com/vegaprotocol/specs/blob/master/protocol/0048-DSRI-data_source_internal.md#13-vega-time-changed)
-	// We add the filter key values manually to match a time based data source
-	// Ensure only a single filter has been created, that holds the first condition
-	if len(s.Conditions) > 0 {
-		filters = append(
-			filters,
-			&common.SpecFilter{
-				Key: &common.SpecPropertyKey{
-					Name: VegaTimeKey,
-					Type: datapb.PropertyKey_TYPE_TIMESTAMP,
-				},
-				Conditions: []*common.SpecCondition{
-					s.Conditions[0],
-				},
-			},
-		)
+
+	conditions := []*common.SpecCondition{}
+	if s.Conditions != nil {
+		conditions = s.Conditions
 	}
+	// For the case the internal data source is time based
+	// (https://github.com/vegaprotocol/specs/blob/master/protocol/0048-DSRI-data_source_internal.md#12-time-triggered)
+	// We add the filter key values manually to match a time based data source
+	// if len(s.Conditions) > 0 {
+	filters = append(
+		filters,
+		&common.SpecFilter{
+			Key: &common.SpecPropertyKey{
+				Name: InternalTimeTriggerKey,
+				Type: datapb.PropertyKey_TYPE_TIMESTAMP,
+			},
+			Conditions: conditions,
+		},
+	)
+	//}
 	return filters
 }
 
-func SpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConfigurationTime) SpecConfiguration {
+func (s SpecConfiguration) GetTimeTriggers() common.InternalTimeTriggers {
+	return s.Triggers
+}
+
+func (s SpecConfiguration) IsTriggered(tm time.Time) bool {
+	return s.Triggers.IsTriggered(tm)
+}
+
+func SpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConfigurationTimeTrigger, tm *time.Time) (SpecConfiguration, error) {
+	if tm == nil {
+		return SpecConfiguration{}, errors.ErrMissingTimeForSettingTriggerRepetition
+	}
 	if protoConfig == nil {
-		return SpecConfiguration{}
+		return SpecConfiguration{}, nil
 	}
 
 	return SpecConfiguration{
+		Triggers:   common.InternalTimeTriggersFromProto(protoConfig.Triggers, *tm),
 		Conditions: common.SpecConditionsFromProto(protoConfig.Conditions),
-	}
+	}, nil
 }
 
 func (s SpecConfiguration) ToDefinitionProto() (*vegapb.DataSourceDefinition, error) {
 	return &vegapb.DataSourceDefinition{
 		SourceType: &vegapb.DataSourceDefinition_Internal{
 			Internal: &vegapb.DataSourceDefinitionInternal{
-				SourceType: &vegapb.DataSourceDefinitionInternal_Time{
-					Time: s.IntoProto(),
+				SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+					TimeTrigger: s.IntoProto(),
 				},
 			},
 		},

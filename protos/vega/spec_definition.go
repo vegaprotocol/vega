@@ -12,6 +12,7 @@ const (
 	DataSourceContentTypeOracle
 	DataSourceContentTypeEthOracle
 	DataSourceContentTypeInternalTimeTermination
+	DataSourceContentTypeInternalTimeTriggerTermination
 )
 
 func (d DataSourceDefinition) DeepClone() *DataSourceDefinition {
@@ -76,6 +77,20 @@ func (d DataSourceDefinition) GetFilters() []*datapb.Filter {
 					)
 				}
 			}
+		case *DataSourceSpecConfigurationTimeTrigger:
+			if tp != nil {
+				if len(tp.Conditions) > 0 {
+					filters = append(filters,
+						&datapb.Filter{
+							Key: &datapb.PropertyKey{
+								Name: "vegaprotocol.builtin.timetrigger",
+								Type: datapb.PropertyKey_TYPE_TIMESTAMP,
+							},
+							Conditions: tp.Conditions,
+						},
+					)
+				}
+			}
 		}
 	}
 
@@ -122,6 +137,18 @@ func NewDataSourceDefinition(tp DataSourceContentType) *DataSourceDefinition {
 				SourceType: &DataSourceDefinitionInternal_Time{
 					Time: &DataSourceSpecConfigurationTime{
 						Conditions: []*datapb.Condition{},
+					},
+				},
+			},
+		}
+
+	case DataSourceContentTypeInternalTimeTriggerTermination:
+		ds.SourceType = &DataSourceDefinition_Internal{
+			Internal: &DataSourceDefinitionInternal{
+				SourceType: &DataSourceDefinitionInternal_TimeTrigger{
+					TimeTrigger: &DataSourceSpecConfigurationTimeTrigger{
+						Conditions: []*datapb.Condition{},
+						Triggers:   []*datapb.InternalTimeTrigger{},
 					},
 				},
 			},
@@ -214,6 +241,21 @@ func (s *DataSourceDefinition) SetTimeTriggerConditionConfig(c []*datapb.Conditi
 					},
 				}
 				*s = *ds
+
+			case *DataSourceSpecConfigurationTimeTrigger:
+				// Set the new condition only in this case
+				ds := &DataSourceDefinition{
+					SourceType: &DataSourceDefinition_Internal{
+						Internal: &DataSourceDefinitionInternal{
+							SourceType: &DataSourceDefinitionInternal_TimeTrigger{
+								TimeTrigger: &DataSourceSpecConfigurationTimeTrigger{
+									Conditions: c,
+								},
+							},
+						},
+					},
+				}
+				*s = *ds
 			}
 		}
 	}
@@ -251,7 +293,10 @@ func (s *DataSourceDefinition) Content() interface{} {
 								return intTp.Time
 							}
 
-							// The rest of the internal type sources will go here.
+						case *DataSourceDefinitionInternal_TimeTrigger:
+							if intTp.TimeTrigger != nil {
+								return intTp.TimeTrigger
+							}
 						}
 					}
 				}
