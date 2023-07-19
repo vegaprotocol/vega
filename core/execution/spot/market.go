@@ -661,6 +661,7 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 	m.mkt.State = mktState
 	m.mkt.TradingMode = types.MarketTradingModeNoTrading
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+	m.closed = true
 	return nil
 }
 
@@ -2806,9 +2807,6 @@ func scaleQuoteQuantityToAssetDP(sizeUint uint64, priceInAssetDP *num.Uint, posi
 func (m *Market) closeSpotMarket(ctx context.Context) {
 	if m.mkt.State != types.MarketStatePending {
 		m.markPrice = m.lastTradedPrice
-		m.mkt.State = types.MarketStateClosed
-		m.mkt.TradingMode = types.MarketTradingModeNoTrading
-		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		if err := m.closeMarket(ctx); err != nil {
 			m.log.Error("could not close market", logging.Error(err))
 		}
