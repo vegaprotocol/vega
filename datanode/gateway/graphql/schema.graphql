@@ -3464,7 +3464,7 @@ enum AccountType {
   ACCOUNT_TYPE_HOLDING
   "Per liquidity provider, per market account for holding LPs' fees before distribution"
   ACCOUNT_TYPE_LP_LIQUIDITY_FEES
-  "NetworkTeasury, per asset treasury controlled by the network"
+  "Network treasury, per-asset treasury controlled by the network"
   ACCOUNT_TYPE_NETWORK_TREASURY
 }
 
