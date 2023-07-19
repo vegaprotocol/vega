@@ -720,7 +720,7 @@ func (b *BrokerStub) GetMarketInsurancePoolAccount(market string) (types.Account
 	return types.Account{}, errors.New("account does not exist")
 }
 
-func (b *BrokerStub) GetStakingRewwardAccount(asset string) (types.Account, error) {
+func (b *BrokerStub) GetStakingRewardAccount(asset string) (types.Account, error) {
 	batch := b.GetAccountEvents()
 	for _, e := range batch {
 		v := e.Account()

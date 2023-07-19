@@ -293,7 +293,7 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 		e.broker.Send(events.NewAccountEvent(ctx, *ntAcc))
 	}
 
-	// network treasury for the asset
+	// global insurance for the asset
 	globalInsurance := e.accountID(noMarket, systemOwner, asset.ID, types.AccountTypeGlobalInsurance)
 	if _, ok := e.accs[globalInsurance]; !ok {
 		giAcc := &types.Account{
@@ -830,20 +830,20 @@ func (e *Engine) CheckLeftOverBalance(ctx context.Context, settle *types.Account
 		return nil, nil
 	}
 
-	e.log.Error("final settlement left asset unit in the settlement, transferring to the asset reward account", logging.String("remaining-settle-balance", settle.Balance.String()))
+	e.log.Error("final settlement left asset unit in the settlement, transferring to the asset global insurance", logging.String("remaining-settle-balance", settle.Balance.String()))
 	for _, t := range transfers {
 		e.log.Error("final settlement transfer", logging.String("amount", t.Amount.String()), logging.Int32("type", int32(t.Type)))
 	}
-	// if there's just one asset unit left over from some weird rounding issue, transfer it to the network treasury
+	// if there's just one asset unit left over from some weird rounding issue, transfer it to the global insurance
 	if settle.Balance.EQ(num.UintOne()) {
-		e.log.Warn("final settlement left 1 asset unit in the settlement, transferring to the asset reward account")
+		e.log.Warn("final settlement left 1 asset unit in the settlement, transferring to the asset global insurance account")
 		req := &types.TransferRequest{
 			FromAccount: make([]*types.Account, 1),
 			ToAccount:   make([]*types.Account, 1),
 			Asset:       asset,
 			Type:        types.TransferTypeClearAccount,
 		}
-		globalIns, _ := e.GetNetworkTreasuryAccount(asset)
+		globalIns, _ := e.GetGlobalInsuranceAccount(asset)
 		req.FromAccount[0] = settle
 		req.ToAccount = []*types.Account{globalIns}
 		req.Amount = num.UintOne()
