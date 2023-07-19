@@ -136,6 +136,12 @@ func testNewTransferChangeSubmissionInvalidDestinationTypeFails(t *testing.T) {
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_GENERAL))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_INSURANCE))
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY))
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE))
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES))
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES))
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES))
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_UNSPECIFIED))
 
 	for at := range allAccountTypes {
@@ -177,6 +183,8 @@ func testNewTransferChangeSubmissionInvalidSourceTypeFails(t *testing.T) {
 	for k := range types.AccountType_name {
 		allAccountTypes[k] = struct{}{}
 	}
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY))
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_INSURANCE))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_UNSPECIFIED))

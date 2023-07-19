@@ -789,6 +789,9 @@ enum AccountType {
   // Network controlled liquidity fees bonus distribution account, per market.
   ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION = 20;
 
+  // Network controlled treasury
+  ACCOUNT_TYPE_NETWORK_TREASURY = 21;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
