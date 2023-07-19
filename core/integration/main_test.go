@@ -171,6 +171,15 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return nil
 	})
 
+	s.Step(`^the spot markets are updated:$`, func(table *godog.Table) error {
+		markets, err := steps.TheSpotMarketsUpdated(marketConfig, execsetup.executionEngine, execsetup.markets, execsetup.netParams, table)
+		if err != nil {
+			return err
+		}
+		execsetup.markets = markets
+		return nil
+	})
+
 	s.Step(`the successor market "([^"]+)" is enacted$`, func(successor string) error {
 		if err := steps.TheSuccesorMarketIsEnacted(successor, execsetup.markets, execsetup.executionEngine); err != nil {
 			return err

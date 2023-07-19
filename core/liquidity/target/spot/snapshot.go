@@ -49,8 +49,8 @@ func NewSnapshotEngine(
 	marketID string,
 	positionFactor num.Decimal,
 ) *SnapshotEngine {
-	key := (&types.PayloadLiquidityTarget{
-		Target: &snapshot.LiquidityTarget{MarketId: marketID},
+	key := (&types.PayloadSpotLiquidityTarget{
+		Target: &snapshot.SpotLiquidityTarget{MarketId: marketID},
 	}).Key()
 
 	return &SnapshotEngine{
