@@ -116,7 +116,7 @@ Feature: Simple example of successor markets
       | trader3 | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the insurance pool balance should be "5077" for the market "ETH/DEC19"
-    And the network treasury balance should be "0" for the asset "USD"
+    And the global insurance pool balance should be "0" for the asset "USD"
     And the liquidity provider fee shares for the market "ETH/DEC19" should be:
       | party   | equity like share | average entry valuation |
       | lpprov1 | 0.9               | 9000                    |
@@ -142,7 +142,7 @@ Feature: Simple example of successor markets
 # market ETH/DEC19 is not settled yet, it still active
     And the insurance pool balance should be "5077" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
-    And the network treasury balance should be "0" for the asset "USD"
+    And the global insurance pool balance should be "0" for the asset "USD"
 
     When the successor market "ETH/DEC20" is enacted
     When the successor market "ETH/DEC21" is enacted
@@ -177,7 +177,7 @@ Feature: Simple example of successor markets
     And the insurance pool balance should be "2031" for the market "ETH/DEC19"
     And the insurance pool balance should be "3046" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-    And the network treasury balance should be "0" for the asset "USD"
+    And the global insurance pool balance should be "0" for the asset "USD"
 
     # check LP account is released after the market ETH/DEC21 is rejceted
     Then the parties should have the following account balances:
@@ -218,7 +218,7 @@ Feature: Simple example of successor markets
     When the network moves ahead "1" blocks
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "4062" for the market "ETH/DEC20"
-    And the network treasury balance should be "1016" for the asset "USD"
+    And the global insurance pool balance should be "1016" for the asset "USD"
 
   @SuccessorMarketSimple
   Scenario: 002 Successor market enacted with parent market still active, ELS is copied over and both states can change independently. 0042-LIQF-031, 0042-LIQF-048, 0042-LIQF-033
@@ -272,7 +272,7 @@ Feature: Simple example of successor markets
       | trader3 | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the insurance pool balance should be "5077" for the market "ETH/DEC19"
-    And the network treasury balance should be "0" for the asset "USD"
+    And the global insurance pool balance should be "0" for the asset "USD"
     And the liquidity provider fee shares for the market "ETH/DEC19" should be:
       | party   | equity like share | average entry valuation |
       | lpprov1 | 0.9               | 9000                    |
@@ -315,7 +315,7 @@ Feature: Simple example of successor markets
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "4062" for the market "ETH/DEC20"
-    And the network treasury balance should be "1016" for the asset "USD"
+    And the global insurance pool balance should be "1016" for the asset "USD"
     # this is from ETH/DEC19 market
     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
       | party   | equity like share | average entry valuation |
@@ -388,7 +388,7 @@ Feature: Simple example of successor markets
       | trader3 | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the insurance pool balance should be "5077" for the market "ETH/DEC19"
-    And the network treasury balance should be "0" for the asset "USD"
+    And the global insurance pool balance should be "0" for the asset "USD"
     And the liquidity provider fee shares for the market "ETH/DEC19" should be:
       | party   | equity like share | average entry valuation |
       | lpprov1 | 0.9               | 9000                    |
@@ -406,7 +406,7 @@ Feature: Simple example of successor markets
 
     And the insurance pool balance should be "5077" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
-    And the network treasury balance should be "0" for the asset "USD"
+    And the global insurance pool balance should be "0" for the asset "USD"
     When the successor market "ETH/DEC20" is enacted
 
     Then the parties place the following orders:
@@ -422,7 +422,7 @@ Feature: Simple example of successor markets
       | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 82           | 10000          | 1             |
     And the insurance pool balance should be "2031" for the market "ETH/DEC19"
     And the insurance pool balance should be "3046" for the market "ETH/DEC20"
-    And the network treasury balance should be "0" for the asset "USD"
+    And the global insurance pool balance should be "0" for the asset "USD"
 
     # this is from ETH/DEC19 market
     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
@@ -458,7 +458,7 @@ Feature: Simple example of successor markets
     When the network moves ahead "1" blocks
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "4062" for the market "ETH/DEC20"
-    And the network treasury balance should be "1016" for the asset "USD"
+    And the global insurance pool balance should be "1016" for the asset "USD"
 
 
   @SuccessorMarketExpires2
@@ -516,7 +516,7 @@ Feature: Simple example of successor markets
       | trader3 | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     Then the insurance pool balance should be "5077" for the market "ETH/DEC19"
-    And the network treasury balance should be "0" for the asset "USD"
+    And the global insurance pool balance should be "0" for the asset "USD"
     And the liquidity provider fee shares for the market "ETH/DEC19" should be:
       | party   | equity like share | average entry valuation |
       | lpprov1 | 0.9               | 9000                    |
@@ -524,7 +524,7 @@ Feature: Simple example of successor markets
 
     And the insurance pool balance should be "5077" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
-    And the network treasury balance should be "0" for the asset "USD"
+    And the global insurance pool balance should be "0" for the asset "USD"
 
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |
@@ -554,7 +554,7 @@ Feature: Simple example of successor markets
       | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 82           | 10000          | 1             |
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "2539" for the market "ETH/DEC20"
-    And the network treasury balance should be "2539" for the asset "USD"
+    And the global insurance pool balance should be "2539" for the asset "USD"
 
     # this is from ETH/DEC19 market
     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
@@ -576,5 +576,5 @@ Feature: Simple example of successor markets
     When the network moves ahead "1" blocks
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "2539" for the market "ETH/DEC20"
-    And the network treasury balance should be "2539" for the asset "USD"
+    And the global insurance pool balance should be "2539" for the asset "USD"
 

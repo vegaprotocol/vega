@@ -258,7 +258,7 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 		e.broker.Send(events.NewAccountEvent(ctx, *externalAcc))
 	}
 
-	// when an asset is enabled a global reward account (aka network treasury) is created for it along with the other 4 types of rewards
+	// when an asset is enabled a staking reward account is created for it
 	rewardAccountTypes := []vega.AccountType{types.AccountTypeGlobalReward}
 	for _, rewardAccountType := range rewardAccountTypes {
 		rewardID := e.accountID(noMarket, systemOwner, asset.ID, rewardAccountType)
@@ -275,6 +275,38 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 			e.addAccountToHashableSlice(rewardAcc)
 			e.broker.Send(events.NewAccountEvent(ctx, *rewardAcc))
 		}
+	}
+
+	// network treasury for the asset
+	netTreasury := e.accountID(noMarket, systemOwner, asset.ID, types.AccountTypeNetworkTreasury)
+	if _, ok := e.accs[netTreasury]; !ok {
+		ntAcc := &types.Account{
+			ID:       netTreasury,
+			Asset:    asset.ID,
+			Owner:    systemOwner,
+			Balance:  num.UintZero(),
+			MarketID: noMarket,
+			Type:     types.AccountTypeNetworkTreasury,
+		}
+		e.accs[netTreasury] = ntAcc
+		e.addAccountToHashableSlice(ntAcc)
+		e.broker.Send(events.NewAccountEvent(ctx, *ntAcc))
+	}
+
+	// global insurance for the asset
+	globalInsurance := e.accountID(noMarket, systemOwner, asset.ID, types.AccountTypeGlobalInsurance)
+	if _, ok := e.accs[globalInsurance]; !ok {
+		giAcc := &types.Account{
+			ID:       globalInsurance,
+			Asset:    asset.ID,
+			Owner:    systemOwner,
+			Balance:  num.UintZero(),
+			MarketID: noMarket,
+			Type:     types.AccountTypeGlobalInsurance,
+		}
+		e.accs[globalInsurance] = giAcc
+		e.addAccountToHashableSlice(giAcc)
+		e.broker.Send(events.NewAccountEvent(ctx, *giAcc))
 	}
 
 	// pending transfers account
@@ -572,7 +604,7 @@ func (e *Engine) getSpotFeeTransferRequest(
 		if err != nil {
 			return nil, err
 		}
-		networkTreasury, err := e.GetGlobalRewardAccount(assetID)
+		networkTreasury, err := e.GetNetworkTreasuryAccount(assetID)
 		if err != nil {
 			return nil, err
 		}
@@ -798,22 +830,22 @@ func (e *Engine) CheckLeftOverBalance(ctx context.Context, settle *types.Account
 		return nil, nil
 	}
 
-	e.log.Error("final settlement left asset unit in the settlement, transferring to the asset reward account", logging.String("remaining-settle-balance", settle.Balance.String()))
+	e.log.Error("final settlement left asset unit in the settlement, transferring to the asset global insurance", logging.String("remaining-settle-balance", settle.Balance.String()))
 	for _, t := range transfers {
 		e.log.Error("final settlement transfer", logging.String("amount", t.Amount.String()), logging.Int32("type", int32(t.Type)))
 	}
-	// if there's just one asset unit left over from some weird rounding issue, transfer it to the global reward account
+	// if there's just one asset unit left over from some weird rounding issue, transfer it to the global insurance
 	if settle.Balance.EQ(num.UintOne()) {
-		e.log.Warn("final settlement left 1 asset unit in the settlement, transferring to the asset reward account")
+		e.log.Warn("final settlement left 1 asset unit in the settlement, transferring to the asset global insurance account")
 		req := &types.TransferRequest{
 			FromAccount: make([]*types.Account, 1),
 			ToAccount:   make([]*types.Account, 1),
 			Asset:       asset,
 			Type:        types.TransferTypeClearAccount,
 		}
-		globalRewardPool, _ := e.GetGlobalRewardAccount(asset)
+		globalIns, _ := e.GetGlobalInsuranceAccount(asset)
 		req.FromAccount[0] = settle
-		req.ToAccount = []*types.Account{globalRewardPool}
+		req.ToAccount = []*types.Account{globalIns}
 		req.Amount = num.UintOne()
 		ledgerEntries, err := e.getLedgerEntries(ctx, req)
 		if err != nil {
@@ -1912,7 +1944,7 @@ func (e *Engine) getBondSpotTransferRequest(t *types.Transfer, market string) (*
 	}
 
 	// We'll need this account for all transfer types anyway (settlements, margin-risk updates).
-	networkTreasury, err := e.GetGlobalRewardAccount(t.Amount.Asset)
+	networkTreasury, err := e.GetNetworkTreasuryAccount(t.Amount.Asset)
 	if err != nil {
 		e.log.Error(
 			"Failed to get the network treasury account",
@@ -1983,6 +2015,26 @@ func (e *Engine) getGovernanceTransferFundsTransferRequest(ctx context.Context, 
 			// we always pay onto the pending transfers accounts
 			toAcc = e.GetPendingTransfersAccount(t.Amount.Asset)
 
+		case types.AccountTypeNetworkTreasury:
+			fromAcc, err = e.GetNetworkTreasuryAccount(t.Amount.Asset)
+			if err != nil {
+				return nil, fmt.Errorf("account does not exists: %v, %v, %v",
+					accountType, t.Owner, t.Amount.Asset,
+				)
+			}
+			// we always pay onto the pending transfers accounts
+			toAcc = e.GetPendingTransfersAccount(t.Amount.Asset)
+
+		case types.AccountTypeGlobalInsurance:
+			fromAcc, err = e.GetGlobalInsuranceAccount(t.Amount.Asset)
+			if err != nil {
+				return nil, fmt.Errorf("account does not exists: %v, %v, %v",
+					accountType, t.Owner, t.Amount.Asset,
+				)
+			}
+			// we always pay onto the pending transfers accounts
+			toAcc = e.GetPendingTransfersAccount(t.Amount.Asset)
+
 		case types.AccountTypeInsurance:
 			fromAcc, err = e.GetMarketInsurancePoolAccount(t.Market, t.Amount.Asset)
 			if err != nil {
@@ -2017,13 +2069,26 @@ func (e *Engine) getGovernanceTransferFundsTransferRequest(ctx context.Context, 
 				}
 			}
 
-		// this could not exists as well, let's just create in this case
-		case types.AccountTypeGlobalReward:
+			// this could not exists as well, let's just create in this case
+		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward, types.AccountTypeMarketProposerReward:
 			market := noMarket
 			if len(t.Market) > 0 {
 				market = t.Market
 			}
 			toAcc, err = e.GetOrCreateRewardAccount(ctx, t.Amount.Asset, market, accountType)
+			if err != nil {
+				// shouldn't happen, we just created it...
+				return nil, err
+			}
+
+		case types.AccountTypeNetworkTreasury:
+			toAcc, err = e.GetNetworkTreasuryAccount(t.Amount.Asset)
+			if err != nil {
+				return nil, err
+			}
+
+		case types.AccountTypeGlobalInsurance:
+			toAcc, err = e.GetGlobalInsuranceAccount(t.Amount.Asset)
 			if err != nil {
 				return nil, err
 			}
@@ -2720,9 +2785,9 @@ func (e *Engine) ClearInsurancepool(ctx context.Context, mktID, asset string, cl
 		}
 	}
 
-	// add the network treasury, if it doesn't exist yet, create it
-	globalRewardPool, _ := e.GetGlobalRewardAccount(asset)
-	insuranceAccounts = append(insuranceAccounts, globalRewardPool)
+	// add the global insurance account
+	globalIns, _ := e.GetGlobalInsuranceAccount(asset)
+	insuranceAccounts = append(insuranceAccounts, globalIns)
 	// redistribute market insurance funds between the global and other markets equally
 	req.FromAccount[0] = marketInsuranceAcc
 	req.ToAccount = insuranceAccounts
@@ -3508,6 +3573,54 @@ func (e *Engine) GetGlobalRewardAccount(asset string) (*types.Account, error) {
 	return e.GetAccountByID(rewardAccID)
 }
 
+func (e *Engine) GetNetworkTreasuryAccount(asset string) (*types.Account, error) {
+	return e.GetAccountByID(e.accountID(noMarket, systemOwner, asset, types.AccountTypeNetworkTreasury))
+}
+
+func (e *Engine) GetOrCreateNetworkTreasuryAccount(ctx context.Context, asset string) *types.Account {
+	accID := e.accountID(noMarket, systemOwner, asset, types.AccountTypeNetworkTreasury)
+	acc, err := e.GetAccountByID(accID)
+	if err == nil {
+		return acc
+	}
+	ntAcc := &types.Account{
+		ID:       accID,
+		Asset:    asset,
+		Owner:    systemOwner,
+		Balance:  num.UintZero(),
+		MarketID: noMarket,
+		Type:     types.AccountTypeNetworkTreasury,
+	}
+	e.accs[accID] = ntAcc
+	e.addAccountToHashableSlice(ntAcc)
+	e.broker.Send(events.NewAccountEvent(ctx, *ntAcc))
+	return ntAcc
+}
+
+func (e *Engine) GetGlobalInsuranceAccount(asset string) (*types.Account, error) {
+	return e.GetAccountByID(e.accountID(noMarket, systemOwner, asset, types.AccountTypeGlobalInsurance))
+}
+
+func (e *Engine) GetOrCreateGlobalInsuranceAccount(ctx context.Context, asset string) *types.Account {
+	accID := e.accountID(noMarket, systemOwner, asset, types.AccountTypeGlobalInsurance)
+	acc, err := e.GetAccountByID(accID)
+	if err == nil {
+		return acc
+	}
+	giAcc := &types.Account{
+		ID:       accID,
+		Asset:    asset,
+		Owner:    systemOwner,
+		Balance:  num.UintZero(),
+		MarketID: noMarket,
+		Type:     types.AccountTypeGlobalInsurance,
+	}
+	e.accs[accID] = giAcc
+	e.addAccountToHashableSlice(giAcc)
+	e.broker.Send(events.NewAccountEvent(ctx, *giAcc))
+	return giAcc
+}
+
 // GetRewardAccount returns a reward accound by asset and type.
 func (e *Engine) GetOrCreateRewardAccount(ctx context.Context, asset string, market string, rewardAcccountType types.AccountType) (*types.Account, error) {
 	rewardID := e.accountID(market, systemOwner, asset, rewardAcccountType)
@@ -3643,7 +3756,7 @@ func (e *Engine) ReleaseFromHoldingAccount(ctx context.Context, transfer *types.
 func (e *Engine) ClearSpotMarket(ctx context.Context, mktID, quoteAsset string) ([]*types.LedgerMovement, error) {
 	resps := []*types.LedgerMovement{}
 
-	globalRewardAcc, _ := e.GetGlobalRewardAccount(quoteAsset)
+	treasury, _ := e.GetNetworkTreasuryAccount(quoteAsset)
 	req := &types.TransferRequest{
 		FromAccount: make([]*types.Account, 1),
 		ToAccount:   make([]*types.Account, 1),
@@ -3654,7 +3767,7 @@ func (e *Engine) ClearSpotMarket(ctx context.Context, mktID, quoteAsset string) 
 	lpFeeAccID := e.accountID(mktID, "", quoteAsset, types.AccountTypeFeesLiquidity)
 	if lpFeeAcc, ok := e.accs[lpFeeAccID]; ok {
 		req.FromAccount[0] = lpFeeAcc
-		req.ToAccount[0] = globalRewardAcc
+		req.ToAccount[0] = treasury
 		req.Amount = lpFeeAcc.Balance.Clone()
 		lpFeeLE, err := e.getLedgerEntries(ctx, req)
 		if err != nil {

@@ -231,7 +231,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     When the network moves ahead "2" blocks
     Then the cumulated balance for all accounts should be worth "10023600000000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the network treasury balance should be "2000000000" for the asset "ETH"
+    And the global insurance pool balance should be "2000000000" for the asset "ETH"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
   Scenario: Same as above, but the other market already terminated before the end of scenario, expecting 0 balances in per market insurance pools - all should go to per asset insurance pool (0002-STTL-additional-tests, 0005-COLL-002, 0015-INSR-002, 0032-PRIM-018)
@@ -308,7 +308,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
 
     And the insurance pool balance should be "1000000000" for the market "ETH/DEC21"
     And the insurance pool balance should be "1000000000" for the market "ETH/DEC19"
-    And the network treasury balance should be "0" for the asset "ETH"
+    And the global insurance pool balance should be "0" for the asset "ETH"
 
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name             | value |
@@ -320,7 +320,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the network moves ahead "6" blocks
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the insurance pool balance should be "1500000000" for the market "ETH/DEC19"
-    And the network treasury balance should be "500000000" for the asset "ETH"
+    And the global insurance pool balance should be "500000000" for the asset "ETH"
 
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
 
@@ -366,7 +366,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     Then the cumulated balance for all accounts should be worth "20023600000000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-    And the network treasury balance should be "2000000000" for the asset "ETH"
+    And the global insurance pool balance should be "2000000000" for the asset "ETH"
 
   Scenario: Settlement happened when market is being closed - no loss socialisation needed - insurance covers losses (0002-STTL-008)
     Given the initial insurance pool balance is "100000000" for all the markets
@@ -445,7 +445,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the cumulated balance for all accounts should be worth "10021300000000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     # 916 were taken from the insurance pool to cover the losses of party 2, the remaining is split between global and the other market
-    And the network treasury balance should be "4200000" for the asset "ETH"
+    And the global insurance pool balance should be "4200000" for the asset "ETH"
     And the insurance pool balance should be "104200000" for the market "ETH/DEC21"
 
   Scenario: Settlement happened when market is being closed - loss socialisation in action - insurance doesn't cover all losses (0002-STTL-009)
@@ -520,7 +520,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the cumulated balance for all accounts should be worth "10201200000000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     # 500 were taken from the insurance pool to cover the losses of party 2, still not enough to cover losses of (1000-42)*2 for party2
-    And the network treasury balance should be "0" for the asset "ETH"
+    And the global insurance pool balance should be "0" for the asset "ETH"
     And the insurance pool balance should be "50000000" for the market "ETH/DEC21"
 
   Scenario: Settlement happened when market is being closed whilst being suspended (due to protective auction) - loss socialisation in action - insurance doesn't covers all losses (0002-STTL-004, 0002-STTL-009)
@@ -617,7 +617,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
 
     And the cumulated balance for all accounts should be worth "10201200000000"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-    And the network treasury balance should be "25000000" for the asset "ETH"
+    And the global insurance pool balance should be "25000000" for the asset "ETH"
     And the insurance pool balance should be "75000000" for the market "ETH/DEC19"
 
 
