@@ -870,8 +870,8 @@ func (m *Market) closeCancelledMarket(ctx context.Context) error {
 	return nil
 }
 
-func (m *Market) closeMarket(ctx context.Context, t time.Time, finalState types.MarketState) error {
-	positions, err := m.settlement.Settle(t, m.assetDP)
+func (m *Market) closeMarket(ctx context.Context, t time.Time, finalState types.MarketState, settlementPriceInAsset *num.Uint) error {
+	positions, err := m.settlement.Settle(t, settlementPriceInAsset)
 	if err != nil {
 		m.log.Error("Failed to get settle positions on market closed",
 			logging.Error(err))
@@ -3717,7 +3717,7 @@ func (m *Market) settlementDataWithLock(ctx context.Context, finalState types.Ma
 	}
 
 	if m.mkt.State == types.MarketStateTradingTerminated && settlementDataInAsset != nil {
-		err := m.closeMarket(ctx, m.timeService.GetTimeNow(), finalState)
+		err := m.closeMarket(ctx, m.timeService.GetTimeNow(), finalState, settlementDataInAsset)
 		if err != nil {
 			m.log.Error("could not close market", logging.Error(err))
 		}
