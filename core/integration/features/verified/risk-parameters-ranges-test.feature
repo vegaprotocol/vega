@@ -148,7 +148,7 @@ Feature: test risk model parameter ranges
 
     And the following network parameters are set:
       | name                                  | value |
-      | market.liquidity.bondPenaltyParameter | 0.2   |
+      | market.liquidityV2.bondPenaltyParameter | 0.2   |
 
     And the average block duration is "1"
 
@@ -462,7 +462,7 @@ Feature: test risk model parameter ranges
 
     And the following network parameters are set:
       | name                                  | value |
-      | market.liquidity.bondPenaltyParameter | 0.2   |
+      | market.liquidityV2.bondPenaltyParameter | 0.2   |
 
     And the average block duration is "1"
 
@@ -524,7 +524,7 @@ Feature: test risk model parameter ranges
       | ETH/MAR53 | updated-lqm-params   | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                  | value |
-      | market.liquidity.bondPenaltyParameter | 0.2   |
+      | market.liquidityV2.bondPenaltyParameter | 0.2   |
 
     And the average block duration is "1"
 

@@ -5,7 +5,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | name                                          | value |
             | market.stake.target.timeWindow                | 24h   |
             | market.stake.target.scalingFactor             | 1     |
-            | market.liquidity.bondPenaltyParameter         | 0.2   |
+            | market.liquidityV2.bondPenaltyParameter         | 0.2   |
             | market.liquidity.targetstake.triggering.ratio | 0.1   |
             | limits.markets.maxPeggedOrders                | 1500  |
             | network.markPriceUpdateMaximumFrequency       | 0s    |
