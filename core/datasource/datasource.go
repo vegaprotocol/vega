@@ -65,7 +65,7 @@ func (s *Spec) String() string {
 }
 
 func SpecFromProto(specProto *vegapb.DataSourceSpec) *Spec {
-	d, _ := definition.FromProto(specProto.Data)
+	d, _ := definition.FromProto(specProto.Data, nil)
 	//if err != nil {
 	// TODO: bubble error
 	//}
@@ -153,10 +153,11 @@ func FromOracleSpecProto(specProto *vegapb.OracleSpec) *Spec {
 }
 
 const (
-	ContentTypeInvalid                 = definition.ContentTypeInvalid
-	ContentTypeOracle                  = definition.ContentTypeOracle
-	ContentTypeEthOracle               = definition.ContentTypeEthOracle
-	ContentTypeInternalTimeTermination = definition.ContentTypeInternalTimeTermination
+	ContentTypeInvalid                        = definition.ContentTypeInvalid
+	ContentTypeOracle                         = definition.ContentTypeOracle
+	ContentTypeEthOracle                      = definition.ContentTypeEthOracle
+	ContentTypeInternalTimeTermination        = definition.ContentTypeInternalTimeTermination
+	ContentTypeInternalTimeTriggerTermination = definition.ContentTypeInternalTimeTriggerTermination
 )
 
 func NewDefinitionWith(tp common.DataSourceType) *definition.Definition {
@@ -168,5 +169,5 @@ func NewDefinition(tp definition.ContentType) *definition.Definition {
 }
 
 func DefinitionFromProto(protoConfig *vegapb.DataSourceDefinition) (common.DataSourceType, error) {
-	return definition.FromProto(protoConfig)
+	return definition.FromProto(protoConfig, nil)
 }

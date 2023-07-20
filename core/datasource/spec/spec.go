@@ -71,6 +71,13 @@ func New(originalSpec datasource.Spec) (*Spec, error) {
 		}
 	}
 
+	builtInTrigger := false
+	for _, f := range filtersFromSpec {
+		if strings.HasPrefix(f.Key.Name, "vegaprotocol.builtin.timetrigger") && f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
+			builtInTrigger = true
+		}
+	}
+
 	typedFilters, err := common.NewFilters(filtersFromSpec, isExtType)
 	if err != nil {
 		return nil, err
@@ -79,7 +86,7 @@ func New(originalSpec datasource.Spec) (*Spec, error) {
 	// We do not need to double that logic here.
 
 	signers := map[string]struct{}{}
-	if !builtInKey && isExtType {
+	if !builtInTrigger && !builtInKey && isExtType {
 		// if originalSpec != nil {
 		if originalSpec.Data != nil {
 			src := *originalSpec.Data

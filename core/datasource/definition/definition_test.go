@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/core/datasource/definition"
 	ethcallcommon "code.vegaprotocol.io/vega/core/datasource/external/ethcall/common"
 	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
+	"code.vegaprotocol.io/vega/core/datasource/internal/timetrigger"
 	"code.vegaprotocol.io/vega/core/datasource/internal/vegatime"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -198,6 +199,46 @@ func TestDefinitionIntoProto(t *testing.T) {
 			assert.IsType(t, &datapb.Condition{}, cond.Conditions[0])
 			assert.Equal(t, datapb.Condition_OPERATOR_UNSPECIFIED, cond.Conditions[0].Operator)
 			assert.Equal(t, "12", cond.Conditions[0].Value)
+		})
+
+		t.Run("time trigger termination", func(t *testing.T) {
+			timeNow := time.Now()
+			ds := definition.NewWith(
+				&timetrigger.SpecConfiguration{
+					Conditions: []*common.SpecCondition{
+						{
+							Operator: common.SpecConditionOperator(0),
+							Value:    "12",
+						},
+						{
+							Operator: common.SpecConditionOperator(0),
+							Value:    "17",
+						},
+					},
+					Triggers: common.InternalTimeTriggers{
+						{
+							Initial: &timeNow,
+							Every:   int64(15),
+						},
+					},
+				},
+			)
+
+			dsProto := ds.IntoProto()
+			assert.NotNil(t, dsProto.SourceType)
+			assert.IsType(t, &vegapb.DataSourceDefinition_Internal{}, dsProto.SourceType)
+			cond := dsProto.GetInternal().GetTimeTrigger()
+			assert.NotNil(t, cond)
+			assert.IsType(t, &vegapb.DataSourceSpecConfigurationTimeTrigger{}, cond)
+			assert.Equal(t, 2, len(cond.Conditions))
+			assert.IsType(t, &datapb.Condition{}, cond.Conditions[0])
+			assert.Equal(t, datapb.Condition_OPERATOR_UNSPECIFIED, cond.Conditions[0].Operator)
+			assert.Equal(t, "12", cond.Conditions[0].Value)
+			assert.IsType(t, &datapb.Condition{}, cond.Conditions[1])
+			assert.Equal(t, datapb.Condition_OPERATOR_UNSPECIFIED, cond.Conditions[1].Operator)
+			assert.Equal(t, "17", cond.Conditions[1].Value)
+			assert.Equal(t, timeNow.Unix(), *cond.Triggers[0].Initial)
+			assert.Equal(t, int64(15), cond.Triggers[0].Every)
 		})
 	})
 }
@@ -409,7 +450,7 @@ func TestUpdateFilters(t *testing.T) {
 				SourceType: &vegapb.DataSourceDefinition_External{},
 			}
 
-			dsdt, err := definition.FromProto(dsd)
+			dsdt, err := definition.FromProto(dsd, nil)
 			assert.NoError(t, err)
 
 			err = dsdt.(*definition.Definition).UpdateFilters([]*common.SpecFilter{})
@@ -427,7 +468,7 @@ func TestUpdateFilters(t *testing.T) {
 				},
 			}
 
-			dsdt, err = definition.FromProto(dsd)
+			dsdt, err = definition.FromProto(dsd, nil)
 			assert.NoError(t, err)
 			filters = dsdt.(*definition.Definition).GetFilters()
 			assert.Equal(t, 0, len(filters))
@@ -450,7 +491,7 @@ func TestUpdateFilters(t *testing.T) {
 				},
 			}
 
-			dsdt, err := definition.FromProto(dsd)
+			dsdt, err := definition.FromProto(dsd, nil)
 			assert.NoError(t, err)
 			dst := definition.NewWith(dsdt)
 			err = dst.UpdateFilters(
@@ -540,7 +581,7 @@ func TestUpdateFilters(t *testing.T) {
 				},
 			}
 
-			dsdt, err := definition.FromProto(dsd)
+			dsdt, err := definition.FromProto(dsd, nil)
 			assert.NoError(t, err)
 			dst := definition.NewWith(dsdt)
 			err = dst.UpdateFilters(
@@ -612,7 +653,7 @@ func TestUpdateFilters(t *testing.T) {
 				},
 			}
 
-			dsdt, err := definition.FromProto(dsd)
+			dsdt, err := definition.FromProto(dsd, nil)
 			assert.NoError(t, err)
 			dst := definition.NewWith(dsdt)
 			err = dst.UpdateFilters(
@@ -643,12 +684,58 @@ func TestUpdateFilters(t *testing.T) {
 			assert.Equal(t, "int-test-value-1", filters[0].Conditions[0].Value)
 		})
 
+		t.Run("NotEmpty timetrigger", func(t *testing.T) {
+			dsd := &vegapb.DataSourceDefinition{
+				SourceType: &vegapb.DataSourceDefinition_Internal{
+					Internal: &vegapb.DataSourceDefinitionInternal{
+						SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+							TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{},
+						},
+					},
+				},
+			}
+
+			tn := time.Now()
+			dsdt, err := definition.FromProto(dsd, &tn)
+			assert.NoError(t, err)
+			dst := definition.NewWith(dsdt)
+			err = dst.UpdateFilters(
+				[]*common.SpecFilter{
+					{
+						Conditions: []*common.SpecCondition{
+							{
+								Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+								Value:    "int-test-value-1",
+							},
+							{
+								Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+								Value:    "int-test-value-2",
+							},
+						},
+					},
+				},
+			)
+			assert.NoError(t, err)
+			filters := dst.GetFilters()
+			// Ensure only a single filter has been created, that holds all given conditions
+			assert.Equal(t, 1, len(filters))
+
+			assert.Equal(t, "vegaprotocol.builtin.timetrigger", filters[0].Key.Name)
+			assert.Equal(t, datapb.PropertyKey_TYPE_TIMESTAMP, filters[0].Key.Type)
+
+			assert.Equal(t, 2, len(filters[0].Conditions))
+			assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL, filters[0].Conditions[0].Operator)
+			assert.Equal(t, "int-test-value-1", filters[0].Conditions[0].Value)
+			assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN, filters[0].Conditions[1].Operator)
+			assert.Equal(t, "int-test-value-2", filters[0].Conditions[1].Value)
+		})
+
 		t.Run("Empty", func(t *testing.T) {
 			dsd := &vegapb.DataSourceDefinition{
 				SourceType: &vegapb.DataSourceDefinition_Internal{},
 			}
 
-			dsdt, err := definition.FromProto(dsd)
+			dsdt, err := definition.FromProto(dsd, nil)
 			assert.NoError(t, err)
 			dst := definition.NewWith(dsdt)
 			err = dst.UpdateFilters(
@@ -769,6 +856,30 @@ func TestGetDataSourceSpecConfigurationTime(t *testing.T) {
 	assert.Equal(t, "1", spec.(vegatime.SpecConfiguration).Conditions[0].Value)
 }
 
+func TestGetDataSourceSpecConfigurationTimeTrigger(t *testing.T) {
+	ds := definition.NewWith(timetrigger.SpecConfiguration{
+		Conditions: []*common.SpecCondition{
+			{
+				Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+				Value:    "1",
+			},
+		},
+		Triggers: common.InternalTimeTriggers{
+			{},
+		},
+	})
+
+	spec := ds.GetSpecConfiguration()
+	assert.NotNil(t, spec)
+	assert.IsType(t, timetrigger.SpecConfiguration{}, spec)
+
+	assert.NotNil(t, spec.(timetrigger.SpecConfiguration).Conditions)
+	assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN, spec.(timetrigger.SpecConfiguration).Conditions[0].Operator)
+	assert.Equal(t, "1", spec.(timetrigger.SpecConfiguration).Conditions[0].Value)
+
+	assert.IsType(t, common.InternalTimeTriggers{}, spec.(timetrigger.SpecConfiguration).Triggers)
+}
+
 func TestIsExternal(t *testing.T) {
 	dsDef := definition.NewWith(signedoracle.SpecConfiguration{})
 
@@ -784,6 +895,15 @@ func TestIsExternal(t *testing.T) {
 
 	dsDef = definition.NewWith(vegatime.SpecConfiguration{
 		Conditions: []*common.SpecCondition{},
+	})
+
+	res, err = dsDef.IsExternal()
+	assert.NoError(t, err)
+	assert.False(t, res)
+
+	dsDef = definition.NewWith(timetrigger.SpecConfiguration{
+		Conditions: []*common.SpecCondition{},
+		Triggers:   common.InternalTimeTriggers{},
 	})
 
 	res, err = dsDef.IsExternal()
@@ -1024,7 +1144,7 @@ func TestSetTimeTriggerConditionConfig(t *testing.T) {
 	filters := udsd.GetFilters()
 	assert.Equal(t, 0, len(filters))
 
-	t.Run("try to set time trigger config to internal data source", func(t *testing.T) {
+	t.Run("try to set time config to internal time data source", func(t *testing.T) {
 		dsd := definition.NewWith(
 			vegatime.SpecConfiguration{
 				Conditions: []*common.SpecCondition{
@@ -1058,8 +1178,53 @@ func TestSetTimeTriggerConditionConfig(t *testing.T) {
 		assert.Equal(t, "vegaprotocol.builtin.timestamp", filters[0].Key.Name)
 		assert.Equal(t, datapb.PropertyKey_TYPE_TIMESTAMP, filters[0].Key.Type)
 
+		assert.Equal(t, 1, len(filters[0].Conditions))
 		assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL, filters[0].Conditions[0].Operator)
 		assert.Equal(t, "int-test-value-3", filters[0].Conditions[0].Value)
+	})
+
+	t.Run("try to set time trigger config to internal time data source", func(t *testing.T) {
+		dsd := definition.NewWith(
+			timetrigger.SpecConfiguration{
+				Conditions: []*common.SpecCondition{
+					{
+						Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+						Value:    "int-test-value-1",
+					},
+					{
+						Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+						Value:    "int-test-value-2",
+					},
+				},
+				Triggers: common.InternalTimeTriggers{
+					{},
+				},
+			})
+
+		iudsd := dsd.SetTimeTriggerConditionConfig(
+			[]*common.SpecCondition{
+				{
+					Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+					Value:    "int-test-value-3",
+				},
+				{
+					Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+					Value:    "int-test-value-4",
+				},
+			},
+		)
+
+		filters := iudsd.GetFilters()
+		assert.Equal(t, 1, len(filters))
+
+		assert.Equal(t, "vegaprotocol.builtin.timetrigger", filters[0].Key.Name)
+		assert.Equal(t, datapb.PropertyKey_TYPE_TIMESTAMP, filters[0].Key.Type)
+
+		assert.Equal(t, 2, len(filters[0].Conditions))
+		assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL, filters[0].Conditions[0].Operator)
+		assert.Equal(t, "int-test-value-3", filters[0].Conditions[0].Value)
+		assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN, filters[0].Conditions[1].Operator)
+		assert.Equal(t, "int-test-value-4", filters[0].Conditions[1].Value)
 	})
 }
 

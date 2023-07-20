@@ -177,8 +177,43 @@ func TestGetFilters(t *testing.T) {
 			assert.Equal(t, "vegaprotocol.builtin.timestamp", filters[0].Key.Name)
 			assert.Equal(t, datapb.PropertyKey_TYPE_TIMESTAMP, filters[0].Key.Type)
 
+			assert.Equal(t, 1, len(filters[0].Conditions))
 			assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL, filters[0].Conditions[0].Operator)
 			assert.Equal(t, "int-test-value-1", filters[0].Conditions[0].Value)
+
+			dsd = &vegapb.DataSourceDefinition{
+				SourceType: &vegapb.DataSourceDefinition_Internal{
+					Internal: &vegapb.DataSourceDefinitionInternal{
+						SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+							TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
+								Conditions: []*datapb.Condition{
+									{
+										Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+										Value:    "int-test-value-1",
+									},
+									{
+										Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+										Value:    "int-test-value-2",
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			filters = dsd.GetFilters()
+			// Ensure only a single filter has been created, that holds all given conditions
+			assert.Equal(t, 1, len(filters))
+
+			assert.Equal(t, "vegaprotocol.builtin.timetrigger", filters[0].Key.Name)
+			assert.Equal(t, datapb.PropertyKey_TYPE_TIMESTAMP, filters[0].Key.Type)
+
+			assert.Equal(t, 2, len(filters[0].Conditions))
+			assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL, filters[0].Conditions[0].Operator)
+			assert.Equal(t, "int-test-value-1", filters[0].Conditions[0].Value)
+			assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN, filters[0].Conditions[1].Operator)
+			assert.Equal(t, "int-test-value-2", filters[0].Conditions[1].Value)
 		})
 
 		t.Run("Empty", func(t *testing.T) {
@@ -454,6 +489,86 @@ func TestSetOracleConfig(t *testing.T) {
 		assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL, filters[0].Conditions[0].Operator)
 		assert.Equal(t, "int-test-value-1", filters[0].Conditions[0].Value)
 	})
+
+	t.Run("try to set oracle config to internal time trigger data source", func(t *testing.T) {
+		timeNow := time.Now().Unix()
+		dsd := &vegapb.DataSourceDefinition{
+			SourceType: &vegapb.DataSourceDefinition_Internal{
+				Internal: &vegapb.DataSourceDefinitionInternal{
+					SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+						TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
+							Conditions: []*datapb.Condition{
+								{
+									Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+									Value:    "int-test-value-1",
+								},
+								{
+									Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+									Value:    "int-test-value-2",
+								},
+							},
+							Triggers: []*datapb.InternalTimeTrigger{
+								{
+									Initial: &timeNow,
+									Every:   int64(19),
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		iudsd := dsd.SetOracleConfig(
+			&vegapb.DataSourceDefinitionExternal_Oracle{
+				Oracle: &vegapb.DataSourceSpecConfiguration{
+					Filters: []*datapb.Filter{
+						{
+							Key: &datapb.PropertyKey{
+								Name: "prices.ETH.value",
+								Type: datapb.PropertyKey_TYPE_INTEGER,
+							},
+							Conditions: []*datapb.Condition{
+								{
+									Operator: datapb.Condition_OPERATOR_EQUALS,
+									Value:    "ext-test-value-1",
+								},
+								{
+									Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+									Value:    "ext-test-value-2",
+								},
+							},
+						},
+						{
+							Key: &datapb.PropertyKey{
+								Name: "key-name-string",
+								Type: datapb.PropertyKey_TYPE_STRING,
+							},
+							Conditions: []*datapb.Condition{
+								{
+									Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+									Value:    "ext-test-value-3",
+								},
+								{
+									Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+									Value:    "ext-test-value-4",
+								},
+							},
+						},
+					},
+				},
+			},
+		)
+
+		filters := iudsd.GetFilters()
+		assert.Equal(t, 1, len(filters))
+
+		assert.Equal(t, "vegaprotocol.builtin.timetrigger", filters[0].Key.Name)
+		assert.Equal(t, datapb.PropertyKey_TYPE_TIMESTAMP, filters[0].Key.Type)
+
+		assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL, filters[0].Conditions[0].Operator)
+		assert.Equal(t, "int-test-value-1", filters[0].Conditions[0].Value)
+	})
 }
 
 func TestSetTimeTriggerConditionConfig(t *testing.T) {
@@ -526,6 +641,54 @@ func TestSetTimeTriggerConditionConfig(t *testing.T) {
 
 		assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL, filters[0].Conditions[0].Operator)
 		assert.Equal(t, "int-test-value-3", filters[0].Conditions[0].Value)
+	})
+
+	t.Run("non-empty internal time trigger data source", func(t *testing.T) {
+		dsd := &vegapb.DataSourceDefinition{
+			SourceType: &vegapb.DataSourceDefinition_Internal{
+				Internal: &vegapb.DataSourceDefinitionInternal{
+					SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+						TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
+							Conditions: []*datapb.Condition{
+								{
+									Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+									Value:    "int-test-value-1",
+								},
+								{
+									Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+									Value:    "int-test-value-2",
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		iudsd := dsd.SetTimeTriggerConditionConfig(
+			[]*datapb.Condition{
+				{
+					Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+					Value:    "int-test-value-3",
+				},
+				{
+					Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+					Value:    "int-test-value-4",
+				},
+			},
+		)
+
+		filters := iudsd.GetFilters()
+		assert.Equal(t, 1, len(filters))
+
+		assert.Equal(t, "vegaprotocol.builtin.timetrigger", filters[0].Key.Name)
+		assert.Equal(t, datapb.PropertyKey_TYPE_TIMESTAMP, filters[0].Key.Type)
+
+		assert.Equal(t, 2, len(filters[0].Conditions))
+		assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL, filters[0].Conditions[0].Operator)
+		assert.Equal(t, "int-test-value-3", filters[0].Conditions[0].Value)
+		assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN, filters[0].Conditions[1].Operator)
+		assert.Equal(t, "int-test-value-4", filters[0].Conditions[1].Value)
 	})
 }
 
@@ -623,6 +786,47 @@ func TestContent(t *testing.T) {
 			assert.Equal(t, 2, len(tp.Conditions))
 			assert.Equal(t, "ext-test-value-0", tp.Conditions[0].Value)
 			assert.Equal(t, "ext-test-value-1", tp.Conditions[1].Value)
+		})
+
+		t.Run("non-empty content with time trigger termiation source", func(t *testing.T) {
+			timeNow := time.Now().Unix()
+			d := &vegapb.DataSourceDefinition{
+				SourceType: &vegapb.DataSourceDefinition_Internal{
+					Internal: &vegapb.DataSourceDefinitionInternal{
+						SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+							TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
+								Conditions: []*datapb.Condition{
+									{
+										Operator: datapb.Condition_OPERATOR_EQUALS,
+										Value:    "ext-test-value-0",
+									},
+									{
+										Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+										Value:    "ext-test-value-1",
+									},
+								},
+								Triggers: []*datapb.InternalTimeTrigger{
+									{
+										Initial: &timeNow,
+										Every:   int64(19),
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			c := d.Content()
+			assert.NotNil(t, c)
+			assert.IsType(t, &vegapb.DataSourceSpecConfigurationTimeTrigger{}, c)
+			tp, ok := c.(*vegapb.DataSourceSpecConfigurationTimeTrigger)
+			assert.True(t, ok)
+			assert.Equal(t, 2, len(tp.Conditions))
+			assert.Equal(t, "ext-test-value-0", tp.Conditions[0].Value)
+			assert.Equal(t, "ext-test-value-1", tp.Conditions[1].Value)
+			assert.Equal(t, timeNow, *tp.GetTriggers()[0].Initial)
+			assert.Equal(t, int64(19), tp.GetTriggers()[0].Every)
 		})
 
 		t.Run("non-empty content with oracle", func(t *testing.T) {

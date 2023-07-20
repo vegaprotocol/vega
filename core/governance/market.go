@@ -44,6 +44,9 @@ var (
 	ErrSettlementWithInternalDataSourceIsNotAllowed = errors.New("settlement with internal data source is not allwed")
 	// ErrMissingDataSourceSpecForTradingTermination is returned when the data source spec for trading termination is absent.
 	ErrMissingDataSourceSpecForTradingTermination = errors.New("missing data source spec for trading termination")
+
+	// ErrInternalTimeTriggerForFuturesInNotAllowed is returned when a proposal containing timetrigger terminaiton type of data is received.
+	ErrInternalTimeTriggerForFuturesInNotAllowed = errors.New("setting internal time trigger for future termination is not allowed")
 	// ErrDataSourceSpecTerminationTimeBeforeEnactment is returned when termination time is before enactment
 	// for time triggered termination condition.
 	ErrDataSourceSpecTerminationTimeBeforeEnactment = errors.New("data source spec termination time before enactment")
@@ -407,6 +410,11 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
 	}
 
+	tp, _ := tterm.Type()
+	if tp == datasource.ContentTypeInternalTimeTriggerTermination {
+		return types.ProposalErrorInvalidFutureProduct, ErrInternalTimeTriggerForFuturesInNotAllowed
+	}
+
 	filters := future.DataSourceSpecForTradingTermination.GetFilters()
 	for i, f := range filters {
 		if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
@@ -753,6 +761,11 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) 
 
 	if tterm.Content() == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
+	}
+
+	tp, _ := tterm.Type()
+	if tp == datasource.ContentTypeInternalTimeTriggerTermination {
+		return types.ProposalErrorInvalidFutureProduct, ErrInternalTimeTriggerForFuturesInNotAllowed
 	}
 
 	filters := future.DataSourceSpecForTradingTermination.GetFilters()

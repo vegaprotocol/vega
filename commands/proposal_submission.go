@@ -987,34 +987,42 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 
 	switch tp := spec.SourceType.(type) {
 	case *vegapb.DataSourceDefinition_Internal:
-		if tryToSettle {
-			return errs.FinalAddForProperty(fmt.Sprintf("%s.%s", parentProperty, name), ErrIsNotValid)
-		}
-
-		t := tp.Internal.GetTime()
-		if t != nil {
-			if len(t.Conditions) == 0 {
-				errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions", parentProperty, name), ErrIsRequired)
+		switch tp.Internal.SourceType.(type) {
+		case *vegapb.DataSourceDefinitionInternal_Time:
+			if tryToSettle {
+				return errs.FinalAddForProperty(fmt.Sprintf("%s.%s", parentProperty, name), ErrIsNotValid)
 			}
 
-			if len(t.Conditions) != 0 {
-				for j, condition := range t.Conditions {
-					if len(condition.Value) == 0 {
-						errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.value", parentProperty, name, j), ErrIsRequired)
-					}
-					if condition.Operator == datapb.Condition_OPERATOR_UNSPECIFIED {
-						errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsRequired)
-					}
+			t := tp.Internal.GetTime()
+			if t != nil {
+				if len(t.Conditions) == 0 {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions", parentProperty, name), ErrIsRequired)
+				}
 
-					if _, ok := datapb.Condition_Operator_name[int32(condition.Operator)]; !ok {
-						errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsNotValid)
+				if len(t.Conditions) != 0 {
+					for j, condition := range t.Conditions {
+						if len(condition.Value) == 0 {
+							errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.value", parentProperty, name, j), ErrIsRequired)
+						}
+						if condition.Operator == datapb.Condition_OPERATOR_UNSPECIFIED {
+							errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsRequired)
+						}
+
+						if _, ok := datapb.Condition_Operator_name[int32(condition.Operator)]; !ok {
+							errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsNotValid)
+						}
 					}
 				}
+			} else {
+				return errs.FinalAddForProperty(fmt.Sprintf("%s.%s.internal.time", parentProperty, name), ErrIsRequired)
 			}
-		} else {
-			return errs.FinalAddForProperty(fmt.Sprintf("%s.%s.internal.time", parentProperty, name), ErrIsRequired)
-		}
 
+		case *vegapb.DataSourceDefinitionInternal_TimeTrigger:
+			spl := strings.Split(parentProperty, ".")
+			if spl[len(spl)-1] == "future" {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.internal.timetrigger", parentProperty, name), ErrIsNotValid)
+			}
+		}
 	case *vegapb.DataSourceDefinition_External:
 
 		switch tp.External.SourceType.(type) {

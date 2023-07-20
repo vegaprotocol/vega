@@ -39,4 +39,8 @@ var (
 
 	// ErrDuplicatedEthereumCallEvent is returned when there is a duplicated Ethereum event.
 	ErrDuplicatedEthereumCallEvent = errors.New("duplicated call event")
+
+	// ErrDuplicatedEthereumCallEvent is returned when no deterministic time is given to set the next time trigger
+	// repetition.
+	ErrMissingTimeForSettingTriggerRepetition = errors.New("missing time for setting trigger repetition")
 )
