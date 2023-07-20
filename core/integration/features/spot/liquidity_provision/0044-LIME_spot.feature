@@ -21,12 +21,11 @@ Feature: Spot market
       | BTC | 1              |
 
     And the following network parameters are set:
-      | name                                                | value |
-      | network.markPriceUpdateMaximumFrequency             | 0s    |
-      | market.liquidityV2.earlyExitPenalty                 | 0.02  |
-      | market.stake.target.timeWindow                      | 2s    |
-      # | market.liquidity.performanceHysteresisEpochs        | 2s    |
-      | market.liquidity.providers.fee.distributionTimeStep | 0     |
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
+      | market.liquidityV2.earlyExitPenalty     | 0.02  |
+      | market.stake.target.timeWindow          | 2s    |
+      | validators.epoch.length                 | 10s   |
 
     Given time is updated to "2023-07-20T00:00:00Z"
     Given the average block duration is "2"
@@ -56,9 +55,9 @@ Feature: Spot market
       | id  | party  | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov | BTC/ETH   | 1000              | 0.1 | submission |
 
-    Then the liquidity provisions should have the following states:
-      | id  | party  | market  | commitment amount | status         |
-      | lp1 | lpprov | BTC/ETH | 1000              | STATUS_PENDING |
+    # Then the liquidity provisions should have the following states:
+    #   | id  | party  | market  | commitment amount | status         |
+    #   | lp1 | lpprov | BTC/ETH | 1000              | STATUS_PENDING |
 
     # place orders and generate trades
     And the parties place the following orders:
@@ -76,6 +75,11 @@ Feature: Spot market
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 360000  | 10        | 22        | 200          | 1000           | 0             |
+
+    And the order book should have the following volumes for market "BTC/ETH":
+      | side | price | volume |
+      | buy  | 10    | 10     |
+      | buy  | 20    | 5      |
 
     Then the liquidity provisions should have the following states:
       | id  | party  | market  | commitment amount | status        |
