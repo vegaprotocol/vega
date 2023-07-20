@@ -23,6 +23,7 @@
 ### 🐛 Fixes
 
 - [8772](https://github.com/vegaprotocol/vega/issues/8772) - Checkpoint panic on successor markets.
+- [8837](https://github.com/vegaprotocol/vega/issues/8837) - Remove successor entries from snapshot if they will be removed next tick.
 
 
 ## 0.72.4
