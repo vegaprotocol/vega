@@ -38,6 +38,7 @@
 - [8679](https://github.com/vegaprotocol/vega/issues/8679) - Disallow snapshot state-sync if local snapshots exist
 - [8836](https://github.com/vegaprotocol/vega/issues/8836) - Fix enactment of market update state
 - [8848](https://github.com/vegaprotocol/vega/issues/8848) - Handle the case where the market is terminated and the epoch ends at the same block.
+- [8853](https://github.com/vegaprotocol/vega/issues/8853) - Liquidity provision amendment bug fixes
 
 
 ## 0.72.1
