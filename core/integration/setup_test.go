@@ -191,7 +191,7 @@ func newExecutionTestSetup() *executionTestSetup {
 		),
 		execsetup.broker,
 	)
-
+	execsetup.epochEngine.NotifyOnEpoch(execsetup.executionEngine.OnEpochEvent, execsetup.executionEngine.OnEpochRestore)
 	execsetup.positionPlugin = plugins.NewPositions(context.Background())
 	execsetup.broker.Subscribe(execsetup.positionPlugin)
 

@@ -90,5 +90,6 @@ Feature: Spot market
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake |
       | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 20           | 20             |
-
+      
     And the network treasury balance should be "0" for the asset "ETH"
+

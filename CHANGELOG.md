@@ -21,6 +21,7 @@
 - [8845](https://github.com/vegaprotocol/vega/issues/8845) - Add support for network treasury and global insurance accounts.
 - [8846](https://github.com/vegaprotocol/vega/issues/8846) - Add support to transfer recurring transfers to metric based reward
 - [8857](https://github.com/vegaprotocol/vega/issues/8857) - Add a step for getting the balance of the liquidity provider liquidity fee account
+- [8847](https://github.com/vegaprotocol/vega/issues/8847) - Implement internal time trigger data source.
 
 ### 🐛 Fixes
 
@@ -41,7 +42,9 @@
 - [8827](https://github.com/vegaprotocol/vega/issues/8827) - Add block height validation to validator initiated transactions and pruning to the `pow` engine cache
 - [8836](https://github.com/vegaprotocol/vega/issues/8836) - Fix enactment of market update state
 - [8848](https://github.com/vegaprotocol/vega/issues/8848) - Handle the case where the market is terminated and the epoch ends at the same block.
+- [8853](https://github.com/vegaprotocol/vega/issues/8853) - Liquidity provision amendment bug fixes
 - [8862](https://github.com/vegaprotocol/vega/issues/8862) - Fix settlement via governance
+- [8772](https://github.com/vegaprotocol/vega/issues/8772) - Checkpoint panic on successor markets.
 
 
 ## 0.72.1

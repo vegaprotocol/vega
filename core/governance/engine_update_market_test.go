@@ -44,6 +44,8 @@ func TestProposalForMarketUpdate(t *testing.T) {
 	t.Run("Submitting a proposal for market update with empty termination data fails", testSubmittingProposalForMarketUpdateWithEmptyTerminationDataFails)
 	t.Run("Submitting a proposal for market update on unknown market fails", testSubmittingProposalForMarketUpdateForUnknownMarketFails)
 	t.Run("Submitting a proposal with internal time termination for market update on unknown market fails", testSubmittingProposalForMarketUpdateWithInternalTimeTerminationForUnknownMarketFails)
+	t.Run("Submitting a proposal with internal time trigger termination fails", testSubmittingProposalForMarketUpdateWithInternalTimeTriggerTerminationFails)
+	t.Run("Submitting a proposal with internal time trigger settlement fails", testSubmittingProposalForMarketUpdateWithInternalTimeTriggerSettlementFails)
 
 	t.Run("Submitting a proposal for market update for not-enacted market fails", testSubmittingProposalForMarketUpdateForNotEnactedMarketFails)
 	t.Run("Submitting a proposal for market update with insufficient equity-like share fails", testSubmittingProposalForMarketUpdateWithInsufficientEquityLikeShareFails)
@@ -753,6 +755,205 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationForUnknownM
 
 	// then
 	require.ErrorIs(t, governance.ErrMarketDoesNotExist, err)
+	require.Nil(t, toSubmit)
+}
+
+func testSubmittingProposalForMarketUpdateWithInternalTimeTriggerTerminationFails(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	proposer := vgrand.RandomStr(5)
+	id := eng.newProposalID()
+	now := eng.tsvc.GetTimeNow()
+	tm := time.Now().Add(time.Hour * 24 * 365)
+	_, binding := produceTimeTriggeredDataSourceSpec(tm)
+	settl := datasource.NewDefinition(
+		datasource.ContentTypeOracle,
+	).SetOracleConfig(
+		&signedoracle.SpecConfiguration{
+			Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+			Filters: []*dstypes.SpecFilter{
+				{
+					Key: &dstypes.SpecPropertyKey{
+						Name: "prices.ETH.value",
+						Type: datapb.PropertyKey_TYPE_INTEGER,
+					},
+					Conditions: []*dstypes.SpecCondition{},
+				},
+			},
+		},
+	)
+
+	term := datasource.NewDefinition(
+		datasource.ContentTypeInternalTimeTriggerTermination,
+	).SetTimeTriggerConditionConfig(
+		[]*dstypes.SpecCondition{
+			{
+				Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+				Value:    fmt.Sprintf("%d", tm.UnixNano()),
+			},
+		})
+
+	riskParameters := types.UpdateMarketConfigurationLogNormal{
+		LogNormal: &types.LogNormalRiskModel{
+			RiskAversionParameter: num.DecimalFromFloat(0.01),
+			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
+			Params: &types.LogNormalModelParams{
+				Mu:    num.DecimalZero(),
+				R:     num.DecimalFromFloat(0.016),
+				Sigma: num.DecimalFromFloat(0.09),
+			},
+		},
+	}
+	proposal := types.Proposal{
+		ID:        "market-1",
+		Reference: "ref-" + id,
+		Party:     proposer,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(1 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change: &types.ProposalTermsUpdateMarket{
+				UpdateMarket: &types.UpdateMarket{
+					MarketID: vgrand.RandomStr(5),
+					Changes: &types.UpdateMarketConfiguration{
+						Instrument: &types.UpdateInstrumentConfiguration{
+							Code: "CRYPTO:GBPVUSD/JUN20",
+							Product: &types.UpdateInstrumentConfigurationFuture{
+								Future: &types.UpdateFutureProduct{
+									QuoteName:                           "VUSD",
+									DataSourceSpecForSettlementData:     *settl,
+									DataSourceSpecForTradingTermination: *term,
+									DataSourceSpecBinding:               binding,
+								},
+							},
+						},
+						RiskParameters:          &riskParameters,
+						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
+						LpPriceRange:            num.DecimalFromFloat(0.95),
+						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
+						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+					},
+				},
+			},
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+	marketID := proposal.MarketUpdate().MarketID
+
+	// setup
+	eng.ensureTokenBalanceForParty(t, proposer, 1000)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
+	eng.ensureExistingMarket(t, marketID)
+
+	// expect
+	eng.expectRejectedProposalEvent(t, proposer, proposal.ID, types.ProposalErrorInvalidFutureProduct)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	assert.Error(t, err, governance.ErrInternalTimeTriggerForFuturesInNotAllowed)
+	require.Nil(t, toSubmit)
+}
+
+func testSubmittingProposalForMarketUpdateWithInternalTimeTriggerSettlementFails(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	proposer := vgrand.RandomStr(5)
+	id := eng.newProposalID()
+	now := eng.tsvc.GetTimeNow()
+	tm := time.Now().Add(time.Hour * 24 * 365)
+	_, binding := produceTimeTriggeredDataSourceSpec(tm)
+	settl := datasource.NewDefinition(
+		datasource.ContentTypeInternalTimeTriggerTermination,
+	).SetTimeTriggerConditionConfig(
+		[]*dstypes.SpecCondition{
+			{
+				Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+				Value:    fmt.Sprintf("%d", tm.UnixNano()),
+			},
+		})
+
+	term := datasource.NewDefinition(
+		datasource.ContentTypeInternalTimeTermination,
+	).SetTimeTriggerConditionConfig(
+		[]*dstypes.SpecCondition{
+			{
+				Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+				Value:    fmt.Sprintf("%d", tm.UnixNano()),
+			},
+		},
+	)
+	riskParameters := types.UpdateMarketConfigurationLogNormal{
+		LogNormal: &types.LogNormalRiskModel{
+			RiskAversionParameter: num.DecimalFromFloat(0.01),
+			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
+			Params: &types.LogNormalModelParams{
+				Mu:    num.DecimalZero(),
+				R:     num.DecimalFromFloat(0.016),
+				Sigma: num.DecimalFromFloat(0.09),
+			},
+		},
+	}
+	proposal := types.Proposal{
+		ID:        "market-1",
+		Reference: "ref-" + id,
+		Party:     proposer,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(1 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change: &types.ProposalTermsUpdateMarket{
+				UpdateMarket: &types.UpdateMarket{
+					MarketID: vgrand.RandomStr(5),
+					Changes: &types.UpdateMarketConfiguration{
+						Instrument: &types.UpdateInstrumentConfiguration{
+							Code: "CRYPTO:GBPVUSD/JUN20",
+							Product: &types.UpdateInstrumentConfigurationFuture{
+								Future: &types.UpdateFutureProduct{
+									QuoteName:                           "VUSD",
+									DataSourceSpecForSettlementData:     *settl,
+									DataSourceSpecForTradingTermination: *term,
+									DataSourceSpecBinding:               binding,
+								},
+							},
+						},
+						RiskParameters:          &riskParameters,
+						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
+						LpPriceRange:            num.DecimalFromFloat(0.95),
+						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
+						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+					},
+				},
+			},
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+	marketID := proposal.MarketUpdate().MarketID
+
+	// setup
+	eng.ensureTokenBalanceForParty(t, proposer, 1000)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
+	eng.ensureExistingMarket(t, marketID)
+
+	// expect
+	eng.expectRejectedProposalEvent(t, proposer, proposal.ID, types.ProposalErrorInvalidFutureProduct)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	assert.Error(t, err, governance.ErrInternalTimeTriggerForFuturesInNotAllowed)
 	require.Nil(t, toSubmit)
 }
 
