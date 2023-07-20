@@ -606,7 +606,7 @@ func (m *Market) BlockEnd(ctx context.Context) {
 		m.lastTradedPrice = mp.Clone()
 		m.hasTraded = false
 	}
-
+	m.tsCalc.RecordTotalStake(m.liquidity.CalculateSuppliedStake().Uint64(), m.timeService.GetTimeNow())
 	m.liquidity.EndBlock(m.markPrice, m.midPrice(), m.positionFactor)
 }
 

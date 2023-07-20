@@ -41,6 +41,7 @@
 - [8827](https://github.com/vegaprotocol/vega/issues/8827) - Add block height validation to validator initiated transactions and pruning to the `pow` engine cache
 - [8836](https://github.com/vegaprotocol/vega/issues/8836) - Fix enactment of market update state
 - [8848](https://github.com/vegaprotocol/vega/issues/8848) - Handle the case where the market is terminated and the epoch ends at the same block.
+- [8853](https://github.com/vegaprotocol/vega/issues/8853) - Liquidity provision amendment bug fixes
 - [8862](https://github.com/vegaprotocol/vega/issues/8862) - Fix settlement via governance
 
 
