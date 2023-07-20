@@ -405,6 +405,16 @@ type Query {
   "The list of all assets in use in the Vega network or the specified asset if ID is provided"
   assetsConnection(id: ID, pagination: Pagination): AssetsConnection
 
+  "Get historical balances for an account within the given date range"
+  balanceChanges(
+    "Optional filter to restrict queried accounts to those of a specific asset, party, market or type"
+    filter: AccountFilter
+    "Date range to retrieve historical balances from/to. Start and end time should be expressed as an integer value of Unix nanoseconds"
+    dateRange: DateRange
+    "Optional pagination information"
+    pagination: Pagination
+  ): AggregatedBalanceConnection!
+
   "List core snapshots"
   coreSnapshots(pagination: Pagination): CoreSnapshotConnection
 
@@ -545,22 +555,22 @@ type Query {
     pagination: Pagination
   ): MarketDataConnection
 
-  "Get historical balances for an account within the given date range"
-  balanceChanges(
-    "Optional filter to restrict queried accounts to those of a specific asset, party, market or type"
-    filter: AccountFilter
-    "Date range to retrieve historical balances from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
-    dateRange: DateRange
-    "Optional pagination information"
-    pagination: Pagination
-  ): AggregatedBalanceConnection!
-
   "Get ledger entries by asset, market, party, account type, transfer type within the given date range."
   ledgerEntries(
     filter: LedgerEntryFilter
     dateRange: DateRange
     pagination: Pagination
   ): AggregatedLedgerEntriesConnection!
+
+  "List all active liquidity providers for a specific market"
+  liquidityProviders(
+    "Party ID of the liquidity provider"
+    partyId: ID
+    "Market ID to retrieve liquidity providers for"
+    marketId: ID
+    "Optional Pagination"
+    pagination: Pagination
+  ): LiquidityProviderConnection
 
   "Query for historic key rotations"
   keyRotationsConnection(id: ID, pagination: Pagination): KeyRotationConnection!
@@ -4778,6 +4788,32 @@ type LiquidityProvisionsEdge {
 type LiquidityProvisionsConnection {
   edges: [LiquidityProvisionsEdge]
   pageInfo: PageInfo!
+}
+
+"Information about a liquidity provider"
+type LiquidityProvider {
+  "Party ID of the liquidity provider"
+  partyId: ID!
+  "Market ID the liquidity provision is for"
+  marketId: ID!
+  "Information used for calculating an LP's fee share, such as the equity like share, average entry valuation and liquidity score, for the given liquidity provider and market"
+  feeShare: LiquidityProviderFeeShare
+}
+
+"Edge type containing the liquidity provider and cursor information"
+type LiquidityProviderEdge {
+  "Liquidity provider's information"
+  node: LiquidityProvider!
+  "Cursor for the liquidity provider"
+  cursor: String!
+}
+
+"Connection type for retrieving cursor-based paginated liquidity provider information"
+type LiquidityProviderConnection {
+  "Page of liquidity provider edges for the connection"
+  edges: [LiquidityProviderEdge]
+  "Current page information"
+  pageInfo: PageInfo
 }
 
 "Edge type containing the transfer and cursor information returned by a TransferConnection"

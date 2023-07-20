@@ -75,6 +75,7 @@ type ResolverRoot interface {
 	KeyRotation() KeyRotationResolver
 	LedgerEntry() LedgerEntryResolver
 	LiquidityOrderReference() LiquidityOrderReferenceResolver
+	LiquidityProvider() LiquidityProviderResolver
 	LiquidityProvision() LiquidityProvisionResolver
 	LiquidityProvisionUpdate() LiquidityProvisionUpdateResolver
 	MarginLevels() MarginLevelsResolver
@@ -743,6 +744,22 @@ type ComplexityRoot struct {
 	LiquidityOrderReference struct {
 		LiquidityOrder func(childComplexity int) int
 		Order          func(childComplexity int) int
+	}
+
+	LiquidityProvider struct {
+		FeeShare func(childComplexity int) int
+		MarketId func(childComplexity int) int
+		PartyId  func(childComplexity int) int
+	}
+
+	LiquidityProviderConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	LiquidityProviderEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	LiquidityProviderFeeShare struct {
@@ -1551,6 +1568,7 @@ type ComplexityRoot struct {
 		KeyRotationsConnection             func(childComplexity int, id *string, pagination *v2.Pagination) int
 		LastBlockHeight                    func(childComplexity int) int
 		LedgerEntries                      func(childComplexity int, filter *v2.LedgerEntryFilter, dateRange *v2.DateRange, pagination *v2.Pagination) int
+		LiquidityProviders                 func(childComplexity int, partyID *string, marketID *string, pagination *v2.Pagination) int
 		Market                             func(childComplexity int, id string) int
 		MarketsConnection                  func(childComplexity int, id *string, pagination *v2.Pagination, includeSettled *bool) int
 		MostRecentHistorySegment           func(childComplexity int) int
@@ -2183,6 +2201,9 @@ type LedgerEntryResolver interface {
 type LiquidityOrderReferenceResolver interface {
 	Order(ctx context.Context, obj *vega.LiquidityOrderReference) (*vega.Order, error)
 }
+type LiquidityProviderResolver interface {
+	FeeShare(ctx context.Context, obj *v2.LiquidityProvider) (*LiquidityProviderFeeShare, error)
+}
 type LiquidityProvisionResolver interface {
 	Party(ctx context.Context, obj *vega.LiquidityProvision) (*vega.Party, error)
 
@@ -2446,6 +2467,7 @@ type ProtocolUpgradeProposalResolver interface {
 type QueryResolver interface {
 	Asset(ctx context.Context, id string) (*vega.Asset, error)
 	AssetsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.AssetsConnection, error)
+	BalanceChanges(ctx context.Context, filter *v2.AccountFilter, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedBalanceConnection, error)
 	CoreSnapshots(ctx context.Context, pagination *v2.Pagination) (*v2.CoreSnapshotConnection, error)
 	Deposit(ctx context.Context, id string) (*vega.Deposit, error)
 	Deposits(ctx context.Context, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.DepositsConnection, error)
@@ -2462,8 +2484,8 @@ type QueryResolver interface {
 	EstimatePosition(ctx context.Context, marketID string, openVolume string, orders []*OrderInfo, collateralAvailable *string) (*PositionEstimate, error)
 	EthereumKeyRotations(ctx context.Context, nodeID *string) (*v2.EthereumKeyRotationsConnection, error)
 	GetMarketDataHistoryConnectionByID(ctx context.Context, id string, start *int64, end *int64, pagination *v2.Pagination) (*v2.MarketDataConnection, error)
-	BalanceChanges(ctx context.Context, filter *v2.AccountFilter, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedBalanceConnection, error)
 	LedgerEntries(ctx context.Context, filter *v2.LedgerEntryFilter, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedLedgerEntriesConnection, error)
+	LiquidityProviders(ctx context.Context, partyID *string, marketID *string, pagination *v2.Pagination) (*v2.LiquidityProviderConnection, error)
 	KeyRotationsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.KeyRotationConnection, error)
 	LastBlockHeight(ctx context.Context) (string, error)
 	Market(ctx context.Context, id string) (*vega.Market, error)
@@ -4988,6 +5010,55 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LiquidityOrderReference.Order(childComplexity), true
+
+	case "LiquidityProvider.feeShare":
+		if e.complexity.LiquidityProvider.FeeShare == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProvider.FeeShare(childComplexity), true
+
+	case "LiquidityProvider.marketId":
+		if e.complexity.LiquidityProvider.MarketId == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProvider.MarketId(childComplexity), true
+
+	case "LiquidityProvider.partyId":
+		if e.complexity.LiquidityProvider.PartyId == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProvider.PartyId(childComplexity), true
+
+	case "LiquidityProviderConnection.edges":
+		if e.complexity.LiquidityProviderConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProviderConnection.Edges(childComplexity), true
+
+	case "LiquidityProviderConnection.pageInfo":
+		if e.complexity.LiquidityProviderConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProviderConnection.PageInfo(childComplexity), true
+
+	case "LiquidityProviderEdge.cursor":
+		if e.complexity.LiquidityProviderEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProviderEdge.Cursor(childComplexity), true
+
+	case "LiquidityProviderEdge.node":
+		if e.complexity.LiquidityProviderEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProviderEdge.Node(childComplexity), true
 
 	case "LiquidityProviderFeeShare.averageEntryValuation":
 		if e.complexity.LiquidityProviderFeeShare.AverageEntryValuation == nil {
@@ -8817,6 +8888,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.LedgerEntries(childComplexity, args["filter"].(*v2.LedgerEntryFilter), args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination)), true
 
+	case "Query.liquidityProviders":
+		if e.complexity.Query.LiquidityProviders == nil {
+			break
+		}
+
+		args, err := ec.field_Query_liquidityProviders_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.LiquidityProviders(childComplexity, args["partyId"].(*string), args["marketId"].(*string), args["pagination"].(*v2.Pagination)), true
+
 	case "Query.market":
 		if e.complexity.Query.Market == nil {
 			break
@@ -12491,6 +12574,39 @@ func (ec *executionContext) field_Query_ledgerEntries_args(ctx context.Context, 
 		}
 	}
 	args["dateRange"] = arg1
+	var arg2 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_liquidityProviders_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyId"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["marketId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketId"] = arg1
 	var arg2 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
@@ -29305,6 +29421,341 @@ func (ec *executionContext) fieldContext_LiquidityOrderReference_liquidityOrder(
 				return ec.fieldContext_LiquidityOrder_offset(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LiquidityOrder", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidityProvider_partyId(ctx context.Context, field graphql.CollectedField, obj *v2.LiquidityProvider) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityProvider_partyId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PartyId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityProvider_partyId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityProvider",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidityProvider_marketId(ctx context.Context, field graphql.CollectedField, obj *v2.LiquidityProvider) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityProvider_marketId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityProvider_marketId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityProvider",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidityProvider_feeShare(ctx context.Context, field graphql.CollectedField, obj *v2.LiquidityProvider) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityProvider_feeShare(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.LiquidityProvider().FeeShare(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*LiquidityProviderFeeShare)
+	fc.Result = res
+	return ec.marshalOLiquidityProviderFeeShare2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐLiquidityProviderFeeShare(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityProvider_feeShare(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityProvider",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "party":
+				return ec.fieldContext_LiquidityProviderFeeShare_party(ctx, field)
+			case "equityLikeShare":
+				return ec.fieldContext_LiquidityProviderFeeShare_equityLikeShare(ctx, field)
+			case "averageEntryValuation":
+				return ec.fieldContext_LiquidityProviderFeeShare_averageEntryValuation(ctx, field)
+			case "averageScore":
+				return ec.fieldContext_LiquidityProviderFeeShare_averageScore(ctx, field)
+			case "virtualStake":
+				return ec.fieldContext_LiquidityProviderFeeShare_virtualStake(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquidityProviderFeeShare", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidityProviderConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.LiquidityProviderConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityProviderConnection_edges(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.LiquidityProviderEdge)
+	fc.Result = res
+	return ec.marshalOLiquidityProviderEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProviderEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityProviderConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityProviderConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "node":
+				return ec.fieldContext_LiquidityProviderEdge_node(ctx, field)
+			case "cursor":
+				return ec.fieldContext_LiquidityProviderEdge_cursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquidityProviderEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidityProviderConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.LiquidityProviderConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityProviderConnection_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityProviderConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityProviderConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidityProviderEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.LiquidityProviderEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityProviderEdge_node(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.LiquidityProvider)
+	fc.Result = res
+	return ec.marshalNLiquidityProvider2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvider(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityProviderEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityProviderEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "partyId":
+				return ec.fieldContext_LiquidityProvider_partyId(ctx, field)
+			case "marketId":
+				return ec.fieldContext_LiquidityProvider_marketId(ctx, field)
+			case "feeShare":
+				return ec.fieldContext_LiquidityProvider_feeShare(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquidityProvider", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidityProviderEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.LiquidityProviderEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityProviderEdge_cursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityProviderEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityProviderEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -53137,6 +53588,67 @@ func (ec *executionContext) fieldContext_Query_assetsConnection(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_balanceChanges(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_balanceChanges(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().BalanceChanges(rctx, fc.Args["filter"].(*v2.AccountFilter), fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.AggregatedBalanceConnection)
+	fc.Result = res
+	return ec.marshalNAggregatedBalanceConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedBalanceConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_balanceChanges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_AggregatedBalanceConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_AggregatedBalanceConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AggregatedBalanceConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_balanceChanges_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_coreSnapshots(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_coreSnapshots(ctx, field)
 	if err != nil {
@@ -54179,67 +54691,6 @@ func (ec *executionContext) fieldContext_Query_getMarketDataHistoryConnectionByI
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_balanceChanges(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_balanceChanges(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().BalanceChanges(rctx, fc.Args["filter"].(*v2.AccountFilter), fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*v2.AggregatedBalanceConnection)
-	fc.Result = res
-	return ec.marshalNAggregatedBalanceConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedBalanceConnection(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_balanceChanges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "edges":
-				return ec.fieldContext_AggregatedBalanceConnection_edges(ctx, field)
-			case "pageInfo":
-				return ec.fieldContext_AggregatedBalanceConnection_pageInfo(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AggregatedBalanceConnection", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_balanceChanges_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_ledgerEntries(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_ledgerEntries(ctx, field)
 	if err != nil {
@@ -54295,6 +54746,64 @@ func (ec *executionContext) fieldContext_Query_ledgerEntries(ctx context.Context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_ledgerEntries_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_liquidityProviders(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_liquidityProviders(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().LiquidityProviders(rctx, fc.Args["partyId"].(*string), fc.Args["marketId"].(*string), fc.Args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.LiquidityProviderConnection)
+	fc.Result = res
+	return ec.marshalOLiquidityProviderConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProviderConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_liquidityProviders(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_LiquidityProviderConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_LiquidityProviderConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquidityProviderConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_liquidityProviders_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -77376,6 +77885,122 @@ func (ec *executionContext) _LiquidityOrderReference(ctx context.Context, sel as
 	return out
 }
 
+var liquidityProviderImplementors = []string{"LiquidityProvider"}
+
+func (ec *executionContext) _LiquidityProvider(ctx context.Context, sel ast.SelectionSet, obj *v2.LiquidityProvider) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liquidityProviderImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiquidityProvider")
+		case "partyId":
+
+			out.Values[i] = ec._LiquidityProvider_partyId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "marketId":
+
+			out.Values[i] = ec._LiquidityProvider_marketId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "feeShare":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._LiquidityProvider_feeShare(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var liquidityProviderConnectionImplementors = []string{"LiquidityProviderConnection"}
+
+func (ec *executionContext) _LiquidityProviderConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.LiquidityProviderConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liquidityProviderConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiquidityProviderConnection")
+		case "edges":
+
+			out.Values[i] = ec._LiquidityProviderConnection_edges(ctx, field, obj)
+
+		case "pageInfo":
+
+			out.Values[i] = ec._LiquidityProviderConnection_pageInfo(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var liquidityProviderEdgeImplementors = []string{"LiquidityProviderEdge"}
+
+func (ec *executionContext) _LiquidityProviderEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.LiquidityProviderEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liquidityProviderEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiquidityProviderEdge")
+		case "node":
+
+			out.Values[i] = ec._LiquidityProviderEdge_node(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+
+			out.Values[i] = ec._LiquidityProviderEdge_cursor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var liquidityProviderFeeShareImplementors = []string{"LiquidityProviderFeeShare"}
 
 func (ec *executionContext) _LiquidityProviderFeeShare(ctx context.Context, sel ast.SelectionSet, obj *LiquidityProviderFeeShare) graphql.Marshaler {
@@ -84556,6 +85181,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "balanceChanges":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_balanceChanges(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "coreSnapshots":
 			field := field
 
@@ -84900,29 +85548,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "balanceChanges":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_balanceChanges(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return rrm(innerCtx)
-			})
 		case "ledgerEntries":
 			field := field
 
@@ -84936,6 +85561,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "liquidityProviders":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_liquidityProviders(ctx, field)
 				return res
 			}
 
@@ -91331,6 +91976,16 @@ func (ec *executionContext) marshalNLiquidityOrderReference2ᚖcodeᚗvegaprotoc
 	return ec._LiquidityOrderReference(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNLiquidityProvider2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvider(ctx context.Context, sel ast.SelectionSet, v *v2.LiquidityProvider) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LiquidityProvider(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNLiquidityProviderFeeShare2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐLiquidityProviderFeeShare(ctx context.Context, sel ast.SelectionSet, v *LiquidityProviderFeeShare) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -95041,6 +95696,61 @@ func (ec *executionContext) marshalOLiquidityOrderReference2ᚕᚖcodeᚗvegapro
 	return ret
 }
 
+func (ec *executionContext) marshalOLiquidityProviderConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProviderConnection(ctx context.Context, sel ast.SelectionSet, v *v2.LiquidityProviderConnection) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LiquidityProviderConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOLiquidityProviderEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProviderEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.LiquidityProviderEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOLiquidityProviderEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProviderEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOLiquidityProviderEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProviderEdge(ctx context.Context, sel ast.SelectionSet, v *v2.LiquidityProviderEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LiquidityProviderEdge(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOLiquidityProviderFeeShare2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐLiquidityProviderFeeShareᚄ(ctx context.Context, sel ast.SelectionSet, v []*LiquidityProviderFeeShare) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -95086,6 +95796,13 @@ func (ec *executionContext) marshalOLiquidityProviderFeeShare2ᚕᚖcodeᚗvegap
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalOLiquidityProviderFeeShare2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐLiquidityProviderFeeShare(ctx context.Context, sel ast.SelectionSet, v *LiquidityProviderFeeShare) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LiquidityProviderFeeShare(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityProvision(ctx context.Context, sel ast.SelectionSet, v []*vega.LiquidityProvision) graphql.Marshaler {

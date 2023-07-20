@@ -442,6 +442,10 @@ func (r *VegaResolverRoot) RewardSummaryFilter() RewardSummaryFilterResolver {
 	return (*rewardSummaryFilterResolver)(r)
 }
 
+func (r *VegaResolverRoot) LiquidityProvider() LiquidityProviderResolver {
+	return (*liquidityProviderResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -1396,6 +1400,19 @@ func (r *myQueryResolver) StopOrders(ctx context.Context, filter *v2.StopOrderFi
 	}
 
 	return resp.Orders, nil
+}
+
+func (r *myQueryResolver) LiquidityProviders(ctx context.Context, partyID, marketID *string, pagination *v2.Pagination) (*v2.LiquidityProviderConnection, error) {
+	providers, err := r.tradingDataClientV2.ListLiquidityProviders(ctx, &v2.ListLiquidityProvidersRequest{
+		MarketId:   marketID,
+		PartyId:    partyID,
+		Pagination: pagination,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return providers.LiquidityProviders, nil
 }
 
 // END: Root Resolver
