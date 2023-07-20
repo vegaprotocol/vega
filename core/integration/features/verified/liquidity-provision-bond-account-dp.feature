@@ -18,7 +18,7 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.bondPenaltyParameter         | 0.1   |
+      | market.liquidityV2.bondPenaltyParameter         | 0.1   |
       | market.liquidity.targetstake.triggering.ratio | 0.24  |
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor |
