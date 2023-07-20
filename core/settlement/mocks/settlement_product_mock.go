@@ -51,7 +51,7 @@ func (mr *MockProductMockRecorder) GetAsset() *gomock.Call {
 }
 
 // Settle mocks base method.
-func (m *MockProduct) Settle(arg0 *num.Uint, arg1 uint32, arg2 decimal.Decimal) (*types.FinancialAmount, bool, error) {
+func (m *MockProduct) Settle(arg0, arg1 *num.Uint, arg2 decimal.Decimal) (*types.FinancialAmount, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Settle", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*types.FinancialAmount)

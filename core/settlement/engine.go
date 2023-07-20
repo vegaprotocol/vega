@@ -46,7 +46,7 @@ type MarketPosition interface {
 //
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_product_mock.go -package mocks code.vegaprotocol.io/vega/core/settlement Product
 type Product interface {
-	Settle(*num.Uint, uint32, num.Decimal) (*types.FinancialAmount, bool, error)
+	Settle(*num.Uint, *num.Uint, num.Decimal) (*types.FinancialAmount, bool, error)
 	GetAsset() string
 }
 
@@ -130,9 +130,9 @@ func (e *Engine) Update(positions []events.MarketPosition) {
 }
 
 // Settle run settlement over all the positions.
-func (e *Engine) Settle(t time.Time, assetDecimals uint32) ([]*types.Transfer, error) {
+func (e *Engine) Settle(t time.Time, settlementData *num.Uint) ([]*types.Transfer, error) {
 	e.log.Debugf("Settling market, closed at %s", t.Format(time.RFC3339))
-	positions, err := e.settleAll(assetDecimals)
+	positions, err := e.settleAll(settlementData)
 	if err != nil {
 		e.log.Error(
 			"Something went wrong trying to settle positions",
@@ -403,7 +403,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 }
 
 // simplified settle call.
-func (e *Engine) settleAll(assetDecimals uint32) ([]*types.Transfer, error) {
+func (e *Engine) settleAll(settlementData *num.Uint) ([]*types.Transfer, error) {
 	e.mu.Lock()
 
 	// there should be as many positions as there are parties (obviously)
@@ -426,7 +426,7 @@ func (e *Engine) settleAll(assetDecimals uint32) ([]*types.Transfer, error) {
 		}
 		e.log.Debug("Settling position for party", logging.String("party-id", party))
 		// @TODO - there was something here... the final amount had to be oracle - market or something
-		amt, neg, err := e.product.Settle(e.lastMarkPrice, assetDecimals, num.DecimalFromInt64(pos).Div(e.positionFactor))
+		amt, neg, err := e.product.Settle(e.lastMarkPrice, settlementData.Clone(), num.DecimalFromInt64(pos).Div(e.positionFactor))
 		// for now, product.Settle returns the total value, we need to only settle the delta between a parties current position
 		// and the final price coming from the oracle, so oracle_price - mark_price * volume (check with Tamlyn whether this should be absolute or not)
 		if err != nil {
