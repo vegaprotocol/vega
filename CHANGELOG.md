@@ -18,6 +18,13 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
+## 0.72.5
+
+### 🐛 Fixes
+
+- [8772](https://github.com/vegaprotocol/vega/issues/8772) - Checkpoint panic on successor markets.
+
+
 ## 0.72.4
 
 ### 🐛 Fixes
