@@ -338,19 +338,10 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 
 	now := t.Unix()
 
-	// use slice for deterministic behaviour and event order
-	// succeededMarkets := []string{}
-	// use map internally for O(1) lookups
-	ignoreSuccession := map[string]struct{}{}
 	for _, proposal := range e.activeProposals {
-		if proposal.IsSuccessorMarket() {
-			if _, ok := e.markets.GetMarket(proposal.ID, false); !ok {
-				// successor proposal for a successor market which cannot be enacted anymore -> remove the proposal
-				proposal.FailWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketAlreadySucceeded)
-				// ensure the event is sent
-				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
-			}
-		}
+		// do not check parent market, the market was either rejected when the parent was succeeded
+		// or, if the parent market state is gone (ie succession window has expired), the proposal simply
+		// loses its parent market reference
 		if proposal.ShouldClose(now) {
 			e.closeProposal(ctx, proposal)
 			voteClosed = append(voteClosed, e.preVoteClosedProposal(proposal))
@@ -360,19 +351,6 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 			toBeRemoved = append(toBeRemoved, proposal.ID)
 		} else if proposal.IsPassed() && (e.isAutoEnactableProposal(proposal.Proposal) || proposal.IsTimeToEnact(now)) {
 			enact, perr, err := e.preEnactProposal(ctx, proposal)
-			if err == nil && proposal.IsSuccessorMarket() {
-				parentID, _ := proposal.NewMarket().ParentMarketID()
-				if _, ok := ignoreSuccession[parentID]; ok {
-					// @TODO we have a successor market ready, other proposals should not go through
-					// perhaps we ought to not set the errors here, but rather wait until
-					// we are sure the successor market went through
-					err = ErrParentMarketAlreadySucceeded
-					perr = types.ProposalErrorInvalidSuccessorMarket // @TODO proposal Error types
-				} else {
-					ignoreSuccession[parentID] = struct{}{}
-					// succeededMarkets = append(succeededMarkets, sucP.Changes.ParentID)
-				}
-			}
 			if err != nil {
 				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
 				toBeRemoved = append(toBeRemoved, proposal.ID)
@@ -602,18 +580,26 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 		var parent *types.Market
 		if suc := newMarket.Successor(); suc != nil {
 			pm, ok := e.markets.GetMarket(suc.ParentID, true)
-			if !ok && !restore {
-				e.rejectProposal(ctx, p, types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketDoesNotExist)
-				return nil, fmt.Errorf("%w, %v", ErrParentMarketDoesNotExist, types.ProposalErrorInvalidSuccessorMarket)
-			} else if restore && !ok {
-				newMarket.ClearSuccessor()
+			if !ok {
+				if !restore {
+					e.rejectProposal(ctx, p, types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketDoesNotExist)
+					return nil, fmt.Errorf("%w, %v", ErrParentMarketDoesNotExist, types.ProposalErrorInvalidSuccessorMarket)
+				}
+			} else {
+				parent = &pm
 			}
 			// proposal to succeed a market that was already succeeded
-			if e.markets.IsSucceeded(suc.ParentID) {
+			// on restore, the parent market may be succeeded and the restored market may have own state (ie was the successor)
+			// So skip this check when restoring markets from checkpoints
+			if !restore && e.markets.IsSucceeded(suc.ParentID) {
 				e.rejectProposal(ctx, p, types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketAlreadySucceeded)
 				return nil, fmt.Errorf("%w, %v", ErrParentMarketAlreadySucceeded, types.ProposalErrorInvalidSuccessorMarket)
 			}
-			parent = &pm
+			// CP restore market but the parent is not part of the state -> restore as regular market proposal
+			// in case the market has associated state
+			if restore && parent == nil {
+				newMarket.ClearSuccessor()
+			}
 		}
 		closeTime := time.Unix(p.Terms.ClosingTimestamp, 0)
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
