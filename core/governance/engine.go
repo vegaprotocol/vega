@@ -602,18 +602,26 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 		var parent *types.Market
 		if suc := newMarket.Successor(); suc != nil {
 			pm, ok := e.markets.GetMarket(suc.ParentID, true)
-			if !ok && !restore {
-				e.rejectProposal(ctx, p, types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketDoesNotExist)
-				return nil, fmt.Errorf("%w, %v", ErrParentMarketDoesNotExist, types.ProposalErrorInvalidSuccessorMarket)
-			} else if restore && !ok {
-				newMarket.ClearSuccessor()
+			if !ok {
+				if !restore {
+					e.rejectProposal(ctx, p, types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketDoesNotExist)
+					return nil, fmt.Errorf("%w, %v", ErrParentMarketDoesNotExist, types.ProposalErrorInvalidSuccessorMarket)
+				}
+			} else {
+				parent = &pm
 			}
 			// proposal to succeed a market that was already succeeded
-			if e.markets.IsSucceeded(suc.ParentID) {
+			// on restore, the parent market may be succeeded and the restored market may have own state (ie was the successor)
+			// So skip this check when restoring markets from checkpoints
+			if !restore && e.markets.IsSucceeded(suc.ParentID) {
 				e.rejectProposal(ctx, p, types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketAlreadySucceeded)
 				return nil, fmt.Errorf("%w, %v", ErrParentMarketAlreadySucceeded, types.ProposalErrorInvalidSuccessorMarket)
 			}
-			parent = &pm
+			// CP restore market but the parent is not part of the state -> restore as regular market proposal
+			// in case the market has associated state
+			if restore && parent == nil {
+				newMarket.ClearSuccessor()
+			}
 		}
 		closeTime := time.Unix(p.Terms.ClosingTimestamp, 0)
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
