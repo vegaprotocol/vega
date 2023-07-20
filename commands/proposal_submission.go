@@ -377,9 +377,54 @@ func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Error
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.fraction_of_balance", ErrMustBeLTE1)
 	}
 
+	if oneoff := changes.GetOneOff(); oneoff != nil {
+		if changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
+			errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
+		}
+		if oneoff.DeliverOn < 0 {
+			return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.oneoff.deliveron", ErrMustBePositiveOrZero)
+		}
+	}
+
 	if recurring := changes.GetRecurring(); recurring != nil {
 		if recurring.EndEpoch != nil && *recurring.EndEpoch < recurring.StartEpoch {
 			return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.end_epoch", ErrIsNotValid)
+		}
+
+		if recurring.DispatchStrategy != nil {
+			if len(changes.Destination) > 0 {
+				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
+			}
+			// check account type is one of the relevant reward accounts
+			if changes.DestinationType != vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES &&
+				changes.DestinationType != vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES &&
+				changes.DestinationType != vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES &&
+				changes.DestinationType != vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
+				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
+			}
+			// check asset for metric is passed unless it's a market proposer reward
+			if len(recurring.DispatchStrategy.AssetForMetric) <= 0 && changes.DestinationType != vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
+				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.asset_for_metric", ErrUnknownAsset)
+			}
+			if len(recurring.DispatchStrategy.AssetForMetric) > 0 && !IsVegaPubkey(recurring.DispatchStrategy.AssetForMetric) {
+				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.asset_for_metric", ErrShouldBeAValidVegaID)
+			}
+			// check that that the metric makes sense for the account type
+			if changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES && recurring.DispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED {
+				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.dispatch_metric", ErrIsNotValid)
+			}
+			if changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES && recurring.DispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED {
+				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.dispatch_metric", ErrIsNotValid)
+			}
+			if changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES && recurring.DispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID {
+				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.dispatch_metric", ErrIsNotValid)
+			}
+			if changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS && recurring.DispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE {
+				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.dispatch_metric", ErrIsNotValid)
+			}
 		}
 	}
 
