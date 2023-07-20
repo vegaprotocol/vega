@@ -4811,7 +4811,7 @@ type LiquidityProviderEdge {
 "Connection type for retrieving cursor-based paginated liquidity provider information"
 type LiquidityProviderConnection {
   "Page of liquidity provider edges for the connection"
-  edges: [LiquidityProviderEdge]
+  edges: [LiquidityProviderEdge!]!
   "Current page information"
   pageInfo: PageInfo
 }

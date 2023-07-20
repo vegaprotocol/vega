@@ -1920,6 +1920,15 @@ func (t *TradingDataServiceV2) ListLiquidityProviders(ctx context.Context, req *
 			"marketID: %s", marketID))
 	}
 
+	if len(providers) == 0 {
+		return &v2.ListLiquidityProvidersResponse{
+			LiquidityProviders: &v2.LiquidityProviderConnection{
+				Edges:    []*v2.LiquidityProviderEdge{},
+				PageInfo: pageInfo.ToProto(),
+			},
+		}, nil
+	}
+
 	edges, err := makeEdges[*v2.LiquidityProviderEdge](providers)
 	if err != nil {
 		return nil, formatE(err)
