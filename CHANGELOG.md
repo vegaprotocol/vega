@@ -46,6 +46,7 @@
 - [8862](https://github.com/vegaprotocol/vega/issues/8862) - Fix settlement via governance
 - [8772](https://github.com/vegaprotocol/vega/issues/8772) - Checkpoint panic on successor markets.
 - [8837](https://github.com/vegaprotocol/vega/issues/8837) - Remove successor entries from snapshot if they will be removed next tick.
+- [8868](https://github.com/vegaprotocol/vega/issues/8868) - Fix `oracle_specs` table null value error.
 
 
 ## 0.72.1
@@ -104,7 +105,7 @@
 - [8402](https://github.com/vegaprotocol/vega/issues/8402) - Avoid division by 0 in market activity tracker
 - [8347](https://github.com/vegaprotocol/vega/issues/8347) - Market state (`ELS`) to be included in checkpoint data.
 - [8303](https://github.com/vegaprotocol/vega/issues/8303) - Add support for successor markets in datanode.
-- [8118](https://github.com/vegaprotocol/vega/issues/8118) - Spot market execution 
+- [8118](https://github.com/vegaprotocol/vega/issues/8118) - Spot market execution
 - [7416](https://github.com/vegaprotocol/vega/issues/7416) - Support for governance transfers
 - [7701](https://github.com/vegaprotocol/vega/issues/7701) - Support parallel request on different party on the wallet API
 - [8353](https://github.com/vegaprotocol/vega/issues/8353) - Improve ledger entry `CSV` export.
