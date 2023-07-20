@@ -1595,8 +1595,9 @@ type ComplexityRoot struct {
 	}
 
 	RecurringGovernanceTransfer struct {
-		EndEpoch   func(childComplexity int) int
-		StartEpoch func(childComplexity int) int
+		DispatchStrategy func(childComplexity int) int
+		EndEpoch         func(childComplexity int) int
+		StartEpoch       func(childComplexity int) int
 	}
 
 	RecurringTransfer struct {
@@ -2504,6 +2505,7 @@ type RankingScoreResolver interface {
 type RecurringGovernanceTransferResolver interface {
 	StartEpoch(ctx context.Context, obj *v1.RecurringGovernanceTransfer) (int, error)
 	EndEpoch(ctx context.Context, obj *v1.RecurringGovernanceTransfer) (*int, error)
+	DispatchStrategy(ctx context.Context, obj *v1.RecurringGovernanceTransfer) (*DispatchStrategy, error)
 }
 type RecurringTransferResolver interface {
 	StartEpoch(ctx context.Context, obj *v1.RecurringTransfer) (int, error)
@@ -9215,6 +9217,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RankingScore.VotingPower(childComplexity), true
+
+	case "RecurringGovernanceTransfer.dispatchStrategy":
+		if e.complexity.RecurringGovernanceTransfer.DispatchStrategy == nil {
+			break
+		}
+
+		return e.complexity.RecurringGovernanceTransfer.DispatchStrategy(childComplexity), true
 
 	case "RecurringGovernanceTransfer.endEpoch":
 		if e.complexity.RecurringGovernanceTransfer.EndEpoch == nil {
@@ -57010,6 +57019,55 @@ func (ec *executionContext) fieldContext_RecurringGovernanceTransfer_endEpoch(ct
 	return fc, nil
 }
 
+func (ec *executionContext) _RecurringGovernanceTransfer_dispatchStrategy(ctx context.Context, field graphql.CollectedField, obj *v1.RecurringGovernanceTransfer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RecurringGovernanceTransfer_dispatchStrategy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RecurringGovernanceTransfer().DispatchStrategy(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*DispatchStrategy)
+	fc.Result = res
+	return ec.marshalODispatchStrategy2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDispatchStrategy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RecurringGovernanceTransfer_dispatchStrategy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecurringGovernanceTransfer",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "dispatchMetric":
+				return ec.fieldContext_DispatchStrategy_dispatchMetric(ctx, field)
+			case "dispatchMetricAssetId":
+				return ec.fieldContext_DispatchStrategy_dispatchMetricAssetId(ctx, field)
+			case "marketIdsInScope":
+				return ec.fieldContext_DispatchStrategy_marketIdsInScope(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DispatchStrategy", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _RecurringTransfer_startEpoch(ctx context.Context, field graphql.CollectedField, obj *v1.RecurringTransfer) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_RecurringTransfer_startEpoch(ctx, field)
 	if err != nil {
@@ -85731,6 +85789,23 @@ func (ec *executionContext) _RecurringGovernanceTransfer(ctx context.Context, se
 					}
 				}()
 				res = ec._RecurringGovernanceTransfer_endEpoch(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "dispatchStrategy":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RecurringGovernanceTransfer_dispatchStrategy(ctx, field, obj)
 				return res
 			}
 

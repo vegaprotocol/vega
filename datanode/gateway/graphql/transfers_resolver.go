@@ -86,3 +86,14 @@ func (r *recurringGovernanceTransferResolver) EndEpoch(ctx context.Context, obj 
 	}
 	return nil, nil
 }
+
+func (r *recurringGovernanceTransferResolver) DispatchStrategy(ctx context.Context, obj *eventspb.RecurringGovernanceTransfer) (*DispatchStrategy, error) {
+	if obj.DispatchStrategy != nil {
+		return &DispatchStrategy{
+			DispatchMetric:        obj.DispatchStrategy.Metric,
+			DispatchMetricAssetID: obj.DispatchStrategy.AssetForMetric,
+			MarketIdsInScope:      obj.DispatchStrategy.Markets,
+		}, nil
+	}
+	return nil, nil
+}

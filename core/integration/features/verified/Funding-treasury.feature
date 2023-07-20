@@ -214,7 +214,7 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | name             | value |
       | prices.ETH.value | 80    |
 
-    # When a market ETH/DEC19 is closed, the insurance pool account has its outstanding funds transferred to the [network treasury]
+    # When a market ETH/DEC19 is closed, the insurance pool account has its outstanding funds transferred to the global insurance account
     When the network moves ahead "3" blocks
     And the orders should have the following status:
       | party | reference | status         |
