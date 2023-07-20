@@ -38,7 +38,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | ETH/MAR22 | updated-lqm-params   | 0.7                    | 0                         |
     And the following network parameters are set:
       | name                                  | value |
-      | market.liquidity.bondPenaltyParameter | 0.2   |
+      | market.liquidityV2.bondPenaltyParameter | 0.2   |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | party0 | USD   | 12500  |
@@ -174,7 +174,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | ETH/MAR22 | updated-lqm-params   | 0.7                    | 0                         |
     And the following network parameters are set:
       | name                                  | value |
-      | market.liquidity.bondPenaltyParameter | 0.5   |
+      | market.liquidityV2.bondPenaltyParameter | 0.5   |
 
     And the average block duration is "1"
 

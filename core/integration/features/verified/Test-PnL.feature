@@ -21,7 +21,7 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | market.liquidityV2.bondPenaltyParameter         | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
@@ -127,7 +127,7 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | market.liquidityV2.bondPenaltyParameter         | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor |

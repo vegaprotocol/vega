@@ -22,7 +22,7 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | market.liquidityV2.bondPenaltyParameter         | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
     And the markets:

@@ -21,7 +21,7 @@ Feature: Basic feature-file matching the system-test setup like for like
       | market.fee.factors.infrastructureFee          | 0.001 |
       | market.fee.factors.makerFee                   | 0.004 |
       | market.value.windowLength                     | 60s   |
-      | market.liquidity.bondPenaltyParameter         | 0.1   |
+      | market.liquidityV2.bondPenaltyParameter         | 0.1   |
       | market.liquidityProvision.shapes.maxSize      | 10    |
       | validators.epoch.length                       | 5s    |
       | market.liquidity.stakeToCcyVolume             | 0.2   |
