@@ -175,6 +175,7 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.HoldingAccountTrackerSnapshot,
 	types.EthereumOracleVerifierSnapshot,
 	types.LiquiditySnapshot,
+	types.LiquidityV2Snapshot,
 	types.LiquidityTargetSnapshot,
 	types.StakingSnapshot,
 	types.StakeVerifierSnapshot,

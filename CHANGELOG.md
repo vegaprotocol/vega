@@ -44,6 +44,7 @@
 - [8848](https://github.com/vegaprotocol/vega/issues/8848) - Handle the case where the market is terminated and the epoch ends at the same block.
 - [8853](https://github.com/vegaprotocol/vega/issues/8853) - Liquidity provision amendment bug fixes
 - [8862](https://github.com/vegaprotocol/vega/issues/8862) - Fix settlement via governance
+- [8854](https://github.com/vegaprotocol/vega/issues/8854) - Add liquidity `v2` snapshots to the list of providers
 - [8772](https://github.com/vegaprotocol/vega/issues/8772) - Checkpoint panic on successor markets.
 - [8837](https://github.com/vegaprotocol/vega/issues/8837) - Remove successor entries from snapshot if they will be removed next tick.
 - [8868](https://github.com/vegaprotocol/vega/issues/8868) - Fix `oracle_specs` table null value error.
