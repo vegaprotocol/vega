@@ -21,11 +21,12 @@ Feature: Spot market
       | BTC | 1              |
 
     And the following network parameters are set:
-      | name                                    | value |
-      | network.markPriceUpdateMaximumFrequency | 0s    |
-      | market.liquidityV2.earlyExitPenalty     | 0.02  |
-      | market.stake.target.timeWindow          | 2s    |
-      | validators.epoch.length                 | 10s   |
+      | name                                                | value |
+      | network.markPriceUpdateMaximumFrequency             | 0s    |
+      | market.liquidityV2.earlyExitPenalty                 | 0.02  |
+      | market.stake.target.timeWindow                      | 2s    |
+      # | market.liquidity.performanceHysteresisEpochs        | 2s    |
+      | market.liquidity.providers.fee.distributionTimeStep | 0     |
 
     Given time is updated to "2023-07-20T00:00:00Z"
     Given the average block duration is "2"
@@ -45,7 +46,7 @@ Feature: Spot market
 
     Given the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
-      | updated-lqm-params | 0.2              | 20s         | 0.01           |
+      | updated-lqm-params | 0.2              | 20s         | 0.2            |
 
     When the spot markets are updated:
       | id      | liquidity monitoring | linear slippage factor | quadratic slippage factor |
@@ -54,6 +55,10 @@ Feature: Spot market
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov | BTC/ETH   | 1000              | 0.1 | submission |
+
+    Then the liquidity provisions should have the following states:
+      | id  | party  | market  | commitment amount | status         |
+      | lp1 | lpprov | BTC/ETH | 1000              | STATUS_PENDING |
 
     # place orders and generate trades
     And the parties place the following orders:
@@ -72,6 +77,17 @@ Feature: Spot market
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 360000  | 10        | 22        | 200          | 1000           | 0             |
 
+    And the order book should have the following volumes for market "BTC/ETH":
+      | side | price | volume |
+      | buy  | 1     | 12     |
+      | buy  | 10    | 10     |
+      | sell | 19    | 1      |
+      | sell | 20    | 5      |
+
+    Then the liquidity provisions should have the following states:
+      | id  | party  | market  | commitment amount | status        |
+      | lp1 | lpprov | BTC/ETH | 1000              | STATUS_ACTIVE |
+
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type   |
       | lp1 | lpprov | BTC/ETH   | 2000              | 0.1 | amendment |
@@ -79,7 +95,7 @@ Feature: Spot market
     Then the network moves ahead "1" blocks
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake |
-      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 20           | 2000           |
+      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 400          | 2000           |
 
     Then the network moves ahead "7" blocks
     When the parties submit the following liquidity provision:
@@ -89,6 +105,6 @@ Feature: Spot market
     Then the network moves ahead "7" blocks
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake |
-      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 20           | 20             |
+      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 400          | 20             |
 
     And the network treasury balance should be "0" for the asset "ETH"
