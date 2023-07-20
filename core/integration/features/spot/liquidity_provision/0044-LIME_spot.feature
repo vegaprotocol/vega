@@ -88,6 +88,9 @@ Feature: Spot market
       | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 0            | 1000           |
 
     And the network treasury balance should be "0" for the asset "ETH"
+    And the accumulated liquidity fees should be "0" for the market "BTC/ETH"
+    And the party "lpprov" lp liquidity account balance should be "100" for the market "BTC/ETH"
+
 
 
 
