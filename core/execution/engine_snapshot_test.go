@@ -519,8 +519,8 @@ func TestSuccessorMapSnapshot(t *testing.T) {
 	// ensure CP state doesn't get invalidated the moment the market is settled
 	engine.OnSuccessorMarketTimeWindowUpdate(ctx, time.Hour)
 	// now let's set up the settlement and trading terminated callbacks
-	engine.oracle.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(_ context.Context, s spec.Spec, cb spec.OnMatchedData) (spec.SubscriptionID, spec.Unsubscriber, error) {
-		return spec.SubscriptionID(0), func(_ context.Context, _ spec.SubscriptionID) {}, nil
+	engine.oracle.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(_ context.Context, s oracles.OracleSpec, cb oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber, error) {
+		return oracles.SubscriptionID(0), func(_ context.Context, _ oracles.SubscriptionID) {}, nil
 	})
 	defer engine.ctrl.Finish()
 	assert.NotNil(t, engine)
