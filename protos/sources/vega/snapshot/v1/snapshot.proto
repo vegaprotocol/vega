@@ -963,6 +963,7 @@ message ProofOfWork {
   repeated BannedParty banned = 7;
   repeated ProofOfWorkParams pow_params = 8;
   repeated ProofOfWorkState pow_state = 9;
+  uint64 last_pruning_block = 10;
 }
 
 message BannedParty {

@@ -84,8 +84,10 @@ func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAcco
 	e.accs = make(map[string]*types.Account, len(accs.Accounts))
 	e.partiesAccs = map[string]map[string]*types.Account{}
 	e.hashableAccs = make([]*types.Account, 0, len(accs.Accounts))
+	assets := map[string]struct{}{}
 	for _, acc := range accs.Accounts {
 		e.accs[acc.ID] = acc
+		assets[acc.Asset] = struct{}{}
 		if _, ok := e.partiesAccs[acc.Owner]; !ok {
 			e.partiesAccs[acc.Owner] = map[string]*types.Account{}
 		}
@@ -104,8 +106,21 @@ func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAcco
 	e.broker.SendBatch(pevts)
 	var err error
 	e.state.serialisedAccounts, err = proto.Marshal(p.IntoProto())
-
+	e.getOrCreateNetTreasuryAndGlobalInsForAssets(ctx, assets)
 	return err
+}
+
+func (e *Engine) getOrCreateNetTreasuryAndGlobalInsForAssets(ctx context.Context, assets map[string]struct{}) {
+	// bit of migration - ensure that the network treasury and global insurance account are created for all assets
+	assetStr := make([]string, 0, len(assets))
+	for k := range assets {
+		assetStr = append(assetStr, k)
+	}
+	sort.Strings(assetStr)
+	for _, asset := range assetStr {
+		e.GetOrCreateNetworkTreasuryAccount(ctx, asset)
+		e.GetOrCreateGlobalInsuranceAccount(ctx, asset)
+	}
 }
 
 func (e *Engine) restoreAssets(assets *types.CollateralAssets, p *types.Payload) error {

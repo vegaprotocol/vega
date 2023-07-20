@@ -19,30 +19,31 @@ import (
 	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
-func TheNetworkTreasuryBalanceShouldBeForTheAsset(
+func TheLPLiquidityFeeBalanceShouldBeForTheMarket(
 	broker *stubs.BrokerStub,
-	rawAmount, asset string,
+	party, rawAmount, market string,
 ) error {
-	amount := parseExpectedInsurancePoolBalance(rawAmount)
+	amount, err := U64(rawAmount)
+	panicW("balance", err)
 
-	acc, err := broker.GetAssetNetworkTreasuryAccount(asset)
+	acc, err := broker.GetMarketLPLiquidityFeePoolAccount(party, market)
 	if err != nil {
-		return errCannotGetNetworkTreasuryAccountForAsset(asset, err)
+		return errCannotGetLPLiquidityFeeAccountForPartyInMarket(party, market, err)
 	}
 
 	if amount != stringToU64(acc.Balance) {
-		return errInvalidAssetNetworkTreasuryBalance(amount, acc)
+		return errInvalidBalance(amount, acc)
 	}
 	return nil
 }
 
-func errCannotGetNetworkTreasuryAccountForAsset(asset string, err error) error {
-	return fmt.Errorf("couldn't get network treasury account for asset(%s): %s", asset, err.Error())
+func errCannotGetLPLiquidityFeeAccountForPartyInMarket(party, market string, err error) error {
+	return fmt.Errorf("couldn't get LP liquidity fee account for party(%s) in market (%s): %s", party, market, err.Error())
 }
 
-func errInvalidAssetNetworkTreasuryBalance(amount uint64, acc types.Account) error {
+func errInvalidBalance(amount uint64, acc types.Account) error {
 	return fmt.Errorf(
-		"invalid balance for network treasury, expected %v, got %v",
+		"invalid balance for party LP liquidity fee account, expected %v, got %v",
 		amount, acc.Balance,
 	)
 }

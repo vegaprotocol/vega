@@ -19,30 +19,30 @@ import (
 	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
-func TheNetworkTreasuryBalanceShouldBeForTheAsset(
+func TheGlobalInsuranceBalanceShouldBeForTheAsset(
 	broker *stubs.BrokerStub,
 	rawAmount, asset string,
 ) error {
 	amount := parseExpectedInsurancePoolBalance(rawAmount)
 
-	acc, err := broker.GetAssetNetworkTreasuryAccount(asset)
+	acc, err := broker.GetAssetGlobalInsuranceAccount(asset)
 	if err != nil {
-		return errCannotGetNetworkTreasuryAccountForAsset(asset, err)
+		return errCannotGetGlobalInsuranceAccountForAsset(asset, err)
 	}
 
 	if amount != stringToU64(acc.Balance) {
-		return errInvalidAssetNetworkTreasuryBalance(amount, acc)
+		return errInvalidAssetGlobalInsuranceBalance(amount, acc)
 	}
 	return nil
 }
 
-func errCannotGetNetworkTreasuryAccountForAsset(asset string, err error) error {
-	return fmt.Errorf("couldn't get network treasury account for asset(%s): %s", asset, err.Error())
+func errCannotGetGlobalInsuranceAccountForAsset(asset string, err error) error {
+	return fmt.Errorf("couldn't get global insurance account for asset(%s): %s", asset, err.Error())
 }
 
-func errInvalidAssetNetworkTreasuryBalance(amount uint64, acc types.Account) error {
+func errInvalidAssetGlobalInsuranceBalance(amount uint64, acc types.Account) error {
 	return fmt.Errorf(
-		"invalid balance for network treasury, expected %v, got %v",
+		"invalid balance for global insurance, expected %v, got %v",
 		amount, acc.Balance,
 	)
 }

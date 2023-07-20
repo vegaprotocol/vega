@@ -831,6 +831,8 @@ type RecurringGovernanceTransfer {
   startEpoch: Int!
   "An optional epoch at which this transfer will stop"
   endEpoch: Int
+  "An optional dispatch strategy for the recurring transfer"
+  dispatchStrategy: DispatchStrategy
 }
 
 "The specific details for a one-off transfer"
@@ -1203,9 +1205,13 @@ type Asset {
   "The infrastructure fee account for this asset"
   infrastructureFeeAccount: AccountBalance
 
-  "The global reward pool account for this asset"
+  "The staking reward pool account for this asset"
   globalRewardPoolAccount: AccountBalance
 
+  "The global insurance account for this asset"
+  globalInsuranceAccount: AccountBalance
+  "The network treasury account for this asset"
+  networkTreasuryAccount: AccountBalance
   "The taker fee reward account for this asset"
   takerFeeRewardAccount: AccountBalance
   "The maker fee reward account for this asset"
@@ -3460,6 +3466,8 @@ enum AccountType {
   ACCOUNT_TYPE_HOLDING
   "Per liquidity provider, per market account for holding LPs' fees before distribution"
   ACCOUNT_TYPE_LP_LIQUIDITY_FEES
+  "Network treasury, per-asset treasury controlled by the network"
+  ACCOUNT_TYPE_NETWORK_TREASURY
 }
 
 "Types that describe why a transfer has been made"

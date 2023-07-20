@@ -586,4 +586,6 @@ message RecurringTransfer {
   uint64 start_epoch = 1;
   // Last epoch at which this transfer shall be paid.
   optional uint64 end_epoch = 2;
+  // Optional parameter defining how a transfer is dispatched.
+  optional vega.DispatchStrategy dispatch_strategy = 3;
 }

@@ -20,6 +20,26 @@ import (
 
 const ReferenceMaxLen int = 100
 
+var (
+	validSources = map[protoTypes.AccountType]struct{}{
+		protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE:        {},
+		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY: {},
+		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE: {},
+	}
+	validDestinations = map[protoTypes.AccountType]struct{}{
+		protoTypes.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:              {},
+		protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE:                  {},
+		protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY:           {},
+		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE:           {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES:     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES: {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS:    {},
+	}
+)
+
 func CheckProposalSubmission(cmd *commandspb.ProposalSubmission) error {
 	return checkProposalSubmission(cmd).ErrorOrNil()
 }
@@ -285,8 +305,7 @@ func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Error
 	}
 
 	// source account type may be one of the following:
-	if changes.SourceType != protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE &&
-		changes.SourceType != protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD {
+	if _, ok := validSources[changes.SourceType]; !ok {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.source_type", ErrIsNotValid)
 	}
 
@@ -298,18 +317,26 @@ func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Error
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
 	}
 
-	// destination account type may be one of the following:
-	if changes.DestinationType != protoTypes.AccountType_ACCOUNT_TYPE_GENERAL &&
-		changes.DestinationType != protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD &&
-		changes.DestinationType != protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE {
+	if changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY && changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
 	}
 
-	if changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD && len(changes.Source) > 0 {
+	// destination account type may be one of the following:
+	if _, ok := validDestinations[changes.DestinationType]; !ok {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
+	}
+
+	if (changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD ||
+		changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY ||
+		changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE) &&
+		len(changes.Source) > 0 {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.source", ErrIsNotValid)
 	}
 
-	if changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD && len(changes.Destination) > 0 {
+	if (changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD ||
+		changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY ||
+		changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE) &&
+		len(changes.Destination) > 0 {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
 	}
 
@@ -350,9 +377,54 @@ func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Error
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.fraction_of_balance", ErrMustBeLTE1)
 	}
 
+	if oneoff := changes.GetOneOff(); oneoff != nil {
+		if changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
+			errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
+		}
+		if oneoff.DeliverOn < 0 {
+			return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.oneoff.deliveron", ErrMustBePositiveOrZero)
+		}
+	}
+
 	if recurring := changes.GetRecurring(); recurring != nil {
 		if recurring.EndEpoch != nil && *recurring.EndEpoch < recurring.StartEpoch {
 			return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.end_epoch", ErrIsNotValid)
+		}
+
+		if recurring.DispatchStrategy != nil {
+			if len(changes.Destination) > 0 {
+				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
+			}
+			// check account type is one of the relevant reward accounts
+			if changes.DestinationType != vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES &&
+				changes.DestinationType != vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES &&
+				changes.DestinationType != vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES &&
+				changes.DestinationType != vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
+				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
+			}
+			// check asset for metric is passed unless it's a market proposer reward
+			if len(recurring.DispatchStrategy.AssetForMetric) <= 0 && changes.DestinationType != vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
+				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.asset_for_metric", ErrUnknownAsset)
+			}
+			if len(recurring.DispatchStrategy.AssetForMetric) > 0 && !IsVegaPubkey(recurring.DispatchStrategy.AssetForMetric) {
+				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.asset_for_metric", ErrShouldBeAValidVegaID)
+			}
+			// check that that the metric makes sense for the account type
+			if changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES && recurring.DispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED {
+				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.dispatch_metric", ErrIsNotValid)
+			}
+			if changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES && recurring.DispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED {
+				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.dispatch_metric", ErrIsNotValid)
+			}
+			if changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES && recurring.DispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID {
+				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.dispatch_metric", ErrIsNotValid)
+			}
+			if changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS && recurring.DispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE {
+				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.dispatch_metric", ErrIsNotValid)
+			}
 		}
 	}
 

@@ -733,7 +733,7 @@ func testEnableAssetSuccess(t *testing.T) {
 			Symbol: "MYASSET",
 		},
 	}
-	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(6)
 	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 
@@ -750,7 +750,7 @@ func testEnableAssetFailureDuplicate(t *testing.T) {
 			Symbol: "MYASSET",
 		},
 	}
-	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(6)
 	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 
@@ -2429,10 +2429,10 @@ func TestClearMarket(t *testing.T) {
 	assert.Equal(t, num.NewUint(1250), entry.ToAccountBalance)
 	assert.Equal(t, num.NewUint(250), entry.Amount)
 
-	// This will be the insurance account going into the global rewards pool
+	// This will be the insurance account going into the global insurance pool
 	entry = responses[2].Entries[0]
 	assert.Equal(t, types.AccountTypeInsurance, entry.FromAccount.Type)
-	assert.Equal(t, types.AccountTypeGlobalReward, entry.ToAccount.Type)
+	assert.Equal(t, types.AccountTypeGlobalInsurance, entry.ToAccount.Type)
 	assert.Equal(t, num.NewUint(0), entry.FromAccountBalance)
 	assert.Equal(t, num.NewUint(1250), entry.ToAccountBalance)
 	assert.Equal(t, num.NewUint(1250), entry.Amount)
@@ -2685,7 +2685,7 @@ func getTestEngine(t *testing.T) *testEngine {
 	broker := bmocks.NewMockBroker(ctrl)
 	conf := collateral.NewDefaultConfig()
 	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
-	broker.EXPECT().Send(gomock.Any()).Times(16)
+	broker.EXPECT().Send(gomock.Any()).Times(22)
 	// system accounts created
 
 	eng := collateral.New(logging.NewTestLogger(), conf, timeSvc, broker)
@@ -2911,7 +2911,7 @@ func TestHash(t *testing.T) {
 
 	hash := eng.Hash()
 	require.Equal(t,
-		"4fc5846d26f3faffcd37b082f136d6daeee6084acbc073a90a1e49aa44a33374",
+		"589c48274f3ab644f725d9abc4de9cb07b6ea9069dd3bd8f41f35dc55d062550",
 		hex.EncodeToString(hash),
 		"It should match against the known hash",
 	)
@@ -3020,9 +3020,9 @@ func TestClearSpotMarket(t *testing.T) {
 	_, err = eng.ClearSpotMarket(context.Background(), testMarketID, "BTC")
 	require.NoError(t, err)
 
-	globalReward, err := eng.GetGlobalRewardAccount("BTC")
+	treasury, err := eng.GetNetworkTreasuryAccount("BTC")
 	require.NoError(t, err)
-	require.Equal(t, num.NewUint(1000), globalReward.Balance)
+	require.Equal(t, num.NewUint(1000), treasury.Balance)
 
 	// the liquidity and makes fees should be removed at this point
 	_, err = eng.GetMarketLiquidityFeeAccount(testMarketID, "BTC")

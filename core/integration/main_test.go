@@ -405,6 +405,12 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the network treasury balance should be "([^"]*)" for the asset "([^"]*)"$`, func(rawAmount, asset string) error {
 		return steps.TheNetworkTreasuryBalanceShouldBeForTheAsset(execsetup.broker, rawAmount, asset)
 	})
+	s.Step(`^the global insurance pool balance should be "([^"]*)" for the asset "([^"]*)"$`, func(rawAmount, asset string) error {
+		return steps.TheGlobalInsuranceBalanceShouldBeForTheAsset(execsetup.broker, rawAmount, asset)
+	})
+	s.Step(`^the party "([^"]*)" lp liquidity account balance should be "([^"]*)" for the market "([^"]*)"$`, func(party, rawAmount, market string) error {
+		return steps.TheLPLiquidityFeeBalanceShouldBeForTheMarket(execsetup.broker, rawAmount, party, market)
+	})
 	s.Step(`^the following transfers should happen:$`, func(table *godog.Table) error {
 		return steps.TheFollowingTransfersShouldHappen(execsetup.broker, table)
 	})

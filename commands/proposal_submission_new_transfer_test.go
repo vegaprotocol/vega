@@ -25,8 +25,259 @@ func TestCheckProposalSubmissionForNewTransfer(t *testing.T) {
 	t.Run("Submitting a new transfer change with an invalid fraction fails", testNewTransferChangeSubmissionInvalidFractionFails)
 	t.Run("Submitting a new transfer change with neither one off nor recurring fails", testNewTransferWithNoKind)
 	t.Run("Submitting a new transfer change with recurring end epoch before the start epoch", testNewRecurringGovernanceTransferInvalidEndEpoch)
-	t.Run("Submitting a new transfer change with identifal source/destination accounts", testNewTransferChangeSubmissionIneffectualTransferFails)
+	t.Run("Submitting a new transfer change with identical source/destination accounts", testNewTransferChangeSubmissionIneffectualTransferFails)
 	t.Run("Submitting a cancel transfer change with missing transfer id fails", testCancelTransferChangeSubmission)
+	t.Run("Submitting a new transfer change with an invalid destination type for one off transfer", testOneOffWithInvalidDestinationType)
+	t.Run("Submitting a new transfer change with an negative deliverOn", testOneOffWithNegativeDeliverOn)
+	t.Run("Submitting a new recurring transfer change with a dispatch strategy and destination party", testRecurringWithDestinationAndDispatch)
+	t.Run("Submitting a new recurring transfer change with a dispatch strategy and an invalid type", testRecurringWithDispatchInvalidTypes)
+	t.Run("Submitting a new recurring transfer change with a dispatch strategy and incompatible empty asset for metric", testInvalidAssetForMetric)
+	t.Run("Submitting a new recurring transfer change with a dispatch strategy and mismatching destination type for metric", testInvalidDestForMetric)
+}
+
+func testInvalidDestForMetric(t *testing.T) {
+	metricsMismatches := map[types.AccountType][]types.DispatchMetric{
+		types.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES: {
+			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
+			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
+			types.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+		},
+		types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES: {
+			types.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
+			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
+			types.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+		},
+		types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES: {
+			types.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
+			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
+			types.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+		},
+		types.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS: {
+			types.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
+			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
+			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
+		},
+	}
+
+	for tp, metrics := range metricsMismatches {
+		for _, metric := range metrics {
+			err := checkProposalSubmission(&commandspb.ProposalSubmission{
+				Terms: &types.ProposalTerms{
+					Change: &types.ProposalTerms_NewTransfer{
+						NewTransfer: &types.NewTransfer{
+							Changes: &types.NewTransferConfiguration{
+								FractionOfBalance: "0.5",
+								Amount:            "1000",
+								SourceType:        types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+								DestinationType:   tp,
+								Destination:       "",
+								TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
+								Asset:             "abcde",
+								Kind: &types.NewTransferConfiguration_Recurring{
+									Recurring: &types.RecurringTransfer{
+										StartEpoch: 10,
+										DispatchStrategy: &types.DispatchStrategy{
+											Metric: metric,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+
+			require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.dispatch_metric"), commands.ErrIsNotValid)
+		}
+	}
+}
+
+func testInvalidAssetForMetric(t *testing.T) {
+	invalidTypes := []types.AccountType{
+		types.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES,
+		types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES,
+		types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES,
+	}
+
+	for _, inv := range invalidTypes {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &types.ProposalTerms{
+				Change: &types.ProposalTerms_NewTransfer{
+					NewTransfer: &types.NewTransfer{
+						Changes: &types.NewTransferConfiguration{
+							FractionOfBalance: "0.5",
+							Amount:            "1000",
+							SourceType:        types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+							DestinationType:   inv,
+							Destination:       "",
+							TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
+							Asset:             "abcde",
+							Kind: &types.NewTransferConfiguration_Recurring{
+								Recurring: &types.RecurringTransfer{
+									StartEpoch:       10,
+									DispatchStrategy: &types.DispatchStrategy{},
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+
+		require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.asset_for_metric"), commands.ErrUnknownAsset)
+	}
+
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_NewTransfer{
+				NewTransfer: &types.NewTransfer{
+					Changes: &types.NewTransferConfiguration{
+						FractionOfBalance: "0.5",
+						Amount:            "1000",
+						SourceType:        types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+						DestinationType:   types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES,
+						Destination:       "",
+						TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
+						Asset:             "abcde",
+						Kind: &types.NewTransferConfiguration_Recurring{
+							Recurring: &types.RecurringTransfer{
+								StartEpoch: 10,
+								DispatchStrategy: &types.DispatchStrategy{
+									AssetForMetric: "zohar",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.asset_for_metric"), commands.ErrShouldBeAValidVegaID)
+}
+
+func testRecurringWithDispatchInvalidTypes(t *testing.T) {
+	invalidTypes := make(map[types.AccountType]struct{}, len(types.AccountType_name))
+	for k := range types.AccountType_name {
+		invalidTypes[types.AccountType(k)] = struct{}{}
+	}
+	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES)
+	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES)
+	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES)
+	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS)
+	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
+
+	for inv := range invalidTypes {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &types.ProposalTerms{
+				Change: &types.ProposalTerms_NewTransfer{
+					NewTransfer: &types.NewTransfer{
+						Changes: &types.NewTransferConfiguration{
+							FractionOfBalance: "0.5",
+							Amount:            "1000",
+							SourceType:        types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+							DestinationType:   inv,
+							Destination:       "",
+							TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
+							Asset:             "abcde",
+							Kind: &types.NewTransferConfiguration_Recurring{
+								Recurring: &types.RecurringTransfer{
+									StartEpoch:       10,
+									DispatchStrategy: &types.DispatchStrategy{},
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+		require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.destination_type"), commands.ErrIsNotValid)
+	}
+}
+
+func testRecurringWithDestinationAndDispatch(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_NewTransfer{
+				NewTransfer: &types.NewTransfer{
+					Changes: &types.NewTransferConfiguration{
+						FractionOfBalance: "0.5",
+						Amount:            "1000",
+						SourceType:        types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+						DestinationType:   types.AccountType_ACCOUNT_TYPE_GENERAL,
+						Destination:       "zohar",
+						TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
+						Asset:             "abcde",
+						Kind: &types.NewTransferConfiguration_Recurring{
+							Recurring: &types.RecurringTransfer{
+								StartEpoch:       10,
+								DispatchStrategy: &types.DispatchStrategy{},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+	require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.destination"), commands.ErrIsNotValid)
+}
+
+func testOneOffWithNegativeDeliverOn(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_NewTransfer{
+				NewTransfer: &types.NewTransfer{
+					Changes: &types.NewTransferConfiguration{
+						FractionOfBalance: "0.5",
+						Amount:            "1000",
+						SourceType:        types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+						DestinationType:   types.AccountType_ACCOUNT_TYPE_GENERAL,
+						Destination:       "zohar",
+						TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
+						Asset:             "abcde",
+						Kind: &types.NewTransferConfiguration_OneOff{
+							OneOff: &types.OneOffTransfer{
+								DeliverOn: -100,
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+	require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.oneoff.deliveron"), commands.ErrMustBePositiveOrZero)
+}
+
+func testOneOffWithInvalidDestinationType(t *testing.T) {
+	dests := []types.AccountType{
+		types.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES,
+		types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES,
+		types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES,
+		types.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS,
+	}
+
+	for _, dest := range dests {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &types.ProposalTerms{
+				Change: &types.ProposalTerms_NewTransfer{
+					NewTransfer: &types.NewTransfer{
+						Changes: &types.NewTransferConfiguration{
+							FractionOfBalance: "0.5",
+							Amount:            "1000",
+							SourceType:        types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+							DestinationType:   dest,
+							TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
+							Asset:             "abcde",
+							Kind: &types.NewTransferConfiguration_OneOff{
+								OneOff: &types.OneOffTransfer{},
+							},
+						},
+					},
+				},
+			},
+		})
+		require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.destination_type"), commands.ErrIsNotValid)
+	}
 }
 
 func testNewRecurringGovernanceTransferInvalidEndEpoch(t *testing.T) {
@@ -136,6 +387,12 @@ func testNewTransferChangeSubmissionInvalidDestinationTypeFails(t *testing.T) {
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_GENERAL))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_INSURANCE))
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY))
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE))
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES))
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES))
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES))
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_UNSPECIFIED))
 
 	for at := range allAccountTypes {
@@ -153,7 +410,6 @@ func testNewTransferChangeSubmissionInvalidDestinationTypeFails(t *testing.T) {
 		})
 		require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.destination_type"), commands.ErrIsNotValid)
 	}
-
 	validDestinationAccountTypes := []types.AccountType{types.AccountType_ACCOUNT_TYPE_GENERAL, types.AccountType_ACCOUNT_TYPE_INSURANCE}
 	for _, at := range validDestinationAccountTypes {
 		err := checkProposalSubmission(&commandspb.ProposalSubmission{
@@ -177,6 +433,8 @@ func testNewTransferChangeSubmissionInvalidSourceTypeFails(t *testing.T) {
 	for k := range types.AccountType_name {
 		allAccountTypes[k] = struct{}{}
 	}
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY))
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_INSURANCE))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_UNSPECIFIED))

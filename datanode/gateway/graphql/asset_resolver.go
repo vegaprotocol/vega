@@ -70,6 +70,14 @@ func (r *myAssetResolver) MarketProposerRewardAccount(ctx context.Context, asset
 	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS)
 }
 
+func (r *myAssetResolver) NetworkTreasuryAccount(ctx context.Context, asset *types.Asset) (*v2.AccountBalance, error) {
+	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY)
+}
+
+func (r *myAssetResolver) GlobalInsuranceAccount(ctx context.Context, asset *types.Asset) (*v2.AccountBalance, error) {
+	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE)
+}
+
 func (r myAssetResolver) Name(ctx context.Context, obj *types.Asset) (string, error) {
 	return obj.Details.Name, nil
 }

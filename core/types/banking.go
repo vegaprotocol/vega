@@ -96,7 +96,7 @@ func (t *TransferBase) IsValid() error {
 	}
 
 	switch t.ToAccountType {
-	case AccountTypeGlobalReward:
+	case AccountTypeGlobalReward, AccountTypeNetworkTreasury:
 		if t.To != "0000000000000000000000000000000000000000000000000000000000000000" {
 			return ErrInvalidToForRewardAccountType
 		}
@@ -145,7 +145,7 @@ func (g *GovernanceTransfer) IntoEvent(amount *num.Uint, reason *string) *events
 		from = g.Config.Source
 	}
 	to := g.Config.Destination
-	if g.Config.DestinationType == AccountTypeGlobalReward {
+	if g.Config.DestinationType == AccountTypeGlobalReward || g.Config.DestinationType == AccountTypeNetworkTreasury || g.Config.DestinationType == AccountTypeGlobalInsurance {
 		to = "0000000000000000000000000000000000000000000000000000000000000000"
 	}
 

@@ -81,13 +81,14 @@ type Engine struct {
 	activeStates  []*state             // active states corresponding to the sets of parameters
 	bannedParties map[string]time.Time // banned party -> release time
 
-	currentBlock uint64              // the current block height
-	blockHeight  [ringSize]uint64    // block heights in scope ring buffer - this has a fixed size which is equal to the maximum value of the network parameter
-	blockHash    [ringSize]string    // block hashes in scope ring buffer - this has a fixed size which is equal to the maximum value of the network parameter
-	seenTx       map[string]struct{} // seen transactions in scope set
-	heightToTx   map[uint64][]string // height to slice of seen transaction in scope ring buffer
-	seenTid      map[string]struct{} // seen tid in scope set
-	heightToTid  map[uint64][]string // height to slice of seen tid in scope ring buffer
+	currentBlock     uint64              // the current block height
+	blockHeight      [ringSize]uint64    // block heights in scope ring buffer - this has a fixed size which is equal to the maximum value of the network parameter
+	blockHash        [ringSize]string    // block hashes in scope ring buffer - this has a fixed size which is equal to the maximum value of the network parameter
+	seenTx           map[string]struct{} // seen transactions in scope set
+	heightToTx       map[uint64][]string // height to slice of seen transaction in scope ring buffer
+	seenTid          map[string]struct{} // seen tid in scope set
+	heightToTid      map[uint64][]string // height to slice of seen tid in scope ring buffer
+	lastPruningBlock uint64
 
 	mempoolSeenTid map[string]struct{} // tids seen already in this node's mempool, cleared at the end of the block
 
@@ -157,8 +158,28 @@ func (e *Engine) EndOfBlock() {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
+	// run this once for migration cleanup
+	// this is going to clean up blocks that belong to inactive states which are unreachable by the latter loop.
+	if e.lastPruningBlock == 0 {
+		if e.activeParams[0].fromBlock > 0 {
+			end := e.activeParams[0].fromBlock
+			for block := uint64(0); block <= end; block++ {
+				if b, ok := e.heightToTx[block]; ok {
+					for _, v := range b {
+						delete(e.seenTx, v)
+					}
+				}
+				for _, v := range e.heightToTid[block] {
+					delete(e.seenTid, v)
+				}
+				delete(e.heightToTx, block)
+				delete(e.heightToTid, block)
+			}
+		}
+	}
+
 	toDelete := []int{}
-	// iterate over parameters set and clear then out if ther's not relevant anymore.
+	// iterate over parameters set and clear them out if they're not relevant anymore.
 	for i, p := range e.activeParams {
 		// is active means if we're still accepting transactions from it i.e. if the untilBlock + spamPoWNumberOfPastBlocks <= blockHeight
 		if !p.isActive(e.currentBlock) {
@@ -172,20 +193,27 @@ func (e *Engine) EndOfBlock() {
 		if outOfScopeBlock < 0 {
 			continue
 		}
-		uOutOfScopeBlock := uint64(outOfScopeBlock)
-		b, ok := e.heightToTx[uOutOfScopeBlock]
-		if !ok {
-			continue
+
+		start := uint64(outOfScopeBlock)
+		end := uint64(outOfScopeBlock)
+		if e.currentBlock%1000 == 0 {
+			start = e.lastPruningBlock
+			e.lastPruningBlock = e.currentBlock
 		}
-		for _, v := range b {
-			delete(e.seenTx, v)
+
+		for block := start; block <= end; block++ {
+			if b, ok := e.heightToTx[block]; ok {
+				for _, v := range b {
+					delete(e.seenTx, v)
+				}
+			}
+			for _, v := range e.heightToTid[block] {
+				delete(e.seenTid, v)
+			}
+			delete(e.heightToTx, block)
+			delete(e.heightToTid, block)
+			delete(e.activeStates[i].blockToPartyState, block)
 		}
-		for _, v := range e.heightToTid[uOutOfScopeBlock] {
-			delete(e.seenTid, v)
-		}
-		delete(e.heightToTx, uOutOfScopeBlock)
-		delete(e.heightToTid, uOutOfScopeBlock)
-		delete(e.activeStates[i].blockToPartyState, uOutOfScopeBlock)
 	}
 
 	// delete all out of scope configurations and states
@@ -386,11 +414,6 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 		return h, errors.New("transaction hash already used")
 	}
 
-	// validator commands skip PoW verification
-	if tx.Command().IsValidatorCommand() {
-		return h, nil
-	}
-
 	// check if the block height is in scope and is known
 
 	// we need to find the parameters that is relevant to the block for which the pow was generated
@@ -408,6 +431,11 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 			e.log.Debug("unknown block height", logging.Uint64("current-block-height", e.currentBlock), logging.String("tx-hash", txHash), logging.String("tid", tx.GetPoWTID()), logging.Uint64("tx-block-height", tx.BlockHeight()), logging.Uint64("index", idx), logging.String("command", tx.Command().String()), logging.String("party", tx.Party()))
 		}
 		return h, errors.New("unknown block height for tx:" + txHash + ", command:" + tx.Command().String() + ", party:" + tx.Party())
+	}
+
+	// validator commands skip PoW verification
+	if tx.Command().IsValidatorCommand() {
+		return h, nil
 	}
 
 	// check if the tid was seen in scope

@@ -227,6 +227,7 @@ type ComplexityRoot struct {
 
 	Asset struct {
 		Decimals                    func(childComplexity int) int
+		GlobalInsuranceAccount      func(childComplexity int) int
 		GlobalRewardPoolAccount     func(childComplexity int) int
 		Id                          func(childComplexity int) int
 		InfrastructureFeeAccount    func(childComplexity int) int
@@ -234,6 +235,7 @@ type ComplexityRoot struct {
 		MakerFeeRewardAccount       func(childComplexity int) int
 		MarketProposerRewardAccount func(childComplexity int) int
 		Name                        func(childComplexity int) int
+		NetworkTreasuryAccount      func(childComplexity int) int
 		Quantum                     func(childComplexity int) int
 		Source                      func(childComplexity int) int
 		Status                      func(childComplexity int) int
@@ -328,11 +330,11 @@ type ComplexityRoot struct {
 	}
 
 	Data struct {
-		BroadcastAt         func(childComplexity int) int
-		Data                func(childComplexity int) int
-		EthereumBlockHeight func(childComplexity int) int
-		MatchedSpecIds      func(childComplexity int) int
-		Signers             func(childComplexity int) int
+		BroadcastAt    func(childComplexity int) int
+		Data           func(childComplexity int) int
+		MatchedSpecIds func(childComplexity int) int
+		MetaData       func(childComplexity int) int
+		Signers        func(childComplexity int) int
 	}
 
 	DataSourceDefinition struct {
@@ -1593,8 +1595,9 @@ type ComplexityRoot struct {
 	}
 
 	RecurringGovernanceTransfer struct {
-		EndEpoch   func(childComplexity int) int
-		StartEpoch func(childComplexity int) int
+		DispatchStrategy func(childComplexity int) int
+		EndEpoch         func(childComplexity int) int
+		StartEpoch       func(childComplexity int) int
 	}
 
 	RecurringTransfer struct {
@@ -2068,6 +2071,8 @@ type AssetResolver interface {
 
 	InfrastructureFeeAccount(ctx context.Context, obj *vega.Asset) (*v2.AccountBalance, error)
 	GlobalRewardPoolAccount(ctx context.Context, obj *vega.Asset) (*v2.AccountBalance, error)
+	GlobalInsuranceAccount(ctx context.Context, obj *vega.Asset) (*v2.AccountBalance, error)
+	NetworkTreasuryAccount(ctx context.Context, obj *vega.Asset) (*v2.AccountBalance, error)
 	TakerFeeRewardAccount(ctx context.Context, obj *vega.Asset) (*v2.AccountBalance, error)
 	MakerFeeRewardAccount(ctx context.Context, obj *vega.Asset) (*v2.AccountBalance, error)
 	LpFeeRewardAccount(ctx context.Context, obj *vega.Asset) (*v2.AccountBalance, error)
@@ -2500,6 +2505,7 @@ type RankingScoreResolver interface {
 type RecurringGovernanceTransferResolver interface {
 	StartEpoch(ctx context.Context, obj *v1.RecurringGovernanceTransfer) (int, error)
 	EndEpoch(ctx context.Context, obj *v1.RecurringGovernanceTransfer) (*int, error)
+	DispatchStrategy(ctx context.Context, obj *v1.RecurringGovernanceTransfer) (*DispatchStrategy, error)
 }
 type RecurringTransferResolver interface {
 	StartEpoch(ctx context.Context, obj *v1.RecurringTransfer) (int, error)
@@ -3041,6 +3047,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Asset.Decimals(childComplexity), true
 
+	case "Asset.globalInsuranceAccount":
+		if e.complexity.Asset.GlobalInsuranceAccount == nil {
+			break
+		}
+
+		return e.complexity.Asset.GlobalInsuranceAccount(childComplexity), true
+
 	case "Asset.globalRewardPoolAccount":
 		if e.complexity.Asset.GlobalRewardPoolAccount == nil {
 			break
@@ -3089,6 +3102,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Asset.Name(childComplexity), true
+
+	case "Asset.networkTreasuryAccount":
+		if e.complexity.Asset.NetworkTreasuryAccount == nil {
+			break
+		}
+
+		return e.complexity.Asset.NetworkTreasuryAccount(childComplexity), true
 
 	case "Asset.quantum":
 		if e.complexity.Asset.Quantum == nil {
@@ -3426,19 +3446,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Data.Data(childComplexity), true
 
-	case "Data.ethereumBlockHeight":
-		if e.complexity.Data.EthereumBlockHeight == nil {
-			break
-		}
-
-		return e.complexity.Data.EthereumBlockHeight(childComplexity), true
-
 	case "Data.matchedSpecIds":
 		if e.complexity.Data.MatchedSpecIds == nil {
 			break
 		}
 
 		return e.complexity.Data.MatchedSpecIds(childComplexity), true
+
+	case "Data.metaData":
+		if e.complexity.Data.MetaData == nil {
+			break
+		}
+
+		return e.complexity.Data.MetaData(childComplexity), true
 
 	case "Data.signers":
 		if e.complexity.Data.Signers == nil {
@@ -9198,6 +9218,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RankingScore.VotingPower(childComplexity), true
 
+	case "RecurringGovernanceTransfer.dispatchStrategy":
+		if e.complexity.RecurringGovernanceTransfer.DispatchStrategy == nil {
+			break
+		}
+
+		return e.complexity.RecurringGovernanceTransfer.DispatchStrategy(childComplexity), true
+
 	case "RecurringGovernanceTransfer.endEpoch":
 		if e.complexity.RecurringGovernanceTransfer.EndEpoch == nil {
 			break
@@ -13566,6 +13593,10 @@ func (ec *executionContext) fieldContext_AccountBalance_asset(ctx context.Contex
 				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
 			case "globalRewardPoolAccount":
 				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
 			case "takerFeeRewardAccount":
 				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
 			case "makerFeeRewardAccount":
@@ -14166,6 +14197,10 @@ func (ec *executionContext) fieldContext_AccountEvent_asset(ctx context.Context,
 				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
 			case "globalRewardPoolAccount":
 				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
 			case "takerFeeRewardAccount":
 				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
 			case "makerFeeRewardAccount":
@@ -16307,6 +16342,112 @@ func (ec *executionContext) fieldContext_Asset_globalRewardPoolAccount(ctx conte
 	return fc, nil
 }
 
+func (ec *executionContext) _Asset_globalInsuranceAccount(ctx context.Context, field graphql.CollectedField, obj *vega.Asset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Asset().GlobalInsuranceAccount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.AccountBalance)
+	fc.Result = res
+	return ec.marshalOAccountBalance2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountBalance(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Asset_globalInsuranceAccount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Asset",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "balance":
+				return ec.fieldContext_AccountBalance_balance(ctx, field)
+			case "asset":
+				return ec.fieldContext_AccountBalance_asset(ctx, field)
+			case "type":
+				return ec.fieldContext_AccountBalance_type(ctx, field)
+			case "market":
+				return ec.fieldContext_AccountBalance_market(ctx, field)
+			case "party":
+				return ec.fieldContext_AccountBalance_party(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AccountBalance", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Asset_networkTreasuryAccount(ctx context.Context, field graphql.CollectedField, obj *vega.Asset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Asset().NetworkTreasuryAccount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.AccountBalance)
+	fc.Result = res
+	return ec.marshalOAccountBalance2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountBalance(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Asset_networkTreasuryAccount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Asset",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "balance":
+				return ec.fieldContext_AccountBalance_balance(ctx, field)
+			case "asset":
+				return ec.fieldContext_AccountBalance_asset(ctx, field)
+			case "type":
+				return ec.fieldContext_AccountBalance_type(ctx, field)
+			case "market":
+				return ec.fieldContext_AccountBalance_market(ctx, field)
+			case "party":
+				return ec.fieldContext_AccountBalance_party(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AccountBalance", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Asset_takerFeeRewardAccount(ctx context.Context, field graphql.CollectedField, obj *vega.Asset) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
 	if err != nil {
@@ -16576,6 +16717,10 @@ func (ec *executionContext) fieldContext_AssetEdge_node(ctx context.Context, fie
 				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
 			case "globalRewardPoolAccount":
 				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
 			case "takerFeeRewardAccount":
 				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
 			case "makerFeeRewardAccount":
@@ -18493,8 +18638,8 @@ func (ec *executionContext) fieldContext_Data_data(ctx context.Context, field gr
 	return fc, nil
 }
 
-func (ec *executionContext) _Data_ethereumBlockHeight(ctx context.Context, field graphql.CollectedField, obj *Data) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Data_ethereumBlockHeight(ctx, field)
+func (ec *executionContext) _Data_metaData(ctx context.Context, field graphql.CollectedField, obj *Data) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Data_metaData(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -18507,7 +18652,7 @@ func (ec *executionContext) _Data_ethereumBlockHeight(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.EthereumBlockHeight, nil
+		return obj.MetaData, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -18516,19 +18661,25 @@ func (ec *executionContext) _Data_ethereumBlockHeight(ctx context.Context, field
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.([]*v12.Property)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐProperty(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Data_ethereumBlockHeight(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Data_metaData(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Data",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_Property_name(ctx, field)
+			case "value":
+				return ec.fieldContext_Property_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Property", field.Name)
 		},
 	}
 	return fc, nil
@@ -19870,6 +20021,10 @@ func (ec *executionContext) fieldContext_Deposit_asset(ctx context.Context, fiel
 				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
 			case "globalRewardPoolAccount":
 				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
 			case "takerFeeRewardAccount":
 				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
 			case "makerFeeRewardAccount":
@@ -23017,6 +23172,10 @@ func (ec *executionContext) fieldContext_Entities_assets(ctx context.Context, fi
 				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
 			case "globalRewardPoolAccount":
 				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
 			case "takerFeeRewardAccount":
 				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
 			case "makerFeeRewardAccount":
@@ -26137,8 +26296,8 @@ func (ec *executionContext) fieldContext_ExternalData_data(ctx context.Context, 
 				return ec.fieldContext_Data_signers(ctx, field)
 			case "data":
 				return ec.fieldContext_Data_data(ctx, field)
-			case "ethereumBlockHeight":
-				return ec.fieldContext_Data_ethereumBlockHeight(ctx, field)
+			case "metaData":
+				return ec.fieldContext_Data_metaData(ctx, field)
 			case "matchedSpecIds":
 				return ec.fieldContext_Data_matchedSpecIds(ctx, field)
 			case "broadcastAt":
@@ -26642,6 +26801,10 @@ func (ec *executionContext) fieldContext_Future_settlementAsset(ctx context.Cont
 				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
 			case "globalRewardPoolAccount":
 				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
 			case "takerFeeRewardAccount":
 				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
 			case "makerFeeRewardAccount":
@@ -26920,6 +27083,10 @@ func (ec *executionContext) fieldContext_FutureProduct_settlementAsset(ctx conte
 				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
 			case "globalRewardPoolAccount":
 				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
 			case "takerFeeRewardAccount":
 				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
 			case "makerFeeRewardAccount":
@@ -31704,6 +31871,10 @@ func (ec *executionContext) fieldContext_MarginLevels_asset(ctx context.Context,
 				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
 			case "globalRewardPoolAccount":
 				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
 			case "takerFeeRewardAccount":
 				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
 			case "makerFeeRewardAccount":
@@ -38412,6 +38583,10 @@ func (ec *executionContext) fieldContext_NewTransfer_asset(ctx context.Context, 
 				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
 			case "globalRewardPoolAccount":
 				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
 			case "takerFeeRewardAccount":
 				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
 			case "makerFeeRewardAccount":
@@ -52874,6 +53049,10 @@ func (ec *executionContext) fieldContext_Query_asset(ctx context.Context, field 
 				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
 			case "globalRewardPoolAccount":
 				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
 			case "takerFeeRewardAccount":
 				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
 			case "makerFeeRewardAccount":
@@ -56840,6 +57019,55 @@ func (ec *executionContext) fieldContext_RecurringGovernanceTransfer_endEpoch(ct
 	return fc, nil
 }
 
+func (ec *executionContext) _RecurringGovernanceTransfer_dispatchStrategy(ctx context.Context, field graphql.CollectedField, obj *v1.RecurringGovernanceTransfer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RecurringGovernanceTransfer_dispatchStrategy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RecurringGovernanceTransfer().DispatchStrategy(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*DispatchStrategy)
+	fc.Result = res
+	return ec.marshalODispatchStrategy2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDispatchStrategy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RecurringGovernanceTransfer_dispatchStrategy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecurringGovernanceTransfer",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "dispatchMetric":
+				return ec.fieldContext_DispatchStrategy_dispatchMetric(ctx, field)
+			case "dispatchMetricAssetId":
+				return ec.fieldContext_DispatchStrategy_dispatchMetricAssetId(ctx, field)
+			case "marketIdsInScope":
+				return ec.fieldContext_DispatchStrategy_marketIdsInScope(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DispatchStrategy", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _RecurringTransfer_startEpoch(ctx context.Context, field graphql.CollectedField, obj *v1.RecurringTransfer) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_RecurringTransfer_startEpoch(ctx, field)
 	if err != nil {
@@ -57075,6 +57303,10 @@ func (ec *executionContext) fieldContext_Reward_asset(ctx context.Context, field
 				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
 			case "globalRewardPoolAccount":
 				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
 			case "takerFeeRewardAccount":
 				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
 			case "makerFeeRewardAccount":
@@ -57869,6 +58101,10 @@ func (ec *executionContext) fieldContext_RewardSummary_asset(ctx context.Context
 				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
 			case "globalRewardPoolAccount":
 				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
 			case "takerFeeRewardAccount":
 				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
 			case "makerFeeRewardAccount":
@@ -66254,6 +66490,10 @@ func (ec *executionContext) fieldContext_Transfer_asset(ctx context.Context, fie
 				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
 			case "globalRewardPoolAccount":
 				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
 			case "takerFeeRewardAccount":
 				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
 			case "makerFeeRewardAccount":
@@ -68927,6 +69167,10 @@ func (ec *executionContext) fieldContext_Withdrawal_asset(ctx context.Context, f
 				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
 			case "globalRewardPoolAccount":
 				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
 			case "takerFeeRewardAccount":
 				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
 			case "makerFeeRewardAccount":
@@ -73121,6 +73365,40 @@ func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, ob
 				return innerFunc(ctx)
 
 			})
+		case "globalInsuranceAccount":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Asset_globalInsuranceAccount(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "networkTreasuryAccount":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Asset_networkTreasuryAccount(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "takerFeeRewardAccount":
 			field := field
 
@@ -73913,9 +74191,9 @@ func (ec *executionContext) _Data(ctx context.Context, sel ast.SelectionSet, obj
 
 			out.Values[i] = ec._Data_data(ctx, field, obj)
 
-		case "ethereumBlockHeight":
+		case "metaData":
 
-			out.Values[i] = ec._Data_ethereumBlockHeight(ctx, field, obj)
+			out.Values[i] = ec._Data_metaData(ctx, field, obj)
 
 		case "matchedSpecIds":
 
@@ -85518,6 +85796,23 @@ func (ec *executionContext) _RecurringGovernanceTransfer(ctx context.Context, se
 				return innerFunc(ctx)
 
 			})
+		case "dispatchStrategy":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RecurringGovernanceTransfer_dispatchStrategy(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -96491,6 +96786,47 @@ func (ec *executionContext) marshalOPriceMonitoringTrigger2ᚕᚖcodeᚗvegaprot
 	return ret
 }
 
+func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐProperty(ctx context.Context, sel ast.SelectionSet, v []*v12.Property) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOProperty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐProperty(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
 func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐPropertyᚄ(ctx context.Context, sel ast.SelectionSet, v []*v12.Property) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -96536,6 +96872,13 @@ func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋve
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalOProperty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐProperty(ctx context.Context, sel ast.SelectionSet, v *v12.Property) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Property(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v []*vega.GovernanceData) graphql.Marshaler {

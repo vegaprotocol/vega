@@ -130,12 +130,7 @@ func (f *Future) ScaleSettlementDataToDecimalPlaces(price *num.Numeric, dp uint3
 }
 
 // Settle a position against the future.
-func (f *Future) Settle(entryPriceInAsset *num.Uint, assetDecimals uint32, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error) {
-	settlementData, err := f.oracle.data.SettlementData(uint32(f.oracle.binding.settlementDataDecimals), assetDecimals)
-	if err != nil {
-		return nil, false, err
-	}
-
+func (f *Future) Settle(entryPriceInAsset *num.Uint, settlementData *num.Uint, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error) {
 	amount, neg := settlementData.Delta(settlementData, entryPriceInAsset)
 	// Make sure net position is positive
 	if netFractionalPosition.IsNegative() {
