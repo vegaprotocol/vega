@@ -742,6 +742,17 @@ func (b *BrokerStub) GetAssetNetworkTreasuryAccount(asset string) (types.Account
 	return types.Account{}, errors.New("account does not exist")
 }
 
+func (b *BrokerStub) GetMarketLPLiquidityFeePoolAccount(party, market string) (types.Account, error) {
+	batch := b.GetAccountEvents()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == party && v.MarketId == market && v.Type == types.AccountType_ACCOUNT_TYPE_LP_LIQUIDITY_FEES {
+			return v, nil
+		}
+	}
+	return types.Account{}, errors.New("account does not exist")
+}
+
 func (b *BrokerStub) GetAssetGlobalInsuranceAccount(asset string) (types.Account, error) {
 	batch := b.GetAccountEvents()
 	for _, e := range batch {
