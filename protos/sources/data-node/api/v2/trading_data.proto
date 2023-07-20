@@ -484,7 +484,7 @@ service TradingDataService {
   //
   // List information about active liquidity provider(s) for a given market, or liquidity provider's party ID
   rpc ListLiquidityProviders(ListLiquidityProvidersRequest) returns (ListLiquidityProvidersResponse) {
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = { tags: "Liquidity providers" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Liquidity providers"};
   }
 
   // Get governance data
@@ -2544,7 +2544,7 @@ message LiquidityProviderEdge {
 // Page of liquidity provider data and corresponding page information.
 message LiquidityProviderConnection {
   // Page of liquidity provider data.
-  repeated LiquidityProviderEdge  edges = 1;
+  repeated LiquidityProviderEdge edges = 1;
   // Page information that is used for fetching further pages.
   PageInfo page_info = 2;
 }
