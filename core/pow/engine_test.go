@@ -123,7 +123,7 @@ func TestCheckTxValidator(t *testing.T) {
 
 	// transaction too old: height 10, number of past blocks 5, current block 100
 	oldTx := &testTx{
-		party:       crypto.RandomHash(),
+		party:       "f8480da06c54a04a363c0563f207c0336a2bf80bf6864d560bf9d90653769f83",
 		blockHeight: 10,
 		powTxID:     "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4",
 		powNonce:    596,
@@ -131,8 +131,8 @@ func TestCheckTxValidator(t *testing.T) {
 	txHash := hex.EncodeToString(oldTx.Hash())
 	expErr := errors.New("unknown block height for tx:" + txHash + ", command:" + oldTx.Command().String() + ", party:" + oldTx.Party())
 	require.Equal(t, expErr, e.CheckTx(oldTx))
-	// old tx, but validator command still is good.
-	require.NoError(t, e.CheckTx(&testValidatorTx{testTx: *oldTx}))
+	// old tx, validator command is no good anymore!
+	require.Equal(t, "unknown block height for tx:, command:Node Signature, party:f8480da06c54a04a363c0563f207c0336a2bf80bf6864d560bf9d90653769f83", e.CheckTx(&testValidatorTx{testTx: *oldTx}).Error())
 }
 
 func TestDeliverTx(t *testing.T) {
@@ -646,4 +646,37 @@ func Test_ExpectedSpamDifficulty(t *testing.T) {
 			assert.Equal(t, tt.want, *got, "getMinDifficultyForNextTx() = %v, want %v", *got, tt.want)
 		})
 	}
+}
+
+func TestPruning(t *testing.T) {
+	ts := mocks.NewMockTimeService(gomock.NewController(t))
+	ts.EXPECT().GetTimeNow().AnyTimes().Return(time.Now())
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), ts)
+	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(5))
+	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
+	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
+	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
+
+	e.currentBlock = 100
+	e.blockHeight[100] = 100
+	e.blockHash[100] = "113EB390CBEB921433BDBA832CCDFD81AC4C77C3748A41B1AF08C96BC6C7BCD9"
+
+	require.Equal(t, 0, len(e.seenTid))
+	require.Equal(t, 0, len(e.heightToTid))
+	party := crypto.RandomHash()
+	require.NoError(t, e.DeliverTx(&testTx{party: party, blockHeight: 100, powTxID: "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4", powNonce: 596}))
+	require.Equal(t, 1, len(e.seenTid))
+	require.Equal(t, 1, len(e.heightToTid))
+	require.Equal(t, "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4", e.heightToTid[100][0])
+
+	e.BeginBlock(999, crypto.RandomHash())
+	e.EndOfBlock()
+	require.Equal(t, 1, len(e.seenTid))
+	require.Equal(t, 1, len(e.heightToTid))
+	require.Equal(t, "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4", e.heightToTid[100][0])
+
+	e.BeginBlock(1000, crypto.RandomHash())
+	e.EndOfBlock()
+	require.Equal(t, 0, len(e.heightToTid))
+	require.Equal(t, 0, len(e.seenTid))
 }
