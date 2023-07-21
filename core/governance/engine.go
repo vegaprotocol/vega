@@ -345,6 +345,16 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 		if proposal.ShouldClose(now) {
 			e.closeProposal(ctx, proposal)
 			voteClosed = append(voteClosed, e.preVoteClosedProposal(proposal))
+		} else if nm := proposal.Terms.GetNewMarket(); nm != nil && nm.Successor() != nil && proposal.IsOpen() {
+			// if the proposal is for a successor market, check if the successor wasn't rejected because another proposal
+			// has since been enacted and left opening auction
+			if _, err := e.markets.GetMarketState(proposal.ID); err != nil {
+				// parent has already been succeeded, the proposal should be rejected
+				proposal.Reject(types.ProposalErrorInvalidSuccessorMarket)
+				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
+				toBeRemoved = append(toBeRemoved, proposal.ID)
+				continue
+			}
 		}
 
 		if !proposal.IsOpen() && !proposal.IsPassed() {
@@ -400,13 +410,19 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 				id = prop.Terms.GetUpdateMarket().MarketID
 			}
 
-			_, err := e.markets.GetMarketState(id)
-			if err != nil {
+			// before trying to enact a successor market proposal, check if the market wasn't rejected due
+			// to another successor leaving opening auction
+			if _, err := e.markets.GetMarketState(id); err != nil {
+				if nm := prop.Terms.GetNewMarket(); nm != nil && nm.Successor() != nil {
+					prop.Reject(types.ProposalErrorInvalidSuccessorMarket)
+					e.broker.Send(events.NewProposalEvent(ctx, *prop.Proposal))
+					toBeRemoved = append(toBeRemoved, prop.ID)
+					continue
+				}
 				e.log.Error("could not get state of market %s", logging.String("market-id", id))
 				continue
 			}
 		}
-
 		// just in case the proposal wasn't added for whatever reason (shouldn't be possible)
 		found := false
 		for i, p := range e.enactedProposals {
