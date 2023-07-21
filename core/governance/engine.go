@@ -544,28 +544,6 @@ func (e *Engine) RejectProposal(
 // from a snapshot we can propagate the proposal with the latest state back into the API service.
 func (e *Engine) FinaliseEnactment(ctx context.Context, prop *types.Proposal) {
 	// find the proposal so we can update the state after enactment
-	if prop.State == types.ProposalStateEnacted {
-		// we have enacted a successor market
-		if nm := prop.NewMarket(); nm != nil {
-			// we have a successor market
-			if pid, ok := nm.ParentMarketID(); ok {
-				toRM := []*types.Proposal{}
-				for _, pp := range e.activeProposals {
-					if pp.SucceedsMarket(pid) {
-						toRM = append(toRM, pp.Proposal)
-					}
-				}
-				if len(toRM) > 0 {
-					evts := make([]events.Event, 0, len(toRM))
-					for _, p := range toRM {
-						e.rejectProposal(ctx, p, types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketAlreadySucceeded)
-						evts = append(evts, events.NewProposalEvent(ctx, *p))
-					}
-					e.broker.SendBatch(evts)
-				}
-			}
-		}
-	}
 	for _, enacted := range e.enactedProposals {
 		if enacted.ID == prop.ID {
 			enacted.State = prop.State

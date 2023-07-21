@@ -209,15 +209,6 @@ func testRemoveSuccessorsForSucceeded(t *testing.T) {
 	}
 	// all proposals will be in the active proposals slice, so let's make sure all of them are removed
 	first.State = types.ProposalStateEnacted
-	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
-		require.Equal(t, 3, len(evts))
-		for _, e := range evts {
-			require.Equal(t, events.ProposalEvent, e.Type())
-			pe, ok := e.(*events.Proposal)
-			require.True(t, ok)
-			require.NotNil(t, pe.Proposal().ErrorDetails)
-		}
-	})
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	eng.FinaliseEnactment(context.Background(), &first)
 }
