@@ -30,6 +30,7 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -65,6 +66,7 @@ func TestProposalForSuccessorMarket(t *testing.T) {
 	t.Run("Reject successor market if the parent market does not exist", testRejectSuccessorNoParent)
 
 	t.Run("Remove proposals for an already succeeded market", testRemoveSuccessorsForSucceeded)
+	t.Run("Remove proposals for an already succeeded market on tick", testRemoveSuccessorsForRejectedMarket)
 }
 
 func testSubmittingProposalForNewMarketSucceeds(t *testing.T) {
@@ -87,6 +89,74 @@ func testSubmittingProposalForNewMarketSucceeds(t *testing.T) {
 	require.NotNil(t, toSubmit)
 	assert.True(t, toSubmit.IsNewMarket())
 	require.NotNil(t, toSubmit.NewMarket().Market())
+}
+
+func testRemoveSuccessorsForRejectedMarket(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	suc := types.SuccessorConfig{
+		ParentID:              "parentID",
+		InsurancePoolFraction: num.DecimalFromFloat(.5),
+	}
+	// add 3 proposals for the same parent
+	eng.markets.EXPECT().IsSucceeded(suc.ParentID).Times(3).Return(false)
+	filter, binding := produceTimeTriggeredDataSourceSpec(time.Now())
+	enact := eng.tsvc.GetTimeNow().Add(24 * time.Hour)
+	proposals := []types.Proposal{
+		eng.newProposalForSuccessorMarket(party.Id, enact, filter, binding, true, &suc),
+		eng.newProposalForSuccessorMarket(party.Id, enact, filter, binding, true, &suc),
+		eng.newProposalForNewMarket(party.Id, enact, filter, binding, true), // non successor just because
+		eng.newProposalForSuccessorMarket(party.Id, enact, filter, binding, true, &suc),
+	}
+	first := proposals[0]
+	pFuture := first.NewMarket().Changes.GetFuture()
+	eng.ensureAllAssetEnabled(t)
+	for _, p := range proposals {
+		eng.expectOpenProposalEvent(t, party.Id, p.ID)
+	}
+	eng.markets.EXPECT().GetMarket(suc.ParentID, true).Times(6).Return(
+		types.Market{
+			TradableInstrument: &types.TradableInstrument{
+				Instrument: &types.Instrument{
+					Product: &types.InstrumentFuture{
+						Future: &types.Future{
+							SettlementAsset: pFuture.Future.SettlementAsset,
+							QuoteName:       pFuture.Future.SettlementAsset,
+						},
+					},
+				},
+			},
+		}, true)
+
+	// submit all proposals
+	for _, p := range proposals {
+		toSubmit, err := eng.submitProposal(t, p)
+
+		// then
+		require.NoError(t, err)
+		require.NotNil(t, toSubmit)
+		assert.True(t, toSubmit.IsNewMarket())
+		require.NotNil(t, toSubmit.NewMarket().Market())
+	}
+	// all proposals will be in the active proposals slice, so let's make sure all of them are removed
+	for _, p := range proposals {
+		if p.IsSuccessorMarket() {
+			eng.markets.EXPECT().GetMarketState(p.ID).Times(1).Return(types.MarketStateRejected, errors.New("foo"))
+		}
+	}
+	expState := types.ProposalStateRejected
+	expError := types.ProposalErrorInvalidSuccessorMarket
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(evt events.Event) {
+		pe, ok := evt.(*events.Proposal)
+		require.True(t, ok)
+		prop := pe.Proposal()
+		require.Equal(t, expState, prop.State)
+		require.NotNil(t, prop.Reason)
+		require.EqualValues(t, expError, *prop.Reason)
+	})
+	eng.OnTick(context.Background(), eng.tsvc.GetTimeNow().Add(time.Second))
 }
 
 func testRemoveSuccessorsForSucceeded(t *testing.T) {
@@ -139,15 +209,6 @@ func testRemoveSuccessorsForSucceeded(t *testing.T) {
 	}
 	// all proposals will be in the active proposals slice, so let's make sure all of them are removed
 	first.State = types.ProposalStateEnacted
-	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
-		require.Equal(t, 3, len(evts))
-		for _, e := range evts {
-			require.Equal(t, events.ProposalEvent, e.Type())
-			pe, ok := e.(*events.Proposal)
-			require.True(t, ok)
-			require.NotNil(t, pe.Proposal().ErrorDetails)
-		}
-	})
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	eng.FinaliseEnactment(context.Background(), &first)
 }
