@@ -141,6 +141,7 @@ func parseSubmitLiquidityProvisionTable(table *godog.Table) []RowWrapper {
 		"market id",
 		"commitment amount",
 		"fee",
+		"lp type",
 	}, []string{
 		"reference",
 		"error",
