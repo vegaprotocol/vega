@@ -141,6 +141,7 @@ func parseSubmitLiquidityProvisionTable(table *godog.Table) []RowWrapper {
 		"market id",
 		"commitment amount",
 		"fee",
+		"lp type",
 	}, []string{
 		"reference",
 		"error",
@@ -161,10 +162,6 @@ func (r submitLiquidityProvisionRow) Party() string {
 
 func (r submitLiquidityProvisionRow) MarketID() string {
 	return r.row.MustStr("market id")
-}
-
-func (r submitLiquidityProvisionRow) Side() types.Side {
-	return r.row.MustSide("side")
 }
 
 func (r submitLiquidityProvisionRow) CommitmentAmount() *num.Uint {
