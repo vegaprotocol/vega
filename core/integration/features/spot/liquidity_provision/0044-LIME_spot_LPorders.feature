@@ -57,8 +57,8 @@ Feature: Spot market
       | lp1 | lpprov | BTC/ETH   | 1000              | 0.1 | submission |
 
     Then the liquidity provisions should have the following states:
-      | id  | party  | market  | commitment amount | status         |
-      | lp1 | lpprov | BTC/ETH | 1000              | STATUS_PENDING |
+      | id  | party  | market  | commitment amount | status        |
+      | lp1 | lpprov | BTC/ETH | 1000              | STATUS_ACTIVE |
 
     # place orders and generate trades
     And the parties place the following orders:
@@ -79,7 +79,7 @@ Feature: Spot market
 
     And the order book should have the following volumes for market "BTC/ETH":
       | side | price | volume |
-      | buy  | 1     | 12     |
+      | buy | 12 | 1 |
       | buy  | 10    | 10     |
       | sell | 19    | 1      |
       | sell | 20    | 5      |
