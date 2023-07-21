@@ -25,7 +25,6 @@ Feature: Spot market
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | market.liquidityV2.earlyExitPenalty                 | 0.02  |
       | market.stake.target.timeWindow                      | 2s    |
-      # | market.liquidity.performanceHysteresisEpochs        | 2s    |
       | market.liquidity.providers.fee.distributionTimeStep | 0     |
 
     Given time is updated to "2023-07-20T00:00:00Z"
@@ -39,8 +38,8 @@ Feature: Spot market
       | party  | asset | amount |
       | party1 | ETH   | 10000  |
       | party2 | BTC   | 50     |
-      | lpprov | ETH   | 500000 |
-      | lpprov | BTC   | 50     |
+      | lpprov | ETH   | 2000   |
+      | lpprov | BTC   | 1000   |
 
     And the average block duration is "1"
 
@@ -54,7 +53,7 @@ Feature: Spot market
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | BTC/ETH   | 1000              | 0.1 | submission |
+      | lp1 | lpprov | BTC/ETH   | 1000              | 0   | submission |
 
     Then the liquidity provisions should have the following states:
       | id  | party  | market  | commitment amount | status        |
@@ -84,27 +83,34 @@ Feature: Spot market
       | sell | 19    | 1      |
       | sell | 20    | 5      |
 
+    Then "lpprov" should have holding account balance of "1000" for asset "ETH"
+    Then "lpprov" should have general account balance of "0" for asset "ETH"
+    Then "lpprov" should have holding account balance of "50" for asset "BTC"
+    Then "lpprov" should have general account balance of "950" for asset "BTC"
+    Then the party "lpprov" lp liquidity bond account balance should be "1000" for the market "BTC/ETH"
+
     Then the liquidity provisions should have the following states:
       | id  | party  | market  | commitment amount | status        |
       | lp1 | lpprov | BTC/ETH | 1000              | STATUS_ACTIVE |
 
-    When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type   |
-      | lp1 | lpprov | BTC/ETH   | 2000              | 0.1 | amendment |
+    Then the parties amend the following orders:
+      | party  | reference | price | size delta | tif     | error                                                              |
+      | lpprov | lp-order1 | 10    | 90         | TIF_GTC | party does not have sufficient balance to cover the trade and fees |
+      | lpprov | lp-order2 | 20    | 45         | TIF_GTC |                                                                    |
 
-    Then the network moves ahead "1" blocks
-    Then the market data for the market "BTC/ETH" should be:
-      | mark price | trading mode            | auction trigger             | target stake | supplied stake |
-      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 400          | 2000           |
+    And the orders should have the following status:
+      | party  | reference | status        |
+      | lpprov | lp-order1 | STATUS_ACTIVE |
+      | lpprov | lp-order2 | STATUS_ACTIVE |
 
-    Then the network moves ahead "7" blocks
-    When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type   |
-      | lp1 | lpprov | BTC/ETH   | 20                | 0.1 | amendment |
+    And the order book should have the following volumes for market "BTC/ETH":
+      | side | price | volume |
+      | buy  | 12    | 1      |
+      | buy  | 10    | 10     |
+      | sell | 19    | 1      |
+      | sell | 20    | 50     |
 
-    Then the network moves ahead "7" blocks
-    Then the market data for the market "BTC/ETH" should be:
-      | mark price | trading mode            | auction trigger             | target stake | supplied stake |
-      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 400          | 20             |
-
-    And the network treasury balance should be "0" for the asset "ETH"
+    Then "lpprov" should have holding account balance of "1000" for asset "ETH"
+    Then "lpprov" should have general account balance of "0" for asset "ETH"
+    Then "lpprov" should have holding account balance of "500" for asset "BTC"
+    Then "lpprov" should have general account balance of "500" for asset "BTC"
