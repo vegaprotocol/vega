@@ -11,7 +11,6 @@ Feature: Verify the order size is correctly cumulated.
       | ETH/DEC19 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                     | value |
-      | market.liquidityProvision.shapes.maxSize | 10    |
       | network.markPriceUpdateMaximumFrequency  | 0s    |
 
   Scenario: 001: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size (0038-OLIQ-003, 0038-OLIQ-004, 0038-OLIQ-005)
