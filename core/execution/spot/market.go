@@ -2094,7 +2094,7 @@ func (m *Market) validateOrderAmendment(order *types.Order, amendment *types.Ord
 		}
 		price := order.Price
 		if amendment.Price != nil {
-			price = amendment.Price
+			price = num.UintZero().Mul(amendment.Price, m.priceFactor)
 		}
 		if order.PeggedOrder != nil {
 			p, err := m.getNewPeggedPrice(order)

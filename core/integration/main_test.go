@@ -408,9 +408,13 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the global insurance pool balance should be "([^"]*)" for the asset "([^"]*)"$`, func(rawAmount, asset string) error {
 		return steps.TheGlobalInsuranceBalanceShouldBeForTheAsset(execsetup.broker, rawAmount, asset)
 	})
-	s.Step(`^the party "([^"]*)" lp liquidity account balance should be "([^"]*)" for the market "([^"]*)"$`, func(party, rawAmount, market string) error {
+	s.Step(`^the party "([^"]*)" lp liquidity fee account balance should be "([^"]*)" for the market "([^"]*)"$`, func(party, rawAmount, market string) error {
 		return steps.TheLPLiquidityFeeBalanceShouldBeForTheMarket(execsetup.broker, party, rawAmount, market)
 	})
+	s.Step(`^the party "([^"]*)" lp liquidity bond account balance should be "([^"]*)" for the market "([^"]*)"$`, func(party, rawAmount, market string) error {
+		return steps.TheLPLiquidityBondBalanceShouldBeForTheMarket(execsetup.broker, party, rawAmount, market)
+	})
+
 	s.Step(`^the following transfers should happen:$`, func(table *godog.Table) error {
 		return steps.TheFollowingTransfersShouldHappen(execsetup.broker, table)
 	})
