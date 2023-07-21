@@ -61,6 +61,7 @@ type marginVal struct {
 func TestMarketExpiry(t *testing.T) {
 	t.Run("Settle at market expiry - success", testSettleExpiredSuccess)
 	t.Run("Settle at market expiry - error", testSettleExpiryFail)
+	t.Run("Settle at market expiry - rounding", testSettleRoundingSuccess)
 }
 
 func TestMarkToMarket(t *testing.T) {
@@ -293,6 +294,94 @@ func testMTMWinOneExcess(t *testing.T) {
 	}
 }
 
+func testSettleRoundingSuccess(t *testing.T) {
+	engine := getTestEngineWithFactor(t, 10)
+	defer engine.Finish()
+	// these are mark prices, product will provide the actual value
+	// total wins = 554, total losses = 555
+	pr := num.NewUint(1000)
+	data := []posValue{
+		{
+			party: "party1",
+			price: pr,   // winning
+			size:  1101, // 5 * 110.1 = 550.5 -> 550
+		},
+		{
+			party: "party2",
+			price: pr,   // losing
+			size:  -550, // 5 * 55 = 275
+		},
+		{
+			party: "party3",
+			price: pr,   // losing
+			size:  -560, // 5 * 56 = 280
+		},
+		{
+			party: "party4",
+			price: pr, // winning
+			size:  9,  // 5 * .9 = 4.5-> 4
+		},
+	}
+	expect := []*types.Transfer{
+		{
+			Owner: data[1].party,
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(275),
+			},
+			Type: types.TransferTypeLoss,
+		},
+		{
+			Owner: data[2].party,
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(280),
+			},
+			Type: types.TransferTypeLoss,
+		},
+		{
+			Owner: data[0].party,
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(550),
+			},
+			Type: types.TransferTypeWin,
+		},
+		{
+			Owner: data[3].party,
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(4),
+			},
+			Type: types.TransferTypeWin,
+		},
+	}
+	oraclePrice := num.NewUint(1005)
+	settleF := func(price *num.Uint, settlementData *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, num.Decimal, error) {
+		amt, neg := num.UintZero().Delta(oraclePrice, price)
+		if size.IsNegative() {
+			size = size.Neg()
+			neg = !neg
+		}
+
+		amount, rem := num.UintFromDecimalWithFraction(amt.ToDecimal().Mul(size))
+		return &types.FinancialAmount{
+			Amount: amount,
+		}, neg, rem, nil
+	}
+	positions := engine.getExpiryPositions(data...)
+	// we expect settle calls for each position
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(settleF).AnyTimes()
+	// ensure positions are set
+	engine.Update(positions)
+	// now settle:
+	got, round, err := engine.Settle(time.Now(), oraclePrice)
+	assert.NoError(t, err)
+	assert.Equal(t, len(expect), len(got))
+	assert.True(t, round.EQ(num.NewUint(1)))
+	for i, p := range got {
+		e := expect[i]
+		assert.Equal(t, e.Type, p.Type)
+		assert.Equal(t, e.Amount.Amount, p.Amount.Amount)
+	}
+}
+
 func testSettleExpiredSuccess(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
@@ -340,17 +429,17 @@ func testSettleExpiredSuccess(t *testing.T) {
 		},
 	} // }}}
 	oraclePrice := num.NewUint(1100)
-	settleF := func(price *num.Uint, settlementData *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, error) {
+	settleF := func(price *num.Uint, settlementData *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, num.Decimal, error) {
 		amt, neg := num.UintZero().Delta(oraclePrice, price)
 		if size.IsNegative() {
 			size = size.Neg()
 			neg = !neg
 		}
 
-		amt, _ = num.UintFromDecimal(amt.ToDecimal().Mul(size))
+		amount, rem := num.UintFromDecimalWithFraction(amt.ToDecimal().Mul(size))
 		return &types.FinancialAmount{
-			Amount: amt,
-		}, neg, nil
+			Amount: amount,
+		}, neg, rem, nil
 	}
 	positions := engine.getExpiryPositions(data...)
 	// we expect settle calls for each position
@@ -358,7 +447,7 @@ func testSettleExpiredSuccess(t *testing.T) {
 	// ensure positions are set
 	engine.Update(positions)
 	// now settle:
-	got, err := engine.Settle(time.Now(), oraclePrice)
+	got, _, err := engine.Settle(time.Now(), oraclePrice)
 	assert.NoError(t, err)
 	assert.Equal(t, len(expect), len(got))
 	for i, p := range got {
@@ -381,9 +470,9 @@ func testSettleExpiryFail(t *testing.T) {
 	}
 	errExp := errors.New("product.Settle error")
 	positions := engine.getExpiryPositions(data...)
-	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, false, errExp)
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, false, num.DecimalZero(), errExp)
 	engine.Update(positions)
-	empty, err := engine.Settle(time.Now(), num.UintZero())
+	empty, _, err := engine.Settle(time.Now(), num.UintZero())
 	assert.Empty(t, empty)
 	assert.Error(t, err)
 	assert.Equal(t, errExp, err)
@@ -736,8 +825,8 @@ func TestConcurrent(t *testing.T) {
 
 	engine := getTestEngine(t)
 	defer engine.Finish()
-	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(markPrice *num.Uint, settlementData *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, error) {
-		return &types.FinancialAmount{Amount: num.UintZero()}, false, nil
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(markPrice *num.Uint, settlementData *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, num.Decimal, error) {
+		return &types.FinancialAmount{Amount: num.UintZero()}, false, num.DecimalZero(), nil
 	})
 
 	cfg := engine.Config
@@ -785,7 +874,7 @@ func TestConcurrent(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			// Settle requires posMu
-			_, err := engine.Settle(now, num.UintZero())
+			_, _, err := engine.Settle(now, num.UintZero())
 			assert.NoError(t, err)
 		}()
 	}

@@ -42,7 +42,7 @@ type OracleEngine interface {
 
 // Product is the interface provided by all product in vega.
 type Product interface {
-	Settle(*num.Uint, *num.Uint, num.Decimal) (amt *types.FinancialAmount, neg bool, err error)
+	Settle(*num.Uint, *num.Uint, num.Decimal) (amt *types.FinancialAmount, neg bool, rounding num.Decimal, err error)
 	Value(markPrice *num.Uint) (*num.Uint, error)
 	GetAsset() string
 	IsTradingTerminated() bool

@@ -78,6 +78,10 @@ func DecimalFromString(s string) (Decimal, error) {
 	return decimal.NewFromString(s)
 }
 
+func DecimalPart(a Decimal) Decimal {
+	return a.Sub(a.Floor())
+}
+
 func MaxD(a, b Decimal) Decimal {
 	if a.GreaterThan(b) {
 		return a

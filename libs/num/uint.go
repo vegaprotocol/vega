@@ -111,6 +111,14 @@ func UintFromDecimal(d Decimal) (*Uint, bool) {
 	return &Uint{*u}, ok
 }
 
+func UintFromDecimalWithFraction(d Decimal) (*Uint, Decimal) {
+	u, ok := UintFromDecimal(d)
+	if ok {
+		return u, Decimal{}
+	}
+	return u, DecimalPart(d)
+}
+
 // ToDecimal returns the value of the Uint as a Decimal.
 func (u *Uint) ToDecimal() Decimal {
 	return DecimalFromUint(u)
