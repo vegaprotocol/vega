@@ -18,6 +18,13 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
+## 0.72.6
+
+### 🐛 Fixes
+
+- [8698](https://github.com/vegaprotocol/vega/issues/8698) - Final settlement rounding can be off by a 1 factor instead of just one.
+
+
 ## 0.72.5
 
 ### 🐛 Fixes

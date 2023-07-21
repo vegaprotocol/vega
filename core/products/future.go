@@ -128,10 +128,10 @@ func (f *Future) ScaleSettlementDataToDecimalPlaces(price *num.Numeric, dp uint3
 }
 
 // Settle a position against the future.
-func (f *Future) Settle(entryPriceInAsset *num.Uint, assetDecimals uint32, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error) {
+func (f *Future) Settle(entryPriceInAsset *num.Uint, assetDecimals uint32, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, rounding num.Decimal, err error) {
 	settlementData, err := f.oracle.data.SettlementData(uint32(f.oracle.binding.settlementDataDecimals), assetDecimals)
 	if err != nil {
-		return nil, false, err
+		return nil, false, num.DecimalZero(), err
 	}
 
 	amount, neg := settlementData.Delta(settlementData, entryPriceInAsset)
@@ -150,12 +150,12 @@ func (f *Future) Settle(entryPriceInAsset *num.Uint, assetDecimals uint32, netFr
 			logging.String("amount-in-uint", amount.String()),
 		)
 	}
-	amount, _ = num.UintFromDecimal(netFractionalPosition.Mul(amount.ToDecimal()))
+	a, rem := num.UintFromDecimalWithFraction(netFractionalPosition.Mul(amount.ToDecimal()))
 
 	return &types.FinancialAmount{
 		Asset:  f.SettlementAsset,
-		Amount: amount,
-	}, neg, nil
+		Amount: a,
+	}, neg, rem, nil
 }
 
 // Value - returns the nominal value of a unit given a current mark price.

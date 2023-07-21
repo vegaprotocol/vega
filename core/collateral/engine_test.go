@@ -878,7 +878,7 @@ func testTransferLoss(t *testing.T) {
 	}
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
+	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(responses))
 	resp := responses[0]
@@ -949,7 +949,7 @@ func testTransferComplexLoss(t *testing.T) {
 	}
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
+	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
 	assert.Equal(t, 2, len(responses))
 	resp := responses[0]
 	assert.NoError(t, err)
@@ -987,7 +987,7 @@ func testTransferLossMissingPartyAccounts(t *testing.T) {
 			Type: types.TransferTypeLoss,
 		},
 	}
-	resp, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
+	resp, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
 	assert.Nil(t, resp)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "account does not exist:")
@@ -1066,7 +1066,7 @@ func testProcessBoth(t *testing.T) {
 			assert.Equal(t, int64(2000), acc.Balance)
 		}
 	})
-	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
+	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
 	assert.Equal(t, 4, len(responses))
 	assert.NoError(t, err)
 	resp := responses[0]
@@ -1175,7 +1175,7 @@ func TestLossSocialization(t *testing.T) {
 			assert.Equal(t, 534, stringToInt(acc.Balance))
 		}
 	})
-	raw, err := eng.FinalSettlement(context.Background(), testMarketID, transfers)
+	raw, err := eng.FinalSettlement(context.Background(), testMarketID, transfers, num.UintOne())
 	assert.NoError(t, err)
 	assert.Equal(t, 4, len(raw))
 
@@ -1315,7 +1315,7 @@ func testProcessBothProRated(t *testing.T) {
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(2)
-	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
+	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
 	assert.Equal(t, 4, len(responses))
 	assert.NoError(t, err)
 
@@ -1776,7 +1776,7 @@ func TestFinalSettlementNoTransfers(t *testing.T) {
 
 	pos := []*types.Transfer{}
 
-	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
+	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(responses))
 }
@@ -1804,7 +1804,7 @@ func TestFinalSettlementNoSystemAccounts(t *testing.T) {
 		},
 	}
 
-	responses, err := eng.FinalSettlement(context.Background(), "invalidMarketID", pos)
+	responses, err := eng.FinalSettlement(context.Background(), "invalidMarketID", pos, num.UintOne())
 	assert.Error(t, err)
 	assert.Equal(t, 0, len(responses))
 }
@@ -1847,7 +1847,7 @@ func TestFinalSettlementNotEnoughMargin(t *testing.T) {
 
 	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
+	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(responses))
 
@@ -2759,17 +2759,27 @@ func TestCheckLeftOverBalance(t *testing.T) {
 		ID:      settleAccountID,
 		Balance: num.UintZero(),
 	}
-	leftoverTransfer, err := e.CheckLeftOverBalance(ctx, settle, []*types.Transfer{}, asset)
+	leftoverTransfer, err := e.CheckLeftOverBalance(ctx, settle, []*types.Transfer{}, asset, num.UintOne())
 	require.NoError(t, err)
 	require.Nil(t, leftoverTransfer)
 
 	// settle has balance greater than 1, panic
 	settle.Balance = num.NewUint(100)
-	require.Panics(t, func() { e.CheckLeftOverBalance(ctx, settle, []*types.Transfer{}, asset) })
+	require.Panics(t, func() { e.CheckLeftOverBalance(ctx, settle, []*types.Transfer{}, asset, num.UintOne()) })
+
+	// settle has balance greater than 1, market factor of 10, still panic
+	settle.Balance = num.NewUint(100)
+	require.Panics(t, func() { e.CheckLeftOverBalance(ctx, settle, []*types.Transfer{}, asset, num.NewUint(10)) })
+
+	// settle has balance greater than 1, for a market with price factor 1000 is fine
+	settle.Balance = num.NewUint(100)
+	leftoverTransfer, err = e.CheckLeftOverBalance(ctx, settle, []*types.Transfer{}, asset, num.NewUint(1000))
+	require.NoError(t, err)
+	require.NotNil(t, leftoverTransfer)
 
 	// settle has balance of exactly 1, transfer balance to the reward account
 	settle.Balance = num.NewUint(1)
-	leftoverTransfer, err = e.CheckLeftOverBalance(ctx, settle, []*types.Transfer{}, asset)
+	leftoverTransfer, err = e.CheckLeftOverBalance(ctx, settle, []*types.Transfer{}, asset, num.UintOne())
 	require.NoError(t, err)
 	require.NotNil(t, leftoverTransfer)
 }
