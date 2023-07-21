@@ -211,8 +211,6 @@ func (e *Engine) SubmitLiquidityProvision(
 		UpdatedAt:        now,
 	}
 
-	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, provision))
-
 	// add immediately during the opening auction
 	// otherwise schedule to be added at the beginning of new epoch
 	if e.auctionState.IsOpeningAuction() {
@@ -220,8 +218,12 @@ func (e *Engine) SubmitLiquidityProvision(
 		e.slaPerformance[party] = &slaPerformance{
 			previousPenalties: NewSliceRing[*num.Decimal](e.slaParams.PerformanceHysteresisEpochs),
 		}
+		provision.Status = types.LiquidityProvisionStatusActive
+		e.broker.Send(events.NewLiquidityProvisionEvent(ctx, provision))
 		return true, nil
 	}
+
+	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, provision))
 
 	provision.Status = types.LiquidityProvisionStatusPending
 	e.pendingProvisions.Set(party, provision)

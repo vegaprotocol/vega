@@ -78,11 +78,11 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 			keys = append(keys, id)
 		}
 
+		lp.Reference = id
 		if row.Side() == types.SideUnspecified {
 			continue
 		}
 
-		lp.Reference = id
 		lo := &types.LiquidityOrder{
 			Reference:  row.PeggedReference(),
 			Proportion: row.Proportion(),
