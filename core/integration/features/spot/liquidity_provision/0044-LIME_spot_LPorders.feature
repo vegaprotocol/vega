@@ -85,8 +85,13 @@ Feature: Spot market
 
     Then "lpprov" should have holding account balance of "1000" for asset "ETH"
     Then "lpprov" should have general account balance of "0" for asset "ETH"
+# Then "lpprov" should have bond account balance of "1000" for asset "ETH"
     Then "lpprov" should have holding account balance of "50" for asset "BTC"
     Then "lpprov" should have general account balance of "950" for asset "BTC"
+
+# And the parties should have the following account balances:
+#   | party  | asset | market id | hold | general | bond |
+#   | lpprov | ETH   | BTC/ETH   | 1000 | 0       | 1000 |
 
     Then the liquidity provisions should have the following states:
       | id  | party  | market  | commitment amount | status        |
@@ -96,6 +101,10 @@ Feature: Spot market
       | party  | reference | price | size delta | tif     |
       | lpprov | lp-order1 | 10    | 90         | TIF_GTC |
       | lpprov | lp-order2 | 20 | 45 | TIF_GTC |
+
+    Then the liquidity provisions should have the following states:
+      | id  | party  | market  | commitment amount | status        |
+      | lp1 | lpprov | BTC/ETH | 1000              | STATUS_ACTIVE |
 
     And the orders should have the following status:
       | party  | reference | status                  |
