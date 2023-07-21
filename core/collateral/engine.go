@@ -825,9 +825,12 @@ func (e *Engine) getFeesAccounts(marketID, asset string) (maker, infra, liqui *t
 	return maker, infra, liqui, err
 }
 
-func (e *Engine) CheckLeftOverBalance(ctx context.Context, settle *types.Account, transfers []*types.Transfer, asset string) (*types.LedgerMovement, error) {
+func (e *Engine) CheckLeftOverBalance(ctx context.Context, settle *types.Account, transfers []*types.Transfer, asset string, factor *num.Uint) (*types.LedgerMovement, error) {
 	if settle.Balance.IsZero() {
 		return nil, nil
+	}
+	if factor == nil {
+		factor = num.UintOne()
 	}
 
 	e.log.Error("final settlement left asset unit in the settlement, transferring to the asset global insurance", logging.String("remaining-settle-balance", settle.Balance.String()))
@@ -835,7 +838,7 @@ func (e *Engine) CheckLeftOverBalance(ctx context.Context, settle *types.Account
 		e.log.Error("final settlement transfer", logging.String("amount", t.Amount.String()), logging.Int32("type", int32(t.Type)))
 	}
 	// if there's just one asset unit left over from some weird rounding issue, transfer it to the global insurance
-	if settle.Balance.EQ(num.UintOne()) {
+	if settle.Balance.LTE(factor) {
 		e.log.Warn("final settlement left 1 asset unit in the settlement, transferring to the asset global insurance account")
 		req := &types.TransferRequest{
 			FromAccount: make([]*types.Account, 1),
@@ -846,7 +849,7 @@ func (e *Engine) CheckLeftOverBalance(ctx context.Context, settle *types.Account
 		globalIns, _ := e.GetGlobalInsuranceAccount(asset)
 		req.FromAccount[0] = settle
 		req.ToAccount = []*types.Account{globalIns}
-		req.Amount = num.UintOne()
+		req.Amount = settle.Balance.Clone()
 		ledgerEntries, err := e.getLedgerEntries(ctx, req)
 		if err != nil {
 			e.log.Panic("unable to redistribute settlement leftover funds", logging.Error(err))
@@ -870,7 +873,7 @@ func (e *Engine) CheckLeftOverBalance(ctx context.Context, settle *types.Account
 // FinalSettlement will process the list of transfers instructed by other engines
 // This func currently only expects TransferType_{LOSS,WIN} transfers
 // other transfer types have dedicated funcs (MarkToMarket, MarginUpdate).
-func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers []*types.Transfer) ([]*types.LedgerMovement, error) {
+func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers []*types.Transfer, factor *num.Uint) ([]*types.LedgerMovement, error) {
 	// stop immediately if there aren't any transfers, channels are closed
 	if len(transfers) == 0 {
 		return nil, nil
@@ -1046,7 +1049,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 		responses = append(responses, res)
 	}
 
-	leftoverLedgerEntry, err := e.CheckLeftOverBalance(ctx, settle, transfers, asset)
+	leftoverLedgerEntry, err := e.CheckLeftOverBalance(ctx, settle, transfers, asset, factor)
 	if err != nil {
 		return nil, err
 	}

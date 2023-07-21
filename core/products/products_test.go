@@ -150,7 +150,7 @@ func TestFutureSettlement(t *testing.T) {
 		// Use debug function to update the settlement data as if from a Oracle
 		f.SetSettlementData(ctx, "prices.ETH.value", n)
 		ep := num.NewUint(param.entryPrice)
-		fa, _, err := prod.Settle(ep, n.Uint(), num.DecimalFromInt64(param.position))
+		fa, _, _, err := prod.Settle(ep, n.Uint(), num.DecimalFromInt64(param.position))
 		assert.NoError(t, err)
 		assert.EqualValues(t, param.result, fa.Amount.Uint64())
 	}

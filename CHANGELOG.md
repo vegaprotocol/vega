@@ -49,6 +49,7 @@
 - [8837](https://github.com/vegaprotocol/vega/issues/8837) - Remove successor entries from snapshot if they will be removed next tick.
 - [8868](https://github.com/vegaprotocol/vega/issues/8868) - Fix `oracle_specs` table null value error.
 - [8878](https://github.com/vegaprotocol/vega/issues/8878) - Fix amend to consider market decimals when checking for sufficient funds.
+- [8698](https://github.com/vegaprotocol/vega/issues/8698) - Final settlement rounding can be off by a 1 factor instead of just one.
 
 
 ## 0.72.1
