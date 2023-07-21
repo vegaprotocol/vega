@@ -24,7 +24,7 @@ var ErrCommitmentAmountTooLow = errors.New("commitment amount is too low")
 
 // SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
 func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, deterministicID string) error {
-	if len(sub.Buys) > 0 || len(sub.Sells) > 0 || len(sub.Reference) > 0 {
+	if len(sub.Buys) > 0 || len(sub.Sells) > 0 {
 		return fmt.Errorf("invalid liquidity provision submission for a spot market")
 	}
 
@@ -40,7 +40,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 
 // AmendLiquidityProvision forwards a LiquidityProvisionAmendment to the Liquidity Engine.
 func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string, deterministicID string) error {
-	if len(lpa.Buys) > 0 || len(lpa.Sells) > 0 || len(lpa.Reference) > 0 {
+	if len(lpa.Buys) > 0 || len(lpa.Sells) > 0 {
 		return fmt.Errorf("invalid liquidity amendment for spot market")
 	}
 
