@@ -879,7 +879,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time, finalState types.
 		return err
 	}
 
-	transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions)
+	transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions, m.priceFactor)
 	if err != nil {
 		m.log.Error("Failed to get ledger movements after settling closed market",
 			logging.MarketID(m.GetID()),

@@ -401,18 +401,18 @@ func (mr *MockCollateralMockRecorder) EnableAsset(arg0, arg1 interface{}) *gomoc
 }
 
 // FinalSettlement mocks base method.
-func (m *MockCollateral) FinalSettlement(arg0 context.Context, arg1 string, arg2 []*types.Transfer) ([]*types.LedgerMovement, error) {
+func (m *MockCollateral) FinalSettlement(arg0 context.Context, arg1 string, arg2 []*types.Transfer, arg3 *num.Uint) ([]*types.LedgerMovement, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FinalSettlement", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "FinalSettlement", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].([]*types.LedgerMovement)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FinalSettlement indicates an expected call of FinalSettlement.
-func (mr *MockCollateralMockRecorder) FinalSettlement(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockCollateralMockRecorder) FinalSettlement(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalSettlement", reflect.TypeOf((*MockCollateral)(nil).FinalSettlement), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalSettlement", reflect.TypeOf((*MockCollateral)(nil).FinalSettlement), arg0, arg1, arg2, arg3)
 }
 
 // GetAssetQuantum mocks base method.
