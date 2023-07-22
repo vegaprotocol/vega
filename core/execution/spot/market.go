@@ -227,7 +227,7 @@ func NewMarket(
 		peggedOrders:              common.NewPeggedOrders(log, timeService),
 		expiringOrders:            common.NewExpiringOrders(),
 		feeSplitter:               common.NewFeeSplitter(),
-		equityShares:              common.NewEquityShares(num.DecimalZero()),
+		equityShares:              els,
 		lastBestAskPrice:          num.UintZero(),
 		lastMidSellPrice:          num.UintZero(),
 		lastMidBuyPrice:           num.UintZero(),
@@ -585,6 +585,7 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	timer.EngineTimeCounterAdd()
 	m.updateMarketValueProxy()
 	m.updateLiquidityFee(ctx)
+	m.liquidity.OnTick(ctx, t)
 	m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
 	return m.closed
 }
