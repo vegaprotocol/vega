@@ -73,7 +73,7 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Submitting an update market proposal without enough stake and els fails", testSubmittingUpdateMarketProposalWithoutEnoughStakeAndELSFails)
 	t.Run("Submitting a proposal with internal time termination without enough stake fails", testSubmittingProposalWithInternalTimeTerminationWithoutEnoughStakeFails)
 
-	t.Run("Submitting a time-triggered proposal for new market with termination time before enactment time fails", testSumittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails)
+	t.Run("Submitting a time-triggered proposal for new market with termination time before enactment time fails", testSubmittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails)
 
 	t.Run("Voting on non-existing proposal fails", testVotingOnNonExistingProposalFails)
 	t.Run("Voting with non-existing account fails", testVotingWithNonExistingAccountFails)
@@ -90,12 +90,11 @@ func TestSubmitProposals(t *testing.T) {
 }
 
 func testUpdatingVotersKeyOnVotesSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -160,12 +159,11 @@ func testUpdatingVotersKeyOnVotesSucceeds(t *testing.T) {
 }
 
 func testUpdatingVotersKeyOnVotesWithInternalTimeTerminationSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, false)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, false)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -230,12 +228,11 @@ func testUpdatingVotersKeyOnVotesWithInternalTimeTerminationSucceeds(t *testing.
 }
 
 func testSubmittingProposalWithNonExistingAccountFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 
 	tcs := []struct {
 		name     string
@@ -271,12 +268,11 @@ func testSubmittingProposalWithNonExistingAccountFails(t *testing.T) {
 }
 
 func testSubmitProposalMarketUpdate(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	tc := struct {
 		name     string
 		proposal types.Proposal
@@ -303,12 +299,11 @@ func testSubmitProposalMarketUpdate(t *testing.T) {
 }
 
 func testSubmittingProposalWithInternalTimeTerminationWithNonExistingAccountFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 
 	tcs := []struct {
 		name     string
@@ -344,12 +339,11 @@ func testSubmittingProposalWithInternalTimeTerminationWithNonExistingAccountFail
 }
 
 func testSubmittingProposalWithoutEnoughStakeFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 
 	tcs := []struct {
 		name                    string
@@ -390,12 +384,11 @@ func testSubmittingProposalWithoutEnoughStakeFails(t *testing.T) {
 }
 
 func testSubmittingUpdateMarketProposalWithoutEnoughStakeAndELSFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 
 	tc := struct {
 		name                    string
@@ -426,12 +419,11 @@ func testSubmittingUpdateMarketProposalWithoutEnoughStakeAndELSFails(t *testing.
 }
 
 func testSubmittingProposalWithInternalTimeTerminationWithoutEnoughStakeFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 
 	tcs := []struct {
 		name                    string
@@ -472,10 +464,9 @@ func testSubmittingProposalWithInternalTimeTerminationWithoutEnoughStakeFails(t 
 }
 
 func testSubmittingProposalWithClosingTimeTooSoonFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	party := vgrand.RandomStr(5)
 
 	cases := []struct {
@@ -516,10 +507,9 @@ func testSubmittingProposalWithClosingTimeTooSoonFails(t *testing.T) {
 }
 
 func testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooSoonFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	party := vgrand.RandomStr(5)
 
 	cases := []struct {
@@ -560,10 +550,9 @@ func testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooSoonFail
 }
 
 func testSubmittingProposalWithClosingTimeTooLateFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	party := vgrand.RandomStr(5)
 
 	cases := []struct {
@@ -604,10 +593,9 @@ func testSubmittingProposalWithClosingTimeTooLateFails(t *testing.T) {
 }
 
 func testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooLateFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	party := vgrand.RandomStr(5)
 
 	cases := []struct {
@@ -647,12 +635,11 @@ func testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooLateFail
 	}
 }
 
-func testSumittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+func testSubmittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
 
 	proposer := vgrand.RandomStr(5)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 
 	// Make a proporsal with termination time before enactment time
 	// Enactment time for new market is now + 96 hours
@@ -685,10 +672,9 @@ func testSumittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails(
 }
 
 func testSubmittingProposalWithEnactmentTimeTooSoonFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	party := vgrand.RandomStr(5)
 
 	cases := []struct {
@@ -727,10 +713,9 @@ func testSubmittingProposalWithEnactmentTimeTooSoonFails(t *testing.T) {
 }
 
 func testSubmittingProposalWithEnactmentTimeTooLateFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	party := vgrand.RandomStr(5)
 
 	cases := []struct {
@@ -771,8 +756,7 @@ func testSubmittingProposalWithEnactmentTimeTooLateFails(t *testing.T) {
 }
 
 func testVotingOnNonExistingProposalFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// when
 	voter := vgrand.RandomStr(5)
@@ -789,12 +773,11 @@ func testVotingOnNonExistingProposalFails(t *testing.T) {
 }
 
 func testVotingWithNonExistingAccountFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -824,12 +807,11 @@ func testVotingWithNonExistingAccountFails(t *testing.T) {
 }
 
 func testVotingWithoutTokenFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := eng.newValidParty("proposer", 1)
-	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -856,11 +838,10 @@ func testVotingWithoutTokenFails(t *testing.T) {
 }
 
 func testMultipleProposalsLifecycle(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	partyA := vgrand.RandomStr(5)
 	partyB := vgrand.RandomStr(5)
 
@@ -950,12 +931,11 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 }
 
 func testWithdrawingVoteAssetRemovesVoteFromProposalStateCalculation(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -1029,8 +1009,7 @@ func testWithdrawingVoteAssetRemovesVoteFromProposalStateCalculation(t *testing.
 }
 
 func testComputingGovernanceStateHashIsDeterministic(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	require.Equal(t,
 		"a1292c11ccdb876535c6699e8217e1a1294190d83e4233ecc490d32df17a4116",
@@ -1040,7 +1019,7 @@ func testComputingGovernanceStateHashIsDeterministic(t *testing.T) {
 
 	// when
 	proposer := vgrand.RandomStr(5)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	proposal := eng.newProposalForNewMarket(proposer, now, nil, nil, true)
 
 	// setup
@@ -1109,7 +1088,7 @@ func testComputingGovernanceStateHashIsDeterministic(t *testing.T) {
 	)
 }
 
-func getTestEngine(t *testing.T) *tstEngine {
+func getTestEngine(t *testing.T, now time.Time) *tstEngine {
 	t.Helper()
 
 	cfg := governance.NewDefaultConfig()
@@ -1129,10 +1108,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 
 	ctx := context.Background()
 
-	ts.EXPECT().GetTimeNow().DoAndReturn(
-		func() time.Time {
-			return time.Unix(1659006535, 0)
-		}).AnyTimes()
+	ts.EXPECT().GetTimeNow().Return(now).AnyTimes()
 
 	broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.GovernanceProposalMarketMinVoterBalance, "1")).Times(1)
 	require.NoError(t, netp.Update(ctx, netparams.GovernanceProposalMarketMinVoterBalance, "1"))

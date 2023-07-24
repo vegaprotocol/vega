@@ -2,6 +2,7 @@ package governance_test
 
 import (
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/types"
@@ -9,12 +10,11 @@ import (
 )
 
 func TestSubmittingProposalForTerminateMarketSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newProposalForUpdateMarketState(party.Id, eng.tsvc.GetTimeNow(), types.MarketStateUpdateTypeTerminate, nil)
+	proposal := eng.newProposalForUpdateMarketState(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), types.MarketStateUpdateTypeTerminate, nil)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -38,12 +38,11 @@ func TestSubmittingProposalForUpdateMarketStateInTerminalStateFails(t *testing.T
 	}
 	updateType := []types.MarketStateUpdateType{types.MarketStateUpdateTypeResume, types.MarketStateUpdateTypeSuspend, types.MarketStateUpdateTypeTerminate}
 	// given
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 	party := eng.newValidParty("a-valid-party", 123456789)
 	for _, invalidState := range states {
 		for _, msu := range updateType {
-			proposal := eng.newProposalForUpdateMarketState(party.Id, eng.tsvc.GetTimeNow(), msu, nil)
+			proposal := eng.newProposalForUpdateMarketState(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), msu, nil)
 			// setup
 			eng.ensureAllAssetEnabled(t)
 			eng.ensureEquityLikeShareForMarketAndParty(t, proposal.UpdateMarketState().Changes.MarketID, party.Id, 0.1)
@@ -62,14 +61,13 @@ func TestSubmittingProposalForUpdateMarketStateInTerminalStateFails(t *testing.T
 }
 
 func TestSubmittingProposalForUpdateMarketStateForUnknownMarketFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	updateType := []types.MarketStateUpdateType{types.MarketStateUpdateTypeResume, types.MarketStateUpdateTypeSuspend, types.MarketStateUpdateTypeTerminate}
 	party := eng.newValidParty("a-valid-party", 123456789)
 
 	for _, msu := range updateType {
-		proposal := eng.newProposalForUpdateMarketState(party.Id, eng.tsvc.GetTimeNow(), msu, nil)
+		proposal := eng.newProposalForUpdateMarketState(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), msu, nil)
 		// given
 		proposer := party.Id
 		marketID := proposal.UpdateMarketState().Changes.MarketID

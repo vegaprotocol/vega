@@ -123,7 +123,7 @@ func testGetCheckpointsAdd(t *testing.T) {
 	t.Parallel()
 	eng := getTestEngine(t)
 	ctx := context.Background()
-	defer eng.ctrl.Finish()
+
 	components := map[types.CheckpointName]*mocks.MockState{
 		types.GovernanceCheckpoint: mocks.NewMockState(eng.ctrl),
 		types.AssetsCheckpoint:     mocks.NewMockState(eng.ctrl),

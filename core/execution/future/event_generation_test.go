@@ -14,7 +14,6 @@ package future_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -142,8 +141,6 @@ func checkConsistency(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepth
 	}
 
 	if !assert.Equal(t, tm.market.GetMarketData().BestOfferVolume, mdb.GetVolumeAtPrice(tm.market.GetID(), types.SideSell, bestAsk.Uint64())) {
-		fmt.Println("BestAskVolume in OB:", tm.market.GetMarketData().BestOfferVolume)
-		fmt.Println("BestAskVolume in MD:", mdb.GetVolumeAtPrice(tm.market.GetID(), types.SideSell, bestAsk.Uint64()))
 		correct = false
 	}
 

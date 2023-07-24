@@ -2,7 +2,6 @@ package commands_test
 
 import (
 	"encoding/hex"
-	"fmt"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -88,7 +87,6 @@ func testAnnounceNodeWithNonhexSignaturesFails(t *testing.T) {
 			Value: "helloagain",
 		},
 	})
-	fmt.Println(err)
 	assert.Contains(t, err.Get("announce_node.ethereum_signature.value"), commands.ErrShouldBeHexEncoded)
 	assert.Contains(t, err.Get("announce_node.vega_signature.value"), commands.ErrShouldBeHexEncoded)
 }

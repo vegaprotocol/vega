@@ -70,12 +70,11 @@ func TestProposalForSuccessorMarket(t *testing.T) {
 }
 
 func testSubmittingProposalForNewMarketSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -92,8 +91,8 @@ func testSubmittingProposalForNewMarketSucceeds(t *testing.T) {
 }
 
 func testRemoveSuccessorsForRejectedMarket(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
+
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
 	suc := types.SuccessorConfig{
@@ -101,9 +100,10 @@ func testRemoveSuccessorsForRejectedMarket(t *testing.T) {
 		InsurancePoolFraction: num.DecimalFromFloat(.5),
 	}
 	// add 3 proposals for the same parent
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	eng.markets.EXPECT().IsSucceeded(suc.ParentID).Times(3).Return(false)
-	filter, binding := produceTimeTriggeredDataSourceSpec(time.Now())
-	enact := eng.tsvc.GetTimeNow().Add(24 * time.Hour)
+	filter, binding := produceTimeTriggeredDataSourceSpec(now.Add(3 * 48 * time.Hour))
+	enact := now.Add(24 * time.Hour)
 	proposals := []types.Proposal{
 		eng.newProposalForSuccessorMarket(party.Id, enact, filter, binding, true, &suc),
 		eng.newProposalForSuccessorMarket(party.Id, enact, filter, binding, true, &suc),
@@ -156,12 +156,12 @@ func testRemoveSuccessorsForRejectedMarket(t *testing.T) {
 		require.NotNil(t, prop.Reason)
 		require.EqualValues(t, expError, *prop.Reason)
 	})
-	eng.OnTick(context.Background(), eng.tsvc.GetTimeNow().Add(time.Second))
+	eng.OnTick(context.Background(), now.Add(time.Second))
 }
 
 func testRemoveSuccessorsForSucceeded(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
+
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
 	suc := types.SuccessorConfig{
@@ -170,12 +170,13 @@ func testRemoveSuccessorsForSucceeded(t *testing.T) {
 	}
 	// add 3 proposals for the same parent
 	eng.markets.EXPECT().IsSucceeded(suc.ParentID).Times(3).Return(false)
-	filter, binding := produceTimeTriggeredDataSourceSpec(time.Now())
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
+	filter, binding := produceTimeTriggeredDataSourceSpec(now.Add(3 * 48 * time.Hour))
 	proposals := []types.Proposal{
-		eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow(), filter, binding, true, &suc),
-		eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow(), filter, binding, true, &suc),
-		eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), filter, binding, true), // non successor just because
-		eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow(), filter, binding, true, &suc),
+		eng.newProposalForSuccessorMarket(party.Id, now, filter, binding, true, &suc),
+		eng.newProposalForSuccessorMarket(party.Id, now, filter, binding, true, &suc),
+		eng.newProposalForNewMarket(party.Id, now, filter, binding, true), // non successor just because
+		eng.newProposalForSuccessorMarket(party.Id, now, filter, binding, true, &suc),
 	}
 	first := proposals[0]
 	pFuture := first.NewMarket().Changes.GetFuture()
@@ -214,8 +215,8 @@ func testRemoveSuccessorsForSucceeded(t *testing.T) {
 }
 
 func testSubmittingProposalForFullSuccessorMarketSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
@@ -224,8 +225,8 @@ func testSubmittingProposalForFullSuccessorMarketSucceeds(t *testing.T) {
 		InsurancePoolFraction: num.DecimalFromFloat(.5),
 	}
 	eng.markets.EXPECT().IsSucceeded(suc.ParentID).Times(1).Return(false)
-	filter, binding := produceTimeTriggeredDataSourceSpec(time.Now())
-	proposal := eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow(), filter, binding, true, &suc)
+	filter, binding := produceTimeTriggeredDataSourceSpec(now.Add(3 * 48 * time.Hour))
+	proposal := eng.newProposalForSuccessorMarket(party.Id, now, filter, binding, true, &suc)
 	// returns a pointer directly to the change, but reassign just in case it doesn't
 	nm := proposal.NewMarket()
 	// ensure price monitoring params are set
@@ -281,8 +282,7 @@ func testSubmittingProposalForFullSuccessorMarketSucceeds(t *testing.T) {
 }
 
 func testRejectSuccessorInvalidInsurancePoolFraction(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
@@ -290,7 +290,7 @@ func testRejectSuccessorInvalidInsurancePoolFraction(t *testing.T) {
 		ParentID:              "parentID",
 		InsurancePoolFraction: num.DecimalFromFloat(5), // out of range 0-1
 	}
-	proposal := eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, true, &suc)
+	proposal := eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true, &suc)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -307,8 +307,7 @@ func testRejectSuccessorInvalidInsurancePoolFraction(t *testing.T) {
 }
 
 func testRejectSuccessorProductMismatch(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
@@ -316,7 +315,7 @@ func testRejectSuccessorProductMismatch(t *testing.T) {
 		ParentID:              "parentID",
 		InsurancePoolFraction: num.DecimalFromFloat(0),
 	}
-	proposal := eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, false, &suc)
+	proposal := eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, false, &suc)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -346,8 +345,7 @@ func testRejectSuccessorProductMismatch(t *testing.T) {
 }
 
 func testRejectSuccessorNoParent(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
@@ -355,7 +353,7 @@ func testRejectSuccessorNoParent(t *testing.T) {
 		ParentID:              "parentID",
 		InsurancePoolFraction: num.DecimalFromFloat(0),
 	}
-	proposal := eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, true, &suc)
+	proposal := eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true, &suc)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -372,12 +370,11 @@ func testRejectSuccessorNoParent(t *testing.T) {
 }
 
 func testSubmittingProposalWithInternalTimeTerminationForNewMarketSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, false)
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, false)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -394,14 +391,13 @@ func testSubmittingProposalWithInternalTimeTerminationForNewMarketSucceeds(t *te
 }
 
 func testSubmittingProposalWithInternalTimeSettlingForNewMarketFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	id := eng.newProposalID()
-	tm := time.Now().Add(time.Hour * 24 * 365)
+	tm := now.Add(time.Hour * 24 * 365)
 	_, termBinding := produceTimeTriggeredDataSourceSpec(tm)
 
 	proposal := types.Proposal{
@@ -484,14 +480,13 @@ func testSubmittingProposalWithInternalTimeSettlingForNewMarketFails(t *testing.
 }
 
 func testSubmittingProposalWithEmptySettlingDataForNewMarketFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	id := eng.newProposalID()
-	tm := time.Now().Add(time.Hour * 24 * 365)
+	tm := now.Add(time.Hour * 24 * 365)
 	_, termBinding := produceTimeTriggeredDataSourceSpec(tm)
 
 	proposal := types.Proposal{
@@ -557,14 +552,13 @@ func testSubmittingProposalWithEmptySettlingDataForNewMarketFails(t *testing.T) 
 }
 
 func testSubmittingProposalWithEmptyTerminationDataForNewMarketFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	id := eng.newProposalID()
-	tm := time.Now().Add(time.Hour * 24 * 365)
+	tm := now.Add(time.Hour * 24 * 365)
 	_, termBinding := produceTimeTriggeredDataSourceSpec(tm)
 
 	proposal := types.Proposal{
@@ -639,14 +633,13 @@ func testSubmittingProposalWithEmptyTerminationDataForNewMarketFails(t *testing.
 }
 
 func testSubmittingProposalWithInternalTimeTerminationWithLessThanEqualConditionForNewMarketFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	id := eng.newProposalID()
-	tm := time.Now().Add(time.Hour * 24 * 365)
+	tm := now.Add(time.Hour * 24 * 365)
 	_, termBinding := produceTimeTriggeredDataSourceSpec(tm)
 
 	settl := datasource.NewDefinition(
@@ -807,13 +800,13 @@ func testSubmittingProposalWithInternalTimeTerminationWithLessThanEqualCondition
 }
 
 func testSubmittingProposalWithExternalWithInternalTimeTerminationKeyForNewMarketSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	filter, binding := produceTimeTriggeredDataSourceSpec(time.Now())
-	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), filter, binding, true)
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
+	filter, binding := produceTimeTriggeredDataSourceSpec(now.Add(3 * 48 * time.Hour))
+	proposal := eng.newProposalForNewMarket(party.Id, now.Add(2*time.Hour), filter, binding, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -830,14 +823,13 @@ func testSubmittingProposalWithExternalWithInternalTimeTerminationKeyForNewMarke
 }
 
 func testSubmittingProposalWithInternalTimeTriggerTerminationFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	id := eng.newProposalID()
-	tm := time.Now().Add(time.Hour * 24 * 365)
+	tm := now.Add(time.Hour * 24 * 365)
 	_, termBinding := produceTimeTriggeredDataSourceSpec(tm)
 
 	settl := datasource.NewDefinition(
@@ -938,14 +930,13 @@ func testSubmittingProposalWithInternalTimeTriggerTerminationFails(t *testing.T)
 }
 
 func testSubmittingProposalWithInternalTimeTriggerSettlementFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	id := eng.newProposalID()
-	tm := time.Now().Add(time.Hour * 24 * 365)
+	tm := now.Add(time.Hour * 24 * 365)
 	_, termBinding := produceTimeTriggeredDataSourceSpec(tm)
 
 	settl := datasource.NewDefinition(
@@ -1034,12 +1025,11 @@ func testSubmittingProposalWithInternalTimeTriggerSettlementFails(t *testing.T) 
 }
 
 func testSubmittingDuplicatedProposalForNewMarketFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, party, 1000)
@@ -1078,12 +1068,11 @@ func testSubmittingDuplicatedProposalForNewMarketFails(t *testing.T) {
 }
 
 func testSubmittingDuplicatedProposalWithInternalTimeTerminationForNewMarketFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow(), nil, nil, false)
+	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, false)
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, party, 1000)
@@ -1122,14 +1111,13 @@ func testSubmittingDuplicatedProposalWithInternalTimeTerminationForNewMarketFail
 }
 
 func testSubmittingProposalForNewMarketWithBadRiskParameterFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 1)
 	eng.ensureAllAssetEnabled(t)
 
-	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 	proposal.Terms.GetNewMarket().Changes.RiskParameters = &types.NewMarketConfigurationLogNormal{
 		LogNormal: &types.LogNormalRiskModel{
 			Params: nil, // it's nil by zero value, but eh, let's show that's what we test
@@ -1148,14 +1136,13 @@ func testSubmittingProposalForNewMarketWithBadRiskParameterFails(t *testing.T) {
 }
 
 func testSubmittingProposalForNewMarketWithInternalTimeTerminationWithBadRiskParameterFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 1)
 	eng.ensureAllAssetEnabled(t)
 
-	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, false)
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, false)
 	proposal.Terms.GetNewMarket().Changes.RiskParameters = &types.NewMarketConfigurationLogNormal{
 		LogNormal: &types.LogNormalRiskModel{
 			Params: nil, // it's nil by zero value, but eh, let's show that's what we test
@@ -1175,14 +1162,13 @@ func testSubmittingProposalForNewMarketWithInternalTimeTerminationWithBadRiskPar
 
 func testOutOfRangeRiskParamFail(t *testing.T, lnm *types.LogNormalRiskModel) {
 	t.Helper()
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 1)
 	eng.ensureAllAssetEnabled(t)
 
-	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 	proposal.Terms.GetNewMarket().Changes.RiskParameters = &types.NewMarketConfigurationLogNormal{LogNormal: lnm}
 
 	// setup
@@ -1226,14 +1212,13 @@ func TestSubmittingProposalForNewMarketWithOutOfRangeRiskParameterFails(t *testi
 	lnm.Params.Sigma = num.DecimalFromFloat(1.0)
 
 	// now all risk params are valid
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 1)
 	eng.ensureAllAssetEnabled(t)
 
-	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 	proposal.Terms.GetNewMarket().Changes.RiskParameters = &types.NewMarketConfigurationLogNormal{LogNormal: lnm}
 
 	// setup
@@ -1247,12 +1232,11 @@ func TestSubmittingProposalForNewMarketWithOutOfRangeRiskParameterFails(t *testi
 }
 
 func testRejectingProposalForNewMarketSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -1286,12 +1270,11 @@ func testRejectingProposalForNewMarketSucceeds(t *testing.T) {
 }
 
 func testVotingForNewMarketProposalSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -1323,12 +1306,11 @@ func testVotingForNewMarketProposalSucceeds(t *testing.T) {
 }
 
 func testVotingWithMajorityOfYesMakesNewMarketProposalPassed(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// when
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 
 	// setup
 	eng.ensureStakingAssetTotalSupply(t, 9)
@@ -1403,12 +1385,11 @@ func testVotingWithMajorityOfYesMakesNewMarketProposalPassed(t *testing.T) {
 }
 
 func testVotingWithMajorityOfNoMakesNewMarketProposalDeclined(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -1482,12 +1463,11 @@ func testVotingWithMajorityOfNoMakesNewMarketProposalDeclined(t *testing.T) {
 }
 
 func testVotingWithInsufficientParticipationMakesNewMarketProposalDeclined(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)

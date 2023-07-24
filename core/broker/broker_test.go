@@ -89,7 +89,6 @@ func (b brokerTst) randomEvt() *evt {
 
 func (b *brokerTst) Finish() {
 	b.cfunc()
-	b.ctrl.Finish()
 }
 
 func TestSequenceIDGen(t *testing.T) {
@@ -714,7 +713,6 @@ func testEventTypeSubscription(t *testing.T) {
 func testStreamsOverSocket(t *testing.T) {
 	t.Parallel()
 	ctx, cfunc := context.WithCancel(context.Background())
-	ctrl := gomock.NewController(t)
 	config := broker.NewDefaultConfig()
 	config.Socket.Enabled = true
 	config.Socket.Transport = "inproc"
@@ -733,7 +731,6 @@ func testStreamsOverSocket(t *testing.T) {
 
 	defer func() {
 		cfunc()
-		ctrl.Finish()
 		sock.Close()
 	}()
 
@@ -754,7 +751,6 @@ func testStopsProcessOnStreamError(t *testing.T) {
 	t.Parallel()
 	if os.Getenv("RUN_TEST") == "1" {
 		ctx, cfunc := context.WithCancel(context.Background())
-		ctrl := gomock.NewController(t)
 		config := broker.NewDefaultConfig()
 		config.Socket.Enabled = true
 		config.Socket.Transport = "inproc"
@@ -777,7 +773,6 @@ func testStopsProcessOnStreamError(t *testing.T) {
 
 		defer func() {
 			cfunc()
-			ctrl.Finish()
 			sock.Close()
 		}()
 
