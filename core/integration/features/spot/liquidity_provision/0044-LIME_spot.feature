@@ -66,6 +66,20 @@ Feature: Spot market
       | id  | party  | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov | BTC/ETH   | 1000              | 0.1 | submission |
 
+    Then the network moves ahead "1" blocks
+    And the network treasury balance should be "0" for the asset "ETH"
+    And the global insurance pool balance should be "0" for the asset "ETH"
+    And the global insurance pool balance should be "0" for the asset "BTC"
+    And the party "lpprov" lp liquidity fee account balance should be "0" for the market "BTC/ETH"
+
+    Then "lpprov" should have general account balance of "3000" for asset "ETH"
+    Then "lpprov" should have general account balance of "50" for asset "BTC"
+    Then the party "lpprov" lp liquidity bond account balance should be "1000" for the market "BTC/ETH"
+
+    Then the market data for the market "BTC/ETH" should be:
+      | mark price | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
+      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 10           | 1000           | 0             |
+
     # place orders and generate trades
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | only |
