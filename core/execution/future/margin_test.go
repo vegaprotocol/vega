@@ -14,7 +14,6 @@ package future_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -220,8 +219,6 @@ func TestPartialFillMargins(t *testing.T) {
 		require.NotNil(t, conf)
 		require.NoError(t, err)
 	}
-	mktD := tm.market.GetMarketData()
-	fmt.Printf("TS: %s\nSS: %s\n", mktD.TargetStake, mktD.SuppliedStake)
 	lp := &types.LiquidityProvisionSubmission{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(30000000),

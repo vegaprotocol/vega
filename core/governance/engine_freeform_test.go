@@ -29,12 +29,11 @@ func TestFreeformProposal(t *testing.T) {
 }
 
 func testSubmittingFreeformProposalSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newFreeformProposal(party.Id, eng.tsvc.GetTimeNow())
+	proposal := eng.newFreeformProposal(party.Id, eng.tsvc.GetTimeNow().Add(48*time.Hour))
 
 	// setup
 	eng.expectOpenProposalEvent(t, party.Id, proposal.ID)
@@ -48,12 +47,11 @@ func testSubmittingFreeformProposalSucceeds(t *testing.T) {
 }
 
 func testFreeformProposalDoesNotWaitToEnact(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// when
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newFreeformProposal(proposer, eng.tsvc.GetTimeNow())
+	proposal := eng.newFreeformProposal(proposer, eng.tsvc.GetTimeNow().Add(48*time.Hour))
 
 	// setup
 	eng.ensureStakingAssetTotalSupply(t, 9)

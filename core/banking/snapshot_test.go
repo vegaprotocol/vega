@@ -79,7 +79,7 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	}))
 
 	eng, snap := testEngineAndSnapshot(t)
-	defer eng.ctrl.Finish()
+
 	defer snap.Close()
 
 	now := time.Now()
@@ -263,7 +263,6 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 func TestAssetActionsSnapshotRoundTrip(t *testing.T) {
 	aaKey := (&types.PayloadBankingAssetActions{}).Key()
 	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
 
 	eng.tsvc.EXPECT().GetTimeNow().AnyTimes()
 	d1 := deposit(eng, "VGT1", "someparty1", num.NewUint(42))
@@ -299,7 +298,6 @@ func TestAssetActionsSnapshotRoundTrip(t *testing.T) {
 func TestSeenSnapshotRoundTrip(t *testing.T) {
 	seenKey := (&types.PayloadBankingSeen{}).Key()
 	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
 
 	eng.tsvc.EXPECT().GetTimeNow().Times(2)
 	state1, _, err := eng.GetState(seenKey)
@@ -350,7 +348,6 @@ func TestWithdrawalsSnapshotRoundTrip(t *testing.T) {
 	eng := getTestEngine(t)
 	eng.tsvc.EXPECT().GetTimeNow().AnyTimes()
 
-	defer eng.ctrl.Finish()
 	for i := 0; i < 10; i++ {
 		d1 := deposit(eng, "VGT"+strconv.Itoa(i*2), "someparty"+strconv.Itoa(i*2), num.NewUint(42))
 		err := eng.DepositBuiltinAsset(context.Background(), d1, "depositid"+strconv.Itoa(i*2), 42)
@@ -390,7 +387,6 @@ func TestDepositSnapshotRoundTrip(t *testing.T) {
 	eng := getTestEngine(t)
 	eng.tsvc.EXPECT().GetTimeNow().AnyTimes()
 
-	defer eng.ctrl.Finish()
 	for i := 0; i < 10; i++ {
 		d1 := deposit(eng, "VGT"+strconv.Itoa(i*2), "someparty"+strconv.Itoa(i*2), num.NewUint(42))
 		err := eng.DepositBuiltinAsset(context.Background(), d1, "depositid"+strconv.Itoa(i*2), 42)
@@ -424,7 +420,6 @@ func TestOneOffTransfersSnapshotRoundTrip(t *testing.T) {
 	ctx := context.Background()
 	key := (&types.PayloadBankingScheduledTransfers{}).Key()
 	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
 
 	fromAcc := types.Account{
 		Balance: num.NewUint(1000),
@@ -481,7 +476,6 @@ func TestRecurringTransfersSnapshotRoundTrip(t *testing.T) {
 	ctx := context.Background()
 	key := (&types.PayloadBankingRecurringTransfers{}).Key()
 	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
 
 	fromAcc := types.Account{
 		Balance: num.NewUint(1000),
@@ -536,7 +530,6 @@ func TestRecurringGovTransfersSnapshotRoundTrip(t *testing.T) {
 	ctx := context.Background()
 	key := (&types.PayloadBankingRecurringGovernanceTransfers{}).Key()
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
 		func() time.Time {
@@ -583,7 +576,7 @@ func TestScheduledgGovTransfersSnapshotRoundTrip(t *testing.T) {
 	ctx := context.Background()
 	key := (&types.PayloadBankingScheduledGovernanceTransfers{}).Key()
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
+
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
 		func() time.Time {
 			return time.Unix(10, 0)

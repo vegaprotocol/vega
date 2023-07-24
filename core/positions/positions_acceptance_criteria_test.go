@@ -441,7 +441,6 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 		pos := engine.Positions()
 		assert.Equal(t, c.posSize, len(pos), fmt.Sprintf("all pos trade: %v", c.trade.ID))
 		assert.Equal(t, 2, len(positions), fmt.Sprintf("chan trade: %v", c.trade.ID))
-		fmt.Printf("positions: %v\n", positions)
 
 		// check size of positions
 		for _, p := range pos {

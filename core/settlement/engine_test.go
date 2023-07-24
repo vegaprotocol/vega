@@ -16,7 +16,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -173,18 +172,6 @@ func testMTMWinNoZero(t *testing.T) {
 	}
 	transfers := engine.SettleMTM(ctx, newPrice.Clone(), updates)
 	require.NotEmpty(t, transfers)
-	for _, tr := range transfers {
-		if tr == nil {
-			fmt.Println("NIL")
-			continue
-		}
-		t := tr.Transfer()
-		if t == nil {
-			fmt.Println("NIL TRANSFER")
-			continue
-		}
-		fmt.Printf("Transfer for party %s: %s\n%s -%#v", tr.Party(), t.Amount.Amount.String(), t.String(), t)
-	}
 }
 
 func testMTMWinOneExcess(t *testing.T) {
@@ -280,18 +267,6 @@ func testMTMWinOneExcess(t *testing.T) {
 	}
 	transfers := engine.SettleMTM(ctx, newPrice.Clone(), updates)
 	require.NotEmpty(t, transfers)
-	for _, tr := range transfers {
-		if tr == nil {
-			fmt.Println("NIL")
-			continue
-		}
-		t := tr.Transfer()
-		if t == nil {
-			fmt.Println("NIL TRANSFER")
-			continue
-		}
-		fmt.Printf("Transfer for party %s: %s\n%s -%#v", tr.Party(), t.Amount.Amount.String(), t.String(), t)
-	}
 }
 
 func testSettleRoundingSuccess(t *testing.T) {

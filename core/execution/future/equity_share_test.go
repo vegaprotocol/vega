@@ -2,7 +2,6 @@ package future_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -154,7 +153,6 @@ func TestWithinMarket(t *testing.T) {
 
 	md := esm.tm.market.GetMarketData()
 	require.NotNil(t, md)
-	fmt.Printf("Target stake: %s\nSupplied: %s\n\n", md.TargetStake, md.SuppliedStake)
 	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
 
 	t.Run("WhenNoTrades", func(t *testing.T) {
@@ -197,7 +195,6 @@ func TestWithinMarket(t *testing.T) {
 
 	md = esm.tm.market.GetMarketData()
 	require.NotNil(t, md)
-	fmt.Printf("Target stake: %s\nSupplied: %s\n\n", md.TargetStake, md.SuppliedStake)
 	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
 
 	oneU := num.NewUint(1)

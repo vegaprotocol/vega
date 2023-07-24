@@ -926,7 +926,6 @@ func TestMarketLiquidityFeeAfterUpdate(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	fmt.Println(previousLiqFee, tm.market.GetLiquidityFee())
 	assert.Equal(t, previousLiqFee, tm.market.GetLiquidityFee())
 }
 
@@ -1169,7 +1168,6 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
-	fmt.Printf("%s\n", orderBuy.String())
 	_, err := tm.market.SubmitOrder(ctx, orderBuy)
 	assert.Nil(t, err)
 	if err != nil {
@@ -1177,7 +1175,6 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	}
 	tm.now = tm.now.Add(time.Second)
 	tm.market.OnTick(ctx, tm.now)
-	fmt.Printf("%s\n", orderBuy.String())
 	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
 
 	_, err = tm.market.SubmitOrder(ctx, orderSell)
@@ -1264,7 +1261,6 @@ func TestUpdateMarketWithOracleSpecEarlyTermination(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
-	fmt.Printf("%s\n", orderBuy.String())
 	_, err := tm.market.SubmitOrder(ctx, orderBuy)
 	assert.Nil(t, err)
 	if err != nil {
@@ -1272,7 +1268,6 @@ func TestUpdateMarketWithOracleSpecEarlyTermination(t *testing.T) {
 	}
 	tm.now = tm.now.Add(time.Second)
 	tm.market.OnTick(ctx, tm.now)
-	fmt.Printf("%s\n", orderBuy.String())
 	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
 
 	_, err = tm.market.SubmitOrder(ctx, orderSell)
@@ -1380,7 +1375,6 @@ func Test6056(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
-	fmt.Printf("%s\n", orderBuy.String())
 	_, err := tm.market.SubmitOrder(ctx, orderBuy)
 	assert.Nil(t, err)
 	if err != nil {
@@ -1388,7 +1382,6 @@ func Test6056(t *testing.T) {
 	}
 	tm.now = tm.now.Add(time.Second)
 	tm.market.OnTick(ctx, tm.now)
-	fmt.Printf("%s\n", orderBuy.String())
 	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
 
 	_, err = tm.market.SubmitOrder(ctx, orderSell)
@@ -1516,9 +1509,7 @@ func TestOraclesWithMultipleFilterNameFails(t *testing.T) {
 
 	// submit orders
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
-	fmt.Printf("%s\n", orderBuy.String())
 	_, err := tm.market.SubmitOrder(ctx, orderBuy)
 	assert.Nil(t, err)
 	if err != nil {
@@ -1526,7 +1517,6 @@ func TestOraclesWithMultipleFilterNameFails(t *testing.T) {
 	}
 	tm.now = tm.now.Add(time.Second)
 	tm.market.OnTick(ctx, tm.now)
-	fmt.Printf("%s\n", orderBuy.String())
 	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
 
 	_, err = tm.market.SubmitOrder(ctx, orderSell)
@@ -1713,8 +1703,6 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, conf)
 	}
-	mktD := tm.market.GetMarketData()
-	fmt.Printf("TS: %s\nSS: %s\n", mktD.TargetStake, mktD.SuppliedStake)
 	lp := &types.LiquidityProvisionSubmission{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(500),
@@ -7276,7 +7264,6 @@ func TestAverageEntryValuation(t *testing.T) {
 	tm.EndOpeningAuction(t, auctionEnd, false)
 
 	marketData := tm.market.GetMarketData()
-	fmt.Printf("TS: %s\nSS: %s\n", marketData.TargetStake, marketData.SuppliedStake)
 	/*
 		expects := map[string]struct {
 			found bool
@@ -7915,9 +7902,6 @@ func TestAmendTrade(t *testing.T) {
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	tm.EndOpeningAuction(t, auctionEnd, false)
-	mktD := tm.market.GetMarketData()
-	fmt.Printf("TS: %s\nSS: %s\n", mktD.TargetStake, mktD.SuppliedStake)
-	fmt.Printf("MS: %s\nTS: %s\nSS: %s\n", mktD.MarketTradingMode.String(), mktD.TargetStake, mktD.SuppliedStake)
 
 	assert.Equal(t, types.MarketTradingModeContinuous, tm.market.GetMarketData().MarketTradingMode)
 
@@ -7998,7 +7982,7 @@ func Test_7017_UpdatingMarketDuringOpeningAuction(t *testing.T) {
 	tm.now = tm.now.Add(time.Minute)
 	tm.market.OnTick(ctx, tm.now)
 
-	tm.market.Update(ctx, &mktCfg, tm.oracleEngine)
+	require.NoError(t, tm.market.Update(ctx, &mktCfg, tm.oracleEngine))
 
 	tm.now = tm.now.Add(time.Minute)
 	tm.market.OnTick(ctx, tm.now)

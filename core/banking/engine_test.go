@@ -97,7 +97,6 @@ func TestBanking(t *testing.T) {
 
 func testDepositSuccess(t *testing.T) {
 	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
 
 	eng.tsvc.EXPECT().GetTimeNow().Times(3)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -129,7 +128,6 @@ func testDepositSuccess(t *testing.T) {
 
 func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
 
 	eng.tsvc.EXPECT().GetTimeNow().Times(6)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -174,7 +172,6 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 
 func testDepositFailure(t *testing.T) {
 	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
 
 	eng.tsvc.EXPECT().GetTimeNow().Times(5)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -201,7 +198,6 @@ func testDepositFailure(t *testing.T) {
 
 func testDepositError(t *testing.T) {
 	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
 
 	eng.tsvc.EXPECT().GetTimeNow().Times(4)
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -224,7 +220,6 @@ func testDepositError(t *testing.T) {
 
 func testDepositFailureNotBuiltin(t *testing.T) {
 	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
 
 	eng.tsvc.EXPECT().GetTimeNow().Times(3)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
