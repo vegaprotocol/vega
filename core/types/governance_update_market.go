@@ -489,7 +489,7 @@ func (p UpdatePerpsProduct) IntoProto() *vegapb.UpdatePerpsProduct {
 		MarginFundingFactor:                 p.MarginFundingFactor.String(),
 		InterestRate:                        p.InterestRate.String(),
 		ClampLowerBound:                     p.ClampLowerBound.String(),
-		ClampUpperBound:                     p.ClampLowerBound.String(),
+		ClampUpperBound:                     p.ClampUpperBound.String(),
 		DataSourceSpecForSettlementData:     p.DataSourceSpecForSettlementData.IntoProto(),
 		DataSourceSpecForSettlementSchedule: p.DataSourceSpecForSettlementSchedule.IntoProto(),
 		DataSourceSpecBinding:               p.DataSourceSpecBinding.IntoProto(),

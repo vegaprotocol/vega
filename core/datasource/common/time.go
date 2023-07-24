@@ -105,7 +105,7 @@ func (i *InternalTimeTrigger) SetNextTrigger(timeNow time.Time) {
 func (i *InternalTimeTrigger) SetInitial(initial, timeNow time.Time) {
 	if i.Initial != nil {
 		// this is incorrect, we should only overwrite time
-		// when no submitted by the user
+		// when not submitted by the user
 		panic("invalid initial time override")
 	}
 

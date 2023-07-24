@@ -5354,7 +5354,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 				ClampUpperBound: "0.4",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
-			err:  commands.ErrMustBeSuperiorOrEqualToClampLowerBound,
+			err:  commands.ErrMustBeGTEClampLowerBound,
 			desc: "clamp_upper_bound < clamp_lower_bound is invalid",
 		},
 	}

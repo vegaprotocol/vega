@@ -16,7 +16,6 @@ import (
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
-	"github.com/shopspring/decimal"
 )
 
 const ReferenceMaxLen int = 100
@@ -978,7 +977,7 @@ func checkNewPerps(perps *protoTypes.PerpsProduct) Errors {
 
 	var (
 		okClampLowerBound, okClampUpperBound bool
-		clampLowerBound, clampUpperBound     decimal.Decimal
+		clampLowerBound, clampUpperBound     num.Decimal
 		err                                  error
 	)
 
@@ -1009,7 +1008,7 @@ func checkNewPerps(perps *protoTypes.PerpsProduct) Errors {
 	}
 
 	if okClampLowerBound && okClampUpperBound && clampUpperBound.LessThan(clampLowerBound) {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound", ErrMustBeSuperiorOrEqualToClampLowerBound)
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound", ErrMustBeGTEClampLowerBound)
 	}
 
 	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true))
@@ -1266,6 +1265,7 @@ func isBindingMatchingSpec(spec *vegapb.DataSourceDefinition, bindingProperty st
 			for _, v := range ethOracle.Normalisers {
 				if v.Name == bindingProperty {
 					isNormaliser = true
+					break
 				}
 			}
 

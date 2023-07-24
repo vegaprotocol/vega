@@ -1305,6 +1305,7 @@ func newMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.Spec
 	}
 }
 
+//nolint:unparam
 func newPerpsMarketTerms(termFilter *dstypes.SpecFilter, binding *datasource.SpecBindingForPerps) *types.ProposalTermsNewMarket {
 	if binding == nil {
 		binding = &datasource.SpecBindingForPerps{
@@ -1355,7 +1356,8 @@ func newPerpsMarketTerms(termFilter *dstypes.SpecFilter, binding *datasource.Spe
 								{
 									Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 									Value:    "0",
-								}}),
+								},
+							}),
 							DataSourceSpecBinding: binding,
 						},
 					},
@@ -1565,6 +1567,7 @@ func (e *tstEngine) newProposalID() string {
 	return fmt.Sprintf("proposal-id-%d", e.proposalCounter)
 }
 
+//nolint:unparam
 func (e *tstEngine) newProposalForNewPerpsMarket(
 	partyID string,
 	now time.Time,

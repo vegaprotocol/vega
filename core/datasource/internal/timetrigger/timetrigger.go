@@ -31,7 +31,7 @@ type SpecConfiguration struct {
 	Conditions []*common.SpecCondition
 }
 
-func (s SpecConfiguration) SetInitial(initial, timeNow time.Time) error {
+func (s *SpecConfiguration) SetInitial(initial, timeNow time.Time) error {
 	if err := s.Triggers.Empty(); err != nil {
 		return err
 	}
