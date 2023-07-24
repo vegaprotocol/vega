@@ -5355,7 +5355,7 @@ type NetworkLimits struct {
 	ProposeAssetEnabledFrom int64 `protobuf:"varint,9,opt,name=propose_asset_enabled_from,json=proposeAssetEnabledFrom,proto3" json:"propose_asset_enabled_from,omitempty"`
 	// Are spot market proposals allowed at this point in time.
 	CanProposeSpotMarket bool `protobuf:"varint,10,opt,name=can_propose_spot_market,json=canProposeSpotMarket,proto3" json:"can_propose_spot_market,omitempty"`
-	// Are perps market proposals allowed at this point in time.
+	// Are perpetuals market proposals allowed at this point in time.
 	CanProposePerpsMarket bool `protobuf:"varint,11,opt,name=can_propose_perps_market,json=canProposePerpsMarket,proto3" json:"can_propose_perps_market,omitempty"`
 }
 

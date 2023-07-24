@@ -392,25 +392,25 @@ func (x *Future) GetDataSourceSpecBinding() *DataSourceSpecToFutureBinding {
 	return nil
 }
 
-// Perps product definition
+// Perpetuals product definition
 type Perps struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Underlying asset for the future.
+	// Underlying asset for the perpetuals.
 	SettlementAsset string `protobuf:"bytes,1,opt,name=settlement_asset,json=settlementAsset,proto3" json:"settlement_asset,omitempty"`
 	// Quote name of the instrument.
 	QuoteName string `protobuf:"bytes,2,opt,name=quote_name,json=quoteName,proto3" json:"quote_name,omitempty"`
 	// Controls how much the upcoming funding payment liability contributes to party's margin, in the range [0, 1].
 	MarginFundingFactor string `protobuf:"bytes,3,opt,name=margin_funding_factor,json=marginFundingFactor,proto3" json:"margin_funding_factor,omitempty"`
-	// A continuously compounded interest rate used in funding rate calculation, in the range [-1, 1].
+	// Continuously compounded interest rate used in funding rate calculation, in the range [-1, 1].
 	InterestRate string `protobuf:"bytes,4,opt,name=interest_rate,json=interestRate,proto3" json:"interest_rate,omitempty"`
-	// As lower bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
+	// Lower bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
 	ClampLowerBound string `protobuf:"bytes,5,opt,name=clamp_lower_bound,json=clampLowerBound,proto3" json:"clamp_lower_bound,omitempty"`
-	// An upper bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
+	// Upper bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
 	ClampUpperBound string `protobuf:"bytes,6,opt,name=clamp_upper_bound,json=clampUpperBound,proto3" json:"clamp_upper_bound,omitempty"`
-	// Data source spece describing the data source for settlement schedule.
+	// Data source spec describing the data source for settlement schedule.
 	DataSourceSpecForSettlementSchedule *DataSourceSpec `protobuf:"bytes,7,opt,name=data_source_spec_for_settlement_schedule,json=dataSourceSpecForSettlementSchedule,proto3" json:"data_source_spec_for_settlement_schedule,omitempty"`
 	// Data source spec describing the data source for settlement.
 	DataSourceSpecForSettlementData *DataSourceSpec `protobuf:"bytes,8,opt,name=data_source_spec_for_settlement_data,json=dataSourceSpecForSettlementData,proto3" json:"data_source_spec_for_settlement_data,omitempty"`
@@ -574,7 +574,7 @@ func (x *DataSourceSpecToFutureBinding) GetTradingTerminationProperty() string {
 	return ""
 }
 
-// DataSourceSpecToFutureBinding describes which property of the data source data is to be
+// Describes which property of the data source data is to be
 // used as settlement data and which to use as the trading terminated trigger
 type DataSourceSpecToPerpsBinding struct {
 	state         protoimpl.MessageState
@@ -582,11 +582,11 @@ type DataSourceSpecToPerpsBinding struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Name of the property in the source data that should be used as settlement data.
-	// If it is set to "prices.BTC.value", then the Perps will use the value of
+	// If it is set to "prices.BTC.value", then the perpetuals market will use the value of
 	// this property as settlement data.
 	SettlementDataProperty string `protobuf:"bytes,1,opt,name=settlement_data_property,json=settlementDataProperty,proto3" json:"settlement_data_property,omitempty"`
 	// Name of the property in the source data that should be used as settlement data.
-	// If it is set to "prices.BTC.value", then the Perps will use the value of
+	// If it is set to "prices.BTC.value", then the perpetuals market will use the value of
 	// this property as settlement data.
 	SettlementScheduleProperty string `protobuf:"bytes,2,opt,name=settlement_schedule_property,json=settlementScheduleProperty,proto3" json:"settlement_schedule_property,omitempty"`
 }
@@ -813,7 +813,7 @@ type Instrument_Spot struct {
 }
 
 type Instrument_Perps struct {
-	// Perps.
+	// Perpetuals.
 	Perps *Perps `protobuf:"bytes,102,opt,name=perps,proto3,oneof"`
 }
 

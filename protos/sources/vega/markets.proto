@@ -48,7 +48,7 @@ message Future {
 
 // Perpetuals product definition
 message Perps {
-  // Underlying asset for the future.
+  // Underlying asset for the perpetuals.
   string settlement_asset = 1;
   // Quote name of the instrument.
   string quote_name = 2;
