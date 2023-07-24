@@ -20,7 +20,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
-	"github.com/shopspring/decimal"
 )
 
 type ProposalTermsUpdateMarket struct {
@@ -406,7 +405,7 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 			return nil, fmt.Errorf("failed to parse settlement schedule data source spec: %w", err)
 		}
 
-		var marginFundingFactor, interestRate, clampLowerBound, clampUpperBound decimal.Decimal
+		var marginFundingFactor, interestRate, clampLowerBound, clampUpperBound num.Decimal
 		if marginFundingFactor, err = num.DecimalFromString(pr.Perps.MarginFundingFactor); err != nil {
 			return nil, fmt.Errorf("failed to parse margin funding factor: %w", err)
 		}

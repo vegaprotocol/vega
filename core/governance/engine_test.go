@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/core/assets/builtin"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/datasource"
+	"code.vegaprotocol.io/vega/core/datasource/common"
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	dsdefinition "code.vegaprotocol.io/vega/core/datasource/definition"
 	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
@@ -1304,6 +1305,82 @@ func newMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.Spec
 	}
 }
 
+func newPerpsMarketTerms(termFilter *dstypes.SpecFilter, binding *datasource.SpecBindingForPerps) *types.ProposalTermsNewMarket {
+	if binding == nil {
+		binding = &datasource.SpecBindingForPerps{
+			SettlementDataProperty:     "price.ETH.value",
+			SettlementScheduleProperty: "vegaprotocol.builtin.timetrigger",
+		}
+	}
+
+	return &types.ProposalTermsNewMarket{
+		NewMarket: &types.NewMarket{
+			Changes: &types.NewMarketConfiguration{
+				Instrument: &types.InstrumentConfiguration{
+					Name: "GBP/USDT PERPS",
+					Code: "CRYPTO:GBP/USD",
+					Product: &types.InstrumentConfigurationPerps{
+						Perps: &types.PerpsProduct{
+							SettlementAsset: "USDT",
+							QuoteName:       "USD",
+							DataSourceSpecForSettlementData: *datasource.NewDefinition(
+								datasource.ContentTypeOracle,
+							).SetOracleConfig(
+								&signedoracle.SpecConfiguration{
+									Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+									Filters: []*dstypes.SpecFilter{
+										{
+											Key: &dstypes.SpecPropertyKey{
+												Name: "price.ETH.value",
+												Type: datapb.PropertyKey_TYPE_INTEGER,
+											},
+											Conditions: []*dstypes.SpecCondition{
+												{
+													Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+													Value:    "0",
+												},
+											},
+										},
+									},
+								},
+							),
+							DataSourceSpecForSettlementSchedule: *datasource.NewDefinition(datasource.ContentTypeInternalTimeTriggerTermination).SetTimeTriggerTriggersConfig(
+								common.InternalTimeTriggers{
+									{
+										Initial: nil,
+										Every:   300,
+									},
+								},
+							).SetTimeTriggerConditionConfig([]*dstypes.SpecCondition{
+								{
+									Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+									Value:    "0",
+								}}),
+							DataSourceSpecBinding: binding,
+						},
+					},
+				},
+				RiskParameters: &types.NewMarketConfigurationLogNormal{
+					LogNormal: &types.LogNormalRiskModel{
+						RiskAversionParameter: num.DecimalFromFloat(0.01),
+						Tau:                   num.DecimalFromFloat(0.00011407711613050422),
+						Params: &types.LogNormalModelParams{
+							Mu:    num.DecimalZero(),
+							R:     num.DecimalFromFloat(0.016),
+							Sigma: num.DecimalFromFloat(0.09),
+						},
+					},
+				},
+				Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
+				DecimalPlaces:           0,
+				LpPriceRange:            num.DecimalFromFloat(0.95),
+				LinearSlippageFactor:    num.DecimalFromFloat(0.1),
+				QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+			},
+		},
+	}
+}
+
 func newUpdateMarketState(tp types.MarketStateUpdateType, marketID string, price *num.Uint) *types.ProposalTermsUpdateMarketState {
 	return &types.ProposalTermsUpdateMarketState{
 		UpdateMarketState: &types.UpdateMarketState{
@@ -1488,7 +1565,38 @@ func (e *tstEngine) newProposalID() string {
 	return fmt.Sprintf("proposal-id-%d", e.proposalCounter)
 }
 
-func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time, termFilter *dstypes.SpecFilter, termBinding *datasource.SpecBindingForFuture, termExt bool) types.Proposal {
+func (e *tstEngine) newProposalForNewPerpsMarket(
+	partyID string,
+	now time.Time,
+	termFilter *dstypes.SpecFilter,
+	termBinding *datasource.SpecBindingForPerps,
+	termExt bool,
+) types.Proposal {
+	id := e.newProposalID()
+	return types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     partyID,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change:              newPerpsMarketTerms(termFilter, termBinding),
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+}
+
+func (e *tstEngine) newProposalForNewMarket(
+	partyID string,
+	now time.Time,
+	termFilter *dstypes.SpecFilter,
+	termBinding *datasource.SpecBindingForFuture,
+	termExt bool,
+) types.Proposal {
 	id := e.newProposalID()
 	return types.Proposal{
 		ID:        id,

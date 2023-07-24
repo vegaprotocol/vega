@@ -989,11 +989,10 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 			}
 			parent = &pm
 		}
-		now := e.timeService.GetTimeNow()
-		return validateNewMarketChange(newMarket, e.assets, true, e.netp, enactTime.Sub(closeTime), enct, parent, now)
+		return validateNewMarketChange(newMarket, e.assets, true, e.netp, enactTime.Sub(closeTime), enct, parent, e.timeService.GetTimeNow())
 	case types.ProposalTermsTypeUpdateMarket:
 		enct.shouldNotVerify = true
-		return validateUpdateMarketChange(terms.GetUpdateMarket(), enct)
+		return validateUpdateMarketChange(terms.GetUpdateMarket(), enct, e.timeService.GetTimeNow())
 	case types.ProposalTermsTypeNewAsset:
 		return e.validateNewAssetProposal(terms.GetNewAsset())
 	case types.ProposalTermsTypeUpdateAsset:
@@ -1230,7 +1229,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 		return nil, types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
 
-	if perr, err := validateUpdateMarketChange(terms, &enactmentTime{current: p.Terms.EnactmentTimestamp, shouldNotVerify: true}); err != nil {
+	if perr, err := validateUpdateMarketChange(terms, &enactmentTime{current: p.Terms.EnactmentTimestamp, shouldNotVerify: true}, e.timeService.GetTimeNow()); err != nil {
 		return nil, perr, err
 	}
 
