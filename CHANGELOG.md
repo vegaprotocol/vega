@@ -25,6 +25,10 @@
 - [8895](https://github.com/vegaprotocol/vega/issues/8895) - Allow to set runtime parameters in the SQL Store connection structure
 - [8779](https://github.com/vegaprotocol/vega/issues/8779) - Query all details of liquidity providers via an API.
 - [8782](https://github.com/vegaprotocol/vega/issues/8782) - List all active liquidity providers fora  market via API.
+- [8753](https://github.com/vegaprotocol/vega/issues/8753) - Governance for new market proposal.
+- [8752](https://github.com/vegaprotocol/vega/issues/8752) - Add `PERPS` network parameter.
+- [8759](https://github.com/vegaprotocol/vega/issues/8759) - Add update market support for `PERPS`.
+- [8758](https://github.com/vegaprotocol/vega/issues/8758) - Internal recurring time trigger for `PERPS`.
 
 ### 🐛 Fixes
 
