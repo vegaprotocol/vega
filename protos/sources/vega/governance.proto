@@ -33,7 +33,7 @@ message FutureProduct {
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;
 }
 
-// Perps product configuration
+// Perpetuals product configuration
 message PerpsProduct {
   // Asset ID for the product's settlement asset.
   string settlement_asset = 1;
@@ -41,13 +41,13 @@ message PerpsProduct {
   string quote_name = 2;
   // Controls how much the upcoming funding payment liability contributes to party's margin, in the range [0, 1].
   string margin_funding_factor = 3;
-  // A continuously compounded interest rate used in funding rate calculation, in the range [-1, 1].
+  // Continuously compounded interest rate used in funding rate calculation, in the range [-1, 1].
   string interest_rate = 4;
-  // As lower bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
+  // Lower bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
   string clamp_lower_bound = 5;
-  // An upper bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
+  // Upper bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
   string clamp_upper_bound = 6;
-  // Data source spece describing the data source for settlement schedule.
+  // Data source spec describing the data source for settlement schedule.
   vega.DataSourceDefinition data_source_spec_for_settlement_schedule = 7;
   // Data source spec describing the data source for settlement.
   vega.DataSourceDefinition data_source_spec_for_settlement_data = 8;
@@ -241,13 +241,13 @@ message UpdatePerpsProduct {
   string quote_name = 1;
   // Controls how much the upcoming funding payment liability contributes to party's margin, in the range [0, 1].
   string margin_funding_factor = 2;
-  // A continuously compounded interest rate used in funding rate calculation, in the range [-1, 1].
+  // Continuously compounded interest rate used in funding rate calculation, in the range [-1, 1].
   string interest_rate = 3;
-  // As lower bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
+  // Lower bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
   string clamp_lower_bound = 4;
-  // An upper bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
+  // Upper bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
   string clamp_upper_bound = 5;
-  // Data source spece describing the data source for settlement schedule.
+  // Data source spec describing the data source for settlement schedule.
   vega.DataSourceDefinition data_source_spec_for_settlement_schedule = 6;
   // Data source spec describing the data source for settlement.
   vega.DataSourceDefinition data_source_spec_for_settlement_data = 7;
@@ -510,7 +510,7 @@ enum ProposalError {
   PROPOSAL_ERROR_INVALID_SLA_PARAMS = 53;
   // Mandatory liquidity provision SLA parameters are missing
   PROPOSAL_ERROR_MISSING_SLA_PARAMS = 54;
-  // Market proposal market contained invalid product definition
+  // Perpetuals market proposal contained invalid product definition
   PROPOSAL_ERROR_INVALID_PERPS_PRODUCT = 55;
 }
 

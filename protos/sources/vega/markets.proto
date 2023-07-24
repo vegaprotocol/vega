@@ -46,7 +46,7 @@ message Future {
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;
 }
 
-// Perps product definition
+// Perpetuals product definition
 message Perps {
   // Underlying asset for the future.
   string settlement_asset = 1;
@@ -54,13 +54,13 @@ message Perps {
   string quote_name = 2;
   // Controls how much the upcoming funding payment liability contributes to party's margin, in the range [0, 1].
   string margin_funding_factor = 3;
-  // A continuously compounded interest rate used in funding rate calculation, in the range [-1, 1].
+  // Continuously compounded interest rate used in funding rate calculation, in the range [-1, 1].
   string interest_rate = 4;
-  // As lower bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
+  // Lower bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
   string clamp_lower_bound = 5;
-  // An upper bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
+  // Upper bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
   string clamp_upper_bound = 6;
-  // Data source spece describing the data source for settlement schedule.
+  // Data source spec describing the data source for settlement schedule.
   vega.DataSourceSpec data_source_spec_for_settlement_schedule = 7;
   // Data source spec describing the data source for settlement.
   vega.DataSourceSpec data_source_spec_for_settlement_data = 8;
@@ -79,15 +79,15 @@ message DataSourceSpecToFutureBinding {
   string trading_termination_property = 2;
 }
 
-// DataSourceSpecToFutureBinding describes which property of the data source data is to be
+// Describes which property of the data source data is to be
 // used as settlement data and which to use as the trading terminated trigger
 message DataSourceSpecToPerpsBinding {
   // Name of the property in the source data that should be used as settlement data.
-  // If it is set to "prices.BTC.value", then the Perps will use the value of
+  // If it is set to "prices.BTC.value", then the perpetuals market will use the value of
   // this property as settlement data.
   string settlement_data_property = 1;
   // Name of the property in the source data that should be used as settlement data.
-  // If it is set to "prices.BTC.value", then the Perps will use the value of
+  // If it is set to "prices.BTC.value", then the perpetuals market will use the value of
   // this property as settlement data.
   string settlement_schedule_property = 2;
 }
@@ -114,7 +114,7 @@ message Instrument {
     Future future = 100;
     // Spot.
     Spot spot = 101;
-    // Perps.
+    // Perpetuals.
     Perps perps = 102;
   }
 }
