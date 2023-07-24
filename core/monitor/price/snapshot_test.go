@@ -14,7 +14,6 @@ package price_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -200,8 +199,6 @@ func TestRestorePriceBoundRepresentation(t *testing.T) {
 
 	min, max := pm.GetValidPriceRange()
 	sMin, sMax := snap.GetValidPriceRange()
-	fmt.Println(min.Original().String(), max.Original().String())
-	fmt.Println(min.Representation().String(), max.Representation().String())
 	// check the values of the wrapped decimal are the same
 	require.Equal(t, min, sMin)
 	require.Equal(t, max, sMax)

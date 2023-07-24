@@ -18,7 +18,6 @@ import (
 	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -185,8 +184,7 @@ func getLatestMarketData(t *testing.T) {
 	got, err := store.GetMarketDataByID(ctx, "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
 	assert.NoError(t, err)
 
-	fmt.Printf("want: %#v\ngot: %#v\n", want, got)
-	assert.True(t, want.Equal(got))
+	assert.Truef(t, want.Equal(got), "want: %#v\ngot: %#v\n", want, got)
 }
 
 func getAllForMarketBetweenDates(t *testing.T) {

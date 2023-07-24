@@ -39,8 +39,7 @@ func TesSpottProposalForNewMarket(t *testing.T) {
 }
 
 func testSubmittingProposalForNewSpotMarketSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
@@ -61,8 +60,7 @@ func testSubmittingProposalForNewSpotMarketSucceeds(t *testing.T) {
 }
 
 func testSubmittingDuplicatedProposalForNewSpotMarketFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
@@ -105,8 +103,7 @@ func testSubmittingDuplicatedProposalForNewSpotMarketFails(t *testing.T) {
 }
 
 func testSubmittingProposalForNewSpotMarketWithBadRiskParameterFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 1)
@@ -160,14 +157,13 @@ func TestSubmittingProposalForNewSpotMarketWithOutOfRangeRiskParameterFails(t *t
 	lnm.Params.Sigma = num.DecimalFromFloat(1.0)
 
 	// now all risk params are valid
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 1)
 	eng.ensureAllAssetEnabled(t)
 
-	proposal := eng.newProposalForNewSpotMarket(party.Id, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewSpotMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour))
 	proposal.Terms.GetNewSpotMarket().Changes.RiskParameters = &types.NewSpotMarketConfigurationLogNormal{LogNormal: lnm}
 
 	// setup
@@ -181,8 +177,7 @@ func TestSubmittingProposalForNewSpotMarketWithOutOfRangeRiskParameterFails(t *t
 }
 
 func testRejectingProposalForNewSpotMarketSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
@@ -220,8 +215,7 @@ func testRejectingProposalForNewSpotMarketSucceeds(t *testing.T) {
 }
 
 func testVotingForNewSpotMarketProposalSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
@@ -257,8 +251,7 @@ func testVotingForNewSpotMarketProposalSucceeds(t *testing.T) {
 }
 
 func testVotingWithMajorityOfYesMakesNewSpotMarketProposalPassed(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// when
 	proposer := vgrand.RandomStr(5)
@@ -337,8 +330,7 @@ func testVotingWithMajorityOfYesMakesNewSpotMarketProposalPassed(t *testing.T) {
 }
 
 func testVotingWithMajorityOfNoMakesNewSpotMarketProposalDeclined(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
@@ -416,8 +408,7 @@ func testVotingWithMajorityOfNoMakesNewSpotMarketProposalDeclined(t *testing.T) 
 }
 
 func testVotingWithInsufficientParticipationMakesNewSpotMarketProposalDeclined(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
