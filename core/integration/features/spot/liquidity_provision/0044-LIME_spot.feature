@@ -29,7 +29,7 @@ Feature: Spot market
       | network.markPriceUpdateMaximumFrequency               | 0s    |
       | market.liquidityV2.earlyExitPenalty                   | 0.02  |
       | market.stake.target.timeWindow                        | 2s    |
-      | validators.epoch.length                               | 10s   |
+      # | validators.epoch.length                               | 10s   |
       | market.liquidityV2.earlyExitPenalty                   | 0.5   |
       | market.liquidity.providers.fee.distributionTimeStep   | 0     |
       | market.liquidity.bondPenaltyParameter                 | 0     |
@@ -39,7 +39,6 @@ Feature: Spot market
       | validators.epoch.length                               | 2s    |
 
     Given time is updated to "2023-07-20T00:00:00Z"
-    Given the average block duration is "2"
 
     And the spot markets:
       | id      | name    | base asset | quote asset | risk model             | auction duration | fees          | price monitoring   | sla params |
@@ -90,7 +89,7 @@ Feature: Spot market
       | lpprov | BTC/ETH   | buy  | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | lp-order1    |      |
       | lpprov | BTC/ETH   | sell | 5      | 20    | 0                | TYPE_LIMIT | TIF_GTC | lp-order2    |      |
 
-    Then the network moves ahead "10" blocks
+    Then the network moves ahead "3" blocks
 
     When the opening auction period ends for market "BTC/ETH"
     Then the market data for the market "BTC/ETH" should be:
