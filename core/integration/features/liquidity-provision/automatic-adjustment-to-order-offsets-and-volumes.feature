@@ -13,8 +13,8 @@ Feature: Confirm automatic adjustments to LP orders as specified in 0038-OLIQ
       | 1.2           | 1.5            | 2              |
 
     And the markets:
-      | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 0.5            | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 0.5            | 1e6                    | 1e6                       | default-futures |
 
     And the following network parameters are set:
       | name                                                   | value |

@@ -14,9 +14,9 @@ Feature: check margin account with partially filled order
       | 3600    | 0.99        | 300               |
 
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring  | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC20 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | default-none      | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/DEC21 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | price-monitoring-1| default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring  | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC20 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | default-none      | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC21 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | price-monitoring-1| default-eth-for-future | 1e6                    | 1e6                       | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |

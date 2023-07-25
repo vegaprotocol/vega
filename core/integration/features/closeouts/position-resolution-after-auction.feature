@@ -1,8 +1,8 @@
 Feature: Set up a market with an opening auction, then uncross the book so that the part trading in auction becomes distressed 
   Background:
     Given the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0.1                       |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0.1                       | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party   | asset | amount    |
       | party1  | BTC   | 20000     |

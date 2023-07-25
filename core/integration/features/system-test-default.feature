@@ -7,10 +7,10 @@ Feature: Basic feature-file matching the system-test setup like for like
       | USD | 0              |
 
     And the markets:
-      | id        | quote name | asset | risk model             | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places |
-      | ETH/DEC19 | ETH        | ETH   | default-st-risk-model  | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 5              | 5                       |
-      | ETH/DEC20 | ETH        | ETH   | closeout-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 5              | 5                       |
-      | ETH/DEC21 | ETH        | USD   | closeout-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 0              | 0                       |
+      | id        | quote name | asset | risk model             | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | sla params      | 
+      | ETH/DEC19 | ETH        | ETH   | default-st-risk-model  | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 5              | 5                       | default-futures |
+      | ETH/DEC20 | ETH        | ETH   | closeout-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 5              | 5                       | default-futures |
+      | ETH/DEC21 | ETH        | USD   | closeout-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 0              | 0                       | default-futures |
     And the following network parameters are set:
       | name                                          | value |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
