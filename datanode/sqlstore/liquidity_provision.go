@@ -48,7 +48,7 @@ type LiquidityProviderFeeShare struct {
 	Ordinality            int64
 	MarketID              entities.MarketID
 	PartyID               string
-	AverageScore          string
+	AverageLiquidityScore string `db:"average_score"`
 	EquityLikeShare       string
 	AverageEntryValuation string
 	VirtualStake          string
@@ -165,7 +165,7 @@ func (lp *LiquidityProvision) ListProviders(ctx context.Context, partyID *entiti
 				Party:                 feeShare.PartyID,
 				EquityLikeShare:       feeShare.EquityLikeShare,
 				AverageEntryValuation: feeShare.AverageEntryValuation,
-				AverageScore:          feeShare.AverageScore,
+				AverageScore:          feeShare.AverageLiquidityScore,
 				VirtualStake:          feeShare.VirtualStake,
 			},
 		})
