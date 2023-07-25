@@ -59,8 +59,7 @@
 - [8477](https://github.com/vegaprotocol/vega/issues/8477) - Do not allow opening auction duration of 0
 - [8891](https://github.com/vegaprotocol/vega/issues/8891) - Emit market update event when resuming via governance
 - [8874](https://github.com/vegaprotocol/vega/issues/8874) - Database migration can fail when rolling back and migrating up again.
--
-
+- [8855](https://github.com/vegaprotocol/vega/issues/8855) - Preserve reference to parent market when restoring checkpoint data
 
 ## 0.72.1
 
