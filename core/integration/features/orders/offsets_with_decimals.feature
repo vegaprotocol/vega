@@ -8,7 +8,6 @@ Feature: Test how offsets are applied with decimals
             | market.stake.target.timeWindow                      | 24h   |
             | market.stake.target.scalingFactor                   | 1     |
             | market.liquidity.targetstake.triggering.ratio       | 0     |
-            | market.liquidity.providers.fee.distributionTimeStep | 10m   |
             | network.markPriceUpdateMaximumFrequency             | 0s    |
             | limits.markets.maxPeggedOrders                      | 4     |
         And the following assets are registered:
@@ -28,8 +27,8 @@ Feature: Test how offsets are applied with decimals
             | 100000  | 0.99        | 3                 |
 
         And the markets:
-            | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees         | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor |
-            | USD/DEC19 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none | price-monitoring-1 | default-usd-for-future | 3              | 3                       | 1e6                    | 1e6                       |
+            | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees         | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | lp timestep |
+            | USD/DEC19 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none | price-monitoring-1 | default-usd-for-future | 3              | 3                       | 1e6                    | 1e6                       | 10m         |
 
         Given the parties deposit on asset's general account the following amount:
             | party  | asset | amount          |

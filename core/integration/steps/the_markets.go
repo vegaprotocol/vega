@@ -366,7 +366,7 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 		LiquiditySLAParams: &types.LiquiditySLAParams{
 			PriceRange:                      num.DecimalFromFloat(0.95),
 			CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0.5),
-			ProvidersFeeCalculationTimeStep: time.Second * 5,
+			ProvidersFeeCalculationTimeStep: row.lpDistributionTimestep(),
 			PerformanceHysteresisEpochs:     4,
 			SlaCompetitionFactor:            num.NewDecimalFromFloat(0.5),
 		},
@@ -562,6 +562,14 @@ func (r marketRow) lpPriceRange() float64 {
 		return 1
 	}
 	return r.row.MustF64("lp price range")
+}
+
+func (r marketRow) lpDistributionTimestep() time.Duration {
+	if !r.row.HasColumn("lp timestep") {
+		// set to 5s by default
+		return time.Second * 5
+	}
+	return r.row.MustDurationSec("lp timestep")
 }
 
 func (r marketRow) linearSlippageFactor() float64 {

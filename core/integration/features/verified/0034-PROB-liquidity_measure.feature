@@ -8,7 +8,6 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | limits.markets.maxPeggedOrders                      | 18    |
 
@@ -25,8 +24,8 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | id  | decimal places |
       | ETH | 3              |
     And the markets:
-      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 2              | 2                       | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | lp timestep |
+      | ETH/DEC19 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 2              | 2                       | 1e6                    | 1e6                       | 10m         |
 
     Given the parties deposit on asset's general account the following amount:
       | party      | asset | amount                |
@@ -124,8 +123,8 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | 0.004     | 0.001              |
 
     And the markets:
-      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | lp timestep |
+      | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future | 1e6                    | 1e6                       | 10m         |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount              |
       | lp1    | ETH2  | 1000000000000000000 |
@@ -176,8 +175,8 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | 0.004     | 0.001              |
 
     And the markets:
-      | id         | quote name | asset | risk model                | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH2/MAR22 | ETH2       | ETH2  | default-simple-risk-model | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | id         | quote name | asset | risk model                | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | lp timestep |
+      | ETH2/MAR22 | ETH2       | ETH2  | default-simple-risk-model | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future | 1e6                    | 1e6                       | 10m         |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount              |
       | lp1    | ETH2  | 1000000000000000000 |

@@ -7,7 +7,6 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidityV2.bondPenaltyParameter             | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0.1   |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
     And the average block duration is "1"
     And the simple risk model named "simple-risk-model-1":
@@ -25,8 +24,8 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
 
   Scenario: 001, LP gets distressed during continuous trading (0042-LIQF-014)
     Given the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.01           | 0.5                    | 0                         |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | lp timestep |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.01           | 0.5                    | 0                         | 10s         |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | party0 | ETH   | 5721       |
@@ -185,8 +184,8 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 30          | 30            | 0.2                    |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-2 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5            | 0.5                    | 0                         |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | lp timestep |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-2 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5            | 0.5                    | 0                         | 10s         |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | party0 | ETH   | 5721       |
@@ -310,8 +309,8 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
 
   Scenario: 003, 2 LPs on the market, LP1 gets distressed and closed-out during continuous trading (0042-LIQF-014)
     Given the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.01           | 5e-2                   | 0                       |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | lp timestep |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.01           | 5e-2                   | 0                         | 10s         |
     And the parties deposit on asset's general account the following amount:
       | party   | asset | amount     |
       | party0  | ETH   | 5721       |
