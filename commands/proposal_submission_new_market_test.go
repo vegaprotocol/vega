@@ -4195,7 +4195,7 @@ func testFutureMarketSubmissionWithInternalTimeTriggerTerminationDataFails(t *te
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination.internal.timetrigger"), commands.ErrIsNotValid)
 }
 
-func testNewMarketChangeSubmissionWithValidLpRangeSucceeds(t *testing.T) {
+func TestNewMarketChangeSubmissionWithValidLpRangeSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
 			Change: &protoTypes.ProposalTerms_NewSpotMarket{
@@ -4259,7 +4259,7 @@ func testFutureMarketSubmissionWithInternalTimeTriggerSettlementDataFails(t *tes
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.internal.timetrigger"), commands.ErrIsNotValid)
 }
 
-func testNewMarketChangeSubmissionWithInvalidLpRangeFails(t *testing.T) {
+func TestNewMarketChangeSubmissionWithInvalidLpRangeFails(t *testing.T) {
 	priceRanges := []string{"banana", "-1", "0", "101"}
 	errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBePositive, commands.ErrMustBePositive, commands.ErrMustBeAtMost100}
 
@@ -4284,7 +4284,7 @@ func testNewMarketChangeSubmissionWithInvalidLpRangeFails(t *testing.T) {
 	}
 }
 
-func testNewMarketChangeSubmissionWithInvalidMinTimeFractionFails(t *testing.T) {
+func TestNewMarketChangeSubmissionWithInvalidMinTimeFractionFails(t *testing.T) {
 	minTimeFraction := []string{"banana", "-1", "-1.1", "1.1", "100"}
 	errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01}
 
@@ -4309,7 +4309,7 @@ func testNewMarketChangeSubmissionWithInvalidMinTimeFractionFails(t *testing.T) 
 	}
 }
 
-func testNewMarketChangeSubmissionWithValidMinTimeFractionSucceeds(t *testing.T) {
+func TestNewMarketChangeSubmissionWithValidMinTimeFractionSucceeds(t *testing.T) {
 	minTimeFraction := []string{"0", "0.1", "0.99", "1"}
 
 	for _, v := range minTimeFraction {
@@ -4337,7 +4337,7 @@ func testNewMarketChangeSubmissionWithValidMinTimeFractionSucceeds(t *testing.T)
 	}
 }
 
-func testNewMarketChangeSubmissionWithInvalidCalculationTimeStepFails(t *testing.T) {
+func TestNewMarketChangeSubmissionWithInvalidCalculationTimeStepFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
 			Change: &protoTypes.ProposalTerms_NewSpotMarket{
@@ -4357,7 +4357,7 @@ func testNewMarketChangeSubmissionWithInvalidCalculationTimeStepFails(t *testing
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.sla_params.providers.fee.calculation_time_step"), commands.ErrMustBePositive)
 }
 
-func testNewMarketChangeSubmissionWithValidCalculationTimeStepSucceeds(t *testing.T) {
+func TestNewMarketChangeSubmissionWithValidCalculationTimeStepSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
 			Change: &protoTypes.ProposalTerms_NewSpotMarket{
@@ -4377,7 +4377,7 @@ func testNewMarketChangeSubmissionWithValidCalculationTimeStepSucceeds(t *testin
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.sla_params.providers.fee.calculation_time_step"), commands.ErrMustBePositive)
 }
 
-func testNewMarketChangeSubmissionWithInvalidCompetitionFactorFails(t *testing.T) {
+func TestNewMarketChangeSubmissionWithInvalidCompetitionFactorFails(t *testing.T) {
 	competitionFactors := []string{"banana", "-1", "-1.1", "1.1", "100"}
 	errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01}
 
@@ -4402,7 +4402,7 @@ func testNewMarketChangeSubmissionWithInvalidCompetitionFactorFails(t *testing.T
 	}
 }
 
-func testNewMarketChangeSubmissionWithValidCompetitionFactorSucceeds(t *testing.T) {
+func TestNewMarketChangeSubmissionWithValidCompetitionFactorSucceeds(t *testing.T) {
 	minTimeFraction := []string{"0", "0.1", "0.99", "1"}
 
 	for _, v := range minTimeFraction {
@@ -4430,7 +4430,7 @@ func testNewMarketChangeSubmissionWithValidCompetitionFactorSucceeds(t *testing.
 	}
 }
 
-func testNewMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails(t *testing.T) {
+func TestNewMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
 			Change: &protoTypes.ProposalTerms_NewSpotMarket{
@@ -4450,7 +4450,7 @@ func testNewMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails(t 
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBePositive)
 }
 
-func testNewMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds(t *testing.T) {
+func TestNewMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
 			Change: &protoTypes.ProposalTerms_NewSpotMarket{

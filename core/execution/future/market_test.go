@@ -668,7 +668,7 @@ func getMarket(pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDu
 	return getMarketWithDP(pMonitorSettings, openingAuctionDuration, 1, 0.99)
 }
 
-func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration, decimalPlaces uint64, lpRange float64) types.Market {
+func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration, decimalPlaces uint64, _ float64) types.Market {
 	pubKeys := []*dstypes.Signer{
 		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}

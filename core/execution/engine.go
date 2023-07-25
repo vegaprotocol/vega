@@ -824,7 +824,7 @@ func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mk
 	return nil
 }
 
-func (e *Engine) propagateSLANetParams(ctx context.Context, mkt *future.Market) {
+func (e *Engine) propagateSLANetParams(_ context.Context, mkt *future.Market) {
 	if !e.npv.liquidityV2BondPenaltyFactor.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
 		mkt.OnMarketLiquidityV2BondPenaltyFactorUpdate(e.npv.liquidityV2BondPenaltyFactor)
 	}

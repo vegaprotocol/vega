@@ -127,7 +127,6 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 			return err
 		}
 		responses = append(responses, resp...)
-
 	}
 	if len(responses) > 0 {
 		m.broker.Send(events.NewLedgerMovements(ctx, responses))

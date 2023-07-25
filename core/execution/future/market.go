@@ -3792,11 +3792,6 @@ func (m *Market) GetTotalOpenPositionCount() uint64 {
 	return m.position.GetOpenPositionCount()
 }
 
-// we use this in a banch of places so let's inform it from here in case we want to modify it in the future.
-func (m *Market) minValidPrice() *num.Uint {
-	return m.priceFactor
-}
-
 // getMarketObservable returns current mark price once market is out of opening auction, during opening auction the indicative uncrossing price is returned.
 func (m *Market) getMarketObservable(fallbackPrice *num.Uint) *num.Uint {
 	// during opening auction we don't have a last traded price, so we use the indicative price instead

@@ -468,7 +468,7 @@ func TestPartialFillMargins(t *testing.T) {
 // 	require.NoError(t, err)
 // }
 
-func changeSizeTo(ord *types.Order, size uint64) {
-	ord.Size = size
-	ord.Remaining = size
-}
+// func changeSizeTo(ord *types.Order, size uint64) {
+// 	ord.Size = size
+// 	ord.Remaining = size
+// }
