@@ -75,10 +75,6 @@ func (svcs *allServices) loadAsset(
 		return fmt.Errorf("unable to get asset %v", err)
 	}
 
-	// if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain && asset.IsERC20() {
-	// 	return ErrERC20AssetWithNullChain
-	// }
-
 	// the validation is required only for validators
 	if svcs.conf.IsValidator() {
 		// just a simple backoff here

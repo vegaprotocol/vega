@@ -332,15 +332,11 @@ func newServices(
 	if svcs.spam != nil {
 		svcs.snapshotEngine.AddProviders(svcs.spam)
 	}
-	powWatchers := []netparams.WatchParam{}
 
-	// if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
-	// 	svcs.pow = pow.NewNoop()
-	// } else {
 	pow := pow.New(svcs.log, svcs.conf.PoW, svcs.timeService)
 	svcs.pow = pow
 	svcs.snapshotEngine.AddProviders(pow)
-	powWatchers = []netparams.WatchParam{
+	powWatchers := []netparams.WatchParam{
 		{
 			Param:   netparams.SpamPoWNumberOfPastBlocks,
 			Watcher: pow.UpdateSpamPoWNumberOfPastBlocks,
@@ -366,7 +362,6 @@ func newServices(
 			Watcher: pow.OnEpochDurationChanged,
 		},
 	}
-	// }
 
 	// setup config reloads for all engines / services /etc
 	svcs.registerConfigWatchers()

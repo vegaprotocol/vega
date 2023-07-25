@@ -442,14 +442,12 @@ func (n *Command) startBlockchainClients() error {
 		return nil
 	}
 
-	// if n.conf.Blockchain.ChainProvider != blockchain.ProviderNullChain {
 	var err error
 	n.ethClient, err = ethclient.Dial(n.ctx, n.conf.Ethereum)
 	if err != nil {
 		return fmt.Errorf("could not instantiate ethereum client: %w", err)
 	}
 	n.ethConfirmations = ethclient.NewEthereumConfirmations(n.conf.Ethereum, n.ethClient, nil)
-	// }
 
 	return nil
 }
