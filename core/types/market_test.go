@@ -157,7 +157,7 @@ func TestMarketFromIntoProto(t *testing.T) {
 		LiquiditySlaParams: &vegapb.LiquiditySLAParameters{
 			PriceRange:                      "0.95",
 			CommitmentMinTimeFraction:       "0.5",
-			ProvidersFeeCalculationTimeStep: time.Duration(time.Second * 5).Nanoseconds(),
+			ProvidersFeeCalculationTimeStep: (5 * time.Second).Nanoseconds(),
 			PerformanceHysteresisEpochs:     4,
 			SlaCompetitionFactor:            "0.5",
 		},

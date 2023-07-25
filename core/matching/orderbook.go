@@ -1165,7 +1165,6 @@ func (b *OrderBook) add(o *types.Order) {
 		b.peggedOrdersCount++
 		b.peggedCountNotify(1)
 	}
-
 }
 
 // cleanup removes all orders and resets the the order lookup maps.

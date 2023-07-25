@@ -556,14 +556,6 @@ func (r marketRow) liquidityMonitoring() string {
 	return r.row.MustStr("liquidity monitoring")
 }
 
-func (r marketRow) lpPriceRange() float64 {
-	if !r.row.HasColumn("lp price range") {
-		// set to 1 by default
-		return 1
-	}
-	return r.row.MustF64("lp price range")
-}
-
 func (r marketRow) linearSlippageFactor() float64 {
 	if !r.row.HasColumn("linear slippage factor") {
 		// set to 0.1 by default
@@ -603,13 +595,6 @@ func (r marketRow) successorAuction() int64 {
 		return 5 * r.auctionDuration() // five times auction duration
 	}
 	return r.row.MustI64("successor auction")
-}
-
-func (r marketUpdateRow) tryLpPriceRange() (float64, bool) {
-	if r.row.HasColumn("lp price range") {
-		return r.row.MustF64("lp price range"), true
-	}
-	return -1, false
 }
 
 func (r marketUpdateRow) tryLinearSlippageFactor() (float64, bool) {

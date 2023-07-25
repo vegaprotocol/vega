@@ -183,9 +183,8 @@ func TestWithinMarket(t *testing.T) {
 
 	// Retrieve both MarketLiquidityFee account balance and Party Balance
 	// before the fee distribution.
-	var (
-		originalBalance = esm.LiquidityFeeAccount().Balance.Clone()
-	)
+
+	originalBalance := esm.LiquidityFeeAccount().Balance.Clone()
 
 	curTime = curTime.Add(1 * time.Second)
 	tm.now = curTime

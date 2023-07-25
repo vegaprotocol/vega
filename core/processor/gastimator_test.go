@@ -278,30 +278,6 @@ func unmarshalCancelOrder(order *commandspb.OrderCancellation) func(interface{})
 	}
 }
 
-func unmarshalLPSubmission(order *commandspb.LiquidityProvisionSubmission) func(interface{}) error {
-	return func(i interface{}) error {
-		underlyingCmd, _ := i.(*commandspb.LiquidityProvisionSubmission)
-		*underlyingCmd = *order
-		return nil
-	}
-}
-
-func unmarshalLPAmendment(order *commandspb.LiquidityProvisionAmendment) func(interface{}) error {
-	return func(i interface{}) error {
-		underlyingCmd, _ := i.(*commandspb.LiquidityProvisionAmendment)
-		*underlyingCmd = *order
-		return nil
-	}
-}
-
-func unmarshalLPCancellation(order *commandspb.LiquidityProvisionCancellation) func(interface{}) error {
-	return func(i interface{}) error {
-		underlyingCmd, _ := i.(*commandspb.LiquidityProvisionCancellation)
-		*underlyingCmd = *order
-		return nil
-	}
-}
-
 type testTx struct {
 	command      txn.Command
 	unmarshaller func(interface{}) error

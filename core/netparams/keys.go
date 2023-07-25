@@ -26,7 +26,7 @@ const (
 	MarketLiquidityBondPenaltyParameter           = "market.liquidity.bondPenaltyParameter"
 	MarketLiquidityMaximumLiquidityFeeFactorLevel = "market.liquidity.maximumLiquidityFeeFactorLevel"
 
-	// TODO karel - remove
+	// TODO karel - remove.
 	MarketLiquidityStakeToCCYVolume                 = "market.liquidity.stakeToCcyVolume"
 	MarketLiquidityProvidersFeeDistributionTimeStep = "market.liquidity.providers.fee.distributionTimeStep"
 	MarketLiquidityTargetStakeTriggeringRatio       = "market.liquidity.targetstake.triggering.ratio"
@@ -37,7 +37,7 @@ const (
 	MarketValueWindowLength                         = "market.value.windowLength"
 	MarketPriceMonitoringDefaultParameters          = "market.monitor.price.defaultParameters"
 
-	// TODO karel - remove
+	// TODO karel - remove.
 	MarketLiquidityProvisionShapesMaxSize = "market.liquidityProvision.shapes.maxSize"
 	MarketMinLpStakeQuantumMultiple       = "market.liquidityProvision.minLpStakeQuantumMultiple"
 	MarketSuccessorLaunchWindow           = "market.liquidity.successorLaunchWindowLength"
