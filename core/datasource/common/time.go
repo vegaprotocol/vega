@@ -138,7 +138,7 @@ type InternalTimeTriggers [1]*InternalTimeTrigger
 
 func (i InternalTimeTriggers) Empty() error {
 	if len(i) <= 0 || i[0] == nil {
-		return errors.New("no time trigger set")
+		return errors.New("no time trigger is set")
 	}
 
 	return nil

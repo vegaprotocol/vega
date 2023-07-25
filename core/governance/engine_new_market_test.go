@@ -39,8 +39,8 @@ import (
 func TestProposalForNewMarket(t *testing.T) {
 	t.Run("Submitting a proposal for new market succeeds", testSubmittingProposalForNewMarketSucceeds)
 	t.Run("Submitting a proposal for new perps market succeeds", testSubmittingProposalForNewPerpsMarketSucceeds)
-	t.Run("Submitting a proposal for new perps market succeeds 2", testSubmittingProposalForNewPerpsMarketSucceedsWithCustomInitialTime)
-	t.Run("Submitting a proposal for new perps market fails with initial time in past", testSubmittingProposalForNewPerpsMarketFailsWithPastInitialTime)
+	t.Run("Submitting a proposal for new perps market succeeds 2", testSubmittingProposalForNewPerpsMarketWithCustomInitialTimeSucceeds)
+	t.Run("Submitting a proposal for new perps market with initial time in past fails", testSubmittingProposalForNewPerpsMarketWithPastInitialTimeFails)
 	t.Run("Submitting a proposal with internal time termination for new market succeeds", testSubmittingProposalWithInternalTimeTerminationForNewMarketSucceeds)
 	t.Run("Submitting a proposal with internal time termination with `less than equal` condition fails", testSubmittingProposalWithInternalTimeTerminationWithLessThanEqualConditionForNewMarketFails)
 	t.Run("Submitting a proposal with internal time settling for new market fails", testSubmittingProposalWithInternalTimeSettlingForNewMarketFails)
@@ -1565,7 +1565,7 @@ func testSubmittingProposalForNewPerpsMarketSucceeds(t *testing.T) {
 	require.NotNil(t, toSubmit.NewMarket().Market())
 }
 
-func testSubmittingProposalForNewPerpsMarketSucceedsWithCustomInitialTime(t *testing.T) {
+func testSubmittingProposalForNewPerpsMarketWithCustomInitialTimeSucceeds(t *testing.T) {
 	eng := getTestEngine(t, time.Now())
 	defer eng.ctrl.Finish()
 
@@ -1603,7 +1603,7 @@ func testSubmittingProposalForNewPerpsMarketSucceedsWithCustomInitialTime(t *tes
 	require.NotNil(t, toSubmit.NewMarket().Market())
 }
 
-func testSubmittingProposalForNewPerpsMarketFailsWithPastInitialTime(t *testing.T) {
+func testSubmittingProposalForNewPerpsMarketWithPastInitialTimeFails(t *testing.T) {
 	eng := getTestEngine(t, time.Now())
 	defer eng.ctrl.Finish()
 
