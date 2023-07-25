@@ -15,6 +15,7 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | market.auction.minimumDuration          | 1     |
       | market.stake.target.scalingFactor       | 10    |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
 
   @LPRelease
   Scenario: Mid price works as expected
@@ -26,9 +27,13 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | party4 | DAI   | 110000000000 |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee  | side | pegged reference | proportion | offset | reference | lp type    |
-      | lp1 | party1 | DAI/DEC22 | 20000000000       | 0.01 | buy  | MID              | 1          | 10     | lp-1      | submission |
-      | lp1 | party1 | DAI/DEC22 | 20000000000       | 0.01 | sell | MID              | 1          | 10     | lp-1      | submission |
+      | id  | party  | market id | commitment amount | fee  | reference | lp type    |
+      | lp1 | party1 | DAI/DEC22 | 20000000000       | 0.01 | lp-1      | submission |
+      | lp1 | party1 | DAI/DEC22 | 20000000000       | 0.01 | lp-1      | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party1 | DAI/DEC22 | 2         | 1                    | buy  | MID              | 1          | 10     |
+      | party1 | DAI/DEC22 | 2         | 1                    | sell | MID              | 1          | 10     |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price      | resulting trades | type       | tif     | reference |
@@ -50,9 +55,13 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | buy  | 800000000  | 1      |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee  | side | pegged reference | proportion | offset | reference | lp type    |
-      | lp2 | party4 | DAI/DEC22 | 10000000000       | 0.01 | buy  | BID              | 1          | 12     | lp-2      | submission |
-      | lp2 | party4 | DAI/DEC22 | 10000000000       | 0.01 | sell | ASK              | 1          | 12     | lp-2      | submission |
+      | id  | party  | market id | commitment amount | fee  | reference | lp type    |
+      | lp2 | party4 | DAI/DEC22 | 10000000000       | 0.01 | lp-2      | submission |
+      | lp2 | party4 | DAI/DEC22 | 10000000000       | 0.01 | lp-2      | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party4 | DAI/DEC22 | 2         | 1                    | buy  | BID              | 1          | 12     |
+      | party4 | DAI/DEC22 | 2         | 1                    | sell | ASK              | 1          | 12     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin     | general     | bond        |
       | party4 | DAI   | DAI/DEC22 | 1060913900 | 98939086100 | 10000000000 |
@@ -87,9 +96,13 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | party4 | DAI   | 110000000000 |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee  | side | pegged reference | proportion | offset | reference | lp type    |
-      | lp1 | party1 | DAI/DEC22 | 20000000000       | 0.01 | buy  | MID              | 1          | 10     | lp-1      | submission |
-      | lp1 | party1 | DAI/DEC22 | 20000000000       | 0.01 | sell | MID              | 1          | 10     | lp-1      | submission |
+      | id  | party  | market id | commitment amount | fee  | reference | lp type    |
+      | lp1 | party1 | DAI/DEC22 | 20000000000       | 0.01 | lp-1      | submission |
+      | lp1 | party1 | DAI/DEC22 | 20000000000       | 0.01 | lp-1      | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party1 | DAI/DEC22 | 2         | 1                    | buy  | MID              | 1          | 10     |
+      | party1 | DAI/DEC22 | 2         | 1                    | sell | MID              | 1          | 10     |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price      | resulting trades | type       | tif     | reference |
@@ -111,9 +124,13 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | buy  | 800000000  | 1      |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee  | side | pegged reference | proportion | offset | reference | lp type    |
-      | lp2 | party4 | DAI/DEC22 | 10000000000       | 0.01 | buy  | BID              | 1          | 12     | lp-2      | submission |
-      | lp2 | party4 | DAI/DEC22 | 10000000000       | 0.01 | sell | ASK              | 1          | 12     | lp-2      | submission |
+      | id  | party  | market id | commitment amount | fee  | reference | lp type    |
+      | lp2 | party4 | DAI/DEC22 | 10000000000       | 0.01 | lp-2      | submission |
+      | lp2 | party4 | DAI/DEC22 | 10000000000       | 0.01 | lp-2      | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party4 | DAI/DEC22 | 2         | 1                    | buy  | BID              | 1          | 12     |
+      | party4 | DAI/DEC22 | 2         | 1                    | sell | ASK              | 1          | 12     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin     | general     | bond        |
       | party4 | DAI   | DAI/DEC22 | 1060913900 | 98939086100 | 10000000000 |
@@ -128,9 +145,13 @@ Feature: Replicate unexpected margin issues - no mid price pegs
 
     # Amending the LP should result in LP versions being different
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee  | side | pegged reference | proportion | offset | reference | lp type   |
-      | lp2 | party4 | DAI/DEC22 | 10000000010       | 0.01 | buy  | BID              | 1          | 12     | lp-2      | amendment |
-      | lp2 | party4 | DAI/DEC22 | 10000000010       | 0.01 | sell | ASK              | 1          | 12     | lp-2      | amendment |
+      | id  | party  | market id | commitment amount | fee  | reference | lp type   |
+      | lp2 | party4 | DAI/DEC22 | 10000000010       | 0.01 | lp-2      | amendment |
+      | lp2 | party4 | DAI/DEC22 | 10000000010       | 0.01 | lp-2      | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party4 | DAI/DEC22 | 2         | 1                    | buy  | BID              | 1          | 12     |
+      | party4 | DAI/DEC22 | 2         | 1                    | sell | ASK              | 1          | 12     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin     | general     | bond        |
       | party4 | DAI   | DAI/DEC22 | 1060913900 | 98939086090 | 10000000010 |

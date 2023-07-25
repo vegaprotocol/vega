@@ -15,10 +15,11 @@ Feature: test probability of trading used in LP vol when best bid/ask is changin
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
-      | market.liquidityV2.bondPenaltyParameter         | 0.2   |
+      | market.liquidityV2.bondPenaltyParameter       | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
-      | market.liquidity.stakeToCcyVolume             | 1.0   |
+      | market.liquidityV2.stakeToCcyVolume           | 1.0   |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
+      | limits.markets.maxPeggedOrders                | 2     |
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
@@ -34,10 +35,14 @@ Feature: test probability of trading used in LP vol when best bid/ask is changin
   Scenario: 001, LP price at 0, check what's happening with LP volume; 0038-OLIQ-002
 
     Given the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | sell | ASK              | 500        | 1      | submission |
-      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | buy  | BID              | 500        | 1      | amendment  |
-
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | submission |
+      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 1      |
+      | party0 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 1      |
+ 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | party1 | ETH/MAR22 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
@@ -84,10 +89,14 @@ Feature: test probability of trading used in LP vol when best bid/ask is changin
   Scenario: 002, market starts with a low best bid price 1 (ProbTrading is large), and then best bid goes to 899; test of the new ProbTrading is reasonable, and LP is not distressed; 0038-OLIQ-002
 
     Given the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | sell | ASK              | 500        | 1      | submission |
-      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | buy  | BID              | 500        | 1      | amendment  |
-
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | submission |
+      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 1      |
+      | party0 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 1      |
+ 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | party1 | ETH/MAR22 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |

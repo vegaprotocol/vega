@@ -5,9 +5,10 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
-      | market.liquidityV2.bondPenaltyParameter         | 0.2   |
+      | market.liquidityV2.bondPenaltyParameter       | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
+      | limits.markets.maxPeggedOrders                | 2     |
 
     And the following assets are registered:
       | id  | decimal places |
@@ -37,9 +38,13 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
       | party2 | USD   | 10000000000000 |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp    | ETH/MAR22 | 390500000000      | 0.3 | sell | ASK              | 13         | 100000 | submission |
-      | lp1 | lp    | ETH/MAR22 | 390500000000      | 0.3 | buy  | BID              | 2          | 100000 | amendment  |
+      | id  | party | market id | commitment amount | fee | lp type    |
+      | lp1 | lp    | ETH/MAR22 | 390500000000      | 0.3 | submission |
+      | lp1 | lp    | ETH/MAR22 | 390500000000      | 0.3 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp    | ETH/MAR22 | 2         | 1                    | sell | ASK              | 13         | 100000 |
+      | lp    | ETH/MAR22 | 2         | 1                    | buy  | BID              | 2          | 100000 |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price       | resulting trades | type       | tif     | reference  |
@@ -84,9 +89,10 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
-      | market.liquidityV2.bondPenaltyParameter         | 0.2   |
+      | market.liquidityV2.bondPenaltyParameter       | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
+      | limits.markets.maxPeggedOrders                | 2     |
 
     And the following assets are registered:
       | id  | decimal places |
@@ -116,9 +122,13 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
       | party2 | USD   | 10000000000000 |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp    | ETH/MAR22 | 390500000000      | 0.3 | sell | ASK              | 13         | 100000 | submission |
-      | lp1 | lp    | ETH/MAR22 | 390500000000      | 0.3 | buy  | BID              | 2          | 100000 | amendment  |
+      | id  | party | market id | commitment amount | fee | lp type    |
+      | lp1 | lp    | ETH/MAR22 | 390500000000      | 0.3 | submission |
+      | lp1 | lp    | ETH/MAR22 | 390500000000      | 0.3 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp    | ETH/MAR22 | 2         | 1                    | sell | ASK              | 13         | 100000 |
+      | lp    | ETH/MAR22 | 2         | 1                    | buy  | BID              | 2          | 100000 |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price       | resulting trades | type       | tif     | reference  |
@@ -165,10 +175,11 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
-      | market.liquidityV2.bondPenaltyParameter         | 0.2   |
+      | market.liquidityV2.bondPenaltyParameter       | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
-
+      | limits.markets.maxPeggedOrders                | 2     |
+      
     And the following assets are registered:
       | id  | decimal places |
       | USD | 6              |
@@ -197,10 +208,14 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
       | party2 | USD   | 100000000000000 |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp    | ETH/MAR22 | 390500000000      | 0.3 | sell | ASK              | 13         | 10     | submission |
-      | lp1 | lp    | ETH/MAR22 | 390500000000      | 0.3 | buy  | BID              | 2          | 10     | amendment  |
-
+      | id  | party | market id | commitment amount | fee | lp type    |
+      | lp1 | lp    | ETH/MAR22 | 390500000000      | 0.3 | submission |
+      | lp1 | lp    | ETH/MAR22 | 390500000000      | 0.3 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp    | ETH/MAR22 | 2         | 1                    | sell | ASK              | 13         | 10     |
+      | lp    | ETH/MAR22 | 2         | 1                    | buy  | BID              | 2          | 10     |
+ 
     And the parties place the following orders:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference  |
       | party1 | ETH/MAR22 | buy  | 1      | 1000    | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-3  |

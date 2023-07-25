@@ -39,12 +39,18 @@ Feature: Test how offsets are applied with decimals
             | party3 | ETH   | 10000000000000  |
 
         And the parties submit the following liquidity provision:
-            | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-            | lp1 | lp1   | USD/DEC19 | 10000000000       | 0.001 | buy  | BID              | 1          | 0      | submission |
-            | lp1 | lp1   | USD/DEC19 | 10000000000       | 0.001 | buy  | MID              | 2          | 1      | submission |
-            | lp1 | lp1   | USD/DEC19 | 10000000000       | 0.001 | sell | ASK              | 1          | 0      | submission |
-            | lp1 | lp1   | USD/DEC19 | 10000000000       | 0.001 | sell | MID              | 2          | 1      | submission |
-
+            | id  | party | market id | commitment amount | fee   | lp type    |
+            | lp1 | lp1   | USD/DEC19 | 10000000000       | 0.001 | submission |
+            | lp1 | lp1   | USD/DEC19 | 10000000000       | 0.001 | submission |
+            | lp1 | lp1   | USD/DEC19 | 10000000000       | 0.001 | submission |
+            | lp1 | lp1   | USD/DEC19 | 10000000000       | 0.001 | submission |
+        And the parties place the following pegged iceberg orders:
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+            | lp1    | USD/DEC19 | 2         | 1                    | buy  | BID              | 1          | 0      |
+            | lp1    | USD/DEC19 | 2         | 1                    | buy  | MID              | 2          | 1      |
+            | lp1    | USD/DEC19 | 2         | 1                    | sell | ASK              | 1          | 0      |
+            | lp1    | USD/DEC19 | 2         | 1                    | sell | MID              | 2          | 1      |
+    
         Then the parties place the following orders:
             | party  | market id | side | volume | price   | resulting trades | type       | tif     |
             | party1 | USD/DEC19 | buy  | 10000  | 999999  | 0                | TYPE_LIMIT | TIF_GTC |

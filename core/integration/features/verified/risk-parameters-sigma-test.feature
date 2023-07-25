@@ -39,6 +39,7 @@ Feature: test risk model parameter sigma
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
 
   @Now
   Scenario: 001, test market ETH/MAR53(sigma=50),
@@ -56,9 +57,13 @@ Feature: test risk model parameter sigma
     And the average block duration is "1"
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/MAR53 | 100000000         | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp1 | party0 | ETH/MAR53 | 100000000         | 0.001 | buy  | BID              | 500        | 20     | amendment  |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/MAR53 | 100000000         | 0.001 | submission |
+      | lp1 | party0 | ETH/MAR53 | 100000000         | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/MAR53 | 2         | 1                    | sell | ASK              | 500        | 20     |
+      | party0 | ETH/MAR53 | 2         | 1                    | buy  | BID              | 500        | 20     |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -112,10 +117,14 @@ Feature: test risk model parameter sigma
     And the average block duration is "1"
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/MAR0  | 10000000          | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp1 | party0 | ETH/MAR0  | 10000000          | 0.001 | buy  | BID              | 500        | 20     | amendment  |
-
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/MAR0  | 10000000          | 0.001 | submission |
+      | lp1 | party0 | ETH/MAR0  | 10000000          | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/MAR0  | 2         | 1                    | sell | ASK              | 500        | 20     |
+      | party0 | ETH/MAR0  | 2         | 1                    | buy  | BID              | 500        | 20     |
+ 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR0  | buy  | 10     | 90    | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-11  |
@@ -156,13 +165,13 @@ Feature: test risk model parameter sigma
 #     | name                                          | value |
 #     | market.stake.target.timeWindow                | 24h   |
 #     | market.stake.target.scalingFactor             | 1     |
-#     | market.liquidityV2.bondPenaltyParameter         | 0.2   |
+#     | market.liquidityV2.bondPenaltyParameter       | 0.2   |
 #     | market.liquidity.targetstake.triggering.ratio | 0.1   |
 
 #   And the average block duration is "1"
 
 #   And the parties submit the following liquidity provision:
-#     | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+#     | id  | party  | market id | commitment amount | fee   | side | pegged reference | volume     | offset | lp type    |
 #     | lp1 | party0 | ETH/MAR54 | 10000000          | 0.001 | sell | ASK              | 500        | 20     | submission |
 #     | lp1 | party0 | ETH/MAR54 | 10000000          | 0.001 | buy  | BID              | 500        | 20     | amendment  |
 

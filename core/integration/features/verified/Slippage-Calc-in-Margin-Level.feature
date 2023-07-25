@@ -21,7 +21,7 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
-
+      | limits.markets.maxPeggedOrders          | 4     |
     And the average block duration is "1"
 
   Scenario: case 1 test closeout cost and insurance pool balance
@@ -36,11 +36,17 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | aux2             | USD   | 1000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC19 | 20000             | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC19 | 20000             | 0.001 | sell | ASK              | 1          | 10     | amendment  |
-      | lp1 | aux1  | ETH/DEC19 | 20000             | 0.001 | buy  | MID              | 1          | 10     | amendment  |
-      | lp1 | aux1  | ETH/DEC19 | 20000             | 0.001 | sell | MID              | 1          | 26     | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC19 | 20000             | 0.001 | submission |
+      | lp1 | aux1  | ETH/DEC19 | 20000             | 0.001 | amendment  |
+      | lp1 | aux1  | ETH/DEC19 | 20000             | 0.001 | amendment  |
+      | lp1 | aux1  | ETH/DEC19 | 20000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | aux1  | ETH/DEC19 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | aux1  | ETH/DEC19 | 2         | 1                    | sell | ASK              | 1          | 10     |
+      | aux1  | ETH/DEC19 | 2         | 1                    | buy  | MID              | 1          | 10     |
+      | aux1  | ETH/DEC19 | 2         | 1                    | sell | MID              | 1          | 26     |
     When the network moves ahead "1" blocks
     # setup order book
     When the parties place the following orders:

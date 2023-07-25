@@ -17,6 +17,7 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
       | market.auction.minimumDuration          | 1     |
       | limits.markets.maxPeggedOrders          | 1500  |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
   Scenario: Replicate test called test_TriggerWithMarketOrder
@@ -38,9 +39,14 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
       | party1 | ETH/DEC20 | buy  | 1      | 95000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC20 | sell | 1      | 107000 | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party1 | ETH/DEC20 | 16000000          | 0.3 | buy  | BID              | 2          | 10     | submission |
-      | lp1 | party1 | ETH/DEC20 | 16000000          | 0.3 | sell | ASK              | 13         | 10     | amendment  |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | party1 | ETH/DEC20 | 16000000          | 0.3 | submission |
+      | lp1 | party1 | ETH/DEC20 | 16000000          | 0.3 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party1 | ETH/DEC20 | 2         | 1                    | buy  | BID              | 2          | 10     |
+      | party1 | ETH/DEC20 | 2         | 1                    | sell | ASK              | 13         | 10     |
+ 
     Then the mark price should be "0" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 

@@ -12,7 +12,10 @@ Feature: Set up a market with an opening auction, then uncross the book so that 
       | party3  | BTC   | 100000000 |
       | party4  | BTC   | 100000000 |
       | lp      | BTC   | 100000000 |
-
+    And the following network parameters are set:
+      | name                                    | value |
+      | limits.markets.maxPeggedOrders          | 2     |
+      
   Scenario:
     When the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -25,9 +28,13 @@ Feature: Set up a market with an opening auction, then uncross the book so that 
       | party1  | ETH/DEC19 | buy  | 4      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t1-b-3    |
       | party2c | ETH/DEC19 | sell | 3      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t2c-s-3   |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee  | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp    | ETH/DEC19 | 160000            | 0.01 | buy  | MID              | 50         | 100    | submission |
-      | lp1 | lp    | ETH/DEC19 | 160000            | 0.01 | sell | MID              | 50         | 100    | submission |
+      | id  | party | market id | commitment amount | fee  | lp type    |
+      | lp1 | lp    | ETH/DEC19 | 160000            | 0.01 | submission |
+      | lp1 | lp    | ETH/DEC19 | 160000            | 0.01 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp    | ETH/DEC19 | 2         | 1                    | buy  | MID              | 50         | 100    |
+      | lp    | ETH/DEC19 | 2         | 1                    | sell | MID              | 50         | 100    |
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 15680   |

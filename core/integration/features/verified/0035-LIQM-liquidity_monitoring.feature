@@ -9,6 +9,7 @@ Feature: Test liquidity monitoring
       | network.floatingPointUpdates.delay            | 10s   |
       | market.auction.minimumDuration                | 1     |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
+      | limits.markets.maxPeggedOrders                | 4     |
     And the average block duration is "1"
     And the margin calculator named "margin-calculator-1":
       | search factor | initial factor | release factor |
@@ -52,9 +53,13 @@ Feature: Test liquidity monitoring
 
   Scenario: 001: A market which enters a state requiring liquidity auction through increased open interest during a block but then leaves state again prior to block completion never enters liquidity auction. (0035-LIQM-005)
     Given the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lprov1 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lprov1 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | submission |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | lprov1 | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp1 | lprov1 | ETH/DEC21 | 1000              | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lprov1 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lprov1 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -83,10 +88,13 @@ Feature: Test liquidity monitoring
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 3000         | 1000           | 30            |
 
     Then the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | lprov1 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | lprov1 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment |
-
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | lprov1 | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | lprov1 | ETH/DEC21 | 10000             | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lprov1 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lprov1 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
     # move to the next block to perform liquidity check, we should still be in continuous trading
     Then the network moves ahead "1" blocks
 
@@ -107,10 +115,13 @@ Feature: Test liquidity monitoring
     And the average block duration is "1"
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lprov1 | ETH/MAR22 | 50000             | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp1 | lprov1 | ETH/MAR22 | 50000             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
-
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | lprov1 | ETH/MAR22 | 50000             | 0.001 | submission |
+      | lp1 | lprov1 | ETH/MAR22 | 50000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lprov1 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 20     |
+      | lprov1 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 20     |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | party1 | ETH/MAR22 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
@@ -140,9 +151,13 @@ Feature: Test liquidity monitoring
       | 1000       | TRADING_MODE_CONTINUOUS | 142276       | 50000          | 40            |
 
     Then the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lprov2 | ETH/MAR22 | 92276             | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp2 | lprov2 | ETH/MAR22 | 92276             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp2 | lprov2 | ETH/MAR22 | 92276             | 0.001 | submission |
+      | lp2 | lprov2 | ETH/MAR22 | 92276             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lprov2 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 20     |
+      | lprov2 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 20     |
 
     # move to the next block to perform liquidity check, we should still be in continuous trading
     Then the network moves ahead "1" blocks
@@ -161,11 +176,11 @@ Feature: Test liquidity monitoring
       | market.liquidity.targetstake.triggering.ratio | 1     |
       | market.stake.target.timeWindow                | 1s    |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lprov1 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lprov1 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp2 | lprov2 | ETH/DEC21 | 500               | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp2 | lprov2 | ETH/DEC21 | 500               | 0.001 | sell | ASK              | 1          | 2      | submission |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | lprov1 | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp1 | lprov1 | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp2 | lprov2 | ETH/DEC21 | 500               | 0.001 | submission |
+      | lp2 | lprov2 | ETH/DEC21 | 500               | 0.001 | submission |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 1      | 970   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -183,9 +198,9 @@ Feature: Test liquidity monitoring
 
     When the network moves ahead "1" blocks
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   | error                                            |
-      | lp2 | lprov2 | ETH/DEC21 | 400               | 0.001 | buy  | BID              | 1          | 2      | amendment | commitment submission rejected, not enough stake |
-      | lp2 | lprov2 | ETH/DEC21 | 400               | 0.001 | sell | ASK              | 1          | 2      | amendment |                                                  |
+      | id  | party  | market id | commitment amount | fee   | lp type   | error                                            |
+      | lp2 | lprov2 | ETH/DEC21 | 400               | 0.001 | amendment | commitment submission rejected, not enough stake |
+      | lp2 | lprov2 | ETH/DEC21 | 400               | 0.001 | amendment |                                                  |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -196,9 +211,9 @@ Feature: Test liquidity monitoring
       | mark price | trading mode            | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 1300         | 1500           | 13            |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type      | error                                            |
-      | lp2 | lprov2 | ETH/DEC21 | 0                 | 0.001 | buy  | BID              | 1          | 2      | cancellation | commitment submission rejected, not enough stake |
-      | lp2 | lprov2 | ETH/DEC21 | 0                 | 0.001 | sell | ASK              | 1          | 2      | cancellation |                                                  |
+      | id  | party  | market id | commitment amount | fee   | lp type      | error                                            |
+      | lp2 | lprov2 | ETH/DEC21 | 0                 | 0.001 | cancellation | commitment submission rejected, not enough stake |
+      | lp2 | lprov2 | ETH/DEC21 | 0                 | 0.001 | cancellation |                                                  |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | sell | 3      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -211,9 +226,13 @@ Feature: Test liquidity monitoring
 
     # cancellation goes through fine once target stake's been updated
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type      |
-      | lp2 | lprov2 | ETH/DEC21 | 0                 | 0.001 | buy  | BID              | 1          | 2      | cancellation |
-      | lp2 | lprov2 | ETH/DEC21 | 0                 | 0.001 | sell | ASK              | 1          | 2      | cancellation |
+      | id  | party  | market id | commitment amount | fee   | lp type      |
+      | lp2 | lprov2 | ETH/DEC21 | 0                 | 0.001 | cancellation |
+      | lp2 | lprov2 | ETH/DEC21 | 0                 | 0.001 | cancellation |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lprov2 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lprov2 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 1000         | 1000           | 10            |
@@ -224,16 +243,22 @@ Feature: Test liquidity monitoring
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 1     |
       | market.stake.target.timeWindow                | 5s    |
-      | market.liquidityV2.bondPenaltyParameter         | 1     |
+      | market.liquidityV2.bondPenaltyParameter       | 1     |
     And the parties deposit on asset's general account the following amount:
       | party          | asset | amount |
       | lp2Bdistressed | ETH   | 101    |
     And the parties submit the following liquidity provision:
-      | id  | party          | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lprov1         | ETH/DEC21 | 5999              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lprov1         | ETH/DEC21 | 5999              | 0.001 | sell | ASK              | 1          | 2      |            |
-      | lp2 | lp2Bdistressed | ETH/DEC21 | 1                 | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp2 | lp2Bdistressed | ETH/DEC21 | 1                 | 0.001 | sell | ASK              | 1          | 10     |            |
+      | id  | party          | market id | commitment amount | fee   | lp type    |
+      | lp1 | lprov1         | ETH/DEC21 | 5999              | 0.001 | submission |
+      | lp1 | lprov1         | ETH/DEC21 | 5999              | 0.001 |            |
+      | lp2 | lp2Bdistressed | ETH/DEC21 | 1                 | 0.001 | submission |
+      | lp2 | lp2Bdistressed | ETH/DEC21 | 1                 | 0.001 |            |
+    And the parties place the following pegged iceberg orders:
+      | party          | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov1        | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lpprov1        | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp2Bdistressed | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | lp2Bdistressed | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 1      | 970   | 0                | TYPE_LIMIT | TIF_GTC |

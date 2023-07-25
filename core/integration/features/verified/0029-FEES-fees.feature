@@ -14,6 +14,7 @@ Feature: Fees calculations
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
@@ -27,9 +28,13 @@ Feature: Fees calculations
       | trader2 | ETH   | 10000     |
 
     When the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.002 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.002 | sell | ASK              | 1          | 10     | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.002 | submission |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.002 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | aux1  | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | aux2  | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1  | ETH/DEC21 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
