@@ -13,6 +13,7 @@ Feature: Fees calculations
       | reward.staking.delegation.minValidators           | 5      |
       | reward.staking.delegation.optimalStakeMultiplier  | 5.0    |
       | network.markPriceUpdateMaximumFrequency           | 0s     |
+      | limits.markets.maxPeggedOrders                    | 2      |
 
     Given time is updated to "2021-08-26T00:00:00Z"
     Given the average block duration is "2"
@@ -98,10 +99,13 @@ Feature: Fees calculations
       | lpprov  | ETH   | 1000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC21 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC21 | 2         | 1                    | sell | ASK              | 50         | 100    |
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |

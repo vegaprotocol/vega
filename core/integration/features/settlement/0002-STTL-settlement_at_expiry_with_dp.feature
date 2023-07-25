@@ -29,6 +29,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | market.auction.minimumDuration               | 1     |
       | network.markPriceUpdateMaximumFrequency      | 0s    |
       | market.liquidity.successorLaunchWindowLength | 1s    |
+      | limits.markets.maxPeggedOrders               | 4     |
 
     And the settlement data decimals for the oracle named "ethDec20Oracle" is given in "2" decimal places
     And the settlement data decimals for the oracle named "ethDec21Oracle" is given in "1" decimal places
@@ -57,10 +58,13 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | lpprov | ETH   | 10000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 900000000         | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 900000000         | 0.1 | sell | ASK              | 50         | 100    | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 900000000         | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 900000000         | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
     When the parties place the following orders:
       | party | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | aux1  | ETH/DEC19 | buy  | 1      | 999000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -102,12 +106,18 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the cumulated balance for all accounts should be worth "10023600000000"
 
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | buy  | BID              | 50         | 10000  | submission |
-      | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | sell | ASK              | 50         | 10000  | amendment  |
-      | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | buy  | BID              | 50         | 10000  | submission |
-      | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | sell | ASK              | 50         | 10000  | amendment  |
-
+      | id  | party    | market id | commitment amount | fee | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | submission |
+      | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | amendment  |
+      | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | submission |
+      | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party   | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party-lp | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10000  |
+      | party-lp | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 10000  |
+      | party-lp | ETH/DEC21 | 2         | 1                    | buy  | BID              | 50         | 10000  |
+      | party-lp | ETH/DEC21 | 2         | 1                    | sell | ASK              | 50         | 10000  |
+ 
     When the parties place the following orders:
       | party | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | aux1  | ETH/DEC19 | buy  | 2      | 999000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -250,12 +260,18 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the cumulated balance for all accounts should be worth "20023600000000"
 
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | buy  | BID              | 50         | 10000  | submission |
-      | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | sell | ASK              | 50         | 10000  | amendment  |
-      | lp2 | lpprov   | ETH/DEC21 | 3000000000000     | 0   | buy  | BID              | 50         | 10000  | submission |
-      | lp2 | lpprov   | ETH/DEC21 | 3000000000000     | 0   | sell | ASK              | 50         | 10000  | amendment  |
-
+      | id  | party    | market id | commitment amount | fee | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | submission |
+      | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | amendment  |
+      | lp2 | lpprov   | ETH/DEC21 | 3000000000000     | 0   | submission |
+      | lp2 | lpprov   | ETH/DEC21 | 3000000000000     | 0   | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party    | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party-lp | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10000  |
+      | party-lp | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 10000  |
+      | lpprov   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 50         | 10000  |
+      | lpprov   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 50         | 10000  |
+ 
     When the parties place the following orders:
       | party | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | aux1  | ETH/DEC19 | buy  | 1      | 999000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -378,11 +394,17 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | aux2     | ETH   | 10000000000    |
       | party-lp | ETH   | 10000000000000 |
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | buy  | BID              | 50         | 10000  | submission |
-      | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | sell | ASK              | 50         | 10000  | amendment  |
-      | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | buy  | BID              | 50         | 10000  | submission |
-      | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | sell | ASK              | 50         | 10000  | amendment  |
+      | id  | party    | market id | commitment amount | fee | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | submission |
+      | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | amendment  |
+      | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | submission |
+      | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party    | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party-lp | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10000  |
+      | party-lp | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 10000  |
+      | party-lp | ETH/DEC21 | 2         | 1                    | buy  | BID              | 50         | 10000  |
+      | party-lp | ETH/DEC21 | 2         | 1                    | sell | ASK              | 50         | 10000  |
 
     When the parties place the following orders:
       | party | market id | side | volume | price   | resulting trades | type       | tif     | reference |
@@ -460,11 +482,17 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the cumulated balance for all accounts should be worth "10201200000000"
 
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | buy  | BID              | 50         | 10000  | submission |
-      | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | sell | ASK              | 50         | 10000  | amendment  |
-      | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | buy  | BID              | 50         | 10000  | submission |
-      | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | sell | ASK              | 50         | 10000  | amendment  |
+      | id  | party    | market id | commitment amount | fee | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | submission |
+      | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | amendment  |
+      | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | submission |
+      | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party    | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party-lp | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10000  |
+      | party-lp | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 10000  |
+      | party-lp | ETH/DEC21 | 2         | 1                    | buy  | BID              | 50         | 10000  |
+      | party-lp | ETH/DEC21 | 2         | 1                    | sell | ASK              | 50         | 10000  |
 
     When the parties place the following orders:
       | party | market id | side | volume | price   | resulting trades | type       | tif     | reference |
@@ -536,9 +564,13 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the cumulated balance for all accounts should be worth "10201200000000"
 
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party-lp | ETH/DEC21 | 3000000000000     | 0   | buy  | BID              | 50         | 1000   | submission |
-      | lp1 | party-lp | ETH/DEC21 | 3000000000000     | 0   | sell | ASK              | 50         | 1000   | amendment  |
+      | id  | party    | market id | commitment amount | fee | lp type    |
+      | lp1 | party-lp | ETH/DEC21 | 3000000000000     | 0   | submission |
+      | lp1 | party-lp | ETH/DEC21 | 3000000000000     | 0   | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party    | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party-lp | ETH/DEC21 | 2         | 1                    | buy  | BID              | 50         | 1000   |
+      | party-lp | ETH/DEC21 | 2         | 1                    | sell | ASK              | 50         | 1000   |
 
     When the parties place the following orders:
       | party | market id | side | volume | price  | resulting trades | type       | tif     | reference |

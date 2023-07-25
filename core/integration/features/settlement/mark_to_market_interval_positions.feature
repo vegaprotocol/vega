@@ -23,6 +23,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 5s    |
+      | limits.markets.maxPeggedOrders          | 2     |
 
   Scenario: 001, using lognormal risk model, set "designatedLoser" closeout while the position of "designatedLoser" is not fully covered by orders on the order book (0007-POSN-013)
     # setup accounts
@@ -39,9 +40,13 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | network.markPriceUpdateMaximumFrequency | 4s    |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | sell | ASK              | 50         | 100    | amendment  |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general      | bond |
@@ -189,9 +194,13 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | network.markPriceUpdateMaximumFrequency | 4s    |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC20 | 9000              | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC20 | 9000              | 0.1 | sell | ASK              | 50         | 100    | amendment  |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 9000              | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC20 | 9000              | 0.1 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC20 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC20 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general      | bond |
@@ -329,9 +338,13 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | network.markPriceUpdateMaximumFrequency | 10s   |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp     | ETH/DEC19 | 9000              | 0.0 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lp     | ETH/DEC19 | 9000              | 0.0 | sell | ASK              | 50         | 100    | amendment  |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lp     | ETH/DEC19 | 9000              | 0.0 | submission |
+      | lp1 | lp     | ETH/DEC19 | 9000              | 0.0 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp     | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lp     | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux   | ETH/DEC19 | buy  | 10     | 1     | 0                | TYPE_LIMIT | TIF_GTC |

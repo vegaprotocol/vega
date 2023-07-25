@@ -25,7 +25,8 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
-
+      | limits.markets.maxPeggedOrders          | 2     |
+      
   @Now
   Scenario: 001, LP gets distressed during continuous trading, no DPD setting (0044-LIME-002, 0035-LIQM-004)
 
@@ -45,10 +46,14 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the average block duration is "1"
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
-
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | submission |
+      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 20     |
+      | party0 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 20     |
+ 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | party4 | ETH/MAR22 | buy  | 100    | 850   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-4  |
@@ -179,10 +184,14 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the average block duration is "1"
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
-
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | submission |
+      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 20     |
+      | party0 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 20     |
+ 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | party1 | ETH/MAR22 | buy  | 2      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |

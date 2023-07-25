@@ -9,6 +9,7 @@ Feature: Target stake
       | market.stake.target.timeWindow          | 168h  |
       | market.stake.target.scalingFactor       | 1.5   |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 10          | -10           | 0.1                    |
@@ -51,10 +52,14 @@ Feature: Target stake
       | tt_0  | ETH/DEC21 | sell | 100000 | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_0_1    |
 
     Then the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | tt_0  | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | tt_0  | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 10     | amendment  |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | tt_0  | ETH/DEC21 | 2000              | 0.001 | submission |
+      | lp1 | tt_0  | ETH/DEC21 | 2000              | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | tt_0  | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | tt_0  | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
+ 
     # nothing should have traded, we have mark price set apriori or
     # due to auction closing.
     Then the mark price should be "0" for the market "ETH/DEC21"

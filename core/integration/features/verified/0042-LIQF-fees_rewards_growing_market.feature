@@ -19,6 +19,7 @@ Feature:
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
+      | limits.markets.maxPeggedOrders                      | 4     |
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
       | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 0.5                    | 0                         |
@@ -61,14 +62,22 @@ Feature:
       | party2 | USD   | 100000    |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | MID              | 3          | 1      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      |            |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 |            |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 3          | 1      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | MID              | 3          | 1      |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | buy  | MID              | 3          | 1      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | sell | MID              | 3          | 1      |            |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | submission |
+      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 |            |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 3          | 1      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | MID              | 3          | 1      |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -113,9 +122,13 @@ Feature:
       | lp2   | 0.92              | 50000                   |
 
     When the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | MID              | 3          | 1      | amendment |
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | amendment |
+      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 3          | 1      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | MID              | 3          | 1      |
 
     # Confirm equity-like-shares updated immediately after liquidity amendment
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
@@ -202,9 +215,13 @@ Feature:
       | lp2   | 0.9387755102040816 | 50000                   |
 
     When the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      |           |
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | amendment |
+      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 |           |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 3          | 1      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | MID              | 3          | 1      |
 
     # Confirm equity-like-shares updated immediately after liquidity amendment
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
@@ -290,13 +307,21 @@ Feature:
       | lp2   | 0.9204581983962178 | 50000                   |
 
     When the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | MID              | 3          | 1      |           |
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | amendment |
+      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 |           |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 3          | 1      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | MID              | 3          | 1      |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp2 | lp2   | ETH/MAR22 | 45000             | 0.002 | buy  | MID              | 3          | 1      | amendment |
-      | lp2 | lp2   | ETH/MAR22 | 45000             | 0.002 | sell | MID              | 3          | 1      |           |
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp2 | lp2   | ETH/MAR22 | 45000             | 0.002 | amendment |
+      | lp2 | lp2   | ETH/MAR22 | 45000             | 0.002 |           |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 3          | 1      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | MID              | 3          | 1      |
 
     # Confirm equity-like-shares updated immediately after liquidity amendment
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
@@ -383,13 +408,21 @@ Feature:
       | lp2   | 0.9378647369245325 | 50000                   |
 
     When the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      |           |
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | amendment |
+      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 |           |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 3          | 1      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | MID              | 3          | 1      |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | buy  | MID              | 3          | 1      | amendment |
-      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | sell | MID              | 3          | 1      |           |
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | amendment |
+      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 |           |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 3          | 1      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | MID              | 3          | 1      |
 
     # Confirm equity-like-shares updated immediately after liquidity amendment
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
@@ -476,17 +509,29 @@ Feature:
       | lp2   | 0.9215324475238062 | 50078.6851584004428259  |
 
     When the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | MID              | 3          | 1      | amendment |
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | amendment |
+      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | amendment |
+      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | amendment |
+      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 3          | 1      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | MID              | 3          | 1      |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp2 | lp2   | ETH/MAR22 | 47000             | 0.002 | buy  | BID              | 1          | 2      | amendment |
-      | lp2 | lp2   | ETH/MAR22 | 47000             | 0.002 | buy  | MID              | 3          | 1      | amendment |
-      | lp2 | lp2   | ETH/MAR22 | 47000             | 0.002 | sell | ASK              | 1          | 2      | amendment |
-      | lp2 | lp2   | ETH/MAR22 | 47000             | 0.002 | sell | MID              | 3          | 1      | amendment |
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp2 | lp2   | ETH/MAR22 | 47000             | 0.002 | amendment |
+      | lp2 | lp2   | ETH/MAR22 | 47000             | 0.002 | amendment |
+      | lp2 | lp2   | ETH/MAR22 | 47000             | 0.002 | amendment |
+      | lp2 | lp2   | ETH/MAR22 | 47000             | 0.002 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 3          | 1      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | MID              | 3          | 1      |
 
     # Confirm equity-like-shares updated immediately after liquidity amendment
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
@@ -576,18 +621,30 @@ Feature:
       | party2 | USD   | 100000    |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/MAR22 | 25000             | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 25000             | 0.001 | buy  | MID              | 3          | 1      | amendment  |
-      | lp1 | lp1   | ETH/MAR22 | 25000             | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | lp1   | ETH/MAR22 | 25000             | 0.001 | sell | MID              | 3          | 1      | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/MAR22 | 25000             | 0.001 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 25000             | 0.001 | amendment  |
+      | lp1 | lp1   | ETH/MAR22 | 25000             | 0.001 | amendment  |
+      | lp1 | lp1   | ETH/MAR22 | 25000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 3          | 1      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | MID              | 3          | 1      |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/MAR22 | 25000             | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 25000             | 0.001 | buy  | MID              | 3          | 1      | amendment  |
-      | lp2 | lp2   | ETH/MAR22 | 25000             | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp2 | lp2   | ETH/MAR22 | 25000             | 0.001 | sell | MID              | 3          | 1      | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp2 | lp2   | ETH/MAR22 | 25000             | 0.001 | submission |
+      | lp2 | lp2   | ETH/MAR22 | 25000             | 0.001 | amendment  |
+      | lp2 | lp2   | ETH/MAR22 | 25000             | 0.001 | amendment  |
+      | lp2 | lp2   | ETH/MAR22 | 25000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 3          | 1      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | MID              | 3          | 1      |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -684,12 +741,18 @@ Feature:
     # -------------------------------------------------------------------------------------------------------------------
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp3   | ETH/MAR22 | 25000             | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp3   | ETH/MAR22 | 25000             | 0.001 | buy  | MID              | 3          | 1      | amendment  |
-      | lp1 | lp3   | ETH/MAR22 | 25000             | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | lp3   | ETH/MAR22 | 25000             | 0.001 | sell | MID              | 3          | 1      | amendment  |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp3   | ETH/MAR22 | 25000             | 0.001 | submission |
+      | lp1 | lp3   | ETH/MAR22 | 25000             | 0.001 | amendment  |
+      | lp1 | lp3   | ETH/MAR22 | 25000             | 0.001 | amendment  |
+      | lp1 | lp3   | ETH/MAR22 | 25000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp3   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp3   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 3          | 1      |
+      | lp3   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp3   | ETH/MAR22 | 2         | 1                    | sell | MID              | 3          | 1      |
+ 
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
       | lp1   | 0.3750624687656172 | 25000                   |

@@ -6,6 +6,7 @@ Feature: Target stake
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 16    |
     # Market risk parameters and assets don't really matter.
     # We need to track open interest i.e. sum of all long positions across the parties and how they change over time
     And the log normal risk model named "log-normal-risk-model-1":
@@ -68,24 +69,42 @@ Feature: Target stake
       | tt_3  | ETH/DEC21 | buy  | 30     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
 
     Then the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp_1  | ETH/DEC21 | 135               | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | lp_1  | ETH/DEC21 | 135               | 0.001 | sell | ASK              | 1          | 10     | amendment  |
-      | lp2 | lp_2  | ETH/DEC21 | 165               | 0.002 | buy  | BID              | 1          | 10     | submission |
-      | lp2 | lp_2  | ETH/DEC21 | 165               | 0.002 | sell | ASK              | 1          | 10     | amendment  |
-      | lp3 | lp_3  | ETH/DEC21 | 300               | 0.003 | buy  | BID              | 1          | 10     | submission |
-      | lp3 | lp_3  | ETH/DEC21 | 300               | 0.003 | sell | ASK              | 1          | 10     | amendment  |
-      | lp4 | lp_4  | ETH/DEC21 | 300               | 0.004 | buy  | BID              | 1          | 10     | submission |
-      | lp4 | lp_4  | ETH/DEC21 | 300               | 0.004 | sell | ASK              | 1          | 10     | amendment  |
-      | lp5 | lp_5  | ETH/DEC21 | 500               | 0.005 | buy  | BID              | 1          | 10     | submission |
-      | lp5 | lp_5  | ETH/DEC21 | 500               | 0.005 | sell | ASK              | 1          | 10     | amendment  |
-      | lp6 | lp_6  | ETH/DEC21 | 300               | 0.006 | buy  | BID              | 1          | 10     | submission |
-      | lp6 | lp_6  | ETH/DEC21 | 300               | 0.006 | sell | ASK              | 1          | 10     | amendment  |
-      | lp7 | lp_7  | ETH/DEC21 | 200               | 0.007 | buy  | BID              | 1          | 10     | submission |
-      | lp7 | lp_7  | ETH/DEC21 | 200               | 0.007 | sell | ASK              | 1          | 10     | amendment  |
-      | lp8 | lp_8  | ETH/DEC21 | 100               | 0.008 | buy  | BID              | 1          | 10     | submission |
-      | lp8 | lp_8  | ETH/DEC21 | 100               | 0.008 | sell | ASK              | 1          | 10     | amendment  |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp_1  | ETH/DEC21 | 135               | 0.001 | submission |
+      | lp1 | lp_1  | ETH/DEC21 | 135               | 0.001 | amendment  |
+      | lp2 | lp_2  | ETH/DEC21 | 165               | 0.002 | submission |
+      | lp2 | lp_2  | ETH/DEC21 | 165               | 0.002 | amendment  |
+      | lp3 | lp_3  | ETH/DEC21 | 300               | 0.003 | submission |
+      | lp3 | lp_3  | ETH/DEC21 | 300               | 0.003 | amendment  |
+      | lp4 | lp_4  | ETH/DEC21 | 300               | 0.004 | submission |
+      | lp4 | lp_4  | ETH/DEC21 | 300               | 0.004 | amendment  |
+      | lp5 | lp_5  | ETH/DEC21 | 500               | 0.005 | submission |
+      | lp5 | lp_5  | ETH/DEC21 | 500               | 0.005 | amendment  |
+      | lp6 | lp_6  | ETH/DEC21 | 300               | 0.006 | submission |
+      | lp6 | lp_6  | ETH/DEC21 | 300               | 0.006 | amendment  |
+      | lp7 | lp_7  | ETH/DEC21 | 200               | 0.007 | submission |
+      | lp7 | lp_7  | ETH/DEC21 | 200               | 0.007 | amendment  |
+      | lp8 | lp_8  | ETH/DEC21 | 100               | 0.008 | submission |
+      | lp8 | lp_8  | ETH/DEC21 | 100               | 0.008 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp_1   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | lp_1   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
+      | lp_2   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | lp_2   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
+      | lp_3   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | lp_3   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
+      | lp_4   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | lp_4   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
+      | lp_5   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | lp_5   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
+      | lp_6   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | lp_6   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
+      | lp_7   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | lp_7   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
+      | lp_8   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | lp_8   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
+ 
     Then the opening auction period ends for market "ETH/DEC21"
 
     # Now parties 1,2,3 are long so open intereset = 10+20+30 = 60.
@@ -208,10 +227,13 @@ Feature: Target stake
       | lp_1  | ETH/DEC21 | sell | 1000   | 110   | 0                | TYPE_LIMIT | TIF_GTC | lp_1_1    |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp_1  | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 20     | submission |
-      | lp1 | lp_1  | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | -20    | submission |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp_1  | ETH/DEC21 | 2000              | 0.001 | submission |
+      | lp1 | lp_1  | ETH/DEC21 | 2000              | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp_1   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 20     |
+      | lp_1   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | -20    |
     # nothing should have traded, we have mark price set apriori or
     # due to auction closing.
     Then the mark price should be "0" for the market "ETH/DEC21"
@@ -310,10 +332,13 @@ Feature: Target stake
       | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 550          | 0              | 0             |
 
     Then the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp_1  | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | lp_1  | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 10     | amendment  |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp_1  | ETH/DEC21 | 2000              | 0.001 | submission |
+      | lp1 | lp_1  | ETH/DEC21 | 2000              | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp_1   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | lp_1   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
     # Add wash trades
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -354,9 +379,13 @@ Feature: Target stake
       | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
       | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 550          | 0              | 0             |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp_1  | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | lp_1  | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp_1  | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp1 | lp_1  | ETH/DEC21 | 1000              | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp_1  | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | lp_1  | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
     And the opening auction period ends for market "ETH/DEC21"
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |

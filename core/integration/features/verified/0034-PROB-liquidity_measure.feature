@@ -10,6 +10,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
+      | limits.markets.maxPeggedOrders                      | 18    |
 
   Scenario: 001: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size(0034-PROB-001);Probability of trading decreases away from the mid-price (0034-PROB-005). Tested with varying decimal places.
 
@@ -35,25 +36,45 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | party3     | ETH   | 100000000000          |
 
     And the parties submit the following liquidity provision:
-      | id  | party      | market id | commitment amount | fee | side | pegged reference | proportion | offset | reference | lp type    |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | buy  | BID              | 1          | 100000 | lp-1-ref  | submission |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | buy  | BID              | 1          | 90000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | buy  | BID              | 1          | 80000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | buy  | BID              | 1          | 70000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | buy  | BID              | 1          | 60000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | buy  | BID              | 1          | 50000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | buy  | BID              | 1          | 40000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | buy  | BID              | 1          | 30000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | buy  | BID              | 1          | 20000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | sell | ASK              | 1          | 20000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | sell | ASK              | 1          | 30000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | sell | ASK              | 1          | 40000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | sell | ASK              | 1          | 50000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | sell | ASK              | 1          | 60000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | sell | ASK              | 1          | 70000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | sell | ASK              | 1          | 80000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | sell | ASK              | 1          | 90000  | lp-1-ref  | amendment  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | sell | ASK              | 1          | 100000 | lp-1-ref  | amendment  |
+      | id  | party      | market id | commitment amount | fee | reference | lp type    |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | lp-1-ref  | amendment  |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | 0.1 | lp-1-ref  | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party      | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | buy  | BID              | 1          | 100000 |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | buy  | BID              | 1          | 90000  |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | buy  | BID              | 1          | 80000  |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | buy  | BID              | 1          | 70000  |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | buy  | BID              | 1          | 60000  |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | buy  | BID              | 1          | 50000  |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | buy  | BID              | 1          | 40000  |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | buy  | BID              | 1          | 30000  |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | buy  | BID              | 1          | 20000  |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | sell | ASK              | 1          | 20000  |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | sell | ASK              | 1          | 30000  |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | sell | ASK              | 1          | 40000  |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | sell | ASK              | 1          | 50000  |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | sell | ASK              | 1          | 60000  |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | sell | ASK              | 1          | 70000  |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | sell | ASK              | 1          | 80000  |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | sell | ASK              | 1          | 90000  |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | sell | ASK              | 1          | 100000 |
 
     # Trigger an auction to set the mark price
     When the parties place the following orders:
@@ -112,9 +133,13 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | party2 | ETH2  | 10000000            |
 
     And the parties submit the following liquidity provision:
-      | id          | party | market id  | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | buy  | BID              | 600        | 600    | submission |
-      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | sell | ASK              | 600        | 600    | amendment  |
+      | id          | party | market id  | commitment amount | fee   | lp type    |
+      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | submission |
+      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party       | market id  | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | commitment1 | ETH2/MAR22 | 2         | 1                    | buy  | BID              | 600        | 600    |
+      | commitment1 | ETH2/MAR22 | 2         | 1                    | sell | ASK              | 600        | 600    |
 
     And the parties place the following orders:
       | party  | market id  | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -160,16 +185,27 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | party2 | ETH2  | 10000000            |
 
     And the parties submit the following liquidity provision:
-      | id          | party | market id  | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | buy  | MID              | 20         | 5      | submission |
-      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | buy  | MID              | 30         | 10     | amendment  |
-      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | buy  | MID              | 40         | 15     | amendment  |
-      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | buy  | MID              | 5          | 20     | amendment  |
-      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | sell | MID              | 5          | 20     | amendment  |
-      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | sell | MID              | 40         | 15     | amendment  |
-      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | sell | MID              | 30         | 10     | amendment  |
-      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | sell | MID              | 20         | 5      | amendment  |
+      | id          | party | market id  | commitment amount | fee   | lp type    |
+      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | submission |
+      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | amendment  |
+      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | amendment  |
+      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | amendment  |
+      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | amendment  |
+      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | amendment  |
+      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | amendment  |
+      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | amendment  |
 
+    And the parties place the following pegged iceberg orders:
+      | party  | market id  | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1    | ETH2/MAR22 | 2         | 1                    | buy  | MID              | 20         | 5      |
+      | lp1    | ETH2/MAR22 | 2         | 1                    | buy  | MID              | 30         | 10     |
+      | lp1    | ETH2/MAR22 | 2         | 1                    | buy  | MID              | 40         | 15     |
+      | lp1    | ETH2/MAR22 | 2         | 1                    | buy  | MID              | 5          | 20     |
+      | lp1    | ETH2/MAR22 | 2         | 1                    | sell | MID              | 5          | 20     |
+      | lp1    | ETH2/MAR22 | 2         | 1                    | sell | MID              | 40         | 15     |
+      | lp1    | ETH2/MAR22 | 2         | 1                    | sell | MID              | 30         | 10     |
+      | lp1    | ETH2/MAR22 | 2         | 1                    | sell | MID              | 20         | 5      |
+ 
     And the parties place the following orders:
       | party  | market id  | side | volume | price | resulting trades | type       | tif     | reference  |
       | party1 | ETH2/MAR22 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |

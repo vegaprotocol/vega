@@ -4,9 +4,10 @@ Feature: test negative PDP (position decimal places)
             | name                                          | value |
             | market.stake.target.timeWindow                | 24h   |
             | market.stake.target.scalingFactor             | 1     |
-            | market.liquidityV2.bondPenaltyParameter         | 0.2   |
+            | market.liquidityV2.bondPenaltyParameter       | 0.2   |
             | market.liquidity.targetstake.triggering.ratio | 0.1   |
             | network.markPriceUpdateMaximumFrequency       | 0s    |
+            | limits.markets.maxPeggedOrders                | 4     |
         And the following assets are registered:
             | id  | decimal places |
             | ETH | 5              |
@@ -40,11 +41,17 @@ Feature: test negative PDP (position decimal places)
     Scenario: 001, test negative PDP when trading mode is auction (0019-MCAL-010)
 
         Given  the parties submit the following liquidity provision:
-            | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-            | lp7 | party0 | USD/DEC22 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp7 | party0 | USD/DEC22 | 1000              | 0.001 | buy  | BID              | 100        | -20    | amendment  |
-            | lp6 | lpprov | USD/DEC22 | 4000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp6 | lpprov | USD/DEC22 | 4000              | 0.001 | buy  | BID              | 100        | -20    | amendment  |
+            | id  | party  | market id | commitment amount | fee   | lp type    |
+            | lp7 | party0 | USD/DEC22 | 1000              | 0.001 | submission |
+            | lp7 | party0 | USD/DEC22 | 1000              | 0.001 | amendment  |
+            | lp6 | lpprov | USD/DEC22 | 4000              | 0.001 | submission |
+            | lp6 | lpprov | USD/DEC22 | 4000              | 0.001 | amendment  |
+        And the parties place the following pegged iceberg orders:
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+            | party0 | USD/DEC22 | 2         | 1                    | sell | ASK              | 100        | 20     |
+            | party0 | USD/DEC22 | 2         | 1                    | buy  | BID              | 100        | -20    |
+            | lpprov | USD/DEC22 | 2         | 1                    | sell | ASK              | 100        | 20     |
+            | lpprov | USD/DEC22 | 2         | 1                    | buy  | BID              | 100        | -20    |
 
         And the parties place the following orders:
             | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -76,9 +83,13 @@ Feature: test negative PDP (position decimal places)
     @Now
     Scenario: 002, test negative PDP when trading mode is continuous (0003-MTMK-014, 0003-MTMK-015, 0019-MCAL-010, 0029-FEES-014)
         Given the parties submit the following liquidity provision:
-            | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-            | lp2 | party0 | USD/DEC22 | 35569             | 0.001 | sell | ASK              | 500        | 20     | submission |
-            | lp2 | party0 | USD/DEC22 | 35569             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
+            | id  | party  | market id | commitment amount | fee   | lp type    |
+            | lp2 | party0 | USD/DEC22 | 35569             | 0.001 | submission |
+            | lp2 | party0 | USD/DEC22 | 35569             | 0.001 | amendment  |
+        And the parties place the following pegged iceberg orders:            
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+            | party0 | USD/DEC22 | 2         | 1                    | sell | ASK              | 500        | 20     |
+            | party0 | USD/DEC22 | 2         | 1                    | buy  | BID              | 500        | 20     |
 
         # LP places limit orders which oversupply liquidity
         And the parties place the following orders:
@@ -213,9 +224,13 @@ Feature: test negative PDP (position decimal places)
             | party  | asset | amount     |
             | party0 | ETH   | 1000000000 |
         And the parties submit the following liquidity provision:
-            | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-            | lp1 | party0 | USD/DEC23 | 40000000          | 0.001 | sell | MID              | 500        | 1      | submission |
-            | lp1 | party0 | USD/DEC23 | 40000000          | 0.001 | buy  | MID              | 500        | 1      |            |
+            | id  | party  | market id | commitment amount | fee   | lp type    |
+            | lp1 | party0 | USD/DEC23 | 40000000          | 0.001 | submission |
+            | lp1 | party0 | USD/DEC23 | 40000000          | 0.001 |            |
+        And the parties place the following pegged iceberg orders:
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+            | party0 | USD/DEC23 | 2         | 1                    | sell | MID              | 500        | 1      |
+            | party0 | USD/DEC23 | 2         | 1                    | buy  | MID              | 500        | 1      |
         And the parties place the following orders:
             | party  | market id | side | volume | price | resulting trades | type       | tif     |
             | party1 | USD/DEC23 | buy  | 5      | 8     | 0                | TYPE_LIMIT | TIF_GTC |

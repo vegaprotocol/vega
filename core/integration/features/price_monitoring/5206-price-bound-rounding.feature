@@ -39,7 +39,7 @@ Feature: Ensure price bounds are triggered as and when they should be, consideri
       | party1 | ETH/DEC20 | buy  | 1      | 950000000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC20 | sell | 1      | 1070000000 | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount       | fee | side | pegged reference | proportion | offset  | lp type    |
+      | id  | party  | market id | commitment amount       | fee | side | pegged reference | volume     | offset  | lp type    |
       | lp1 | party1 | ETH/DEC20 | 39050000000000000000000 | 0.3 | buy  | BID              | 2          | 1000000 | submission |
       | lp1 | party1 | ETH/DEC20 | 39050000000000000000000 | 0.3 | sell | ASK              | 13         | 1000000 | submission |
     Then the mark price should be "0" for the market "ETH/DEC20"
@@ -92,7 +92,7 @@ Feature: Ensure price bounds are triggered as and when they should be, consideri
       | party1 | ETH/DEC20 | buy  | 1      | 950000000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC20 | sell | 1      | 1070000000 | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount       | fee | side | pegged reference | proportion | offset  | lp type    |
+      | id  | party  | market id | commitment amount       | fee | side | pegged reference | volume     | offset  | lp type    |
       | lp1 | party1 | ETH/DEC20 | 39050000000000000000000 | 0.3 | buy  | BID              | 2          | 1000000 | submission |
       | lp1 | party1 | ETH/DEC20 | 39050000000000000000000 | 0.3 | sell | ASK              | 13         | 1000000 | submission |
     Then the mark price should be "0" for the market "ETH/DEC20"
