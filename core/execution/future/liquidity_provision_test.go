@@ -298,7 +298,7 @@ func TestSubmit(t *testing.T) {
 			}
 			require.NotNil(t, found)
 			// no update to the liquidity fee
-			assert.Equal(t, found.Status.String(), types.LiquidityProvisionStatusPending.String())
+			assert.Equal(t, found.Status.String(), types.LiquidityProvisionStatusActive.String())
 		})
 
 		tm.events = nil
