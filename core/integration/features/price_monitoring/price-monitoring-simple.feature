@@ -10,8 +10,8 @@ Feature: Price monitoring test using simple risk model
       | long | short | max move up | min move down | probability of trading |
       | 0.11 | 0.1   | 10          | 11            | 0.1                    |
     And the markets:
-      | id        | quote name | asset | auction duration | risk model           | margin calculator         | fees         | price monitoring    | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC20 | ETH        | ETH   | 240              | my-simple-risk-model | default-margin-calculator | default-none | my-price-monitoring | default-eth-for-future | 0.01                   | 0                         |
+      | id        | quote name | asset | auction duration | risk model           | margin calculator         | fees         | price monitoring    | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC20 | ETH        | ETH   | 240              | my-simple-risk-model | default-margin-calculator | default-none | my-price-monitoring | default-eth-for-future | 0.01                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 240   |

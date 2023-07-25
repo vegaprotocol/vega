@@ -282,6 +282,18 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		update.Changes.QuadraticSlippageFactor = slippageD
 		existing.QuadraticSlippageFactor = slippageD
 	}
+
+	if liquiditySla, ok := row.tryLiquiditySLA(); ok {
+		sla, err := config.LiquiditySLAParams.Get(liquiditySla)
+		if err != nil {
+			panic(err)
+		}
+		slaParams := types.LiquiditySLAParamsFromProto(sla)
+		// update existing
+		existing.LiquiditySLAParams = slaParams
+		update.Changes.LiquiditySLAParameters = slaParams
+	}
+
 	return update
 }
 
@@ -327,6 +339,11 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 
 	setLiquidityMonitoringNetParams(liqMon, netparams)
 
+	slaParams, err := config.LiquiditySLAParams.Get(row.liquiditySLA())
+	if err != nil {
+		panic(err)
+	}
+
 	m := types.Market{
 		TradingMode:           types.MarketTradingModeContinuous,
 		State:                 types.MarketStateActive,
@@ -362,14 +379,7 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 		LiquidityMonitoringParameters: liqMon,
 		LinearSlippageFactor:          num.DecimalFromFloat(linearSlippageFactor),
 		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
-		// TODO karel - implement real spec data
-		LiquiditySLAParams: &types.LiquiditySLAParams{
-			PriceRange:                      num.DecimalFromFloat(0.95),
-			CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0.5),
-			ProvidersFeeCalculationTimeStep: time.Second * 5,
-			PerformanceHysteresisEpochs:     4,
-			SlaCompetitionFactor:            num.NewDecimalFromFloat(0.5),
-		},
+		LiquiditySLAParams:            types.LiquiditySLAParamsFromProto(slaParams),
 	}
 
 	if row.isSuccessor() {
@@ -433,7 +443,9 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"decimal places",
 		"position decimal places",
 		"liquidity monitoring",
+		// TODO: WG: remove lp price range
 		"lp price range",
+		"sla params",
 		"parent market id",
 		"insurance pool fraction",
 		"successor auction",
@@ -554,6 +566,18 @@ func (r marketRow) liquidityMonitoring() string {
 		return "default-parameters"
 	}
 	return r.row.MustStr("liquidity monitoring")
+}
+
+func (r marketRow) liquiditySLA() string {
+	return r.row.MustStr("sla params")
+}
+
+func (r marketUpdateRow) tryLiquiditySLA() (string, bool) {
+	if r.row.HasColumn("SLA") {
+		sla := r.row.MustStr("SLA")
+		return sla, true
+	}
+	return "", false
 }
 
 func (r marketRow) linearSlippageFactor() float64 {
