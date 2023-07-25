@@ -57,6 +57,7 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 			errRow = row
 		}
 		id := row.ID()
+		ref := id
 
 		if _, ok := lps[id]; !ok {
 			lp := &LPUpdate{
