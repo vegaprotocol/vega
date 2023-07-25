@@ -15,7 +15,6 @@ package governance_test
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -35,8 +34,7 @@ var (
 )
 
 func TestGovernanceSnapshotProposalReject(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// get snapshot hash for active proposals
 	emptyState, _, err := eng.GetState(activeKey)
@@ -44,7 +42,7 @@ func TestGovernanceSnapshotProposalReject(t *testing.T) {
 
 	// Submit a proposal
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 	eng.ensureAllAssetEnabled(t)
 	eng.expectOpenProposalEvent(t, party.Id, proposal.ID)
 
@@ -70,8 +68,7 @@ func TestGovernanceSnapshotProposalReject(t *testing.T) {
 }
 
 func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// get snapshot hashes
 	emptyActive, _, err := eng.GetState(activeKey)
@@ -82,7 +79,7 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 
 	proposer := eng.newValidParty("proposer", 1)
 	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
-	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 
 	eng.ensureStakingAssetTotalSupply(t, 9)
 	eng.ensureAllAssetEnabled(t)
@@ -128,8 +125,7 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 }
 
 func TestGovernanceSnapshotWithInternalTimeTerminationProposalEnacted(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// get snapshot hashes
 	emptyActive, _, err := eng.GetState(activeKey)
@@ -140,7 +136,7 @@ func TestGovernanceSnapshotWithInternalTimeTerminationProposalEnacted(t *testing
 
 	proposer := eng.newValidParty("proposer", 1)
 	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
-	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), nil, nil, false)
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, false)
 
 	eng.ensureStakingAssetTotalSupply(t, 9)
 	eng.ensureAllAssetEnabled(t)
@@ -186,7 +182,7 @@ func TestGovernanceSnapshotWithInternalTimeTerminationProposalEnacted(t *testing
 }
 
 func TestGovernanceSnapshotNodeProposal(t *testing.T) {
-	eng := getTestEngine(t)
+	eng := getTestEngine(t, time.Now())
 	defer eng.ctrl.Finish()
 
 	// get snapshot state for active proposals
@@ -195,7 +191,7 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 
 	// Submit a proposal
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newProposalForNewAsset(party.Id, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewAsset(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour))
 
 	eng.expectProposalWaitingForNodeVoteEvent(t, party.Id, proposal.ID)
 	eng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
@@ -219,13 +215,11 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	err = proto.Unmarshal(state, snap)
 	require.Nil(t, err)
 
-	snapEng := getTestEngine(t)
+	snapEng := getTestEngine(t, time.Now())
 	defer snapEng.ctrl.Finish()
 
 	snapEng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	snapEng.witness.EXPECT().RestoreResource(gomock.Any(), gomock.Any()).Times(1)
-
-	fmt.Printf("SNAP: %v\n", snap.String())
 
 	// Load snapshot into a new engine
 	snapEng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -242,7 +236,7 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 
 func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	activeKey := (&types.PayloadGovernanceActive{}).Key()
-	eng := getTestEngine(t)
+	eng := getTestEngine(t, time.Now())
 	defer eng.ctrl.Finish()
 
 	// initial state
@@ -250,7 +244,7 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 
 	proposer := eng.newValidParty("proposer", 1)
-	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 	ctx := context.Background()
 
 	eng.ensureAllAssetEnabled(t)
@@ -273,7 +267,7 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 	assert.False(t, bytes.Equal(s1, s2))
 
-	snapEng := getTestEngine(t)
+	snapEng := getTestEngine(t, time.Now())
 	defer snapEng.ctrl.Finish()
 
 	state, _, err := eng.GetState(activeKey)
@@ -294,7 +288,7 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 
 func TestGovernanceWithInternalTimeTerminationSnapshotRoundTrip(t *testing.T) {
 	activeKey := (&types.PayloadGovernanceActive{}).Key()
-	eng := getTestEngine(t)
+	eng := getTestEngine(t, time.Now())
 	defer eng.ctrl.Finish()
 
 	// initial state
@@ -302,7 +296,7 @@ func TestGovernanceWithInternalTimeTerminationSnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 
 	proposer := eng.newValidParty("proposer", 1)
-	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), nil, nil, false)
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, false)
 	ctx := context.Background()
 
 	eng.ensureAllAssetEnabled(t)
@@ -325,7 +319,7 @@ func TestGovernanceWithInternalTimeTerminationSnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 	assert.False(t, bytes.Equal(s1, s2))
 
-	snapEng := getTestEngine(t)
+	snapEng := getTestEngine(t, time.Now())
 	defer snapEng.ctrl.Finish()
 
 	state, _, err := eng.GetState(activeKey)
@@ -346,7 +340,7 @@ func TestGovernanceWithInternalTimeTerminationSnapshotRoundTrip(t *testing.T) {
 
 func TestGovernanceSnapshotEmpty(t *testing.T) {
 	activeKey := (&types.PayloadGovernanceActive{}).Key()
-	eng := getTestEngine(t)
+	eng := getTestEngine(t, time.Now())
 	defer eng.ctrl.Finish()
 
 	s, _, err := eng.GetState(activeKey)

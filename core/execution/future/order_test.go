@@ -14,7 +14,6 @@ package future_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -3240,10 +3239,6 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 			switch evt := e.(type) {
 			case *events.ExpiredOrders:
 				orders = append(orders, evt.OrderIDs()...)
-			case *events.Order:
-				if evt.Order().Status != types.OrderStatusExpired {
-					fmt.Printf("%s\n", evt.Order().Status)
-				}
 			}
 		}
 		assert.Len(t, orders, 1)

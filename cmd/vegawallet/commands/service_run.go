@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -755,22 +754,37 @@ func yesOrNo(ctx context.Context, controlCh <-chan error, question *printer.Form
 	}
 }
 
-func readString(reader cancelreader.CancelReader) (string, error) {
+func readString(reader io.Reader) (string, error) {
 	var line string
 	for {
-		var input [1024]byte
-		_, err := reader.Read(input[:])
-		if err != nil {
+		var input [50]byte
+		bytesRead, err := reader.Read(input[:])
+
+		// As said in the Read documentation:
+		//     Callers should treat a return of 0 and nil as indicating that
+		//     nothing happened; in particular it does not indicate EOF.
+		if bytesRead == 0 && err == nil {
+			continue
+		}
+
+		if bytesRead == 0 && err != nil && !errors.Is(err, io.EOF) {
 			return "", err
 		}
-		index := bytes.IndexByte(input[:], '\n')
-		line += string(input[:index])
-		if index != -1 {
+
+		// As said in the Read documentation:
+		//     Callers should always process the n > 0 bytes returned before
+		//     considering the error err. Doing so correctly handles I/O errors
+		//     that happen after reading some bytes and also both of the
+		//     allowed EOF behaviors.
+		line += string(input[:bytesRead])
+
+		// Verify if the input chunk contains the "enter" key.
+		if strings.ContainsAny(line, "\r\n") || err != nil {
 			break
 		}
 	}
 
-	return strings.Trim(line, " \r\n\t"), nil
+	return strings.Trim(line, " \r\n\t"), nil // nolint:nilerr
 }
 
 // ensureNotRunningInMsys verifies if the underlying shell is not running on

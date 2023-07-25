@@ -617,7 +617,8 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 		m.enterAuction(ctx)
 	} else {
 		// TODO(): to be removed once we don't have market starting
-		// without an opening auction
+		// without an opening auction - this is only used in unit tests
+		// validation on the proposal ensures opening auction duration is always >= 1 (or whatever the min duration is)
 		m.mkt.State = types.MarketStateActive
 		m.mkt.TradingMode = types.MarketTradingModeContinuous
 	}

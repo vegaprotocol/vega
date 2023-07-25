@@ -53,7 +53,6 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 
 	as, snapshotEngine := getEngineAndSnapshotEngine(t)
 	defer snapshotEngine.Close()
-	defer as.ctrl.Finish()
 	as.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	_, err := as.NewAsset(ctx, "asset1", &types.AssetDetails{
@@ -157,7 +156,6 @@ func TestActiveSnapshotRoundTrip(t *testing.T) {
 		require.Nil(t, err)
 		statePostReload, _, _ := as.GetState(activeKey)
 		require.True(t, bytes.Equal(state, statePostReload))
-		as.ctrl.Finish()
 	}
 }
 
@@ -201,6 +199,5 @@ func TestPendingSnapshotRoundTrip(t *testing.T) {
 		require.Nil(t, err)
 		statePostReload, _, _ := as.GetState(pendingKey)
 		require.True(t, bytes.Equal(state, statePostReload))
-		as.ctrl.Finish()
 	}
 }
