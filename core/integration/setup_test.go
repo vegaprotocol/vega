@@ -252,7 +252,7 @@ func newExecutionTestSetup() *executionTestSetup {
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
-			Watcher: execsetup.executionEngine.OnMarketLiquidityV2SuppliedStakeToObligationFactorUpdate,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2StakeToCCYVolumeUpdate,
 		},
 	)
 	return execsetup
