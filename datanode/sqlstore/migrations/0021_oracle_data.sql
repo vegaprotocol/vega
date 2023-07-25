@@ -1,9 +1,9 @@
 -- +goose Up
-ALTER TABLE oracle_data ADD COLUMN meta_data JSONB;
-ALTER TABLE oracle_data_current ADD COLUMN meta_data JSONB;
+ALTER TABLE oracle_data ADD COLUMN IF NOT EXISTS meta_data JSONB;
+ALTER TABLE oracle_data_current ADD COLUMN IF NOT EXISTS meta_data JSONB;
 
-ALTER TABLE oracle_data ADD COLUMN error text;
-ALTER TABLE oracle_data_current ADD COLUMN error text;
+ALTER TABLE oracle_data ADD COLUMN IF NOT EXISTS error text;
+ALTER TABLE oracle_data_current ADD COLUMN IF NOT EXISTS error text;
 
 
 -- +goose StatementBegin
