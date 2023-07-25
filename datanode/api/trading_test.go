@@ -61,9 +61,6 @@ func waitForNode(ctx context.Context, t *testing.T, conn *grpc.ClientConn) {
 			return
 		}
 
-		fmt.Println(err)
-
-		fmt.Printf("Sleeping for %d milliseconds\n", sleepTime)
 		time.Sleep(time.Duration(sleepTime) * time.Millisecond)
 		sleepTime *= 2
 	}

@@ -35,16 +35,15 @@ func TestProposalForNewAsset(t *testing.T) {
 	t.Run("Submitting a proposal for new asset succeeds", testSubmittingProposalForNewAssetSucceeds)
 	t.Run("Submitting a proposal for new asset with closing time before validation time fails", testSubmittingProposalForNewAssetWithClosingTimeBeforeValidationTimeFails)
 	t.Run("Voting during validation of proposal for new asset succeeds", testVotingDuringValidationOfProposalForNewAssetSucceeds)
-	t.Run("rejects erc20 proposals for address already used", testRejectsERC20ProposalForAddressAlreadyUsed)
+	t.Run("Rejects erc20 proposals for address already used", testRejectsERC20ProposalForAddressAlreadyUsed)
 }
 
 func testRejectsERC20ProposalForAddressAlreadyUsed(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newProposalForNewAsset(party.Id, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewAsset(party.Id, eng.tsvc.GetTimeNow().Add(48*time.Hour))
 
 	newAssetERC20 := newAssetTerms()
 	newAssetERC20.NewAsset.Changes.Source = &types.AssetDetailsErc20{
@@ -70,12 +69,11 @@ func testRejectsERC20ProposalForAddressAlreadyUsed(t *testing.T) {
 }
 
 func testSubmittingProposalForNewAssetSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newProposalForNewAsset(party.Id, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewAsset(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour))
 
 	// setup
 	eng.assets.EXPECT().NewAsset(gomock.Any(), proposal.ID, gomock.Any()).Times(1).Return(proposal.ID, nil)
@@ -95,12 +93,11 @@ func testSubmittingProposalForNewAssetSucceeds(t *testing.T) {
 }
 
 func testSubmittingProposalForNewAssetWithClosingTimeBeforeValidationTimeFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewAsset(party, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewAsset(party, eng.tsvc.GetTimeNow().Add(48*time.Hour))
 	proposal.Terms.ValidationTimestamp = proposal.Terms.ClosingTimestamp + 10
 
 	// setup
@@ -115,12 +112,11 @@ func testSubmittingProposalForNewAssetWithClosingTimeBeforeValidationTimeFails(t
 }
 
 func testVotingDuringValidationOfProposalForNewAssetSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// when
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewAsset(proposer, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewAsset(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour))
 
 	// setup
 	var bAsset *assets.Asset
@@ -221,8 +217,7 @@ func testVotingDuringValidationOfProposalForNewAssetSucceeds(t *testing.T) {
 }
 
 func TestNoVotesAnd0RequiredFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	ctx := context.Background()
 	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.GovernanceProposalAssetRequiredParticipation, "0")).Times(1)
@@ -235,7 +230,7 @@ func TestNoVotesAnd0RequiredFails(t *testing.T) {
 
 	// when
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewAsset(proposer, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewAsset(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour))
 
 	// setup
 	var fcheck func(interface{}, bool)

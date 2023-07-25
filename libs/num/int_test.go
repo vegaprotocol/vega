@@ -230,7 +230,6 @@ func testAddLoop(t *testing.T) {
 		bigNum1.Add(bigNum2)
 
 		assert.Equal(t, num1+num2, bigNum1.Int64())
-		// fmt.Println(num1, num2, num1-num2, bigNum1.String())
 	}
 }
 
@@ -245,7 +244,6 @@ func testSubLoop(t *testing.T) {
 		bigNum1.Sub(bigNum2)
 
 		assert.Equal(t, num1-num2, bigNum1.Int64())
-		// fmt.Println(num1, num2, num1-num2, bigNum1.String())
 	}
 }
 

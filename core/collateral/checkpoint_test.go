@@ -62,7 +62,6 @@ func newCheckpointTestEngine(t *testing.T) *checkpointTestEngine {
 
 func TestCheckPointLoadingWithAlias(t *testing.T) {
 	e := newCheckpointTestEngine(t)
-	defer e.ctrl.Finish()
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(4).Do(func(e events.Event) {
 		ledgerMovmenentsE, ok := e.(*events.LedgerMovements)
@@ -147,7 +146,6 @@ func (f *feesTransfer) Transfers() []*types.Transfer { return f.transfers }
 // back to the network treasury of the asset as takes a checkpoint.
 func TestCheckPointWithUndistributedLPFees(t *testing.T) {
 	e := newCheckpointTestEngine(t)
-	defer e.ctrl.Finish()
 
 	e.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 

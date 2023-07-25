@@ -30,7 +30,6 @@ import (
 
 func TestCancelTransfer(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	// let's do a massive fee, easy to test
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(0.5))

@@ -678,13 +678,6 @@ func TestSubmit(t *testing.T) {
 		// Move the price enough that we go into a price auction
 		tm.now = tm.now.Add(20 * time.Second)
 		tm.market.OnTick(ctx, tm.now)
-		// amount
-		mktDat := tm.market.GetMarketData()
-		fmt.Printf("Target: %s\nSupplied: %s\n\n", mktDat.TargetStake, mktDat.SuppliedStake)
-		fmt.Printf("bounds: %d\n%#v\n", len(mktDat.PriceMonitoringBounds), mktDat)
-		for _, pb := range mktDat.PriceMonitoringBounds {
-			fmt.Printf("Horizon -> %s - %s \n", pb.MinValidPrice.String(), pb.MaxValidPrice.String())
-		}
 
 		o5 := getMarketOrder(tm, tm.now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order05", types.SideBuy, "party-B", 50, 3000)
 		o5conf, err := tm.market.SubmitOrder(ctx, o5)
@@ -919,8 +912,6 @@ func TestSubmit(t *testing.T) {
 		}
 
 		tm.events = nil
-		mktD := tm.market.GetMarketData()
-		fmt.Printf("TS: %s\nSS: %s\n", mktD.TargetStake, mktD.SuppliedStake)
 		// submit the auctions orders
 		tm.WithSubmittedOrders(t, mpOrders...)
 

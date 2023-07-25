@@ -40,7 +40,7 @@ func TestRecurringTransfers(t *testing.T) {
 
 func TestMaturation(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
+
 	ctx := context.Background()
 
 	e.OnMinTransferQuantumMultiple(context.Background(), num.DecimalFromFloat(1))
@@ -100,7 +100,6 @@ func TestMaturation(t *testing.T) {
 
 func testInvalidRecurringTransfersBadAmount(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	ctx := context.Background()
 	transfer := &types.TransferFunds{
@@ -135,7 +134,6 @@ func testInvalidRecurringTransfersBadAmount(t *testing.T) {
 
 func testInvalidRecurringTransfersInThePast(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	// let's do a massive fee, easy to test
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(0.5))
@@ -198,7 +196,6 @@ func testInvalidRecurringTransfersInThePast(t *testing.T) {
 
 func testInvalidRecurringTransfersDuplicates(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	// let's do a massive fee, easy to test
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(0.5))
@@ -281,7 +278,6 @@ func testInvalidRecurringTransfersDuplicates(t *testing.T) {
 
 func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	// let's do a massive fee, easy to test
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(0.5))
@@ -401,7 +397,6 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 
 func testValidRecurringTransfer(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	// let's do a massive fee, easy to test
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(0.5))
@@ -546,7 +541,6 @@ func testValidRecurringTransfer(t *testing.T) {
 
 func testRecurringTransferInvalidTransfers(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	ctx := context.Background()
 	transfer := types.TransferFunds{

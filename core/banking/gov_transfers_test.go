@@ -12,7 +12,6 @@ import (
 
 func TestCalculateGovernanceTransferAmount(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	e.OnMaxAmountChanged(context.Background(), num.DecimalFromInt64(1000000))
 	e.OnMaxFractionChanged(context.Background(), num.MustDecimalFromString("0.5"))

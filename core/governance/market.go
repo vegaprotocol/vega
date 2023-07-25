@@ -551,7 +551,7 @@ func validateLPSLAParams(slaParams *types.LiquiditySLAParams) (types.ProposalErr
 
 func validateAuctionDuration(proposedDuration time.Duration, netp NetParams) (types.ProposalError, error) {
 	minAuctionDuration, _ := netp.GetDuration(netparams.MarketAuctionMinimumDuration)
-	if proposedDuration != 0 && proposedDuration < minAuctionDuration {
+	if proposedDuration < minAuctionDuration {
 		// Auction duration is too small
 		return types.ProposalErrorOpeningAuctionDurationTooSmall,
 			fmt.Errorf("proposal opening auction duration is too short, expected > %v, got %v", minAuctionDuration, proposedDuration)

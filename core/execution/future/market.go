@@ -617,7 +617,8 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 		m.enterAuction(ctx)
 	} else {
 		// TODO(): to be removed once we don't have market starting
-		// without an opening auction
+		// without an opening auction - this is only used in unit tests
+		// validation on the proposal ensures opening auction duration is always >= 1 (or whatever the min duration is)
 		m.mkt.State = types.MarketStateActive
 		m.mkt.TradingMode = types.MarketTradingModeContinuous
 	}
@@ -1136,7 +1137,7 @@ func (m *Market) OnAuctionEnded() {
 // leaveAuction : Return the orderbook and market to continuous trading.
 func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	defer func() {
-		if !m.as.InAuction() && (m.mkt.State == types.MarketStateSuspended || m.mkt.State == types.MarketStatePending) {
+		if !m.as.InAuction() && (m.mkt.State == types.MarketStateSuspended || m.mkt.State == types.MarketStatePending || m.mkt.State == types.MarketStateSuspendedViaGovernance) {
 			if m.mkt.State == types.MarketStatePending {
 				// the market is now properly open,
 				// so set the timestamp to when the opening auction actually ended
