@@ -36,9 +36,9 @@ Feature: Position resolution case 5 lognormal risk model
       | lpprov           | USD   | 1000000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | submission |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:

@@ -19,6 +19,7 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 720h  |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
+      | limits.markets.maxPeggedOrders                      | 4     |
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
       | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
@@ -34,12 +35,18 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
       | party2 | USD   | 100000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | sell | MID              | 2          | 1      | amendment  |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | amendment  |
+      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | amendment  |
+      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | MID              | 2          | 1      |
+ 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |

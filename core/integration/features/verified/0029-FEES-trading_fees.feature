@@ -4,6 +4,7 @@ Feature: Fees calculations
     Given the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
 
   Scenario: S001, Testing fees in continuous trading with one trade and no liquidity providers (0029-FEES-001)
 
@@ -32,10 +33,14 @@ Feature: Fees calculations
       | lpprov  | ETH   | 100000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 10     | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 10     | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | submission |
+     And the parties place the following pegged iceberg orders:
+       | party  | market id | peak size | minimum visible size |side | pegged reference | volume     | offset |
+       | lpprov | ETH/DEC21 | 2         | 1                    |buy  | BID              | 50         | 10     |
+       | lpprov | ETH/DEC21 | 2         | 1                    |sell | ASK              | 50         | 10     |
+ 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -134,9 +139,13 @@ Feature: Fees calculations
       | lpprov   | ETH   | 100000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 10     | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 10     | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC21 | 2         | 1                    | buy  | BID              | 50         | 10     |
+      | lpprov | ETH/DEC21 | 2         | 1                    | sell | ASK              | 50         | 10     |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -250,9 +259,13 @@ Feature: Fees calculations
       | aux2  | ETH/DEC21 | sell | 1      | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | submission |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | lpprov | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -395,9 +408,13 @@ Feature: Fees calculations
       | lpprov   | ETH   | 100000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 10     | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 10     | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC21 | 2         | 1                    | buy  | BID              | 50         | 10     |
+      | lpprov | ETH/DEC21 | 2         | 1                    | sell | ASK              | 50         | 10     |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -530,9 +547,13 @@ Feature: Fees calculations
       | lpprov  | ETH   | 100000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 10     | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 10     | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC21 | 2         | 1                    | buy  | BID              | 50         | 10     |
+      | lpprov | ETH/DEC21 | 2         | 1                    | sell | ASK              | 50         | 10     |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -646,9 +667,13 @@ Feature: Fees calculations
       | lpprov  | ETH   | 100000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 10     | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 10     | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC21 | 2         | 1                    | buy  | BID              | 50         | 10     |
+      | lpprov | ETH/DEC21 | 2         | 1                    | sell | ASK              | 50         | 10     |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -720,9 +745,13 @@ Feature: Fees calculations
       | aux2  | ETH/DEC21 | sell | 10     | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | submission |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | aux1  | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | aux1  | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -821,9 +850,13 @@ Feature: Fees calculations
       | trader4  | ETH/DEC21 | sell | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | submission |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | lpprov | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -867,9 +900,13 @@ Feature: Fees calculations
       | trader4  | ETH/DEC21 | sell | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | aux1  | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | aux1  | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
 
     # leave auction
     When the network moves ahead "2" blocks
@@ -982,9 +1019,13 @@ Feature: Fees calculations
       | trader4  | ETH/DEC21 | sell | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | submission |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | aux1  | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | aux1  | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
 
     And the opening auction period ends for market "ETH/DEC21"
 
@@ -1010,9 +1051,13 @@ Feature: Fees calculations
       | trader4  | ETH/DEC21 | sell | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | aux1  | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | aux1  | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
 
     Then the network moves ahead "2" blocks
 
@@ -1088,17 +1133,23 @@ Feature: Fees calculations
       | trader4  | ETH/DEC21 | sell | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          | 10     | amendment  |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | submission |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | aux1  | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | aux1  | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
     Then the opening auction period ends for market "ETH/DEC21"
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
-
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | aux1  | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | aux1  | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1002       | TRADING_MODE_CONTINUOUS | 1       | 903       | 1101      | 200          | 10000          | 1             |
@@ -1192,9 +1243,13 @@ Feature: Fees calculations
       | trader4  | ETH/DEC21 | sell | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | submission |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | aux1  | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | aux1  | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
 
     When the opening auction period ends for market "ETH/DEC21"
 
@@ -1214,9 +1269,13 @@ Feature: Fees calculations
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | aux1  | ETH/DEC21 | 20000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
-      | lp1 | aux1  | ETH/DEC21 | 20000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp1 | aux1  | ETH/DEC21 | 20000             | 0.001 | amendment |
+      | lp1 | aux1  | ETH/DEC21 | 20000             | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | aux1  | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | aux1  | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |    
     And the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -1302,16 +1361,23 @@ Feature: Fees calculations
       | trader4  | ETH/DEC21 | sell | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          | 10     | amendment  |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | submission |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | aux1  | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | aux1  | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
     Then the opening auction period ends for market "ETH/DEC21"
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | aux1  | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | aux1  | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -1409,16 +1475,23 @@ Feature: Fees calculations
       | trader4  | ETH/DEC21 | sell | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          | 10     | amendment  |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | submission |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | aux1  | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | aux1  | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
     Then the opening auction period ends for market "ETH/DEC21"
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | aux1  | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | aux1  | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -1696,9 +1769,13 @@ Feature: Fees calculations
       | aux2  | ETH/DEC21 | sell | 1      | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 1          | 10     | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | submission |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | aux1  | ETH/DEC21 | 2         | 1                    | buy  | MID              | 1          | 10     |
+      | aux1  | ETH/DEC21 | 2         | 1                    | sell | MID              | 1          | 10     |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -1815,10 +1892,14 @@ Feature: Fees calculations
       | lpprov  | ETH   | 100000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 10     | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 10     | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC21 | 2         | 1                    | buy  | BID              | 50         | 10     |
+      | lpprov | ETH/DEC21 | 2         | 1                    | sell | ASK              | 50         | 10     |
+ 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |

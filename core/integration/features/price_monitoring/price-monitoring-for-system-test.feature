@@ -15,6 +15,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 6     |
+      | limits.markets.maxPeggedOrders | 2     |
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
   Scenario: Scenario for the system test with opening auction
@@ -28,10 +29,14 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | lpprov | ETH   | 100000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC20 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC20 | 2         | 1                    | sell | ASK              | 50         | 100    |
+ 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price  | resulting trades | type       | tif     |

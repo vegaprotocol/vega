@@ -21,6 +21,7 @@ Feature:  test 0038-OLIQ-008
       | name                                                   | value |
       | market.liquidity.minimum.probabilityOfTrading.lpOrders | 0.01  |
       | network.markPriceUpdateMaximumFrequency                | 0s    |
+      | limits.markets.maxPeggedOrders                         | 2     |
     And the average block duration is "1"
 
   Scenario: If best bid / ask has changed and the LP order volume is moved around to match the shape / new peg levels then the margin requirement for the party may change. There is at most one transfer in / out of the margin account of the LP party as a result of one of the pegs moving. 0038-OLIQ-008
@@ -34,10 +35,13 @@ Feature:  test 0038-OLIQ-008
       | lp    | USD   | 1000000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp    | ETH/DEC19 | 90000             | 0   | buy  | BID              | 50         | 10     | submission |
-      | lp1 | lp    | ETH/DEC19 | 90000             | 0   | sell | ASK              | 50         | 10     | submission |
-
+      | id  | party | market id | commitment amount | fee | lp type    |
+      | lp1 | lp    | ETH/DEC19 | 90000             | 0   | submission |
+      | lp1 | lp    | ETH/DEC19 | 90000             | 0   | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp     | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10     |
+      | lp     | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 10     |
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux3  | ETH/DEC19 | buy  | 10     | 140   | 0                | TYPE_LIMIT | TIF_GTC | bestBid   |

@@ -16,6 +16,7 @@ Feature: Price monitoring test using simple risk model
       | name                                    | value |
       | market.auction.minimumDuration          | 240   |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
 
   Scenario: Persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates with a trade from order that originally triggered the auction.
     Given the parties deposit on asset's general account the following amount:
@@ -27,9 +28,13 @@ Feature: Price monitoring test using simple risk model
       | lpprov | ETH   | 100000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC20 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC20 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -81,9 +86,13 @@ Feature: Price monitoring test using simple risk model
       | lpprov | ETH   | 100000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC20 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC20 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -123,9 +132,13 @@ Feature: Price monitoring test using simple risk model
       | lpprov | ETH   | 100000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC20 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC20 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -184,9 +197,13 @@ Feature: Price monitoring test using simple risk model
       | lpprov | ETH   | 100000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC20 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC20 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -293,9 +310,13 @@ Feature: Price monitoring test using simple risk model
       | aux   | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux   | ETH/DEC20 | 660               | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux   | ETH/DEC20 | 660               | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux   | ETH/DEC20 | 660               | 0.001 | submission |
+      | lp1 | aux   | ETH/DEC20 | 660               | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | aux    | ETH/DEC20 | 2         | 1                    | sell | ASK              | 1          | 10     |
+      | aux    | ETH/DEC20 | 2         | 1                    | buy  | BID              | 1          | 10     |
 
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
@@ -394,9 +415,13 @@ Feature: Price monitoring test using simple risk model
       | lpprov | ETH   | 100000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC20 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC20 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -500,10 +525,14 @@ Feature: Price monitoring test using simple risk model
       | lpprov | ETH   | 100000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC20 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC20 | 2         | 1                    | sell | ASK              | 50         | 100    |
+ 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |

@@ -9,6 +9,7 @@ Feature: Distressed parties should not have general balance left
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
 
   Scenario: Upper bound breached
     Given the parties deposit on asset's general account the following amount:
@@ -24,9 +25,13 @@ Feature: Distressed parties should not have general balance left
 
     # Provide LP so market can leave opening auction
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC20 | 10000             | 0.1 | buy  | BID              | 50         | 10     | submission |
-      | lp1 | lpprov | ETH/DEC20 | 10000             | 0.1 | sell | ASK              | 50         | 10     | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 10000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC20 | 10000             | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC20 | 2         | 1                    | buy  | BID              | 50     | 10     |
+      | lpprov | ETH/DEC20 | 2         | 1                    | sell | ASK              | 50     | 10     |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -64,9 +69,14 @@ Feature: Distressed parties should not have general balance left
       | party4 | ETH   | ETH/DEC20 | 360    | 9999999999640 |
       | party5 | ETH   | ETH/DEC20 | 372    | 9999999999528 |
     Then the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | party3 | ETH/DEC20 | 20000             | 0.1 | buy  | BID              | 10         | 10     | submission |
-      | lp2 | party3 | ETH/DEC20 | 20000             | 0.1 | sell | ASK              | 10         | 10     | amendment  |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp2 | party3 | ETH/DEC20 | 20000             | 0.1 | submission |
+      | lp2 | party3 | ETH/DEC20 | 20000             | 0.1 | amendment  |
+    And the parties place the following pegged iceberg orders:    
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party3 | ETH/DEC20 | 2         | 1                    | buy  | BID              | 10         | 10     |
+      | party3 | ETH/DEC20 | 2         | 1                    | sell | ASK              | 10         | 10     |
+    
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status        |
       | lp2 | party3 | ETH/DEC20 | 20000             | STATUS_ACTIVE |

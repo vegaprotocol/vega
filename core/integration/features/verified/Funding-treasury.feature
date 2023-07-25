@@ -52,7 +52,7 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | market.auction.minimumDuration               | 1     |
       | network.markPriceUpdateMaximumFrequency      | 0s    |
       | market.liquidity.successorLaunchWindowLength | 1s    |
-
+      | limits.markets.maxPeggedOrders               | 4     |
   Scenario: using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book; and check the funding of treasury. 0012-POSR-002, 0012-POSR-005, 0013-ACCT-001, 0013-ACCT-022
 
     # setup accounts
@@ -66,12 +66,18 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | lpprov           | USD   | 1000000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | sell | ASK              | 50         | 100    | amendment  |
-      | lp2 | lpprov | ETH/DEC20 | 9000              | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp2 | lpprov | ETH/DEC20 | 9000              | 0.1 | sell | ASK              | 50         | 100    | amendment  |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | amendment  |
+      | lp2 | lpprov | ETH/DEC20 | 9000              | 0.1 | submission |
+      | lp2 | lpprov | ETH/DEC20 | 9000              | 0.1 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
+      | lpprov | ETH/DEC20 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC20 | 2         | 1                    | sell | ASK              | 50         | 100    |
+ 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |

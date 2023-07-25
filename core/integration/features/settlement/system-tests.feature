@@ -27,6 +27,7 @@ Feature: Test settlement at expiry time from internal oracle
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
 
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -54,12 +55,17 @@ Feature: Test settlement at expiry time from internal oracle
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 5s    |
+      | limits.markets.maxPeggedOrders          | 2     |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 10000             | 0.001 | buy  | BID              | 50         | 1      | submission |
-      | lp1 | lpprov | ETH/DEC19 | 10000             | 0.001 | sell | ASK              | 50         | 1      | submission |
-
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 10000             | 0.001 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 10000             | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 1      |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 1      |
+  
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux1  | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |

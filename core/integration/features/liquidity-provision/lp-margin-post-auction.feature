@@ -15,7 +15,7 @@ Feature: Assure LP margin is correct
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1.5   |
-      | market.liquidityV2.bondPenaltyParameter         | 0.2   |
+      | market.liquidityV2.bondPenaltyParameter       | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.24  |
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
@@ -29,14 +29,19 @@ Feature: Assure LP margin is correct
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
 
   Scenario: Assure LP margin is released when opening auction concludes with a price lower than indicative uncrossing price at the time of LP submission
 
     Given the average block duration is "1"
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | sell | ASK              | 500        | 17     | submission |
-      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | buy  | BID              | 500        | 17     | amendment  |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | submission |
+      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 17     |
+      | party0 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 17     |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
@@ -52,9 +57,13 @@ Feature: Assure LP margin is correct
       | 0          | TRADING_MODE_OPENING_AUCTION | 50000            | 100               |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | party0 | ETH/MAR22 | 55000             | 0.001 | sell | ASK              | 500        | 17     | amendment |
-      | lp1 | party0 | ETH/MAR22 | 55000             | 0.001 | buy  | BID              | 500        | 17     | amendment |
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | party0 | ETH/MAR22 | 55000             | 0.001 | amendment |
+      | lp1 | party0 | ETH/MAR22 | 55000             | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 17     |
+      | party0 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 17     |
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party0 | ETH/MAR22 | 63256       | 69581  | 75907   | 88558   |

@@ -21,6 +21,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
+      | limits.markets.maxPeggedOrders                      | 4     |
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
       | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 0.5                    | 0                         |
@@ -36,11 +37,17 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party2 | USD   | 100000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | sell | MID              | 2          | 1      | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | amendment  |
+      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | amendment  |
+      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -158,17 +165,29 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party2 | USD   | 100000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/MAR22 | 5000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 5000              | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 5000              | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 5000              | 0.001 | sell | MID              | 2          | 1      | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/MAR22 | 5000              | 0.001 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 5000              | 0.001 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 5000              | 0.001 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 5000              | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | MID              | 2          | 1      |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/MAR22 | 5000              | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 5000              | 0.002 | buy  | MID              | 2          | 1      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 5000              | 0.002 | sell | ASK              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 5000              | 0.002 | sell | MID              | 2          | 1      | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp2 | lp2   | ETH/MAR22 | 5000              | 0.002 | submission |
+      | lp2 | lp2   | ETH/MAR22 | 5000              | 0.002 | submission |
+      | lp2 | lp2   | ETH/MAR22 | 5000              | 0.002 | submission |
+      | lp2 | lp2   | ETH/MAR22 | 5000              | 0.002 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -251,17 +270,29 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party2 | USD   | 100000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | sell | MID              | 2          | 1      | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | MID              | 2          | 1      |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | buy  | MID              | 2          | 1      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | sell | ASK              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | sell | MID              | 2          | 1      | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | submission |
+      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | submission |
+      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | submission |
+      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -352,17 +383,29 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party2 | USD   | 100000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | sell | MID              | 2          | 1      | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | MID              | 2          | 1      |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | buy  | MID              | 2          | 1      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | sell | ASK              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | sell | MID              | 2          | 1      | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | submission |
+      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | submission |
+      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | submission |
+      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -425,18 +468,24 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party2 | USD   | 100000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | sell | MID              | 2          | 1      | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | amendment  |
+      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | amendment  |
+      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | amendment  |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | buy  | MID              | 2          | 1      | amendment  |
-      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | sell | ASK              | 1          | 2      | amendment  |
-      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | sell | MID              | 2          | 1      | amendment  |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | submission |
+      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | amendment  |
+      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | amendment  |
+      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | MID              | 2          | 1      |
+ 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -504,13 +553,21 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party2 | USD   | 100000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | sell | ASK              | 1          | 2      | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | sell | ASK              | 1          | 2      | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | submission |
+      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.002 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -623,20 +680,32 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party2 | USD   | 100000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/MAR22 | 2000              | 0.002 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 2000              | 0.002 | buy  | BID              | 1          | 1      | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/MAR22 | 2000              | 0.002 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 2000              | 0.002 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 1      |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/MAR22 | 3000              | 0.003 | sell | ASK              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 3000              | 0.003 | buy  | BID              | 1          | 1      | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp2 | lp2   | ETH/MAR22 | 3000              | 0.003 | submission |
+      | lp2 | lp2   | ETH/MAR22 | 3000              | 0.003 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 1      |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp3 | lp3   | ETH/MAR22 | 4000              | 0.004 | sell | ASK              | 1          | 2      | submission |
-      | lp3 | lp3   | ETH/MAR22 | 4000              | 0.004 | buy  | BID              | 1          | 1      | amendment  |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp3 | lp3   | ETH/MAR22 | 4000              | 0.004 | submission |
+      | lp3 | lp3   | ETH/MAR22 | 4000              | 0.004 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp3     | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp3     | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 1      |
+ 
     Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |

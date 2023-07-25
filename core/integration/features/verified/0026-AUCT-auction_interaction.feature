@@ -15,6 +15,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | market.auction.minimumDuration                | 10    |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | market.liquidity.successorLaunchWindowLength  | 1s    |
+      | limits.markets.maxPeggedOrders                | 4     |
     And the average block duration is "1"
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
@@ -49,11 +50,17 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | market.auction.minimumDuration | 400   |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | sell | MID              | 2          | 1      | submission |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -99,9 +106,13 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
   Scenario: When trying to exit opening auction liquidity monitoring doesn't get triggered, hence the opening auction uncrosses and market goes into continuous trading mode (0026-AUCT-004)
 
     Given the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 500        | 10     | submission |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 500        | 10     | submission |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 500        | 10     |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 500        | 10     |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -121,11 +132,17 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
   Scenario: When trying to exit opening auction liquidity monitoring is triggered due to missing best bid, hence the opening auction gets extended (0026-AUCT-005)
 
     Given the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | submission |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -160,11 +177,17 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      | submission |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -180,11 +203,17 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | party0 | ETH/DEC21 | 799               | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 799               | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 799               | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 799               | 0.001 | sell | MID              | 2          | 1      | amendment |
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 799               | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 799               | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 799               | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 799               | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     When the network moves ahead "1" blocks
     And the market data for the market "ETH/DEC21" should be:
@@ -192,11 +221,17 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 1000         | 799            | 0             |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | sell | MID              | 2          | 1      | amendment |
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     And the market data for the market "ETH/DEC21" should be:
       | trading mode                 | auction trigger         | extension trigger                        | target stake | supplied stake | open interest |
@@ -207,14 +242,19 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Then the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC21"
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | amendment |
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     When the network moves ahead "1" blocks
-
     Then the auction ends with a traded volume of "10" at a price of "1000"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -229,12 +269,17 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | submission |
-
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -284,11 +329,17 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     And a total of "116" events should be emitted
 
     Then the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | amendment |
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     When the network moves ahead "11" blocks
 
@@ -305,11 +356,17 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | submission |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -356,11 +413,17 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | sell | MID              | 2          | 1      | submission |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -420,11 +483,17 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 1      | submission |
-      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 1      | submission |
-      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | sell | MID              | 2          | 1      | submission |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -498,11 +567,17 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | submission |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -550,11 +625,17 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | submission |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -614,11 +695,17 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     When the network moves ahead "2" blocks
 
     Then  the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | MID              | 2          | 1      | amendment |
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     # leave liquidity auction
     When the network moves ahead "2" blocks
@@ -643,11 +730,17 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | submission |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -705,11 +798,17 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     When the network moves ahead "1" blocks
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | party0 | ETH/DEC21 | 3468              | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 3468              | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 3468              | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 3468              | 0.001 | sell | MID              | 2          | 1      | amendment |
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 3468              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 3468              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 3468              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 3468              | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     When the network moves ahead "11" blocks
     # We should be able to leave liquidity auction now (price extension keep the market in auction mode though)
@@ -732,11 +831,17 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
     # Increasing the supplied stake should end the auction
     Then the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | party0 | ETH/DEC21 | 4488              | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 4488              | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 4488              | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 4488              | 0.001 | sell | MID              | 2          | 1      | amendment |
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 4488              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 4488              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 4488              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 4488              | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
@@ -752,11 +857,17 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     Then the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | sell | MID              | 2          | 1      | submission |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -790,11 +901,17 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
     # We were in liquidity auction, we've updated the commitment amount
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | sell | MID              | 2          | 1      | amendment |
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
     And the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -810,9 +927,13 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | submission |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -851,9 +972,13 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
     # Updating the commitment amount to come out of liquidity auction
     And  the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | party0 | ETH/DEC21 | 2080              | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 2080              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 2080              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 2080              | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
@@ -866,9 +991,13 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | party1 | ETH/DEC21 | buy  | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC21 | sell | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
     And  the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
 
     Then the network moves ahead "9" blocks
 
@@ -895,10 +1024,14 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
     # Updating the commitment amount to come out of liquidity auction
     Then  the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | party0 | ETH/DEC21 | 6120              | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 6120              | 0.001 | sell | ASK              | 1          | 2      | amendment |
-
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 6120              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 6120              | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+ 
     When the network moves ahead "10" blocks
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |

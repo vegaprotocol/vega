@@ -6,6 +6,7 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.targetstake.triggering.ratio | 0.9   |
+      | limits.markets.maxPeggedOrders                | 4     |
     And the average block duration is "1"
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
@@ -36,11 +37,17 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
   Scenario: Enter liquidity auction, extended by trades at liq. auction end, single trade -> single extension
 
     Given the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      | amendment  |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | amendment  |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | amendment  |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -60,11 +67,17 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 100     | 990       | 1010      | 1000         | 700            | 0             | 2           |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | sell | MID              | 2          | 1      | amendment |
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     When the network moves ahead "1" blocks
     Then the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC21"
@@ -74,11 +87,17 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 100     | 990       | 1010      | 1000         | 800            | 0             | 3           |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | sell | MID              | 2          | 1      | amendment |
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -94,11 +113,17 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 100     | 990       | 1010      | 1010         | 801            | 0             | 3           |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | amendment |
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     When the network moves ahead "1" blocks
 
@@ -110,12 +135,17 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
   Scenario: Enter liquidity auction, extended by trades at liq. auction end, multiple trades -> still a single extension
 
     Given the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | -2     | submission |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | -1     | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      | amendment  |
-
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | amendment  |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | amendment  |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | -2     |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | -1     |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -135,11 +165,17 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 100     | 990       | 1010      | 1000         | 700            | 0             | 2           |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | sell | MID              | 2          | 1      | amendment |
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders: 
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     When the network moves ahead "1" blocks
     Then the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC21"
@@ -149,12 +185,17 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 100     | 990       | 1010      | 1000         | 800            | 0             | 3           |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | sell | MID              | 2          | 1      | amendment |
-
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -166,11 +207,17 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 100     | 990       | 1010      | 1010         | 801            | 0             | 3           |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | party0 | ETH/DEC21 | 1010              | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 1010              | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 1010              | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 1010              | 0.001 | sell | MID              | 2          | 1      | amendment |
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 1010              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 1010              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 1010              | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 1010              | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     When the network moves ahead "1" blocks
 
@@ -213,12 +260,17 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
     When the network moves ahead "10" blocks
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | amendment |
-
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
     # we've met the liquidity requirements, but the auction uncrosses out of bounds
     # Auction end is now 12s (2+10 blocks) + 300 price extension
     When the network moves ahead "1" blocks

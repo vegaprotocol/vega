@@ -11,6 +11,7 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
+      | limits.markets.maxPeggedOrders                      | 18    |
     And the following assets are registered:
       | id  | decimal places |
       | ETH | 5              |
@@ -46,25 +47,45 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
       | lpprov | USD   | 100000000000000 |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1    | USD/DEC19 | 1000000000        | 0.001 | buy  | BID              | 1          | 2000   | submission |
-      | lp2 | lp1    | USD/DEC20 | 1000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission |
-      | lp3 | lp1    | USD/DEC21 | 1000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission |
-      | lp1 | lp1    | USD/DEC19 | 1000000000        | 0.001 | buy  | MID              | 2          | 1000   | submission |
-      | lp2 | lp1    | USD/DEC20 | 1000000000        | 0.001 | buy  | MID              | 2          | 100000 | submission |
-      | lp3 | lp1    | USD/DEC21 | 1000000000        | 0.001 | buy  | MID              | 2          | 100000 | submission |
-      | lp1 | lp1    | USD/DEC19 | 1000000000        | 0.001 | sell | ASK              | 1          | 2000   | submission |
-      | lp2 | lp1    | USD/DEC20 | 1000000000        | 0.001 | sell | ASK              | 1          | 200000 | submission |
-      | lp3 | lp1    | USD/DEC21 | 1000000000        | 0.001 | sell | ASK              | 1          | 200000 | submission |
-      | lp1 | lp1    | USD/DEC19 | 1000000000        | 0.001 | sell | MID              | 2          | 1000   | submission |
-      | lp2 | lp1    | USD/DEC20 | 1000000000        | 0.001 | sell | MID              | 2          | 100000 | submission |
-      | lp3 | lp1    | USD/DEC21 | 1000000000        | 0.001 | sell | MID              | 2          | 100000 | submission |
-      | lp4 | lpprov | USD/DEC19 | 5000000000        | 0.001 | buy  | BID              | 1          | 2000   | submission |
-      | lp5 | lpprov | USD/DEC20 | 5000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission |
-      | lp6 | lpprov | USD/DEC21 | 5000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission |
-      | lp4 | lpprov | USD/DEC19 | 5000000000        | 0.001 | sell | MID              | 2          | 1000   | submission |
-      | lp5 | lpprov | USD/DEC20 | 5000000000        | 0.001 | sell | MID              | 2          | 100000 | submission |
-      | lp6 | lpprov | USD/DEC21 | 5000000000        | 0.001 | sell | MID              | 2          | 100000 | submission |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1    | USD/DEC19 | 1000000000        | 0.001 | submission |
+      | lp2 | lp1    | USD/DEC20 | 1000000000        | 0.001 | submission |
+      | lp3 | lp1    | USD/DEC21 | 1000000000        | 0.001 | submission |
+      | lp1 | lp1    | USD/DEC19 | 1000000000        | 0.001 | submission |
+      | lp2 | lp1    | USD/DEC20 | 1000000000        | 0.001 | submission |
+      | lp3 | lp1    | USD/DEC21 | 1000000000        | 0.001 | submission |
+      | lp1 | lp1    | USD/DEC19 | 1000000000        | 0.001 | submission |
+      | lp2 | lp1    | USD/DEC20 | 1000000000        | 0.001 | submission |
+      | lp3 | lp1    | USD/DEC21 | 1000000000        | 0.001 | submission |
+      | lp1 | lp1    | USD/DEC19 | 1000000000        | 0.001 | submission |
+      | lp2 | lp1    | USD/DEC20 | 1000000000        | 0.001 | submission |
+      | lp3 | lp1    | USD/DEC21 | 1000000000        | 0.001 | submission |
+      | lp4 | lpprov | USD/DEC19 | 5000000000        | 0.001 | submission |
+      | lp5 | lpprov | USD/DEC20 | 5000000000        | 0.001 | submission |
+      | lp6 | lpprov | USD/DEC21 | 5000000000        | 0.001 | submission |
+      | lp4 | lpprov | USD/DEC19 | 5000000000        | 0.001 | submission |
+      | lp5 | lpprov | USD/DEC20 | 5000000000        | 0.001 | submission |
+      | lp6 | lpprov | USD/DEC21 | 5000000000        | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1    | USD/DEC19 | 2         | 1                    | buy  | BID              | 1          | 2000   |
+      | lp1    | USD/DEC20 | 2         | 1                    | buy  | BID              | 1          | 200000 |
+      | lp1    | USD/DEC21 | 2         | 1                    | buy  | BID              | 1          | 200000 |
+      | lp1    | USD/DEC19 | 2         | 1                    | buy  | MID              | 2          | 1000   |
+      | lp1    | USD/DEC20 | 2         | 1                    | buy  | MID              | 2          | 100000 |
+      | lp1    | USD/DEC21 | 2         | 1                    | buy  | MID              | 2          | 100000 |
+      | lp1    | USD/DEC19 | 2         | 1                    | sell | ASK              | 1          | 2000   |
+      | lp1    | USD/DEC20 | 2         | 1                    | sell | ASK              | 1          | 200000 |
+      | lp1    | USD/DEC21 | 2         | 1                    | sell | ASK              | 1          | 200000 |
+      | lp1    | USD/DEC19 | 2         | 1                    | sell | MID              | 2          | 1000   |
+      | lp1    | USD/DEC20 | 2         | 1                    | sell | MID              | 2          | 100000 |
+      | lp1    | USD/DEC21 | 2         | 1                    | sell | MID              | 2          | 100000 |
+      | lpprov | USD/DEC19 | 2         | 1                    | buy  | BID              | 1          | 2000   |
+      | lpprov | USD/DEC20 | 2         | 1                    | buy  | BID              | 1          | 200000 |
+      | lpprov | USD/DEC21 | 2         | 1                    | buy  | BID              | 1          | 200000 |
+      | lpprov | USD/DEC19 | 2         | 1                    | sell | MID              | 2          | 1000   |
+      | lpprov | USD/DEC20 | 2         | 1                    | sell | MID              | 2          | 100000 |
+      | lpprov | USD/DEC21 | 2         | 1                    | sell | MID              | 2          | 100000 |
 
     Then the parties place the following orders:
       | party  | market id | side | volume  | price     | resulting trades | type       | tif     |
@@ -201,25 +222,45 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
       | lpprov | USD   | 100000000000000 |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1    | USD/DEC19 | 1000000           | 0.001 | buy  | BID              | 1          | 2000   | submission |
-      | lp2 | lp1    | USD/DEC20 | 1000000           | 0.001 | buy  | BID              | 1          | 200000 | submission |
-      | lp3 | lp1    | USD/DEC21 | 1000000           | 0.001 | buy  | BID              | 1          | 200000 | submission |
-      | lp1 | lp1    | USD/DEC19 | 1000000           | 0.001 | buy  | MID              | 2          | 1000   | submission |
-      | lp2 | lp1    | USD/DEC20 | 1000000           | 0.001 | buy  | MID              | 2          | 100000 | submission |
-      | lp3 | lp1    | USD/DEC21 | 1000000           | 0.001 | buy  | MID              | 2          | 100000 | submission |
-      | lp1 | lp1    | USD/DEC19 | 1000000           | 0.001 | sell | ASK              | 1          | 2000   | submission |
-      | lp2 | lp1    | USD/DEC20 | 1000000           | 0.001 | sell | ASK              | 1          | 200000 | submission |
-      | lp3 | lp1    | USD/DEC21 | 1000000           | 0.001 | sell | ASK              | 1          | 200000 | submission |
-      | lp1 | lp1    | USD/DEC19 | 1000000           | 0.001 | sell | MID              | 2          | 1000   | submission |
-      | lp2 | lp1    | USD/DEC20 | 1000000           | 0.001 | sell | MID              | 2          | 100000 | submission |
-      | lp3 | lp1    | USD/DEC21 | 1000000           | 0.001 | sell | MID              | 2          | 100000 | submission |
-      | lp4 | lpprov | USD/DEC19 | 5000000000        | 0.001 | buy  | BID              | 1          | 2000   | submission |
-      | lp5 | lpprov | USD/DEC20 | 5000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission |
-      | lp6 | lpprov | USD/DEC21 | 5000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission |
-      | lp4 | lpprov | USD/DEC19 | 5000000000        | 0.001 | sell | MID              | 2          | 1000   | submission |
-      | lp5 | lpprov | USD/DEC20 | 5000000000        | 0.001 | sell | MID              | 2          | 100000 | submission |
-      | lp6 | lpprov | USD/DEC21 | 5000000000        | 0.001 | sell | MID              | 2          | 100000 | submission |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1    | USD/DEC19 | 1000000           | 0.001 | submission |
+      | lp2 | lp1    | USD/DEC20 | 1000000           | 0.001 | submission |
+      | lp3 | lp1    | USD/DEC21 | 1000000           | 0.001 | submission |
+      | lp1 | lp1    | USD/DEC19 | 1000000           | 0.001 | submission |
+      | lp2 | lp1    | USD/DEC20 | 1000000           | 0.001 | submission |
+      | lp3 | lp1    | USD/DEC21 | 1000000           | 0.001 | submission |
+      | lp1 | lp1    | USD/DEC19 | 1000000           | 0.001 | submission |
+      | lp2 | lp1    | USD/DEC20 | 1000000           | 0.001 | submission |
+      | lp3 | lp1    | USD/DEC21 | 1000000           | 0.001 | submission |
+      | lp1 | lp1    | USD/DEC19 | 1000000           | 0.001 | submission |
+      | lp2 | lp1    | USD/DEC20 | 1000000           | 0.001 | submission |
+      | lp3 | lp1    | USD/DEC21 | 1000000           | 0.001 | submission |
+      | lp4 | lpprov | USD/DEC19 | 5000000000        | 0.001 | submission |
+      | lp5 | lpprov | USD/DEC20 | 5000000000        | 0.001 | submission |
+      | lp6 | lpprov | USD/DEC21 | 5000000000        | 0.001 | submission |
+      | lp4 | lpprov | USD/DEC19 | 5000000000        | 0.001 | submission |
+      | lp5 | lpprov | USD/DEC20 | 5000000000        | 0.001 | submission |
+      | lp6 | lpprov | USD/DEC21 | 5000000000        | 0.001 | submission |
+    And the parties place the following pegged iceberg orders: 
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1    | USD/DEC19 | 2         | 1                    | buy  | BID              | 1          | 2000   |
+      | lp1    | USD/DEC20 | 2         | 1                    | buy  | BID              | 1          | 200000 |
+      | lp1    | USD/DEC21 | 2         | 1                    | buy  | BID              | 1          | 200000 |
+      | lp1    | USD/DEC19 | 2         | 1                    | buy  | MID              | 2          | 1000   |
+      | lp1    | USD/DEC20 | 2         | 1                    | buy  | MID              | 2          | 100000 |
+      | lp1    | USD/DEC21 | 2         | 1                    | buy  | MID              | 2          | 100000 |
+      | lp1    | USD/DEC19 | 2         | 1                    | sell | ASK              | 1          | 2000   |
+      | lp1    | USD/DEC20 | 2         | 1                    | sell | ASK              | 1          | 200000 |
+      | lp1    | USD/DEC21 | 2         | 1                    | sell | ASK              | 1          | 200000 |
+      | lp1    | USD/DEC19 | 2         | 1                    | sell | MID              | 2          | 1000   |
+      | lp1    | USD/DEC20 | 2         | 1                    | sell | MID              | 2          | 100000 |
+      | lp1    | USD/DEC21 | 2         | 1                    | sell | MID              | 2          | 100000 |
+      | lpprov | USD/DEC19 | 2         | 1                    | buy  | BID              | 1          | 2000   |
+      | lpprov | USD/DEC20 | 2         | 1                    | buy  | BID              | 1          | 200000 |
+      | lpprov | USD/DEC21 | 2         | 1                    | buy  | BID              | 1          | 200000 |
+      | lpprov | USD/DEC19 | 2         | 1                    | sell | MID              | 2          | 1000   |
+      | lpprov | USD/DEC20 | 2         | 1                    | sell | MID              | 2          | 100000 |
+      | lpprov | USD/DEC21 | 2         | 1                    | sell | MID              | 2          | 100000 |
 
     Then the parties place the following orders:
       | party  | market id | side | volume  | price     | resulting trades | type       | tif     |
@@ -341,20 +382,30 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
 
     # amend LP commintment amount
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | lp1   | USD/DEC19 | 2000000           | 0.001 | buy  | MID              | 2          | 100000 | amendment |
-      | lp1 | lp1   | USD/DEC19 | 2000000           | 0.001 | sell | ASK              | 1          | 200000 | amendment |
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp1 | lp1   | USD/DEC19 | 2000000           | 0.001 | amendment |
+      | lp1 | lp1   | USD/DEC19 | 2000000           | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/DEC19 | 2         | 1                    | buy  | MID              | 2          | 100000 |
+      | lp1   | ETH/DEC19 | 2         | 1                    | sell | ASK              | 1          | 200000 |
 
     And the market data for the market "USD/DEC19" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1001000    | 1001000           | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 5002000000     | 10005         |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | lp1    | USD/DEC19 | 4000000000        | 0.001 | buy  | MID              | 2          | 100000 | amendment |
-      | lp1 | lp1    | USD/DEC19 | 4000000000        | 0.001 | sell | ASK              | 1          | 200000 | amendment |
-      | lp4 | lpprov | USD/DEC19 | 1000000000        | 0.001 | buy  | BID              | 1          | 2000   | amendment |
-      | lp4 | lpprov | USD/DEC19 | 1000000000        | 0.001 | sell | MID              | 2          | 1000   | amendment |
+      | id  | party  | market id | commitment amount | fee   | lp type   |
+      | lp1 | lp1    | USD/DEC19 | 4000000000        | 0.001 | amendment |
+      | lp1 | lp1    | USD/DEC19 | 4000000000        | 0.001 | amendment |
+      | lp4 | lpprov | USD/DEC19 | 1000000000        | 0.001 | amendment |
+      | lp4 | lpprov | USD/DEC19 | 1000000000        | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1    | USD/DEC19 | 2         | 1                    | buy  | MID              | 2          | 100000 |
+      | lp1    | USD/DEC19 | 2         | 1                    | sell | ASK              | 1          | 200000 |
+      | lpprov | USD/DEC19 | 2         | 1                    | buy  | BID              | 1          | 2000   |
+      | lpprov | USD/DEC19 | 2         | 1                    | sell | MID              | 2          | 1000   |
 
     And the market data for the market "USD/DEC19" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -362,9 +413,13 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
 
     #reduce LP commitment amount
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | lp1   | USD/DEC19 | 3600000000        | 0.001 | buy  | MID              | 2          | 100000 | amendment |
-      | lp1 | lp1   | USD/DEC19 | 3600000000        | 0.001 | sell | ASK              | 1          | 200000 | amendment |
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp1 | lp1   | USD/DEC19 | 3600000000        | 0.001 | amendment |
+      | lp1 | lp1   | USD/DEC19 | 3600000000        | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | USD/DEC19 | 2         | 1                    | buy  | MID              | 2          | 100000 |
+      | lp1   | USD/DEC19 | 2         | 1                    | sell | ASK              | 1          | 200000 |
 
     And the market data for the market "USD/DEC19" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -372,14 +427,14 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
 
     # 0038-OLIQ-006 assure that submission bringing supplied stake < target stake gets rejected
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   | reference        | error                                            |
-      | lp1 | lp1   | USD/DEC19 | 2562237127        | 0.001 | buy  | MID              | 2          | 100000 | amendment | failing_amedment | commitment submission rejected, not enough stake |
-      | lp1 | lp1   | USD/DEC19 | 2562237127        | 0.001 | sell | ASK              | 1          | 200000 | amendment |                  |                                                  |
+      | id  | party | market id | commitment amount | fee   | lp type   | reference        | error                                            |
+      | lp1 | lp1   | USD/DEC19 | 2562237127        | 0.001 | amendment | failing_amedment | commitment submission rejected, not enough stake |
+      | lp1 | lp1   | USD/DEC19 | 2562237127        | 0.001 | amendment |                  |                                                  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type      | reference            | error                                            |
-      | lp1 | lp1   | USD/DEC19 | 2562237127        | 0.001 | buy  | MID              | 2          | 100000 | cancellation | failing_cancellation | commitment submission rejected, not enough stake |
-      | lp1 | lp1   | USD/DEC19 | 2562237127        | 0.001 | sell | ASK              | 1          | 200000 | cancellation |                      |                                                  |
+      | id  | party | market id | commitment amount | fee   | lp type      | reference            | error                                            |
+      | lp1 | lp1   | USD/DEC19 | 2562237127        | 0.001 | cancellation | failing_cancellation | commitment submission rejected, not enough stake |
+      | lp1 | lp1   | USD/DEC19 | 2562237127        | 0.001 | cancellation |                      |                                                  |
 
   Scenario: 003, no decimal, 0042-LIQF-001
 
@@ -416,12 +471,18 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
       | lpprov | USD   | 1000000000 |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/MAR22 | 40000             | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 40000             | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 40000             | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 40000             | 0.001 | sell | MID              | 2          | 1      | submission |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/MAR22 | 40000             | 0.001 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 40000             | 0.001 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 40000             | 0.001 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 40000             | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | MID              | 2          | 1      |
+ 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |

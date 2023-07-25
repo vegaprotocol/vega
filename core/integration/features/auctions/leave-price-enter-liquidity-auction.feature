@@ -21,10 +21,14 @@ Feature: Leave a monitoring auction, enter a liquidity auction
 
     # submit our LP
     Then the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | buy  | BID              | 2          | 10     | submission |
-      | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | sell | ASK              | 13         | 10     | amendment  |
-
+      | id  | party   | market id | commitment amount | fee | lp type    |
+      | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | submission |
+      | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | amendment  |
+    And the parties place the following pegged iceberg orders:      
+      | party   | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | partylp | ETH/DEC19 | 2         | 1                    | buy  | BID              | 2          | 10     |
+      | partylp | ETH/DEC19 | 2         | 1                    | sell | ASK              | 13         | 10     |
+    
     # get out of auction
     When the parties place the following orders:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |

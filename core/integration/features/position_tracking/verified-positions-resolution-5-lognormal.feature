@@ -22,6 +22,7 @@ Feature: Position resolution case 5 lognormal risk model
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
 
   @MTMDelta
   Scenario: using lognormal risk model, set "designatedLoser " closeout while the position of "designatedLoser " is not fully covered by orders on the order book (0007-POSN-013, 0038-OLIQ-011)
@@ -37,9 +38,13 @@ Feature: Position resolution case 5 lognormal risk model
       | lpprov           | USD   | 1000000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | sell | ASK              | 50         | 100    | amendment  |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general      | bond |

@@ -18,6 +18,7 @@ Feature: Fees rewards with multiple markets and assets
       | market.liquidity.targetstake.triggering.ratio       | 0      |
       | market.liquidity.providers.fee.distributionTimeStep | 0s     |
       | network.markPriceUpdateMaximumFrequency             | 0s     |
+      | limits.markets.maxPeggedOrders                      | 2      |
 
     Given time is updated to "2021-08-26T00:00:00Z"
     Given the average block duration is "2"
@@ -82,55 +83,106 @@ Feature: Fees rewards with multiple markets and assets
 
     # all LPs use the same shape within a given market so that liquidity score doesn't impact this test
     When the parties submit the following liquidity provision:
-      | id       | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | id       | party  | market id | commitment amount | fee   | lp type    |
       # ETH/DEC21
-      | lp1-A    | lp1    | ETH/DEC21 | 4000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1-A    | lp1    | ETH/DEC21 | 4000              | 0.001 | buy  | MID              | 2          | 1      |            |
-      | lp1-A    | lp1    | ETH/DEC21 | 4000              | 0.001 | sell | ASK              | 1          | 2      |            |
-      | lp1-A    | lp1    | ETH/DEC21 | 4000              | 0.001 | sell | MID              | 2          | 1      |            |
-      | lp2-A    | lp2    | ETH/DEC21 | 1000              | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp2-A    | lp2    | ETH/DEC21 | 1000              | 0.002 | buy  | MID              | 2          | 1      |            |
-      | lp2-A    | lp2    | ETH/DEC21 | 1000              | 0.002 | sell | ASK              | 1          | 2      |            |
-      | lp2-A    | lp2    | ETH/DEC21 | 1000              | 0.002 | sell | MID              | 2          | 1      |            |
-      | lpprov-A | lpprov | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lpprov-A | lpprov | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      |            |
-      | lpprov-A | lpprov | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      |            |
-      | lpprov-A | lpprov | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      |            |
+      | lp1-A    | lp1    | ETH/DEC21 | 4000              | 0.001 | submission |
+      | lp1-A    | lp1    | ETH/DEC21 | 4000              | 0.001 |            |
+      | lp1-A    | lp1    | ETH/DEC21 | 4000              | 0.001 |            |
+      | lp1-A    | lp1    | ETH/DEC21 | 4000              | 0.001 |            |
+      | lp2-A    | lp2    | ETH/DEC21 | 1000              | 0.002 | submission |
+      | lp2-A    | lp2    | ETH/DEC21 | 1000              | 0.002 |            |
+      | lp2-A    | lp2    | ETH/DEC21 | 1000              | 0.002 |            |
+      | lp2-A    | lp2    | ETH/DEC21 | 1000              | 0.002 |            |
+      | lpprov-A | lpprov | ETH/DEC21 | 10000             | 0.001 | submission |
+      | lpprov-A | lpprov | ETH/DEC21 | 10000             | 0.001 |            |
+      | lpprov-A | lpprov | ETH/DEC21 | 10000             | 0.001 |            |
+      | lpprov-A | lpprov | ETH/DEC21 | 10000             | 0.001 |            |
       # ETH/DEC22
-      | lp1-B    | lp1    | ETH/DEC22 | 8000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1-B    | lp1    | ETH/DEC22 | 8000              | 0.001 | buy  | MID              | 2          | 1      |            |
-      | lp1-B    | lp1    | ETH/DEC22 | 8000              | 0.001 | sell | ASK              | 1          | 2      |            |
-      | lp1-B    | lp1    | ETH/DEC22 | 8000              | 0.001 | sell | MID              | 2          | 1      |            |
-      | lp2-B    | lp2    | ETH/DEC22 | 2000              | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp2-B    | lp2    | ETH/DEC22 | 2000              | 0.002 | buy  | MID              | 2          | 1      |            |
-      | lp2-B    | lp2    | ETH/DEC22 | 2000              | 0.002 | sell | ASK              | 1          | 2      |            |
-      | lp2-B    | lp2    | ETH/DEC22 | 2000              | 0.002 | sell | MID              | 2          | 1      |            |
+      | lp1-B    | lp1    | ETH/DEC22 | 8000              | 0.001 | submission |
+      | lp1-B    | lp1    | ETH/DEC22 | 8000              | 0.001 |            |
+      | lp1-B    | lp1    | ETH/DEC22 | 8000              | 0.001 |            |
+      | lp1-B    | lp1    | ETH/DEC22 | 8000              | 0.001 |            |
+      | lp2-B    | lp2    | ETH/DEC22 | 2000              | 0.002 | submission |
+      | lp2-B    | lp2    | ETH/DEC22 | 2000              | 0.002 |            |
+      | lp2-B    | lp2    | ETH/DEC22 | 2000              | 0.002 |            |
+      | lp2-B    | lp2    | ETH/DEC22 | 2000              | 0.002 |            |
       # BTC/DEC21
-      | lp1-C    | lp1    | BTC/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1-C    | lp1    | BTC/DEC21 | 2000              | 0.001 | buy  | MID              | 2          | 1      |            |
-      | lp1-C    | lp1    | BTC/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 2      |            |
-      | lp1-C    | lp1    | BTC/DEC21 | 2000              | 0.001 | sell | MID              | 2          | 1      |            |
-      | lp2-C    | lp2    | BTC/DEC21 | 500               | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp2-C    | lp2    | BTC/DEC21 | 500               | 0.002 | buy  | MID              | 2          | 1      |            |
-      | lp2-C    | lp2    | BTC/DEC21 | 500               | 0.002 | sell | ASK              | 1          | 2      |            |
-      | lp2-C    | lp2    | BTC/DEC21 | 500               | 0.002 | sell | MID              | 2          | 1      |            |
-      | lpprov-C | lpprov | BTC/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lpprov-C | lpprov | BTC/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      |            |
-      | lpprov-C | lpprov | BTC/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      |            |
-      | lpprov-C | lpprov | BTC/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      |            |
+      | lp1-C    | lp1    | BTC/DEC21 | 2000              | 0.001 | submission |
+      | lp1-C    | lp1    | BTC/DEC21 | 2000              | 0.001 |            |
+      | lp1-C    | lp1    | BTC/DEC21 | 2000              | 0.001 |            |
+      | lp1-C    | lp1    | BTC/DEC21 | 2000              | 0.001 |            |
+      | lp2-C    | lp2    | BTC/DEC21 | 500               | 0.002 | submission |
+      | lp2-C    | lp2    | BTC/DEC21 | 500               | 0.002 |            |
+      | lp2-C    | lp2    | BTC/DEC21 | 500               | 0.002 |            |
+      | lp2-C    | lp2    | BTC/DEC21 | 500               | 0.002 |            |
+      | lpprov-C | lpprov | BTC/DEC21 | 10000             | 0.001 | submission |
+      | lpprov-C | lpprov | BTC/DEC21 | 10000             | 0.001 |            |
+      | lpprov-C | lpprov | BTC/DEC21 | 10000             | 0.001 |            |
+      | lpprov-C | lpprov | BTC/DEC21 | 10000             | 0.001 |            |
       # BTC/DEC22
-      | lp1-D    | lp1    | BTC/DEC22 | 4000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1-D    | lp1    | BTC/DEC22 | 4000              | 0.001 | buy  | MID              | 2          | 1      |            |
-      | lp1-D    | lp1    | BTC/DEC22 | 4000              | 0.001 | sell | ASK              | 1          | 2      |            |
-      | lp1-D    | lp1    | BTC/DEC22 | 4000              | 0.001 | sell | MID              | 2          | 1      |            |
-      | lp2-D    | lp2    | BTC/DEC22 | 1000              | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp2-D    | lp2    | BTC/DEC22 | 1000              | 0.002 | buy  | MID              | 2          | 1      |            |
-      | lp2-D    | lp2    | BTC/DEC22 | 1000              | 0.002 | sell | ASK              | 1          | 2      |            |
-      | lp2-D    | lp2    | BTC/DEC22 | 1000              | 0.002 | sell | MID              | 2          | 1      |            |
-      | lpprov-D | lpprov | BTC/DEC22 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lpprov-D | lpprov | BTC/DEC22 | 10000             | 0.001 | buy  | MID              | 2          | 1      |            |
-      | lpprov-D | lpprov | BTC/DEC22 | 10000             | 0.001 | sell | ASK              | 1          | 2      |            |
-      | lpprov-D | lpprov | BTC/DEC22 | 10000             | 0.001 | sell | MID              | 2          | 1      |            |
+      | lp1-D    | lp1    | BTC/DEC22 | 4000              | 0.001 | submission |
+      | lp1-D    | lp1    | BTC/DEC22 | 4000              | 0.001 |            |
+      | lp1-D    | lp1    | BTC/DEC22 | 4000              | 0.001 |            |
+      | lp1-D    | lp1    | BTC/DEC22 | 4000              | 0.001 |            |
+      | lp2-D    | lp2    | BTC/DEC22 | 1000              | 0.002 | submission |
+      | lp2-D    | lp2    | BTC/DEC22 | 1000              | 0.002 |            |
+      | lp2-D    | lp2    | BTC/DEC22 | 1000              | 0.002 |            |
+      | lp2-D    | lp2    | BTC/DEC22 | 1000              | 0.002 |            |
+      | lpprov-D | lpprov | BTC/DEC22 | 10000             | 0.001 | submission |
+      | lpprov-D | lpprov | BTC/DEC22 | 10000             | 0.001 |            |
+      | lpprov-D | lpprov | BTC/DEC22 | 10000             | 0.001 |            |
+      | lpprov-D | lpprov | BTC/DEC22 | 10000             | 0.001 |            |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      # ETH/DEC21
+      | lp1    | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1    | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp1    | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp1    | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
+      | lp2    | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp2    | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp2    | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp2    | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
+      | lpprov | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lpprov | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lpprov | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lpprov | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
+      # ETH/DEC22
+      | lp1    | ETH/DEC22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1    | ETH/DEC22 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp1    | ETH/DEC22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp1    | ETH/DEC22 | 2         | 1                    | sell | MID              | 2          | 1      |
+      | lp2    | ETH/DEC22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp2    | ETH/DEC22 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp2    | ETH/DEC22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp2    | ETH/DEC22 | 2         | 1                    | sell | MID              | 2          | 1      |
+      # BTC/DEC21
+      | lp1    | BTC/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1    | BTC/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp1    | BTC/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp1    | BTC/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
+      | lp2    | BTC/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp2    | BTC/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp2    | BTC/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp2    | BTC/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
+      | lpprov | BTC/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lpprov | BTC/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lpprov | BTC/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lpprov | BTC/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
+      # BTC/DEC22
+      | lp1    | BTC/DEC22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1    | BTC/DEC22 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp1    | BTC/DEC22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp1    | BTC/DEC22 | 2         | 1                    | sell | MID              | 2          | 1      |
+      | lp2    | BTC/DEC22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp2    | BTC/DEC22 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp2    | BTC/DEC22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp2    | BTC/DEC22 | 2         | 1                    | sell | MID              | 2          | 1      |
+      | lpprov | BTC/DEC22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lpprov | BTC/DEC22 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lpprov | BTC/DEC22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lpprov | BTC/DEC22 | 2         | 1                    | sell | MID              | 2          | 1      |
+
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |

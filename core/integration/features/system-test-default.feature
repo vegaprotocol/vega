@@ -21,11 +21,9 @@ Feature: Basic feature-file matching the system-test setup like for like
       | market.fee.factors.infrastructureFee          | 0.001 |
       | market.fee.factors.makerFee                   | 0.004 |
       | market.value.windowLength                     | 60s   |
-      | market.liquidityV2.bondPenaltyParameter         | 0.1   |
-      | market.liquidityProvision.shapes.maxSize      | 10    |
+      | market.liquidityV2.bondPenaltyParameter       | 0.1   |
       | validators.epoch.length                       | 5s    |
-      | market.liquidity.stakeToCcyVolume             | 0.2   |
-
+      | limits.markets.maxPeggedOrders                | 2     |
     And the average block duration is "1"
 
     # All parties have 1,000,000.000,000,000,000,000,000 
@@ -47,9 +45,14 @@ Feature: Basic feature-file matching the system-test setup like for like
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.01  |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | buy  | BID              | 2          | 1      | submission |
-      | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | sell | ASK              | 13         | 1      | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | side | volume | peak size | minimum visible size | pegged reference | offset |
+      | lpprov | ETH/DEC19 | buy  | 20     | 2         | 1                    | BID              | 1      |
+      | lpprov | ETH/DEC19 | sell | 130    | 2         | 1                    | ASK              | 1      |
+  
     And the parties place the following orders:
       | party   | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 5      | 1001   | 0                | TYPE_LIMIT | TIF_GTC | t1-b-1    |
@@ -79,9 +82,9 @@ Feature: Basic feature-file matching the system-test setup like for like
       | party2          | ETH   | 10000000000000000000000000 |
       | designatedloser | ETH   | 18000000000000000000000    |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC20 | 3905000000000000  | 0.3 | buy  | BID              | 2          | 1      | submission |
-      | lp1 | lpprov | ETH/DEC20 | 3905000000000000  | 0.3 | sell | ASK              | 13         | 1      | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 3905000000000000  | 0.3 | submission |
+      | lp1 | lpprov | ETH/DEC20 | 3905000000000000  | 0.3 | submission |
     And the parties place the following orders:
       | party   | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | buy  | 5      | 1001   | 0                | TYPE_LIMIT | TIF_GTC | t1-b-1    |
@@ -129,10 +132,10 @@ Feature: Basic feature-file matching the system-test setup like for like
       | buySideProvider  | USD   | 200000000000 |
       | designatedloser  | USD   | 33000         |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 390500  | 0.3 | buy  | BID              | 2          | 100      | submission |
-      | lp1 | lpprov | ETH/DEC21 | 390500  | 0.3 | sell | ASK              | 13         | 100      | submission |
-        Then the parties place the following orders:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 390500            | 0.3 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 390500            | 0.3 | submission |
+    Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1   | ETH/DEC21 | buy  | 400    | 1     | 0                | TYPE_LIMIT | TIF_GTC |
       | aux1   | ETH/DEC21 | sell | 300    | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
