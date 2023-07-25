@@ -18,6 +18,10 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
+
+	"code.vegaprotocol.io/vega/libs/ptr"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
@@ -761,14 +765,269 @@ func addLiquidityProvisions(ctx context.Context, t *testing.T, bs *sqlstore.Bloc
 		require.NoError(t, err, "Converting withdrawal proto to database entity")
 		err = lpstore.Upsert(ctx, withdrawal)
 		require.NoError(t, err)
+		err = lpstore.Flush(ctx)
 		require.NoError(t, err)
-		lpstore.Flush(ctx)
 		lps = append(lps, withdrawal)
-		require.NoError(t, err)
 
 		vegaTime = vegaTime.Add(time.Second)
 		amount += 100
 	}
 
 	return lps
+}
+
+func TestLiquidityProvision_ListProviders(t *testing.T) {
+	t.Run("ListLiquidityProviders should return all liquidity provider data for active liquidity provisions given a liquidity provider party id", testListLiquidityProviderValidPartyID)
+	t.Run("ListLiquidityProviders should return an empty list if the party id does not exist", testListLiquidityProviderInvalidPartyID)
+	t.Run("ListLiquidityProviders should return all active liquidity providers for a market if it exists", testListLiquidityProviderValidMarketID)
+	t.Run("ListLiquidityProviders should return a empty list if the market does not exist", testListLiquidityProviderInvalidMarketID)
+	t.Run("ListLiquidityProviders should return the liquidity providers information for a given market and liquidity provider party id", testListLiquidityProviderValidMarketIDValidPartyID)
+	t.Run("ListLiquidityProviders should return an error if the market id and party id is not provided", testListLiquidityProviderNoMarketIDNoPartyID)
+}
+
+func testListLiquidityProviderValidPartyID(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, lpStore, _ := setupLPTests(t)
+	mds := sqlstore.NewMarketData(connectionSource)
+
+	providers := addLiquidityProvisionsMultiProvider(ctx, t, bs, lpStore, mds)
+
+	lps, pageInfo, err := lpStore.ListProviders(ctx, ptr.From(entities.PartyID("deadbaad")), nil, entities.CursorPagination{})
+	require.NoError(t, err)
+
+	want := []entities.LiquidityProvider{
+		providers[0],
+		providers[2],
+	}
+
+	assert.Equal(t, want, lps)
+	assert.Equal(t, entities.PageInfo{
+		StartCursor:     want[0].Cursor().Encode(),
+		EndCursor:       want[1].Cursor().Encode(),
+		HasNextPage:     false,
+		HasPreviousPage: false,
+	}, pageInfo)
+}
+
+func testListLiquidityProviderInvalidPartyID(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, lpStore, _ := setupLPTests(t)
+	mds := sqlstore.NewMarketData(connectionSource)
+
+	addLiquidityProvisionsMultiProvider(ctx, t, bs, lpStore, mds)
+
+	lps, pageInfo, err := lpStore.ListProviders(ctx, ptr.From(entities.PartyID("acacacac")), nil, entities.CursorPagination{})
+	require.NoError(t, err)
+
+	var want []entities.LiquidityProvider
+
+	assert.Len(t, lps, 0)
+	assert.Equal(t, want, lps)
+	assert.Equal(t, entities.PageInfo{
+		StartCursor:     "",
+		EndCursor:       "",
+		HasNextPage:     false,
+		HasPreviousPage: false,
+	}, pageInfo)
+}
+
+func testListLiquidityProviderValidMarketID(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, lpStore, _ := setupLPTests(t)
+	mds := sqlstore.NewMarketData(connectionSource)
+
+	providers := addLiquidityProvisionsMultiProvider(ctx, t, bs, lpStore, mds)
+
+	lps, pageInfo, err := lpStore.ListProviders(ctx, nil, ptr.From(entities.MarketID("cafed00d")), entities.CursorPagination{})
+	require.NoError(t, err)
+
+	want := providers[:2]
+
+	assert.Equal(t, want, lps)
+	assert.Equal(t, entities.PageInfo{
+		StartCursor:     want[0].Cursor().Encode(),
+		EndCursor:       want[1].Cursor().Encode(),
+		HasNextPage:     false,
+		HasPreviousPage: false,
+	}, pageInfo)
+}
+
+func testListLiquidityProviderInvalidMarketID(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, lpStore, _ := setupLPTests(t)
+	mds := sqlstore.NewMarketData(connectionSource)
+
+	addLiquidityProvisionsMultiProvider(ctx, t, bs, lpStore, mds)
+
+	lps, pageInfo, err := lpStore.ListProviders(ctx, nil, ptr.From(entities.MarketID("deaddaad")), entities.CursorPagination{})
+	require.NoError(t, err)
+
+	var want []entities.LiquidityProvider
+
+	assert.Len(t, lps, 0)
+	assert.Equal(t, want, lps)
+	assert.Equal(t, entities.PageInfo{
+		StartCursor:     "",
+		EndCursor:       "",
+		HasNextPage:     false,
+		HasPreviousPage: false,
+	}, pageInfo)
+}
+
+func testListLiquidityProviderValidMarketIDValidPartyID(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, lpStore, _ := setupLPTests(t)
+	mds := sqlstore.NewMarketData(connectionSource)
+
+	providers := addLiquidityProvisionsMultiProvider(ctx, t, bs, lpStore, mds)
+
+	lps, pageInfo, err := lpStore.ListProviders(ctx, ptr.From(entities.PartyID("deadbaad")),
+		ptr.From(entities.MarketID("cafed00d")), entities.CursorPagination{})
+	require.NoError(t, err)
+
+	want := []entities.LiquidityProvider{providers[0]}
+
+	assert.Len(t, lps, 1)
+	assert.Equal(t, want, lps)
+	assert.Equal(t, entities.PageInfo{
+		StartCursor:     want[0].Cursor().Encode(),
+		EndCursor:       want[0].Cursor().Encode(),
+		HasNextPage:     false,
+		HasPreviousPage: false,
+	}, pageInfo)
+}
+
+func testListLiquidityProviderNoMarketIDNoPartyID(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	bs, lpStore, _ := setupLPTests(t)
+	mds := sqlstore.NewMarketData(connectionSource)
+
+	addLiquidityProvisionsMultiProvider(ctx, t, bs, lpStore, mds)
+
+	_, _, err := lpStore.ListProviders(ctx, nil, nil, entities.CursorPagination{})
+	require.Error(t, err)
+}
+
+func addLiquidityProvisionsMultiProvider(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
+	lpstore *sqlstore.LiquidityProvision, mds *sqlstore.MarketData,
+) []entities.LiquidityProvider {
+	t.Helper()
+	vegaTime := time.Now().Truncate(time.Microsecond)
+	amount := int64(1000)
+
+	setupProviders := []struct {
+		PartyID string
+		Status  vega.LiquidityProvision_Status
+	}{
+		{
+			PartyID: "deadbaad",
+			Status:  vega.LiquidityProvision_STATUS_ACTIVE,
+		},
+		{
+			PartyID: "deadd00d",
+			Status:  vega.LiquidityProvision_STATUS_ACTIVE,
+		},
+		{
+			PartyID: "deadbeef",
+			Status:  vega.LiquidityProvision_STATUS_STOPPED,
+		},
+	}
+
+	activeProviders := make([]entities.LiquidityProvider, 0)
+	marketData := []entities.MarketData{
+		{
+			MarketTradingMode:          "TRADING_MODE_CONTINUOUS",
+			MarketState:                "STATE_ACTIVE",
+			AuctionTrigger:             "AUCTION_TRIGGER_UNSPECIFIED",
+			ExtensionTrigger:           "AUCTION_TRIGGER_UNSPECIFIED",
+			LiquidityProviderFeeShares: []*vega.LiquidityProviderFeeShare{},
+			TxHash:                     generateTxHash(),
+			SeqNum:                     0,
+			Market:                     entities.MarketID("cafed00d"),
+		},
+		{
+			MarketTradingMode:          "TRADING_MODE_CONTINUOUS",
+			MarketState:                "STATE_ACTIVE",
+			AuctionTrigger:             "AUCTION_TRIGGER_UNSPECIFIED",
+			ExtensionTrigger:           "AUCTION_TRIGGER_UNSPECIFIED",
+			LiquidityProviderFeeShares: []*vega.LiquidityProviderFeeShare{},
+			TxHash:                     generateTxHash(),
+			SeqNum:                     0,
+			Market:                     entities.MarketID("cafedaad"),
+		},
+	}
+
+	for _, md := range marketData {
+		var ordinality int64
+		for i, provider := range setupProviders {
+			addTestBlockForTime(t, ctx, bs, vegaTime)
+
+			lp := &vega.LiquidityProvision{
+				Id:               helpers.GenerateID(),
+				PartyId:          provider.PartyID,
+				CreatedAt:        vegaTime.UnixNano(),
+				UpdatedAt:        vegaTime.UnixNano(),
+				MarketId:         md.Market.String(),
+				CommitmentAmount: "100000",
+				Fee:              "0.3",
+				Sells:            nil,
+				Buys:             nil,
+				Version:          0,
+				Status:           provider.Status,
+				Reference:        fmt.Sprintf("TEST1%s%00d", provider.PartyID, i),
+			}
+
+			withdrawal, err := entities.LiquidityProvisionFromProto(lp, generateTxHash(), vegaTime)
+			require.NoError(t, err, "Converting withdrawal proto to database entity")
+			err = lpstore.Upsert(ctx, withdrawal)
+			require.NoError(t, err)
+			err = lpstore.Flush(ctx)
+			require.NoError(t, err)
+
+			md.SeqNum = uint64(i)
+			md.LiquidityProviderFeeShares = append(md.LiquidityProviderFeeShares, &vega.LiquidityProviderFeeShare{
+				Party:                 provider.PartyID,
+				EquityLikeShare:       "0",
+				AverageEntryValuation: "0",
+				AverageScore:          "0",
+				VirtualStake:          "0",
+			})
+			md.SyntheticTime = vegaTime
+			md.VegaTime = vegaTime
+
+			err = mds.Add(&md)
+			require.NoError(t, err)
+
+			_, err = mds.Flush(ctx)
+			require.NoError(t, err)
+
+			vegaTime = vegaTime.Add(time.Second)
+			amount += 100
+
+			if provider.Status == vega.LiquidityProvision_STATUS_ACTIVE {
+				ordinality += 1
+				activeProviders = append(activeProviders, entities.LiquidityProvider{
+					PartyID:    entities.PartyID(provider.PartyID),
+					MarketID:   md.Market,
+					Ordinality: ordinality,
+					FeeShare: &vega.LiquidityProviderFeeShare{
+						Party:                 provider.PartyID,
+						EquityLikeShare:       "0",
+						AverageEntryValuation: "0",
+						AverageScore:          "0",
+						VirtualStake:          "0",
+					},
+				})
+			}
+		}
+	}
+
+	return activeProviders
 }
