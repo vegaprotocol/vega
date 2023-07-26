@@ -141,6 +141,8 @@ const (
 	ExpiredOrdersEvent
 	DistressedPositionsEvent
 	StopOrderEvent
+	FundingPeriodEvent
+	FundingPeriodDataPointEvent
 )
 
 var (
@@ -213,6 +215,8 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_EXPIRED_ORDERS:                   ExpiredOrdersEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_DISTRESSED_POSITIONS:             DistressedPositionsEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_STOP_ORDER:                       StopOrderEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PERIOD:                   FundingPeriodEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PERIOD_DATA_POINT:        FundingPeriodDataPointEvent,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -276,6 +280,8 @@ var (
 		ExpiredOrdersEvent:                eventspb.BusEventType_BUS_EVENT_TYPE_EXPIRED_ORDERS,
 		DistressedPositionsEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_DISTRESSED_POSITIONS,
 		StopOrderEvent:                    eventspb.BusEventType_BUS_EVENT_TYPE_STOP_ORDER,
+		FundingPeriodEvent:                eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PERIOD,
+		FundingPeriodDataPointEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PERIOD_DATA_POINT,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -340,6 +346,8 @@ var (
 		ExpiredOrdersEvent:                "ExpiredOrdersEvent",
 		DistressedPositionsEvent:          "DistressedPositionsEvent",
 		StopOrderEvent:                    "StopOrderEvent",
+		FundingPeriodEvent:                "FundingPeriodEvent",
+		FundingPeriodDataPointEvent:       "FundingPeriodDataPointEvent",
 	}
 )
 

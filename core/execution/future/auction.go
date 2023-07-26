@@ -95,6 +95,9 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		m.log.Info("leaving opening auction for market", logging.String("market-id", m.mkt.ID))
 		m.leaveAuction(ctx, now)
 
+		// tell the product we're ready to start
+		m.tradableInstrument.Instrument.Product.OnLeaveOpeningAuction(ctx, now.UnixNano())
+
 		m.equityShares.OpeningAuctionEnded()
 		// start the market fee window
 		m.feeSplitter.TimeWindowStart(now)
