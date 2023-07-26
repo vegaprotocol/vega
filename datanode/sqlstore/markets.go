@@ -91,7 +91,7 @@ const (
 	sqlMarketsColumns = `id, tx_hash, vega_time, instrument_id, tradable_instrument, decimal_places,
 		fees, opening_auction, price_monitoring_settings, liquidity_monitoring_parameters,
 		trading_mode, state, market_timestamps, position_decimal_places, lp_price_range, linear_slippage_factor, quadratic_slippage_factor,
-		parent_market_id, insurance_pool_fraction`
+		parent_market_id, insurance_pool_fraction, liquidity_sla_parameters`
 )
 
 func NewMarkets(connectionSource *ConnectionSource) *Markets {
@@ -104,7 +104,7 @@ func NewMarkets(connectionSource *ConnectionSource) *Markets {
 
 func (m *Markets) Upsert(ctx context.Context, market *entities.Market) error {
 	query := fmt.Sprintf(`insert into markets(%s)
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
 on conflict (id, vega_time) do update
 set
 	instrument_id=EXCLUDED.instrument_id,
@@ -123,13 +123,15 @@ set
     quadratic_slippage_factor=EXCLUDED.quadratic_slippage_factor,
     parent_market_id=EXCLUDED.parent_market_id,
     insurance_pool_fraction=EXCLUDED.insurance_pool_fraction,
-	tx_hash=EXCLUDED.tx_hash;`, sqlMarketsColumns)
+	tx_hash=EXCLUDED.tx_hash,
+    liquidity_sla_parameters=EXCLUDED.liquidity_sla_parameters;`, sqlMarketsColumns)
 
 	defer metrics.StartSQLQuery("Markets", "Upsert")()
 	if _, err := m.Connection.Exec(ctx, query, market.ID, market.TxHash, market.VegaTime, market.InstrumentID, market.TradableInstrument, market.DecimalPlaces,
 		market.Fees, market.OpeningAuction, market.PriceMonitoringSettings, market.LiquidityMonitoringParameters,
 		market.TradingMode, market.State, market.MarketTimestamps, market.PositionDecimalPlaces, market.LpPriceRange,
-		market.LinearSlippageFactor, market.QuadraticSlippageFactor, market.ParentMarketID, market.InsurancePoolFraction); err != nil {
+		market.LinearSlippageFactor, market.QuadraticSlippageFactor, market.ParentMarketID, market.InsurancePoolFraction,
+		market.LiquiditySLAParameters); err != nil {
 		err = fmt.Errorf("could not insert market into database: %w", err)
 		return err
 	}
@@ -156,7 +158,7 @@ func getSelect() string {
 select mc.id,  mc.tx_hash,  mc.vega_time,  mc.instrument_id,  mc.tradable_instrument,  mc.decimal_places,
 		mc.fees, mc.opening_auction, mc.price_monitoring_settings, mc.liquidity_monitoring_parameters,
 		mc.trading_mode, mc.state, mc.market_timestamps, mc.position_decimal_places, mc.lp_price_range, mc.linear_slippage_factor, mc.quadratic_slippage_factor,
-		mc.parent_market_id, mc.insurance_pool_fraction, ml.market_id as successor_market_id
+		mc.parent_market_id, mc.insurance_pool_fraction, ml.market_id as successor_market_id, mc.liquidity_sla_parameters
 from markets_current mc
 left join lineage ml on mc.id = ml.parent_market_id
 `
