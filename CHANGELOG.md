@@ -34,6 +34,7 @@
 - [8752](https://github.com/vegaprotocol/vega/issues/8752) - Add `PERPS` network parameter.
 - [8759](https://github.com/vegaprotocol/vega/issues/8759) - Add update market support for `PERPS`.
 - [8758](https://github.com/vegaprotocol/vega/issues/8758) - Internal recurring time trigger for `PERPS`.
+- [8913](https://github.com/vegaprotocol/vega/issues/8913) - Add business logic for team management.
 
 ### 🐛 Fixes
 

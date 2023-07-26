@@ -188,7 +188,7 @@ func (s *Svc) fastForward(ctx context.Context) {
 
 // NotifyOnEpoch allows other services to register 2 callback functions.
 // The first will be called once we enter or leave a new epoch, and the second
-// will be called when the epochserivce has been restored from a snapshot.
+// will be called when the epoch service has been restored from a snapshot.
 func (s *Svc) NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch)) {
 	s.listeners = append(s.listeners, f)
 	s.restoreListeners = append(s.restoreListeners, r)
