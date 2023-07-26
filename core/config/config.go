@@ -165,6 +165,10 @@ func (c Config) GetMaxMemoryFactor() (float64, error) {
 }
 
 func (c Config) HaveEthClient() bool {
+	if c.Blockchain.ChainProvider == blockchain.ProviderNullChain {
+		return c.IsValidator() && len(c.Ethereum.RPCEndpoint) > 0
+	}
+
 	return c.IsValidator()
 }
 

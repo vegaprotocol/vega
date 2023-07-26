@@ -442,6 +442,13 @@ func (n *Command) startBlockchainClients() error {
 		return nil
 	}
 
+	// We may not need ethereum client initialized when we have not
+	// provided the ethereum endpoint. We skip creating client here
+	// when RPCEnpoint is empty and the nullchain present.
+	if n.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain && len(n.conf.Ethereum.RPCEndpoint) < 1 {
+		return nil
+	}
+
 	var err error
 	n.ethClient, err = ethclient.Dial(n.ctx, n.conf.Ethereum)
 	if err != nil {
