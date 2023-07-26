@@ -11,7 +11,6 @@ Feature: Spot market
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10m   |
 
     Given the following assets are registered:
       | id  | decimal places |

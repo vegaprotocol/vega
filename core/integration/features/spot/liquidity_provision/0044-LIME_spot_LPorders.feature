@@ -25,7 +25,6 @@ Feature: Spot market
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | market.liquidityV2.earlyExitPenalty                 | 0.02  |
       | market.stake.target.timeWindow                      | 2s    |
-      | market.liquidity.providers.fee.distributionTimeStep | 0     |
 
     Given time is updated to "2023-07-20T00:00:00Z"
     Given the average block duration is "2"

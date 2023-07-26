@@ -1,14 +1,12 @@
 Feature: Tests impact from change of tau.scaling parameter on probability of trading, 0038-OLIQ-006
 
   Scenario: 001: set tau.scaling to 1
-  Background:
     Given the following network parameters are set:
       | name                                                | value |
       | market.value.windowLength                           | 1h    |
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | market.liquidity.probabilityOfTrading.tau.scaling   | 1     |
       | limits.markets.maxPeggedOrders                      | 4     |
@@ -29,9 +27,13 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | horizon | probability | auction extension |
       | 100000  | 0.99        | 3                 |
 
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
+
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 100            | 0.001                  | 0                         | default-futures |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 100            | 0.001                  | 0                         | SLA        |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
@@ -130,14 +132,12 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1606   | USD   |
 
   Scenario: 002: set tau.scaling to 10
-  Background:
     Given the following network parameters are set:
       | name                                                | value |
       | market.value.windowLength                           | 1h    |
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | market.liquidity.probabilityOfTrading.tau.scaling   | 10    |
     And the following assets are registered:
@@ -156,9 +156,13 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | horizon | probability | auction extension |
       | 100000  | 0.99        | 3                 |
 
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
+
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 0.001                  | 0                         | default-futures |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 0.001                  | 0                         | SLA        |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
@@ -240,15 +244,12 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1610   | USD   |
 
   Scenario: 003: set tau.scaling to 1000
-  Background:
-
     Given the following network parameters are set:
       | name                                                | value |
       | market.value.windowLength                           | 1h    |
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | market.liquidity.probabilityOfTrading.tau.scaling   | 1000  |
     And the following assets are registered:
@@ -267,9 +268,13 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | horizon | probability | auction extension |
       | 100000  | 0.99        | 3                 |
 
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
+
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 0.001                  | 0                         | default-futures |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 0.001                  | 0                         | SLA        |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
@@ -352,15 +357,12 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1612   | USD   |
 
   Scenario: 004: set tau.scaling to 1, smaller lp offset
-  Background:
-
     Given the following network parameters are set:
       | name                                                | value |
       | market.value.windowLength                           | 1h    |
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | market.liquidity.probabilityOfTrading.tau.scaling   | 1     |
 
@@ -380,10 +382,13 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | horizon | probability | auction extension |
       | 100000  | 0.99        | 3                 |
 
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
 
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 0.001                  | 0                         | default-futures |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 0.001                  | 0                         | SLA        |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
@@ -466,14 +471,12 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1086   | USD   |
 
   Scenario: 005: set tau.scaling to 10, smaller lp offset
-  Background:
     Given the following network parameters are set:
       | name                                                | value |
       | market.value.windowLength                           | 1h    |
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | market.liquidity.probabilityOfTrading.tau.scaling   | 10    |
 
@@ -493,10 +496,13 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | horizon | probability | auction extension |
       | 100000  | 0.99        | 3                 |
 
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
 
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 0.001                  | 0                         | default-futures |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 0.001                  | 0                         | SLA        |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
@@ -579,14 +585,12 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 991    | USD   |
 
   Scenario: 006: set tau.scaling to 1000, smaller lp offset
-  Background:
     Given the following network parameters are set:
       | name                                                | value |
       | market.value.windowLength                           | 1h    |
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | market.liquidity.probabilityOfTrading.tau.scaling   | 1000  |
 
@@ -606,9 +610,13 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | horizon | probability | auction extension |
       | 100000  | 0.99        | 3                 |
 
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
+
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 0.001                  | 0                         | default-futures |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 0.001                  | 0                         | SLA        |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
