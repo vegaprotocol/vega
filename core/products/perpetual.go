@@ -336,15 +336,15 @@ func twap(points []*dataPoint, start, end int64) *num.Uint {
 		}
 
 		if prev != nil {
-			tdiff := num.UintFromUint64(uint64(p.t - num.MaxV(start, prev.t)))
+			tdiff := num.NewUint(uint64(p.t - num.MaxV(start, prev.t)))
 			sum.Add(sum, num.UintZero().Mul(prev.price, tdiff))
 		}
 		prev = p
 	}
 
 	// process the final interval
-	tdiff := num.UintFromUint64(uint64(end - num.MaxV(start, prev.t)))
+	tdiff := num.NewUint(uint64(end - num.MaxV(start, prev.t)))
 	sum.Add(sum, num.UintZero().Mul(prev.price, tdiff))
 
-	return sum.Div(sum, num.UintFromUint64(uint64(end-num.MaxV(start, points[0].t))))
+	return sum.Div(sum, num.NewUint(uint64(end-num.MaxV(start, points[0].t))))
 }

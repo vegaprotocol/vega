@@ -13,8 +13,15 @@ type Numeric struct {
 }
 
 func (n *Numeric) Clone() *Numeric {
-	if n.asUint != nil || n.asInt != nil {
-		nn := n
+	if n.asUint != nil {
+		nn := &Numeric{}
+		nn.SetUint(n.Uint().Clone())
+		return nn
+	}
+
+	if n.asInt != nil {
+		nn := &Numeric{}
+		nn.SetInt(n.Int().Clone())
 		return nn
 	}
 

@@ -221,10 +221,10 @@ func submitDataWithDifference(t *testing.T, perp *tstPerp, points []*testDataPoi
 		perp.perpetual.AddTestExternalPoint(ctx, p.price, p.t)
 
 		if diff > 0 {
-			internalPrice = num.UintZero().Add(p.price, num.UintFromUint64(uint64(diff)))
+			internalPrice = num.UintZero().Add(p.price, num.NewUint(uint64(diff)))
 		}
 		if diff < 0 {
-			internalPrice = num.UintZero().Sub(p.price, num.UintFromUint64(uint64(-diff)))
+			internalPrice = num.UintZero().Sub(p.price, num.NewUint(uint64(-diff)))
 		}
 		require.NoError(t, perp.perpetual.SubmitDataPoint(ctx, internalPrice, p.t))
 	}
@@ -239,19 +239,19 @@ func getTestDataPoints(t *testing.T) []*testDataPoint {
 	t.Helper()
 	return []*testDataPoint{
 		{
-			price: num.UintFromUint64(110),
+			price: num.NewUint(110),
 			t:     1000,
 		},
 		{
-			price: num.UintFromUint64(120),
+			price: num.NewUint(120),
 			t:     1010,
 		},
 		{
-			price: num.UintFromUint64(120),
+			price: num.NewUint(120),
 			t:     1020,
 		},
 		{
-			price: num.UintFromUint64(100),
+			price: num.NewUint(100),
 			t:     1030,
 		},
 	}

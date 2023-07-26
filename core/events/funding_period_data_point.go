@@ -53,7 +53,7 @@ func (p FundingPeriodDataPoint) StreamMessage() *eventspb.BusEvent {
 	return busEvent
 }
 
-func PeriodicSettlementDataEventFromStream(ctx context.Context, be *eventspb.BusEvent) *FundingPeriodDataPoint {
+func FundingPeriodDataPointEventFromStream(ctx context.Context, be *eventspb.BusEvent) *FundingPeriodDataPoint {
 	return &FundingPeriodDataPoint{
 		Base: newBaseFromBusEvent(ctx, EpochUpdate, be),
 		p:    be.GetFundingPeriodDataPoint(),
