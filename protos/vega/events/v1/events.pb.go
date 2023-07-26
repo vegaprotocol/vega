@@ -665,9 +665,9 @@ type FundingPeriod struct {
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Sequence number of the funding period.
 	Seq uint64 `protobuf:"varint,2,opt,name=seq,proto3" json:"seq,omitempty"`
-	// Time in Unix nanosecond when the funding period started.
+	// Time in Unix nanoseconds when the funding period started.
 	Start int64 `protobuf:"varint,3,opt,name=start,proto3" json:"start,omitempty"`
-	// Time in Unix nanosecond when the funding period ended.
+	// Time in Unix nanoseconds when the funding period ended.
 	End *int64 `protobuf:"varint,4,opt,name=end,proto3,oneof" json:"end,omitempty"`
 	// Funding payment for this period as the difference between the time-weighted average price of the external and internal data point.
 	FundingPayment *string `protobuf:"bytes,5,opt,name=funding_payment,json=fundingPayment,proto3,oneof" json:"funding_payment,omitempty"`
