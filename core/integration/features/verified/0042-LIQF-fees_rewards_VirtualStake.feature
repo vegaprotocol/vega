@@ -20,7 +20,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
-      | limits.markets.maxPeggedOrders                      | 4     |
+      | limits.markets.maxPeggedOrders                      | 12    |
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
@@ -164,10 +164,10 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | lp2 | lp2   | ETH/MAR22 | 5000              | 0.002 | amendment  |
     And the parties place the following pegged iceberg orders:
       | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lp2   | ETH/DAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
-      | lp2   | ETH/DAR22 | 2         | 1                    | buy  | MID              | 2          | 1      |
-      | lp2   | ETH/DAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
-      | lp2   | ETH/DAR22 | 2         | 1                    | sell | MID              | 2          | 1      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |

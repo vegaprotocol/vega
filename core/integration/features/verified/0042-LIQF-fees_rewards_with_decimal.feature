@@ -181,6 +181,7 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
+      | limits.markets.maxPeggedOrders                      | 18    |
     And the following assets are registered:
       | id  | decimal places |
       | ETH | 5              |
@@ -450,6 +451,7 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
+      | limits.markets.maxPeggedOrders                      | 18    |
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |

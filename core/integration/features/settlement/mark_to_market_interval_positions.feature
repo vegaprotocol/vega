@@ -321,9 +321,12 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | designatedLoser | USD   | ETH/DEC20 | 0      | 0       |
 
   Scenario: 003, settlement works correctly when party enters and leaves within one MTM window
-    Given the markets are updated:
-      | id        | linear slippage factor | quadratic slippage factor | lp price range |
-      | ETH/DEC19 | 1e0                    | 0                         | 2              |
+    Given the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 2           | 0.5                          | 0                                   | 1                             | 1.0                    |
+    And the markets are updated:
+      | id        | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC19 | 1e0                    | 0                         | SLA        |
     And the parties deposit on asset's general account the following amount:
       | party            | asset | amount        |
       | aux              | USD   | 1000000000000 |

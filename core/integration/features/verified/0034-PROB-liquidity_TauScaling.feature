@@ -29,11 +29,11 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
 
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
+      | 100         | 0.5                          | 600                                 | 1                             | 1.0                    |
 
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 100            | 0.001                  | 0                         | SLA        |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.001                  | 0                         | SLA        |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
@@ -140,6 +140,7 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | market.liquidity.probabilityOfTrading.tau.scaling   | 10    |
+      | limits.markets.maxPeggedOrders                      | 4     |
     And the following assets are registered:
       | id  | decimal places |
       | USD | 2              |
@@ -161,8 +162,8 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
 
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 0.001                  | 0                         | SLA        |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.001                  | 0                         | SLA        |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
@@ -252,6 +253,7 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | market.liquidity.probabilityOfTrading.tau.scaling   | 1000  |
+      | limits.markets.maxPeggedOrders                      | 4     |
     And the following assets are registered:
       | id  | decimal places |
       | USD | 2              |
@@ -273,8 +275,8 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
 
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 0.001                  | 0                         | SLA        |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.001                  | 0                         | SLA        |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
@@ -365,6 +367,7 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | market.liquidity.probabilityOfTrading.tau.scaling   | 1     |
+      | limits.markets.maxPeggedOrders                      | 8     |
 
     And the following assets are registered:
       | id  | decimal places |
@@ -387,8 +390,8 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
 
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 0.001                  | 0                         | SLA        |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.001                  | 0                         | SLA        |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
@@ -479,6 +482,7 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | market.liquidity.probabilityOfTrading.tau.scaling   | 10    |
+      | limits.markets.maxPeggedOrders                      | 4     |
 
     And the following assets are registered:
       | id  | decimal places |
@@ -501,8 +505,8 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
 
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 0.001                  | 0                         | SLA        |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.001                  | 0                         | SLA        |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
@@ -593,7 +597,7 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | market.liquidity.probabilityOfTrading.tau.scaling   | 1000  |
-
+      | limits.markets.maxPeggedOrders                      | 4     |
     And the following assets are registered:
       | id  | decimal places |
       | USD | 2              |
@@ -615,8 +619,8 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
 
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 0.001                  | 0                         | SLA        |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.001                  | 0                         | SLA        |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
