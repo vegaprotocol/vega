@@ -16,6 +16,7 @@ Feature: Ensure price bounds are triggered as and when they should be, consideri
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
+      | limits.markets.maxPeggedOrders | 2     |
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
   @STAuc
@@ -39,9 +40,13 @@ Feature: Ensure price bounds are triggered as and when they should be, consideri
       | party1 | ETH/DEC20 | buy  | 1      | 950000000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC20 | sell | 1      | 1070000000 | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount       | fee | side | pegged reference | volume     | offset  | lp type    |
-      | lp1 | party1 | ETH/DEC20 | 39050000000000000000000 | 0.3 | buy  | BID              | 2          | 1000000 | submission |
-      | lp1 | party1 | ETH/DEC20 | 39050000000000000000000 | 0.3 | sell | ASK              | 13         | 1000000 | submission |
+      | id  | party  | market id | commitment amount       | fee | lp type    |
+      | lp1 | party1 | ETH/DEC20 | 39050000000000000000000 | 0.3 | submission |
+      | lp1 | party1 | ETH/DEC20 | 39050000000000000000000 | 0.3 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset  |
+      | party1 | ETH/DEC20 | 2         | 1                    | buy  | BID              | 2          | 1000000 |
+      | party1 | ETH/DEC20 | 2         | 1                    | sell | ASK              | 13         | 1000000 |
     Then the mark price should be "0" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
@@ -92,9 +97,13 @@ Feature: Ensure price bounds are triggered as and when they should be, consideri
       | party1 | ETH/DEC20 | buy  | 1      | 950000000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC20 | sell | 1      | 1070000000 | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount       | fee | side | pegged reference | volume     | offset  | lp type    |
-      | lp1 | party1 | ETH/DEC20 | 39050000000000000000000 | 0.3 | buy  | BID              | 2          | 1000000 | submission |
-      | lp1 | party1 | ETH/DEC20 | 39050000000000000000000 | 0.3 | sell | ASK              | 13         | 1000000 | submission |
+      | id  | party  | market id | commitment amount       | fee | lp type    |
+      | lp1 | party1 | ETH/DEC20 | 39050000000000000000000 | 0.3 | submission |
+      | lp1 | party1 | ETH/DEC20 | 39050000000000000000000 | 0.3 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset  |
+      | party1 | ETH/DEC20 | 2         | 1                    | buy  | BID              | 2          | 1000000 |
+      | party1 | ETH/DEC20 | 2         | 1                    | sell | ASK              | 13         | 1000000 |
     Then the mark price should be "0" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
