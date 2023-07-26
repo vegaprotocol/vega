@@ -11,7 +11,6 @@ import (
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	vgjob "code.vegaprotocol.io/vega/libs/job"
 	"code.vegaprotocol.io/vega/paths"
-	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
 	"github.com/fsnotify/fsnotify"
 )
@@ -186,7 +185,7 @@ func (s *FileStore) readTokensFile() (tokens tokensFile, rerr error) {
 
 	if err := paths.ReadEncryptedFile(s.tokensFilePath, s.passphrase, &tokens); err != nil {
 		if err.Error() == "couldn't decrypt content: cipher: message authentication failed" {
-			return tokensFile{}, api.ErrWrongPassphrase
+			return tokensFile{}, ErrWrongPassphrase
 		}
 		return tokensFile{}, fmt.Errorf("couldn't read the file %s: %w", s.tokensFilePath, err)
 	}
