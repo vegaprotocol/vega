@@ -83,7 +83,7 @@ func testSubmittingProposalForNewMarketSucceeds(t *testing.T) {
 }
 
 func testRemoveSuccessorsForRejectedMarket(t *testing.T) {
-	eng := getTestEngine(t)
+	eng := getTestEngine(t, time.Now())
 	defer eng.ctrl.Finish()
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
