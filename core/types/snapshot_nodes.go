@@ -519,15 +519,16 @@ type EpochState struct {
 }
 
 type LimitState struct {
-	BlockCount               uint32
-	CanProposeMarket         bool
-	CanProposeAsset          bool
-	GenesisLoaded            bool
-	ProposeMarketEnabled     bool
-	ProposeSpotMarketEnabled bool
-	ProposeAssetEnabled      bool
-	ProposeMarketEnabledFrom time.Time
-	ProposeAssetEnabledFrom  time.Time
+	BlockCount                uint32
+	CanProposeMarket          bool
+	CanProposeAsset           bool
+	GenesisLoaded             bool
+	ProposeMarketEnabled      bool
+	ProposeSpotMarketEnabled  bool
+	ProposePerpsMarketEnabled bool
+	ProposeAssetEnabled       bool
+	ProposeMarketEnabledFrom  time.Time
+	ProposeAssetEnabledFrom   time.Time
 }
 
 type EquityShare struct {
@@ -2304,15 +2305,16 @@ func (p PayloadLimitState) IntoProto() *snapshot.Payload_LimitState {
 
 func LimitFromProto(l *snapshot.LimitState) *LimitState {
 	state := &LimitState{
-		BlockCount:               l.BlockCount,
-		CanProposeMarket:         l.CanProposeMarket,
-		CanProposeAsset:          l.CanProposeAsset,
-		GenesisLoaded:            l.GenesisLoaded,
-		ProposeMarketEnabled:     l.ProposeMarketEnabled,
-		ProposeAssetEnabled:      l.ProposeAssetEnabled,
-		ProposeSpotMarketEnabled: l.ProposeSpotMarketEnabled,
-		ProposeAssetEnabledFrom:  time.Time{},
-		ProposeMarketEnabledFrom: time.Time{},
+		BlockCount:                l.BlockCount,
+		CanProposeMarket:          l.CanProposeMarket,
+		CanProposeAsset:           l.CanProposeAsset,
+		GenesisLoaded:             l.GenesisLoaded,
+		ProposeMarketEnabled:      l.ProposeMarketEnabled,
+		ProposeAssetEnabled:       l.ProposeAssetEnabled,
+		ProposeSpotMarketEnabled:  l.ProposeSpotMarketEnabled,
+		ProposePerpsMarketEnabled: l.ProposePerpsMarketEnabled,
+		ProposeAssetEnabledFrom:   time.Time{},
+		ProposeMarketEnabledFrom:  time.Time{},
 	}
 
 	if l.ProposeAssetEnabledFrom != -1 {
@@ -3081,15 +3083,16 @@ func (e *EpochState) IntoProto() *snapshot.EpochState {
 
 func (l *LimitState) IntoProto() *snapshot.LimitState {
 	state := &snapshot.LimitState{
-		BlockCount:               l.BlockCount,
-		CanProposeMarket:         l.CanProposeMarket,
-		CanProposeAsset:          l.CanProposeAsset,
-		GenesisLoaded:            l.GenesisLoaded,
-		ProposeMarketEnabled:     l.ProposeMarketEnabled,
-		ProposeSpotMarketEnabled: l.ProposeSpotMarketEnabled,
-		ProposeAssetEnabled:      l.ProposeAssetEnabled,
-		ProposeMarketEnabledFrom: l.ProposeMarketEnabledFrom.UnixNano(),
-		ProposeAssetEnabledFrom:  l.ProposeAssetEnabledFrom.UnixNano(),
+		BlockCount:                l.BlockCount,
+		CanProposeMarket:          l.CanProposeMarket,
+		CanProposeAsset:           l.CanProposeAsset,
+		GenesisLoaded:             l.GenesisLoaded,
+		ProposeMarketEnabled:      l.ProposeMarketEnabled,
+		ProposeSpotMarketEnabled:  l.ProposeSpotMarketEnabled,
+		ProposePerpsMarketEnabled: l.ProposePerpsMarketEnabled,
+		ProposeAssetEnabled:       l.ProposeAssetEnabled,
+		ProposeMarketEnabledFrom:  l.ProposeMarketEnabledFrom.UnixNano(),
+		ProposeAssetEnabledFrom:   l.ProposeAssetEnabledFrom.UnixNano(),
 	}
 
 	// Use -1 to mean it hasn't been set

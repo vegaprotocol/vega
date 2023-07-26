@@ -139,7 +139,7 @@ func TestSpecConfigurationGetTimeTriggers(t *testing.T) {
 	triggers := ds.GetTimeTriggers()
 	assert.NotNil(t, triggers)
 	assert.Equal(t, 1, len(triggers))
-	assert.IsType(t, common.InternalTimeTrigger{}, triggers[0])
+	assert.IsType(t, &common.InternalTimeTrigger{}, triggers[0])
 	assert.Equal(t, timeNow, *triggers[0].Initial)
 	assert.Equal(t, int64(15), triggers[0].Every)
 }

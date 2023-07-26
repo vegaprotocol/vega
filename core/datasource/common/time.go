@@ -15,6 +15,7 @@
 package common
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -101,6 +102,17 @@ func (i *InternalTimeTrigger) SetNextTrigger(timeNow time.Time) {
 	}
 }
 
+func (i *InternalTimeTrigger) SetInitial(initial, timeNow time.Time) {
+	if i.Initial != nil {
+		// this is incorrect, we should only overwrite time
+		// when not submitted by the user
+		panic("invalid initial time override")
+	}
+
+	i.Initial = ptr.From(initial)
+	i.SetNextTrigger(timeNow)
+}
+
 func InternalTimeTriggerFromProto(
 	protoTrigger *datapb.InternalTimeTrigger,
 	timeNow time.Time,
@@ -115,11 +127,22 @@ func InternalTimeTriggerFromProto(
 		Every:   protoTrigger.Every,
 	}
 
-	tt.SetNextTrigger(timeNow)
+	if initial != nil {
+		tt.SetNextTrigger(timeNow)
+	}
+
 	return tt
 }
 
-type InternalTimeTriggers [1]InternalTimeTrigger
+type InternalTimeTriggers [1]*InternalTimeTrigger
+
+func (i InternalTimeTriggers) Empty() error {
+	if len(i) <= 0 || i[0] == nil {
+		return errors.New("no time trigger is set")
+	}
+
+	return nil
+}
 
 func (i InternalTimeTriggers) String() string {
 	if len(i) != 1 {
@@ -129,6 +152,10 @@ func (i InternalTimeTriggers) String() string {
 	strs := make([]string, 0, len(i))
 	for _, f := range i {
 		// We handle length of 1 for the moment, but later will be extended.
+		if f == nil {
+			strs = append(strs, "nil")
+			continue
+		}
 		strs = append(strs, f.String())
 	}
 	return "[" + strings.Join(strs, ", ") + "]"
@@ -137,7 +164,9 @@ func (i InternalTimeTriggers) String() string {
 func (i InternalTimeTriggers) IntoProto() []*datapb.InternalTimeTrigger {
 	protoTriggers := [1]*datapb.InternalTimeTrigger{}
 	if len(i) == 1 {
-		protoTriggers[0] = i[0].IntoProto()
+		if len(i) == 1 && i[0] != nil {
+			protoTriggers[0] = i[0].IntoProto()
+		}
 	}
 
 	return protoTriggers[:]
@@ -148,7 +177,7 @@ func InternalTimeTriggersFromProto(protoTriggers []*datapb.InternalTimeTrigger, 
 	for i, protoTrigger := range protoTriggers {
 		// Handle length of 1 for now
 		if i == 0 {
-			ts[0] = *InternalTimeTriggerFromProto(protoTrigger, timeNow)
+			ts[0] = InternalTimeTriggerFromProto(protoTrigger, timeNow)
 		}
 	}
 
@@ -157,8 +186,8 @@ func InternalTimeTriggersFromProto(protoTriggers []*datapb.InternalTimeTrigger, 
 
 func (i InternalTimeTriggers) DeepClone() InternalTimeTriggers {
 	clonedTriggers := InternalTimeTriggers{}
-	if len(i) == 1 {
-		clonedTriggers[0] = *i[0].DeepClone()
+	if len(i) == 1 && i[0] != nil {
+		clonedTriggers[0] = i[0].DeepClone()
 	}
 
 	return clonedTriggers

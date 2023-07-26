@@ -120,6 +120,8 @@ const (
 	ProposalErrorInvalidSLAParams ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_MISSING_SLA_PARAMS
 	// ProposalErrorMissingSLAParams indicates that mandatory SLA params for a new or update spot market is missing.
 	ProposalErrorMissingSLAParams ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_SLA_PARAMS
+	// ProposalErrorInvalidPerpsProduct Market proposal market contained invalid product definition.
+	ProposalErrorInvalidPerpsProduct ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_PERPS_PRODUCT
 )
 
 type ProposalState = vegapb.Proposal_State

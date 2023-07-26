@@ -68,6 +68,9 @@ func defaultNetParams() map[string]value {
 		// spots
 		SpotMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
 
+		// perps
+		PerpsMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
+
 		// ethereum oracles
 		EthereumOraclesEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
 

@@ -70,6 +70,7 @@ var (
 	ErrAwaitingCheckpointRestore                     = errors.New("transactions not allowed while waiting for checkpoint restore")
 	ErrOracleNoSubscribers                           = errors.New("there are no subscribes to the oracle data")
 	ErrSpotMarketProposalDisabled                    = errors.New("spot market proposal disabled")
+	ErrPerpsMarketProposalDisabled                   = errors.New("perps market proposal disabled")
 	ErrOracleDataNormalization                       = func(err error) error {
 		return fmt.Errorf("error normalizing incoming oracle data: %w", err)
 	}
@@ -1158,6 +1159,9 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 		case types.ProposalTermsTypeNewMarket:
 			if !app.limits.CanProposeMarket() {
 				return ErrMarketProposalDisabled
+			}
+			if p.Terms.GetNewMarket().Changes.ProductType() == types.ProductTypePerps && !app.limits.CanProposePerpsMarket() {
+				return ErrPerpsMarketProposalDisabled
 			}
 			return validateUseOfEthOracles(p.Terms.GetNewMarket(), app.netp)
 		case types.ProposalTermsTypeNewAsset:

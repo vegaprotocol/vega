@@ -31,6 +31,15 @@ type SpecConfiguration struct {
 	Conditions []*common.SpecCondition
 }
 
+func (s *SpecConfiguration) SetInitial(initial, timeNow time.Time) error {
+	if err := s.Triggers.Empty(); err != nil {
+		return err
+	}
+
+	s.Triggers[0].SetInitial(initial, timeNow)
+	return nil
+}
+
 func (s SpecConfiguration) String() string {
 	return fmt.Sprintf(
 		"trigger(%s), conditions(%s)",

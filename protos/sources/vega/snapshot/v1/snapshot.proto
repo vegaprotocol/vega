@@ -643,6 +643,7 @@ message LimitState {
   int64 propose_market_enabled_from = 7;
   int64 propose_asset_enabled_from = 8;
   bool propose_spot_market_enabled = 9;
+  bool propose_perps_market_enabled = 10;
 }
 
 message VoteSpamPolicy {

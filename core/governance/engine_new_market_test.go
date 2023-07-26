@@ -27,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
@@ -37,6 +38,9 @@ import (
 
 func TestProposalForNewMarket(t *testing.T) {
 	t.Run("Submitting a proposal for new market succeeds", testSubmittingProposalForNewMarketSucceeds)
+	t.Run("Submitting a proposal for new perps market succeeds", testSubmittingProposalForNewPerpsMarketSucceeds)
+	t.Run("Submitting a proposal for new perps market succeeds 2", testSubmittingProposalForNewPerpsMarketWithCustomInitialTimeSucceeds)
+	t.Run("Submitting a proposal for new perps market with initial time in past fails", testSubmittingProposalForNewPerpsMarketWithPastInitialTimeFails)
 	t.Run("Submitting a proposal with internal time termination for new market succeeds", testSubmittingProposalWithInternalTimeTerminationForNewMarketSucceeds)
 	t.Run("Submitting a proposal with internal time termination with `less than equal` condition fails", testSubmittingProposalWithInternalTimeTerminationWithLessThanEqualConditionForNewMarketFails)
 	t.Run("Submitting a proposal with internal time settling for new market fails", testSubmittingProposalWithInternalTimeSettlingForNewMarketFails)
@@ -1525,4 +1529,99 @@ func testVotingWithInsufficientParticipationMakesNewMarketProposalDeclined(t *te
 
 	// then
 	assert.Empty(t, toBeEnacted)
+}
+
+func testSubmittingProposalForNewPerpsMarketSucceeds(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := eng.newProposalForNewPerpsMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.expectOpenProposalEvent(t, party.Id, proposal.ID)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// the proposal had a nil initial time for the time trigger.
+	// ensure it was set to the enactment time.
+	tt := toSubmit.Proposal().Terms.GetNewMarket().Changes.Instrument.
+		Product.(*types.InstrumentConfigurationPerps).
+		Perps.DataSourceSpecForSettlementSchedule.
+		GetInternalTimeTriggerSpecConfiguration().Triggers[0]
+
+	enactmentTime := toSubmit.Proposal().Terms.EnactmentTimestamp
+
+	assert.NotNil(t, tt.Initial)
+	assert.Equal(t, tt.Initial.Unix(), enactmentTime)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, toSubmit)
+	assert.True(t, toSubmit.IsNewMarket())
+	require.NotNil(t, toSubmit.NewMarket().Market())
+}
+
+func testSubmittingProposalForNewPerpsMarketWithCustomInitialTimeSucceeds(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := eng.newProposalForNewPerpsMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
+
+	// set the time differently to start e.g sometimes after the enactment ti
+	enactAt := proposal.Terms.EnactmentTimestamp
+	proposal.Terms.Change.(*types.ProposalTermsNewMarket).NewMarket.Changes.Instrument.Product.(*types.InstrumentConfigurationPerps).Perps.DataSourceSpecForSettlementSchedule.GetInternalTimeTriggerSpecConfiguration().Triggers[0].Initial = ptr.From(time.Unix(enactAt, 0).Add(60 * time.Minute))
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.expectOpenProposalEvent(t, party.Id, proposal.ID)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// the proposal had a nil initial time for the time trigger.
+	// ensure it was set to the enactment time.
+	tt := toSubmit.Proposal().Terms.GetNewMarket().Changes.Instrument.
+		Product.(*types.InstrumentConfigurationPerps).
+		Perps.DataSourceSpecForSettlementSchedule.
+		GetInternalTimeTriggerSpecConfiguration().Triggers[0]
+
+	enactmentTime := toSubmit.Proposal().Terms.EnactmentTimestamp
+
+	assert.NotNil(t, tt.Initial)
+	assert.NotEqual(t, tt.Initial.Unix(), enactmentTime)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, toSubmit)
+	assert.True(t, toSubmit.IsNewMarket())
+	require.NotNil(t, toSubmit.NewMarket().Market())
+}
+
+func testSubmittingProposalForNewPerpsMarketWithPastInitialTimeFails(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := eng.newProposalForNewPerpsMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
+
+	now := eng.tsvc.GetTimeNow()
+	proposal.Terms.Change.(*types.ProposalTermsNewMarket).NewMarket.Changes.Instrument.Product.(*types.InstrumentConfigurationPerps).Perps.DataSourceSpecForSettlementSchedule.GetInternalTimeTriggerSpecConfiguration().Triggers[0].Initial = ptr.From(now.Add(-(60 * time.Second)))
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+
+	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorInvalidPerpsProduct)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	require.EqualError(t, err, "time trigger starts in the past")
+	require.Nil(t, toSubmit)
 }
