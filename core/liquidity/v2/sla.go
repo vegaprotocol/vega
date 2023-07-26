@@ -65,9 +65,11 @@ func (e *Engine) CalculateSLAPenalties(now time.Time) SlaPenalties {
 			commitment.s += now.Sub(commitment.start)
 		}
 
-		s := num.DecimalFromInt64(commitment.s.Nanoseconds())
-		observedEpochLengthD := num.DecimalFromInt64(observedEpochLength.Nanoseconds())
-		timeBookFraction := s.Div(observedEpochLengthD)
+		timeBookFraction := num.DecimalZero()
+		lNano := observedEpochLength.Nanoseconds()
+		if lNano > 0 {
+			timeBookFraction = num.DecimalFromInt64(commitment.s.Nanoseconds()).Div(num.DecimalFromInt64(lNano))
+		}
 
 		var feePenalty, bondPenalty num.Decimal
 
