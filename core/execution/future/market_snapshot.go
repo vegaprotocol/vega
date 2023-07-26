@@ -64,7 +64,7 @@ func NewMarketFromSnapshot(
 		return nil, common.ErrEmptyMarketID
 	}
 
-	tradableInstrument, err := markets.NewTradableInstrument(ctx, log, mkt.TradableInstrument, oracleEngine)
+	tradableInstrument, err := markets.NewTradableInstrument(ctx, log, mkt.TradableInstrument, oracleEngine, broker)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}
