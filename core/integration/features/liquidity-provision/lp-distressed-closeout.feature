@@ -23,11 +23,11 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | 1       | 0.99        | 5                 |
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+      | 0.01        | 0.5                          | 10                                  | 1                             | 1.0                    |
   Scenario: 001, LP gets distressed during continuous trading (0042-LIQF-014)
     Given the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.01           | 0.5                    | 0                         | SLA        |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5                    | 0                         | SLA        |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | party0 | ETH   | 5721       |
@@ -185,9 +185,12 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     Given the simple risk model named "simple-risk-model-2":
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 30          | 30            | 0.2                    |
+    And the liquidity sla params named "SLA-2":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 0.5         | 0.5                          | 10                                  | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-2 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5            | 0.5                    | 0                         | SLA        |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-2 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5                    | 0                         | SLA-2      |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | party0 | ETH   | 5721       |
@@ -311,8 +314,8 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
 
   Scenario: 003, 2 LPs on the market, LP1 gets distressed and closed-out during continuous trading (0042-LIQF-014)
     Given the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.01           | 5e-2                   | 0                         | SLA        |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 5e-2                   | 0                         | SLA        |
     And the parties deposit on asset's general account the following amount:
       | party   | asset | amount     |
       | party0  | ETH   | 5721       |

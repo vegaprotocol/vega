@@ -439,13 +439,11 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"auction duration",
 		"linear slippage factor",
 		"quadratic slippage factor",
+		"sla params",
 	}, []string{
 		"decimal places",
 		"position decimal places",
 		"liquidity monitoring",
-		// TODO: WG: remove lp price range
-		"lp price range",
-		"sla params",
 		"parent market id",
 		"insurance pool fraction",
 		"successor auction",
@@ -463,7 +461,7 @@ func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
 		"price monitoring",     // price monitoring update
 		"risk model",           // risk model update
 		"liquidity monitoring", // liquidity monitoring update
-		"lp price range",
+		"sla params",
 	})
 }
 

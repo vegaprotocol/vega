@@ -26,9 +26,12 @@ Feature: check the impact from change of market parameter: market.liquidityV2.st
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | limits.markets.maxPeggedOrders                | 6     |
+     And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 0.014       | 0.5                          | 0                                   | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config | lp price range | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 0.014          | 1e6                    | 1e6                       | default-futures |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e6                    | 1e6                       | SLA        |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party0 | USD   | 500000000 |
