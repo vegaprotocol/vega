@@ -50,6 +50,21 @@ func (mr *MockEthCallEngineMockRecorder) CallSpec(arg0, arg1, arg2 interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CallSpec", reflect.TypeOf((*MockEthCallEngine)(nil).CallSpec), arg0, arg1, arg2)
 }
 
+// GetRequiredConfirmations mocks base method.
+func (m *MockEthCallEngine) GetRequiredConfirmations(arg0 string) (uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRequiredConfirmations", arg0)
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRequiredConfirmations indicates an expected call of GetRequiredConfirmations.
+func (mr *MockEthCallEngineMockRecorder) GetRequiredConfirmations(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRequiredConfirmations", reflect.TypeOf((*MockEthCallEngine)(nil).GetRequiredConfirmations), arg0)
+}
+
 // MakeResult mocks base method.
 func (m *MockEthCallEngine) MakeResult(arg0 string, arg1 []byte) (ethcall.Result, error) {
 	m.ctrl.T.Helper()

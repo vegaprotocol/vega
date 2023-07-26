@@ -92,3 +92,32 @@ func TestEthereumConfirmations(t *testing.T) {
 	// block 10, request 50, we are in the past, return err
 	assert.NoError(t, ethCfns.Check(50))
 }
+
+func TestCheckRequiredConfirmations(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	ethClient := mocks.NewMockEthereumClientConfirmations(ctrl)
+	tim := localMocks.NewMockTime(ctrl)
+	cfg := eth.NewDefaultConfig()
+	cfg.RetryDelay.Duration = 15 * time.Second
+	ethCfns := eth.NewEthereumConfirmations(cfg, ethClient, tim)
+	defer ctrl.Finish()
+
+	tim.EXPECT().Now().Times(1).Return(time.Unix(10, 0))
+	// start a block 10
+	ethClient.EXPECT().HeaderByNumber(gomock.Any(), gomock.Any()).Times(1).
+		Return(&ethtypes.Header{Number: big.NewInt(10)}, nil)
+
+	// block 10, request 50, we are in the past, return err
+	assert.ErrorIs(t, ethCfns.CheckRequiredConfirmations(50, 30), eth.ErrMissingConfirmations)
+
+	tim.EXPECT().Now().Times(1).Return(time.Unix(58, 0))
+	// do block 80 > requested block == confirmations
+	ethClient.EXPECT().HeaderByNumber(gomock.Any(), gomock.Any()).Times(1).
+		Return(&ethtypes.Header{Number: big.NewInt(80)}, nil)
+
+	// block 10, request 50, we are in the past, return err
+	assert.NoError(t, ethCfns.CheckRequiredConfirmations(50, 30))
+
+	tim.EXPECT().Now().Times(1).Return(time.Unix(59, 0))
+	assert.ErrorIs(t, ethCfns.CheckRequiredConfirmations(50, 40), eth.ErrMissingConfirmations)
+}

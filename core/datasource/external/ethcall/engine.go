@@ -162,6 +162,18 @@ func (e *Engine) CallSpec(ctx context.Context, id string, atBlock uint64) (Resul
 	return call.Call(ctx, e.client, atBlock)
 }
 
+func (e *Engine) GetRequiredConfirmations(id string) (uint64, error) {
+	e.mu.Lock()
+	call, ok := e.calls[id]
+	if !ok {
+		e.mu.Unlock()
+		return 0, fmt.Errorf("no such specification: %v", id)
+	}
+	e.mu.Unlock()
+
+	return call.spec.RequiredConfirmations, nil
+}
+
 func (e *Engine) OnSpecActivated(ctx context.Context, spec datasource.Spec) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
