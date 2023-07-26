@@ -157,8 +157,8 @@ func TestSubmittingProposalForNewSpotMarketWithOutOfRangeRiskParameterFails(t *t
 	lnm.Params.Sigma = num.DecimalFromFloat(1.0)
 
 	// now all risk params are valid
-	eng.markets.EXPECT().SpotsMarketsEnabled().AnyTimes()
 	eng := getTestEngine(t, time.Now())
+	eng.markets.EXPECT().SpotsMarketsEnabled().AnyTimes()
 
 	// given
 	party := eng.newValidParty("a-valid-party", 1)

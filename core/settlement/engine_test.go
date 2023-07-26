@@ -328,7 +328,8 @@ func testSettleRoundingSuccess(t *testing.T) {
 		},
 	}
 	oraclePrice := num.NewUint(1005)
-	settleF := func(price *num.Uint, settlementData *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, num.Decimal, error) {
+
+	settleF := func(price *num.Uint, assetDecimals uint32, size num.Decimal) (*types.FinancialAmount, bool, num.Decimal, error) {
 		amt, neg := num.UintZero().Delta(oraclePrice, price)
 		if size.IsNegative() {
 			size = size.Neg()
@@ -340,13 +341,14 @@ func testSettleRoundingSuccess(t *testing.T) {
 			Amount: amount,
 		}, neg, rem, nil
 	}
+
 	positions := engine.getExpiryPositions(data...)
 	// we expect settle calls for each position
 	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(settleF).AnyTimes()
 	// ensure positions are set
 	engine.Update(positions)
 	// now settle:
-	got, round, err := engine.Settle(time.Now(), oraclePrice)
+	got, round, err := engine.Settle(time.Now(), 0)
 	assert.NoError(t, err)
 	assert.Equal(t, len(expect), len(got))
 	assert.True(t, round.EQ(num.NewUint(1)))
