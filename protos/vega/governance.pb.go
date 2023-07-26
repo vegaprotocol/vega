@@ -123,7 +123,7 @@ const (
 	ProposalError_PROPOSAL_ERROR_INVALID_SLA_PARAMS ProposalError = 53
 	// Mandatory liquidity provision SLA parameters are missing
 	ProposalError_PROPOSAL_ERROR_MISSING_SLA_PARAMS ProposalError = 54
-	// Perpetuals market proposal contained invalid product definition
+	// Perpetual market proposal contained invalid product definition
 	ProposalError_PROPOSAL_ERROR_INVALID_PERPS_PRODUCT ProposalError = 55
 )
 
@@ -652,7 +652,7 @@ func (x *FutureProduct) GetDataSourceSpecBinding() *DataSourceSpecToFutureBindin
 	return nil
 }
 
-// Perpetuals product configuration
+// Perpetual product configuration
 type PerpsProduct struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

@@ -33,7 +33,7 @@ message FutureProduct {
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;
 }
 
-// Perpetuals product configuration
+// Perpetual product configuration
 message PerpsProduct {
   // Asset ID for the product's settlement asset.
   string settlement_asset = 1;
@@ -510,7 +510,7 @@ enum ProposalError {
   PROPOSAL_ERROR_INVALID_SLA_PARAMS = 53;
   // Mandatory liquidity provision SLA parameters are missing
   PROPOSAL_ERROR_MISSING_SLA_PARAMS = 54;
-  // Perpetuals market proposal contained invalid product definition
+  // Perpetual market proposal contained invalid product definition
   PROPOSAL_ERROR_INVALID_PERPS_PRODUCT = 55;
 }
 

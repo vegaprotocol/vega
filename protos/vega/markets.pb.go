@@ -392,13 +392,13 @@ func (x *Future) GetDataSourceSpecBinding() *DataSourceSpecToFutureBinding {
 	return nil
 }
 
-// Perpetuals product definition
+// Perpetual product definition
 type Perps struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Underlying asset for the perpetuals.
+	// Underlying asset for the perpetual.
 	SettlementAsset string `protobuf:"bytes,1,opt,name=settlement_asset,json=settlementAsset,proto3" json:"settlement_asset,omitempty"`
 	// Quote name of the instrument.
 	QuoteName string `protobuf:"bytes,2,opt,name=quote_name,json=quoteName,proto3" json:"quote_name,omitempty"`
@@ -582,11 +582,11 @@ type DataSourceSpecToPerpsBinding struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Name of the property in the source data that should be used as settlement data.
-	// If it is set to "prices.BTC.value", then the perpetuals market will use the value of
+	// If it is set to "prices.BTC.value", then the perpetual market will use the value of
 	// this property as settlement data.
 	SettlementDataProperty string `protobuf:"bytes,1,opt,name=settlement_data_property,json=settlementDataProperty,proto3" json:"settlement_data_property,omitempty"`
 	// Name of the property in the source data that should be used as settlement data.
-	// If it is set to "prices.BTC.value", then the perpetuals market will use the value of
+	// If it is set to "prices.BTC.value", then the perpetual market will use the value of
 	// this property as settlement data.
 	SettlementScheduleProperty string `protobuf:"bytes,2,opt,name=settlement_schedule_property,json=settlementScheduleProperty,proto3" json:"settlement_schedule_property,omitempty"`
 }
@@ -813,7 +813,7 @@ type Instrument_Spot struct {
 }
 
 type Instrument_Perps struct {
-	// Perpetuals.
+	// Perpetual.
 	Perps *Perps `protobuf:"bytes,102,opt,name=perps,proto3,oneof"`
 }
 
