@@ -16,6 +16,7 @@ import (
 	"context"
 	"testing"
 
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/products/mocks"
 	"code.vegaprotocol.io/vega/core/types"
@@ -27,15 +28,15 @@ import (
 )
 
 func TestPeriodicSettlement(t *testing.T) {
-	t.Run("cannot submit data-point before leaving opening auction", TestCannotSubmitDataPointBeforeOpeningAuction)
-	t.Run("period end with no data point", TestPeriodEndWithNoDataPoints)
-	t.Run("equal internal and external prices", TestEqualInternalAndExternalPrices)
-	t.Run("constant difference long pays short", TestConstantDifferenceLongPaysShort)
-	t.Run("data points outside of period", TestDataPointsOutsidePeriod)
-	t.Run("data points not on boundary", TestDataPointsNotOnBoundary)
+	t.Run("cannot submit data-point before leaving opening auction", testCannotSubmitDataPointBeforeOpeningAuction)
+	t.Run("period end with no data point", testPeriodEndWithNoDataPoints)
+	t.Run("equal internal and external prices", testEqualInternalAndExternalPrices)
+	t.Run("constant difference long pays short", testConstantDifferenceLongPaysShort)
+	t.Run("data points outside of period", testDataPointsOutsidePeriod)
+	t.Run("data points not on boundary", testDataPointsNotOnBoundary)
 }
 
-func TestCannotSubmitDataPointBeforeOpeningAuction(t *testing.T) {
+func testCannotSubmitDataPointBeforeOpeningAuction(t *testing.T) {
 	perp := testPerpetual(t)
 	defer perp.ctrl.Finish()
 
@@ -48,30 +49,31 @@ func TestCannotSubmitDataPointBeforeOpeningAuction(t *testing.T) {
 	assert.ErrorIs(t, err, products.ErrInitialPeriodNotStarted)
 }
 
-func TestPeriodEndWithNoDataPoints(t *testing.T) {
+func testPeriodEndWithNoDataPoints(t *testing.T) {
 	perp := testPerpetual(t)
 	defer perp.ctrl.Finish()
 
 	ctx := context.Background()
 
 	// funding payment will be zero because there are no data points
+	perp.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	var called bool
 	fn := func(context.Context, *num.Numeric) {
 		called = true
 	}
 	perp.perpetual.SetSettlementListener(fn)
 
-	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
+	perp.broker.EXPECT().Send(gomock.Any()).Times(2)
 	perp.perpetual.OnLeaveOpeningAuction(ctx, 1000)
 
-	perp.broker.EXPECT().Send(gomock.Any()).Times(2)
+	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
 	perp.perpetual.PromptSettlementCue(ctx, 1040)
 
 	// we had no points to check we didn't call into listener
 	assert.False(t, called)
 }
 
-func TestEqualInternalAndExternalPrices(t *testing.T) {
+func testEqualInternalAndExternalPrices(t *testing.T) {
 	perp := testPerpetual(t)
 	defer perp.ctrl.Finish()
 	ctx := context.Background()
@@ -98,14 +100,15 @@ func TestEqualInternalAndExternalPrices(t *testing.T) {
 	}
 	perp.perpetual.SetSettlementListener(fn)
 
-	perp.broker.EXPECT().Send(gomock.Any()).Times(4)
+	perp.broker.EXPECT().Send(gomock.Any()).Times(2)
+	perp.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	perp.perpetual.PromptSettlementCue(ctx, 1040)
 	assert.NotNil(t, fundingPayment)
 	assert.True(t, fundingPayment.IsInt())
 	assert.Equal(t, "0", fundingPayment.String())
 }
 
-func TestConstantDifferenceLongPaysShort(t *testing.T) {
+func testConstantDifferenceLongPaysShort(t *testing.T) {
 	perp := testPerpetual(t)
 	defer perp.ctrl.Finish()
 	ctx := context.Background()
@@ -127,14 +130,15 @@ func TestConstantDifferenceLongPaysShort(t *testing.T) {
 	}
 	perp.perpetual.SetSettlementListener(fn)
 
-	perp.broker.EXPECT().Send(gomock.Any()).Times(4)
+	perp.broker.EXPECT().Send(gomock.Any()).Times(2)
+	perp.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	perp.perpetual.PromptSettlementCue(ctx, 1040)
 	assert.NotNil(t, fundingPayment)
 	assert.True(t, fundingPayment.IsInt())
 	assert.Equal(t, "-10", fundingPayment.String())
 }
 
-func TestDataPointsOutsidePeriod(t *testing.T) {
+func testDataPointsOutsidePeriod(t *testing.T) {
 	perp := testPerpetual(t)
 	defer perp.ctrl.Finish()
 	ctx := context.Background()
@@ -172,15 +176,18 @@ func TestDataPointsOutsidePeriod(t *testing.T) {
 	}
 	perp.perpetual.SetSettlementListener(fn)
 
-	// 6 times because: end + start of the period, plus 2 carry over points for external + internal
-	perp.broker.EXPECT().Send(gomock.Any()).Times(6)
+	// 6 times because: end + start of the period, plus 2 carry over points for external + internal (total 4)
+	perp.broker.EXPECT().Send(gomock.Any()).Times(2)
+	perp.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
+		require.Equal(t, 4, len(evts)) // 4 carry over points
+	})
 	perp.perpetual.PromptSettlementCue(ctx, 1040)
 	assert.NotNil(t, fundingPayment)
 	assert.True(t, fundingPayment.IsInt())
 	assert.Equal(t, "0", fundingPayment.String())
 }
 
-func TestDataPointsNotOnBoundary(t *testing.T) {
+func testDataPointsNotOnBoundary(t *testing.T) {
 	perp := testPerpetual(t)
 	defer perp.ctrl.Finish()
 	ctx := context.Background()
@@ -203,7 +210,8 @@ func TestDataPointsNotOnBoundary(t *testing.T) {
 	perp.perpetual.SetSettlementListener(fn)
 
 	// period end is *after* our last point
-	perp.broker.EXPECT().Send(gomock.Any()).Times(4)
+	perp.broker.EXPECT().Send(gomock.Any()).Times(2)
+	perp.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	perp.perpetual.PromptSettlementCue(ctx, 1050)
 	assert.NotNil(t, fundingPayment)
 	assert.True(t, fundingPayment.IsInt())

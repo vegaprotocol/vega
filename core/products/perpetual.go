@@ -97,9 +97,9 @@ func (p *Perpetual) ScaleSettlementDataToDecimalPlaces(price *num.Numeric, dp ui
 }
 
 // Settle a position against the perpetual.
-func (p *Perpetual) Settle(entryPriceInAsset *num.Uint, assetDecimals uint32, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error) {
+func (p *Perpetual) Settle(entryPriceInAsset, settlementData *num.Uint, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, rounding num.Decimal, err error) {
 	p.log.Panic("not implemented")
-	return nil, false, nil
+	return nil, false, num.DecimalZero(), nil
 }
 
 // Value - returns the nominal value of a unit given a current mark price.
@@ -210,12 +210,14 @@ func (p *Perpetual) startNewFundingPeriod(ctx context.Context, endAt int64) {
 	p.internal = carryOver(p.internal)
 
 	// send events for all the data-points that were carried over
+	evts := make([]events.Event, 0, len(p.external)+len(p.internal))
 	for _, dp := range p.external {
-		p.broker.Send(events.NewFundingPeriodDataPointEvent(ctx, p.id, dp.price.String(), dp.t, p.seq, dataPointSourceExternal))
+		evts = append(evts, events.NewFundingPeriodDataPointEvent(ctx, p.id, dp.price.String(), dp.t, p.seq, dataPointSourceExternal))
 	}
 	for _, dp := range p.internal {
-		p.broker.Send(events.NewFundingPeriodDataPointEvent(ctx, p.id, dp.price.String(), dp.t, p.seq, dataPointSourceInternal))
+		evts = append(evts, events.NewFundingPeriodDataPointEvent(ctx, p.id, dp.price.String(), dp.t, p.seq, dataPointSourceInternal))
 	}
+	p.broker.SendBatch(evts)
 }
 
 // addInternal adds an price point to our internal slice which represents a price value as seen by core.
