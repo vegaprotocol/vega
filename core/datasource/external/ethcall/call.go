@@ -78,6 +78,10 @@ func (c Call) Call(ctx context.Context, ethClient EthReaderCaller, blockNumber u
 	return newResult(c, bytes)
 }
 
+func (c Call) Spec() ethcallcommon.Spec {
+	return c.spec
+}
+
 func (c Call) triggered(prevEthBlock blockish, currentEthBlock blockish) bool {
 	switch trigger := c.spec.Trigger.(type) {
 	case ethcallcommon.TimeTrigger:

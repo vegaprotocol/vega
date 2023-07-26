@@ -72,12 +72,16 @@ func (e *EthereumConfirmations) UpdateConfirmations(confirmations uint64) {
 }
 
 func (e *EthereumConfirmations) Check(block uint64) error {
+	return e.CheckRequiredConfirmations(block, e.required)
+}
+
+func (e *EthereumConfirmations) CheckRequiredConfirmations(block uint64, required uint64) error {
 	curBlock, err := e.currentHeight(context.Background())
 	if err != nil {
 		return err
 	}
 
-	if curBlock < block || (curBlock-block) < e.required {
+	if curBlock < block || (curBlock-block) < required {
 		return ErrMissingConfirmations
 	}
 

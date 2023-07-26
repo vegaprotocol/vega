@@ -46,13 +46,14 @@ type OracleDataBroadcaster interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/core/datasource/external/ethverifier EthereumConfirmations
 type EthereumConfirmations interface {
-	Check(uint64) error
+	CheckRequiredConfirmations(block uint64, required uint64) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/ethcallengine_mock.go -package mocks code.vegaprotocol.io/vega/core/datasource/external/ethverifier EthCallEngine
 type EthCallEngine interface {
 	MakeResult(specID string, bytes []byte) (ethcall.Result, error)
 	CallSpec(ctx context.Context, id string, atBlock uint64) (ethcall.Result, error)
+	GetRequiredConfirmations(specId string) (uint64, error)
 	UpdatePreviousEthBlock(height uint64, timestamp uint64)
 }
 
@@ -203,7 +204,12 @@ func (s *Verifier) checkCallEventResult(ctx context.Context, callEvent ethcall.C
 		return fmt.Errorf("mismatched results for block %d", callEvent.BlockHeight)
 	}
 
-	if err = s.ethConfirmations.Check(callEvent.BlockHeight); err != nil {
+	requiredConfirmations, err := s.ethEngine.GetRequiredConfirmations(callEvent.SpecId)
+	if err != nil {
+		return fmt.Errorf("failed to get required confirmations: %w", err)
+	}
+
+	if err = s.ethConfirmations.CheckRequiredConfirmations(callEvent.BlockHeight, requiredConfirmations); err != nil {
 		return fmt.Errorf("failed confirmations check: %w", err)
 	}
 

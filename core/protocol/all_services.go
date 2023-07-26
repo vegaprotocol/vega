@@ -72,6 +72,7 @@ type EthCallEngine interface {
 	Stop()
 	MakeResult(specID string, bytes []byte) (ethcall.Result, error)
 	CallSpec(ctx context.Context, id string, atBlock uint64) (ethcall.Result, error)
+	GetRequiredConfirmations(id string) (uint64, error)
 	OnSpecActivated(ctx context.Context, spec datasource.Spec) error
 	OnSpecDeactivated(ctx context.Context, spec datasource.Spec)
 	UpdatePreviousEthBlock(height uint64, timestamp uint64)
