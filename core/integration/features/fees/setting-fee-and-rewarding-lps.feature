@@ -32,7 +32,7 @@ Feature: Test liquidity provider reward distribution
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | network.markPriceUpdateMaximumFrequency             | 1s    |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
-      | limits.markets.maxPeggedOrders                      | 4     |
+      | limits.markets.maxPeggedOrders                      | 6     |
 
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
@@ -262,8 +262,8 @@ Feature: Test liquidity provider reward distribution
       | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 5                                   | 1                             | 1.0                    |
     And the markets are updated:
-      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC22 | updated-SLA          | 1e0                    | 1e0                       |
+      | id        | sla params  | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC22 | updated-SLA | 1e0                    | 1e0                       |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | lp1    | ETH   | 1000000000 |
