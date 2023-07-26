@@ -230,6 +230,7 @@ func (m Market) ToProto() *vega.Market {
 		ParentMarketId:                parentMarketID,
 		InsurancePoolFraction:         insurancePoolFraction,
 		SuccessorMarketId:             successorMarketID,
+		LiquiditySlaParams:            m.LiquiditySLAParameters.IntoProto(),
 	}
 }
 
