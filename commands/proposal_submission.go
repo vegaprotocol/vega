@@ -880,6 +880,8 @@ func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent s
 	switch product := instrument.Product.(type) {
 	case *protoTypes.InstrumentConfiguration_Future:
 		errs.Merge(checkNewFuture(product.Future))
+	case *protoTypes.InstrumentConfiguration_Perps:
+		errs.Merge(checkNewPerps(product.Perps))
 	case *protoTypes.InstrumentConfiguration_Spot:
 		errs.Merge(checkNewSpot(product.Spot))
 	default:
@@ -907,6 +909,8 @@ func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration)
 	switch product := instrument.Product.(type) {
 	case *protoTypes.UpdateInstrumentConfiguration_Future:
 		errs.Merge(checkUpdateFuture(product.Future))
+	case *protoTypes.UpdateInstrumentConfiguration_Perps:
+		errs.Merge(checkUpdatePerps(product.Perps))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product", ErrIsNotValid)
 	}
@@ -931,6 +935,85 @@ func checkNewFuture(future *protoTypes.FutureProduct) Errors {
 	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.future", true))
 	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.new_market.changes.instrument.product.future", false))
 	errs.Merge(checkNewOracleBinding(future))
+
+	return errs
+}
+
+func checkNewPerps(perps *protoTypes.PerpsProduct) Errors {
+	errs := NewErrors()
+
+	if perps == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps", ErrIsRequired)
+	}
+
+	if len(perps.SettlementAsset) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.settlement_asset", ErrIsRequired)
+	}
+	if len(perps.QuoteName) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.quote_name", ErrIsRequired)
+	}
+
+	if len(perps.MarginFundingFactor) <= 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor", ErrIsRequired)
+	} else {
+		mff, err := num.DecimalFromString(perps.MarginFundingFactor)
+		if err != nil {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor", ErrIsNotValidNumber)
+		} else if mff.IsNegative() || mff.GreaterThan(num.DecimalOne()) {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor", ErrMustBeWithinRange01)
+		}
+	}
+
+	if len(perps.InterestRate) <= 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate", ErrIsRequired)
+	} else {
+		mff, err := num.DecimalFromString(perps.InterestRate)
+		if err != nil {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate", ErrIsNotValidNumber)
+		} else if mff.LessThan(num.MustDecimalFromString("-1")) || mff.GreaterThan(num.DecimalOne()) {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate", ErrMustBeWithinRange11)
+		}
+	}
+
+	var (
+		okClampLowerBound, okClampUpperBound bool
+		clampLowerBound, clampUpperBound     num.Decimal
+		err                                  error
+	)
+
+	if len(perps.ClampLowerBound) <= 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound", ErrIsRequired)
+	} else {
+		clampLowerBound, err = num.DecimalFromString(perps.ClampLowerBound)
+		if err != nil {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound", ErrIsNotValidNumber)
+		} else if clampLowerBound.LessThan(num.MustDecimalFromString("-1")) || clampLowerBound.GreaterThan(num.DecimalOne()) {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound", ErrMustBeWithinRange11)
+		} else {
+			okClampLowerBound = true
+		}
+	}
+
+	if len(perps.ClampUpperBound) <= 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound", ErrIsRequired)
+	} else {
+		clampUpperBound, err = num.DecimalFromString(perps.ClampUpperBound)
+		if err != nil {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound", ErrIsNotValidNumber)
+		} else if clampUpperBound.LessThan(num.MustDecimalFromString("-1")) || clampUpperBound.GreaterThan(num.DecimalOne()) {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound", ErrMustBeWithinRange11)
+		} else {
+			okClampUpperBound = true
+		}
+	}
+
+	if okClampLowerBound && okClampUpperBound && clampUpperBound.LessThan(clampLowerBound) {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound", ErrMustBeGTEClampLowerBound)
+	}
+
+	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true))
+	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementSchedule, "data_source_spec_for_settlement_schedule", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true))
+	errs.Merge(checkNewPerpsOracleBinding(perps))
 
 	return errs
 }
@@ -971,6 +1054,24 @@ func checkUpdateFuture(future *protoTypes.UpdateFutureProduct) Errors {
 	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future", true))
 	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.update_market.changes.instrument.product.future", false))
 	errs.Merge(checkUpdateOracleBinding(future))
+
+	return errs
+}
+
+func checkUpdatePerps(perps *protoTypes.UpdatePerpsProduct) Errors {
+	errs := NewErrors()
+
+	if perps == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future", ErrIsRequired)
+	}
+
+	if len(perps.QuoteName) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.quote_name", ErrIsRequired)
+	}
+
+	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future", true))
+	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementSchedule, "data_source_spec_for_settlement_schedule", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true))
+	errs.Merge(checkUpdatePerpsOracleBinding(perps))
 
 	return errs
 }
@@ -1022,6 +1123,20 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 			if spl[len(spl)-1] == "future" {
 				errs.AddForProperty(fmt.Sprintf("%s.%s.internal.timetrigger", parentProperty, name), ErrIsNotValid)
 			}
+
+			t := tp.Internal.GetTimeTrigger()
+			if len(t.Triggers) != 1 {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.internal.timetrigger", parentProperty, name), ErrOneTimeTriggerAllowedMax)
+			} else {
+				for i, v := range t.Triggers {
+					if v.Initial != nil && *v.Initial <= 0 {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.internal.timetrigger.triggers.%d.initial", parentProperty, name, i), ErrIsNotValid)
+					}
+					if v.Every <= 0 {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.internal.timetrigger.triggers.%d.every", parentProperty, name, i), ErrIsNotValid)
+					}
+				}
+			}
 		}
 	case *vegapb.DataSourceDefinition_External:
 
@@ -1051,7 +1166,6 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 			} else {
 				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle", parentProperty, name), ErrIsRequired)
 			}
-
 		case *vegapb.DataSourceDefinitionExternal_EthOracle:
 			ethOracle := tp.External.GetEthOracle()
 
@@ -1059,6 +1173,9 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 				if !crypto.EthereumIsValidAddress(ethOracle.Address) {
 					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.address", parentProperty, name), ErrIsNotValidEthereumAddress)
 				}
+
+				filters := ethOracle.Filters
+				errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.ethoracle", name), parentProperty))
 
 				if len(ethOracle.Abi) == 0 {
 					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.abi", parentProperty, name), ErrIsRequired)
@@ -1087,7 +1204,6 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 			}
 		}
 	}
-
 	return errs
 }
 
@@ -1144,13 +1260,16 @@ func isBindingMatchingSpec(spec *vegapb.DataSourceDefinition, bindingProperty st
 		case *vegapb.DataSourceDefinitionExternal_EthOracle:
 			ethOracle := specType.External.GetEthOracle()
 
+			isNormaliser := false
+
 			for _, v := range ethOracle.Normalisers {
 				if v.Name == bindingProperty {
-					return true
+					isNormaliser = true
+					break
 				}
 			}
 
-			return false
+			return isNormaliser || isBindingMatchingSpecFilters(spec, bindingProperty)
 		}
 
 	case *vegapb.DataSourceDefinition_Internal:
@@ -1204,6 +1323,24 @@ func checkNewOracleBinding(future *protoTypes.FutureProduct) Errors {
 	return errs
 }
 
+func checkNewPerpsOracleBinding(perps *protoTypes.PerpsProduct) Errors {
+	errs := NewErrors()
+
+	if perps.DataSourceSpecBinding != nil {
+		if len(perps.DataSourceSpecBinding.SettlementDataProperty) == 0 {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsRequired)
+		} else {
+			if !isBindingMatchingSpec(perps.DataSourceSpecForSettlementData, perps.DataSourceSpecBinding.SettlementDataProperty) {
+				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsMismatching)
+			}
+		}
+	} else {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding", ErrIsRequired)
+	}
+
+	return errs
+}
+
 func checkUpdateOracleBinding(future *protoTypes.UpdateFutureProduct) Errors {
 	errs := NewErrors()
 	if future.DataSourceSpecBinding != nil {
@@ -1224,6 +1361,23 @@ func checkUpdateOracleBinding(future *protoTypes.UpdateFutureProduct) Errors {
 		}
 	} else {
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_binding", ErrIsRequired)
+	}
+
+	return errs
+}
+
+func checkUpdatePerpsOracleBinding(perps *protoTypes.UpdatePerpsProduct) Errors {
+	errs := NewErrors()
+	if perps.DataSourceSpecBinding != nil {
+		if len(perps.DataSourceSpecBinding.SettlementDataProperty) == 0 {
+			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsRequired)
+		} else {
+			if !isBindingMatchingSpec(perps.DataSourceSpecForSettlementData, perps.DataSourceSpecBinding.SettlementDataProperty) {
+				errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsMismatching)
+			}
+		}
+	} else {
+		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.perps.data_source_spec_binding", ErrIsRequired)
 	}
 
 	return errs

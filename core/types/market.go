@@ -436,12 +436,88 @@ func (f Future) String() string {
 	)
 }
 
+type InstrumentPerps struct {
+	Perps *Perps
+}
+
+func (InstrumentPerps) Type() ProductType {
+	return ProductTypePerps
+}
+
+func (i InstrumentPerps) String() string {
+	return fmt.Sprintf(
+		"perps(%s)",
+		stringer.ReflectPointerToString(i.Perps),
+	)
+}
+
+type Perps struct {
+	SettlementAsset string
+	QuoteName       string
+
+	MarginFundingFactor num.Decimal
+	InterestRate        num.Decimal
+	ClampLowerBound     num.Decimal
+	ClampUpperBound     num.Decimal
+
+	DataSourceSpecForSettlementData     *datasource.Spec
+	DataSourceSpecForSettlementSchedule *datasource.Spec
+	DataSourceSpecBinding               *datasource.SpecBindingForPerps
+}
+
+func PerpsFromProto(p *proto.Perps) *Perps {
+	return &Perps{
+		SettlementAsset:                     p.SettlementAsset,
+		QuoteName:                           p.QuoteName,
+		MarginFundingFactor:                 num.MustDecimalFromString(p.MarginFundingFactor),
+		InterestRate:                        num.MustDecimalFromString(p.InterestRate),
+		ClampLowerBound:                     num.MustDecimalFromString(p.ClampLowerBound),
+		ClampUpperBound:                     num.MustDecimalFromString(p.ClampUpperBound),
+		DataSourceSpecForSettlementData:     datasource.SpecFromProto(p.DataSourceSpecForSettlementData),
+		DataSourceSpecForSettlementSchedule: datasource.SpecFromProto(p.DataSourceSpecForSettlementSchedule),
+		DataSourceSpecBinding:               datasource.SpecBindingForPerpsFromProto(p.DataSourceSpecBinding),
+	}
+}
+
+func (p Perps) IntoProto() *proto.Perps {
+	return &proto.Perps{
+		SettlementAsset:                     p.SettlementAsset,
+		QuoteName:                           p.QuoteName,
+		MarginFundingFactor:                 p.MarginFundingFactor.String(),
+		InterestRate:                        p.InterestRate.String(),
+		ClampLowerBound:                     p.ClampLowerBound.String(),
+		ClampUpperBound:                     p.ClampUpperBound.String(),
+		DataSourceSpecForSettlementData:     p.DataSourceSpecForSettlementData.IntoProto(),
+		DataSourceSpecForSettlementSchedule: p.DataSourceSpecForSettlementSchedule.IntoProto(),
+		DataSourceSpecBinding:               p.DataSourceSpecBinding.IntoProto(),
+	}
+}
+
+func (p Perps) String() string {
+	return fmt.Sprintf(
+		"quoteName(%s) settlementAsset(%s) marginFundingFactore(%s) interestRate(%s) clampLowerBound(%s) clampUpperBound(%s) settlementData(%s) tradingTermination(%s) binding(%s)",
+		p.QuoteName,
+		p.SettlementAsset,
+		p.MarginFundingFactor.String(),
+		p.InterestRate.String(),
+		p.ClampLowerBound.String(),
+		p.ClampUpperBound.String(),
+		stringer.ReflectPointerToString(p.DataSourceSpecForSettlementData),
+		stringer.ReflectPointerToString(p.DataSourceSpecForSettlementSchedule),
+		stringer.ReflectPointerToString(p.DataSourceSpecBinding),
+	)
+}
+
 func iInstrumentFromProto(pi interface{}) iProto {
 	switch i := pi.(type) {
 	case proto.Instrument_Future:
 		return InstrumentFutureFromProto(&i)
 	case *proto.Instrument_Future:
 		return InstrumentFutureFromProto(i)
+	case proto.Instrument_Perps:
+		return InstrumentPerpsFromProto(&i)
+	case *proto.Instrument_Perps:
+		return InstrumentPerpsFromProto(i)
 	case proto.Instrument_Spot:
 		return InstrumentSpotFromProto(&i)
 	case *proto.Instrument_Spot:
@@ -492,6 +568,25 @@ func (i InstrumentFuture) getAssets() ([]string, error) {
 	return []string{i.Future.SettlementAsset}, nil
 }
 
+func InstrumentPerpsFromProto(p *proto.Instrument_Perps) *InstrumentPerps {
+	return &InstrumentPerps{
+		Perps: PerpsFromProto(p.Perps),
+	}
+}
+
+func (i InstrumentPerps) IntoProto() *proto.Instrument_Perps {
+	return &proto.Instrument_Perps{
+		Perps: i.Perps.IntoProto(),
+	}
+}
+
+func (i InstrumentPerps) getAssets() ([]string, error) {
+	if i.Perps == nil {
+		return []string{}, ErrUnknownAsset
+	}
+	return []string{i.Perps.SettlementAsset}, nil
+}
+
 func (m *Market) GetAssets() ([]string, error) {
 	if m.TradableInstrument == nil {
 		return []string{}, ErrNilTradableInstrument
@@ -518,6 +613,14 @@ func (m *Market) GetFuture() *InstrumentFuture {
 	return nil
 }
 
+func (m *Market) GetPerps() *InstrumentPerps {
+	if m.ProductType() == ProductTypePerps {
+		p, _ := m.TradableInstrument.Instrument.Product.(*InstrumentPerps)
+		return p
+	}
+	return nil
+}
+
 func (m *Market) GetSpot() *InstrumentSpot {
 	if m.ProductType() == ProductTypeSpot {
 		s, _ := m.TradableInstrument.Instrument.Product.(*InstrumentSpot)
@@ -527,6 +630,10 @@ func (m *Market) GetSpot() *InstrumentSpot {
 }
 
 func (i InstrumentFuture) iIntoProto() interface{} {
+	return i.IntoProto()
+}
+
+func (i InstrumentPerps) iIntoProto() interface{} {
 	return i.IntoProto()
 }
 
@@ -545,6 +652,7 @@ type Instrument struct {
 	// Types that are valid to be assigned to Product:
 	//	*InstrumentFuture
 	//	*InstrumentSpot
+	//  *InstrumentPerps
 	Product iProto
 }
 
@@ -579,6 +687,15 @@ func (i Instrument) GetFuture() *Future {
 	}
 }
 
+func (i Instrument) GetPerps() *Perps {
+	switch p := i.Product.(type) {
+	case *InstrumentPerps:
+		return p.Perps
+	default:
+		return nil
+	}
+}
+
 func (i Instrument) IntoProto() *proto.Instrument {
 	p := i.Product.iIntoProto()
 	r := &proto.Instrument{
@@ -590,7 +707,8 @@ func (i Instrument) IntoProto() *proto.Instrument {
 	switch pt := p.(type) {
 	case *proto.Instrument_Future:
 		r.Product = pt
-
+	case *proto.Instrument_Perps:
+		r.Product = pt
 	case *proto.Instrument_Spot:
 		r.Product = pt
 	}

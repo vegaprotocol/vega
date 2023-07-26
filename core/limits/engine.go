@@ -33,8 +33,8 @@ type Engine struct {
 	canProposeMarket, canProposeAsset bool
 
 	// Settings from the genesis state
-	proposeMarketEnabled, proposeAssetEnabled, proposeSpotMarketEnabled bool
-	proposeMarketEnabledFrom, proposeAssetEnabledFrom                   time.Time
+	proposeMarketEnabled, proposeAssetEnabled, proposeSpotMarketEnabled, proposePerpsMarketEnabled bool
+	proposeMarketEnabledFrom, proposeAssetEnabledFrom                                              time.Time
 
 	genesisLoaded bool
 
@@ -136,6 +136,12 @@ func (e *Engine) OnLimitsProposeSpotMarketEnabledFromUpdate(ctx context.Context,
 	return nil
 }
 
+func (e *Engine) OnLimitsProposePerpsMarketEnabledFromUpdate(ctx context.Context, enabled int64) error {
+	e.proposePerpsMarketEnabled = enabled == 1
+	e.sendEvent(ctx)
+	return nil
+}
+
 func (e *Engine) OnLimitsProposeAssetEnabledFromUpdate(ctx context.Context, date string) error {
 	// already validated by the netparams
 	// no need to check it again, this is a valid date
@@ -209,14 +215,19 @@ func (e *Engine) CanProposeSpotMarket() bool {
 	return e.proposeSpotMarketEnabled
 }
 
+func (e *Engine) CanProposePerpsMarket() bool {
+	return e.proposeSpotMarketEnabled
+}
+
 func (e *Engine) sendEvent(ctx context.Context) {
 	limits := vega.NetworkLimits{
-		CanProposeMarket:     e.canProposeMarket,
-		CanProposeAsset:      e.canProposeAsset,
-		ProposeMarketEnabled: e.proposeMarketEnabled,
-		ProposeAssetEnabled:  e.proposeAssetEnabled,
-		GenesisLoaded:        e.genesisLoaded,
-		CanProposeSpotMarket: e.proposeSpotMarketEnabled,
+		CanProposeMarket:      e.canProposeMarket,
+		CanProposeAsset:       e.canProposeAsset,
+		ProposeMarketEnabled:  e.proposeMarketEnabled,
+		ProposeAssetEnabled:   e.proposeAssetEnabled,
+		GenesisLoaded:         e.genesisLoaded,
+		CanProposeSpotMarket:  e.proposeSpotMarketEnabled,
+		CanProposePerpsMarket: e.proposePerpsMarketEnabled,
 	}
 
 	if !e.proposeMarketEnabledFrom.IsZero() {

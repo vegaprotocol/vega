@@ -595,10 +595,11 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 				newMarket.ClearSuccessor()
 			}
 		}
+		now := e.timeService.GetTimeNow()
 		closeTime := time.Unix(p.Terms.ClosingTimestamp, 0)
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 		auctionDuration := enactTime.Sub(closeTime)
-		if perr, err := validateNewMarketChange(newMarket, e.assets, true, e.netp, auctionDuration, enct, parent); err != nil {
+		if perr, err := validateNewMarketChange(newMarket, e.assets, true, e.netp, auctionDuration, enct, parent, now); err != nil {
 			e.rejectProposal(ctx, p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
 		}
@@ -988,10 +989,10 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 			}
 			parent = &pm
 		}
-		return validateNewMarketChange(newMarket, e.assets, true, e.netp, enactTime.Sub(closeTime), enct, parent)
+		return validateNewMarketChange(newMarket, e.assets, true, e.netp, enactTime.Sub(closeTime), enct, parent, e.timeService.GetTimeNow())
 	case types.ProposalTermsTypeUpdateMarket:
 		enct.shouldNotVerify = true
-		return validateUpdateMarketChange(terms.GetUpdateMarket(), enct)
+		return validateUpdateMarketChange(terms.GetUpdateMarket(), enct, e.timeService.GetTimeNow())
 	case types.ProposalTermsTypeNewAsset:
 		return e.validateNewAssetProposal(terms.GetNewAsset())
 	case types.ProposalTermsTypeUpdateAsset:
@@ -1228,7 +1229,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 		return nil, types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
 
-	if perr, err := validateUpdateMarketChange(terms, &enactmentTime{current: p.Terms.EnactmentTimestamp, shouldNotVerify: true}); err != nil {
+	if perr, err := validateUpdateMarketChange(terms, &enactmentTime{current: p.Terms.EnactmentTimestamp, shouldNotVerify: true}, e.timeService.GetTimeNow()); err != nil {
 		return nil, perr, err
 	}
 

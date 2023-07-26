@@ -110,16 +110,16 @@ func TestInternalTimeTriggerFromProto(t *testing.T) {
 func TestInternalTimeTriggersString(t *testing.T) {
 	timeNow := time.Now()
 
-	tt := common.InternalTimeTrigger{
+	tt := &common.InternalTimeTrigger{
 		Initial: &timeNow,
 		Every:   int64(15),
 	}
 
 	var ttl common.InternalTimeTriggers
-	assert.Equal(t, "[initial(<nil>) every(0) nextTrigger(<nil>)]", ttl.String())
+	assert.Equal(t, "[nil]", ttl.String())
 
 	ttl = common.InternalTimeTriggers{}
-	assert.Equal(t, "[initial(<nil>) every(0) nextTrigger(<nil>)]", ttl.String())
+	assert.Equal(t, "[nil]", ttl.String())
 
 	ttl = common.InternalTimeTriggers{tt}
 	assert.Equal(
@@ -131,7 +131,7 @@ func TestInternalTimeTriggersString(t *testing.T) {
 
 func TestInternalTimeTriggersIntoProto(t *testing.T) {
 	timeNow := time.Now()
-	tt := common.InternalTimeTrigger{
+	tt := &common.InternalTimeTrigger{
 		Initial: &timeNow,
 		Every:   int64(15),
 	}
@@ -149,7 +149,7 @@ func TestInternalTimeTriggersIntoProto(t *testing.T) {
 func TestInternalTimeTriggersIsTriggered(t *testing.T) {
 	timeNow := time.Now()
 	nt := timeNow.Add(time.Minute)
-	tt := common.InternalTimeTrigger{
+	tt := &common.InternalTimeTrigger{
 		Initial: &timeNow,
 		Every:   int64(15),
 	}
