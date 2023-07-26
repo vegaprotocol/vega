@@ -23,7 +23,7 @@ func testInitialisingAPITokenSucceeds(t *testing.T) {
 	}
 
 	// when
-	err := cmd.InitAPIToken(testDir, f)
+	_, err := cmd.InitAPIToken(testDir, f)
 
 	// then
 	require.NoError(t, err)
@@ -40,7 +40,7 @@ func testForcingAPITokenInitialisationSucceeds(t *testing.T) {
 	}
 
 	// when
-	err := cmd.InitAPIToken(testDir, f)
+	_, err := cmd.InitAPIToken(testDir, f)
 
 	// then
 	require.NoError(t, err)
@@ -52,7 +52,7 @@ func testForcingAPITokenInitialisationSucceeds(t *testing.T) {
 	}
 
 	// when
-	err = cmd.InitAPIToken(testDir, f)
+	_, err = cmd.InitAPIToken(testDir, f)
 
 	// then
 	require.NoError(t, err)

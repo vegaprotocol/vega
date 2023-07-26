@@ -30,7 +30,7 @@ import (
 	serviceV1 "code.vegaprotocol.io/vega/wallet/service/v1"
 	serviceV2 "code.vegaprotocol.io/vega/wallet/service/v2"
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
-	"code.vegaprotocol.io/vega/wallet/service/v2/connections/store/longliving/v1"
+	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/longliving/v1"
 	sessionStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/session/v1"
 	"code.vegaprotocol.io/vega/wallet/version"
 	"code.vegaprotocol.io/vega/wallet/wallets"
@@ -229,9 +229,9 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 	if f.LoadTokens {
 		cliLog.Warn("Long-living tokens enabled")
 		p.Print(p.String().WarningBangMark().WarningText("Long-living tokens enabled").NextLine())
-		s, err := v1.InitialiseStore(vegaPaths, f.tokensPassphrase)
+		s, err := tokenStoreV1.InitialiseStore(vegaPaths, f.tokensPassphrase)
 		if err != nil {
-			if errors.Is(err, walletapi.ErrWrongPassphrase) {
+			if errors.Is(err, tokenStoreV1.ErrWrongPassphrase) {
 				return err
 			}
 			return fmt.Errorf("couldn't load the token store: %w", err)
@@ -239,7 +239,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		closer.Add(s.Close)
 		tokenStore = s
 	} else {
-		s := v1.NewEmptyStore()
+		s := tokenStoreV1.NewEmptyStore()
 		tokenStore = s
 	}
 
