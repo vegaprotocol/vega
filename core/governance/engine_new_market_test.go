@@ -93,7 +93,7 @@ func testRemoveSuccessorsForRejectedMarket(t *testing.T) {
 	}
 	// add 3 proposals for the same parent
 	eng.markets.EXPECT().IsSucceeded(suc.ParentID).Times(3).Return(false)
-	filter, binding := produceTimeTriggeredDataSourceSpec(time.Now())
+	filter, binding := produceTimeTriggeredDataSourceSpec(time.Now().Add(3 * 48 * time.Hour))
 	enact := eng.tsvc.GetTimeNow().Add(24 * time.Hour)
 	proposals := []types.Proposal{
 		eng.newProposalForSuccessorMarket(party.Id, enact, filter, binding, true, &suc),
