@@ -30,15 +30,18 @@ Feature: Test liquidity provider reward distribution
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 1s    |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | limits.markets.maxPeggedOrders                      | 4     |
 
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
+
     And the markets:
-      | id        | quote name | asset | risk model             | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1    | default-margin-calculator | 2                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e0                    | 1e0                       | default-futures |
-      | ETH/DEC22 | ETH        | ETH   | lognormal-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-2 | ethDec21Oracle     | 1e0                    | 1e0                       | default-futures |
+      | id        | quote name | asset | risk model             | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1    | default-margin-calculator | 2                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e0                    | 1e0                       | SLA        |
+      | ETH/DEC22 | ETH        | ETH   | lognormal-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-2 | ethDec21Oracle     | 1e0                    | 1e0                       | SLA        |
     And the average block duration is "1"
 
   Scenario: 001, 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades
@@ -254,8 +257,13 @@ Feature: Test liquidity provider reward distribution
   Scenario: 003, 2 LPs joining at start, equal commitments, unequal offsets
     Given the following network parameters are set:
       | name                                                | value |
-      | market.liquidity.providers.fee.distributionTimeStep | 5s    |
       | limits.markets.maxPeggedOrders                      | 10    |
+    And the liquidity sla params named "updated-SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 5                                   | 1                             | 1.0                    |
+    And the markets are updated:
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC22 | updated-SLA          | 1e0                    | 1e0                       |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | lp1    | ETH   | 1000000000 |

@@ -16,7 +16,6 @@ Feature: Fees rewards with multiple markets and assets
       | market.stake.target.timeWindow                      | 24h    |
       | market.stake.target.scalingFactor                   | 1      |
       | market.liquidity.targetstake.triggering.ratio       | 0      |
-      | market.liquidity.providers.fee.distributionTimeStep | 0s     |
       | network.markPriceUpdateMaximumFrequency             | 0s     |
       | limits.markets.maxPeggedOrders                      | 2      |
 
@@ -41,9 +40,9 @@ Feature: Fees rewards with multiple markets and assets
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | default-futures |
-      | ETH/DEC22 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         |
-      | BTC/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-2 | price-monitoring | default-eth-for-future | 1e0                    | 0                         |
-      | BTC/DEC22 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-2 | price-monitoring | default-eth-for-future | 1e0                    | 0                         |
+      | ETH/DEC22 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | default-futures |
+      | BTC/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-2 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | default-futures |
+      | BTC/DEC22 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-2 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | default-futures |
 
     Given the parties deposit on asset's general account the following amount:
       | party                                                            | asset | amount   |

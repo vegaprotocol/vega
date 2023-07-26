@@ -25,12 +25,14 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 1     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | limits.markets.maxPeggedOrders                      | 6     |
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR22 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | id        | quote name | asset | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       | SLA        |
 
     Given the average block duration is "2"
 

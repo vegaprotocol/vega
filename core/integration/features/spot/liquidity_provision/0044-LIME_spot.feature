@@ -30,13 +30,11 @@ Feature: Spot market
       | market.liquidityV2.earlyExitPenalty                   | 0.02  |
       | market.stake.target.timeWindow                        | 2s    |
       | market.liquidityV2.earlyExitPenalty                   | 0.5   |
-      | market.liquidity.providers.fee.distributionTimeStep   | 0     |
       | market.liquidity.bondPenaltyParameter                 | 0     |
       | market.liquidityV2.sla.nonPerformanceBondPenaltySlope | 0.5   |
       | market.liquidityV2.sla.nonPerformanceBondPenaltyMax   | 0.2   |
       | market.liquidity.maximumLiquidityFeeFactorLevel       | 0.4   |
       | validators.epoch.length                               | 2s    |
-      | market.liquidity.providers.fee.distributionTimeStep   | 3s    |
 
     Given time is updated to "2023-07-20T00:00:00Z"
 

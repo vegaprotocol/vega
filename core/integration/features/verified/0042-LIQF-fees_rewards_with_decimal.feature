@@ -1,15 +1,12 @@
 Feature: Test decimal places in LP order, liquidity provider reward distribution; Should also cover liquidity-fee-setting and equity-like-share calc and total stake.
 
   Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
-  Background:
-
     Given the following network parameters are set:
       | name                                                | value |
       | market.value.windowLength                           | 1h    |
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | limits.markets.maxPeggedOrders                      | 18    |
     And the following assets are registered:
@@ -27,13 +24,15 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 100000  | 0.99        | 3                 |
-
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0              | 0                       | 1e6                    | 1e6                       | default-futures |
-      | USD/DEC19 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 3              | 3                       | 1e6                    | 1e6                       | default-futures |
-      | USD/DEC20 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 5                       | 1e6                    | 1e6                       | default-futures |
-      | USD/DEC21 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 3                       | 1e6                    | 1e6                       | default-futures |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0              | 0                       | 1e6                    | 1e6                       | SLA        |
+      | USD/DEC19 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 3              | 3                       | 1e6                    | 1e6                       | SLA        |
+      | USD/DEC20 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 5                       | 1e6                    | 1e6                       | SLA        |
+      | USD/DEC21 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 3                       | 1e6                    | 1e6                       | SLA        |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount          |
@@ -175,16 +174,12 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
       | party2 | USD   |           |            | 10000000000    |            |
 
   Scenario: 002: 0070-MKTD-007, 0042-LIQF-001, 0038-OLIQ-002; 0038-OLIQ-006; 0019-MCAL-008, check updated version of dpd feature in 0038-OLIQ-liquidity_provision_order_type.md
-
-  Background:
-
     Given the following network parameters are set:
       | name                                                | value |
       | market.value.windowLength                           | 1h    |
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
     And the following assets are registered:
       | id  | decimal places |
@@ -202,13 +197,15 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 100000  | 0.99        | 3                 |
-
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0              | 0                       | 1e6                    | 1e6                       | default-futures |
-      | USD/DEC19 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 3              | 3                       | 1e6                    | 1e6                       | default-futures |
-      | USD/DEC20 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 5                       | 1e6                    | 1e6                       | default-futures |
-      | USD/DEC21 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 3                       | 1e6                    | 1e6                       | default-futures |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0              | 0                       | 1e6                    | 1e6                       | SLA        |
+      | USD/DEC19 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 3              | 3                       | 1e6                    | 1e6                       | SLA        |
+      | USD/DEC20 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 5                       | 1e6                    | 1e6                       | SLA        |
+      | USD/DEC21 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 3                       | 1e6                    | 1e6                       | SLA        |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount          |
@@ -437,9 +434,6 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
       | lp1 | lp1   | USD/DEC19 | 2562237127        | 0.001 | cancellation |                      |                                                  |
 
   Scenario: 003, no decimal, 0042-LIQF-001
-
-  Background:
-
     Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | 0  | 0 | 1.0   |
@@ -455,11 +449,13 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR22 | USD        | USD   | log-normal-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | USD        | USD   | log-normal-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | SLA        |
 
     Given the average block duration is "2"
 

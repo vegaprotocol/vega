@@ -222,12 +222,8 @@ Feature: Fees calculations
   @WhutBug
   Scenario: S003, Testing fees in continuous trading with two trades and one liquidity providers with 10 and 0 s liquidity fee distribution timestep (0029-FEES-006)
 
-    When the following network parameters are set:
-      | name                                                | value |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
-    And the average block duration is "1"
-
-    Given the fees configuration named "fees-config-1":
+    Given the average block duration is "1"
+    And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
     And the price monitoring named "price-monitoring":
@@ -238,9 +234,13 @@ Feature: Fees calculations
       | long | short | max move up | min move down | probability of trading |
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | default-futures |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA        |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -347,10 +347,12 @@ Feature: Fees calculations
       | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 5      | ETH   |
 
     # Scenario: S004, Testing fees in continuous trading with two trades and one liquidity providers with 0s liquidity fee distribution timestep (0029-FEES-004)
-    When the following network parameters are set:
-      | name                                                | value |
-      | market.liquidity.providers.fee.distributionTimeStep | 1s    |
-
+    When the liquidity sla params named "updated-SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                                   | 1                             | 1.0                    |
+    And the markets are updated:
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-SLA          | 1e0                    | 0                         |
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader4 | ETH/DEC21 | sell | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -709,10 +711,7 @@ Feature: Fees calculations
 
   Scenario: S008, Testing fees in continuous trading when insufficient balance in their general and margin account with LP, then the trade does not execute (0029-FEES-007，0029-FEES-008)
 
-    Given the following network parameters are set:
-      | name                                                | value |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
-    And the average block duration is "1"
+    Given the average block duration is "1"
 
     When the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -725,9 +724,13 @@ Feature: Fees calculations
       | long | short | max move up | min move down | probability of trading |
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | default-futures |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA        |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -812,7 +815,6 @@ Feature: Fees calculations
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 1     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
 
     And the average block duration is "1"
 
@@ -830,9 +832,13 @@ Feature: Fees calculations
       | risk aversion | tau | mu | r   | sigma |
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
 
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e0                    | 0                         | default-futures |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e0                    | 0                         | SLA        |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -979,7 +985,6 @@ Feature: Fees calculations
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 1     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
 
     And the average block duration is "1"
 
@@ -997,9 +1002,13 @@ Feature: Fees calculations
       | risk aversion | tau | mu | r   | sigma |
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
 
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e0                    | 0                         | default-futures |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e0                    | 0                         | SLA        |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -1095,7 +1104,6 @@ Feature: Fees calculations
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 1     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
 
     And the average block duration is "1"
 
@@ -1113,9 +1121,13 @@ Feature: Fees calculations
       | risk aversion | tau | mu | r   | sigma |
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
 
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e0                    | 0                         | default-futures |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e0                    | 0                         | SLA        |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -1203,7 +1215,6 @@ Feature: Fees calculations
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 1     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
 
     And the average block duration is "1"
 
@@ -1221,9 +1232,13 @@ Feature: Fees calculations
       | risk aversion | tau | mu | r   | sigma |
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
 
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e0                    | 0                         | default-futures |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e0                    | 0                         | SLA        |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -1323,7 +1338,6 @@ Feature: Fees calculations
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 1     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
 
     And the average block duration is "1"
 
@@ -1341,9 +1355,13 @@ Feature: Fees calculations
       | risk aversion | tau | mu | r   | sigma |
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
 
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e0                    | 0                         | default-futures |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e0                    | 0                         | SLA        |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -1435,7 +1453,6 @@ Feature: Fees calculations
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 1     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
 
     And the average block duration is "1"
 
@@ -1453,9 +1470,13 @@ Feature: Fees calculations
       | risk aversion | tau | mu | r   | sigma |
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
 
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e0                    | 0                         | default-futures |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e0                    | 0                         | SLA        |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -1733,12 +1754,8 @@ Feature: Fees calculations
 
   Scenario: S020, Testing fees in continuous trading with two pegged trades and one liquidity providers (0029-FEES-002)
 
-    When the following network parameters are set:
-      | name                                                | value |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
-    And the average block duration is "1"
-
-    Given the fees configuration named "fees-config-1":
+    Given the average block duration is "1"
+    And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
     And the price monitoring named "price-monitoring":
@@ -1749,9 +1766,13 @@ Feature: Fees calculations
       | long | short | max move up | min move down | probability of trading |
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | default-futures |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA        |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
