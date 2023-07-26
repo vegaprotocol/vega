@@ -1008,6 +1008,14 @@ func (m *Market) uncrossOrderAtAuctionEnd(ctx context.Context) {
 }
 
 func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error {
+	_, blockHash := vegacontext.TraceIDFromContext(ctx)
+	// make deterministic ID for this market, concatenate
+	// the block hash and the market ID
+	m.idgen = idgeneration.New(blockHash + crypto.HashStrToHex(m.GetID()))
+	// and we call next ID on this directly just so we don't have an ID which have
+	// a different from others, we basically burn the first ID.
+	_ = m.idgen.NextID()
+	defer func() { m.idgen = nil }()
 	if changes.UpdateType == types.MarketStateUpdateTypeTerminate {
 		m.uncrossOrderAtAuctionEnd(ctx)
 		// terminate and settle
@@ -1038,14 +1046,6 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 				m.mkt.State = types.MarketStateSuspended
 				m.mkt.TradingMode = types.MarketTradingModeMonitoringAuction
 			}
-			_, blockHash := vegacontext.TraceIDFromContext(ctx)
-			// make deterministic ID for this market, concatenate
-			// the block hash and the market ID
-			m.idgen = idgeneration.New(blockHash + crypto.HashStrToHex(m.GetID()))
-			// and we call next ID on this directly just so we don't have an ID which have
-			// a different from others, we basically burn the first ID.
-			_ = m.idgen.NextID()
-			defer func() { m.idgen = nil }()
 			m.checkAuction(ctx, m.timeService.GetTimeNow(), m.idgen)
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		}
