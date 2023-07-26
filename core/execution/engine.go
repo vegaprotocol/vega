@@ -346,7 +346,12 @@ func (e *Engine) succeedOrRestore(ctx context.Context, successor, parent string,
 	// restoring a market, but no state of the market nor parent market exists. Treat market as parent.
 	if restore && !sok && !ok {
 		// restoring a market, but the market state and parent market both are missing
+		// this market, upon leaving opening auction, cannot possibly succeed a market that no longer exists
+		// now we should reset
 		mkt.ResetParentIDAndInsurancePoolFraction()
+		// remove from maps
+		delete(e.successors, parent)
+		delete(e.isSuccessor, successor)
 		return nil
 	}
 	// if parent market is active, mark as succeeded
@@ -404,6 +409,13 @@ func (e *Engine) RestoreMarket(ctx context.Context, marketConfig *types.Market) 
 		// check to see if the parent market can be found, remove if the parent market is gone
 		if _, ok := e.markets[marketConfig.ParentMarketID]; !ok {
 			e.markets[marketConfig.ID].ResetParentIDAndInsurancePoolFraction()
+		}
+
+		// check to see if the parent market can be found, remove from the successor maps if the parent is gone
+		// the market itself should still hold the reference because state was restored
+		if _, ok := e.markets[marketConfig.ParentMarketID]; !ok {
+			delete(e.successors, marketConfig.ParentMarketID)
+			delete(e.isSuccessor, marketConfig.ID)
 		}
 		return nil
 	}
