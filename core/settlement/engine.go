@@ -59,6 +59,7 @@ type TimeService interface {
 
 // Broker - the event bus broker, send events here.
 type Broker interface {
+	Send(event events.Event)
 	SendBatch(events []events.Event)
 }
 
@@ -549,4 +550,29 @@ func calcMTM(markPrice, price *num.Uint, size int64, trades []*settlementTrade, 
 	decShare := mtmShare.ToDecimal().Div(positionFactor)
 	res, _ := num.UintFromDecimal(decShare)
 	return res, decShare, sign
+}
+
+// SettleFundingPeriod takes positions and a funding-payement and returns a slice of transfers.
+func (e *Engine) SettleFundingPeriod(ctx context.Context, positions []events.MarketPosition, fundingPayment *num.Int) []events.Transfer {
+	if fundingPayment.IsZero() || len(positions) == 0 {
+		// nothing to do here
+		return nil
+	}
+
+	transfers := make([]events.Transfer, 0, len(positions))
+	for _, p := range positions {
+		// per-party cash flow is -openVolume * fundingPayment
+		openVolume := num.NewInt(p.Size())
+		flow := num.NewInt(-1).Mul(openVolume.Mul(fundingPayment))
+
+		if !flow.IsZero() {
+			// TODO: change this to not use the MTM transfer stuff and add a new transfer type
+			// https://github.com/vegaprotocol/vega/issues/8755
+			transfers = append(transfers, e.getMtmTransfer(flow.U, flow.IsNegative(), p, p.Party()))
+		}
+		if e.log.IsDebug() {
+			e.log.Debug("cash flow", logging.String("mid", e.market), logging.String("pid", p.Party()), logging.String("flow", flow.String()))
+		}
+	}
+	return transfers
 }

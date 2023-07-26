@@ -101,6 +101,7 @@ func TestFutureSettlement(t *testing.T) {
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	oe := mocks.NewMockOracleEngine(ctrl)
+	broker := mocks.NewMockBroker(ctrl)
 
 	sid1 := spec.SubscriptionID(1)
 	oe.EXPECT().Unsubscribe(ctx, sid1).AnyTimes()
@@ -115,7 +116,7 @@ func TestFutureSettlement(t *testing.T) {
 
 	prodSpec := proto.Product
 	require.NotNil(t, prodSpec)
-	prod, err := products.New(ctx, logging.NewTestLogger(), prodSpec, oe)
+	prod, err := products.New(ctx, logging.NewTestLogger(), prodSpec, oe, broker)
 
 	// Cast back into a future so we can call future specific functions
 	f, ok := prod.(*products.Future)
