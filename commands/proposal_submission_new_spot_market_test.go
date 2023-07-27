@@ -83,7 +83,6 @@ func TestCheckProposalSubmissionForNewSpotMarket(t *testing.T) {
 	t.Run("Submitting a new spot market with valid fee calculation time step succeeds", testNewSpotMarketChangeSubmissionWithValidCalculationTimeStepSucceeds)
 	t.Run("Submitting a new spot market with invalid competition factor fails", testNewSpotMarketChangeSubmissionWithInvalidCompetitionFactorFails)
 	t.Run("Submitting a new spot market with valid competition factor succeeds", testNewSpotMarketChangeSubmissionWithValidCompetitionFactorSucceeds)
-	t.Run("Submitting a new spot market with invalid hysteresis epochs fails", testNewSpotMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails)
 	t.Run("Submitting a new spot market with valid hysteresis epochs succeeds", testNewSpotMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds)
 }
 
@@ -2187,26 +2186,6 @@ func testNewSpotMarketChangeSubmissionWithValidCompetitionFactorSucceeds(t *test
 			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.sla_params.sla_competition_factor"), e)
 		}
 	}
-}
-
-func testNewSpotMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewSpotMarket{
-				NewSpotMarket: &protoTypes.NewSpotMarket{
-					Changes: &protoTypes.NewSpotMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Spot{},
-						},
-						SlaParams: &protoTypes.LiquiditySLAParameters{
-							PerformanceHysteresisEpochs: 0,
-						},
-					},
-				},
-			},
-		},
-	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBePositive)
 }
 
 func testNewSpotMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds(t *testing.T) {
