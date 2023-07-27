@@ -49,6 +49,9 @@ func NewPerpetualFromSnapshot(
 		perps.internal = append(perps.internal, &dataPoint{price: price, t: v.Timestamp})
 	}
 
+	perps.startedAt = state.StartedAt
+	perps.seq = state.Seq
+
 	return perps, nil
 }
 
