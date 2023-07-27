@@ -29,16 +29,16 @@ import (
 )
 
 type Snapshot struct {
+	// Fields from the snapshot offering.
 	Format SnapshotFormat
 	Height uint64    // the block-height of the snapshot
 	Hash   []byte    // the hash of the snapshot (the root hash of the AVL tree)
 	Meta   *Metadata // the AVL tree metadata
-	// Metadata []byte     // the above metadata serialised
+	Chunks uint32
 
-	Nodes []*Payload // the snapshot payloads in the tree (always leaf nodes)
+	// Used when loading chunks.
 
-	// Chunk stuff
-	Chunks     uint32
+	Nodes      []*Payload // the snapshot payloads in the tree (always leaf nodes)
 	DataChunks []*Chunk
 	ByteChunks [][]byte
 	ChunksSeen uint32
@@ -67,7 +67,6 @@ type Chunk struct {
 
 type Payload struct {
 	Data    isPayload
-	raw     []byte // access to the raw data for chunking
 	treeKey string
 }
 
@@ -706,17 +705,6 @@ type PayloadLiquidityScores struct {
 	LiquidityScores *snapshot.LiquidityScores
 }
 
-func (s Snapshot) GetRawChunk(idx uint32) (*RawChunk, error) {
-	if s.Chunks < idx {
-		return nil, ErrUnknownSnapshotChunkHeight
-	}
-	i := int(idx)
-	return &RawChunk{
-		Nr:   idx,
-		Data: s.ByteChunks[i],
-	}, nil
-}
-
 func MetadataFromProto(m *snapshot.Metadata) (*Metadata, error) {
 	nh := make([]*NodeHash, 0, len(m.NodeHashes))
 	for _, h := range m.NodeHashes {
@@ -933,7 +921,7 @@ func (p Payload) Key() string {
 	return p.Data.Key()
 }
 
-func (p *Payload) GetTreeKey() string {
+func (p Payload) TreeKey() string {
 	if len(p.treeKey) == 0 {
 		p.treeKey = KeyFromPayload(p.Data)
 	}

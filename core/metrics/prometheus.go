@@ -170,8 +170,8 @@ func BufCap(bc uint32) InstrumentOption {
 	}
 }
 
-// addInstrument  configure and register new metrics instrument
-// this will, over time, be moved to use custom Registries, etc...
+// addInstrument configures and registers new metrics instrument.
+// This will, over time, be moved to use custom Registries, etc...
 func addInstrument(t instrument, name string, opts ...InstrumentOption) (*mi, error) {
 	var col prometheus.Collector
 	ret := mi{}
@@ -603,13 +603,13 @@ func StartAPIRequestAndTimeGRPC(request string) func() {
 	}
 }
 
-func StartSnapshot(engine string) func() {
+func StartSnapshot(namespace string) func() {
 	startTime := time.Now()
 	return func() {
 		if snapshotTimeCounter == nil {
 			return
 		}
 		duration := time.Since(startTime).Seconds()
-		snapshotTimeCounter.WithLabelValues(engine).Add(duration)
+		snapshotTimeCounter.WithLabelValues(namespace).Add(duration)
 	}
 }

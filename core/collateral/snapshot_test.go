@@ -21,16 +21,15 @@ import (
 
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/config/encoding"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/proto"
+	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
-
-	snp "code.vegaprotocol.io/vega/core/snapshot"
-	vgcontext "code.vegaprotocol.io/vega/libs/context"
-	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -38,7 +37,6 @@ import (
 
 func TestCheckpoint(t *testing.T) {
 	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
 	ctx := context.Background()
 
 	party := "foo"
@@ -211,7 +209,6 @@ func testSnapshotConsistentHash(t *testing.T) {
 		},
 	}
 	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
 	// create assets, accounts, and update balances
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	require.NoError(t, eng.EnableAsset(ctx, asset))
@@ -306,7 +303,6 @@ func testSnapshotRestore(t *testing.T) {
 		},
 	}
 	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
 	// create assets, accounts, and update balances
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	require.NoError(t, eng.EnableAsset(ctx, asset))
@@ -366,7 +362,6 @@ func testSnapshotRestore(t *testing.T) {
 		data[k] = s
 	}
 	newEng := getTestEngine(t)
-	defer newEng.ctrl.Finish()
 	// we expect 2 batches of events to be sent
 
 	newEng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -409,10 +404,9 @@ func testSnapshotRestore(t *testing.T) {
 	}
 }
 
-func TestSnapshotRoundtripViaEngine(t *testing.T) {
+func TestSnapshotRoundTripViaEngine(t *testing.T) {
 	mkt := "market1"
-	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
-	ctx = vgcontext.WithChainID(ctx, "chainid")
+	ctx := vgtest.VegaContext("chainid", 100)
 
 	erc20 := types.AssetDetailsErc20{
 		ERC20: &types.ERC20{
@@ -429,11 +423,10 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 			Source:   erc20,
 		},
 	}
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	collateralEngine1 := getTestEngine(t)
 	// create assets, accounts, and update balances
-	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	require.NoError(t, eng.EnableAsset(ctx, asset))
+	collateralEngine1.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	require.NoError(t, collateralEngine1.EnableAsset(ctx, asset))
 	parties := []string{
 		"party1",
 		"party2",
@@ -456,64 +449,26 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	for _, p := range parties {
 		// always create general account first
 		if gb, ok := balances[p][types.AccountTypeGeneral]; ok {
-			id, err := eng.CreatePartyGeneralAccount(ctx, p, asset.ID)
+			id, err := collateralEngine1.CreatePartyGeneralAccount(ctx, p, asset.ID)
 			require.NoError(t, err)
-			require.NoError(t, eng.IncrementBalance(ctx, id, gb))
+			require.NoError(t, collateralEngine1.IncrementBalance(ctx, id, gb))
 		}
 		for tp, b := range balances[p] {
 			switch tp {
 			case types.AccountTypeGeneral:
 				continue
 			case types.AccountTypeMargin:
-				id, err := eng.CreatePartyMarginAccount(ctx, p, mkt, asset.ID)
+				id, err := collateralEngine1.CreatePartyMarginAccount(ctx, p, mkt, asset.ID)
 				require.NoError(t, err)
-				require.NoError(t, eng.IncrementBalance(ctx, id, b))
+				require.NoError(t, collateralEngine1.IncrementBalance(ctx, id, b))
 			case types.AccountTypeBond:
-				id, err := eng.CreatePartyBondAccount(ctx, p, mkt, asset.ID)
+				id, err := collateralEngine1.CreatePartyBondAccount(ctx, p, mkt, asset.ID)
 				require.NoError(t, err)
-				require.NoError(t, eng.IncrementBalance(ctx, id, b))
+				require.NoError(t, collateralEngine1.IncrementBalance(ctx, id, b))
 			}
 		}
 	}
 
-	// setup snapshot engine
-	now := time.Now()
-	log := logging.NewTestLogger()
-	timeService := stubs.NewTimeStub()
-	timeService.SetTime(now)
-	statsData := stats.New(log, stats.NewDefaultConfig())
-	config := snp.NewDefaultConfig()
-	config.Storage = "memory"
-	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
-	snapshotEngine.AddProviders(eng.Engine)
-	snapshotEngine.ClearAndInitialise()
-	defer snapshotEngine.Close()
-
-	_, err := snapshotEngine.Snapshot(ctx)
-	require.NoError(t, err)
-	snaps, err := snapshotEngine.List()
-	require.NoError(t, err)
-	snap1 := snaps[0]
-
-	engLoad := getTestEngine(t)
-	engLoad.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	engLoad.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	snapshotEngineLoad, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
-	snapshotEngineLoad.AddProviders(engLoad.Engine)
-	snapshotEngineLoad.ClearAndInitialise()
-	snapshotEngineLoad.ReceiveSnapshot(snap1)
-	snapshotEngineLoad.ApplySnapshot(ctx)
-	snapshotEngineLoad.CheckLoaded()
-	defer snapshotEngineLoad.Close()
-
-	// verify snapshot is equal right after loading
-	b, err := snapshotEngine.Snapshot(ctx)
-	require.NoError(t, err)
-	bLoad, err := snapshotEngineLoad.Snapshot(ctx)
-	require.NoError(t, err)
-	require.True(t, bytes.Equal(b, bLoad))
-
-	// now make some changes and recheck
 	newAsset := types.Asset{
 		ID: "foo2",
 		Details: &types.AssetDetails{
@@ -525,21 +480,74 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 		},
 	}
 
-	require.NoError(t, eng.EnableAsset(ctx, newAsset))
-	require.NoError(t, engLoad.EnableAsset(ctx, newAsset))
+	// setup snapshot engine
+	now := time.Now()
+	log := logging.NewTestLogger()
+	timeService := stubs.NewTimeStub()
+	vegaPath := paths.New(t.TempDir())
+	timeService.SetTime(now)
+	statsData := stats.New(log, stats.NewDefaultConfig())
+	config := snapshot.DefaultConfig()
 
-	id, err := eng.CreatePartyGeneralAccount(ctx, "party4", newAsset.ID)
+	snapshotEngine1, err := snapshot.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
 	require.NoError(t, err)
-	require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(100)))
+	snapshotEngine1.AddProviders(collateralEngine1.Engine)
+	snapshotEngine1CloseFn := vgtest.OnlyOnce(snapshotEngine1.Close)
+	defer snapshotEngine1CloseFn()
 
-	id2, err := engLoad.CreatePartyGeneralAccount(ctx, "party4", newAsset.ID)
-	require.NoError(t, err)
-	require.NoError(t, engLoad.IncrementBalance(ctx, id2, num.NewUint(100)))
+	require.NoError(t, snapshotEngine1.Start(ctx))
 
-	// verify snapshot is equal right after changes made
-	b, err = snapshotEngine.Snapshot(ctx)
+	hash1, err := snapshotEngine1.SnapshotNow(ctx)
 	require.NoError(t, err)
-	bLoad, err = snapshotEngineLoad.Snapshot(ctx)
+
+	require.NoError(t, collateralEngine1.EnableAsset(ctx, newAsset))
+
+	id, err := collateralEngine1.CreatePartyGeneralAccount(ctx, "party4", newAsset.ID)
 	require.NoError(t, err)
-	require.True(t, bytes.Equal(b, bLoad))
+	require.NoError(t, collateralEngine1.IncrementBalance(ctx, id, num.NewUint(100)))
+
+	state1 := map[string][]byte{}
+	for _, key := range collateralEngine1.Keys() {
+		state, additionalProvider, err := collateralEngine1.GetState(key)
+		require.NoError(t, err)
+		assert.Empty(t, additionalProvider)
+		state1[key] = state
+	}
+
+	snapshotEngine1CloseFn()
+
+	collateralEngine2 := getTestEngine(t)
+	collateralEngine2.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	collateralEngine2.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	snapshotEngine2, err := snapshot.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
+	require.NoError(t, err)
+	defer snapshotEngine2.Close()
+
+	snapshotEngine2.AddProviders(collateralEngine2.Engine)
+
+	// This triggers the state restoration from the local snapshot.
+	require.NoError(t, snapshotEngine2.Start(ctx))
+
+	// Comparing the hash after restoration, to ensure it produces the same result.
+	hash2, _, _ := snapshotEngine2.Info()
+	require.Equal(t, hash1, hash2)
+
+	require.NoError(t, collateralEngine2.EnableAsset(ctx, newAsset))
+
+	id2, err := collateralEngine2.CreatePartyGeneralAccount(ctx, "party4", newAsset.ID)
+	require.NoError(t, err)
+	require.NoError(t, collateralEngine2.IncrementBalance(ctx, id2, num.NewUint(100)))
+
+	state2 := map[string][]byte{}
+	for _, key := range collateralEngine2.Keys() {
+		state, additionalProvider, err := collateralEngine2.GetState(key)
+		require.NoError(t, err)
+		assert.Empty(t, additionalProvider)
+		state2[key] = state
+	}
+
+	for key := range state1 {
+		assert.Equalf(t, state1[key], state2[key], "Key %q does not have the same data", key)
+	}
 }

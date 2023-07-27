@@ -22,8 +22,9 @@ import (
 	snp "code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
-	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
@@ -31,93 +32,66 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func getEngineAndSnapshotEngine(t *testing.T) (*testService, *snp.Engine) {
+func getEngineAndSnapshotEngine(t *testing.T, vegaPath paths.Paths) (*testService, *snp.Engine) {
 	t.Helper()
 	as := getTestService(t)
+	as.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	now := time.Now()
 	log := logging.NewTestLogger()
 	timeService := stubs.NewTimeStub()
 	timeService.SetTime(now)
 	statsData := stats.New(log, stats.NewDefaultConfig())
-	config := snp.NewDefaultConfig()
-	config.Storage = "memory"
-	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
+	config := snp.DefaultConfig()
+	snapshotEngine, err := snp.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
+	require.NoError(t, err)
 	snapshotEngine.AddProviders(as)
-	require.NoError(t, snapshotEngine.ClearAndInitialise())
 	return as, snapshotEngine
 }
 
-func TestSnapshotRoundtripViaEngine(t *testing.T) {
-	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
-	ctx = vgcontext.WithChainID(ctx, "chainid")
+func TestSnapshotRoundTripViaEngine(t *testing.T) {
+	ctx := vgtest.VegaContext("chainid", 100)
 
-	as, snapshotEngine := getEngineAndSnapshotEngine(t)
-	defer snapshotEngine.Close()
-	as.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	vegaPath := paths.New(t.TempDir())
 
-	_, err := as.NewAsset(ctx, "asset1", &types.AssetDetails{
-		Source: &types.AssetDetailsBuiltinAsset{},
-	})
-	require.Nil(t, err)
-	err = as.Enable(ctx, "asset1")
-	require.Nil(t, err)
-	_, err = as.NewAsset(ctx, "asset2", &types.AssetDetails{
-		Source: &types.AssetDetailsBuiltinAsset{},
-	})
-	require.Nil(t, err)
-	err = as.Enable(ctx, "asset2")
-	require.Nil(t, err)
+	assetEngine1, snapshotEngine1 := getEngineAndSnapshotEngine(t, vegaPath)
+	closeSnapshotEngine1 := vgtest.OnlyOnce(snapshotEngine1.Close)
+	defer closeSnapshotEngine1()
 
-	_, err = as.NewAsset(ctx, "asset3", &types.AssetDetails{
-		Source: &types.AssetDetailsBuiltinAsset{},
-	})
-	require.Nil(t, err)
-	_, err = as.NewAsset(ctx, "asset4", &types.AssetDetails{
-		Source: &types.AssetDetailsBuiltinAsset{},
-	})
-	require.Nil(t, err)
+	require.NoError(t, snapshotEngine1.Start(context.Background()))
 
-	_, err = snapshotEngine.Snapshot(ctx)
-	require.NoError(t, err)
-	snaps, err := snapshotEngine.List()
-	require.NoError(t, err)
-	snap1 := snaps[0]
+	for i := 0; i < 3; i++ {
+		assetName := vgrand.RandomStr(5)
 
-	asLoad, snapshotEngineLoad := getEngineAndSnapshotEngine(t)
-	asLoad.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	require.NoError(t, snapshotEngineLoad.ReceiveSnapshot(snap1))
-	require.NoError(t, snapshotEngineLoad.ApplySnapshot(ctx))
-	_, err = snapshotEngineLoad.CheckLoaded()
-	require.NoError(t, err)
-	defer snapshotEngineLoad.Close()
+		_, err := assetEngine1.NewAsset(ctx, assetName, &types.AssetDetails{
+			Source: &types.AssetDetailsBuiltinAsset{},
+		})
+		require.Nil(t, err)
 
-	err = as.Enable(ctx, "asset3")
-	require.Nil(t, err)
+		err = assetEngine1.Enable(ctx, assetName)
+		require.Nil(t, err)
+	}
 
-	err = asLoad.Enable(ctx, "asset3")
-	require.Nil(t, err)
-
-	_, err = as.NewAsset(ctx, "asset5", &types.AssetDetails{
-		Source: &types.AssetDetailsBuiltinAsset{},
-	})
+	snapshotHash1, err := snapshotEngine1.SnapshotNow(ctx)
 	require.NoError(t, err)
 
-	_, err = asLoad.NewAsset(ctx, "asset5", &types.AssetDetails{
-		Source: &types.AssetDetailsBuiltinAsset{},
-	})
-	require.NoError(t, err)
+	closeSnapshotEngine1()
 
-	b, err := snapshotEngine.Snapshot(ctx)
-	require.NoError(t, err)
-	bLoad, err := snapshotEngineLoad.Snapshot(ctx)
-	require.NoError(t, err)
-	require.True(t, bytes.Equal(b, bLoad))
+	// Reload the engine using the previous snapshot.
+
+	_, snapshotEngine2 := getEngineAndSnapshotEngine(t, vegaPath)
+	defer snapshotEngine2.Close()
+
+	// This triggers the state restoration from the local snapshot.
+	require.NoError(t, snapshotEngine2.Start(ctx))
+
+	snapshotHash2, _, _ := snapshotEngine2.Info()
+
+	require.Equal(t, snapshotHash1, snapshotHash2)
 }
 
 // test round trip of active snapshot hash and serialisation.
 func TestActiveSnapshotRoundTrip(t *testing.T) {
-	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
-	ctx = vgcontext.WithChainID(ctx, "chainid")
+	ctx := vgtest.VegaContext("chainid", 100)
 
 	activeKey := (&types.PayloadActiveAssets{}).Key()
 	for i := 0; i < 10; i++ {
@@ -161,8 +135,7 @@ func TestActiveSnapshotRoundTrip(t *testing.T) {
 
 // test round trip of active snapshot serialisation.
 func TestPendingSnapshotRoundTrip(t *testing.T) {
-	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
-	ctx = vgcontext.WithChainID(ctx, "chainid")
+	ctx := vgtest.VegaContext("chainid", 100)
 	pendingKey := (&types.PayloadPendingAssets{}).Key()
 
 	for i := 0; i < 10; i++ {

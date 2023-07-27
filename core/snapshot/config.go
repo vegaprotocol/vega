@@ -33,14 +33,14 @@ var (
 type Config struct {
 	Level       encoding.LogLevel `choice:"debug"                                                                                                                                                                                                                                                                                            choice:"info"                 choice:"warning"                  choice:"error" choice:"panic" choice:"fatal" description:"Logging level (default: info)" long:"log-level"`
 	KeepRecent  uint              `description:"Number of historic snapshots to keep on disk. The minimum value is 1."                                                                                                                                                                                                                       long:"snapshot-keep-recent"`
-	RetryLimit  uint              `description:"Maximum number of times to try and apply snapshot chunk"                                                                                                                                                                                                                                     long:"max-retries"`
+	RetryLimit  uint              `description:"Maximum number of times to try and apply snapshot chunk coming from state-sync"                                                                                                                                                                                                              long:"max-retries"`
 	Storage     string            `choice:"GOLevelDB"                                                                                                                                                                                                                                                                                        choice:"memory"               description:"Storage type to use" long:"storage"`
 	StartHeight int64             `description:"If there are local snapshots, load the one matching the specified block height. If there is no local snapshot, and state-sync is enabled, the node waits for a snapshot to match the specified block height to be offered by the network peers. If set to 0, the latest snapshot is loaded." long:"load-from-block-height"`
 }
 
-// NewDefaultConfig creates an instance of the package specific configuration, given a
+// DefaultConfig creates an instance of the package specific configuration, given a
 // pointer to a logger instance to be used for logging within the package.
-func NewDefaultConfig() Config {
+func DefaultConfig() Config {
 	return Config{
 		Level:       encoding.LogLevel{Level: logging.InfoLevel},
 		KeepRecent:  10,

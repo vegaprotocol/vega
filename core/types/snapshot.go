@@ -33,7 +33,7 @@ import (
 type StateProvider interface {
 	Namespace() SnapshotNamespace
 	Keys() []string
-	// NB: GetState must be threadsafe as it may be called from multiple goroutines concurrently!
+	// GetState must be thread-safe as it may be called from multiple goroutines concurrently!
 	GetState(key string) ([]byte, []StateProvider, error)
 	LoadState(ctx context.Context, pl *Payload) ([]StateProvider, error)
 	Stopped() bool
@@ -72,7 +72,6 @@ const (
 	ExecutionSnapshot              SnapshotNamespace = "execution"
 	EpochSnapshot                  SnapshotNamespace = "epoch"
 	StakingSnapshot                SnapshotNamespace = "staking"
-	IDGenSnapshot                  SnapshotNamespace = "idgenerator"
 	RewardSnapshot                 SnapshotNamespace = "rewards"
 	SpamSnapshot                   SnapshotNamespace = "spam"
 	LimitSnapshot                  SnapshotNamespace = "limits"
@@ -97,17 +96,12 @@ const (
 )
 
 var (
-	ErrSnapshotHashMismatch         = errors.New("snapshot hashes do not match")
-	ErrSnapshotMetaMismatch         = errors.New("snapshot metadata does not match")
 	ErrUnknownSnapshotNamespace     = errors.New("unknown snapshot namespace")
 	ErrNoPrefixFound                = errors.New("no prefix in chunk keys")
 	ErrInconsistentNamespaceKeys    = errors.New("chunk contains several namespace keys")
 	ErrChunkHashMismatch            = errors.New("loaded chunk hash does not match metadata")
 	ErrChunkOutOfRange              = errors.New("chunk number out of range")
-	ErrNoSnapshotToApply            = errors.New("no snapshot to apply")
-	ErrUnknownSnapshot              = errors.New("no snapshot to reject")
 	ErrMissingChunks                = errors.New("missing previous chunks")
-	ErrSnapshotRetryLimit           = errors.New("could not load snapshot, retry limit reached")
 	ErrSnapshotKeyDoesNotExist      = errors.New("unknown key for snapshot")
 	ErrInvalidSnapshotNamespace     = errors.New("invalid snapshot namespace")
 	ErrUnknownSnapshotType          = errors.New("snapshot data type not known")
@@ -115,21 +109,10 @@ var (
 	ErrInvalidSnapshotFormat        = errors.New("invalid snapshot format")
 	ErrSnapshotFormatMismatch       = errors.New("snapshot formats do not match")
 	ErrUnexpectedKey                = errors.New("snapshot namespace has unknown/unexpected key(s)")
-	ErrNoSnapshot                   = errors.New("no snapshot found")
-	ErrMissingSnapshotVersion       = errors.New("unknown snapshot version")
 	ErrInvalidSnapshotStorageMethod = errors.New("invalid snapshot storage method")
-	ErrMissingAppstateNode          = errors.New("appstate missing from tree")
-	ErrMissingPayload               = errors.New("payload missing from exported tree")
 )
 
 type SnapshotFormat = snapshot.Format
-
-const (
-	SnapshotFormatUnspecified     = snapshot.Format_FORMAT_UNSPECIFIED
-	SnapshotFormatProto           = snapshot.Format_FORMAT_PROTO
-	SnapshotFormatProtoCompressed = snapshot.Format_FORMAT_PROTO_COMPRESSED
-	SnapshotFormatJSON            = snapshot.Format_FORMAT_JSON
-)
 
 type RawChunk struct {
 	Nr     uint32
@@ -158,7 +141,7 @@ func SnapshotFromTM(tms *tmtypes.Snapshot) (*Snapshot, error) {
 	return &snap, nil
 }
 
-func (s Snapshot) ToTM() (*tmtypes.Snapshot, error) {
+func (s *Snapshot) ToTM() (*tmtypes.Snapshot, error) {
 	md, err := proto.Marshal(s.Meta.IntoProto())
 	if err != nil {
 		return nil, err
@@ -176,7 +159,7 @@ func AppStateFromTree(tree *iavl.ImmutableTree) (*PayloadAppState, error) {
 	appState := &Payload{
 		Data: &PayloadAppState{AppState: &AppState{}},
 	}
-	key := appState.GetTreeKey()
+	key := appState.TreeKey()
 	data, _ := tree.Get([]byte(key))
 	if data == nil {
 		return nil, ErrSnapshotKeyDoesNotExist
@@ -187,59 +170,6 @@ func AppStateFromTree(tree *iavl.ImmutableTree) (*PayloadAppState, error) {
 	}
 	appState = PayloadFromProto(prp)
 	return appState.GetAppState(), nil
-}
-
-// TreeFromSnapshot takes the given snapshot data and creates a avl tree from it.
-func (s *Snapshot) TreeFromSnapshot(tree *iavl.MutableTree) error {
-	importer, err := tree.Import(s.Meta.Version)
-	if err != nil {
-		return fmt.Errorf("failed instantiate AVL tree importer: %w", err)
-	}
-	defer importer.Close()
-
-	// Convert slice into map for quick lookup
-	payloads := map[string]*Payload{}
-	for _, pl := range s.Nodes {
-		payloads[pl.GetTreeKey()] = pl
-	}
-
-	// Add the nodes in in the order they were exported in SnapshotFromTree
-	for _, n := range s.Meta.NodeHashes {
-		var value []byte
-		if n.IsLeaf {
-			// value is the snapshot payload
-			payload, ok := payloads[n.Key]
-			if !ok {
-				return ErrMissingPayload
-			}
-			value, err = proto.Marshal(payload.IntoProto())
-			if err != nil {
-				return err
-			}
-		} else {
-			// it is very important that this is a nil-slice and not an empty-non-nil slice for importer.Add()
-			// to work which is why I've made it explicit and left this comment. An empty slice means there is
-			// a node value but its empty, a nil slice means there is no value.
-			value = nil
-		}
-
-		// Reconstruct exported node and add it to the important
-		importer.Add(
-			&iavl.ExportNode{
-				Key:     []byte(n.Key),
-				Value:   value,
-				Height:  int8(n.Height), // this is the height of the node in thre tree
-				Version: n.Version,      // this is the version of the node in the tree (it is incremented if that node's value is updated)
-			})
-	}
-
-	// validate the import and commit it into the tree
-	err = importer.Commit()
-	if err != nil {
-		return fmt.Errorf("could not commit imported tree: %w", err)
-	}
-
-	return nil
 }
 
 // SnapshotFromTree traverses the given avl tree and represents it as a Snapshot.
@@ -256,14 +186,14 @@ func SnapshotFromTree(tree *iavl.ImmutableTree) (*Snapshot, error) {
 			ChunkHashes: []string{},
 		},
 
-		// a slice of payloads that correspond to the nodehashes. Note that len(NodeHashes) != len(Nodes) since
+		// a slice of payloads that correspond to the node hashes. Note that len(NodeHashes) != len(Nodes) since
 		// only the leaf nodes of the tree contain payload data, the sub-tree roots only exist for the merkle-hash.
 		Nodes: []*Payload{},
 	}
 
 	exporter, err := tree.Export()
 	if err != nil {
-		return nil, fmt.Errorf("could not export the current AVL tree: %w", err)
+		return nil, fmt.Errorf("could not export the AVL tree: %w", err)
 	}
 	defer exporter.Close()
 
@@ -290,12 +220,11 @@ func SnapshotFromTree(tree *iavl.ImmutableTree) (*Snapshot, error) {
 
 		// sort out the payload for this node
 		pl := &snapshot.Payload{}
-		if perr := proto.Unmarshal(exportedNode.Value, pl); err != nil {
+		if perr := proto.Unmarshal(exportedNode.Value, pl); perr != nil {
 			return nil, perr
 		}
 
 		payload := PayloadFromProto(pl)
-		payload.raw = exportedNode.Value[:]
 
 		snap.Nodes = append(snap.Nodes, payload)
 
@@ -315,7 +244,7 @@ func SnapshotFromTree(tree *iavl.ImmutableTree) (*Snapshot, error) {
 	}
 
 	if snap.Height == 0 {
-		return nil, fmt.Errorf("failed to export AVL tree: %w", ErrMissingAppstateNode)
+		return nil, errors.New("the block height is 0 after export, the app state might by missing")
 	}
 
 	// set chunks, ready to send in case we need it
@@ -323,21 +252,16 @@ func SnapshotFromTree(tree *iavl.ImmutableTree) (*Snapshot, error) {
 	return &snap, nil
 }
 
-func (s *Snapshot) ValidateMeta(other *Snapshot) error {
-	if len(s.Meta.ChunkHashes) != len(other.Meta.ChunkHashes) || len(s.Meta.NodeHashes) != len(other.Meta.NodeHashes) {
-		return ErrSnapshotMetaMismatch
+func (s *Snapshot) RawChunkByIndex(idx uint32) (*RawChunk, error) {
+	if s.Chunks < idx {
+		return nil, ErrUnknownSnapshotChunkHeight
 	}
-	for i := range s.Meta.ChunkHashes {
-		if other.Meta.ChunkHashes[i] != s.Meta.ChunkHashes[i] {
-			return ErrSnapshotMetaMismatch
-		}
-	}
-	for i := range s.Meta.NodeHashes {
-		if other.Meta.NodeHashes[i].Hash != s.Meta.NodeHashes[i].Hash {
-			return ErrSnapshotMetaMismatch
-		}
-	}
-	return nil
+	return &RawChunk{
+		Nr:     idx,
+		Data:   s.ByteChunks[int(idx)],
+		Height: s.Height,
+		Format: s.Format,
+	}, nil
 }
 
 func (s *Snapshot) nodesToChunks() {
@@ -422,15 +346,15 @@ func (s *Snapshot) LoadChunk(chunk *RawChunk) error {
 	return nil
 }
 
-func (s Snapshot) GetMissing() []uint32 {
+func (s *Snapshot) MissingChunks() []uint32 {
 	// no need to check seen vs expected, seen will always be smaller
-	ids := make([]uint32, 0, int(s.Chunks-s.ChunksSeen))
+	chunkIndexes := make([]uint32, 0, int(s.Chunks-s.ChunksSeen))
 	for i := range s.ByteChunks {
 		if len(s.ByteChunks) == 0 {
-			ids = append(ids, uint32(i))
+			chunkIndexes = append(chunkIndexes, uint32(i))
 		}
 	}
-	return ids
+	return chunkIndexes
 }
 
 func (s *Snapshot) unmarshalChunks() error {
@@ -452,7 +376,7 @@ func (s *Snapshot) unmarshalChunks() error {
 	return nil
 }
 
-func (s Snapshot) Ready() bool {
+func (s *Snapshot) Ready() bool {
 	return s.ChunksSeen == s.Chunks
 }
 
@@ -463,7 +387,7 @@ func (n SnapshotNamespace) String() string {
 func SnapshotFormatFromU32(f uint32) (SnapshotFormat, error) {
 	i32 := int32(f)
 	if _, ok := snapshot.Format_name[i32]; !ok {
-		return SnapshotFormatUnspecified, ErrInvalidSnapshotFormat
+		return snapshot.Format_FORMAT_UNSPECIFIED, ErrInvalidSnapshotFormat
 	}
 	return SnapshotFormat(i32), nil
 }

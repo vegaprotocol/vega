@@ -18,9 +18,8 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/logging"
-
 	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 var accountsKey = (&types.PayloadStakingAccounts{}).Key()
@@ -112,6 +111,7 @@ func (a *Accounting) LoadState(ctx context.Context, payload *types.Payload) ([]t
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadStakingAccounts:
+
 		return nil, a.restoreStakingAccounts(ctx, pl.StakingAccounts, pl.PendingStakeTotalSupply, payload)
 	default:
 		return nil, types.ErrUnknownSnapshotType
