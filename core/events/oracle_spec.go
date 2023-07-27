@@ -21,22 +21,21 @@ import (
 
 type OracleSpec struct {
 	*Base
-	o vegapb.OracleSpec
+	o *vegapb.OracleSpec
 }
 
-func NewOracleSpecEvent(ctx context.Context, spec vegapb.OracleSpec) *OracleSpec {
-	cpy := spec.DeepClone()
+func NewOracleSpecEvent(ctx context.Context, spec *vegapb.OracleSpec) *OracleSpec {
 	return &OracleSpec{
 		Base: newBase(ctx, OracleSpecEvent),
-		o:    *cpy,
+		o:    spec,
 	}
 }
 
-func (o *OracleSpec) OracleSpec() vegapb.OracleSpec {
+func (o *OracleSpec) OracleSpec() *vegapb.OracleSpec {
 	return o.o
 }
 
-func (o OracleSpec) Proto() vegapb.OracleSpec {
+func (o OracleSpec) Proto() *vegapb.OracleSpec {
 	return o.o
 }
 
@@ -45,7 +44,7 @@ func (o OracleSpec) StreamMessage() *eventspb.BusEvent {
 
 	busEvent := newBusEventFromBase(o.Base)
 	busEvent.Event = &eventspb.BusEvent_OracleSpec{
-		OracleSpec: &spec,
+		OracleSpec: spec,
 	}
 
 	return busEvent
@@ -54,6 +53,6 @@ func (o OracleSpec) StreamMessage() *eventspb.BusEvent {
 func OracleSpecEventFromStream(ctx context.Context, be *eventspb.BusEvent) *OracleSpec {
 	return &OracleSpec{
 		Base: newBaseFromBusEvent(ctx, OracleSpecEvent, be),
-		o:    *be.GetOracleSpec(),
+		o:    be.GetOracleSpec(),
 	}
 }

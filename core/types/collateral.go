@@ -242,8 +242,6 @@ func (a LedgerEntries) IntoProto() []*proto.LedgerEntry {
 	return out
 }
 
-type Party = proto.Party
-
 type AccountType = proto.AccountType
 
 const (

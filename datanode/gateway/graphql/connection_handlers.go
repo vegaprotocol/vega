@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -98,7 +97,7 @@ func toV2IntervalString(interval vega.Interval) (string, error) {
 	}
 }
 
-func handleWithdrawalsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party,
+func handleWithdrawalsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *vega.Party,
 	dateRange *v2.DateRange, pagination *v2.Pagination,
 ) (*v2.WithdrawalsConnection, error) {
 	req := v2.ListWithdrawalsRequest{PartyId: party.Id, Pagination: pagination, DateRange: dateRange}
@@ -109,7 +108,7 @@ func handleWithdrawalsConnectionRequest(ctx context.Context, client TradingDataS
 	return resp.Withdrawals, nil
 }
 
-func handleDepositsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party,
+func handleDepositsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *vega.Party,
 	dateRange *v2.DateRange, pagination *v2.Pagination,
 ) (*v2.DepositsConnection, error) {
 	req := v2.ListDepositsRequest{PartyId: party.Id, Pagination: pagination, DateRange: dateRange}
@@ -120,7 +119,7 @@ func handleDepositsConnectionRequest(ctx context.Context, client TradingDataServ
 	return resp.Deposits, nil
 }
 
-func handleProposalsRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party, ref *string, inType *v2.ListGovernanceDataRequest_Type,
+func handleProposalsRequest(ctx context.Context, client TradingDataServiceClientV2, party *vega.Party, ref *string, inType *v2.ListGovernanceDataRequest_Type,
 	inState *vega.Proposal_State, pagination *v2.Pagination,
 ) (*v2.GovernanceDataConnection, error) {
 	var partyID *string

@@ -22,7 +22,8 @@ import (
 	"code.vegaprotocol.io/vega/core/datasource"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/stringer"
-	proto "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	"google.golang.org/protobuf/proto"
 )
 
 type LiquidityProviderFeeShares []*LiquidityProviderFeeShare
@@ -38,7 +39,7 @@ func (ls LiquidityProviderFeeShares) String() string {
 	return "[" + strings.Join(strs, ", ") + "]"
 }
 
-type LiquidityProviderFeeShare = proto.LiquidityProviderFeeShare
+type LiquidityProviderFeeShare = vegapb.LiquidityProviderFeeShare
 
 var (
 	ErrNilTradableInstrument = errors.New("nil tradable instrument")
@@ -54,7 +55,7 @@ type MarketTimestamps struct {
 	Close    int64
 }
 
-func MarketTimestampsFromProto(p *proto.MarketTimestamps) *MarketTimestamps {
+func MarketTimestampsFromProto(p *vegapb.MarketTimestamps) *MarketTimestamps {
 	var ts MarketTimestamps
 	if p != nil {
 		ts = MarketTimestamps{
@@ -67,8 +68,8 @@ func MarketTimestampsFromProto(p *proto.MarketTimestamps) *MarketTimestamps {
 	return &ts
 }
 
-func (m MarketTimestamps) IntoProto() *proto.MarketTimestamps {
-	return &proto.MarketTimestamps{
+func (m MarketTimestamps) IntoProto() *vegapb.MarketTimestamps {
+	return &vegapb.MarketTimestamps{
 		Proposed: m.Proposed,
 		Pending:  m.Pending,
 		Open:     m.Open,
@@ -95,86 +96,86 @@ func (m MarketTimestamps) String() string {
 	)
 }
 
-type MarketTradingMode = proto.Market_TradingMode
+type MarketTradingMode = vegapb.Market_TradingMode
 
 const (
 	// Default value, this is invalid.
-	MarketTradingModeUnspecified MarketTradingMode = proto.Market_TRADING_MODE_UNSPECIFIED
+	MarketTradingModeUnspecified MarketTradingMode = vegapb.Market_TRADING_MODE_UNSPECIFIED
 	// Normal trading.
-	MarketTradingModeContinuous MarketTradingMode = proto.Market_TRADING_MODE_CONTINUOUS
+	MarketTradingModeContinuous MarketTradingMode = vegapb.Market_TRADING_MODE_CONTINUOUS
 	// Auction trading (FBA).
-	MarketTradingModeBatchAuction MarketTradingMode = proto.Market_TRADING_MODE_BATCH_AUCTION
+	MarketTradingModeBatchAuction MarketTradingMode = vegapb.Market_TRADING_MODE_BATCH_AUCTION
 	// Opening auction.
-	MarketTradingModeOpeningAuction MarketTradingMode = proto.Market_TRADING_MODE_OPENING_AUCTION
+	MarketTradingModeOpeningAuction MarketTradingMode = vegapb.Market_TRADING_MODE_OPENING_AUCTION
 	// Auction triggered by monitoring.
-	MarketTradingModeMonitoringAuction MarketTradingMode = proto.Market_TRADING_MODE_MONITORING_AUCTION
+	MarketTradingModeMonitoringAuction MarketTradingMode = vegapb.Market_TRADING_MODE_MONITORING_AUCTION
 	// No trading allowed.
-	MarketTradingModeNoTrading MarketTradingMode = proto.Market_TRADING_MODE_NO_TRADING
+	MarketTradingModeNoTrading MarketTradingMode = vegapb.Market_TRADING_MODE_NO_TRADING
 	// Special auction mode for market suspended via governance.
-	MarketTradingModeSuspendedViaGovernance MarketTradingMode = proto.Market_TRADING_MODE_SUSPENDED_VIA_GOVERNANCE
+	MarketTradingModeSuspendedViaGovernance MarketTradingMode = vegapb.Market_TRADING_MODE_SUSPENDED_VIA_GOVERNANCE
 )
 
-type MarketState = proto.Market_State
+type MarketState = vegapb.Market_State
 
 const (
 	// Default value, invalid.
-	MarketStateUnspecified MarketState = proto.Market_STATE_UNSPECIFIED
+	MarketStateUnspecified MarketState = vegapb.Market_STATE_UNSPECIFIED
 	// The Governance proposal valid and accepted.
-	MarketStateProposed MarketState = proto.Market_STATE_PROPOSED
+	MarketStateProposed MarketState = vegapb.Market_STATE_PROPOSED
 	// Outcome of governance votes is to reject the market.
-	MarketStateRejected MarketState = proto.Market_STATE_REJECTED
+	MarketStateRejected MarketState = vegapb.Market_STATE_REJECTED
 	// Governance vote passes/wins.
-	MarketStatePending MarketState = proto.Market_STATE_PENDING
+	MarketStatePending MarketState = vegapb.Market_STATE_PENDING
 	// Market triggers cancellation condition or governance
 	// votes to close before market becomes Active.
-	MarketStateCancelled MarketState = proto.Market_STATE_CANCELLED
+	MarketStateCancelled MarketState = vegapb.Market_STATE_CANCELLED
 	// Enactment date reached and usual auction exit checks pass.
-	MarketStateActive MarketState = proto.Market_STATE_ACTIVE
+	MarketStateActive MarketState = vegapb.Market_STATE_ACTIVE
 	// Price monitoring or liquidity monitoring trigger.
-	MarketStateSuspended MarketState = proto.Market_STATE_SUSPENDED
+	MarketStateSuspended MarketState = vegapb.Market_STATE_SUSPENDED
 	// Governance vote (to close).
-	MarketStateClosed MarketState = proto.Market_STATE_CLOSED
+	MarketStateClosed MarketState = vegapb.Market_STATE_CLOSED
 	// Defined by the product (i.e. from a product parameter,
 	// specified in market definition, giving close date/time).
-	MarketStateTradingTerminated MarketState = proto.Market_STATE_TRADING_TERMINATED
+	MarketStateTradingTerminated MarketState = vegapb.Market_STATE_TRADING_TERMINATED
 	// Settlement triggered and completed as defined by product.
-	MarketStateSettled MarketState = proto.Market_STATE_SETTLED
+	MarketStateSettled MarketState = vegapb.Market_STATE_SETTLED
 	// Market has been suspended via a governance proposal.
-	MarketStateSuspendedViaGovernance MarketState = proto.Market_STATE_SUSPENDED_VIA_GOVERNANCE
+	MarketStateSuspendedViaGovernance MarketState = vegapb.Market_STATE_SUSPENDED_VIA_GOVERNANCE
 )
 
-type AuctionTrigger = proto.AuctionTrigger
+type AuctionTrigger = vegapb.AuctionTrigger
 
 const (
 	// Default value for AuctionTrigger, no auction triggered.
-	AuctionTriggerUnspecified AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
+	AuctionTriggerUnspecified AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
 	// Batch auction.
-	AuctionTriggerBatch AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_BATCH
+	AuctionTriggerBatch AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_BATCH
 	// Opening auction.
-	AuctionTriggerOpening AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_OPENING
+	AuctionTriggerOpening AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_OPENING
 	// Price monitoring trigger.
-	AuctionTriggerPrice AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_PRICE
+	AuctionTriggerPrice AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_PRICE
 	// Liquidity monitoring due to unmet target trigger.
-	AuctionTriggerLiquidityTargetNotMet AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET
+	AuctionTriggerLiquidityTargetNotMet AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET
 	// Liquidity monitoring due to being unable to deploy LP orders due to missing best bid or ask.
-	AuctionTriggerUnableToDeployLPOrders AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS
+	AuctionTriggerUnableToDeployLPOrders AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS
 	// Governance triggered auction.
-	AuctionTriggerGovernanceSuspension AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_GOVERNANCE_SUSPENSION
+	AuctionTriggerGovernanceSuspension AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_GOVERNANCE_SUSPENSION
 )
 
 type InstrumentMetadata struct {
 	Tags []string
 }
 
-func InstrumentMetadataFromProto(m *proto.InstrumentMetadata) *InstrumentMetadata {
+func InstrumentMetadataFromProto(m *vegapb.InstrumentMetadata) *InstrumentMetadata {
 	return &InstrumentMetadata{
 		Tags: append([]string{}, m.Tags...),
 	}
 }
 
-func (i InstrumentMetadata) IntoProto() *proto.InstrumentMetadata {
+func (i InstrumentMetadata) IntoProto() *vegapb.InstrumentMetadata {
 	tags := make([]string, 0, len(i.Tags))
-	return &proto.InstrumentMetadata{
+	return &vegapb.InstrumentMetadata{
 		Tags: append(tags, i.Tags...),
 	}
 }
@@ -199,7 +200,7 @@ type AuctionDuration struct {
 	Volume   uint64
 }
 
-func AuctionDurationFromProto(ad *proto.AuctionDuration) *AuctionDuration {
+func AuctionDurationFromProto(ad *vegapb.AuctionDuration) *AuctionDuration {
 	if ad == nil {
 		return nil
 	}
@@ -209,8 +210,8 @@ func AuctionDurationFromProto(ad *proto.AuctionDuration) *AuctionDuration {
 	}
 }
 
-func (a AuctionDuration) IntoProto() *proto.AuctionDuration {
-	return &proto.AuctionDuration{
+func (a AuctionDuration) IntoProto() *vegapb.AuctionDuration {
+	return &vegapb.AuctionDuration{
 		Duration: a.Duration,
 		Volume:   a.Volume,
 	}
@@ -253,7 +254,7 @@ type isTRM interface {
 	Equal(isTRM) bool
 }
 
-func TradableInstrumentFromProto(ti *proto.TradableInstrument) *TradableInstrument {
+func TradableInstrumentFromProto(ti *vegapb.TradableInstrument) *TradableInstrument {
 	if ti == nil {
 		return nil
 	}
@@ -266,10 +267,10 @@ func TradableInstrumentFromProto(ti *proto.TradableInstrument) *TradableInstrume
 	}
 }
 
-func (t TradableInstrument) IntoProto() *proto.TradableInstrument {
+func (t TradableInstrument) IntoProto() *vegapb.TradableInstrument {
 	var (
-		i *proto.Instrument
-		m *proto.MarginCalculator
+		i *vegapb.Instrument
+		m *vegapb.MarginCalculator
 	)
 	if t.Instrument != nil {
 		i = t.Instrument.IntoProto()
@@ -277,7 +278,7 @@ func (t TradableInstrument) IntoProto() *proto.TradableInstrument {
 	if t.MarginCalculator != nil {
 		m = t.MarginCalculator.IntoProto()
 	}
-	r := &proto.TradableInstrument{
+	r := &vegapb.TradableInstrument{
 		Instrument:       i,
 		MarginCalculator: m,
 	}
@@ -286,9 +287,9 @@ func (t TradableInstrument) IntoProto() *proto.TradableInstrument {
 	}
 	rmp := t.RiskModel.trmIntoProto()
 	switch rm := rmp.(type) {
-	case *proto.TradableInstrument_SimpleRiskModel:
+	case *vegapb.TradableInstrument_SimpleRiskModel:
 		r.RiskModel = rm
-	case *proto.TradableInstrument_LogNormalRiskModel:
+	case *vegapb.TradableInstrument_LogNormalRiskModel:
 		r.RiskModel = rm
 	}
 	return r
@@ -358,7 +359,7 @@ type Spot struct {
 	QuoteAsset string
 }
 
-func SpotFromProto(s *proto.Spot) *Spot {
+func SpotFromProto(s *vegapb.Spot) *Spot {
 	return &Spot{
 		Name:       s.Name,
 		BaseAsset:  s.BaseAsset,
@@ -366,8 +367,8 @@ func SpotFromProto(s *proto.Spot) *Spot {
 	}
 }
 
-func (s Spot) IntoProto() *proto.Spot {
-	return &proto.Spot{
+func (s Spot) IntoProto() *vegapb.Spot {
+	return &vegapb.Spot{
 		Name:       s.Name,
 		BaseAsset:  s.BaseAsset,
 		QuoteAsset: s.QuoteAsset,
@@ -416,7 +417,7 @@ type Future struct {
 	DataSourceSpecBinding               *datasource.SpecBindingForFuture
 }
 
-func FutureFromProto(f *proto.Future) *Future {
+func FutureFromProto(f *vegapb.Future) *Future {
 	return &Future{
 		SettlementAsset:                     f.SettlementAsset,
 		QuoteName:                           f.QuoteName,
@@ -426,8 +427,8 @@ func FutureFromProto(f *proto.Future) *Future {
 	}
 }
 
-func (f Future) IntoProto() *proto.Future {
-	return &proto.Future{
+func (f Future) IntoProto() *vegapb.Future {
+	return &vegapb.Future{
 		SettlementAsset:                     f.SettlementAsset,
 		QuoteName:                           f.QuoteName,
 		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.IntoProto(),
@@ -476,7 +477,7 @@ type Perps struct {
 	DataSourceSpecBinding               *datasource.SpecBindingForPerps
 }
 
-func PerpsFromProto(p *proto.Perps) *Perps {
+func PerpsFromProto(p *vegapb.Perps) *Perps {
 	return &Perps{
 		SettlementAsset:                     p.SettlementAsset,
 		QuoteName:                           p.QuoteName,
@@ -490,8 +491,8 @@ func PerpsFromProto(p *proto.Perps) *Perps {
 	}
 }
 
-func (p Perps) IntoProto() *proto.Perps {
-	return &proto.Perps{
+func (p Perps) IntoProto() *vegapb.Perps {
+	return &vegapb.Perps{
 		SettlementAsset:                     p.SettlementAsset,
 		QuoteName:                           p.QuoteName,
 		MarginFundingFactor:                 p.MarginFundingFactor.String(),
@@ -521,30 +522,30 @@ func (p Perps) String() string {
 
 func iInstrumentFromProto(pi interface{}) iProto {
 	switch i := pi.(type) {
-	case proto.Instrument_Future:
+	case vegapb.Instrument_Future:
 		return InstrumentFutureFromProto(&i)
-	case *proto.Instrument_Future:
+	case *vegapb.Instrument_Future:
 		return InstrumentFutureFromProto(i)
-	case proto.Instrument_Perps:
+	case vegapb.Instrument_Perps:
 		return InstrumentPerpsFromProto(&i)
-	case *proto.Instrument_Perps:
+	case *vegapb.Instrument_Perps:
 		return InstrumentPerpsFromProto(i)
-	case proto.Instrument_Spot:
+	case vegapb.Instrument_Spot:
 		return InstrumentSpotFromProto(&i)
-	case *proto.Instrument_Spot:
+	case *vegapb.Instrument_Spot:
 		return InstrumentSpotFromProto(i)
 	}
 	return nil
 }
 
-func InstrumentSpotFromProto(f *proto.Instrument_Spot) *InstrumentSpot {
+func InstrumentSpotFromProto(f *vegapb.Instrument_Spot) *InstrumentSpot {
 	return &InstrumentSpot{
 		Spot: SpotFromProto(f.Spot),
 	}
 }
 
-func (i InstrumentSpot) IntoProto() *proto.Instrument_Spot {
-	return &proto.Instrument_Spot{
+func (i InstrumentSpot) IntoProto() *vegapb.Instrument_Spot {
+	return &vegapb.Instrument_Spot{
 		Spot: i.Spot.IntoProto(),
 	}
 }
@@ -560,14 +561,14 @@ func (i InstrumentSpot) iIntoProto() interface{} {
 	return i.IntoProto()
 }
 
-func InstrumentFutureFromProto(f *proto.Instrument_Future) *InstrumentFuture {
+func InstrumentFutureFromProto(f *vegapb.Instrument_Future) *InstrumentFuture {
 	return &InstrumentFuture{
 		Future: FutureFromProto(f.Future),
 	}
 }
 
-func (i InstrumentFuture) IntoProto() *proto.Instrument_Future {
-	return &proto.Instrument_Future{
+func (i InstrumentFuture) IntoProto() *vegapb.Instrument_Future {
+	return &vegapb.Instrument_Future{
 		Future: i.Future.IntoProto(),
 	}
 }
@@ -579,14 +580,14 @@ func (i InstrumentFuture) getAssets() ([]string, error) {
 	return []string{i.Future.SettlementAsset}, nil
 }
 
-func InstrumentPerpsFromProto(p *proto.Instrument_Perps) *InstrumentPerps {
+func InstrumentPerpsFromProto(p *vegapb.Instrument_Perps) *InstrumentPerps {
 	return &InstrumentPerps{
 		Perps: PerpsFromProto(p.Perps),
 	}
 }
 
-func (i InstrumentPerps) IntoProto() *proto.Instrument_Perps {
-	return &proto.Instrument_Perps{
+func (i InstrumentPerps) IntoProto() *vegapb.Instrument_Perps {
+	return &vegapb.Instrument_Perps{
 		Perps: i.Perps.IntoProto(),
 	}
 }
@@ -667,7 +668,7 @@ type Instrument struct {
 	Product iProto
 }
 
-func InstrumentFromProto(i *proto.Instrument) *Instrument {
+func InstrumentFromProto(i *vegapb.Instrument) *Instrument {
 	if i == nil {
 		return nil
 	}
@@ -707,20 +708,20 @@ func (i Instrument) GetPerps() *Perps {
 	}
 }
 
-func (i Instrument) IntoProto() *proto.Instrument {
+func (i Instrument) IntoProto() *vegapb.Instrument {
 	p := i.Product.iIntoProto()
-	r := &proto.Instrument{
+	r := &vegapb.Instrument{
 		Id:       i.ID,
 		Code:     i.Code,
 		Name:     i.Name,
 		Metadata: i.Metadata.IntoProto(),
 	}
 	switch pt := p.(type) {
-	case *proto.Instrument_Future:
+	case *vegapb.Instrument_Future:
 		r.Product = pt
-	case *proto.Instrument_Perps:
+	case *vegapb.Instrument_Perps:
 		r.Product = pt
-	case *proto.Instrument_Spot:
+	case *vegapb.Instrument_Spot:
 		r.Product = pt
 	}
 	return r
@@ -802,14 +803,14 @@ func (m MarketData) DeepClone() *MarketData {
 	}
 	lpfs := make([]*LiquidityProviderFeeShare, 0, len(m.LiquidityProviderFeeShare))
 	for _, fs := range m.LiquidityProviderFeeShare {
-		lpfs = append(lpfs, fs.DeepClone())
+		lpfs = append(lpfs, proto.Clone(fs).(*LiquidityProviderFeeShare))
 	}
 	cpy.LiquidityProviderFeeShare = lpfs
 	return &cpy
 }
 
-func (m MarketData) IntoProto() *proto.MarketData {
-	r := &proto.MarketData{
+func (m MarketData) IntoProto() *vegapb.MarketData {
+	r := &vegapb.MarketData{
 		MarkPrice:                 num.UintToString(m.MarkPrice),
 		LastTradedPrice:           num.UintToString(m.LastTradedPrice),
 		BestBidPrice:              num.UintToString(m.BestBidPrice),
@@ -835,9 +836,9 @@ func (m MarketData) IntoProto() *proto.MarketData {
 		ExtensionTrigger:          m.ExtensionTrigger,
 		TargetStake:               m.TargetStake,
 		SuppliedStake:             m.SuppliedStake,
-		PriceMonitoringBounds:     make([]*proto.PriceMonitoringBounds, 0, len(m.PriceMonitoringBounds)),
+		PriceMonitoringBounds:     make([]*vegapb.PriceMonitoringBounds, 0, len(m.PriceMonitoringBounds)),
 		MarketValueProxy:          m.MarketValueProxy,
-		LiquidityProviderFeeShare: make([]*proto.LiquidityProviderFeeShare, 0, len(m.LiquidityProviderFeeShare)),
+		LiquidityProviderFeeShare: make([]*vegapb.LiquidityProviderFeeShare, 0, len(m.LiquidityProviderFeeShare)),
 		NextMarkToMarket:          m.NextMTM,
 		MarketGrowth:              m.MarketGrowth.String(),
 	}
@@ -845,7 +846,7 @@ func (m MarketData) IntoProto() *proto.MarketData {
 		r.PriceMonitoringBounds = append(r.PriceMonitoringBounds, pmb.IntoProto())
 	}
 	for _, lpfs := range m.LiquidityProviderFeeShare {
-		r.LiquidityProviderFeeShare = append(r.LiquidityProviderFeeShare, lpfs.DeepClone()) // call IntoProto if this type gets updated
+		r.LiquidityProviderFeeShare = append(r.LiquidityProviderFeeShare, proto.Clone(lpfs).(*vegapb.LiquidityProviderFeeShare)) // call IntoProto if this type gets updated
 	}
 	return r
 }
@@ -907,7 +908,7 @@ type Market struct {
 	InsurancePoolFraction num.Decimal
 }
 
-func MarketFromProto(mkt *proto.Market) (*Market, error) {
+func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
 	lppr, _ := num.DecimalFromString(mkt.LpPriceRange)
 	linearSlippageFactor, _ := num.DecimalFromString(mkt.LinearSlippageFactor)
 	quadraticSlippageFactor, _ := num.DecimalFromString(mkt.QuadraticSlippageFactor)
@@ -950,14 +951,14 @@ func MarketFromProto(mkt *proto.Market) (*Market, error) {
 	return m, nil
 }
 
-func (m Market) IntoProto() *proto.Market {
+func (m Market) IntoProto() *vegapb.Market {
 	var (
-		openAuct *proto.AuctionDuration
-		mktTS    *proto.MarketTimestamps
-		ti       *proto.TradableInstrument
-		fees     *proto.Fees
-		pms      *proto.PriceMonitoringSettings
-		lms      *proto.LiquidityMonitoringParameters
+		openAuct *vegapb.AuctionDuration
+		mktTS    *vegapb.MarketTimestamps
+		ti       *vegapb.TradableInstrument
+		fees     *vegapb.Fees
+		pms      *vegapb.PriceMonitoringSettings
+		lms      *vegapb.LiquidityMonitoringParameters
 	)
 	if m.OpeningAuction != nil {
 		openAuct = m.OpeningAuction.IntoProto()
@@ -984,12 +985,12 @@ func (m Market) IntoProto() *proto.Market {
 		insPoolFrac = &insf
 	}
 
-	var lpSLA *proto.LiquiditySLAParameters
+	var lpSLA *vegapb.LiquiditySLAParameters
 	if m.LiquiditySLAParams != nil {
 		lpSLA = m.LiquiditySLAParams.IntoProto()
 	}
 
-	r := &proto.Market{
+	r := &vegapb.Market{
 		Id:                            m.ID,
 		TradableInstrument:            ti,
 		DecimalPlaces:                 m.DecimalPlaces,

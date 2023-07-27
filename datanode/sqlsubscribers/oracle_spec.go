@@ -24,7 +24,7 @@ import (
 
 type OracleSpecEvent interface {
 	events.Event
-	OracleSpec() vegapb.OracleSpec
+	OracleSpec() *vegapb.OracleSpec
 }
 
 type OracleSpecStore interface {
@@ -52,7 +52,7 @@ func (od *OracleSpec) Push(ctx context.Context, evt events.Event) error {
 
 func (od *OracleSpec) consume(ctx context.Context, event OracleSpecEvent) error {
 	spec := event.OracleSpec()
-	entity := entities.OracleSpecFromProto(&spec, entities.TxHash(event.TxHash()), od.vegaTime)
+	entity := entities.OracleSpecFromProto(spec, entities.TxHash(event.TxHash()), od.vegaTime)
 
 	return errors.Wrap(od.store.Upsert(ctx, entity), "inserting oracle spec to SQL store failed")
 }

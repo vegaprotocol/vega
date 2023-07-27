@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/subscribers"
 	"code.vegaprotocol.io/vega/protos/vega"
+	"google.golang.org/protobuf/proto"
 )
 
 type netLimitsEvent interface {
@@ -64,7 +65,7 @@ func (n *NetLimits) consume() {
 func (n *NetLimits) Get() *vega.NetworkLimits {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
-	return n.limits.DeepClone()
+	return proto.Clone(&n.limits).(*vega.NetworkLimits)
 }
 
 func (n *NetLimits) Push(evts ...events.Event) {
