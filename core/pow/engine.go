@@ -92,6 +92,8 @@ type Engine struct {
 
 	mempoolSeenTid map[string]struct{} // tids seen already in this node's mempool, cleared at the end of the block
 
+	noVerify bool // disables verification of PoW in scenario, where we use the null chain and we do not want to send transaction w/o verification
+
 	// snapshot key
 	hashKeys    []string
 	log         *logging.Logger
@@ -227,6 +229,11 @@ func (e *Engine) Commit() {
 	e.lock.Lock()
 	e.mempoolSeenTid = map[string]struct{}{}
 	e.lock.Unlock()
+}
+
+func (e *Engine) DisableVerification() {
+	e.log.Info("Disabling PoW verification")
+	e.noVerify = true
 }
 
 // CheckTx is called by checkTx in the abci and verifies the proof of work, it doesn't update any state.
@@ -398,6 +405,10 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 	var h byte
+
+	if e.noVerify {
+		return h, nil
+	}
 
 	// check if the party is banned for the epoch
 	if _, ok := e.bannedParties[tx.Party()]; ok {

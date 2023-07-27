@@ -334,6 +334,10 @@ func newServices(
 	}
 
 	pow := pow.New(svcs.log, svcs.conf.PoW, svcs.timeService)
+	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
+		pow.DisableVerification()
+	}
+
 	svcs.pow = pow
 	svcs.snapshotEngine.AddProviders(pow)
 	powWatchers := []netparams.WatchParam{
