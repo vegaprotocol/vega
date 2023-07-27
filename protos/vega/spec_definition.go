@@ -15,21 +15,6 @@ const (
 	DataSourceContentTypeInternalTimeTriggerTermination
 )
 
-func (d DataSourceDefinition) DeepClone() *DataSourceDefinition {
-	cpy := &DataSourceDefinition{}
-
-	if d.SourceType != nil {
-		switch t := d.SourceType.(type) {
-		case *DataSourceDefinition_External:
-			cpy.SourceType = t.DeepClone()
-		case *DataSourceDefinition_Internal:
-			cpy.SourceType = t.DeepClone()
-		}
-	}
-
-	return cpy
-}
-
 // GetSigners tries to get the Signers from the DataSourceDefinition object.
 func (d DataSourceDefinition) GetSigners() []*datapb.Signer {
 	signers := []*datapb.Signer{}

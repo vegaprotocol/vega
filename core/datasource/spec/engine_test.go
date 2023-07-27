@@ -516,14 +516,14 @@ func (b *testBroker) expectNewSpecSubscription(currentTime time.Time, spec *data
 	proto := spec.IntoProto()
 	proto.CreatedAt = currentTime.UnixNano()
 	proto.Status = vegapb.DataSourceSpec_STATUS_ACTIVE
-	b.EXPECT().Send(events.NewOracleSpecEvent(b.ctx, vegapb.OracleSpec{ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{Spec: proto}})).Times(1)
+	b.EXPECT().Send(events.NewOracleSpecEvent(b.ctx, &vegapb.OracleSpec{ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{Spec: proto}})).Times(1)
 }
 
 func (b *testBroker) expectSpecSubscriptionDeactivation(currentTime time.Time, spec *datasource.Spec) {
 	proto := spec.IntoProto()
 	proto.CreatedAt = currentTime.UnixNano()
 	proto.Status = vegapb.DataSourceSpec_STATUS_DEACTIVATED
-	b.EXPECT().Send(events.NewOracleSpecEvent(b.ctx, vegapb.OracleSpec{ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{Spec: proto}})).Times(1)
+	b.EXPECT().Send(events.NewOracleSpecEvent(b.ctx, &vegapb.OracleSpec{ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{Spec: proto}})).Times(1)
 }
 
 func (b *testBroker) expectMatchedDataEvent(currentTime time.Time, data *vegapb.OracleData, specIDs []string) {

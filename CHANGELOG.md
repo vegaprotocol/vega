@@ -25,6 +25,7 @@
 - [8847](https://github.com/vegaprotocol/vega/issues/8847) - Implement internal time trigger data source.
 - [8895](https://github.com/vegaprotocol/vega/issues/8895) - Allow to set runtime parameters in the SQL Store connection structure
 - [8779](https://github.com/vegaprotocol/vega/issues/8779) - Query all details of liquidity providers via an API.
+- [8924](https://github.com/vegaprotocol/vega/issues/8924) - Refactor slightly to remove need to deep clone `proto` types
 - [8782](https://github.com/vegaprotocol/vega/issues/8782) - List all active liquidity providers fora  market via API.
 - [8753](https://github.com/vegaprotocol/vega/issues/8753) - Governance for new market proposal.
 - [8752](https://github.com/vegaprotocol/vega/issues/8752) - Add `PERPS` network parameter.

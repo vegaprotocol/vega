@@ -33,5 +33,5 @@ func TestOracleSpec_Push(t *testing.T) {
 	store.EXPECT().Upsert(context.Background(), gomock.Any()).Times(1)
 	subscriber := sqlsubscribers.NewOracleSpec(store)
 	subscriber.Flush(context.Background())
-	subscriber.Push(context.Background(), events.NewOracleSpecEvent(context.Background(), vegapb.OracleSpec{}))
+	subscriber.Push(context.Background(), events.NewOracleSpecEvent(context.Background(), &vegapb.OracleSpec{}))
 }
