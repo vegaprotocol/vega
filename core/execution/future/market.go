@@ -395,7 +395,7 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	// if we're already in trading terminated, not point to listen to trading termination oracle
 	if m.perp {
 		m.tradableInstrument.Instrument.Product.NotifyOnSettlementData(m.settlementDataPerp)
-	} else if mkt.State != types.MarketStateTradingTerminated {
+	} else if m.mkt.State != types.MarketStateTradingTerminated {
 		m.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(m.tradingTerminated)
 	} else {
 		m.tradableInstrument.Instrument.UnsubscribeTradingTerminated(ctx)
@@ -2029,7 +2029,7 @@ func (m *Market) confirmMTM(
 	settle := m.settlement.SettleMTM(ctx, mp, evts)
 
 	// let the product know about the mark-price, incase its the sort of product that cares
-	if m.markPrice != nil {
+	if m.perp && m.markPrice != nil {
 		m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, mp, m.timeService.GetTimeNow().UnixNano())
 	}
 
@@ -2049,9 +2049,8 @@ func (m *Market) confirmMTM(
 
 func (m *Market) handleRiskEvts(ctx context.Context, margins []events.Risk) []*types.Order {
 	if len(margins) == 0 {
-		return
+		return nil
 	}
-	orderUpdates := []*types.Order{}
 	transfers, closed, bondPenalties, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
 	if err != nil {
 		m.log.Error("margin update had issues", logging.Error(err))
@@ -2087,17 +2086,20 @@ func (m *Market) handleRiskEvts(ctx context.Context, margins []events.Risk) []*t
 			closed = closedRecalculated
 		}
 	}
-	if len(closed) > 0 {
-		upd, err := m.resolveClosedOutParties(
-			ctx, closed)
-		if err != nil {
-			m.log.Error("unable to closed out parties",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
-		}
-		if len(upd) > 0 {
-			orderUpdates = append(orderUpdates, upd...)
-		}
+	if len(closed) == 0 {
+		m.updateLiquidityFee(ctx)
+		return nil
+	}
+	var orderUpdates []*types.Order
+	upd, err := m.resolveClosedOutParties(
+		ctx, closed)
+	if err != nil {
+		m.log.Error("unable to closed out parties",
+			logging.String("market-id", m.GetID()),
+			logging.Error(err))
+	}
+	if len(upd) > 0 {
+		orderUpdates = append(orderUpdates, upd...)
 	}
 	m.updateLiquidityFee(ctx)
 	return orderUpdates
@@ -3737,19 +3739,19 @@ func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Num
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.settlementDataInMarket = settlementData
-	settlementDataInAsset, err := m.tradableInstrument.Instrument.Product.ScaleSettlementDataToDecimalPlaces(m.settlementDataInMarket, m.assetDP)
+	settlementPriceInAsset, err := m.tradableInstrument.Instrument.Product.ScaleSettlementDataToDecimalPlaces(m.settlementDataInMarket, m.assetDP)
 	if err != nil {
 		m.log.Error(err.Error())
 		return
 	}
 	// take all positions, get funding transfers
-	transfers, round := m.settlement.SettleFundingPeriod(t, m.position.Positions(), settlementPriceInAsset)
-	if len(positions) == 0 {
+	transfers, round := m.settlement.SettleFundingPeriod(ctx, m.position.Positions(), settlementPriceInAsset)
+	if len(transfers) == 0 {
 		m.log.Debug("Failed to get settle positions for funding period")
 		return
 	}
 
-	margins, ledgerMovements, err := m.collateral.PerpsFundingSettlement(ctx, m.GetID(), positions, round)
+	margins, ledgerMovements, err := m.collateral.PerpsFundingSettlement(ctx, m.GetID(), transfers, m.settlementAsset, round)
 	if err != nil {
 		m.log.Error("Failed to get ledger movements when performing the funding settlement",
 			logging.MarketID(m.GetID()),

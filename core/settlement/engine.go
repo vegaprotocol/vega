@@ -554,7 +554,7 @@ func calcMTM(markPrice, price *num.Uint, size int64, trades []*settlementTrade, 
 
 // SettleFundingPeriod takes positions and a funding-payement and returns a slice of transfers.
 // returns the slice of transfers to perform, and the max remainder on the settlement account due to rounding issues.
-func (e *Engine) SettleFundingPeriod(ctx context.Context, positions []events.MarketPosition, fundingPayment *num.Int) ([]events.Transfer, *num.Uint) {
+func (e *Engine) SettleFundingPeriod(ctx context.Context, positions []events.MarketPosition, fundingPayment *num.Uint) ([]events.Transfer, *num.Uint) {
 	if fundingPayment.IsZero() || len(positions) == 0 {
 		// nothing to do here
 		return nil, nil
@@ -592,10 +592,10 @@ func (e *Engine) SettleFundingPeriod(ctx context.Context, positions []events.Mar
 	return transfers, round
 }
 
-func calcFundingFlow(fp *num.Int, p events.MarketPosition, posFac num.Decimal) (*num.Uint, num.Decimal, bool) {
+func calcFundingFlow(fp *num.Uint, p events.MarketPosition, posFac num.Decimal) (*num.Uint, num.Decimal, bool) {
 	// -openVolume * fundingPayment
 	// divide by position factor to account for position decimal places
-	flowD := num.DecimalFromInt64(-p.Size()).Mul(fp.U.ToDecimal()).Div(posFac)
+	flowD := num.DecimalFromInt64(-p.Size()).Mul(fp.ToDecimal()).Div(posFac)
 	neg := flowD.IsNegative()
 	flow, frac := num.UintFromDecimalWithFraction(flowD.Abs())
 	return flow, frac, neg

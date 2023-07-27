@@ -1075,11 +1075,11 @@ func (e *Engine) getMTMPartyAccounts(party, marketID, asset string) (gen, margin
 
 // PerpsFundingSettlement will run a funding settlement over given positions. This works exactly the same as a MTM settlement
 // but uses different transfer types
-func (e *Engine) PerpsFundingSettlement(ctx context.Context, marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.LedgerMovement, error) {
+func (e *Engine) PerpsFundingSettlement(ctx context.Context, marketID string, transfers []events.Transfer, asset string, round *num.Uint) ([]events.Margin, []*types.LedgerMovement, error) {
 	if len(transfers) == 0 {
 		return nil, nil, nil
 	}
-	return e.mtmOrFundingSettlement(ctx, marketID, transfers, asset, types.TransferTypePerpFundingWin)
+	return e.mtmOrFundingSettlement(ctx, marketID, transfers, asset, types.TransferTypePerpFundingWin, round)
 }
 
 // MarkToMarket will run the mark to market settlement over a given set of positions
@@ -1088,10 +1088,10 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 	if len(transfers) == 0 {
 		return nil, nil, nil
 	}
-	return e.mtmOrFundingSettlement(ctx, marketID, transfers, asset, types.TransferTypeMTMWin)
+	return e.mtmOrFundingSettlement(ctx, marketID, transfers, asset, types.TransferTypeMTMWin, nil)
 }
 
-func (e *Engine) mtmOrFundingSettlement(ctx context.Context, marketID string, transfers []events.Transfer, asset string, winType types.TransferType) ([]events.Margin, []*types.LedgerMovement, error) {
+func (e *Engine) mtmOrFundingSettlement(ctx context.Context, marketID string, transfers []events.Transfer, asset string, winType types.TransferType, round *num.Uint) ([]events.Margin, []*types.LedgerMovement, error) {
 	// stop immediately if there aren't any transfers, channels are closed
 	if len(transfers) == 0 {
 		return nil, nil, nil
@@ -1337,8 +1337,31 @@ func (e *Engine) mtmOrFundingSettlement(ctx context.Context, marketID string, tr
 	}
 
 	if !settle.Balance.IsZero() {
-		e.log.Panic("Settlement balance non-zero at the end of MTM/funding settlement", logging.BigUint("settlement-balance", settle.Balance))
-		return nil, nil, ErrSettlementBalanceNotZero
+		if round == nil || settle.Balance.GT(round) {
+			e.log.Panic("Settlement balance non-zero at the end of MTM/funding settlement", logging.BigUint("settlement-balance", settle.Balance))
+			return nil, nil, ErrSettlementBalanceNotZero
+		}
+		// non-zero balance, but within rounding margin
+		req := &types.TransferRequest{
+			FromAccount: []*types.Account{settle},
+			ToAccount:   []*types.Account{insurance},
+			Asset:       asset,
+			Type:        types.TransferTypeClearAccount,
+			Amount:      settle.Balance.Clone(),
+		}
+		ledgerEntries, err := e.getLedgerEntries(ctx, req)
+		if err != nil {
+			e.log.Panic("unable to redistribute settlement leftover funds", logging.Error(err))
+		}
+		for _, bal := range ledgerEntries.Balances {
+			if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+				e.log.Error("Could not update the target account in transfer",
+					logging.String("account-id", bal.Account.ID),
+					logging.Error(err))
+				return nil, nil, err
+			}
+		}
+		responses = append(responses, ledgerEntries)
 	}
 	return marginEvts, responses, nil
 }
