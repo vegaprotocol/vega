@@ -496,6 +496,27 @@ message Market {
   bool succeeded = 23;
   StopOrders stop_orders = 24;
   repeated vega.Order expiring_stop_orders = 25;
+  Product product = 26;
+}
+
+// eventually support multiple products
+message Product {
+  oneof type {
+    Perps perps = 1;
+  }
+}
+
+message DataPoint {
+  string price = 1;
+  int64 timestamp = 2;
+}
+
+message Perps {
+  string id = 1;
+  repeated DataPoint external_data_point = 2;
+  repeated DataPoint internal_data_point = 3;
+  uint64 seq = 4;
+  int64 startedAt = 5;
 }
 
 message OrdersAtPrice {

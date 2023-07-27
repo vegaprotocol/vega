@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
 var (
@@ -62,6 +63,9 @@ type Product interface {
 
 	// tell the product about an internal data-point such as a the current mark-price
 	SubmitDataPoint(context.Context, *num.Uint, int64) error
+
+	// snapshot specific
+	Serialize() *snapshotpb.Product
 }
 
 // New instance a new product from a Market framework product configuration.

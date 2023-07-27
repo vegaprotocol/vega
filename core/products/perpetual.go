@@ -55,9 +55,6 @@ type Perpetual struct {
 	settlementDataListener func(context.Context, *num.Numeric)
 	broker                 Broker
 
-	// TODO: add the below to the snapshot
-	// https://github.com/vegaprotocol/vega/issues/8765
-
 	// id should be the same as the market id
 	id string
 	// data-points created externally such as spot prices received from external data-sources

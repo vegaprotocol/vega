@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"github.com/pkg/errors"
 )
 
@@ -266,6 +267,10 @@ func (f *Future) updateSettlementData(ctx context.Context, data dscommon.Data) e
 	}
 
 	return nil
+}
+
+func (f *Future) Serialize() *snapshotpb.Product {
+	return &snapshotpb.Product{}
 }
 
 func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine) (*Future, error) {
