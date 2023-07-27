@@ -516,7 +516,7 @@ message Perps {
   repeated DataPoint external_data_point = 2;
   repeated DataPoint internal_data_point = 3;
   uint64 seq = 4;
-  int64 startedAt = 5;
+  int64 started_at = 5;
 }
 
 message OrdersAtPrice {

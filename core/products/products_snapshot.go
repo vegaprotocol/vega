@@ -21,9 +21,7 @@ import (
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
-var (
-	ErrNoStateProvidedForPerpsWithSnapshot = errors.New("no state provided to restore perps from a snapshot")
-)
+var ErrNoStateProvidedForPerpsWithSnapshot = errors.New("no state provided to restore perps from a snapshot")
 
 // New instance a new product from a Market framework product configuration.
 func NewFromSnapshot(
