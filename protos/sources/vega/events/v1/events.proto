@@ -671,6 +671,57 @@ message CoreSnapshotData {
   bool protocol_upgrade_block = 4;
 }
 
+message ExpiredOrders {
+  // Market ID for the event
+  string market_id = 1;
+  // Slice of expired order IDs
+  repeated string order_ids = 2;
+}
+
+message TeamCreated {
+  // The unique identifier of the created team.
+  string team_id = 1;
+  // The party that created the team.
+  string referrer = 2;
+  // Specifies whether the team enabled team based rewards.
+  bool enable_rewards = 3;
+  // Optional team name to be added to the referral banner.
+  optional string name = 4;
+  // Optional link to a team forum, discord, etc.
+  optional string team_url = 5;
+  // Optional link to an image to be used as the team avatar.
+  optional string avatar_url = 6;
+}
+
+message TeamUpdated {
+  // The unique identifier for the updated team.
+  string team_id = 1;
+  // Specifies whether the team enabled team based rewards.
+  bool enable_rewards = 2;
+  // Optional team name to be added to the referral banner.
+  optional string name = 3;
+  // Optional link to a team forum, discord, etc.
+  optional string team_url = 4;
+  // Optional link to an image to be used as the team avatar.
+  optional string avatar_url = 5;
+}
+
+message RefereeSwitchedTeam {
+  // The unique identifier of the team the referee left.
+  string from_team_id = 1;
+  // The unique identifier of the team joined.
+  string to_team_id = 2;
+  // The party that switched team.
+  string referee = 3;
+}
+
+message RefereeJoinedTeam {
+  // The unique identifier of the team the referee joined.
+  string team_id = 1;
+  // The party that joined the team.
+  string referee = 2;
+}
+
 // Bus event type is used to specify a type of event
 // It has 2 styles of event:
 // Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item
@@ -809,6 +860,18 @@ enum BusEventType {
   // Event indicating a data point for a funding period has been received.
   BUS_EVENT_TYPE_FUNDING_PERIOD_DATA_POINT = 62;
 
+  // Event indicating a team has been created.
+  BUS_EVENT_TYPE_TEAM_CREATED = 63;
+
+  // Event indicating a team has been updated.
+  BUS_EVENT_TYPE_TEAM_UPDATED = 64;
+
+  // Event indicating a referee switched team.
+  BUS_EVENT_TYPE_REFEREE_SWITCHED_TEAM = 65;
+
+  // Event indicating a referee joined a team.
+  BUS_EVENT_TYPE_REFEREE_JOINED_TEAM = 66;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -942,6 +1005,14 @@ message BusEvent {
     FundingPeriod funding_period = 159;
     // Data point within a funding period.
     FundingPeriodDataPoint funding_period_data_point = 160;
+    // Event notifying of the creation of a team.m
+    TeamCreated team_created = 161;
+    // Event notifying of an update to a team.
+    TeamUpdated team_updated = 162;
+    // Event notifying that a referee switched teams.
+    RefereeSwitchedTeam referee_switched_team = 163;
+    // Event notifying that a referee joined a team.
+    RefereeJoinedTeam referee_joined_team = 164;
 
     // Market tick events
     MarketEvent market = 1001;
@@ -952,11 +1023,4 @@ message BusEvent {
   uint32 version = 4;
   string chain_id = 5;
   string tx_hash = 6;
-}
-
-message ExpiredOrders {
-  // Market ID for the event
-  string market_id = 1;
-  // Slice of expired order IDs
-  repeated string order_ids = 2;
 }
