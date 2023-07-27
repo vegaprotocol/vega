@@ -1265,8 +1265,8 @@ func checkSLAParams(config *protoTypes.LiquiditySLAParameters, parent string) Er
 		errs.AddForProperty(fmt.Sprintf("%s.sla_competition_factor", parent), ErrMustBeWithinRange01)
 	}
 
-	if config.PerformanceHysteresisEpochs < 1 {
-		errs.AddForProperty(fmt.Sprintf("%s.performance_hysteresis_epochs", parent), ErrMustBePositive)
+	if config.PerformanceHysteresisEpochs < 1 || config.PerformanceHysteresisEpochs > 366 {
+		errs.AddForProperty(fmt.Sprintf("%s.performance_hysteresis_epochs", parent), ErrMustBeWithinRange1366)
 	}
 
 	return errs

@@ -4447,7 +4447,25 @@ func TestNewMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails(t 
 			},
 		},
 	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBePositive)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBeWithinRange1366)
+
+	err = checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewSpotMarket{
+				NewSpotMarket: &protoTypes.NewSpotMarket{
+					Changes: &protoTypes.NewSpotMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Spot{},
+						},
+						SlaParams: &protoTypes.LiquiditySLAParameters{
+							PerformanceHysteresisEpochs: 367,
+						},
+					},
+				},
+			},
+		},
+	})
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBeWithinRange1366)
 }
 
 func TestNewMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds(t *testing.T) {

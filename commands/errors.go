@@ -48,6 +48,7 @@ var (
 	ErrFallsBelowAndRiseAboveMarketIDMustBeTheSame     = errors.New("market ID for falls below and rises above must be the same")
 	ErrTrailingPercentOffsetMinimalIncrementNotReached = errors.New("trailing percent offset minimal increment must be >= 0.001")
 	ErrMustBeEmpty                                     = errors.New("must be empty")
+	ErrMustBeWithinRange1366                           = errors.New("must be between 1 and 366")
 )
 
 type Errors map[string][]error
