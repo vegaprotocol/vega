@@ -49,12 +49,12 @@ type AdminSendRawTransaction struct {
 }
 
 func (h *AdminSendRawTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+	receivedAt := time.Now()
+
 	params, err := validateAdminSendRawTransactionParams(rawParams)
 	if err != nil {
 		return nil, InvalidParams(err)
 	}
-
-	receivedAt := time.Now()
 
 	tx := &commandspb.Transaction{}
 	if err := proto.Unmarshal([]byte(params.RawTransaction), tx); err != nil {

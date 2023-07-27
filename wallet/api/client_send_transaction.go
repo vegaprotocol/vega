@@ -50,6 +50,8 @@ type ClientSendTransaction struct {
 func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	traceID := jsonrpc.TraceIDFromContext(ctx)
 
+	receivedAt := time.Now()
+
 	params, err := validateSendTransactionParams(rawParams)
 	if err != nil {
 		return nil, InvalidParams(err)
@@ -91,7 +93,6 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	}
 	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
 
-	receivedAt := time.Now()
 	if connectedWallet.RequireInteraction() {
 		approved, err := h.interactor.RequestTransactionReviewForSending(ctx, traceID, 1, connectedWallet.Hostname(), connectedWallet.Name(), params.PublicKey, params.RawTransaction, receivedAt)
 		if err != nil {
