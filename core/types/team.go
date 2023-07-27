@@ -1,6 +1,8 @@
 package types
 
-import vgrand "code.vegaprotocol.io/vega/libs/rand"
+import (
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
+)
 
 const teamIDLength = 64
 
@@ -15,8 +17,6 @@ type Team struct {
 	Name      string
 	TeamURL   string
 	AvatarURL string
-
-	EnableRewards bool
 }
 
 func (t *Team) AddReferee(referee PartyID) {
