@@ -64,7 +64,7 @@ func NewMarketFromSnapshot(
 		return nil, common.ErrEmptyMarketID
 	}
 
-	tradableInstrument, err := markets.NewTradableInstrument(ctx, log, mkt.TradableInstrument, oracleEngine, broker)
+	tradableInstrument, err := markets.NewTradableInstrumentFromSnapshot(ctx, log, mkt.TradableInstrument, oracleEngine, broker, em.Product)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}
@@ -253,6 +253,7 @@ func (m *Market) GetState() *types.ExecMarket {
 		IsSucceeded:                m.succeeded,
 		StopOrders:                 m.stopOrders.ToProto(),
 		ExpiringStopOrders:         m.expiringStopOrders.GetState(),
+		Product:                    m.tradableInstrument.Instrument.Product.Serialize(),
 	}
 
 	return em
