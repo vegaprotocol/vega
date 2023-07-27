@@ -14,6 +14,8 @@ package types
 
 import vegapb "code.vegaprotocol.io/vega/protos/vega"
 
+type PartyID string
+
 type Party struct {
 	Id string
 }
