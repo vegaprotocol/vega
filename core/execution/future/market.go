@@ -3760,20 +3760,20 @@ func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Num
 	if len(ledgerMovements) > 0 {
 		m.broker.Send(events.NewLedgerMovements(ctx, ledgerMovements))
 	}
-	// final distribution of liquidity fees
-	m.distributeLiquidityFees(ctx)
 	// no margin events, no margin stuff to check
 	if len(margins) == 0 {
 		return
 	}
 
+	// check margin balances
 	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, margins, m.getCurrentMarkPrice())
+	// no margin accounts need updating...
 	if len(riskUpdates) == 0 {
 		return
 	}
+	// update margins, close-out any positions that don't have the required margin
 	orderUpdates := m.handleRiskEvts(ctx, riskUpdates)
-	m.checkForReferenceMoves(
-		ctx, orderUpdates, false)
+	m.checkForReferenceMoves(ctx, orderUpdates, false)
 }
 
 // NB this must be called with the lock already acquired.
