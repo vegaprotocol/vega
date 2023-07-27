@@ -57,7 +57,9 @@ func TestTerminateMarketViaGovernance(t *testing.T) {
 		UpdateType:      types.MarketStateUpdateTypeTerminate,
 		SettlementPrice: num.NewUint(100),
 	}
-	require.NoError(t, exec.engine.UpdateMarketState(context.Background(), config))
+	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), crypto.RandomHash())
+	ctx = vgcontext.WithChainID(ctx, "chainid")
+	require.NoError(t, exec.engine.UpdateMarketState(ctx, config))
 	state, err := exec.engine.GetMarketState(mkt.ID)
 	require.NoError(t, err)
 	require.Equal(t, types.MarketStateClosed, state)
