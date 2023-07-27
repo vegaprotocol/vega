@@ -60,12 +60,12 @@ type AdminSendTransaction struct {
 }
 
 func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+	receivedAt := time.Now()
+
 	params, err := validateAdminSendTransactionParams(rawParams)
 	if err != nil {
 		return nil, InvalidParams(err)
 	}
-
-	receivedAt := time.Now()
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
 		return nil, InternalError(fmt.Errorf("could not verify the wallet exists: %w", err))
