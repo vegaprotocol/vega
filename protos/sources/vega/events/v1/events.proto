@@ -314,6 +314,9 @@ message TransactionResult {
     commands.v1.EthereumKeyRotateSubmission ethereum_key_rotate_submission = 121;
     commands.v1.StopOrdersSubmission stop_order_submission = 122;
     commands.v1.StopOrdersCancellation stop_order_cancellation = 123;
+    commands.v1.CreateTeam create_team = 124;
+    commands.v1.UpdateTeam update_team = 125;
+    commands.v1.JoinTeam join_team = 126;
   }
 
   // extra details about the transaction processing

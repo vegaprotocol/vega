@@ -229,6 +229,12 @@ func CheckInputData(rawInputData []byte) (*commandspb.InputData, Errors) {
 			errs.Merge(checkStopOrdersSubmission(cmd.StopOrdersSubmission))
 		case *commandspb.InputData_StopOrdersCancellation:
 			errs.Merge(checkStopOrdersCancellation(cmd.StopOrdersCancellation))
+		case *commandspb.InputData_CreateTeam:
+			errs.Merge(checkCreateTeam(cmd.CreateTeam))
+		case *commandspb.InputData_UpdateTeam:
+			errs.Merge(checkUpdateTeam(cmd.UpdateTeam))
+		case *commandspb.InputData_JoinTeam:
+			errs.Merge(checkJoinTeam(cmd.JoinTeam))
 		default:
 			errs.AddForProperty("tx.input_data.command", ErrIsNotSupported)
 		}
