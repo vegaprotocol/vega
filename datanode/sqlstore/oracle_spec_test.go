@@ -28,6 +28,7 @@ import (
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func TestOracleSpec(t *testing.T) {
@@ -64,6 +65,13 @@ func testInsertIntoNewBlock(t *testing.T) {
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
 	assert.Equal(t, 1, rowCount)
+
+	proto = specProtos[4]
+	data = entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
+	assert.NoError(t, os.Upsert(ctx, data))
+
+	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
+	assert.Equal(t, 2, rowCount)
 }
 
 func testUpdateExistingInBlock(t *testing.T) {
@@ -87,6 +95,16 @@ func testUpdateExistingInBlock(t *testing.T) {
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
 	assert.Equal(t, 1, rowCount)
+
+	proto = specProtos[4]
+	data = entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
+	assert.NoError(t, os.Upsert(ctx, data))
+
+	data.ExternalDataSourceSpec.Spec.Status = entities.OracleSpecDeactivated
+	assert.NoError(t, os.Upsert(ctx, data))
+
+	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
+	assert.Equal(t, 2, rowCount)
 }
 
 func testGetSpecByID(t *testing.T) {
@@ -107,7 +125,7 @@ func testGetSpecByID(t *testing.T) {
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
-	assert.Equal(t, 3, rowCount)
+	assert.Equal(t, 5, rowCount)
 
 	got, err := os.GetSpecByID(ctx, "DEADBEEF")
 	require.NoError(t, err)
@@ -118,6 +136,15 @@ func testGetSpecByID(t *testing.T) {
 	want.UpdatedAt = want.UpdatedAt.Truncate(time.Microsecond)
 	want.CreatedAt = want.CreatedAt.Truncate(time.Microsecond)
 	s := got.ExternalDataSourceSpec.Spec
+	assert.Equal(t, want, s)
+
+	got, err = os.GetSpecByID(ctx, "beef000d")
+	require.NoError(t, err)
+
+	want = entities.DataSourceSpecFromProto(specProtos[4].ExternalDataSourceSpec.Spec, got.ExternalDataSourceSpec.Spec.TxHash, block.VegaTime)
+	want.UpdatedAt = want.UpdatedAt.Truncate(time.Microsecond)
+	want.CreatedAt = want.CreatedAt.Truncate(time.Microsecond)
+	s = got.ExternalDataSourceSpec.Spec
 	assert.Equal(t, want, s)
 }
 
@@ -142,7 +169,7 @@ func testGetSpecByTxHash(t *testing.T) {
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
-	assert.Equal(t, 3, rowCount)
+	assert.Equal(t, 5, rowCount)
 
 	foundSpecs, err := os.GetByTxHash(ctx, specs[0].ExternalDataSourceSpec.Spec.TxHash)
 	require.NoError(t, err)
@@ -161,6 +188,7 @@ func getTestSpecs() []*vegapb.OracleSpec {
 	pk1 := dstypes.CreateSignerFromString("b105f00d", dstypes.SignerTypePubKey)
 	pk2 := dstypes.CreateSignerFromString("0x124dd8a6044ef048614aea0aac86643a8ae1312d", dstypes.SignerTypeEthAddress)
 
+	timeNow := uint64(time.Now().UnixNano())
 	return []*vegapb.OracleSpec{
 		{
 			ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
@@ -264,7 +292,7 @@ func getTestSpecs() []*vegapb.OracleSpec {
 		{
 			ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
 				Spec: &vegapb.DataSourceSpec{
-					Id:        "deadbaad",
+					Id:        "beefbeef",
 					CreatedAt: time.Now().UnixNano(),
 					UpdatedAt: time.Now().UnixNano(),
 					Data: vegapb.NewDataSourceDefinition(
@@ -274,6 +302,50 @@ func getTestSpecs() []*vegapb.OracleSpec {
 							{
 								Operator: datapb.Condition_OPERATOR_EQUALS,
 								Value:    fmt.Sprintf("%v", time.Now().UnixNano()),
+							},
+						},
+					),
+					Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
+				},
+			},
+		},
+		{
+			ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
+				Spec: &vegapb.DataSourceSpec{
+					Id:        "beef000d",
+					CreatedAt: time.Now().UnixNano(),
+					UpdatedAt: time.Now().UnixNano(),
+					Data: vegapb.NewDataSourceDefinition(
+						vegapb.DataSourceContentTypeEthOracle,
+					).SetOracleConfig(
+						&vega.DataSourceDefinitionExternal_EthOracle{
+							EthOracle: &vegapb.EthCallSpec{
+								Address: "some-eth-address",
+								Abi:     "{\"string-value\"}",
+								Method:  "test-method",
+								Args: []*structpb.Value{
+									{
+										Kind: &structpb.Value_StringValue{
+											StringValue: "string-arg",
+										},
+									},
+								},
+								Trigger: &vegapb.EthCallTrigger{
+									Trigger: &vegapb.EthCallTrigger_TimeTrigger{
+										TimeTrigger: &vegapb.EthTimeTrigger{
+											Initial: &timeNow,
+										},
+									},
+								},
+								RequiredConfirmations: 256,
+								Filters: []*datapb.Filter{
+									{
+										Key: &datapb.PropertyKey{
+											Name: "test-key-name-0",
+											Type: dstypes.SpecPropertyKeyType(2),
+										},
+									},
+								},
 							},
 						},
 					),
