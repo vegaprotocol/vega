@@ -49,6 +49,7 @@ var (
 	ErrSpotsNotEnabled                           = errors.New("spot trading not enabled")
 	ErrParentMarketDoesNotExist                  = errors.New("market to succeed does not exist")
 	ErrParentMarketAlreadySucceeded              = errors.New("the market was already succeeded by a prior proposal")
+	ErrInvalidSuccessor                          = errors.New("the successor is no longer valid")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/governance Markets,StakingAccounts,Assets,TimeService,Witness,NetParams,Banking
@@ -339,22 +340,21 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 	now := t.Unix()
 
 	for _, proposal := range e.activeProposals {
+		// check if the market for successor proposals still exists, if not, reject the proposal
+		if nm := proposal.Terms.GetNewMarket(); nm != nil && nm.Successor() != nil {
+			if _, err := e.markets.GetMarketState(proposal.ID); err != nil {
+				proposal.RejectWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrInvalidSuccessor)
+				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
+				toBeRemoved = append(toBeRemoved, proposal.ID)
+				continue
+			}
+		}
 		// do not check parent market, the market was either rejected when the parent was succeeded
 		// or, if the parent market state is gone (ie succession window has expired), the proposal simply
 		// loses its parent market reference
 		if proposal.ShouldClose(now) {
 			e.closeProposal(ctx, proposal)
 			voteClosed = append(voteClosed, e.preVoteClosedProposal(proposal))
-		} else if nm := proposal.Terms.GetNewMarket(); nm != nil && nm.Successor() != nil && proposal.IsOpen() {
-			// if the proposal is for a successor market, check if the successor wasn't rejected because another proposal
-			// has since been enacted and left opening auction
-			if _, err := e.markets.GetMarketState(proposal.ID); err != nil {
-				// parent has already been succeeded, the proposal should be rejected
-				proposal.Reject(types.ProposalErrorInvalidSuccessorMarket)
-				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
-				toBeRemoved = append(toBeRemoved, proposal.ID)
-				continue
-			}
 		}
 
 		if !proposal.IsOpen() && !proposal.IsPassed() {
