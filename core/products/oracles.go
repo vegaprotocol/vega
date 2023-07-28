@@ -18,7 +18,6 @@ type scheduledOracle struct {
 	binding                  scheduledBinding
 	settleUnsub              spec.Unsubscriber
 	scheduleUnsub            spec.Unsubscriber
-	data                     oracleData
 }
 
 type terminatingOracle struct {
@@ -88,7 +87,7 @@ func newFutureBinding(f *types.Future) (terminatingBinding, error) {
 
 func (t *terminatingOracle) bindAll(ctx context.Context, oe OracleEngine, settle, term *spec.Spec, settleCB, termCB spec.OnMatchedData) error {
 	if err := t.bindSettlement(ctx, oe, settle, settleCB); err != nil {
-		return nil
+		return err
 	}
 	return t.bindTermination(ctx, oe, term, termCB)
 }
@@ -115,14 +114,17 @@ func (t *terminatingOracle) bindTermination(ctx context.Context, oe OracleEngine
 	return nil
 }
 
-func (t *terminatingOracle) unsubAll(ctx context.Context) {
-	if t.terminationUnsub != nil {
-		t.terminationUnsub(ctx, t.terminationSubscriptionID)
-		t.terminationUnsub = nil
-	}
+func (t *terminatingOracle) unsubSettle(ctx context.Context) {
 	if t.settleUnsub != nil {
 		t.settleUnsub(ctx, t.settlementSubscriptionID)
 		t.settleUnsub = nil
+	}
+}
+
+func (t *terminatingOracle) unsubTerm(ctx context.Context) {
+	if t.terminationUnsub != nil {
+		t.terminationUnsub(ctx, t.terminationSubscriptionID)
+		t.terminationUnsub = nil
 	}
 }
 
@@ -191,4 +193,26 @@ func (s *scheduledOracle) unsubAll(ctx context.Context) {
 		s.scheduleUnsub(ctx, s.scheduleSubscriptionID)
 		s.scheduleUnsub = nil
 	}
+}
+
+// SettlementData returns oracle data settlement data scaled as Uint.
+func (o *oracleData) SettlementData(op, ap uint32) (*num.Uint, error) {
+	if o.settlData.Decimal() == nil && o.settlData.Uint() == nil {
+		return nil, ErrDataSourceSettlementDataNotSet
+	}
+
+	if !o.settlData.SupportDecimalPlaces(int64(ap)) {
+		return nil, ErrSettlementDataDecimalsNotSupportedByAsset
+	}
+
+	// scale to given target decimals by multiplying by 10^(targetDP - oracleDP)
+	// if targetDP > oracleDP - this scales up the decimals of settlement data
+	// if targetDP < oracleDP - this scaled down the decimals of settlement data and can lead to loss of accuracy
+	// if there're equal - no scaling happens
+	return o.settlData.ScaleTo(int64(op), int64(ap))
+}
+
+// IsTradingTerminated returns true when oracle has signalled termination of trading.
+func (o *oracleData) IsTradingTerminated() bool {
+	return o.tradingTerminated
 }
