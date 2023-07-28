@@ -32,7 +32,7 @@ func checkLiquidityProvisionSubmission(cmd *commandspb.LiquidityProvisionSubmiss
 
 	if len(cmd.MarketId) <= 0 {
 		errs.AddForProperty("liquidity_provision_submission.market_id", ErrIsRequired)
-	} else if !IsVegaPubkey(cmd.MarketId) {
+	} else if !IsVegaID(cmd.MarketId) {
 		errs.AddForProperty("liquidity_provision_submission.market_id", ErrShouldBeAValidVegaID)
 	}
 
@@ -87,7 +87,7 @@ func checkLiquidityProvisionCancellation(cmd *commandspb.LiquidityProvisionCance
 
 	if len(cmd.MarketId) <= 0 {
 		return errs.FinalAddForProperty("liquidity_provision_cancellation.market_id", ErrIsRequired)
-	} else if !IsVegaPubkey(cmd.MarketId) {
+	} else if !IsVegaID(cmd.MarketId) {
 		errs.AddForProperty("liquidity_provision_cancellation.market_id", ErrShouldBeAValidVegaID)
 	}
 

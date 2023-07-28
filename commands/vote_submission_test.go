@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -66,8 +67,8 @@ func TestVoteSubmission(t *testing.T) {
 func checkVoteSubmission(cmd *commandspb.VoteSubmission) commands.Errors {
 	err := commands.CheckVoteSubmission(cmd)
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 

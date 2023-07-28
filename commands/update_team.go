@@ -13,7 +13,7 @@ func checkUpdateTeam(cmd *commandspb.UpdateTeam) Errors {
 		return errs.FinalAddForProperty("update_team", ErrIsRequired)
 	}
 
-	if !IsVegaPubkey(cmd.TeamId) {
+	if !IsVegaID(cmd.TeamId) {
 		errs.AddForProperty("update_team.team_id", ErrShouldBeAValidVegaID)
 	}
 

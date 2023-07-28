@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -168,14 +169,14 @@ func testSubmittingTransactionWithInvalidEncodingOfPubKeyFails(t *testing.T) {
 
 	err := checkTransaction(tx)
 
-	assert.Contains(t, err.Get("tx.from.pub_key"), commands.ErrShouldBeAValidVegaPubkey)
+	assert.Contains(t, err.Get("tx.from.pub_key"), commands.ErrShouldBeAValidVegaPublicKey)
 }
 
 func checkTransaction(cmd *commandspb.Transaction) commands.Errors {
 	_, err := commands.CheckTransaction(cmd, "testnet")
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 

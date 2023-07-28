@@ -24,13 +24,13 @@ func checkOrderAmendment(cmd *commandspb.OrderAmendment) Errors {
 
 	if len(cmd.OrderId) <= 0 {
 		errs.AddForProperty("order_amendment.order_id", ErrIsRequired)
-	} else if !IsVegaPubkey(cmd.OrderId) {
+	} else if !IsVegaID(cmd.OrderId) {
 		errs.AddForProperty("order_amendment.order_id", ErrShouldBeAValidVegaID)
 	}
 
 	if len(cmd.MarketId) <= 0 {
 		errs.AddForProperty("order_amendment.market_id", ErrIsRequired)
-	} else if !IsVegaPubkey(cmd.MarketId) {
+	} else if !IsVegaID(cmd.MarketId) {
 		errs.AddForProperty("order_amendment.market_id", ErrShouldBeAValidVegaID)
 	}
 

@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -100,8 +101,8 @@ func TestStateVarProposals(t *testing.T) {
 func checkStateVarProposal(cmd *commandspb.StateVariableProposal) commands.Errors {
 	err := commands.CheckStateVariableProposal(cmd)
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 

@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -275,8 +276,8 @@ func TestCheckStopOrdersStubmission(t *testing.T) {
 func checkStopOrdersSubmission(cmd *commandspb.StopOrdersSubmission) commands.Errors {
 	err := commands.CheckStopOrdersSubmission(cmd)
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 

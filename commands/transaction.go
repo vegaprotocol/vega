@@ -78,8 +78,8 @@ func CheckTransaction(tx *commandspb.Transaction, chainID string) (*commandspb.I
 		errs.AddForProperty("tx.from", ErrIsRequired)
 	} else if len(tx.GetPubKey()) == 0 {
 		errs.AddForProperty("tx.from.pub_key", ErrIsRequired)
-	} else if !IsVegaPubkey(tx.GetPubKey()) {
-		errs.AddForProperty("tx.from.pub_key", ErrShouldBeAValidVegaPubkey)
+	} else if !IsVegaPublicKey(tx.GetPubKey()) {
+		errs.AddForProperty("tx.from.pub_key", ErrShouldBeAValidVegaPublicKey)
 	}
 
 	// We need the above check to pass, so we verify it's all good.
@@ -136,7 +136,7 @@ func checkSignature(signature *commandspb.Signature, pubKey string, rawInputData
 	}
 
 	decodedPubKey := []byte(pubKey)
-	if IsVegaPubkey(pubKey) {
+	if IsVegaPublicKey(pubKey) {
 		// We can ignore the error has it should have been checked earlier.
 		decodedPubKey, _ = hex.DecodeString(pubKey)
 	}

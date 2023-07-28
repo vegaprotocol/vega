@@ -1726,11 +1726,10 @@ func (x *IssueSignatures) GetValidatorNodeId() string {
 
 // Request for creating a referral team
 //
-// Team creator automatically becomes the team leader,
-// called a referrer. The referrer cannot be changed. Creating a team
-// is possible if the creator does not provide liquidity, and is not
-// already a team member - referrer or referee.
-// When a party becomes a referrer, they can no longer submit liquidity provisions.
+// Creates a referral team. The team creator automatically becomes
+// the team leader, called a referrer. This cannot be changed.
+// A referrer cannot already be or become a liquidity provider,
+// nor can they be on an existing team as referrer or referee.
 type CreateTeam struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

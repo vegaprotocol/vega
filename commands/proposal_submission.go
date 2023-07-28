@@ -409,7 +409,7 @@ func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Error
 			if len(recurring.DispatchStrategy.AssetForMetric) <= 0 && changes.DestinationType != vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
 				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.asset_for_metric", ErrUnknownAsset)
 			}
-			if len(recurring.DispatchStrategy.AssetForMetric) > 0 && !IsVegaPubkey(recurring.DispatchStrategy.AssetForMetric) {
+			if len(recurring.DispatchStrategy.AssetForMetric) > 0 && !IsVegaID(recurring.DispatchStrategy.AssetForMetric) {
 				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.asset_for_metric", ErrShouldBeAValidVegaID)
 			}
 			// check that that the metric makes sense for the account type
@@ -504,7 +504,7 @@ func checkUpdateAssetChanges(change *protoTypes.ProposalTerms_UpdateAsset) Error
 
 	if len(change.UpdateAsset.AssetId) == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.update_asset.asset_id", ErrIsRequired)
-	} else if !IsVegaPubkey(change.UpdateAsset.AssetId) {
+	} else if !IsVegaID(change.UpdateAsset.AssetId) {
 		errs.AddForProperty("proposal_submission.terms.change.update_asset.asset_id", ErrShouldBeAValidVegaID)
 	}
 
@@ -697,7 +697,7 @@ func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Err
 
 	if len(change.UpdateMarket.MarketId) == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.update_market.market_id", ErrIsRequired)
-	} else if !IsVegaPubkey(change.UpdateMarket.MarketId) {
+	} else if !IsVegaID(change.UpdateMarket.MarketId) {
 		errs.AddForProperty("proposal_submission.terms.change.update_market.market_id", ErrShouldBeAValidVegaID)
 	}
 
@@ -754,7 +754,7 @@ func checkUpdateSpotMarketChanges(change *protoTypes.ProposalTerms_UpdateSpotMar
 
 	if len(change.UpdateSpotMarket.MarketId) == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.update_spot_market.market_id", ErrIsRequired)
-	} else if !IsVegaPubkey(change.UpdateSpotMarket.MarketId) {
+	} else if !IsVegaID(change.UpdateSpotMarket.MarketId) {
 		errs.AddForProperty("proposal_submission.terms.change.update_spot_market.market_id", ErrShouldBeAValidVegaID)
 	}
 

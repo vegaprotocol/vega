@@ -1,10 +1,12 @@
 package commands_test
 
 import (
+	"errors"
 	"testing"
 	"time"
 
 	"code.vegaprotocol.io/vega/commands"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
@@ -37,7 +39,7 @@ func testAmendOrderJustPriceSuccess(t *testing.T) {
 	arg := &commandspb.OrderAmendment{
 		OrderId:  "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
 		MarketId: "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
-		Price:    StringPtr("1000"),
+		Price:    ptr.From("1000"),
 	}
 	err := checkOrderAmendment(arg)
 
@@ -70,7 +72,7 @@ func testAmendOrderJustExpirySuccess(t *testing.T) {
 	arg := &commandspb.OrderAmendment{
 		OrderId:   "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
 		MarketId:  "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
-		ExpiresAt: Int64Ptr(expires.UnixNano()),
+		ExpiresAt: ptr.From(expires.UnixNano()),
 	}
 	err := checkOrderAmendment(arg)
 	assert.NoError(t, err.ErrorOrNil())
@@ -112,7 +114,7 @@ func testAmendOrderInvalidExpiryFail(t *testing.T) {
 	arg := &commandspb.OrderAmendment{
 		OrderId:     "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
 		TimeInForce: proto.Order_TIME_IN_FORCE_GTC,
-		ExpiresAt:   Int64Ptr(10),
+		ExpiresAt:   ptr.From(int64(10)),
 	}
 	err := checkOrderAmendment(arg)
 	assert.Error(t, err)
@@ -155,7 +157,7 @@ func testAmendOrderPastExpiry(t *testing.T) {
 		OrderId:     "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
 		MarketId:    "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
 		TimeInForce: proto.Order_TIME_IN_FORCE_GTT,
-		ExpiresAt:   Int64Ptr(10),
+		ExpiresAt:   ptr.From(int64(10)),
 	}
 	err := checkOrderAmendment(arg)
 	assert.NoError(t, err.ErrorOrNil())
@@ -165,7 +167,7 @@ func testAmendOrderToGFN(t *testing.T) {
 	arg := &commandspb.OrderAmendment{
 		OrderId:     "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
 		TimeInForce: proto.Order_TIME_IN_FORCE_GFN,
-		ExpiresAt:   Int64Ptr(10),
+		ExpiresAt:   ptr.From(int64(10)),
 	}
 	err := checkOrderAmendment(arg)
 	assert.Error(t, err)
@@ -175,7 +177,7 @@ func testAmendOrderToGFA(t *testing.T) {
 	arg := &commandspb.OrderAmendment{
 		OrderId:     "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
 		TimeInForce: proto.Order_TIME_IN_FORCE_GFA,
-		ExpiresAt:   Int64Ptr(10),
+		ExpiresAt:   ptr.From(int64(10)),
 	}
 	err := checkOrderAmendment(arg)
 	assert.Error(t, err)
@@ -184,8 +186,8 @@ func testAmendOrderToGFA(t *testing.T) {
 func checkOrderAmendment(cmd *commandspb.OrderAmendment) commands.Errors {
 	err := commands.CheckOrderAmendment(cmd)
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 

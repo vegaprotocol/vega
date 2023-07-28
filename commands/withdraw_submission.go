@@ -32,7 +32,7 @@ func checkWithdrawSubmission(cmd *commandspb.WithdrawSubmission) Errors {
 
 	if len(cmd.Asset) <= 0 {
 		errs.AddForProperty("withdraw_submission.asset", ErrIsRequired)
-	} else if !IsVegaPubkey(cmd.Asset) {
+	} else if !IsVegaID(cmd.Asset) {
 		errs.AddForProperty("withdraw_submission.asset", ErrShouldBeAValidVegaID)
 	}
 

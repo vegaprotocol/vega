@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
+	vgtest "code.vegaprotocol.io/vega/libs/test"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,7 +17,7 @@ func TestJoinTeam(t *testing.T) {
 
 func testJoiningTeamSucceeds(t *testing.T) {
 	err := checkJoinTeam(t, &commandspb.JoinTeam{
-		TeamId: RandomStr(5),
+		TeamId: vgtest.RandomVegaID(),
 	})
 
 	assert.Empty(t, err)
@@ -36,8 +37,7 @@ func checkJoinTeam(t *testing.T, cmd *commandspb.JoinTeam) commands.Errors {
 	err := commands.CheckJoinTeam(cmd)
 
 	var e commands.Errors
-	ok := errors.As(err, &e)
-	if !ok {
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 

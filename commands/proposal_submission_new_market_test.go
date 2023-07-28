@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/commands"
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/libs/ptr"
+	"code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -255,7 +256,7 @@ func testNewMarketChangeSubmissionWithDecimalPlacesBelow150Succeeds(t *testing.T
 			Change: &vegapb.ProposalTerms_NewMarket{
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
-						DecimalPlaces: RandomPositiveU64Before(150),
+						DecimalPlaces: test.RandomPositiveU64Before(150),
 					},
 				},
 			},
@@ -329,7 +330,7 @@ func testNewMarketChangeSubmissionWithPositionDecimalPlacesBelow7Succeeds(t *tes
 			Change: &vegapb.ProposalTerms_NewMarket{
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
-						PositionDecimalPlaces: RandomPositiveI64Before(7),
+						PositionDecimalPlaces: test.RandomPositiveI64Before(7),
 					},
 				},
 			},
@@ -716,7 +717,7 @@ func testLiquidityMonitoringChangeSubmissionWithNonPositiveTimeWindowFails(t *te
 			value: 0,
 		}, {
 			msg:   "with ratio of -1",
-			value: RandomNegativeI64(),
+			value: test.RandomNegativeI64(),
 		},
 	}
 	for _, tc := range testCases {
@@ -751,7 +752,7 @@ func testLiquidityMonitoringChangeSubmissionWithPositiveTimeWindowSucceeds(t *te
 					Changes: &vegapb.NewMarketConfiguration{
 						LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
 							TargetStakeParameters: &vegapb.TargetStakeParameters{
-								TimeWindow: RandomPositiveI64(),
+								TimeWindow: test.RandomPositiveI64(),
 							},
 						},
 					},
@@ -915,10 +916,10 @@ func testPriceMonitoringChangeSubmissionWithTriggerHorizonSucceeds(t *testing.T)
 						PriceMonitoringParameters: &vegapb.PriceMonitoringParameters{
 							Triggers: []*vegapb.PriceMonitoringTrigger{
 								{
-									Horizon: RandomPositiveI64(),
+									Horizon: test.RandomPositiveI64(),
 								},
 								{
-									Horizon: RandomPositiveI64(),
+									Horizon: test.RandomPositiveI64(),
 								},
 							},
 						},
@@ -1041,10 +1042,10 @@ func testPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds(t *t
 						PriceMonitoringParameters: &vegapb.PriceMonitoringParameters{
 							Triggers: []*vegapb.PriceMonitoringTrigger{
 								{
-									AuctionExtension: RandomPositiveI64(),
+									AuctionExtension: test.RandomPositiveI64(),
 								},
 								{
-									AuctionExtension: RandomPositiveI64(),
+									AuctionExtension: test.RandomPositiveI64(),
 								},
 							},
 						},

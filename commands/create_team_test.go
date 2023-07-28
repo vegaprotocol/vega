@@ -79,8 +79,7 @@ func checkCreateTeam(t *testing.T, cmd *commandspb.CreateTeam) commands.Errors {
 	err := commands.CheckCreateTeam(cmd)
 
 	var e commands.Errors
-	ok := errors.As(err, &e)
-	if !ok {
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 

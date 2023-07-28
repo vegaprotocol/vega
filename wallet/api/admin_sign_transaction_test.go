@@ -400,7 +400,7 @@ func testAdminSigningTransactionWithInvalidTransactionFails(t *testing.T) {
 	})
 
 	// then
-	assertInvalidParams(t, errorDetails, fmt.Errorf("vote_submission.proposal_id (should be a valid vega ID)"))
+	assertInvalidParams(t, errorDetails, fmt.Errorf("vote_submission.proposal_id (should be a valid Vega ID)"))
 	assert.Empty(t, result)
 }
 

@@ -13,7 +13,7 @@ func checkJoinTeam(cmd *commandspb.JoinTeam) Errors {
 		return errs.FinalAddForProperty("join_team", ErrIsRequired)
 	}
 
-	if !IsVegaPubkey(cmd.TeamId) {
+	if !IsVegaID(cmd.TeamId) {
 		errs.AddForProperty("join_team.team_id", ErrShouldBeAValidVegaID)
 	}
 
