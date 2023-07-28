@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS funding_period (
     end_time TIMESTAMP WITH TIME ZONE,
     funding_payment NUMERIC,
     funding_rate NUMERIC,
+    external_twap NUMERIC,
+    internal_twap NUMERIC,
     vega_time TIMESTAMP WITH TIME ZONE NOT NULL,
     tx_hash BYTEA NOT NULL,
     PRIMARY KEY (market_id, funding_period_seq)
@@ -18,6 +20,7 @@ CREATE TABLE IF NOT EXISTS funding_period_data_points (
     funding_period_seq BIGINT NOT NULL,
     data_point_type funding_period_data_point_source NOT NULL,
     price NUMERIC NOT NULL,
+    twap NUMERIC NOT NULL,
     timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
     vega_time TIMESTAMP WITH TIME ZONE NOT NULL,
     tx_hash BYTEA NOT NULL,

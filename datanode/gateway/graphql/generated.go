@@ -648,10 +648,12 @@ type ComplexityRoot struct {
 	}
 
 	FundingPeriod struct {
-		DataPoints     func(childComplexity int, seqs []int, source *v1.FundingPeriodDataPoint_Source, pagination *v2.Pagination) int
+		DataPoints     func(childComplexity int, dateRange *v2.DateRange, source *v1.FundingPeriodDataPoint_Source, pagination *v2.Pagination) int
 		EndTime        func(childComplexity int) int
+		ExternalTwap   func(childComplexity int) int
 		FundingPayment func(childComplexity int) int
 		FundingRate    func(childComplexity int) int
+		InternalTwap   func(childComplexity int) int
 		MarketId       func(childComplexity int) int
 		Seq            func(childComplexity int) int
 		StartTime      func(childComplexity int) int
@@ -668,6 +670,7 @@ type ComplexityRoot struct {
 		Price           func(childComplexity int) int
 		Seq             func(childComplexity int) int
 		Timestamp       func(childComplexity int) int
+		Twap            func(childComplexity int) int
 	}
 
 	FundingPeriodDataPointConnection struct {
@@ -916,7 +919,7 @@ type ComplexityRoot struct {
 		DecimalPlaces                 func(childComplexity int) int
 		Depth                         func(childComplexity int, maxDepth *int) int
 		Fees                          func(childComplexity int) int
-		FundingPeriods                func(childComplexity int, seq *int, pagination *v2.Pagination) int
+		FundingPeriods                func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		Id                            func(childComplexity int) int
 		InsurancePoolFraction         func(childComplexity int) int
 		LinearSlippageFactor          func(childComplexity int) int
@@ -2217,7 +2220,7 @@ type FundingPeriodResolver interface {
 	StartTime(ctx context.Context, obj *v1.FundingPeriod) (int64, error)
 	EndTime(ctx context.Context, obj *v1.FundingPeriod) (*int64, error)
 
-	DataPoints(ctx context.Context, obj *v1.FundingPeriod, seqs []int, source *v1.FundingPeriodDataPoint_Source, pagination *v2.Pagination) (*v2.FundingPeriodDataPointConnection, error)
+	DataPoints(ctx context.Context, obj *v1.FundingPeriod, dateRange *v2.DateRange, source *v1.FundingPeriodDataPoint_Source, pagination *v2.Pagination) (*v2.FundingPeriodDataPointConnection, error)
 }
 type FundingPeriodDataPointResolver interface {
 	Seq(ctx context.Context, obj *v1.FundingPeriodDataPoint) (int, error)
@@ -2297,7 +2300,7 @@ type MarketResolver interface {
 
 	RiskFactors(ctx context.Context, obj *vega.Market) (*vega.RiskFactor, error)
 
-	FundingPeriods(ctx context.Context, obj *vega.Market, seq *int, pagination *v2.Pagination) (*v2.FundingPeriodConnection, error)
+	FundingPeriods(ctx context.Context, obj *vega.Market, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.FundingPeriodConnection, error)
 }
 type MarketDataResolver interface {
 	Market(ctx context.Context, obj *vega.MarketData) (*vega.Market, error)
@@ -4704,7 +4707,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.FundingPeriod.DataPoints(childComplexity, args["seqs"].([]int), args["source"].(*v1.FundingPeriodDataPoint_Source), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.FundingPeriod.DataPoints(childComplexity, args["dateRange"].(*v2.DateRange), args["source"].(*v1.FundingPeriodDataPoint_Source), args["pagination"].(*v2.Pagination)), true
 
 	case "FundingPeriod.endTime":
 		if e.complexity.FundingPeriod.EndTime == nil {
@@ -4712,6 +4715,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FundingPeriod.EndTime(childComplexity), true
+
+	case "FundingPeriod.externalTwap":
+		if e.complexity.FundingPeriod.ExternalTwap == nil {
+			break
+		}
+
+		return e.complexity.FundingPeriod.ExternalTwap(childComplexity), true
 
 	case "FundingPeriod.fundingPayment":
 		if e.complexity.FundingPeriod.FundingPayment == nil {
@@ -4726,6 +4736,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FundingPeriod.FundingRate(childComplexity), true
+
+	case "FundingPeriod.internalTwap":
+		if e.complexity.FundingPeriod.InternalTwap == nil {
+			break
+		}
+
+		return e.complexity.FundingPeriod.InternalTwap(childComplexity), true
 
 	case "FundingPeriod.marketId":
 		if e.complexity.FundingPeriod.MarketId == nil {
@@ -4796,6 +4813,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FundingPeriodDataPoint.Timestamp(childComplexity), true
+
+	case "FundingPeriodDataPoint.twap":
+		if e.complexity.FundingPeriodDataPoint.Twap == nil {
+			break
+		}
+
+		return e.complexity.FundingPeriodDataPoint.Twap(childComplexity), true
 
 	case "FundingPeriodDataPointConnection.edges":
 		if e.complexity.FundingPeriodDataPointConnection.Edges == nil {
@@ -5781,7 +5805,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Market.FundingPeriods(childComplexity, args["seq"].(*int), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Market.FundingPeriods(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination)), true
 
 	case "Market.id":
 		if e.complexity.Market.Id == nil {
@@ -11510,15 +11534,15 @@ func (ec *executionContext) field_Epoch_validatorsConnection_args(ctx context.Co
 func (ec *executionContext) field_FundingPeriod_dataPoints_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 []int
-	if tmp, ok := rawArgs["seqs"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("seqs"))
-		arg0, err = ec.unmarshalOInt2ᚕintᚄ(ctx, tmp)
+	var arg0 *v2.DateRange
+	if tmp, ok := rawArgs["dateRange"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateRange"))
+		arg0, err = ec.unmarshalODateRange2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDateRange(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["seqs"] = arg0
+	args["dateRange"] = arg0
 	var arg1 *v1.FundingPeriodDataPoint_Source
 	if tmp, ok := rawArgs["source"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
@@ -11624,15 +11648,15 @@ func (ec *executionContext) field_Market_depth_args(ctx context.Context, rawArgs
 func (ec *executionContext) field_Market_fundingPeriods_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *int
-	if tmp, ok := rawArgs["seq"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("seq"))
-		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+	var arg0 *v2.DateRange
+	if tmp, ok := rawArgs["dateRange"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateRange"))
+		arg0, err = ec.unmarshalODateRange2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDateRange(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["seq"] = arg0
+	args["dateRange"] = arg0
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
@@ -27389,6 +27413,88 @@ func (ec *executionContext) fieldContext_FundingPeriod_fundingRate(ctx context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _FundingPeriod_externalTwap(ctx context.Context, field graphql.CollectedField, obj *v1.FundingPeriod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FundingPeriod_externalTwap(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExternalTwap, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FundingPeriod_externalTwap(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FundingPeriod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FundingPeriod_internalTwap(ctx context.Context, field graphql.CollectedField, obj *v1.FundingPeriod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FundingPeriod_internalTwap(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InternalTwap, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FundingPeriod_internalTwap(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FundingPeriod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _FundingPeriod_dataPoints(ctx context.Context, field graphql.CollectedField, obj *v1.FundingPeriod) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_FundingPeriod_dataPoints(ctx, field)
 	if err != nil {
@@ -27403,7 +27509,7 @@ func (ec *executionContext) _FundingPeriod_dataPoints(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.FundingPeriod().DataPoints(rctx, obj, fc.Args["seqs"].([]int), fc.Args["source"].(*v1.FundingPeriodDataPoint_Source), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.FundingPeriod().DataPoints(rctx, obj, fc.Args["dateRange"].(*v2.DateRange), fc.Args["source"].(*v1.FundingPeriodDataPoint_Source), fc.Args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -27724,6 +27830,47 @@ func (ec *executionContext) fieldContext_FundingPeriodDataPoint_price(ctx contex
 	return fc, nil
 }
 
+func (ec *executionContext) _FundingPeriodDataPoint_twap(ctx context.Context, field graphql.CollectedField, obj *v1.FundingPeriodDataPoint) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FundingPeriodDataPoint_twap(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Twap, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FundingPeriodDataPoint_twap(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FundingPeriodDataPoint",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _FundingPeriodDataPoint_timestamp(ctx context.Context, field graphql.CollectedField, obj *v1.FundingPeriodDataPoint) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_FundingPeriodDataPoint_timestamp(ctx, field)
 	if err != nil {
@@ -27919,6 +28066,8 @@ func (ec *executionContext) fieldContext_FundingPeriodDataPointEdge_node(ctx con
 				return ec.fieldContext_FundingPeriodDataPoint_dataPointSource(ctx, field)
 			case "price":
 				return ec.fieldContext_FundingPeriodDataPoint_price(ctx, field)
+			case "twap":
+				return ec.fieldContext_FundingPeriodDataPoint_twap(ctx, field)
 			case "timestamp":
 				return ec.fieldContext_FundingPeriodDataPoint_timestamp(ctx, field)
 			}
@@ -28023,6 +28172,10 @@ func (ec *executionContext) fieldContext_FundingPeriodEdge_node(ctx context.Cont
 				return ec.fieldContext_FundingPeriod_fundingPayment(ctx, field)
 			case "fundingRate":
 				return ec.fieldContext_FundingPeriod_fundingRate(ctx, field)
+			case "externalTwap":
+				return ec.fieldContext_FundingPeriod_externalTwap(ctx, field)
+			case "internalTwap":
+				return ec.fieldContext_FundingPeriod_internalTwap(ctx, field)
 			case "dataPoints":
 				return ec.fieldContext_FundingPeriod_dataPoints(ctx, field)
 			}
@@ -35589,7 +35742,7 @@ func (ec *executionContext) _Market_fundingPeriods(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().FundingPeriods(rctx, obj, fc.Args["seq"].(*int), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Market().FundingPeriods(rctx, obj, fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -78407,6 +78560,14 @@ func (ec *executionContext) _FundingPeriod(ctx context.Context, sel ast.Selectio
 
 			out.Values[i] = ec._FundingPeriod_fundingRate(ctx, field, obj)
 
+		case "externalTwap":
+
+			out.Values[i] = ec._FundingPeriod_externalTwap(ctx, field, obj)
+
+		case "internalTwap":
+
+			out.Values[i] = ec._FundingPeriod_internalTwap(ctx, field, obj)
+
 		case "dataPoints":
 			field := field
 
@@ -78531,6 +78692,10 @@ func (ec *executionContext) _FundingPeriodDataPoint(ctx context.Context, sel ast
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "twap":
+
+			out.Values[i] = ec._FundingPeriodDataPoint_twap(ctx, field, obj)
+
 		case "timestamp":
 
 			out.Values[i] = ec._FundingPeriodDataPoint_timestamp(ctx, field, obj)
@@ -97284,44 +97449,6 @@ func (ec *executionContext) marshalOIcebergOrder2ᚖcodeᚗvegaprotocolᚗioᚋv
 		return graphql.Null
 	}
 	return ec._IcebergOrder(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOInt2ᚕintᚄ(ctx context.Context, v interface{}) ([]int, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
-	var err error
-	res := make([]int, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNInt2int(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalOInt2ᚕintᚄ(ctx context.Context, sel ast.SelectionSet, v []int) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	for i := range v {
-		ret[i] = ec.marshalNInt2int(ctx, sel, v[i])
-	}
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {

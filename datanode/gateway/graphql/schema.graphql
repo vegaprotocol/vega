@@ -1946,8 +1946,12 @@ type Market {
 
   "Funding periods for perpetual markets"
   fundingPeriods(
-    "Optional: Funding period sequence to filter for"
-    seq: Int
+    """
+    Optional: Date range to retrieve funding periods from/to.
+    The funding period start time will be used to determine whether to include the funding period in the results.
+    Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch.
+    """
+    dateRange: DateRange
     "Pagination control"
     pagination: Pagination
   ): FundingPeriodConnection!
@@ -5207,6 +5211,8 @@ type FundingPeriodDataPoint {
   dataPointSource: FundingPeriodDataPointSource
   "Price of the asset as seen by this data point."
   price: String!
+  "Time weighted average price calculated from data points for this period from the data source."
+  twap: String
   "Timestamp when the data point was received."
   timestamp: Timestamp!
 }
@@ -5241,10 +5247,18 @@ type FundingPeriod {
   fundingPayment: String
   "Percentage difference between the time-weighted average price of the external and internal data point."
   fundingRate: String
+  "Time weighted average price calculated from data points for this period from the external data source."
+  externalTwap: String
+  "Time weighted average price calculated from data points for this period from the internal data source."
+  internalTwap: String
   "Data points associated with this funding period."
   dataPoints (
-    "Optional list of funding period sequences to filter data points by. If omitted, no filtering is applied."
-    seqs: [Int!],
+    """
+    Optional date range to filter funding period data points from/to.
+    The funding period's start date will be used to determine if the funding period's data points should be included in the results.
+    Start and end time should be expressed as an integer value of Unix nanoseconds.
+    """
+    dateRange: DateRange,
     "Optional filter to only return data points from a specific data source. If omitted, no filtering is applied."
     source: FundingPeriodDataPointSource
     "Pagination control"

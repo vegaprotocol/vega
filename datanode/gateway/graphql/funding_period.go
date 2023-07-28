@@ -21,17 +21,12 @@ func (r *fundingPeriodResolver) EndTime(ctx context.Context, obj *v1.FundingPeri
 	return obj.End, nil
 }
 
-func (r *fundingPeriodResolver) DataPoints(ctx context.Context, obj *v1.FundingPeriod, seqs []int, source *v1.FundingPeriodDataPoint_Source,
+func (r *fundingPeriodResolver) DataPoints(ctx context.Context, obj *v1.FundingPeriod, dateRange *v2.DateRange, source *v1.FundingPeriodDataPoint_Source,
 	pagination *v2.Pagination,
 ) (*v2.FundingPeriodDataPointConnection, error) {
-	seqNums := make([]uint64, len(seqs))
-	for i, seq := range seqs {
-		seqNums[i] = uint64(seq)
-	}
-
 	req := &v2.ListFundingPeriodDataPointsRequest{
 		MarketId:   obj.MarketId,
-		Seq:        seqNums,
+		DateRange:  dateRange,
 		Source:     source,
 		Pagination: pagination,
 	}

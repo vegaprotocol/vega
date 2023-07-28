@@ -3911,7 +3911,8 @@ func (t *TradingDataServiceV2) ListFundingPeriods(ctx context.Context, req *v2.L
 	if err != nil {
 		return nil, formatE(ErrInvalidPagination, err)
 	}
-	periods, pageInfo, err := t.fundingPeriodService.ListFundingPeriods(ctx, entities.MarketID(req.MarketId), req.Seq, pagination)
+	dateRange := entities.DateRangeFromProto(req.DateRange)
+	periods, pageInfo, err := t.fundingPeriodService.ListFundingPeriods(ctx, entities.MarketID(req.MarketId), dateRange, pagination)
 	if err != nil {
 		return nil, formatE(ErrListFundingPeriod, err)
 	}
@@ -3940,9 +3941,11 @@ func (t *TradingDataServiceV2) ListFundingPeriodDataPoints(ctx context.Context, 
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
+	dateRange := entities.DateRangeFromProto(req.DateRange)
 	dataPoints, pageInfo, err := t.fundingPeriodService.ListFundingPeriodDataPoints(ctx,
 		entities.MarketID(req.MarketId),
-		req.Seq, (*entities.FundingPeriodDataPointSource)(req.Source),
+		dateRange,
+		(*entities.FundingPeriodDataPointSource)(req.Source),
 		pagination,
 	)
 	if err != nil {

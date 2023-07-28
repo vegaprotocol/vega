@@ -21,6 +21,8 @@ type FundingPeriod struct {
 	EndTime          *time.Time
 	FundingPayment   *num.Decimal
 	FundingRate      *num.Decimal
+	ExternalTwap     *num.Decimal
+	InternalTwap     *num.Decimal
 	VegaTime         time.Time
 	TxHash           TxHash
 }
@@ -30,6 +32,8 @@ func NewFundingPeriodFromProto(fp *events.FundingPeriod, txHash TxHash, vegaTime
 		endTime        *time.Time
 		fundingPayment *num.Decimal
 		fundingRate    *num.Decimal
+		externalTwap   *num.Decimal
+		internalTwap   *num.Decimal
 		err            error
 	)
 
@@ -38,11 +42,27 @@ func NewFundingPeriodFromProto(fp *events.FundingPeriod, txHash TxHash, vegaTime
 	}
 
 	if fp.FundingPayment != nil {
-		*fundingPayment, err = num.DecimalFromString(*fp.FundingPayment)
+		if *fundingPayment, err = num.DecimalFromString(*fp.FundingPayment); err != nil {
+			return nil, err
+		}
 	}
 
 	if fp.FundingRate != nil {
-		*fundingRate, err = num.DecimalFromString(*fp.FundingRate)
+		if *fundingRate, err = num.DecimalFromString(*fp.FundingRate); err != nil {
+			return nil, err
+		}
+	}
+
+	if fp.ExternalTwap != nil {
+		if *externalTwap, err = num.DecimalFromString(*fp.ExternalTwap); err != nil {
+			return nil, err
+		}
+	}
+
+	if fp.InternalTwap != nil {
+		if *internalTwap, err = num.DecimalFromString(*fp.InternalTwap); err != nil {
+			return nil, err
+		}
 	}
 
 	return &FundingPeriod{
@@ -52,6 +72,8 @@ func NewFundingPeriodFromProto(fp *events.FundingPeriod, txHash TxHash, vegaTime
 		EndTime:          endTime,
 		FundingPayment:   fundingPayment,
 		FundingRate:      fundingRate,
+		ExternalTwap:     externalTwap,
+		InternalTwap:     internalTwap,
 		VegaTime:         vegaTime,
 		TxHash:           txHash,
 	}, err
@@ -62,6 +84,8 @@ func (fp FundingPeriod) ToProto() *events.FundingPeriod {
 		endTime        *int64
 		fundingPayment *string
 		fundingRate    *string
+		externalTwap   *string
+		internalTwap   *string
 	)
 
 	if fp.EndTime != nil {
@@ -76,6 +100,14 @@ func (fp FundingPeriod) ToProto() *events.FundingPeriod {
 		fundingRate = ptr.From(fp.FundingRate.String())
 	}
 
+	if fp.ExternalTwap != nil {
+		externalTwap = ptr.From(fp.ExternalTwap.String())
+	}
+
+	if fp.InternalTwap != nil {
+		internalTwap = ptr.From(fp.InternalTwap.String())
+	}
+
 	return &events.FundingPeriod{
 		MarketId:       fp.MarketID.String(),
 		Seq:            fp.FundingPeriodSeq,
@@ -83,12 +115,14 @@ func (fp FundingPeriod) ToProto() *events.FundingPeriod {
 		End:            endTime,
 		FundingPayment: fundingPayment,
 		FundingRate:    fundingRate,
+		ExternalTwap:   externalTwap,
+		InternalTwap:   internalTwap,
 	}
 }
 
 func (fp FundingPeriod) Cursor() *Cursor {
 	pc := FundingPeriodCursor{
-		VegaTime:         fp.VegaTime,
+		StartTime:        fp.StartTime,
 		MarketID:         fp.MarketID,
 		FundingPeriodSeq: fp.FundingPeriodSeq,
 	}
@@ -108,6 +142,7 @@ type FundingPeriodDataPoint struct {
 	FundingPeriodSeq uint64
 	DataPointType    FundingPeriodDataPointSource
 	Price            num.Decimal
+	Twap             num.Decimal
 	Timestamp        time.Time
 	VegaTime         time.Time
 	TxHash           TxHash
@@ -119,11 +154,16 @@ func NewFundingPeriodDataPointFromProto(fpdp *events.FundingPeriodDataPoint, txH
 		return nil, err
 	}
 
+	twap, err := num.DecimalFromString(fpdp.Twap)
+	if err != nil {
+		return nil, err
+	}
 	return &FundingPeriodDataPoint{
 		MarketID:         MarketID(fpdp.MarketId),
 		FundingPeriodSeq: fpdp.Seq,
 		DataPointType:    FundingPeriodDataPointSource(fpdp.DataPointType),
 		Price:            price,
+		Twap:             twap,
 		Timestamp:        NanosToPostgresTimestamp(fpdp.Timestamp),
 		VegaTime:         vegaTime,
 		TxHash:           txHash,
@@ -136,13 +176,14 @@ func (dp FundingPeriodDataPoint) ToProto() *events.FundingPeriodDataPoint {
 		Seq:           dp.FundingPeriodSeq,
 		DataPointType: events.FundingPeriodDataPoint_Source(dp.DataPointType),
 		Price:         dp.Price.String(),
+		Twap:          dp.Twap.String(),
 		Timestamp:     dp.Timestamp.UnixNano(),
 	}
 }
 
 func (dp FundingPeriodDataPoint) Cursor() *Cursor {
 	pc := FundingPeriodDataPointCursor{
-		VegaTime:         dp.VegaTime,
+		Timestamp:        dp.Timestamp,
 		MarketID:         dp.MarketID,
 		FundingPeriodSeq: dp.FundingPeriodSeq,
 		DataPointType:    dp.DataPointType,
@@ -159,7 +200,9 @@ func (dp FundingPeriodDataPoint) ToProtoEdge(_ ...any) (*v2.FundingPeriodDataPoi
 }
 
 type FundingPeriodCursor struct {
-	VegaTime         time.Time `json:"vegaTime"`
+	// We're using start-time over vega-time for the cursor because the funding period record can be updated
+	// on settlement and the vega time and tx hash will change, but the start time will not.
+	StartTime        time.Time `json:"startTime"`
 	MarketID         MarketID  `json:"marketID"`
 	FundingPeriodSeq uint64    `json:"fundingPeriodSeq"`
 }
@@ -180,7 +223,10 @@ func (c *FundingPeriodCursor) Parse(cursorString string) error {
 }
 
 type FundingPeriodDataPointCursor struct {
-	VegaTime         time.Time                    `json:"vegaTime"`
+	// We want to use the timestamp of the data point over the vega time for the cursor because the timestamp represents a
+	// point in time between the start time and end time of the funding period and it is also used for filtering
+	// results when querying via the API.
+	Timestamp        time.Time                    `json:"timestamp"`
 	MarketID         MarketID                     `json:"marketID"`
 	FundingPeriodSeq uint64                       `json:"fundingPeriodSeq"`
 	DataPointType    FundingPeriodDataPointSource `json:"dataPointType"`
