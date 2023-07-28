@@ -27,6 +27,10 @@ message FundingPeriod {
   optional string funding_payment = 5;
   // Percentage difference between the time-weighted average price of the external and internal data point.
   optional string funding_rate = 6;
+  // TWAP for this period based on the internal data-points.
+  optional string internal_twap = 7;
+  // TWAP for this period based on the external data-points.
+  optional string external_twap = 8;
 }
 
 // Event notifying a data point for a funding period.
@@ -50,6 +54,8 @@ message FundingPeriodDataPoint {
   string price = 4;
   // Timestamp in Unix nanoseconds of when the data point was received.
   int64 timestamp = 6;
+  // The TWAP for this source with this data-point added.
+  string twap = 7;
 }
 
 message StopOrderEvent {

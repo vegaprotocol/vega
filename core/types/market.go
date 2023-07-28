@@ -383,17 +383,6 @@ func (s Spot) String() string {
 	)
 }
 
-type InstrumentPerpetual struct {
-	Perpetual *Perpetual
-}
-
-type Perpetual struct {
-	MarginFundingFactor *num.Decimal
-	// TODO the plumbing
-	// https://github.com/vegaprotocol/vega/issues/8756
-	// https://github.com/vegaprotocol/vega/issues/8753
-}
-
 type InstrumentFuture struct {
 	Future *Future
 }
@@ -887,6 +876,14 @@ func (m MarketData) String() string {
 	)
 }
 
+type MarketType uint32
+
+const (
+	MarketTypeFuture MarketType = iota
+	MarketTypeSpot
+	MarketTypePerp
+)
+
 type Market struct {
 	ID                            string
 	TradableInstrument            *TradableInstrument
@@ -906,6 +903,7 @@ type Market struct {
 	MarketTimestamps      *MarketTimestamps
 	ParentMarketID        string
 	InsurancePoolFraction num.Decimal
+	mType                 MarketType
 }
 
 func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
@@ -942,6 +940,12 @@ func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
 		QuadraticSlippageFactor:       quadraticSlippageFactor,
 		ParentMarketID:                parent,
 		InsurancePoolFraction:         insFraction,
+		mType:                         MarketTypeFuture,
+	}
+	if s := m.GetSpot(); s != nil {
+		m.mType = MarketTypeSpot
+	} else if p := m.GetPerps(); p != nil {
+		m.mType = MarketTypePerp
 	}
 
 	if mkt.LiquiditySlaParams != nil {
@@ -1031,6 +1035,10 @@ func (m Market) String() string {
 		m.State.String(),
 		stringer.ReflectPointerToString(m.MarketTimestamps),
 	)
+}
+
+func (m Market) MarketType() MarketType {
+	return m.mType
 }
 
 func (m Market) DeepClone() *Market {

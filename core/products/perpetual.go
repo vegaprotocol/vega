@@ -14,7 +14,13 @@ package products
 
 import (
 	"context"
+	"fmt"
+	"strconv"
+	"strings"
 
+	"code.vegaprotocol.io/vega/core/datasource"
+	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -22,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/pkg/errors"
 
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
@@ -45,15 +52,22 @@ type dataPoint struct {
 	t int64
 }
 
+/*type oracle struct {
+	settlementDataSubscriptionID    spec.SubscriptionID
+	tradingTerminatedSubscriptionID spec.SubscriptionID
+	unsubscribe                     spec.Unsubscriber
+	binding                         oracleBinding
+	data                            oracleData
+}*/
+
 // Perpetual represents a Perpetual as describe by the market framework.
 type Perpetual struct {
-	log                 *logging.Logger
-	SettlementAsset     string
-	QuoteName           string
-	MarginFundingFactor *num.Decimal
+	p   *types.Perps
+	log *logging.Logger
 	// oracle                 oracle
 	settlementDataListener func(context.Context, *num.Numeric)
 	broker                 Broker
+	oracle                 oracle
 
 	// id should be the same as the market id
 	id string
@@ -65,14 +79,81 @@ type Perpetual struct {
 	seq uint64
 	// the time that this period interval started
 	startedAt int64
+	// asset decimal places
+	assetDP uint32
 }
 
-func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perpetual, oe OracleEngine, broker Broker) (*Perpetual, error) {
-	return &Perpetual{
-		log:                 log,
-		broker:              broker,
-		MarginFundingFactor: p.MarginFundingFactor,
-	}, nil
+func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, oe OracleEngine, broker Broker, assetDP uint32) (*Perpetual, error) {
+	// make sure we have all we need
+	if p.DataSourceSpecForSettlementData == nil || p.DataSourceSpecForSettlementSchedule == nil || p.DataSourceSpecBinding == nil {
+		return nil, ErrDataSourceSpecAndBindingAreRequired
+	}
+	oracleBinding, err := newPerpOracleBinding(p)
+	if err != nil {
+		return nil, err
+	}
+
+	dsSpec := p.DataSourceSpecForSettlementData.GetDefinition()
+
+	// check decimal places for settlement data
+	for _, f := range dsSpec.GetFilters() {
+		if f.Key.Type == datapb.PropertyKey_TYPE_INTEGER && f.Key.NumberDecimalPlaces != nil {
+			oracleBinding.settlementDataPropertyType = f.Key.Type
+			oracleBinding.settlementDataDecimals = *f.Key.NumberDecimalPlaces
+		}
+		// we may want to support 2 timestamp types here
+		if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP && f.Key.NumberDecimalPlaces == nil {
+			oracleBinding.settlementSchedulePropertyType = f.Key.Type
+		}
+	}
+	perp := &Perpetual{
+		p:       p,
+		log:     log,
+		broker:  broker,
+		assetDP: assetDP,
+		oracle: oracle{
+			binding: oracleBinding,
+		},
+	}
+	// bind the external data-points oracle
+	oracleSpecForSettlementData, err := spec.New(*datasource.SpecFromDefinition(*p.DataSourceSpecForSettlementData.Data))
+	if err != nil {
+		return nil, err
+	}
+	switch oracleBinding.settlementDataPropertyType {
+	case datapb.PropertyKey_TYPE_INTEGER:
+		err := oracleSpecForSettlementData.EnsureBoundableProperty(oracleBinding.settlementDataProperty, datapb.PropertyKey_TYPE_INTEGER)
+		if err != nil {
+			return nil, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+		}
+	case datapb.PropertyKey_TYPE_DECIMAL:
+		err := oracleSpecForSettlementData.EnsureBoundableProperty(oracleBinding.settlementDataProperty, datapb.PropertyKey_TYPE_DECIMAL)
+		if err != nil {
+			return nil, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+		}
+	}
+	perp.oracle.settlementDataSubscriptionID, perp.oracle.unsubscribe, err = oe.Subscribe(ctx, *oracleSpecForSettlementData, perp.receiveDataPoint)
+	if err != nil {
+		return nil, fmt.Errorf("could not subscribe to oracle engine for settlement data: %w", err)
+	}
+
+	// bind the schedule oracle
+	oracleSpecForSchedule, err := spec.New(*datasource.SpecFromDefinition(*p.DataSourceSpecForSettlementSchedule.Data))
+	if err != nil {
+		return nil, err
+	}
+	switch oracleBinding.settlementSchedulePropertyType {
+	case datapb.PropertyKey_TYPE_TIMESTAMP:
+		if err := oracleSpecForSchedule.EnsureBoundableProperty(oracleBinding.settlementScheduleProperty, oracleBinding.settlementSchedulePropertyType); err != nil {
+			return nil, fmt.Errorf("invalid oracle spec binding for settlement schedule: %w", err)
+		}
+	}
+	perp.oracle.settlementScheduleSubscriptionID, perp.oracle.unsubscribeSchedule, err = oe.Subscribe(ctx, *oracleSpecForSchedule, perp.receiveSettlementCue)
+	if err != nil {
+		return nil, fmt.Errorf("could not subscribe to oracle engine for schedule data: %w", err)
+	}
+
+	return perp, nil
 }
 
 func (p *Perpetual) RestoreSettlementData(settleData *num.Numeric) {
@@ -111,7 +192,7 @@ func (p *Perpetual) IsTradingTerminated() bool {
 
 // GetAsset return the asset used by the future.
 func (p *Perpetual) GetAsset() string {
-	return p.SettlementAsset
+	return p.p.SettlementAsset
 }
 
 func (p *Perpetual) UnsubscribeTradingTerminated(ctx context.Context) {
@@ -119,12 +200,14 @@ func (p *Perpetual) UnsubscribeTradingTerminated(ctx context.Context) {
 }
 
 func (p *Perpetual) UnsubscribeSettlementData(ctx context.Context) {
-	p.log.Panic("not implemented")
+	p.log.Info("unsubscribed trading settlement data for", logging.String("quote-name", p.p.QuoteName))
+	p.oracle.unsubscribe(ctx, p.oracle.settlementDataSubscriptionID)
+	p.oracle.unsubscribeSchedule(ctx, p.oracle.settlementScheduleSubscriptionID)
 }
 
 func (p *Perpetual) OnLeaveOpeningAuction(ctx context.Context, t int64) {
 	p.startedAt = t
-	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil))
+	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil, nil, nil))
 }
 
 // SubmitDataPoint this will add a data point produced internally by the core node.
@@ -138,12 +221,78 @@ func (p *Perpetual) SubmitDataPoint(ctx context.Context, price *num.Uint, t int6
 		p.log.Error("unable to add internal data-point", logging.Error(err))
 		return err
 	}
-	p.broker.Send(events.NewFundingPeriodDataPointEvent(ctx, p.id, price.String(), t, p.seq, dataPointSourceInternal))
+	twap := twap(p.internal, p.startedAt, t)
+	p.broker.Send(events.NewFundingPeriodDataPointEvent(ctx, p.id, price.String(), t, p.seq, dataPointSourceInternal, twap))
+	return nil
+}
+
+func (p *Perpetual) receiveDataPoint(ctx context.Context, data dscommon.Data) error {
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("new oracle data received", data.Debug()...)
+	}
+
+	settlDataDecimals := int64(p.oracle.binding.settlementDataDecimals)
+	odata := &oracleData{
+		settlData: &num.Numeric{},
+	}
+	switch p.oracle.binding.settlementDataPropertyType {
+	case datapb.PropertyKey_TYPE_DECIMAL:
+		settlDataAsDecimal, err := data.GetDecimal(p.oracle.binding.settlementDataProperty)
+		if err != nil {
+			p.log.Error(
+				"could not parse decimal type property acting as settlement data",
+				logging.Error(err),
+			)
+			return err
+		}
+
+		odata.settlData.SetDecimal(&settlDataAsDecimal)
+
+	default:
+		settlDataAsUint, err := data.GetUint(p.oracle.binding.settlementDataProperty)
+		if err != nil {
+			p.log.Error(
+				"could not parse integer type property acting as settlement data",
+				logging.Error(err),
+			)
+			return err
+		}
+
+		odata.settlData.SetUint(settlDataAsUint)
+	}
+
+	// get scaled uint
+	assetPrice, err := odata.settlData.ScaleTo(settlDataDecimals, int64(p.assetDP))
+	if err != nil {
+		p.log.Error("Could not scale the settle data received to asset decimals",
+			logging.String("settle-data", odata.settlData.String()),
+			logging.Error(err),
+		)
+		return err
+	}
+	// add price point with "eth-block-time" as time
+	pTime, err := strconv.ParseUint(data.MetaData["eth-block-time"], 10, 64)
+	if err != nil {
+		p.log.Error("Could not parse the eth block time",
+			logging.String("eth-block-time", data.MetaData["eth-block-time"]),
+			logging.Error(err),
+		)
+		return err
+	}
+	// now add the price
+	p.addExternalDataPoint(ctx, assetPrice, int64(pTime))
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug(
+			"perp settlement data updated",
+			logging.String("settlementData", odata.settlData.String()),
+		)
+	}
+
 	return nil
 }
 
 // receiveDataPoint will be hooked up as a subscriber to the oracle data for incoming settlement data from a data-source.
-func (p *Perpetual) receiveDataPoint(ctx context.Context, price *num.Uint, t int64) {
+func (p *Perpetual) addExternalDataPoint(ctx context.Context, price *num.Uint, t int64) {
 	if !p.readyForData() {
 		p.log.Error("external data point for perpetual received before initial period", logging.String("id", p.id), logging.Int64("t", t))
 		return
@@ -154,27 +303,47 @@ func (p *Perpetual) receiveDataPoint(ctx context.Context, price *num.Uint, t int
 		p.log.Error("unable to add external data-point", logging.Error(err))
 		return
 	}
-	p.broker.Send(events.NewFundingPeriodDataPointEvent(ctx, p.id, price.String(), t, p.seq, dataPointSourceExternal))
+	twap := twap(p.external, p.startedAt, t)
+	p.broker.Send(events.NewFundingPeriodDataPointEvent(ctx, p.id, price.String(), t, p.seq, dataPointSourceExternal, twap))
 }
 
-// receiveSettlementCue will be hooked up as a subscriber to the oracle data for the notification that the settlement period has ended.
-func (p *Perpetual) receiveSettlementCue(ctx context.Context, t int64) {
+func (p *Perpetual) receiveSettlementCue(ctx context.Context, data dscommon.Data) error {
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("new schedule oracle data received", data.Debug()...)
+	}
+	t, err := data.GetTimestamp(p.oracle.binding.settlementScheduleProperty)
+	if err != nil {
+		p.log.Error("schedule data not valid", data.Debug()...)
+		return err
+	}
+	p.handleSettlementCue(ctx, t)
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("perp schedule trigger processed")
+	}
+	return nil
+}
+
+// handleSettlementCue will be hooked up as a subscriber to the oracle data for the notification that the settlement period has ended.
+func (p *Perpetual) handleSettlementCue(ctx context.Context, t int64) {
 	if !p.haveData(t) {
 		// we have no points so we just start a new interval
-		p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t), nil, nil))
+		p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t), nil, nil, nil, nil))
 		p.startNewFundingPeriod(ctx, t)
 		return
 	}
 
+	internalTWAP := twap(p.internal, p.startedAt, t)
+	// and calculate the same using the external oracle data-points over the same period
+	externalTWAP := twap(p.external, p.startedAt, t)
 	// do the calculation
-	fundingPayment, fundingRate := p.calculateFundingPayment(t)
+	fundingPayment, fundingRate := p.calculateFundingPayment(internalTWAP, externalTWAP)
 
 	// send it away!
 	fp := &num.Numeric{}
 	p.settlementDataListener(ctx, fp.SetInt(fundingPayment))
 
 	// now restart the interval
-	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t), ptr.From(fundingPayment.String()), ptr.From(fundingRate.String())))
+	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t), ptr.From(fundingPayment.String()), ptr.From(fundingRate.String()), ptr.From(internalTWAP.String()), ptr.From(externalTWAP.String())))
 	p.startNewFundingPeriod(ctx, t)
 }
 
@@ -187,9 +356,6 @@ func (p *Perpetual) startNewFundingPeriod(ctx context.Context, endAt int64) {
 		logging.MarketID(p.id),
 		logging.Int64("t", endAt),
 	)
-
-	// send event to say our new period has started
-	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil))
 
 	carryOver := func(points []*dataPoint) []*dataPoint {
 		carry := []*dataPoint{}
@@ -208,13 +374,20 @@ func (p *Perpetual) startNewFundingPeriod(ctx context.Context, endAt int64) {
 
 	// send events for all the data-points that were carried over
 	evts := make([]events.Event, 0, len(p.external)+len(p.internal))
+	iTWAP, eTWAP := num.UintZero(), num.UintZero()
 	for _, dp := range p.external {
-		evts = append(evts, events.NewFundingPeriodDataPointEvent(ctx, p.id, dp.price.String(), dp.t, p.seq, dataPointSourceExternal))
+		eTWAP = twap(p.external, p.startedAt, dp.t)
+		evts = append(evts, events.NewFundingPeriodDataPointEvent(ctx, p.id, dp.price.String(), dp.t, p.seq, dataPointSourceExternal, eTWAP))
 	}
 	for _, dp := range p.internal {
-		evts = append(evts, events.NewFundingPeriodDataPointEvent(ctx, p.id, dp.price.String(), dp.t, p.seq, dataPointSourceInternal))
+		iTWAP = twap(p.internal, p.startedAt, dp.t)
+		evts = append(evts, events.NewFundingPeriodDataPointEvent(ctx, p.id, dp.price.String(), dp.t, p.seq, dataPointSourceInternal, iTWAP))
 	}
-	p.broker.SendBatch(evts)
+	// send event to say our new period has started
+	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil, ptr.From(iTWAP.String()), ptr.From(eTWAP.String())))
+	if len(evts) > 0 {
+		p.broker.SendBatch(evts)
+	}
 }
 
 // addInternal adds an price point to our internal slice which represents a price value as seen by core.
@@ -291,13 +464,7 @@ func (p *Perpetual) haveData(endAt int64) bool {
 
 // calculateFundingPayment returns the funding payment and funding rate for the interval between when the current funding period
 // started and the given time. Used on settlement-cues and for margin calculations.
-func (p *Perpetual) calculateFundingPayment(t int64) (*num.Int, *num.Decimal) {
-	// calculate the time-weighted-average-price for the internal MTM data-points over the settlement period
-	internalTWAP := twap(p.internal, p.startedAt, t)
-
-	// and calculate the same using the external oracle data-points over the same period
-	externalTWAP := twap(p.external, p.startedAt, t)
-
+func (p *Perpetual) calculateFundingPayment(internalTWAP, externalTWAP *num.Uint) (*num.Int, *num.Decimal) {
 	p.log.Info("twap-calculations",
 		logging.MarketID(p.id),
 		logging.String("internal", internalTWAP.String()),
@@ -316,10 +483,34 @@ func (p *Perpetual) calculateFundingPayment(t int64) (*num.Int, *num.Decimal) {
 	return fundingPayment, &fundingRate
 }
 
+// GetMarginIncrease returns the estimated extra margin required to account for the next funding payment.
+func (p *Perpetual) GetMarginIncrease(t int64) *num.Uint {
+	// if we have no data, or the funding factor is zero, then the margin increase will always be zero
+	if !p.haveData(t) || p.p.MarginFundingFactor.IsZero() {
+		return num.UintZero()
+	}
+	// internal and external TWAP
+	internalTWAP := twap(p.internal, p.startedAt, t)
+	externalTWAP := twap(p.external, p.startedAt, t)
+	fp, neg := internalTWAP.Delta(internalTWAP, externalTWAP)
+	// if internal and external TWAP cancel eachother out, the margin increase will be zero
+	// if internal TWAP > external TWAP, the margin increase would be a decrease, and has to be ignored
+	if neg || fp.IsZero() {
+		return num.UintZero()
+	}
+	// apply factor
+	fpD := num.DecimalFromUint(fp).Mul(p.p.MarginFundingFactor)
+	fp, _ = num.UintFromDecimal(fpD)
+	return fp
+}
+
 // Calculates the twap of the given settlement data points over the given interval.
 // The given set of points can extend beyond the interval [start, end] and any point
 // lying outside that interval will be ignored.
 func twap(points []*dataPoint, start, end int64) *num.Uint {
+	if len(points) == 0 {
+		return num.UintZero()
+	}
 	sum := num.UintZero()
 	var prev *dataPoint
 	for _, p := range points {
@@ -340,10 +531,29 @@ func twap(points []*dataPoint, start, end int64) *num.Uint {
 		}
 		prev = p
 	}
+	if prev == nil {
+		return num.UintZero()
+	}
 
 	// process the final interval
 	tdiff := num.NewUint(uint64(end - num.MaxV(start, prev.t)))
 	sum.Add(sum, num.UintZero().Mul(prev.price, tdiff))
 
 	return sum.Div(sum, num.NewUint(uint64(end-num.MaxV(start, points[0].t))))
+}
+
+func newPerpOracleBinding(p *types.Perps) (oracleBinding, error) {
+	settleDataProp := strings.TrimSpace(p.DataSourceSpecBinding.SettlementDataProperty)
+	settleScheduleProp := strings.TrimSpace(p.DataSourceSpecBinding.SettlementScheduleProperty)
+	if len(settleDataProp) == 0 {
+		return oracleBinding{}, errors.New("binding for settlement data cannot be blank")
+	}
+	if len(settleScheduleProp) == 0 {
+		return oracleBinding{}, errors.New("binding for settlement schedule cannot be blank")
+	}
+
+	return oracleBinding{
+		settlementDataProperty:     settleDataProp,
+		settlementScheduleProperty: settleScheduleProp,
+	}, nil
 }

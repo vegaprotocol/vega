@@ -49,6 +49,7 @@ type Future struct {
 	oracle                     oracle
 	tradingTerminationListener func(context.Context, bool)
 	settlementDataListener     func(context.Context, *num.Numeric)
+	assetDP                    uint32
 }
 
 func (f *Future) UnsubscribeTradingTerminated(ctx context.Context) {
@@ -67,11 +68,13 @@ func (f *Future) Unsubscribe(ctx context.Context) {
 }
 
 type oracle struct {
-	settlementDataSubscriptionID    spec.SubscriptionID
-	tradingTerminatedSubscriptionID spec.SubscriptionID
-	unsubscribe                     spec.Unsubscriber
-	binding                         oracleBinding
-	data                            oracleData
+	settlementDataSubscriptionID     spec.SubscriptionID
+	settlementScheduleSubscriptionID spec.SubscriptionID
+	tradingTerminatedSubscriptionID  spec.SubscriptionID
+	unsubscribe                      spec.Unsubscriber
+	unsubscribeSchedule              spec.Unsubscriber
+	binding                          oracleBinding
+	data                             oracleData
 }
 
 type oracleData struct {
@@ -106,6 +109,9 @@ type oracleBinding struct {
 	settlementDataPropertyType datapb.PropertyKey_Type
 	settlementDataDecimals     uint64
 
+	settlementScheduleProperty     string
+	settlementSchedulePropertyType datapb.PropertyKey_Type
+
 	tradingTerminationProperty string
 }
 
@@ -114,6 +120,10 @@ func (f *Future) SubmitDataPoint(_ context.Context, _ *num.Uint, _ int64) error 
 }
 
 func (f *Future) OnLeaveOpeningAuction(_ context.Context, _ int64) {
+}
+
+func (f *Future) GetMarginIncrease(_ int64) *num.Uint {
+	return num.UintZero()
 }
 
 func (f *Future) NotifyOnSettlementData(listener func(context.Context, *num.Numeric)) {
@@ -273,7 +283,7 @@ func (f *Future) Serialize() *snapshotpb.Product {
 	return &snapshotpb.Product{}
 }
 
-func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine) (*Future, error) {
+func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine, assetDP uint32) (*Future, error) {
 	if f.DataSourceSpecForSettlementData == nil || f.DataSourceSpecForTradingTermination == nil || f.DataSourceSpecBinding == nil {
 		return nil, ErrDataSourceSpecAndBindingAreRequired
 	}
@@ -303,6 +313,7 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		oracle: oracle{
 			binding: oracleBinding,
 		},
+		assetDP: assetDP,
 	}
 
 	// Oracle spec for settlement data.

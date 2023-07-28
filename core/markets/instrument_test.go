@@ -37,7 +37,7 @@ import (
 func TestInstrument(t *testing.T) {
 	t.Run("Create a valid new instrument", func(t *testing.T) {
 		pinst := getValidInstrumentProto()
-		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t), mocks.NewMockBroker(gomock.NewController(t)))
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t), mocks.NewMockBroker(gomock.NewController(t)), 1)
 		assert.NotNil(t, inst)
 		assert.Nil(t, err)
 	})
@@ -45,7 +45,7 @@ func TestInstrument(t *testing.T) {
 	t.Run("nil product", func(t *testing.T) {
 		pinst := getValidInstrumentProto()
 		pinst.Product = nil
-		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t), mocks.NewMockBroker(gomock.NewController(t)))
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t), mocks.NewMockBroker(gomock.NewController(t)), 1)
 		assert.Nil(t, inst)
 		assert.NotNil(t, err)
 		assert.Equal(t, err.Error(), "unable to instantiate product from instrument configuration: nil product")
@@ -64,7 +64,7 @@ func TestInstrument(t *testing.T) {
 				},
 			},
 		}
-		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t), mocks.NewMockBroker(gomock.NewController(t)))
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t), mocks.NewMockBroker(gomock.NewController(t)), 1)
 		require.NotNil(t, err)
 		assert.Nil(t, inst)
 		assert.Equal(t, "unable to instantiate product from instrument configuration: a data source spec and spec binding are required", err.Error())
@@ -114,7 +114,7 @@ func TestInstrument(t *testing.T) {
 				DataSourceSpecBinding: nil,
 			},
 		}
-		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t), mocks.NewMockBroker(gomock.NewController(t)))
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t), mocks.NewMockBroker(gomock.NewController(t)), 1)
 		require.NotNil(t, err)
 		assert.Nil(t, inst)
 		assert.Equal(t, "unable to instantiate product from instrument configuration: a data source spec and spec binding are required", err.Error())

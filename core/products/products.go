@@ -66,19 +66,20 @@ type Product interface {
 
 	// snapshot specific
 	Serialize() *snapshotpb.Product
+	GetMarginIncrease(int64) *num.Uint
 }
 
 // New instance a new product from a Market framework product configuration.
-func New(ctx context.Context, log *logging.Logger, pp interface{}, oe OracleEngine, broker Broker) (Product, error) {
+func New(ctx context.Context, log *logging.Logger, pp interface{}, oe OracleEngine, broker Broker, assetDP uint32) (Product, error) {
 	if pp == nil {
 		return nil, ErrNilProduct
 	}
 
 	switch p := pp.(type) {
 	case *types.InstrumentFuture:
-		return NewFuture(ctx, log, p.Future, oe)
-	case *types.InstrumentPerpetual:
-		return NewPerpetual(ctx, log, p.Perpetual, oe, broker)
+		return NewFuture(ctx, log, p.Future, oe, assetDP)
+	case *types.InstrumentPerps:
+		return NewPerpetual(ctx, log, p.Perps, oe, broker, assetDP)
 	default:
 		return nil, ErrUnimplementedProduct
 	}

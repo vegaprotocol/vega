@@ -149,6 +149,7 @@ type Market struct {
 	expiringStopOrders      *common.ExpiringOrders
 
 	minDuration time.Duration
+	perp        bool
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -176,14 +177,15 @@ func NewMarket(
 		return nil, common.ErrEmptyMarketID
 	}
 
+	assetDecimals := assetDetails.DecimalPlaces()
 	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(mkt.PositionDecimalPlaces))
 
-	tradableInstrument, err := markets.NewTradableInstrument(ctx, log, mkt.TradableInstrument, oracleEngine, broker)
+	tradableInstrument, err := markets.NewTradableInstrument(ctx, log, mkt.TradableInstrument, oracleEngine, broker, uint32(assetDecimals))
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}
 	priceFactor := num.NewUint(1)
-	if exp := assetDetails.DecimalPlaces() - mkt.DecimalPlaces; exp != 0 {
+	if exp := assetDecimals - mkt.DecimalPlaces; exp != 0 {
 		priceFactor.Exp(num.NewUint(10), num.NewUint(exp))
 	}
 
@@ -257,6 +259,7 @@ func NewMarket(
 	}
 
 	mkt.MarketTimestamps = ts
+	isPerp := mkt.MarketType() == types.MarketTypePerp
 
 	market := &Market{
 		log:                       log,
@@ -297,15 +300,20 @@ func NewMarket(
 		maxStopOrdersPerParties:   num.UintZero(),
 		stopOrders:                stoporders.New(log),
 		expiringStopOrders:        common.NewExpiringOrders(),
+		perp:                      isPerp,
 	}
 
 	assets, _ := mkt.GetAssets()
 	market.settlementAsset = assets[0]
 
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
-	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
-	market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementData)
-	market.assetDP = uint32(assetDetails.DecimalPlaces())
+	if !isPerp {
+		market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
+		market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementData)
+	} else {
+		market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementDataPerp)
+	}
+	market.assetDP = uint32(assetDecimals)
 	return market, nil
 }
 
@@ -386,12 +394,16 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	m.liquidity.UpdateMarketConfig(m.tradableInstrument.RiskModel, m.pMonitor)
 
 	// if we're already in trading terminated, not point to listen to trading termination oracle
-	if m.mkt.State != types.MarketStateTradingTerminated {
+	if m.perp {
+		m.tradableInstrument.Instrument.Product.NotifyOnSettlementData(m.settlementDataPerp)
+	} else if m.mkt.State != types.MarketStateTradingTerminated {
 		m.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(m.tradingTerminated)
 	} else {
 		m.tradableInstrument.Instrument.UnsubscribeTradingTerminated(ctx)
 	}
-	m.tradableInstrument.Instrument.Product.NotifyOnSettlementData(m.settlementData)
+	if !m.perp {
+		m.tradableInstrument.Instrument.Product.NotifyOnSettlementData(m.settlementData)
+	}
 
 	m.updateLiquidityFee(ctx)
 	// risk model hasn't changed -> return
@@ -2016,65 +2028,15 @@ func (m *Market) confirmMTM(
 	mp := m.getCurrentMarkPrice()
 	evts := m.position.UpdateMarkPrice(mp)
 	settle := m.settlement.SettleMTM(ctx, mp, evts)
-	orderUpdates := []*types.Order{}
 
 	// let the product know about the mark-price, incase its the sort of product that cares
-	if m.markPrice != nil {
+	if m.perp && m.markPrice != nil {
 		m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, mp, m.timeService.GetTimeNow().UnixNano())
 	}
 
 	// Only process collateral and risk once per order, not for every trade
 	margins := m.collateralAndRisk(ctx, settle)
-	if len(margins) > 0 {
-		transfers, closed, bondPenalties, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
-		if err != nil {
-			m.log.Error("margin update had issues", logging.Error(err))
-		}
-		if err == nil && len(transfers) > 0 {
-			evt := events.NewLedgerMovements(ctx, transfers)
-			m.broker.Send(evt)
-		}
-		if len(bondPenalties) > 0 {
-			transfers, err := m.bondSlashing(ctx, bondPenalties...)
-			if err != nil {
-				m.log.Error("Failed to perform bond slashing",
-					logging.Error(err))
-			}
-			// if bond slashing occurred then amounts in "closed" will not be accurate
-			if len(transfers) > 0 {
-				m.broker.Send(events.NewLedgerMovements(ctx, transfers))
-				closedRecalculated := make([]events.Margin, 0, len(closed))
-				for _, c := range closed {
-					if pos, ok := m.position.GetPositionByPartyID(c.Party()); ok {
-						margin, err := m.collateral.GetPartyMargin(pos, m.settlementAsset, m.mkt.ID)
-						if err != nil {
-							m.log.Error("couldn't get party margin",
-								logging.PartyID(c.Party()),
-								logging.Error(err))
-							// keep old value if we weren't able to recalculate
-							closedRecalculated = append(closedRecalculated, c)
-							continue
-						}
-						closedRecalculated = append(closedRecalculated, margin)
-					}
-				}
-				closed = closedRecalculated
-			}
-		}
-		if len(closed) > 0 {
-			upd, err := m.resolveClosedOutParties(
-				ctx, closed)
-			if err != nil {
-				m.log.Error("unable to closed out parties",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err))
-			}
-			if len(upd) > 0 {
-				orderUpdates = append(orderUpdates, upd...)
-			}
-		}
-		m.updateLiquidityFee(ctx)
-	}
+	orderUpdates := m.handleRiskEvts(ctx, margins)
 
 	// orders updated -> check reference moves
 	// force check
@@ -2084,6 +2046,64 @@ func (m *Market) confirmMTM(
 		// release excess margin for all positions
 		m.recheckMargin(ctx, m.position.Positions())
 	}
+}
+
+func (m *Market) handleRiskEvts(ctx context.Context, margins []events.Risk) []*types.Order {
+	if len(margins) == 0 {
+		return nil
+	}
+	transfers, closed, bondPenalties, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
+	if err != nil {
+		m.log.Error("margin update had issues", logging.Error(err))
+	}
+	if err == nil && len(transfers) > 0 {
+		evt := events.NewLedgerMovements(ctx, transfers)
+		m.broker.Send(evt)
+	}
+	if len(bondPenalties) > 0 {
+		transfers, err := m.bondSlashing(ctx, bondPenalties...)
+		if err != nil {
+			m.log.Error("Failed to perform bond slashing",
+				logging.Error(err))
+		}
+		// if bond slashing occurred then amounts in "closed" will not be accurate
+		if len(transfers) > 0 {
+			m.broker.Send(events.NewLedgerMovements(ctx, transfers))
+			closedRecalculated := make([]events.Margin, 0, len(closed))
+			for _, c := range closed {
+				if pos, ok := m.position.GetPositionByPartyID(c.Party()); ok {
+					margin, err := m.collateral.GetPartyMargin(pos, m.settlementAsset, m.mkt.ID)
+					if err != nil {
+						m.log.Error("couldn't get party margin",
+							logging.PartyID(c.Party()),
+							logging.Error(err))
+						// keep old value if we weren't able to recalculate
+						closedRecalculated = append(closedRecalculated, c)
+						continue
+					}
+					closedRecalculated = append(closedRecalculated, margin)
+				}
+			}
+			closed = closedRecalculated
+		}
+	}
+	if len(closed) == 0 {
+		m.updateLiquidityFee(ctx)
+		return nil
+	}
+	var orderUpdates []*types.Order
+	upd, err := m.resolveClosedOutParties(
+		ctx, closed)
+	if err != nil {
+		m.log.Error("unable to closed out parties",
+			logging.String("market-id", m.GetID()),
+			logging.Error(err))
+	}
+	if len(upd) > 0 {
+		orderUpdates = append(orderUpdates, upd...)
+	}
+	m.updateLiquidityFee(ctx)
+	return orderUpdates
 }
 
 // updateLiquidityFee computes the current LiquidityProvision fee and updates
@@ -2203,7 +2223,8 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		// now that we closed orders, let's run the risk engine again
 		// so it'll separate the positions still in distress from the
 		// which have acceptable margins
-		okPos, closed = m.risk.ExpectMargins(distressedMarginEvts, m.lastTradedPrice.Clone())
+		increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
+		okPos, closed = m.risk.ExpectMargins(distressedMarginEvts, m.lastTradedPrice.Clone(), increment)
 
 		parties := make([]string, 0, len(okPos))
 		for _, v := range okPos {
@@ -2590,7 +2611,8 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
-	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, evts, m.getCurrentMarkPrice())
+	increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
+	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, evts, m.getCurrentMarkPrice(), increment)
 	if len(riskUpdates) == 0 {
 		return nil
 	}
@@ -3714,6 +3736,44 @@ func (m *Market) settlementData(ctx context.Context, settlementData *num.Numeric
 		return
 	}
 	m.settlementDataWithLock(ctx, types.MarketStateSettled, settlementDataInAsset)
+}
+
+func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Numeric) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	// take all positions, get funding transfers
+	transfers, round := m.settlement.SettleFundingPeriod(ctx, m.position.Positions(), settlementData.Int())
+	if len(transfers) == 0 {
+		m.log.Debug("Failed to get settle positions for funding period")
+		return
+	}
+
+	margins, ledgerMovements, err := m.collateral.PerpsFundingSettlement(ctx, m.GetID(), transfers, m.settlementAsset, round)
+	if err != nil {
+		m.log.Error("Failed to get ledger movements when performing the funding settlement",
+			logging.MarketID(m.GetID()),
+			logging.Error(err))
+		return
+	}
+
+	if len(ledgerMovements) > 0 {
+		m.broker.Send(events.NewLedgerMovements(ctx, ledgerMovements))
+	}
+	// no margin events, no margin stuff to check
+	if len(margins) == 0 {
+		return
+	}
+
+	// check margin balances
+	increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
+	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, margins, m.getCurrentMarkPrice(), increment)
+	// no margin accounts need updating...
+	if len(riskUpdates) == 0 {
+		return
+	}
+	// update margins, close-out any positions that don't have the required margin
+	orderUpdates := m.handleRiskEvts(ctx, riskUpdates)
+	m.checkForReferenceMoves(ctx, orderUpdates, false)
 }
 
 // NB this must be called with the lock already acquired.

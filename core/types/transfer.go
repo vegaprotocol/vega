@@ -202,4 +202,7 @@ const (
 	TransferTypeSLAPenaltyLpFeeApply          TransferType = proto.TransferType_TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY
 	TransferTypeLiquidityFeeUnpaidCollect     TransferType = proto.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT
 	TransferTypeSlaPerformanceBonusDistribute TransferType = proto.TransferType_TRANSFER_TYPE_SLA_PERFORMANCE_BONUS_DISTRIBUTE
+	// perps funding.
+	TransferTypePerpFundingLoss TransferType = proto.TransferType_TRANSFER_TYPE_PERP_FUNDING_LOSS
+	TransferTypePerpFundingWin  TransferType = proto.TransferType_TRANSFER_TYPE_PERP_FUNDING_WIN
 )

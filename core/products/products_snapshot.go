@@ -31,6 +31,7 @@ func NewFromSnapshot(
 	oe OracleEngine,
 	broker Broker,
 	state *snapshotpb.Product,
+	assetDP uint32,
 ) (Product, error) {
 	if pp == nil {
 		return nil, ErrNilProduct
@@ -38,13 +39,13 @@ func NewFromSnapshot(
 
 	switch p := pp.(type) {
 	case *types.InstrumentFuture: // no state in the future, so all OK
-		return NewFuture(ctx, log, p.Future, oe)
-	case *types.InstrumentPerpetual:
+		return NewFuture(ctx, log, p.Future, oe, assetDP)
+	case *types.InstrumentPerps:
 		perpsState := state.GetPerps()
 		if perpsState == nil {
 			return nil, ErrNoStateProvidedForPerpsWithSnapshot
 		}
-		return NewPerpetualFromSnapshot(ctx, log, p.Perpetual, oe, broker, perpsState)
+		return NewPerpetualFromSnapshot(ctx, log, p.Perps, oe, broker, perpsState, assetDP)
 	default:
 		return nil, ErrUnimplementedProduct
 	}

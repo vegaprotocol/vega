@@ -24,12 +24,16 @@ import (
 func NewPerpetualFromSnapshot(
 	ctx context.Context,
 	log *logging.Logger,
-	p *types.Perpetual,
+	p *types.Perps,
 	oe OracleEngine,
 	broker Broker,
 	state *snapshotpb.Perps,
+	assetDP uint32,
 ) (*Perpetual, error) {
-	perps, _ := NewPerpetual(ctx, log, p, oe, broker)
+	perps, err := NewPerpetual(ctx, log, p, oe, broker, assetDP)
+	if err != nil {
+		return nil, err
+	}
 
 	perps.external = make([]*dataPoint, 0, len(state.ExternalDataPoint))
 	for _, v := range state.ExternalDataPoint {

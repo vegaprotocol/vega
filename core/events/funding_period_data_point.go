@@ -15,6 +15,7 @@ package events
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/libs/num"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
@@ -23,7 +24,7 @@ type FundingPeriodDataPoint struct {
 	p *eventspb.FundingPeriodDataPoint
 }
 
-func NewFundingPeriodDataPointEvent(ctx context.Context, marketID, mp string, t int64, seq uint64, typ eventspb.FundingPeriodDataPoint_Source) *FundingPeriodDataPoint {
+func NewFundingPeriodDataPointEvent(ctx context.Context, marketID, mp string, t int64, seq uint64, typ eventspb.FundingPeriodDataPoint_Source, twap *num.Uint) *FundingPeriodDataPoint {
 	data := &FundingPeriodDataPoint{
 		Base: newBase(ctx, FundingPeriodDataPointEvent),
 		p: &eventspb.FundingPeriodDataPoint{
@@ -32,6 +33,7 @@ func NewFundingPeriodDataPointEvent(ctx context.Context, marketID, mp string, t 
 			Timestamp:     t,
 			Seq:           seq,
 			DataPointType: typ,
+			Twap:          twap.String(),
 		},
 	}
 	return data
