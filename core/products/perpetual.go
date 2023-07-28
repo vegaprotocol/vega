@@ -50,7 +50,7 @@ type Perpetual struct {
 	log                 *logging.Logger
 	SettlementAsset     string
 	QuoteName           string
-	MarginFundingFactor *num.Decimal
+	MarginFundingFactor num.Decimal
 	// oracle                 oracle
 	settlementDataListener func(context.Context, *num.Numeric)
 	broker                 Broker
@@ -68,10 +68,14 @@ type Perpetual struct {
 }
 
 func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perpetual, oe OracleEngine, broker Broker) (*Perpetual, error) {
+	mff := num.DecimalZero()
+	if p.MarginFundingFactor != nil {
+		mff = *p.MarginFundingFactor
+	}
 	return &Perpetual{
 		log:                 log,
 		broker:              broker,
-		MarginFundingFactor: p.MarginFundingFactor,
+		MarginFundingFactor: mff,
 	}, nil
 }
 
@@ -314,6 +318,27 @@ func (p *Perpetual) calculateFundingPayment(t int64) (*num.Int, *num.Decimal) {
 		logging.String("funding-rate", fundingRate.String()))
 
 	return fundingPayment, &fundingRate
+}
+
+// GetMarginIncrease returns the estimated extra margin required to account for the next funding payment
+func (p *Perpetual) GetMarginIncrease(t int64) *num.Uint {
+	// if we have no data, or the funding factor is zero, then the margin increase will always be zero
+	if !p.haveData(t) || p.MarginFundingFactor.IsZero() {
+		return num.UintZero()
+	}
+	// internal and external TWAP
+	internalTWAP := twap(p.internal, p.startedAt, t)
+	externalTWAP := twap(p.external, p.startedAt, t)
+	fp, neg := internalTWAP.Delta(internalTWAP, externalTWAP)
+	// if internal and external TWAP cancel eachother out, the margin increase will be zero
+	// if internal TWAP > external TWAP, the margin increase would be a decrease, and has to be ignored
+	if neg || fp.IsZero() {
+		return num.UintZero()
+	}
+	// apply factor
+	fpD := num.DecimalFromUint(fp).Mul(p.MarginFundingFactor)
+	fp, _ = num.UintFromDecimal(fpD)
+	return fp
 }
 
 // Calculates the twap of the given settlement data points over the given interval.

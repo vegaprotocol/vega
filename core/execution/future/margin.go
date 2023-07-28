@@ -35,7 +35,8 @@ func (m *Market) calcMarginsLiquidityProvisionAmendContinuous(
 		return err
 	}
 
-	_, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, e, m.getCurrentMarkPrice())
+	increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
+	_, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, e, m.getCurrentMarkPrice(), increment)
 	if err != nil {
 		return err
 	}
@@ -66,7 +67,8 @@ func (m *Market) calcMarginsLiquidityProvisionAmendAuction(
 	}
 
 	// then we calculated margins for this party
-	risk, closed := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, price)
+	increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
+	risk, closed := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, price, increment)
 	if len(closed) > 0 {
 		// this order would take party below maintenance -> stop here
 		return nil, fmt.Errorf(
@@ -113,7 +115,8 @@ func (m *Market) updateMargin(ctx context.Context, pos []events.MarketPosition) 
 		margins = append(margins, e)
 	}
 	// we should get any and all risk events we need here
-	return m.risk.UpdateMarginsOnSettlement(ctx, margins, price)
+	increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
+	return m.risk.UpdateMarginsOnSettlement(ctx, margins, price, increment)
 }
 
 func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {
@@ -126,7 +129,8 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 	if err != nil {
 		return nil, nil, err
 	}
-	risk, closed := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, m.getMarketObservable(order.Price.Clone()))
+	increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
+	risk, closed := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, m.getMarketObservable(order.Price.Clone()), increment)
 	if len(closed) > 0 {
 		// this order would take party below maintenance -> stop here
 		return nil, nil, common.ErrMarginCheckInsufficient
@@ -141,7 +145,8 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 	if err != nil {
 		return nil, nil, err
 	}
-	risk, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, pos, price.Clone())
+	increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
+	risk, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, pos, price.Clone(), increment)
 	if err != nil {
 		return nil, nil, err
 	}
