@@ -340,9 +340,10 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 	now := t.Unix()
 
 	for _, proposal := range e.activeProposals {
+		// check if the market for successor proposals still exists, if not, reject the proposal
 		if nm := proposal.Terms.GetNewMarket(); nm != nil && nm.Successor() != nil {
 			if _, err := e.markets.GetMarketState(proposal.ID); err != nil {
-				e.rejectProposal(ctx, proposal.Proposal, types.ProposalErrorInvalidSuccessorMarket, ErrInvalidSuccessor)
+				proposal.RejectWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrInvalidSuccessor)
 				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
 				toBeRemoved = append(toBeRemoved, proposal.ID)
 				continue
