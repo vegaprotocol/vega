@@ -32,8 +32,9 @@ func NewInstrumentFromSnapshot(
 	oe products.OracleEngine,
 	broker products.Broker,
 	productState *snapshotpb.Product,
+	assetDP uint32,
 ) (*Instrument, error) {
-	product, err := products.NewFromSnapshot(ctx, log, pi.Product, oe, broker, productState)
+	product, err := products.NewFromSnapshot(ctx, log, pi.Product, oe, broker, productState, assetDP)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate product from instrument configuration: %w", err)
 	}
@@ -55,8 +56,9 @@ func NewTradableInstrumentFromSnapshot(
 	oe products.OracleEngine,
 	broker products.Broker,
 	productState *snapshotpb.Product,
+	assetDP uint32,
 ) (*TradableInstrument, error) {
-	instrument, err := NewInstrumentFromSnapshot(ctx, log, pti.Instrument, oe, broker, productState)
+	instrument, err := NewInstrumentFromSnapshot(ctx, log, pti.Instrument, oe, broker, productState, assetDP)
 	if err != nil {
 		return nil, err
 	}

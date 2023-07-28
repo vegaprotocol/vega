@@ -16,11 +16,17 @@ import (
 	"context"
 	"testing"
 
+	"code.vegaprotocol.io/vega/core/datasource"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/products/mocks"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"github.com/golang/mock/gomock"
@@ -75,15 +81,63 @@ func testPerpetualSnapshot(t *testing.T, ctrl *gomock.Controller, state *snapsho
 	log := logging.NewTestLogger()
 	oe := mocks.NewMockOracleEngine(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
+	dp := uint32(1)
 
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
+	}
 	factor, _ := num.DecimalFromString("0.5")
-	perp := &types.Perpetual{
-		MarginFundingFactor: &factor,
+	settlementSrc := &datasource.Spec{
+		Data: datasource.NewDefinition(
+			datasource.ContentTypeOracle,
+		).SetOracleConfig(
+			&signedoracle.SpecConfiguration{
+				Signers: pubKeys,
+				Filters: []*dstypes.SpecFilter{
+					{
+						Key: &dstypes.SpecPropertyKey{
+							Name:                "foo",
+							Type:                datapb.PropertyKey_TYPE_INTEGER,
+							NumberDecimalPlaces: ptr.From(uint64(dp)),
+						},
+						Conditions: nil,
+					},
+				},
+			},
+		),
 	}
 
-	perpetual, err := products.NewPerpetualFromSnapshot(context.Background(), log, perp, oe, broker, state.GetPerps())
+	scheduleSrc := &datasource.Spec{
+		Data: datasource.NewDefinition(
+			datasource.ContentTypeOracle,
+		).SetOracleConfig(&signedoracle.SpecConfiguration{
+			Signers: pubKeys,
+			Filters: []*dstypes.SpecFilter{
+				{
+					Key: &dstypes.SpecPropertyKey{
+						Name: "bar",
+						Type: datapb.PropertyKey_TYPE_TIMESTAMP,
+					},
+					Conditions: nil,
+				},
+			},
+		}),
+	}
+
+	perp := &types.Perps{
+		MarginFundingFactor:                 factor,
+		DataSourceSpecForSettlementData:     settlementSrc,
+		DataSourceSpecForSettlementSchedule: scheduleSrc,
+		DataSourceSpecBinding: &datasource.SpecBindingForPerps{
+			SettlementDataProperty:     "foo",
+			SettlementScheduleProperty: "bar",
+		},
+	}
+	oe.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(spec.SubscriptionID(1), func(_ context.Context, _ spec.SubscriptionID) {}, nil)
+
+	perpetual, err := products.NewPerpetualFromSnapshot(context.Background(), log, perp, oe, broker, state.GetPerps(), dp)
 	if err != nil {
-		t.Fatalf("couldn't create a Future for testing: %v", err)
+		t.Fatalf("couldn't create a perp for testing: %v", err)
 	}
 	return &tstPerp{
 		perpetual: perpetual,
