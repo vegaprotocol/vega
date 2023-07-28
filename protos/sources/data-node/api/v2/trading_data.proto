@@ -715,14 +715,14 @@ service TradingDataService {
 
   // List funding periods
   //
-  // Get a list of funding periods for a market
+  // Get a list of funding periods for a perpetual market.
   rpc ListFundingPeriods(ListFundingPeriodsRequest) returns (ListFundingPeriodsResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Markets"};
   }
 
   // List funding period data points
   //
-  // Get a list of data points for a market's funding periods
+  // Get a list of data points for a perpetual market's funding periods.
   rpc ListFundingPeriodDataPoints(ListFundingPeriodDataPointsRequest) returns  (ListFundingPeriodDataPointsResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Markets"};
   }
@@ -3326,7 +3326,7 @@ message ListEntitiesResponse {
   repeated vega.events.v1.ProtocolUpgradeEvent protocol_upgrade_proposals = 28;
 }
 
-// Request to list a market's funding periods
+// Request to list a perpetual market's funding periods
 message ListFundingPeriodsRequest {
   // Market ID to get funding periods for.
   string market_id = 1 [(google.api.field_behavior) = REQUIRED];
@@ -3364,7 +3364,7 @@ message ListFundingPeriodDataPointsRequest {
   // List of funding periods sequence numbers to retrieve data points from.
   // If empty, data points for all funding periods will be returned.
   repeated uint64 seq = 2;
-  // Optional funding period data point source to filter for, e.g. Internal or external data points only.
+  // Optional funding period data point source to filter for, e.g. internal or external data points only.
   optional vega.events.v1.FundingPeriodDataPoint.Source source = 3;
   // Optional pagination information to limit the data that is returned.
   optional Pagination pagination = 4;
@@ -3386,7 +3386,7 @@ message FundingPeriodDataPointConnection {
   PageInfo page_info = 2;
 }
 
-// Response from listing funding period data points
+// Response from listing funding period data points.
 message ListFundingPeriodDataPointsResponse {
   // Page of funding period data points and corresponding page information.
   FundingPeriodDataPointConnection funding_period_data_points = 1;

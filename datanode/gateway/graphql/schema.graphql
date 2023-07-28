@@ -1944,7 +1944,7 @@ type Market {
   "Optional: Market ID of the successor to this market if one exists"
   successorMarketID: ID
 
-  "Funding Periods for perpetual markets"
+  "Funding periods for perpetual markets"
   fundingPeriods(
     "Optional: Funding period sequence to filter for"
     seq: Int
@@ -5197,17 +5197,17 @@ type Entities {
   protocolUpgradeProposals: [ProtocolUpgradeProposal]
 }
 
-# Data point for a funding period.
+"Data point for a funding period."
 type FundingPeriodDataPoint {
-  # Market the data point applies to.
+  "Market the data point applies to."
   marketId: ID!
-  # Sequence number of the funding period the data point belongs to.
+  "Sequence number of the funding period the data point belongs to."
   seq: Int!
-  # Source of the data point.
+  "Source of the data point."
   dataPointSource: FundingPeriodDataPointSource
-  # Price of the asset as seen by this data point.
+  "Price of the asset as seen by this data point."
   price: String!
-  # Timestamp when the data point was received.
+  "Timestamp when the data point was received."
   timestamp: Timestamp!
 }
 
@@ -5219,7 +5219,7 @@ type FundingPeriodDataPointEdge {
   cursor: String!
 }
 
-# Connection type for funding period data points
+"Connection type for funding period data points"
 type FundingPeriodDataPointConnection {
   "List of funding period data points"
   edges: [FundingPeriodDataPointEdge!]!
@@ -5227,21 +5227,21 @@ type FundingPeriodDataPointConnection {
   pageInfo: PageInfo!
 }
 
-# Details of a funding interval for a perpetual market.
+"Details of a funding interval for a perpetual market."
 type FundingPeriod {
-  # Market the funding period relates to.
+  "Market the funding period relates to."
   marketId: ID!
-  # Sequence number of the funding period.
+  "Sequence number of the funding period."
   seq: Int!
-  # Time when the funding period started.
+  "RFC3339Nano time when the funding period started."
   startTime: Timestamp!
-  # Time when the funding period ended.
+  "RFC3339Nano time when the funding period ended."
   endTime: Timestamp
-  # Funding payment for this period as the difference between the time-weighted average price of the external and internal data point.
+  "Funding payment for this period as the difference between the time-weighted average price of the external and internal data point."
   fundingPayment: String
-  # Percentage difference between the time-weighted average price of the external and internal data point.
+  "Percentage difference between the time-weighted average price of the external and internal data point."
   fundingRate: String
-  # Data points associated with this funding period.
+  "Data points associated with this funding period."
   dataPoints (
     "Optional list of funding period sequences to filter data points by. If omitted, no filtering is applied."
     seqs: [Int!],
@@ -5252,11 +5252,11 @@ type FundingPeriod {
   ): FundingPeriodDataPointConnection
 }
 
-# Sources of funding period data points
+"Sources of funding period data points."
 enum FundingPeriodDataPointSource {
-  # Funding period data point was sourced from an external data source
+  "Funding period data point was sourced from an external data source."
   SOURCE_EXTERNAL
-  # Funding period data point was generated internally by the network
+  "Funding period data point was generated internally by the network."
   SOURCE_INTERNAL
 }
 

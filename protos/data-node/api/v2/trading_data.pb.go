@@ -17313,7 +17313,7 @@ func (x *ListEntitiesResponse) GetProtocolUpgradeProposals() []*v1.ProtocolUpgra
 	return nil
 }
 
-// Request to list a market's funding periods
+// Request to list a perpetual market's funding periods
 type ListFundingPeriodsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -17555,7 +17555,7 @@ type ListFundingPeriodDataPointsRequest struct {
 	// List of funding periods sequence numbers to retrieve data points from.
 	// If empty, data points for all funding periods will be returned.
 	Seq []uint64 `protobuf:"varint,2,rep,packed,name=seq,proto3" json:"seq,omitempty"`
-	// Optional funding period data point source to filter for, e.g. Internal or external data points only.
+	// Optional funding period data point source to filter for, e.g. internal or external data points only.
 	Source *v1.FundingPeriodDataPoint_Source `protobuf:"varint,3,opt,name=source,proto3,enum=vega.events.v1.FundingPeriodDataPoint_Source,oneof" json:"source,omitempty"`
 	// Optional pagination information to limit the data that is returned.
 	Pagination *Pagination `protobuf:"bytes,4,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
@@ -17737,7 +17737,7 @@ func (x *FundingPeriodDataPointConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Response from listing funding period data points
+// Response from listing funding period data points.
 type ListFundingPeriodDataPointsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
