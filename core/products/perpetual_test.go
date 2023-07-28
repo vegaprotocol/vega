@@ -16,12 +16,18 @@ import (
 	"context"
 	"testing"
 
+	"code.vegaprotocol.io/vega/core/datasource"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/products/mocks"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -56,7 +62,6 @@ func testPeriodEndWithNoDataPoints(t *testing.T) {
 	ctx := context.Background()
 
 	// funding payment will be zero because there are no data points
-	perp.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	var called bool
 	fn := func(context.Context, *num.Numeric) {
 		called = true
@@ -279,15 +284,64 @@ func testPerpetual(t *testing.T) *tstPerp {
 	ctrl := gomock.NewController(t)
 	oe := mocks.NewMockOracleEngine(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
-
-	factor, _ := num.DecimalFromString("0.5")
-	perp := &types.Perpetual{
-		MarginFundingFactor: &factor,
+	dp := uint32(1)
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
 
-	perpetual, err := products.NewPerpetual(context.Background(), log, perp, oe, broker)
+	factor, _ := num.DecimalFromString("0.5")
+	// if p.DataSourceSpecForSettlementData == nil || p.DataSourceSpecForSettlementSchedule == nil || p.DataSourceSpecBinding == nil {
+	settlementSrc := &datasource.Spec{
+		Data: datasource.NewDefinition(
+			datasource.ContentTypeOracle,
+		).SetOracleConfig(
+			&signedoracle.SpecConfiguration{
+				Signers: pubKeys,
+				Filters: []*dstypes.SpecFilter{
+					{
+						Key: &dstypes.SpecPropertyKey{
+							Name:                "foo",
+							Type:                datapb.PropertyKey_TYPE_INTEGER,
+							NumberDecimalPlaces: ptr.From(uint64(dp)),
+						},
+						Conditions: nil,
+					},
+				},
+			},
+		),
+	}
+
+	scheduleSrc := &datasource.Spec{
+		Data: datasource.NewDefinition(
+			datasource.ContentTypeOracle,
+		).SetOracleConfig(&signedoracle.SpecConfiguration{
+			Signers: pubKeys,
+			Filters: []*dstypes.SpecFilter{
+				{
+					Key: &dstypes.SpecPropertyKey{
+						Name: "bar",
+						Type: datapb.PropertyKey_TYPE_TIMESTAMP,
+					},
+					Conditions: nil,
+				},
+			},
+		}),
+	}
+
+	perp := &types.Perps{
+		MarginFundingFactor:                 factor,
+		DataSourceSpecForSettlementData:     settlementSrc,
+		DataSourceSpecForSettlementSchedule: scheduleSrc,
+		DataSourceSpecBinding: &datasource.SpecBindingForPerps{
+			SettlementDataProperty:     "foo",
+			SettlementScheduleProperty: "bar",
+		},
+	}
+	oe.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(spec.SubscriptionID(1), func(_ context.Context, _ spec.SubscriptionID) {}, nil)
+
+	perpetual, err := products.NewPerpetual(context.Background(), log, perp, oe, broker, 1)
 	if err != nil {
-		t.Fatalf("couldn't create a Future for testing: %v", err)
+		t.Fatalf("couldn't create a perp for testing: %v", err)
 	}
 	return &tstPerp{
 		perpetual: perpetual,

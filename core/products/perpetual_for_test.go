@@ -19,7 +19,7 @@ import (
 )
 
 func (p *Perpetual) AddTestExternalPoint(ctx context.Context, price *num.Uint, t int64) {
-	p.receiveDataPoint(ctx, price, t)
+	p.addExternalDataPoint(ctx, price, t)
 }
 
 func (p *Perpetual) PromptSettlementCue(ctx context.Context, t int64) {

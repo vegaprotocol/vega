@@ -23,7 +23,7 @@ type FundingPeriod struct {
 	p *eventspb.FundingPeriod
 }
 
-func NewFundingPeriodEvent(ctx context.Context, marketID string, seq uint64, start int64, end *int64, fundingPayment, fundingRate *string) *FundingPeriod {
+func NewFundingPeriodEvent(ctx context.Context, marketID string, seq uint64, start int64, end *int64, fundingPayment, fundingRate, iTWAP, eTWAP *string) *FundingPeriod {
 	interval := &FundingPeriod{
 		Base: newBase(ctx, FundingPeriodEvent),
 		p: &eventspb.FundingPeriod{
@@ -33,6 +33,8 @@ func NewFundingPeriodEvent(ctx context.Context, marketID string, seq uint64, sta
 			FundingPayment: fundingPayment,
 			FundingRate:    fundingRate,
 			Seq:            seq,
+			InternalTwap:   iTWAP,
+			ExternalTwap:   eTWAP,
 		},
 	}
 	return interval

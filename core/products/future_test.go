@@ -220,7 +220,7 @@ func testFuture(t *testing.T, propertyTpe datapb.PropertyKey_Type) *tstFuture {
 		Times(1).
 		Return(subscriptionID(2), func(ctx context.Context, sid spec.SubscriptionID) {}, nil)
 
-	future, err := products.NewFuture(ctx, log, f, oe)
+	future, err := products.NewFuture(ctx, log, f, oe, uint32(dp))
 	if err != nil {
 		t.Fatalf("couldn't create a Future for testing: %v", err)
 	}

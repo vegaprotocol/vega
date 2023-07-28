@@ -188,7 +188,7 @@ func (p *Perpetual) UnsubscribeSettlementData(ctx context.Context) {
 
 func (p *Perpetual) OnLeaveOpeningAuction(ctx context.Context, t int64) {
 	p.startedAt = t
-	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil))
+	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil, nil, nil))
 }
 
 // SubmitDataPoint this will add a data point produced internally by the core node.
@@ -290,25 +290,30 @@ func (p *Perpetual) addExternalDataPoint(ctx context.Context, price *num.Uint, t
 func (p *Perpetual) receiveSettlementCue(ctx context.Context, t int64) {
 	if !p.haveData(t) {
 		// we have no points so we just start a new interval
-		p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t), nil, nil))
+		p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t), nil, nil, nil, nil))
 		p.startNewFundingPeriod(ctx, t)
 		return
 	}
 
+	internalTWAP := twap(p.internal, p.startedAt, t)
+	// and calculate the same using the external oracle data-points over the same period
+	externalTWAP := twap(p.external, p.startedAt, t)
 	// do the calculation
-	fundingPayment, fundingRate := p.calculateFundingPayment(t)
+	fundingPayment, fundingRate := p.calculateFundingPayment(internalTWAP, externalTWAP)
 
 	// send it away!
 	fp := &num.Numeric{}
 	p.settlementDataListener(ctx, fp.SetInt(fundingPayment))
 
 	// now restart the interval
-	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t), ptr.From(fundingPayment.String()), ptr.From(fundingRate.String())))
+	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t), ptr.From(fundingPayment.String()), ptr.From(fundingRate.String()), ptr.From(internalTWAP.String()), ptr.From(externalTWAP.String())))
 	p.startNewFundingPeriod(ctx, t)
 }
 
 // restarts the funcing period at time st.
 func (p *Perpetual) startNewFundingPeriod(ctx context.Context, endAt int64) {
+	// base the TWAP estimate of this period on the duration of last period
+	duration := endAt - p.startedAt
 	// increment seq and set start to the time the previous ended
 	p.seq += 1
 	p.startedAt = endAt
@@ -316,9 +321,6 @@ func (p *Perpetual) startNewFundingPeriod(ctx context.Context, endAt int64) {
 		logging.MarketID(p.id),
 		logging.Int64("t", endAt),
 	)
-
-	// send event to say our new period has started
-	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil))
 
 	carryOver := func(points []*dataPoint) []*dataPoint {
 		carry := []*dataPoint{}
@@ -337,13 +339,18 @@ func (p *Perpetual) startNewFundingPeriod(ctx context.Context, endAt int64) {
 
 	// send events for all the data-points that were carried over
 	evts := make([]events.Event, 0, len(p.external)+len(p.internal))
+	iTWAP, eTWAP := twap(p.internal, p.startedAt, p.startedAt+duration), twap(p.external, p.startedAt, p.startedAt+duration)
 	for _, dp := range p.external {
 		evts = append(evts, events.NewFundingPeriodDataPointEvent(ctx, p.id, dp.price.String(), dp.t, p.seq, dataPointSourceExternal))
 	}
 	for _, dp := range p.internal {
 		evts = append(evts, events.NewFundingPeriodDataPointEvent(ctx, p.id, dp.price.String(), dp.t, p.seq, dataPointSourceInternal))
 	}
-	p.broker.SendBatch(evts)
+	// send event to say our new period has started
+	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil, ptr.From(iTWAP.String()), ptr.From(eTWAP.String())))
+	if len(evts) > 0 {
+		p.broker.SendBatch(evts)
+	}
 }
 
 // addInternal adds an price point to our internal slice which represents a price value as seen by core.
@@ -420,13 +427,7 @@ func (p *Perpetual) haveData(endAt int64) bool {
 
 // calculateFundingPayment returns the funding payment and funding rate for the interval between when the current funding period
 // started and the given time. Used on settlement-cues and for margin calculations.
-func (p *Perpetual) calculateFundingPayment(t int64) (*num.Int, *num.Decimal) {
-	// calculate the time-weighted-average-price for the internal MTM data-points over the settlement period
-	internalTWAP := twap(p.internal, p.startedAt, t)
-
-	// and calculate the same using the external oracle data-points over the same period
-	externalTWAP := twap(p.external, p.startedAt, t)
-
+func (p *Perpetual) calculateFundingPayment(internalTWAP, externalTWAP *num.Uint) (*num.Int, *num.Decimal) {
 	p.log.Info("twap-calculations",
 		logging.MarketID(p.id),
 		logging.String("internal", internalTWAP.String()),
@@ -470,6 +471,9 @@ func (p *Perpetual) GetMarginIncrease(t int64) *num.Uint {
 // The given set of points can extend beyond the interval [start, end] and any point
 // lying outside that interval will be ignored.
 func twap(points []*dataPoint, start, end int64) *num.Uint {
+	if len(points) == 0 {
+		return num.UintZero()
+	}
 	sum := num.UintZero()
 	var prev *dataPoint
 	for _, p := range points {
@@ -489,6 +493,9 @@ func twap(points []*dataPoint, start, end int64) *num.Uint {
 			sum.Add(sum, num.UintZero().Mul(prev.price, tdiff))
 		}
 		prev = p
+	}
+	if prev == nil {
+		return num.UintZero()
 	}
 
 	// process the final interval
