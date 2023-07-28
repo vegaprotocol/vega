@@ -425,11 +425,11 @@ type TradingDataServiceClient interface {
 	ListEntities(ctx context.Context, in *ListEntitiesRequest, opts ...grpc.CallOption) (*ListEntitiesResponse, error)
 	// List funding periods
 	//
-	// Get a list of funding periods for a market
+	// Get a list of funding periods for a perpetual market.
 	ListFundingPeriods(ctx context.Context, in *ListFundingPeriodsRequest, opts ...grpc.CallOption) (*ListFundingPeriodsResponse, error)
 	// List funding period data points
 	//
-	// Get a list of data points for a market's funding periods
+	// Get a list of data points for a perpetual market's funding periods.
 	ListFundingPeriodDataPoints(ctx context.Context, in *ListFundingPeriodDataPointsRequest, opts ...grpc.CallOption) (*ListFundingPeriodDataPointsResponse, error)
 	// Export network history as CSV
 	//
@@ -2127,11 +2127,11 @@ type TradingDataServiceServer interface {
 	ListEntities(context.Context, *ListEntitiesRequest) (*ListEntitiesResponse, error)
 	// List funding periods
 	//
-	// Get a list of funding periods for a market
+	// Get a list of funding periods for a perpetual market.
 	ListFundingPeriods(context.Context, *ListFundingPeriodsRequest) (*ListFundingPeriodsResponse, error)
 	// List funding period data points
 	//
-	// Get a list of data points for a market's funding periods
+	// Get a list of data points for a perpetual market's funding periods.
 	ListFundingPeriodDataPoints(context.Context, *ListFundingPeriodDataPointsRequest) (*ListFundingPeriodDataPointsResponse, error)
 	// Export network history as CSV
 	//
