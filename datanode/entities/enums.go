@@ -907,3 +907,28 @@ func (s *StopOrderStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 	*s = StopOrderStatus(val)
 	return nil
 }
+
+type FundingPeriodDataPointSource eventspb.FundingPeriodDataPoint_Source
+
+const (
+	FundingPeriodDataPointSourceUnspecified = FundingPeriodDataPointSource(eventspb.FundingPeriodDataPoint_SOURCE_UNSPECIFIED)
+	FundingPeriodDataPointSourceExternal    = FundingPeriodDataPointSource(eventspb.FundingPeriodDataPoint_SOURCE_EXTERNAL)
+	FundingPeriodDataPointSourceInternal    = FundingPeriodDataPointSource(eventspb.FundingPeriodDataPoint_SOURCE_INTERNAL)
+)
+
+func (s FundingPeriodDataPointSource) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	str, ok := eventspb.FundingPeriodDataPoint_Source_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown funding period data point source: %v", s)
+	}
+	return append(buf, []byte(str)...), nil
+}
+
+func (s *FundingPeriodDataPointSource) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := eventspb.FundingPeriodDataPoint_Source_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown funding period data point source: %s", src)
+	}
+	*s = FundingPeriodDataPointSource(val)
+	return nil
+}

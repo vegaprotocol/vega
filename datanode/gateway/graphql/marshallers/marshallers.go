@@ -509,3 +509,21 @@ func UnmarshalStopOrderTriggerDirection(v interface{}) (vega.StopOrder_TriggerDi
 	}
 	return vega.StopOrder_TriggerDirection(t), nil
 }
+
+func MarshalFundingPeriodDataPointSource(s eventspb.FundingPeriodDataPoint_Source) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalFundingPeriodDataPointSource(v interface{}) (eventspb.FundingPeriodDataPoint_Source, error) {
+	s, ok := v.(string)
+	if !ok {
+		return eventspb.FundingPeriodDataPoint_SOURCE_UNSPECIFIED, fmt.Errorf("expected funding period source to be a string")
+	}
+	t, ok := eventspb.FundingPeriodDataPoint_Source_value[s]
+	if !ok {
+		return eventspb.FundingPeriodDataPoint_SOURCE_UNSPECIFIED, fmt.Errorf("failed to convert funding period source to Proto: %v", s)
+	}
+	return eventspb.FundingPeriodDataPoint_Source(t), nil
+}
