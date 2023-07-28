@@ -68,11 +68,13 @@ func (f *Future) Unsubscribe(ctx context.Context) {
 }
 
 type oracle struct {
-	settlementDataSubscriptionID    spec.SubscriptionID
-	tradingTerminatedSubscriptionID spec.SubscriptionID
-	unsubscribe                     spec.Unsubscriber
-	binding                         oracleBinding
-	data                            oracleData
+	settlementDataSubscriptionID     spec.SubscriptionID
+	settlementScheduleSubscriptionID spec.SubscriptionID
+	tradingTerminatedSubscriptionID  spec.SubscriptionID
+	unsubscribe                      spec.Unsubscriber
+	unsubscribeSchedule              spec.Unsubscriber
+	binding                          oracleBinding
+	data                             oracleData
 }
 
 type oracleData struct {
@@ -107,7 +109,9 @@ type oracleBinding struct {
 	settlementDataPropertyType datapb.PropertyKey_Type
 	settlementDataDecimals     uint64
 
-	settlementScheduleProperty string
+	settlementScheduleProperty     string
+	settlementSchedulePropertyType datapb.PropertyKey_Type
+
 	tradingTerminationProperty string
 }
 

@@ -33,7 +33,7 @@ type TradableInstrument struct {
 // NewTradableInstrument will instantiate a new tradable instrument
 // using a market framework configuration for a tradable instrument.
 func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.TradableInstrument, oe products.OracleEngine, broker products.Broker, assetDP uint32) (*TradableInstrument, error) {
-	instrument, err := NewInstrument(ctx, log, pti.Instrument, oe, broker)
+	instrument, err := NewInstrument(ctx, log, pti.Instrument, oe, broker, assetDP)
 	if err != nil {
 		return nil, err
 	}

@@ -64,7 +64,8 @@ func NewMarketFromSnapshot(
 		return nil, common.ErrEmptyMarketID
 	}
 
-	tradableInstrument, err := markets.NewTradableInstrumentFromSnapshot(ctx, log, mkt.TradableInstrument, oracleEngine, broker, em.Product)
+	assetDecimals := assetDetails.DecimalPlaces()
+	tradableInstrument, err := markets.NewTradableInstrumentFromSnapshot(ctx, log, mkt.TradableInstrument, oracleEngine, broker, em.Product, uint32(assetDecimals))
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}
@@ -119,7 +120,7 @@ func NewMarketFromSnapshot(
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
 
-	exp := assetDetails.DecimalPlaces() - mkt.DecimalPlaces
+	exp := assetDecimals - mkt.DecimalPlaces
 	priceFactor := num.UintZero().Exp(num.NewUint(10), num.NewUint(exp))
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
@@ -190,7 +191,7 @@ func NewMarketFromSnapshot(
 		market.parties[p] = struct{}{}
 	}
 
-	market.assetDP = uint32(assetDetails.DecimalPlaces())
+	market.assetDP = uint32(assetDecimals)
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
 	market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementData)
 	if em.SettlementData != nil {

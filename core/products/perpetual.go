@@ -62,10 +62,8 @@ type dataPoint struct {
 
 // Perpetual represents a Perpetual as describe by the market framework.
 type Perpetual struct {
-	p               *types.Perps
-	log             *logging.Logger
-	SettlementAsset string
-	QuoteName       string
+	p   *types.Perps
+	log *logging.Logger
 	// oracle                 oracle
 	settlementDataListener func(context.Context, *num.Numeric)
 	broker                 Broker
@@ -102,7 +100,10 @@ func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, oe O
 		if f.Key.Type == datapb.PropertyKey_TYPE_INTEGER && f.Key.NumberDecimalPlaces != nil {
 			oracleBinding.settlementDataPropertyType = f.Key.Type
 			oracleBinding.settlementDataDecimals = *f.Key.NumberDecimalPlaces
-			break
+		}
+		// we may want to support 2 timestamp types here
+		if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP && f.Key.NumberDecimalPlaces == nil {
+			oracleBinding.settlementSchedulePropertyType = f.Key.Type
 		}
 	}
 	perp := &Perpetual{
@@ -114,6 +115,7 @@ func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, oe O
 			binding: oracleBinding,
 		},
 	}
+	// bind the external data-points oracle
 	oracleSpecForSettlementData, err := spec.New(*datasource.SpecFromDefinition(*p.DataSourceSpecForSettlementData.Data))
 	if err != nil {
 		return nil, err
@@ -135,7 +137,22 @@ func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, oe O
 		return nil, fmt.Errorf("could not subscribe to oracle engine for settlement data: %w", err)
 	}
 
-	// set up the oracle
+	// bind the schedule oracle
+	oracleSpecForSchedule, err := spec.New(*datasource.SpecFromDefinition(*p.DataSourceSpecForSettlementSchedule.Data))
+	if err != nil {
+		return nil, err
+	}
+	switch oracleBinding.settlementSchedulePropertyType {
+	case datapb.PropertyKey_TYPE_TIMESTAMP:
+		if err := oracleSpecForSchedule.EnsureBoundableProperty(oracleBinding.settlementScheduleProperty, oracleBinding.settlementSchedulePropertyType); err != nil {
+			return nil, fmt.Errorf("invalid oracle spec binding for settlement schedule: %w", err)
+		}
+	}
+	perp.oracle.settlementScheduleSubscriptionID, perp.oracle.unsubscribeSchedule, err = oe.Subscribe(ctx, *oracleSpecForSchedule, perp.receiveSettlementCue)
+	if err != nil {
+		return nil, fmt.Errorf("could not subscribe to oracle engine for schedule data: %w", err)
+	}
+
 	return perp, nil
 }
 
@@ -175,7 +192,7 @@ func (p *Perpetual) IsTradingTerminated() bool {
 
 // GetAsset return the asset used by the future.
 func (p *Perpetual) GetAsset() string {
-	return p.SettlementAsset
+	return p.p.SettlementAsset
 }
 
 func (p *Perpetual) UnsubscribeTradingTerminated(ctx context.Context) {
@@ -183,7 +200,9 @@ func (p *Perpetual) UnsubscribeTradingTerminated(ctx context.Context) {
 }
 
 func (p *Perpetual) UnsubscribeSettlementData(ctx context.Context) {
-	p.log.Panic("not implemented")
+	p.log.Info("unsubscribed trading settlement data for", logging.String("quote-name", p.p.QuoteName))
+	p.oracle.unsubscribe(ctx, p.oracle.settlementDataSubscriptionID)
+	p.oracle.unsubscribeSchedule(ctx, p.oracle.settlementScheduleSubscriptionID)
 }
 
 func (p *Perpetual) OnLeaveOpeningAuction(ctx context.Context, t int64) {
@@ -286,8 +305,24 @@ func (p *Perpetual) addExternalDataPoint(ctx context.Context, price *num.Uint, t
 	p.broker.Send(events.NewFundingPeriodDataPointEvent(ctx, p.id, price.String(), t, p.seq, dataPointSourceExternal))
 }
 
-// receiveSettlementCue will be hooked up as a subscriber to the oracle data for the notification that the settlement period has ended.
-func (p *Perpetual) receiveSettlementCue(ctx context.Context, t int64) {
+func (p *Perpetual) receiveSettlementCue(ctx context.Context, data dscommon.Data) error {
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("new schedule oracle data received", data.Debug()...)
+	}
+	t, err := data.GetTimestamp(p.oracle.binding.settlementScheduleProperty)
+	if err != nil {
+		p.log.Error("schedule data not valid", data.Debug()...)
+		return err
+	}
+	p.handleSettlementCue(ctx, t)
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("perp schedule trigger processed")
+	}
+	return nil
+}
+
+// handleSettlementCue will be hooked up as a subscriber to the oracle data for the notification that the settlement period has ended.
+func (p *Perpetual) handleSettlementCue(ctx context.Context, t int64) {
 	if !p.haveData(t) {
 		// we have no points so we just start a new interval
 		p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t), nil, nil, nil, nil))
