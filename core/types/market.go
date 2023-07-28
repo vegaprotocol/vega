@@ -383,17 +383,6 @@ func (s Spot) String() string {
 	)
 }
 
-type InstrumentPerpetual struct {
-	Perpetual *Perpetual
-}
-
-type Perpetual struct {
-	MarginFundingFactor *num.Decimal
-	// TODO the plumbing
-	// https://github.com/vegaprotocol/vega/issues/8756
-	// https://github.com/vegaprotocol/vega/issues/8753
-}
-
 type InstrumentFuture struct {
 	Future *Future
 }

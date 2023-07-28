@@ -132,7 +132,7 @@ func testSettlingAFundingPeriod(t *testing.T) {
 
 	// no positions produces no transfers
 	transfers, round = engine.SettleFundingPeriod(ctx, []events.MarketPosition{}, fundingPayment)
-	require.True(t, round.IsZero())
+	require.Nil(t, round)
 	assert.Len(t, transfers, 0)
 }
 

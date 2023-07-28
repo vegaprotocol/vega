@@ -14,7 +14,13 @@ package products
 
 import (
 	"context"
+	"fmt"
+	"strconv"
+	"strings"
 
+	"code.vegaprotocol.io/vega/core/datasource"
+	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -22,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/pkg/errors"
 
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
@@ -45,15 +52,24 @@ type dataPoint struct {
 	t int64
 }
 
+/*type oracle struct {
+	settlementDataSubscriptionID    spec.SubscriptionID
+	tradingTerminatedSubscriptionID spec.SubscriptionID
+	unsubscribe                     spec.Unsubscriber
+	binding                         oracleBinding
+	data                            oracleData
+}*/
+
 // Perpetual represents a Perpetual as describe by the market framework.
 type Perpetual struct {
-	log                 *logging.Logger
-	SettlementAsset     string
-	QuoteName           string
-	MarginFundingFactor num.Decimal
+	p               *types.Perps
+	log             *logging.Logger
+	SettlementAsset string
+	QuoteName       string
 	// oracle                 oracle
 	settlementDataListener func(context.Context, *num.Numeric)
 	broker                 Broker
+	oracle                 oracle
 
 	// id should be the same as the market id
 	id string
@@ -65,18 +81,62 @@ type Perpetual struct {
 	seq uint64
 	// the time that this period interval started
 	startedAt int64
+	// asset decimal places
+	assetDP uint32
 }
 
-func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perpetual, oe OracleEngine, broker Broker) (*Perpetual, error) {
-	mff := num.DecimalZero()
-	if p.MarginFundingFactor != nil {
-		mff = *p.MarginFundingFactor
+func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, oe OracleEngine, broker Broker, assetDP uint32) (*Perpetual, error) {
+	// make sure we have all we need
+	if p.DataSourceSpecForSettlementData == nil || p.DataSourceSpecForSettlementSchedule == nil || p.DataSourceSpecBinding == nil {
+		return nil, ErrDataSourceSpecAndBindingAreRequired
 	}
-	return &Perpetual{
-		log:                 log,
-		broker:              broker,
-		MarginFundingFactor: mff,
-	}, nil
+	oracleBinding, err := newPerpOracleBinding(p)
+	if err != nil {
+		return nil, err
+	}
+
+	dsSpec := p.DataSourceSpecForSettlementData.GetDefinition()
+
+	// check decimal places for settlement data
+	for _, f := range dsSpec.GetFilters() {
+		if f.Key.Type == datapb.PropertyKey_TYPE_INTEGER && f.Key.NumberDecimalPlaces != nil {
+			oracleBinding.settlementDataPropertyType = f.Key.Type
+			oracleBinding.settlementDataDecimals = *f.Key.NumberDecimalPlaces
+			break
+		}
+	}
+	perp := &Perpetual{
+		p:       p,
+		log:     log,
+		broker:  broker,
+		assetDP: assetDP,
+		oracle: oracle{
+			binding: oracleBinding,
+		},
+	}
+	oracleSpecForSettlementData, err := spec.New(*datasource.SpecFromDefinition(*p.DataSourceSpecForSettlementData.Data))
+	if err != nil {
+		return nil, err
+	}
+	switch oracleBinding.settlementDataPropertyType {
+	case datapb.PropertyKey_TYPE_INTEGER:
+		err := oracleSpecForSettlementData.EnsureBoundableProperty(oracleBinding.settlementDataProperty, datapb.PropertyKey_TYPE_INTEGER)
+		if err != nil {
+			return nil, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+		}
+	case datapb.PropertyKey_TYPE_DECIMAL:
+		err := oracleSpecForSettlementData.EnsureBoundableProperty(oracleBinding.settlementDataProperty, datapb.PropertyKey_TYPE_DECIMAL)
+		if err != nil {
+			return nil, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+		}
+	}
+	perp.oracle.settlementDataSubscriptionID, perp.oracle.unsubscribe, err = oe.Subscribe(ctx, *oracleSpecForSettlementData, perp.receiveDataPoint)
+	if err != nil {
+		return nil, fmt.Errorf("could not subscribe to oracle engine for settlement data: %w", err)
+	}
+
+	// set up the oracle
+	return perp, nil
 }
 
 func (p *Perpetual) RestoreSettlementData(settleData *num.Numeric) {
@@ -146,8 +206,73 @@ func (p *Perpetual) SubmitDataPoint(ctx context.Context, price *num.Uint, t int6
 	return nil
 }
 
+func (p *Perpetual) receiveDataPoint(ctx context.Context, data dscommon.Data) error {
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("new oracle data received", data.Debug()...)
+	}
+
+	settlDataDecimals := int64(p.oracle.binding.settlementDataDecimals)
+	odata := &oracleData{
+		settlData: &num.Numeric{},
+	}
+	switch p.oracle.binding.settlementDataPropertyType {
+	case datapb.PropertyKey_TYPE_DECIMAL:
+		settlDataAsDecimal, err := data.GetDecimal(p.oracle.binding.settlementDataProperty)
+		if err != nil {
+			p.log.Error(
+				"could not parse decimal type property acting as settlement data",
+				logging.Error(err),
+			)
+			return err
+		}
+
+		odata.settlData.SetDecimal(&settlDataAsDecimal)
+
+	default:
+		settlDataAsUint, err := data.GetUint(p.oracle.binding.settlementDataProperty)
+		if err != nil {
+			p.log.Error(
+				"could not parse integer type property acting as settlement data",
+				logging.Error(err),
+			)
+			return err
+		}
+
+		odata.settlData.SetUint(settlDataAsUint)
+	}
+
+	// get scaled uint
+	assetPrice, err := odata.settlData.ScaleTo(settlDataDecimals, int64(p.assetDP))
+	if err != nil {
+		p.log.Error("Could not scale the settle data received to asset decimals",
+			logging.String("settle-data", odata.settlData.String()),
+			logging.Error(err),
+		)
+		return err
+	}
+	// add price point with "eth-block-time" as time
+	pTime, err := strconv.ParseUint(data.MetaData["eth-block-time"], 10, 64)
+	if err != nil {
+		p.log.Error("Could not parse the eth block time",
+			logging.String("eth-block-time", data.MetaData["eth-block-time"]),
+			logging.Error(err),
+		)
+		return err
+	}
+	// now add the price
+	p.addExternalDataPoint(ctx, assetPrice, int64(pTime))
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug(
+			"perp settlement data updated",
+			logging.String("settlementData", odata.settlData.String()),
+		)
+	}
+
+	return nil
+}
+
 // receiveDataPoint will be hooked up as a subscriber to the oracle data for incoming settlement data from a data-source.
-func (p *Perpetual) receiveDataPoint(ctx context.Context, price *num.Uint, t int64) {
+func (p *Perpetual) addExternalDataPoint(ctx context.Context, price *num.Uint, t int64) {
 	if !p.readyForData() {
 		p.log.Error("external data point for perpetual received before initial period", logging.String("id", p.id), logging.Int64("t", t))
 		return
@@ -323,7 +448,7 @@ func (p *Perpetual) calculateFundingPayment(t int64) (*num.Int, *num.Decimal) {
 // GetMarginIncrease returns the estimated extra margin required to account for the next funding payment
 func (p *Perpetual) GetMarginIncrease(t int64) *num.Uint {
 	// if we have no data, or the funding factor is zero, then the margin increase will always be zero
-	if !p.haveData(t) || p.MarginFundingFactor.IsZero() {
+	if !p.haveData(t) || p.p.MarginFundingFactor.IsZero() {
 		return num.UintZero()
 	}
 	// internal and external TWAP
@@ -336,7 +461,7 @@ func (p *Perpetual) GetMarginIncrease(t int64) *num.Uint {
 		return num.UintZero()
 	}
 	// apply factor
-	fpD := num.DecimalFromUint(fp).Mul(p.MarginFundingFactor)
+	fpD := num.DecimalFromUint(fp).Mul(p.p.MarginFundingFactor)
 	fp, _ = num.UintFromDecimal(fpD)
 	return fp
 }
@@ -371,4 +496,20 @@ func twap(points []*dataPoint, start, end int64) *num.Uint {
 	sum.Add(sum, num.UintZero().Mul(prev.price, tdiff))
 
 	return sum.Div(sum, num.NewUint(uint64(end-num.MaxV(start, points[0].t))))
+}
+
+func newPerpOracleBinding(p *types.Perps) (oracleBinding, error) {
+	settleDataProp := strings.TrimSpace(p.DataSourceSpecBinding.SettlementDataProperty)
+	settleScheduleProp := strings.TrimSpace(p.DataSourceSpecBinding.SettlementScheduleProperty)
+	if len(settleDataProp) == 0 {
+		return oracleBinding{}, errors.New("binding for settlement data cannot be blank")
+	}
+	if len(settleScheduleProp) == 0 {
+		return oracleBinding{}, errors.New("binding for settlement schedule cannot be blank")
+	}
+
+	return oracleBinding{
+		settlementDataProperty:     settleDataProp,
+		settlementScheduleProperty: settleScheduleProp,
+	}, nil
 }

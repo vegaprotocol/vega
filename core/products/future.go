@@ -49,6 +49,7 @@ type Future struct {
 	oracle                     oracle
 	tradingTerminationListener func(context.Context, bool)
 	settlementDataListener     func(context.Context, *num.Numeric)
+	assetDP                    uint32
 }
 
 func (f *Future) UnsubscribeTradingTerminated(ctx context.Context) {
@@ -106,6 +107,7 @@ type oracleBinding struct {
 	settlementDataPropertyType datapb.PropertyKey_Type
 	settlementDataDecimals     uint64
 
+	settlementScheduleProperty string
 	tradingTerminationProperty string
 }
 
@@ -277,7 +279,7 @@ func (f *Future) Serialize() *snapshotpb.Product {
 	return &snapshotpb.Product{}
 }
 
-func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine) (*Future, error) {
+func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine, assetDP uint32) (*Future, error) {
 	if f.DataSourceSpecForSettlementData == nil || f.DataSourceSpecForTradingTermination == nil || f.DataSourceSpecBinding == nil {
 		return nil, ErrDataSourceSpecAndBindingAreRequired
 	}
@@ -307,6 +309,7 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		oracle: oracle{
 			binding: oracleBinding,
 		},
+		assetDP: assetDP,
 	}
 
 	// Oracle spec for settlement data.

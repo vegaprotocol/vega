@@ -177,6 +177,7 @@ func NewMarket(
 		return nil, common.ErrEmptyMarketID
 	}
 
+	assetDecimals := assetDetails.DecimalPlaces()
 	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(mkt.PositionDecimalPlaces))
 
 	tradableInstrument, err := markets.NewTradableInstrument(ctx, log, mkt.TradableInstrument, oracleEngine, broker)
@@ -184,7 +185,7 @@ func NewMarket(
 		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}
 	priceFactor := num.NewUint(1)
-	if exp := assetDetails.DecimalPlaces() - mkt.DecimalPlaces; exp != 0 {
+	if exp := assetDecimals - mkt.DecimalPlaces; exp != 0 {
 		priceFactor.Exp(num.NewUint(10), num.NewUint(exp))
 	}
 
@@ -3740,14 +3741,8 @@ func (m *Market) settlementData(ctx context.Context, settlementData *num.Numeric
 func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Numeric) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.settlementDataInMarket = settlementData
-	settlementPriceInAsset, err := m.tradableInstrument.Instrument.Product.ScaleSettlementDataToDecimalPlaces(m.settlementDataInMarket, m.assetDP)
-	if err != nil {
-		m.log.Error(err.Error())
-		return
-	}
 	// take all positions, get funding transfers
-	transfers, round := m.settlement.SettleFundingPeriod(ctx, m.position.Positions(), settlementPriceInAsset)
+	transfers, round := m.settlement.SettleFundingPeriod(ctx, m.position.Positions(), settlementData.Int())
 	if len(transfers) == 0 {
 		m.log.Debug("Failed to get settle positions for funding period")
 		return
