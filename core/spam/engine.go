@@ -62,6 +62,8 @@ type Engine struct {
 	policyNameToPolicy      map[string]Policy
 	hashKeys                []string
 	banDuration             time.Duration
+
+	noSpamProtection bool // flag that disables chesk for the spam policies, that is usefull for the nullchain
 }
 
 type Policy interface {
@@ -148,6 +150,11 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	return e
 }
 
+func (e *Engine) DisableSpamProtection() {
+	e.log.Infof("Disabling spam protection for the Spam Engine")
+	e.noSpamProtection = true
+}
+
 // OnEpochDurationChanged updates the ban duration as a fraction of the epoch duration.
 func (e *Engine) OnEpochDurationChanged(_ context.Context, duration time.Duration) error {
 	epochImpliedDurationNano, _ := num.UintFromDecimal(num.DecimalFromInt64(duration.Nanoseconds()).Mul(banDurationAsEpochFraction))
@@ -214,6 +221,11 @@ func (e *Engine) OnMinTokensForMultisigUpdatesChanged(ctx context.Context, minTo
 func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	e.log.Info("Spam protection OnEpochEvent called", logging.Uint64("epoch", epoch.Seq))
 
+	if e.noSpamProtection {
+		e.log.Info("Spam protection OnEpochEvent disabled", logging.Uint64("epoch", epoch.Seq))
+		return
+	}
+
 	if e.currentEpoch == nil || e.currentEpoch.Seq != epoch.Seq {
 		if e.log.GetLevel() <= logging.DebugLevel {
 			e.log.Debug("Spam protection new epoch started", logging.Uint64("epochSeq", epoch.Seq))
@@ -231,6 +243,12 @@ func (e *Engine) EndOfBlock(blockHeight uint64, now time.Time) {
 	if e.log.GetLevel() <= logging.DebugLevel {
 		e.log.Debug("Spam protection EndOfBlock called", logging.Uint64("blockHeight", blockHeight))
 	}
+
+	if e.noSpamProtection {
+		e.log.Info("Spam protection EndOfBlock disabled", logging.Uint64("blockHeight", blockHeight))
+		return
+	}
+
 	for _, policy := range e.transactionTypeToPolicy {
 		policy.EndOfBlock(blockHeight, now, e.banDuration)
 	}
@@ -246,6 +264,12 @@ func (e *Engine) PreBlockAccept(tx abci.Tx) (bool, error) {
 	if e.log.GetLevel() <= logging.DebugLevel {
 		e.log.Debug("Spam protection PreBlockAccept called for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
 	}
+
+	if e.noSpamProtection {
+		e.log.Debug("Spam protection PreBlockAccept disabled for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
+		return true, nil
+	}
+
 	return e.transactionTypeToPolicy[command].PreBlockAccept(tx)
 }
 
@@ -259,6 +283,12 @@ func (e *Engine) PostBlockAccept(tx abci.Tx) (bool, error) {
 	if e.log.GetLevel() <= logging.DebugLevel {
 		e.log.Debug("Spam protection PostBlockAccept called for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
 	}
+
+	if e.noSpamProtection {
+		e.log.Debug("Spam protection PostBlockAccept disabled for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
+		return true, nil
+	}
+
 	return e.transactionTypeToPolicy[command].PostBlockAccept(tx)
 }
 
