@@ -481,7 +481,7 @@ func (p *Perpetual) calculateFundingPayment(internalTWAP, externalTWAP *num.Uint
 	return fundingPayment, &fundingRate
 }
 
-// GetMarginIncrease returns the estimated extra margin required to account for the next funding payment
+// GetMarginIncrease returns the estimated extra margin required to account for the next funding payment.
 func (p *Perpetual) GetMarginIncrease(t int64) *num.Uint {
 	// if we have no data, or the funding factor is zero, then the margin increase will always be zero
 	if !p.haveData(t) || p.p.MarginFundingFactor.IsZero() {

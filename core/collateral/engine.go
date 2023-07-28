@@ -1073,8 +1073,8 @@ func (e *Engine) getMTMPartyAccounts(party, marketID, asset string) (gen, margin
 	return
 }
 
-// PerpsFundingSettlement will run a funding settlement over given positions. This works exactly the same as a MTM settlement
-// but uses different transfer types
+// PerpsFundingSettlement will run a funding settlement over given positions.
+// This works exactly the same as a MTM settlement, but uses different transfer types.
 func (e *Engine) PerpsFundingSettlement(ctx context.Context, marketID string, transfers []events.Transfer, asset string, round *num.Uint) ([]events.Margin, []*types.LedgerMovement, error) {
 	if len(transfers) == 0 {
 		return nil, nil, nil
