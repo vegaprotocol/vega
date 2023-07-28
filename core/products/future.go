@@ -14,8 +14,6 @@ package products
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"code.vegaprotocol.io/vega/core/datasource"
 	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
@@ -46,7 +44,7 @@ type Future struct {
 	log                        *logging.Logger
 	SettlementAsset            string
 	QuoteName                  string
-	oracle                     oracle
+	oracle                     terminatingOracle
 	tradingTerminationListener func(context.Context, bool)
 	settlementDataListener     func(context.Context, *num.Numeric)
 	assetDP                    uint32
@@ -54,55 +52,17 @@ type Future struct {
 
 func (f *Future) UnsubscribeTradingTerminated(ctx context.Context) {
 	f.log.Info("unsubscribed trading terminated for", logging.String("quote-name", f.QuoteName))
-	f.oracle.unsubscribe(ctx, f.oracle.tradingTerminatedSubscriptionID)
+	f.oracle.unsubTerm(ctx)
 }
 
 func (f *Future) UnsubscribeSettlementData(ctx context.Context) {
 	f.log.Info("unsubscribed trading settlement data for", logging.String("quote-name", f.QuoteName))
-	f.oracle.unsubscribe(ctx, f.oracle.settlementDataSubscriptionID)
+	f.oracle.unsubSettle(ctx)
 }
 
 func (f *Future) Unsubscribe(ctx context.Context) {
 	f.UnsubscribeTradingTerminated(ctx)
 	f.UnsubscribeSettlementData(ctx)
-}
-
-type oracle struct {
-	settlementDataSubscriptionID    spec.SubscriptionID
-	tradingTerminatedSubscriptionID spec.SubscriptionID
-	unsubscribe                     spec.Unsubscriber
-	binding                         oracleBinding
-	data                            oracleData
-}
-
-// SettlementData returns oracle data settlement data scaled as Uint.
-func (o *oracleData) SettlementData(op, ap uint32) (*num.Uint, error) {
-	if o.settlData.Decimal() == nil && o.settlData.Uint() == nil {
-		return nil, ErrDataSourceSettlementDataNotSet
-	}
-
-	if !o.settlData.SupportDecimalPlaces(int64(ap)) {
-		return nil, ErrSettlementDataDecimalsNotSupportedByAsset
-	}
-
-	// scale to given target decimals by multiplying by 10^(targetDP - oracleDP)
-	// if targetDP > oracleDP - this scales up the decimals of settlement data
-	// if targetDP < oracleDP - this scaled down the decimals of settlement data and can lead to loss of accuracy
-	// if there're equal - no scaling happens
-	return o.settlData.ScaleTo(int64(op), int64(ap))
-}
-
-// IsTradingTerminated returns true when oracle has signalled termination of trading.
-func (o *oracleData) IsTradingTerminated() bool {
-	return o.tradingTerminated
-}
-
-type oracleBinding struct {
-	settlementDataProperty     string
-	settlementDataPropertyType datapb.PropertyKey_Type
-	settlementDataDecimals     uint64
-
-	tradingTerminationProperty string
 }
 
 func (f *Future) SubmitDataPoint(_ context.Context, _ *num.Uint, _ int64) error {
@@ -133,7 +93,7 @@ func (f *Future) ScaleSettlementDataToDecimalPlaces(price *num.Numeric, dp uint3
 		return nil, ErrSettlementDataDecimalsNotSupportedByAsset
 	}
 
-	settlDataDecimals := int64(f.oracle.binding.settlementDataDecimals)
+	settlDataDecimals := int64(f.oracle.binding.settlementDecimals)
 	return price.ScaleTo(settlDataDecimals, int64(dp))
 }
 
@@ -183,7 +143,7 @@ func (f *Future) updateTradingTerminated(ctx context.Context, data dscommon.Data
 		f.log.Debug("new oracle data received", data.Debug()...)
 	}
 
-	tradingTerminated, err := data.GetBoolean(f.oracle.binding.tradingTerminationProperty)
+	tradingTerminated, err := data.GetBoolean(f.oracle.binding.terminationProperty)
 
 	return f.setTradingTerminated(ctx, tradingTerminated, err)
 }
@@ -228,9 +188,9 @@ func (f *Future) updateSettlementData(ctx context.Context, data dscommon.Data) e
 	odata := &oracleData{
 		settlData: &num.Numeric{},
 	}
-	switch f.oracle.binding.settlementDataPropertyType {
+	switch f.oracle.binding.settlementType {
 	case datapb.PropertyKey_TYPE_DECIMAL:
-		settlDataAsDecimal, err := data.GetDecimal(f.oracle.binding.settlementDataProperty)
+		settlDataAsDecimal, err := data.GetDecimal(f.oracle.binding.settlementProperty)
 		if err != nil {
 			f.log.Error(
 				"could not parse decimal type property acting as settlement data",
@@ -242,7 +202,7 @@ func (f *Future) updateSettlementData(ctx context.Context, data dscommon.Data) e
 		odata.settlData.SetDecimal(&settlDataAsDecimal)
 
 	default:
-		settlDataAsUint, err := data.GetUint(f.oracle.binding.settlementDataProperty)
+		settlDataAsUint, err := data.GetUint(f.oracle.binding.settlementProperty)
 		if err != nil {
 			f.log.Error(
 				"could not parse integer type property acting as settlement data",
@@ -278,7 +238,7 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		return nil, ErrDataSourceSpecAndBindingAreRequired
 	}
 
-	oracleBinding, err := newOracleBinding(f)
+	oracle, err := newFutureOracle(f)
 	if err != nil {
 		return nil, err
 	}
@@ -290,9 +250,11 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		// We are good to only check if the type is `PropertyKey_TYPE_DECIMAL` or `PropertyKey_TYPE_INTEGER`, because we take decimals
 		// into consideration only in those cases.
 		if f.Key.Type == datapb.PropertyKey_TYPE_INTEGER && f.Key.NumberDecimalPlaces != nil {
-			oracleBinding.settlementDataPropertyType = f.Key.Type
-			oracleBinding.settlementDataDecimals = *f.Key.NumberDecimalPlaces
+			oracle.binding.settlementType = f.Key.Type
+			oracle.binding.settlementDecimals = *f.Key.NumberDecimalPlaces
 			break
+		} else if f.Key.Type == datapb.PropertyKey_TYPE_DECIMAL {
+			oracle.binding.settlementType = f.Key.Type
 		}
 	}
 
@@ -300,93 +262,35 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		log:             log,
 		SettlementAsset: f.SettlementAsset,
 		QuoteName:       f.QuoteName,
-		oracle: oracle{
-			binding: oracleBinding,
-		},
-		assetDP: assetDP,
+		assetDP:         assetDP,
 	}
 
 	// Oracle spec for settlement data.
-	oracleSpecForSettlementData, err := spec.New(*datasource.SpecFromDefinition(*f.DataSourceSpecForSettlementData.Data))
+	osForSettle, err := spec.New(*datasource.SpecFromDefinition(*f.DataSourceSpecForSettlementData.Data))
 	if err != nil {
 		return nil, err
 	}
-
-	switch oracleBinding.settlementDataPropertyType {
-	case datapb.PropertyKey_TYPE_INTEGER:
-		err := oracleSpecForSettlementData.EnsureBoundableProperty(oracleBinding.settlementDataProperty, datapb.PropertyKey_TYPE_INTEGER)
-		if err != nil {
-			return nil, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
-		}
-	case datapb.PropertyKey_TYPE_DECIMAL:
-		err := oracleSpecForSettlementData.EnsureBoundableProperty(oracleBinding.settlementDataProperty, datapb.PropertyKey_TYPE_DECIMAL)
-		if err != nil {
-			return nil, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
-		}
-	}
-
-	// Subscribe registers a callback for a given OracleSpec that is called when an
-	// OracleData matches the spec.
-	future.oracle.settlementDataSubscriptionID, future.oracle.unsubscribe, err = oe.Subscribe(ctx, *oracleSpecForSettlementData, future.updateSettlementData)
+	osForTerm, err := spec.New(*datasource.SpecFromDefinition(*f.DataSourceSpecForTradingTermination.Data))
 	if err != nil {
-		return nil, fmt.Errorf("could not subscribe to oracle engine for settlement data: %w", err)
+		return nil, err
 	}
+	tradingTerminationCb := future.updateTradingTerminated
+	if oracle.binding.terminationType == datapb.PropertyKey_TYPE_TIMESTAMP {
+		tradingTerminationCb = future.updateTradingTerminatedByTimestamp
+	}
+	if err := oracle.bindAll(ctx, oe, osForSettle, osForTerm, future.updateSettlementData, tradingTerminationCb); err != nil {
+		return nil, err
+	}
+	future.oracle = oracle // ensure the oracle on future is not an old copy
 
 	if log.IsDebug() {
 		log.Debug("future subscribed to oracle engine for settlement data",
-			logging.Uint64("subscription ID", uint64(future.oracle.settlementDataSubscriptionID)),
+			logging.Uint64("subscription ID", uint64(future.oracle.settlementSubscriptionID)),
 		)
-	}
-
-	// Oracle spec for trading termination.
-	oracleSpecForTerminatedMarket, err := spec.New(*datasource.SpecFromDefinition(*f.DataSourceSpecForTradingTermination.Data))
-	if err != nil {
-		return nil, err
-	}
-
-	var tradingTerminationPropType datapb.PropertyKey_Type
-	var tradingTerminationCb spec.OnMatchedData
-	if oracleBinding.tradingTerminationProperty == spec.BuiltinTimestamp {
-		tradingTerminationPropType = datapb.PropertyKey_TYPE_TIMESTAMP
-		tradingTerminationCb = future.updateTradingTerminatedByTimestamp
-	} else {
-		tradingTerminationPropType = datapb.PropertyKey_TYPE_BOOLEAN
-		tradingTerminationCb = future.updateTradingTerminated
-	}
-
-	if err = oracleSpecForTerminatedMarket.EnsureBoundableProperty(
-		oracleBinding.tradingTerminationProperty,
-		tradingTerminationPropType,
-	); err != nil {
-		return nil, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
-	}
-
-	future.oracle.tradingTerminatedSubscriptionID, _, err = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, tradingTerminationCb)
-	if err != nil {
-		return nil, fmt.Errorf("could not subscribe to oracle engine for trading termination: %w", err)
-	}
-
-	if log.IsDebug() {
 		log.Debug("future subscribed to oracle engine for market termination event",
-			logging.Uint64("subscription ID", uint64(future.oracle.tradingTerminatedSubscriptionID)),
+			logging.Uint64("subscription ID", uint64(future.oracle.terminationSubscriptionID)),
 		)
 	}
 
 	return future, nil
-}
-
-func newOracleBinding(f *types.Future) (oracleBinding, error) {
-	settlementDataProperty := strings.TrimSpace(f.DataSourceSpecBinding.SettlementDataProperty)
-	if len(settlementDataProperty) == 0 {
-		return oracleBinding{}, errors.New("binding for settlement data cannot be blank")
-	}
-	tradingTerminationProperty := strings.TrimSpace(f.DataSourceSpecBinding.TradingTerminationProperty)
-	if len(tradingTerminationProperty) == 0 {
-		return oracleBinding{}, errors.New("binding for trading termination market cannot be blank")
-	}
-
-	return oracleBinding{
-		settlementDataProperty:     settlementDataProperty,
-		tradingTerminationProperty: tradingTerminationProperty,
-	}, nil
 }

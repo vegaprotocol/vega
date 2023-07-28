@@ -101,7 +101,6 @@ func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, oe O
 		log:     log,
 		broker:  broker,
 		assetDP: assetDP,
-		oracle:  oracle,
 	}
 	// create specs from source
 	osForSettle, err := spec.New(*datasource.SpecFromDefinition(*p.DataSourceSpecForSettlementData.Data))
@@ -115,6 +114,7 @@ func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, oe O
 	if err = oracle.bindAll(ctx, oe, osForSettle, osForSchedule, perp.receiveDataPoint, perp.receiveSettlementCue); err != nil {
 		return nil, err
 	}
+	perp.oracle = oracle // ensure oracle on perp is not an old copy
 
 	return perp, nil
 }
