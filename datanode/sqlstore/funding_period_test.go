@@ -64,7 +64,7 @@ func (s *fundingPeriodTestStores) Initialize(ctx context.Context, t *testing.T) 
 
 func TestFundingPeriod_AddFundingPeriod(t *testing.T) {
 	t.Run("should add funding period if the market exists and the sequence number does not exist", testAddFundingPeriodShouldSucceedIfMarketExistsAndSequenceDoesNotExist)
-	t.Run("should fail to add funding period if the market exists and the sequence number already exists", testAddFundingPeriodShouldFailIfMarketExistsAndSequenceExists)
+	t.Run("should update funding period if the market exists and the sequence number already exists", testAddFundingPeriodShouldUpdateIfMarketExistsAndSequenceExists)
 }
 
 func testAddFundingPeriodShouldSucceedIfMarketExistsAndSequenceDoesNotExist(t *testing.T) {
@@ -88,7 +88,7 @@ func testAddFundingPeriodShouldSucceedIfMarketExistsAndSequenceDoesNotExist(t *t
 	require.NoError(t, err)
 }
 
-func testAddFundingPeriodShouldFailIfMarketExistsAndSequenceExists(t *testing.T) {
+func testAddFundingPeriodShouldUpdateIfMarketExistsAndSequenceExists(t *testing.T) {
 	ctx, rollback := tempTransaction(t)
 	defer rollback()
 
@@ -101,6 +101,8 @@ func testAddFundingPeriodShouldFailIfMarketExistsAndSequenceExists(t *testing.T)
 		EndTime:          nil,
 		FundingPayment:   nil,
 		FundingRate:      nil,
+		ExternalTwap:     nil,
+		InternalTwap:     nil,
 		VegaTime:         stores.blocks[3].VegaTime,
 		TxHash:           generateTxHash(),
 	}
@@ -108,8 +110,25 @@ func testAddFundingPeriodShouldFailIfMarketExistsAndSequenceExists(t *testing.T)
 	err := stores.fp.AddFundingPeriod(ctx, &period)
 	require.NoError(t, err)
 
+	var dbResult entities.FundingPeriod
+	err = pgxscan.Get(ctx, stores.fp.Connection, &dbResult, `select * from funding_period where market_id = $1 and funding_period_seq = $2`, stores.markets[0].ID, 1)
+	require.NoError(t, err)
+	assert.Equal(t, period, dbResult)
+
+	period.EndTime = &stores.blocks[9].VegaTime
+	period.FundingPayment = ptr.From(num.DecimalFromFloat(1.0))
+	period.FundingRate = ptr.From(num.DecimalFromFloat(1.0))
+	period.ExternalTwap = ptr.From(num.DecimalFromFloat(1.0))
+	period.InternalTwap = ptr.From(num.DecimalFromFloat(1.1))
+	period.VegaTime = stores.blocks[9].VegaTime
+	period.TxHash = generateTxHash()
+
 	err = stores.fp.AddFundingPeriod(ctx, &period)
-	require.Error(t, err)
+	require.NoError(t, err)
+
+	err = pgxscan.Get(ctx, stores.fp.Connection, &dbResult, `select * from funding_period where market_id = $1 and funding_period_seq = $2`, stores.markets[0].ID, 1)
+	require.NoError(t, err)
+	assert.Equal(t, period, dbResult)
 }
 
 func TestFundingPeriod_AddFundingPeriodDataPoint(t *testing.T) {
@@ -185,6 +204,8 @@ func testShouldUpdateDataPointInSameBlock(t *testing.T) {
 		EndTime:          nil,
 		FundingPayment:   nil,
 		FundingRate:      nil,
+		ExternalTwap:     nil,
+		InternalTwap:     nil,
 		VegaTime:         stores.blocks[3].VegaTime,
 		TxHash:           generateTxHash(),
 	}
@@ -197,6 +218,7 @@ func testShouldUpdateDataPointInSameBlock(t *testing.T) {
 		FundingPeriodSeq: 1,
 		DataPointType:    entities.FundingPeriodDataPointSourceExternal,
 		Price:            num.DecimalFromFloat(1.0),
+		Twap:             num.DecimalFromFloat(1.0),
 		Timestamp:        stores.blocks[4].VegaTime,
 		VegaTime:         stores.blocks[4].VegaTime,
 		TxHash:           generateTxHash(),
@@ -218,6 +240,7 @@ func testShouldUpdateDataPointInSameBlock(t *testing.T) {
 		FundingPeriodSeq: 1,
 		DataPointType:    entities.FundingPeriodDataPointSourceExternal,
 		Price:            num.DecimalFromFloat(2.0),
+		Twap:             num.DecimalFromFloat(2.0),
 		Timestamp:        stores.blocks[4].VegaTime.Add(100 * time.Microsecond),
 		VegaTime:         stores.blocks[4].VegaTime,
 		TxHash:           generateTxHash(),
@@ -244,6 +267,8 @@ func addFundingPeriodsAndDataPoints(t *testing.T, ctx context.Context, stores *f
 			EndTime:          nil,
 			FundingPayment:   ptr.From(num.DecimalFromFloat(1)),
 			FundingRate:      ptr.From(num.DecimalFromFloat(1)),
+			ExternalTwap:     ptr.From(num.DecimalFromFloat(1)),
+			InternalTwap:     ptr.From(num.DecimalFromFloat(1)),
 			VegaTime:         stores.blocks[1].VegaTime,
 			TxHash:           generateTxHash(),
 		},
@@ -254,6 +279,8 @@ func addFundingPeriodsAndDataPoints(t *testing.T, ctx context.Context, stores *f
 			EndTime:          nil,
 			FundingPayment:   ptr.From(num.DecimalFromFloat(2)),
 			FundingRate:      ptr.From(num.DecimalFromFloat(2)),
+			ExternalTwap:     ptr.From(num.DecimalFromFloat(2)),
+			InternalTwap:     ptr.From(num.DecimalFromFloat(2)),
 			VegaTime:         stores.blocks[3].VegaTime,
 			TxHash:           generateTxHash(),
 		},
@@ -264,6 +291,8 @@ func addFundingPeriodsAndDataPoints(t *testing.T, ctx context.Context, stores *f
 			EndTime:          nil,
 			FundingPayment:   ptr.From(num.DecimalFromFloat(3)),
 			FundingRate:      ptr.From(num.DecimalFromFloat(3)),
+			ExternalTwap:     ptr.From(num.DecimalFromFloat(3)),
+			InternalTwap:     ptr.From(num.DecimalFromFloat(3)),
 			VegaTime:         stores.blocks[5].VegaTime,
 			TxHash:           generateTxHash(),
 		},
@@ -274,6 +303,8 @@ func addFundingPeriodsAndDataPoints(t *testing.T, ctx context.Context, stores *f
 			EndTime:          nil,
 			FundingPayment:   ptr.From(num.DecimalFromFloat(5)),
 			FundingRate:      ptr.From(num.DecimalFromFloat(5)),
+			ExternalTwap:     ptr.From(num.DecimalFromFloat(5)),
+			InternalTwap:     ptr.From(num.DecimalFromFloat(5)),
 			VegaTime:         stores.blocks[7].VegaTime,
 			TxHash:           generateTxHash(),
 		},
@@ -284,6 +315,8 @@ func addFundingPeriodsAndDataPoints(t *testing.T, ctx context.Context, stores *f
 			EndTime:          nil,
 			FundingPayment:   ptr.From(num.DecimalFromFloat(5)),
 			FundingRate:      ptr.From(num.DecimalFromFloat(5)),
+			ExternalTwap:     ptr.From(num.DecimalFromFloat(5)),
+			InternalTwap:     ptr.From(num.DecimalFromFloat(5)),
 			VegaTime:         stores.blocks[9].VegaTime,
 			TxHash:           generateTxHash(),
 		},
@@ -295,6 +328,7 @@ func addFundingPeriodsAndDataPoints(t *testing.T, ctx context.Context, stores *f
 			FundingPeriodSeq: 1,
 			DataPointType:    entities.FundingPeriodDataPointSourceExternal,
 			Price:            num.DecimalFromFloat(1.0),
+			Twap:             num.DecimalFromFloat(1.0),
 			Timestamp:        stores.blocks[2].VegaTime,
 			VegaTime:         stores.blocks[2].VegaTime,
 			TxHash:           generateTxHash(),
@@ -304,6 +338,7 @@ func addFundingPeriodsAndDataPoints(t *testing.T, ctx context.Context, stores *f
 			FundingPeriodSeq: 1,
 			DataPointType:    entities.FundingPeriodDataPointSourceExternal,
 			Price:            num.DecimalFromFloat(1.0),
+			Twap:             num.DecimalFromFloat(1.0),
 			Timestamp:        stores.blocks[3].VegaTime,
 			VegaTime:         stores.blocks[3].VegaTime,
 			TxHash:           generateTxHash(),
@@ -313,6 +348,7 @@ func addFundingPeriodsAndDataPoints(t *testing.T, ctx context.Context, stores *f
 			FundingPeriodSeq: 1,
 			DataPointType:    entities.FundingPeriodDataPointSourceInternal,
 			Price:            num.DecimalFromFloat(1.0),
+			Twap:             num.DecimalFromFloat(1.0),
 			Timestamp:        stores.blocks[4].VegaTime,
 			VegaTime:         stores.blocks[4].VegaTime,
 			TxHash:           generateTxHash(),
@@ -322,6 +358,7 @@ func addFundingPeriodsAndDataPoints(t *testing.T, ctx context.Context, stores *f
 			FundingPeriodSeq: 2,
 			DataPointType:    entities.FundingPeriodDataPointSourceExternal,
 			Price:            num.DecimalFromFloat(1.0),
+			Twap:             num.DecimalFromFloat(1.0),
 			Timestamp:        stores.blocks[5].VegaTime,
 			VegaTime:         stores.blocks[5].VegaTime,
 			TxHash:           generateTxHash(),
@@ -331,6 +368,7 @@ func addFundingPeriodsAndDataPoints(t *testing.T, ctx context.Context, stores *f
 			FundingPeriodSeq: 3,
 			DataPointType:    entities.FundingPeriodDataPointSourceExternal,
 			Price:            num.DecimalFromFloat(1.0),
+			Twap:             num.DecimalFromFloat(1.0),
 			Timestamp:        stores.blocks[6].VegaTime,
 			VegaTime:         stores.blocks[6].VegaTime,
 			TxHash:           generateTxHash(),
@@ -385,7 +423,9 @@ func testListFundingPeriodsMarketNoSequence(t *testing.T, ctx context.Context, s
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
 
-	got, pageInfo, err := stores.fp.ListFundingPeriods(ctx, stores.markets[0].ID, nil, pagination)
+	dateRange := entities.DateRange{}
+
+	got, pageInfo, err := stores.fp.ListFundingPeriods(ctx, stores.markets[0].ID, dateRange, pagination)
 	require.NoError(t, err)
 	want := stores.periods
 
@@ -403,8 +443,10 @@ func testListFundingPeriodForMarketSequence(t *testing.T, ctx context.Context, s
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
 
-	seq := uint64(1)
-	got, pageInfo, err := stores.fp.ListFundingPeriods(ctx, stores.markets[0].ID, &seq, pagination)
+	dateRange := entities.DateRange{
+		End: ptr.From(stores.periods[3].StartTime),
+	}
+	got, pageInfo, err := stores.fp.ListFundingPeriods(ctx, stores.markets[0].ID, dateRange, pagination)
 	require.NoError(t, err)
 	want := stores.periods[4:]
 
@@ -427,7 +469,8 @@ func testListFundingPeriodPagination(t *testing.T, ctx context.Context, stores *
 		pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 		require.NoError(t, err)
 
-		got, pageInfo, err := stores.fp.ListFundingPeriods(ctx, stores.markets[0].ID, nil, pagination)
+		dateRange := entities.DateRange{}
+		got, pageInfo, err := stores.fp.ListFundingPeriods(ctx, stores.markets[0].ID, dateRange, pagination)
 		require.NoError(t, err)
 		want := stores.periods[:2]
 
@@ -445,7 +488,8 @@ func testListFundingPeriodPagination(t *testing.T, ctx context.Context, stores *
 		after = stores.periods[1].Cursor().Encode()
 		pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 		require.NoError(t, err)
-		got, pageInfo, err := stores.fp.ListFundingPeriods(ctx, stores.markets[0].ID, nil, pagination)
+		dateRange := entities.DateRange{}
+		got, pageInfo, err := stores.fp.ListFundingPeriods(ctx, stores.markets[0].ID, dateRange, pagination)
 		require.NoError(t, err)
 		want := stores.periods[2:4]
 		assert.Equal(t, want, got)
@@ -461,7 +505,8 @@ func testListFundingPeriodPagination(t *testing.T, ctx context.Context, stores *
 		last = 2
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 		require.NoError(t, err)
-		got, pageInfo, err := stores.fp.ListFundingPeriods(ctx, stores.markets[0].ID, nil, pagination)
+		dateRange := entities.DateRange{}
+		got, pageInfo, err := stores.fp.ListFundingPeriods(ctx, stores.markets[0].ID, dateRange, pagination)
 		require.NoError(t, err)
 		want := stores.periods[len(stores.periods)-2:]
 		assert.Equal(t, want, got)
@@ -478,7 +523,8 @@ func testListFundingPeriodPagination(t *testing.T, ctx context.Context, stores *
 		before = stores.periods[3].Cursor().Encode()
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 		require.NoError(t, err)
-		got, pageInfo, err := stores.fp.ListFundingPeriods(ctx, stores.markets[0].ID, nil, pagination)
+		dateRange := entities.DateRange{}
+		got, pageInfo, err := stores.fp.ListFundingPeriods(ctx, stores.markets[0].ID, dateRange, pagination)
 		require.NoError(t, err)
 		want := stores.periods[1:3]
 		assert.Equal(t, want, got)
@@ -519,7 +565,8 @@ func testListDataPointsAllSequences(t *testing.T, ctx context.Context, stores *f
 	t.Helper()
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
-	got, pageInfo, err := stores.fp.ListFundingPeriodDataPoints(ctx, stores.markets[0].ID, nil, nil, pagination)
+	dateRange := entities.DateRange{}
+	got, pageInfo, err := stores.fp.ListFundingPeriodDataPoints(ctx, stores.markets[0].ID, dateRange, nil, pagination)
 	require.NoError(t, err)
 	want := stores.dataPoints[:]
 	assert.Equal(t, want, got)
@@ -535,7 +582,8 @@ func testListDataPointsSpecifiedSequences(t *testing.T, ctx context.Context, sto
 	t.Helper()
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
-	got, pageInfo, err := stores.fp.ListFundingPeriodDataPoints(ctx, stores.markets[0].ID, nil, nil, pagination)
+	dateRange := entities.DateRange{}
+	got, pageInfo, err := stores.fp.ListFundingPeriodDataPoints(ctx, stores.markets[0].ID, dateRange, nil, pagination)
 	require.NoError(t, err)
 	want := stores.dataPoints[:]
 	assert.Equal(t, want, got)
@@ -558,7 +606,12 @@ func testListDataPointsNoSource(t *testing.T, ctx context.Context, stores *fundi
 		StartCursor:     want[0].Cursor().Encode(),
 		EndCursor:       want[len(want)-1].Cursor().Encode(),
 	}
-	testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, []uint64{1}, nil, pagination, want, wantPageInfo)
+	// Seq 1
+	dateRange := entities.DateRange{
+		Start: ptr.From(stores.dataPoints[4].Timestamp),
+		End:   ptr.From(stores.dataPoints[1].Timestamp),
+	}
+	testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange, nil, pagination, want, wantPageInfo)
 	want = stores.dataPoints[1:]
 	wantPageInfo = entities.PageInfo{
 		HasNextPage:     false,
@@ -566,15 +619,20 @@ func testListDataPointsNoSource(t *testing.T, ctx context.Context, stores *fundi
 		StartCursor:     want[0].Cursor().Encode(),
 		EndCursor:       want[len(want)-1].Cursor().Encode(),
 	}
-	testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, []uint64{1, 2}, nil, pagination, want, wantPageInfo)
+	// Seq 1 and 2
+	dateRange = entities.DateRange{
+		Start: ptr.From(stores.dataPoints[4].Timestamp),
+		End:   ptr.From(stores.dataPoints[0].Timestamp),
+	}
+	testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange, nil, pagination, want, wantPageInfo)
 }
 
-func testFundingPeriodsListDataPoints(t *testing.T, ctx context.Context, fp *sqlstore.FundingPeriods, marketID entities.MarketID, seqs []uint64,
+func testFundingPeriodsListDataPoints(t *testing.T, ctx context.Context, fp *sqlstore.FundingPeriods, marketID entities.MarketID, dateRange entities.DateRange,
 	source *entities.FundingPeriodDataPointSource, pagination entities.CursorPagination, want []entities.FundingPeriodDataPoint,
 	wantPageInfo entities.PageInfo,
 ) {
 	t.Helper()
-	got, pageInfo, err := fp.ListFundingPeriodDataPoints(ctx, marketID, seqs, source, pagination)
+	got, pageInfo, err := fp.ListFundingPeriodDataPoints(ctx, marketID, dateRange, source, pagination)
 	require.NoError(t, err)
 	assert.Equal(t, want, got)
 	assert.Equal(t, wantPageInfo, pageInfo)
@@ -595,7 +653,8 @@ func testListDataPointsForSource(t *testing.T, ctx context.Context, stores *fund
 			StartCursor:     want[0].Cursor().Encode(),
 			EndCursor:       want[len(want)-1].Cursor().Encode(),
 		}
-		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, nil,
+		dateRange := entities.DateRange{}
+		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange,
 			ptr.From(entities.FundingPeriodDataPointSourceExternal), pagination, want, wantPageInfo)
 	})
 
@@ -609,7 +668,12 @@ func testListDataPointsForSource(t *testing.T, ctx context.Context, stores *fund
 			StartCursor:     want[0].Cursor().Encode(),
 			EndCursor:       want[len(want)-1].Cursor().Encode(),
 		}
-		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, []uint64{1, 2},
+		// sequence 1 and 2
+		dateRange := entities.DateRange{
+			Start: ptr.From(stores.dataPoints[4].Timestamp),
+			End:   ptr.From(stores.dataPoints[0].Timestamp),
+		}
+		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange,
 			ptr.From(entities.FundingPeriodDataPointSourceExternal), pagination, want, wantPageInfo)
 	})
 }
@@ -631,8 +695,8 @@ func testListDataPointsPagination(t *testing.T, ctx context.Context, stores *fun
 			StartCursor:     want[0].Cursor().Encode(),
 			EndCursor:       want[len(want)-1].Cursor().Encode(),
 		}
-
-		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, nil,
+		dateRange := entities.DateRange{}
+		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange,
 			nil, pagination, want, wantPageInfo)
 	})
 
@@ -648,7 +712,8 @@ func testListDataPointsPagination(t *testing.T, ctx context.Context, stores *fun
 			StartCursor:     want[0].Cursor().Encode(),
 			EndCursor:       want[len(want)-1].Cursor().Encode(),
 		}
-		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, nil,
+		dateRange := entities.DateRange{}
+		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange,
 			nil, pagination, want, wantPageInfo)
 	})
 
@@ -663,7 +728,8 @@ func testListDataPointsPagination(t *testing.T, ctx context.Context, stores *fun
 			StartCursor:     want[0].Cursor().Encode(),
 			EndCursor:       want[len(want)-1].Cursor().Encode(),
 		}
-		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, nil,
+		dateRange := entities.DateRange{}
+		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange,
 			nil, pagination, want, wantPageInfo)
 	})
 
@@ -679,7 +745,8 @@ func testListDataPointsPagination(t *testing.T, ctx context.Context, stores *fun
 			StartCursor:     want[0].Cursor().Encode(),
 			EndCursor:       want[len(want)-1].Cursor().Encode(),
 		}
-		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, nil,
+		dateRange := entities.DateRange{}
+		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange,
 			nil, pagination, want, wantPageInfo)
 	})
 }

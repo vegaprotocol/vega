@@ -3330,8 +3330,8 @@ message ListEntitiesResponse {
 message ListFundingPeriodsRequest {
   // Market ID to get funding periods for.
   string market_id = 1 [(google.api.field_behavior) = REQUIRED];
-  // Optional funding period sequence number to limit results to a specific funding period.
-  optional uint64 seq = 2;
+  // Optional date range to limit results to a specific funding period.
+  optional DateRange date_range = 2;
   // Optional pagination information to limit the data that is returned.
   optional Pagination pagination = 3;
 }
@@ -3361,9 +3361,8 @@ message ListFundingPeriodsResponse {
 message ListFundingPeriodDataPointsRequest {
   // Market ID to get funding period data points for.
   string market_id = 1 [(google.api.field_behavior) = REQUIRED];
-  // List of funding periods sequence numbers to retrieve data points from.
-  // If empty, data points for all funding periods will be returned.
-  repeated uint64 seq = 2;
+  // Optional date range to limit data points to a specific funding periods within a date range.
+  optional DateRange date_range = 2;
   // Optional funding period data point source to filter for, e.g. internal or external data points only.
   optional vega.events.v1.FundingPeriodDataPoint.Source source = 3;
   // Optional pagination information to limit the data that is returned.
