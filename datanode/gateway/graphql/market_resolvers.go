@@ -16,6 +16,8 @@ import (
 	"context"
 	"errors"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
+
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -239,4 +241,26 @@ func (r *myMarketResolver) CandlesConnection(ctx context.Context, market *types.
 	interval vega.Interval, pagination *v2.Pagination,
 ) (*v2.CandleDataConnection, error) {
 	return handleCandleConnectionRequest(ctx, r.tradingDataClientV2, market, sinceRaw, toRaw, interval, pagination)
+}
+
+func (r *myMarketResolver) FundingPeriods(ctx context.Context, obj *vega.Market, seq *int, pagination *v2.Pagination) (
+	*v2.FundingPeriodConnection, error,
+) {
+	var seqNum *uint64
+
+	if seq != nil {
+		seqNum = ptr.From(uint64(*seq))
+	}
+
+	req := v2.ListFundingPeriodsRequest{
+		MarketId:   obj.Id,
+		Seq:        seqNum,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.ListFundingPeriods(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return res.FundingPeriods, nil
 }

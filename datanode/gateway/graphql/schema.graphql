@@ -1943,6 +1943,14 @@ type Market {
 
   "Optional: Market ID of the successor to this market if one exists"
   successorMarketID: ID
+
+  "Funding Periods for perpetual markets"
+  fundingPeriods(
+    "Optional: Funding period sequence to filter for"
+    seq: Int
+    "Pagination control"
+    pagination: Pagination
+  ): FundingPeriodConnection!
 }
 
 """
@@ -5187,4 +5195,83 @@ type Entities {
   ethereumKeyRotations: [EthereumKeyRotation]
   "List of protocol upgrade proposals created by the transaction hash"
   protocolUpgradeProposals: [ProtocolUpgradeProposal]
+}
+
+# Data point for a funding period.
+type FundingPeriodDataPoint {
+  # Market the data point applies to.
+  marketId: ID!
+  # Sequence number of the funding period the data point belongs to.
+  seq: Int!
+  # Source of the data point.
+  dataPointSource: FundingPeriodDataPointSource
+  # Price of the asset as seen by this data point.
+  price: String!
+  # Timestamp when the data point was received.
+  timestamp: Timestamp!
+}
+
+"Edge type for funding period data point"
+type FundingPeriodDataPointEdge {
+  "The funding period data point"
+  node: FundingPeriodDataPoint!
+  "Cursor identifying the funding period data point"
+  cursor: String!
+}
+
+# Connection type for funding period data points
+type FundingPeriodDataPointConnection {
+  "List of funding period data points"
+  edges: [FundingPeriodDataPointEdge!]!
+  "Pagination information"
+  pageInfo: PageInfo!
+}
+
+# Details of a funding interval for a perpetual market.
+type FundingPeriod {
+  # Market the funding period relates to.
+  marketId: ID!
+  # Sequence number of the funding period.
+  seq: Int!
+  # Time when the funding period started.
+  startTime: Timestamp!
+  # Time when the funding period ended.
+  endTime: Timestamp
+  # Funding payment for this period as the difference between the time-weighted average price of the external and internal data point.
+  fundingPayment: String
+  # Percentage difference between the time-weighted average price of the external and internal data point.
+  fundingRate: String
+  # Data points associated with this funding period.
+  dataPoints (
+    "Optional list of funding period sequences to filter data points by. If omitted, no filtering is applied."
+    seqs: [Int!],
+    "Optional filter to only return data points from a specific data source. If omitted, no filtering is applied."
+    source: FundingPeriodDataPointSource
+    "Pagination control"
+    pagination: Pagination
+  ): FundingPeriodDataPointConnection
+}
+
+# Sources of funding period data points
+enum FundingPeriodDataPointSource {
+  # Funding period data point was sourced from an external data source
+  SOURCE_EXTERNAL
+  # Funding period data point was generated internally by the network
+  SOURCE_INTERNAL
+}
+
+"Edge type containing a funding period cursor and its associated funding period data"
+type FundingPeriodEdge {
+    "The funding period data"
+    node: FundingPeriod!
+    "Cursor identifying the funding period data"
+    cursor: String!
+}
+
+"Connection type for retrieving cursor-based paginated funding period data for perpetual markets"
+type FundingPeriodConnection {
+  "The funding periods in this connection"
+  edges: [FundingPeriodEdge!]!
+  "The pagination information"
+  pageInfo: PageInfo!
 }

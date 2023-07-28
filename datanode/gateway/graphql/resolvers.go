@@ -446,6 +446,14 @@ func (r *VegaResolverRoot) LiquidityProvider() LiquidityProviderResolver {
 	return (*liquidityProviderResolver)(r)
 }
 
+func (r *VegaResolverRoot) FundingPeriod() FundingPeriodResolver {
+	return (*fundingPeriodResolver)(r)
+}
+
+func (r *VegaResolverRoot) FundingPeriodDataPoint() FundingPeriodDataPointResolver {
+	return (*fundingPeriodDataPointResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {

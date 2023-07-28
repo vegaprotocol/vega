@@ -423,6 +423,14 @@ type TradingDataServiceClient interface {
 	//
 	// Get a list of all entities created by transaction hash
 	ListEntities(ctx context.Context, in *ListEntitiesRequest, opts ...grpc.CallOption) (*ListEntitiesResponse, error)
+	// List funding periods
+	//
+	// Get a list of funding periods for a market
+	ListFundingPeriods(ctx context.Context, in *ListFundingPeriodsRequest, opts ...grpc.CallOption) (*ListFundingPeriodsResponse, error)
+	// List funding period data points
+	//
+	// Get a list of data points for a market's funding periods
+	ListFundingPeriodDataPoints(ctx context.Context, in *ListFundingPeriodDataPointsRequest, opts ...grpc.CallOption) (*ListFundingPeriodDataPointsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -1654,6 +1662,24 @@ func (c *tradingDataServiceClient) ListEntities(ctx context.Context, in *ListEnt
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ListFundingPeriods(ctx context.Context, in *ListFundingPeriodsRequest, opts ...grpc.CallOption) (*ListFundingPeriodsResponse, error) {
+	out := new(ListFundingPeriodsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListFundingPeriods", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListFundingPeriodDataPoints(ctx context.Context, in *ListFundingPeriodDataPointsRequest, opts ...grpc.CallOption) (*ListFundingPeriodDataPointsResponse, error) {
+	out := new(ListFundingPeriodDataPointsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListFundingPeriodDataPoints", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
 	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
@@ -2099,6 +2125,14 @@ type TradingDataServiceServer interface {
 	//
 	// Get a list of all entities created by transaction hash
 	ListEntities(context.Context, *ListEntitiesRequest) (*ListEntitiesResponse, error)
+	// List funding periods
+	//
+	// Get a list of funding periods for a market
+	ListFundingPeriods(context.Context, *ListFundingPeriodsRequest) (*ListFundingPeriodsResponse, error)
+	// List funding period data points
+	//
+	// Get a list of data points for a market's funding periods
+	ListFundingPeriodDataPoints(context.Context, *ListFundingPeriodDataPointsRequest) (*ListFundingPeriodDataPointsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2441,6 +2475,12 @@ func (UnimplementedTradingDataServiceServer) GetNetworkHistoryBootstrapPeers(con
 }
 func (UnimplementedTradingDataServiceServer) ListEntities(context.Context, *ListEntitiesRequest) (*ListEntitiesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListEntities not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListFundingPeriods(context.Context, *ListFundingPeriodsRequest) (*ListFundingPeriodsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListFundingPeriods not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListFundingPeriodDataPoints(context.Context, *ListFundingPeriodDataPointsRequest) (*ListFundingPeriodDataPointsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListFundingPeriodDataPoints not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
@@ -4131,6 +4171,42 @@ func _TradingDataService_ListEntities_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ListFundingPeriods_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListFundingPeriodsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListFundingPeriods(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListFundingPeriods",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListFundingPeriods(ctx, req.(*ListFundingPeriodsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListFundingPeriodDataPoints_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListFundingPeriodDataPointsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListFundingPeriodDataPoints(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListFundingPeriodDataPoints",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListFundingPeriodDataPoints(ctx, req.(*ListFundingPeriodDataPointsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ExportNetworkHistory_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportNetworkHistoryRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -4476,6 +4552,14 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListEntities",
 			Handler:    _TradingDataService_ListEntities_Handler,
+		},
+		{
+			MethodName: "ListFundingPeriods",
+			Handler:    _TradingDataService_ListFundingPeriods_Handler,
+		},
+		{
+			MethodName: "ListFundingPeriodDataPoints",
+			Handler:    _TradingDataService_ListFundingPeriodDataPoints_Handler,
 		},
 		{
 			MethodName: "Ping",

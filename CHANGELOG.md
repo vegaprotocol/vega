@@ -44,6 +44,7 @@
 - [8973](https://github.com/vegaprotocol/vega/issues/8973) - Do some more validation on Ethereum call specifications, add explicit error types to improve reporting
 - [8957](https://github.com/vegaprotocol/vega/issues/8957) - Oracle bindings for `PERPS`.
 - [8770](https://github.com/vegaprotocol/vega/issues/8770) - Add `PERPS` to integration tests.
+- [8763](https://github.com/vegaprotocol/vega/issues/8763) - Periodic settlement data endpoint.
 
 ### 🐛 Fixes
 

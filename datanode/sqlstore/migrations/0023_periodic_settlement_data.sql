@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS funding_period (
     funding_payment NUMERIC,
     funding_rate NUMERIC,
     vega_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    tx_hash BYTEA NOT NULL,
     PRIMARY KEY (market_id, funding_period_seq)
 );
 
@@ -19,7 +20,10 @@ CREATE TABLE IF NOT EXISTS funding_period_data_points (
     price NUMERIC NOT NULL,
     timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
     vega_time TIMESTAMP WITH TIME ZONE NOT NULL,
-    PRIMARY KEY (market_id, funding_period_seq, data_point_type, vega_time)
+    tx_hash BYTEA NOT NULL,
+    PRIMARY KEY (market_id, funding_period_seq, data_point_type, vega_time),
+    -- Because we really shouldn't have a funding period data point for a non-existent funding period.
+    FOREIGN KEY (market_id, funding_period_seq) REFERENCES funding_period(market_id, funding_period_seq)
 );
 
 -- +goose Down
