@@ -221,7 +221,8 @@ func (p *Perpetual) SubmitDataPoint(ctx context.Context, price *num.Uint, t int6
 		p.log.Error("unable to add internal data-point", logging.Error(err))
 		return err
 	}
-	p.broker.Send(events.NewFundingPeriodDataPointEvent(ctx, p.id, price.String(), t, p.seq, dataPointSourceInternal))
+	twap := twap(p.internal, p.startedAt, t)
+	p.broker.Send(events.NewFundingPeriodDataPointEvent(ctx, p.id, price.String(), t, p.seq, dataPointSourceInternal, twap))
 	return nil
 }
 
@@ -302,7 +303,8 @@ func (p *Perpetual) addExternalDataPoint(ctx context.Context, price *num.Uint, t
 		p.log.Error("unable to add external data-point", logging.Error(err))
 		return
 	}
-	p.broker.Send(events.NewFundingPeriodDataPointEvent(ctx, p.id, price.String(), t, p.seq, dataPointSourceExternal))
+	twap := twap(p.external, p.startedAt, t)
+	p.broker.Send(events.NewFundingPeriodDataPointEvent(ctx, p.id, price.String(), t, p.seq, dataPointSourceExternal, twap))
 }
 
 func (p *Perpetual) receiveSettlementCue(ctx context.Context, data dscommon.Data) error {
@@ -347,8 +349,6 @@ func (p *Perpetual) handleSettlementCue(ctx context.Context, t int64) {
 
 // restarts the funcing period at time st.
 func (p *Perpetual) startNewFundingPeriod(ctx context.Context, endAt int64) {
-	// base the TWAP estimate of this period on the duration of last period
-	duration := endAt - p.startedAt
 	// increment seq and set start to the time the previous ended
 	p.seq += 1
 	p.startedAt = endAt
@@ -374,12 +374,14 @@ func (p *Perpetual) startNewFundingPeriod(ctx context.Context, endAt int64) {
 
 	// send events for all the data-points that were carried over
 	evts := make([]events.Event, 0, len(p.external)+len(p.internal))
-	iTWAP, eTWAP := twap(p.internal, p.startedAt, p.startedAt+duration), twap(p.external, p.startedAt, p.startedAt+duration)
+	iTWAP, eTWAP := num.UintZero(), num.UintZero()
 	for _, dp := range p.external {
-		evts = append(evts, events.NewFundingPeriodDataPointEvent(ctx, p.id, dp.price.String(), dp.t, p.seq, dataPointSourceExternal))
+		eTWAP = twap(p.external, p.startedAt, dp.t)
+		evts = append(evts, events.NewFundingPeriodDataPointEvent(ctx, p.id, dp.price.String(), dp.t, p.seq, dataPointSourceExternal, eTWAP))
 	}
 	for _, dp := range p.internal {
-		evts = append(evts, events.NewFundingPeriodDataPointEvent(ctx, p.id, dp.price.String(), dp.t, p.seq, dataPointSourceInternal))
+		iTWAP = twap(p.internal, p.startedAt, dp.t)
+		evts = append(evts, events.NewFundingPeriodDataPointEvent(ctx, p.id, dp.price.String(), dp.t, p.seq, dataPointSourceInternal, iTWAP))
 	}
 	// send event to say our new period has started
 	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil, ptr.From(iTWAP.String()), ptr.From(eTWAP.String())))

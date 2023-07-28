@@ -54,6 +54,8 @@ message FundingPeriodDataPoint {
   string price = 4;
   // Timestamp in Unix nanoseconds of when the data point was received.
   int64 timestamp = 6;
+  // The TWAP for this source with this data-point added.
+  string twap = 7;
 }
 
 message StopOrderEvent {
