@@ -840,9 +840,9 @@ const (
 	TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT TransferType = 34
 	// Distributes performance bonus from market bonus to liquidity provider's general account.
 	TransferType_TRANSFER_TYPE_SLA_PERFORMANCE_BONUS_DISTRIBUTE TransferType = 35
-	// Funds deducted from margin account after a perps funding loss.
+	// Funds deducted from margin account after a perpetuals funding loss.
 	TransferType_TRANSFER_TYPE_PERP_FUNDING_LOSS TransferType = 36
-	// Funds added to margin account after a perps funding gain.
+	// Funds added to margin account after a perpetuals funding gain.
 	TransferType_TRANSFER_TYPE_PERP_FUNDING_WIN TransferType = 37
 )
 
