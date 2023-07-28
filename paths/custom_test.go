@@ -1,7 +1,6 @@
 package paths_test
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -24,8 +23,7 @@ func TestCustomPaths(t *testing.T) {
 }
 
 func testGettingCustomPathForCacheFileSucceeds(t *testing.T) {
-	home := vgtest.RandomPath()
-	defer os.RemoveAll(home)
+	home := t.TempDir()
 	path, err := paths.CreateCustomCachePathFor(home, "fake-file.empty")
 	require.NoError(t, err)
 	vgtest.AssertDirAccess(t, filepath.Dir(home))
@@ -33,8 +31,7 @@ func testGettingCustomPathForCacheFileSucceeds(t *testing.T) {
 }
 
 func testGettingCustomPathForConfigFileSucceeds(t *testing.T) {
-	home := vgtest.RandomPath()
-	defer os.RemoveAll(home)
+	home := t.TempDir()
 	path, err := paths.CreateCustomConfigPathFor(home, "fake-file.empty")
 	require.NoError(t, err)
 	vgtest.AssertDirAccess(t, filepath.Dir(home))
@@ -42,8 +39,7 @@ func testGettingCustomPathForConfigFileSucceeds(t *testing.T) {
 }
 
 func testGettingCustomPathForDataFileSucceeds(t *testing.T) {
-	home := vgtest.RandomPath()
-	defer os.RemoveAll(home)
+	home := t.TempDir()
 	path, err := paths.CreateCustomDataPathFor(home, "fake-file.empty")
 	require.NoError(t, err)
 	vgtest.AssertDirAccess(t, filepath.Dir(home))
@@ -51,8 +47,7 @@ func testGettingCustomPathForDataFileSucceeds(t *testing.T) {
 }
 
 func testGettingCustomPathForStateFileSucceeds(t *testing.T) {
-	home := vgtest.RandomPath()
-	defer os.RemoveAll(home)
+	home := t.TempDir()
 	path, err := paths.CreateCustomStatePathFor(home, "fake-file.empty")
 	require.NoError(t, err)
 	vgtest.AssertDirAccess(t, filepath.Dir(home))
@@ -60,8 +55,7 @@ func testGettingCustomPathForStateFileSucceeds(t *testing.T) {
 }
 
 func testGettingCustomPathFromStructForCacheFileSucceeds(t *testing.T) {
-	home := vgtest.RandomPath()
-	defer os.RemoveAll(home)
+	home := t.TempDir()
 	customPaths := &paths.CustomPaths{CustomHome: home}
 	path, err := customPaths.CreateCachePathFor("fake-file.empty")
 	require.NoError(t, err)
@@ -70,8 +64,7 @@ func testGettingCustomPathFromStructForCacheFileSucceeds(t *testing.T) {
 }
 
 func testGettingCustomPathFromStructForConfigFileSucceeds(t *testing.T) {
-	home := vgtest.RandomPath()
-	defer os.RemoveAll(home)
+	home := t.TempDir()
 	customPaths := &paths.CustomPaths{CustomHome: home}
 	path, err := customPaths.CreateConfigPathFor("fake-file.empty")
 	require.NoError(t, err)
@@ -80,8 +73,7 @@ func testGettingCustomPathFromStructForConfigFileSucceeds(t *testing.T) {
 }
 
 func testGettingCustomPathFromStructForDataFileSucceeds(t *testing.T) {
-	home := vgtest.RandomPath()
-	defer os.RemoveAll(home)
+	home := t.TempDir()
 	customPaths := &paths.CustomPaths{CustomHome: home}
 	path, err := customPaths.CreateDataPathFor("fake-file.empty")
 	require.NoError(t, err)
@@ -90,8 +82,7 @@ func testGettingCustomPathFromStructForDataFileSucceeds(t *testing.T) {
 }
 
 func testGettingCustomPathFromStructForStateFileSucceeds(t *testing.T) {
-	home := vgtest.RandomPath()
-	defer os.RemoveAll(home)
+	home := t.TempDir()
 	customPaths := &paths.CustomPaths{CustomHome: home}
 	path, err := customPaths.CreateStatePathFor("fake-file.empty")
 	require.NoError(t, err)

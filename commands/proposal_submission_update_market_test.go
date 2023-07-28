@@ -9,6 +9,7 @@ import (
 
 	"code.vegaprotocol.io/vega/commands"
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/libs/test"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -325,7 +326,7 @@ func testUpdateMarketLiquidityMonitoringChangeSubmissionWithNonPositiveTimeWindo
 			value: 0,
 		}, {
 			msg:   "with ratio of -1",
-			value: RandomNegativeI64(),
+			value: test.RandomNegativeI64(),
 		},
 	}
 	for _, tc := range testCases {
@@ -360,7 +361,7 @@ func testUpdateMarketLiquidityMonitoringChangeSubmissionWithPositiveTimeWindowSu
 					Changes: &protoTypes.UpdateMarketConfiguration{
 						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
 							TargetStakeParameters: &protoTypes.TargetStakeParameters{
-								TimeWindow: RandomPositiveI64(),
+								TimeWindow: test.RandomPositiveI64(),
 							},
 						},
 					},
@@ -499,10 +500,10 @@ func testUpdateMarketPriceMonitoringChangeSubmissionWithTriggerHorizonSucceeds(t
 						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
 							Triggers: []*protoTypes.PriceMonitoringTrigger{
 								{
-									Horizon: RandomPositiveI64(),
+									Horizon: test.RandomPositiveI64(),
 								},
 								{
-									Horizon: RandomPositiveI64(),
+									Horizon: test.RandomPositiveI64(),
 								},
 							},
 						},
@@ -625,10 +626,10 @@ func testUpdateMarketPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionS
 						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
 							Triggers: []*protoTypes.PriceMonitoringTrigger{
 								{
-									AuctionExtension: RandomPositiveI64(),
+									AuctionExtension: test.RandomPositiveI64(),
 								},
 								{
-									AuctionExtension: RandomPositiveI64(),
+									AuctionExtension: test.RandomPositiveI64(),
 								},
 							},
 						},

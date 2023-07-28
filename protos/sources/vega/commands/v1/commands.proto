@@ -303,3 +303,45 @@ message IssueSignatures {
   // Node ID of the validator node that will be signed in or out of the smart contract.
   string validator_node_id = 3; // the node for which to emit the signatures.
 }
+
+// Request for creating a referral team
+//
+// Creates a referral team. The team creator automatically becomes
+// the team leader, called a referrer. This cannot be changed.
+// A referrer cannot already be or become a liquidity provider,
+// nor can they be on an existing team as referrer or referee.
+message CreateTeam {
+  // Specifies whether the team is eligible for team based rewards.
+  bool enable_rewards = 1;
+  // Optional team name to be added to the referral banner.
+  optional string name = 2;
+  // Optional link to a team forum, discord, etc.
+  optional string team_url = 3;
+  // Optional link to an image to be used as the team avatar.
+  optional string avatar_url = 4;
+}
+
+// Request for updating a team's properties
+message UpdateTeam {
+  // Team ID of the team to update.
+  string team_id = 1;
+  // Specifies whether the team is eligible for team based rewards.
+  bool enable_rewards = 2;
+  // Optional team name to be added to the referral banner.
+  optional string name = 3;
+  // Optional link to a team forum, discord, etc.
+  optional string team_url = 4;
+  // Optional link to an image to be used as the team avatar.
+  optional string avatar_url = 5;
+}
+
+// Request to join a team
+//
+// A party that joins a referral team is called a referee. A referee cannot
+// be a liquidity provider, nor can they create a team or join multiple teams.
+// To switch teams, the referee can ask to join another team, and the switch will
+// be effective at the end of the epoch.
+message JoinTeam {
+  // Team ID of the team to join.
+  string team_id = 1;
+}

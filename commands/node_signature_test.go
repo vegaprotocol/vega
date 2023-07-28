@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -88,8 +89,8 @@ func testNodeSignatureWithKindSucceeds(t *testing.T) {
 func checkNodeSignature(cmd *commandspb.NodeSignature) commands.Errors {
 	err := commands.CheckNodeSignature(cmd)
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 

@@ -20,8 +20,8 @@ func checkValidatorHeartbeat(cmd *commandspb.ValidatorHeartbeat) Errors {
 	if len(cmd.NodeId) == 0 {
 		errs.AddForProperty("validator_heartbeat.node_id", ErrIsRequired)
 	} else {
-		if !IsVegaPubkey(cmd.NodeId) {
-			errs.AddForProperty("validator_heartbeat.node_id", ErrShouldBeAValidVegaPubkey)
+		if !IsVegaPublicKey(cmd.NodeId) {
+			errs.AddForProperty("validator_heartbeat.node_id", ErrShouldBeAValidVegaPublicKey)
 		}
 	}
 

@@ -5,17 +5,30 @@ import (
 	"errors"
 )
 
-const vegaPubkeyLen = 64
-
-var (
-	ErrShouldBeAValidVegaPubkey = errors.New("should be a valid vega public key")
-	ErrShouldBeAValidVegaID     = errors.New("should be a valid vega ID")
+const (
+	vegaPublicKeyLen = 64
+	vegaIDLen        = 64
 )
 
-// IsVegaPubkey check if a string is a valid vega public key.
-// A vega public key is a string of 64 characters containing only hexadecimal characters.
-func IsVegaPubkey(pk string) bool {
-	pkLen := len(pk)
-	_, err := hex.DecodeString(pk)
-	return pkLen == vegaPubkeyLen && err == nil
+var (
+	ErrShouldBeAValidVegaPublicKey = errors.New("should be a valid vega public key")
+	ErrShouldBeAValidVegaID        = errors.New("should be a valid Vega ID")
+)
+
+// IsVegaPublicKey check if a string is a valid Vega public key.
+// A public key is a string of 64 characters containing only hexadecimal characters.
+// Despite being similar to the function IsVegaID, the Vega ID and public
+// key are different concept that generated, and used differently.
+func IsVegaPublicKey(key string) bool {
+	_, err := hex.DecodeString(key)
+	return len(key) == vegaPublicKeyLen && err == nil
+}
+
+// IsVegaID check if a string is a valid Vega public key.
+// An ID is a string of 64 characters containing only hexadecimal characters.
+// Despite being similar to the function IsVegaPublicKey, the Vega ID and public
+// key are different concept that generated, and used differently.
+func IsVegaID(id string) bool {
+	_, err := hex.DecodeString(id)
+	return len(id) == vegaIDLen && err == nil
 }

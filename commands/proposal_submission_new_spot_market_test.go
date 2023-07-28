@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
+	"code.vegaprotocol.io/vega/libs/test"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/stretchr/testify/assert"
@@ -180,7 +181,7 @@ func testNewSpotMarketChangeSubmissionWithDecimalPlacesBelow150Succeeds(t *testi
 			Change: &protoTypes.ProposalTerms_NewSpotMarket{
 				NewSpotMarket: &protoTypes.NewSpotMarket{
 					Changes: &protoTypes.NewSpotMarketConfiguration{
-						DecimalPlaces: RandomPositiveU64Before(150),
+						DecimalPlaces: test.RandomPositiveU64Before(150),
 					},
 				},
 			},
@@ -257,7 +258,7 @@ func testNewSpotMarketChangeSubmissionWithPositionDecimalPlacesBelow7Succeeds(t 
 			Change: &protoTypes.ProposalTerms_NewSpotMarket{
 				NewSpotMarket: &protoTypes.NewSpotMarket{
 					Changes: &protoTypes.NewSpotMarketConfiguration{
-						PositionDecimalPlaces: RandomPositiveI64Before(7),
+						PositionDecimalPlaces: test.RandomPositiveI64Before(7),
 					},
 				},
 			},
@@ -310,7 +311,7 @@ func testSpotTargetStakeWithNonPositiveTimeWindowFails(t *testing.T) {
 			value: 0,
 		}, {
 			msg:   "with ratio of -1",
-			value: RandomNegativeI64(),
+			value: test.RandomNegativeI64(),
 		},
 	}
 	for _, tc := range testCases {
@@ -347,7 +348,7 @@ func testSpotTargetStakeWithPositiveTimeWindowSucceeds(t *testing.T) {
 							Product: &protoTypes.InstrumentConfiguration_Spot{},
 						},
 						TargetStakeParameters: &protoTypes.TargetStakeParameters{
-							TimeWindow: RandomPositiveI64(),
+							TimeWindow: test.RandomPositiveI64(),
 						},
 					},
 				},
@@ -517,10 +518,10 @@ func testSpotPriceMonitoringChangeSubmissionWithTriggerHorizonSucceeds(t *testin
 						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
 							Triggers: []*protoTypes.PriceMonitoringTrigger{
 								{
-									Horizon: RandomPositiveI64(),
+									Horizon: test.RandomPositiveI64(),
 								},
 								{
-									Horizon: RandomPositiveI64(),
+									Horizon: test.RandomPositiveI64(),
 								},
 							},
 						},
@@ -649,10 +650,10 @@ func testSpotMarketPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSuc
 						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
 							Triggers: []*protoTypes.PriceMonitoringTrigger{
 								{
-									AuctionExtension: RandomPositiveI64(),
+									AuctionExtension: test.RandomPositiveI64(),
 								},
 								{
-									AuctionExtension: RandomPositiveI64(),
+									AuctionExtension: test.RandomPositiveI64(),
 								},
 							},
 						},

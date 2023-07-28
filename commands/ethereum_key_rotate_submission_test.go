@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -105,8 +106,8 @@ func TestSubmittingNonEmptyEthereumKeyRotateSubmissionWithoutSigFails(t *testing
 func checkEthereumKeyRotateSubmission(cmd *commandspb.EthereumKeyRotateSubmission) commands.Errors {
 	err := commands.CheckEthereumKeyRotateSubmission(cmd)
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 	return e

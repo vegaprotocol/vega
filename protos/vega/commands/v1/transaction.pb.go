@@ -118,6 +118,9 @@ type InputData struct {
 	//	*InputData_BatchMarketInstructions
 	//	*InputData_StopOrdersSubmission
 	//	*InputData_StopOrdersCancellation
+	//	*InputData_CreateTeam
+	//	*InputData_UpdateTeam
+	//	*InputData_JoinTeam
 	//	*InputData_NodeVote
 	//	*InputData_NodeSignature
 	//	*InputData_ChainEvent
@@ -303,6 +306,27 @@ func (x *InputData) GetStopOrdersCancellation() *StopOrdersCancellation {
 	return nil
 }
 
+func (x *InputData) GetCreateTeam() *CreateTeam {
+	if x, ok := x.GetCommand().(*InputData_CreateTeam); ok {
+		return x.CreateTeam
+	}
+	return nil
+}
+
+func (x *InputData) GetUpdateTeam() *UpdateTeam {
+	if x, ok := x.GetCommand().(*InputData_UpdateTeam); ok {
+		return x.UpdateTeam
+	}
+	return nil
+}
+
+func (x *InputData) GetJoinTeam() *JoinTeam {
+	if x, ok := x.GetCommand().(*InputData_JoinTeam); ok {
+		return x.JoinTeam
+	}
+	return nil
+}
+
 func (x *InputData) GetNodeVote() *NodeVote {
 	if x, ok := x.GetCommand().(*InputData_NodeVote); ok {
 		return x.NodeVote
@@ -462,6 +486,21 @@ type InputData_StopOrdersCancellation struct {
 	StopOrdersCancellation *StopOrdersCancellation `protobuf:"bytes,1017,opt,name=stop_orders_cancellation,json=stopOrdersCancellation,proto3,oneof"`
 }
 
+type InputData_CreateTeam struct {
+	// Command to create a team.
+	CreateTeam *CreateTeam `protobuf:"bytes,1018,opt,name=create_team,json=createTeam,proto3,oneof"`
+}
+
+type InputData_UpdateTeam struct {
+	// Command to update a team.
+	UpdateTeam *UpdateTeam `protobuf:"bytes,1019,opt,name=update_team,json=updateTeam,proto3,oneof"`
+}
+
+type InputData_JoinTeam struct {
+	// Command to join a team.
+	JoinTeam *JoinTeam `protobuf:"bytes,1020,opt,name=join_team,json=joinTeam,proto3,oneof"`
+}
+
 type InputData_NodeVote struct {
 	// Command used by a validator when a node votes for validating that a given resource exists or is valid,
 	// for example, an ERC20 deposit is valid and exists on ethereum.
@@ -549,6 +588,12 @@ func (*InputData_BatchMarketInstructions) isInputData_Command() {}
 func (*InputData_StopOrdersSubmission) isInputData_Command() {}
 
 func (*InputData_StopOrdersCancellation) isInputData_Command() {}
+
+func (*InputData_CreateTeam) isInputData_Command() {}
+
+func (*InputData_UpdateTeam) isInputData_Command() {}
+
+func (*InputData_JoinTeam) isInputData_Command() {}
 
 func (*InputData_NodeVote) isInputData_Command() {}
 
@@ -770,7 +815,7 @@ var file_vega_commands_v1_transaction_proto_rawDesc = []byte{
 	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x29, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x63, 0x6f, 0x6d,
 	0x6d, 0x61, 0x6e, 0x64, 0x73, 0x2f, 0x76, 0x31, 0x2f, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74,
 	0x6f, 0x72, 0x5f, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x22, 0xf2, 0x13, 0x0a, 0x09, 0x49, 0x6e, 0x70, 0x75, 0x74, 0x44, 0x61, 0x74, 0x61, 0x12,
+	0x6f, 0x22, 0xb2, 0x15, 0x0a, 0x09, 0x49, 0x6e, 0x70, 0x75, 0x74, 0x44, 0x61, 0x74, 0x61, 0x12,
 	0x14, 0x0a, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x05,
 	0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x12, 0x21, 0x0a, 0x0c, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68,
 	0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0b, 0x62, 0x6c, 0x6f,
@@ -872,7 +917,19 @@ var file_vega_commands_v1_transaction_proto_rawDesc = []byte{
 	0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x74, 0x6f, 0x70, 0x4f,
 	0x72, 0x64, 0x65, 0x72, 0x73, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x6c, 0x61, 0x74, 0x69, 0x6f,
 	0x6e, 0x48, 0x00, 0x52, 0x16, 0x73, 0x74, 0x6f, 0x70, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x43,
-	0x61, 0x6e, 0x63, 0x65, 0x6c, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x3a, 0x0a, 0x09, 0x6e,
+	0x61, 0x6e, 0x63, 0x65, 0x6c, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x40, 0x0a, 0x0b, 0x63,
+	0x72, 0x65, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x65, 0x61, 0x6d, 0x18, 0xfa, 0x07, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x1c, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64,
+	0x73, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x54, 0x65, 0x61, 0x6d, 0x48,
+	0x00, 0x52, 0x0a, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x54, 0x65, 0x61, 0x6d, 0x12, 0x40, 0x0a,
+	0x0b, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x65, 0x61, 0x6d, 0x18, 0xfb, 0x07, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x63, 0x6f, 0x6d, 0x6d, 0x61,
+	0x6e, 0x64, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x54, 0x65, 0x61,
+	0x6d, 0x48, 0x00, 0x52, 0x0a, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x54, 0x65, 0x61, 0x6d, 0x12,
+	0x3a, 0x0a, 0x09, 0x6a, 0x6f, 0x69, 0x6e, 0x5f, 0x74, 0x65, 0x61, 0x6d, 0x18, 0xfc, 0x07, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x63, 0x6f, 0x6d, 0x6d, 0x61,
+	0x6e, 0x64, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x4a, 0x6f, 0x69, 0x6e, 0x54, 0x65, 0x61, 0x6d, 0x48,
+	0x00, 0x52, 0x08, 0x6a, 0x6f, 0x69, 0x6e, 0x54, 0x65, 0x61, 0x6d, 0x12, 0x3a, 0x0a, 0x09, 0x6e,
 	0x6f, 0x64, 0x65, 0x5f, 0x76, 0x6f, 0x74, 0x65, 0x18, 0xd2, 0x0f, 0x20, 0x01, 0x28, 0x0b, 0x32,
 	0x1a, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x2e,
 	0x76, 0x31, 0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x56, 0x6f, 0x74, 0x65, 0x48, 0x00, 0x52, 0x08, 0x6e,
@@ -998,17 +1055,20 @@ var file_vega_commands_v1_transaction_proto_goTypes = []interface{}{
 	(*BatchMarketInstructions)(nil),        // 18: vega.commands.v1.BatchMarketInstructions
 	(*StopOrdersSubmission)(nil),           // 19: vega.commands.v1.StopOrdersSubmission
 	(*StopOrdersCancellation)(nil),         // 20: vega.commands.v1.StopOrdersCancellation
-	(*NodeVote)(nil),                       // 21: vega.commands.v1.NodeVote
-	(*NodeSignature)(nil),                  // 22: vega.commands.v1.NodeSignature
-	(*ChainEvent)(nil),                     // 23: vega.commands.v1.ChainEvent
-	(*KeyRotateSubmission)(nil),            // 24: vega.commands.v1.KeyRotateSubmission
-	(*StateVariableProposal)(nil),          // 25: vega.commands.v1.StateVariableProposal
-	(*ValidatorHeartbeat)(nil),             // 26: vega.commands.v1.ValidatorHeartbeat
-	(*EthereumKeyRotateSubmission)(nil),    // 27: vega.commands.v1.EthereumKeyRotateSubmission
-	(*ProtocolUpgradeProposal)(nil),        // 28: vega.commands.v1.ProtocolUpgradeProposal
-	(*IssueSignatures)(nil),                // 29: vega.commands.v1.IssueSignatures
-	(*OracleDataSubmission)(nil),           // 30: vega.commands.v1.OracleDataSubmission
-	(*Signature)(nil),                      // 31: vega.commands.v1.Signature
+	(*CreateTeam)(nil),                     // 21: vega.commands.v1.CreateTeam
+	(*UpdateTeam)(nil),                     // 22: vega.commands.v1.UpdateTeam
+	(*JoinTeam)(nil),                       // 23: vega.commands.v1.JoinTeam
+	(*NodeVote)(nil),                       // 24: vega.commands.v1.NodeVote
+	(*NodeSignature)(nil),                  // 25: vega.commands.v1.NodeSignature
+	(*ChainEvent)(nil),                     // 26: vega.commands.v1.ChainEvent
+	(*KeyRotateSubmission)(nil),            // 27: vega.commands.v1.KeyRotateSubmission
+	(*StateVariableProposal)(nil),          // 28: vega.commands.v1.StateVariableProposal
+	(*ValidatorHeartbeat)(nil),             // 29: vega.commands.v1.ValidatorHeartbeat
+	(*EthereumKeyRotateSubmission)(nil),    // 30: vega.commands.v1.EthereumKeyRotateSubmission
+	(*ProtocolUpgradeProposal)(nil),        // 31: vega.commands.v1.ProtocolUpgradeProposal
+	(*IssueSignatures)(nil),                // 32: vega.commands.v1.IssueSignatures
+	(*OracleDataSubmission)(nil),           // 33: vega.commands.v1.OracleDataSubmission
+	(*Signature)(nil),                      // 34: vega.commands.v1.Signature
 }
 var file_vega_commands_v1_transaction_proto_depIdxs = []int32{
 	4,  // 0: vega.commands.v1.InputData.order_submission:type_name -> vega.commands.v1.OrderSubmission
@@ -1028,24 +1088,27 @@ var file_vega_commands_v1_transaction_proto_depIdxs = []int32{
 	18, // 14: vega.commands.v1.InputData.batch_market_instructions:type_name -> vega.commands.v1.BatchMarketInstructions
 	19, // 15: vega.commands.v1.InputData.stop_orders_submission:type_name -> vega.commands.v1.StopOrdersSubmission
 	20, // 16: vega.commands.v1.InputData.stop_orders_cancellation:type_name -> vega.commands.v1.StopOrdersCancellation
-	21, // 17: vega.commands.v1.InputData.node_vote:type_name -> vega.commands.v1.NodeVote
-	22, // 18: vega.commands.v1.InputData.node_signature:type_name -> vega.commands.v1.NodeSignature
-	23, // 19: vega.commands.v1.InputData.chain_event:type_name -> vega.commands.v1.ChainEvent
-	24, // 20: vega.commands.v1.InputData.key_rotate_submission:type_name -> vega.commands.v1.KeyRotateSubmission
-	25, // 21: vega.commands.v1.InputData.state_variable_proposal:type_name -> vega.commands.v1.StateVariableProposal
-	26, // 22: vega.commands.v1.InputData.validator_heartbeat:type_name -> vega.commands.v1.ValidatorHeartbeat
-	27, // 23: vega.commands.v1.InputData.ethereum_key_rotate_submission:type_name -> vega.commands.v1.EthereumKeyRotateSubmission
-	28, // 24: vega.commands.v1.InputData.protocol_upgrade_proposal:type_name -> vega.commands.v1.ProtocolUpgradeProposal
-	29, // 25: vega.commands.v1.InputData.issue_signatures:type_name -> vega.commands.v1.IssueSignatures
-	30, // 26: vega.commands.v1.InputData.oracle_data_submission:type_name -> vega.commands.v1.OracleDataSubmission
-	31, // 27: vega.commands.v1.Transaction.signature:type_name -> vega.commands.v1.Signature
-	0,  // 28: vega.commands.v1.Transaction.version:type_name -> vega.commands.v1.TxVersion
-	3,  // 29: vega.commands.v1.Transaction.pow:type_name -> vega.commands.v1.ProofOfWork
-	30, // [30:30] is the sub-list for method output_type
-	30, // [30:30] is the sub-list for method input_type
-	30, // [30:30] is the sub-list for extension type_name
-	30, // [30:30] is the sub-list for extension extendee
-	0,  // [0:30] is the sub-list for field type_name
+	21, // 17: vega.commands.v1.InputData.create_team:type_name -> vega.commands.v1.CreateTeam
+	22, // 18: vega.commands.v1.InputData.update_team:type_name -> vega.commands.v1.UpdateTeam
+	23, // 19: vega.commands.v1.InputData.join_team:type_name -> vega.commands.v1.JoinTeam
+	24, // 20: vega.commands.v1.InputData.node_vote:type_name -> vega.commands.v1.NodeVote
+	25, // 21: vega.commands.v1.InputData.node_signature:type_name -> vega.commands.v1.NodeSignature
+	26, // 22: vega.commands.v1.InputData.chain_event:type_name -> vega.commands.v1.ChainEvent
+	27, // 23: vega.commands.v1.InputData.key_rotate_submission:type_name -> vega.commands.v1.KeyRotateSubmission
+	28, // 24: vega.commands.v1.InputData.state_variable_proposal:type_name -> vega.commands.v1.StateVariableProposal
+	29, // 25: vega.commands.v1.InputData.validator_heartbeat:type_name -> vega.commands.v1.ValidatorHeartbeat
+	30, // 26: vega.commands.v1.InputData.ethereum_key_rotate_submission:type_name -> vega.commands.v1.EthereumKeyRotateSubmission
+	31, // 27: vega.commands.v1.InputData.protocol_upgrade_proposal:type_name -> vega.commands.v1.ProtocolUpgradeProposal
+	32, // 28: vega.commands.v1.InputData.issue_signatures:type_name -> vega.commands.v1.IssueSignatures
+	33, // 29: vega.commands.v1.InputData.oracle_data_submission:type_name -> vega.commands.v1.OracleDataSubmission
+	34, // 30: vega.commands.v1.Transaction.signature:type_name -> vega.commands.v1.Signature
+	0,  // 31: vega.commands.v1.Transaction.version:type_name -> vega.commands.v1.TxVersion
+	3,  // 32: vega.commands.v1.Transaction.pow:type_name -> vega.commands.v1.ProofOfWork
+	33, // [33:33] is the sub-list for method output_type
+	33, // [33:33] is the sub-list for method input_type
+	33, // [33:33] is the sub-list for extension type_name
+	33, // [33:33] is the sub-list for extension extendee
+	0,  // [0:33] is the sub-list for field type_name
 }
 
 func init() { file_vega_commands_v1_transaction_proto_init() }
@@ -1113,6 +1176,9 @@ func file_vega_commands_v1_transaction_proto_init() {
 		(*InputData_BatchMarketInstructions)(nil),
 		(*InputData_StopOrdersSubmission)(nil),
 		(*InputData_StopOrdersCancellation)(nil),
+		(*InputData_CreateTeam)(nil),
+		(*InputData_UpdateTeam)(nil),
+		(*InputData_JoinTeam)(nil),
 		(*InputData_NodeVote)(nil),
 		(*InputData_NodeSignature)(nil),
 		(*InputData_ChainEvent)(nil),
