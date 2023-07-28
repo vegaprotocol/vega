@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"code.vegaprotocol.io/vega/core/datasource"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -77,9 +78,12 @@ func newFutureBinding(f *types.Future) (terminatingBinding, error) {
 	if tradingTerminationProperty == spec.BuiltinTimestamp {
 		termType = datapb.PropertyKey_TYPE_TIMESTAMP
 	}
+	t, dec := getSettleTypeAndDec(f.DataSourceSpecForSettlementData)
 
 	return terminatingBinding{
 		settlementProperty:  settlementProperty,
+		settlementType:      t,
+		settlementDecimals:  dec,
 		terminationProperty: tradingTerminationProperty,
 		terminationType:     termType,
 	}, nil
@@ -147,9 +151,12 @@ func newPerpBinding(p *types.Perps) (scheduledBinding, error) {
 	if len(settleScheduleProp) == 0 {
 		return scheduledBinding{}, errors.New("binding for settlement schedule cannot be blank")
 	}
+	setT, dec := getSettleTypeAndDec(p.DataSourceSpecForSettlementData)
 
 	return scheduledBinding{
 		settlementProperty: settleDataProp,
+		settlementType:     setT,
+		settlementDecimals: dec,
 		scheduleProperty:   settleScheduleProp,
 		scheduleType:       datapb.PropertyKey_TYPE_TIMESTAMP, // default to timestamp
 	}, nil
@@ -215,4 +222,23 @@ func (o *oracleData) SettlementData(op, ap uint32) (*num.Uint, error) {
 // IsTradingTerminated returns true when oracle has signalled termination of trading.
 func (o *oracleData) IsTradingTerminated() bool {
 	return o.tradingTerminated
+}
+
+func getSettleTypeAndDec(s *datasource.Spec) (datapb.PropertyKey_Type, uint64) {
+	def := s.GetDefinition()
+	defType := datapb.PropertyKey_TYPE_INTEGER
+	dec := uint64(0)
+	for _, f := range def.GetFilters() {
+		if f.Key.Type == datapb.PropertyKey_TYPE_INTEGER && f.Key.NumberDecimalPlaces != nil {
+			dec = *f.Key.NumberDecimalPlaces
+			break
+		} else if f.Key.Type == datapb.PropertyKey_TYPE_DECIMAL {
+			defType = f.Key.Type
+			if f.Key.NumberDecimalPlaces != nil {
+				dec = *f.Key.NumberDecimalPlaces
+			}
+			break
+		}
+	}
+	return defType, dec
 }

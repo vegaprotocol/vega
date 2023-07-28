@@ -243,21 +243,6 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		return nil, err
 	}
 
-	dSrcSpec := f.DataSourceSpecForSettlementData.GetDefinition()
-
-	for _, f := range dSrcSpec.GetFilters() {
-		// Oracle specs with more than one unique filter names are not allowed to exists, so we do not have to make that check here.
-		// We are good to only check if the type is `PropertyKey_TYPE_DECIMAL` or `PropertyKey_TYPE_INTEGER`, because we take decimals
-		// into consideration only in those cases.
-		if f.Key.Type == datapb.PropertyKey_TYPE_INTEGER && f.Key.NumberDecimalPlaces != nil {
-			oracle.binding.settlementType = f.Key.Type
-			oracle.binding.settlementDecimals = *f.Key.NumberDecimalPlaces
-			break
-		} else if f.Key.Type == datapb.PropertyKey_TYPE_DECIMAL {
-			oracle.binding.settlementType = f.Key.Type
-		}
-	}
-
 	future := &Future{
 		log:             log,
 		SettlementAsset: f.SettlementAsset,

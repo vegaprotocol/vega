@@ -83,19 +83,7 @@ func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, oe O
 		return nil, err
 	}
 
-	dsSpec := p.DataSourceSpecForSettlementData.GetDefinition()
-
 	// check decimal places for settlement data
-	for _, f := range dsSpec.GetFilters() {
-		if f.Key.Type == datapb.PropertyKey_TYPE_INTEGER && f.Key.NumberDecimalPlaces != nil {
-			oracle.binding.settlementType = f.Key.Type
-			oracle.binding.settlementDecimals = *f.Key.NumberDecimalPlaces
-		}
-		// we may want to support 2 timestamp types here
-		if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP && f.Key.NumberDecimalPlaces == nil {
-			oracle.binding.scheduleType = f.Key.Type
-		}
-	}
 	perp := &Perpetual{
 		p:       p,
 		log:     log,
