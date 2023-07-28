@@ -1073,9 +1073,25 @@ func (e *Engine) getMTMPartyAccounts(party, marketID, asset string) (gen, margin
 	return
 }
 
+// PerpsFundingSettlement will run a funding settlement over given positions. This works exactly the same as a MTM settlement
+// but uses different transfer types
+func (e *Engine) PerpsFundingSettlement(ctx context.Context, marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.LedgerMovement, error) {
+	if len(transfers) == 0 {
+		return nil, nil, nil
+	}
+	return e.mtmOrFundingSettlement(ctx, marketID, transfers, asset, types.TransferTypePerpFundingWin)
+}
+
 // MarkToMarket will run the mark to market settlement over a given set of positions
 // return ledger move stuff here, too (separate return value, because we need to stream those).
 func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.LedgerMovement, error) {
+	if len(transfers) == 0 {
+		return nil, nil, nil
+	}
+	return e.mtmOrFundingSettlement(ctx, marketID, transfers, asset, types.TransferTypeMTMWin)
+}
+
+func (e *Engine) mtmOrFundingSettlement(ctx context.Context, marketID string, transfers []events.Transfer, asset string, winType types.TransferType) ([]events.Margin, []*types.LedgerMovement, error) {
 	// stop immediately if there aren't any transfers, channels are closed
 	if len(transfers) == 0 {
 		return nil, nil, nil
@@ -1136,7 +1152,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 			continue
 		}
 
-		if transfer.Type == types.TransferTypeMTMWin {
+		if transfer.Type == winType {
 			// we processed all loss break then
 			winidx = i
 			break
@@ -1244,7 +1260,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 			logging.BigUint("collected", settle.Balance))
 		for _, evt := range transfers[winidx:] {
 			transfer := evt.Transfer()
-			if transfer != nil && transfer.Type == types.TransferTypeMTMWin {
+			if transfer != nil && transfer.Type == winType {
 				distr.Add(evt.Transfer())
 			}
 		}
@@ -1321,7 +1337,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 	}
 
 	if !settle.Balance.IsZero() {
-		e.log.Panic("Settlement balance non-zero at the end of MTM settlement", logging.BigUint("settlement-balance", settle.Balance))
+		e.log.Panic("Settlement balance non-zero at the end of MTM/funding settlement", logging.BigUint("settlement-balance", settle.Balance))
 		return nil, nil, ErrSettlementBalanceNotZero
 	}
 	return marginEvts, responses, nil
@@ -2268,6 +2284,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 		}
 	)
 	if p.Type == types.TransferTypeMTMLoss ||
+		p.Type == types.TransferTypePerpFundingLoss ||
 		p.Type == types.TransferTypeWin ||
 		p.Type == types.TransferTypeMarginLow {
 		// we do not care about errors here as the bond account is not mandatory for the transfers
@@ -2316,7 +2333,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 	}
 	switch p.Type {
 	// final settle, or MTM settle, makes no difference, it's win/loss still
-	case types.TransferTypeLoss, types.TransferTypeMTMLoss:
+	case types.TransferTypeLoss, types.TransferTypeMTMLoss, types.TransferTypePerpFundingLoss:
 		req.ToAccount = []*types.Account{
 			settle,
 		}
@@ -2344,7 +2361,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 				insurance,
 			}
 		}
-	case types.TransferTypeWin, types.TransferTypeMTMWin:
+	case types.TransferTypeWin, types.TransferTypeMTMWin, types.TransferTypePerpFundingWin:
 		req.Amount = p.Amount.Amount.Clone()
 		req.MinAmount = num.UintZero() // default value, but keep it here explicitly
 		// the insurance pool in the Req.FromAccountAccount is not used ATM (losses should fully cover wins

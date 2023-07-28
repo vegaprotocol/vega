@@ -71,7 +71,7 @@ func TestMarkToMarket(t *testing.T) {
 	t.Run("Trade adds new party, immediately closing out with themselves", testAddNewPartySelfTrade)
 	t.Run("Test MTM settle when the network is closed out", testMTMNetworkZero)
 
-	t.Run("Test settling a funding period", TestSettlingAFundingPeriod)
+	t.Run("Test settling a funding period", testSettlingAFundingPeriod)
 }
 
 func TestMTMWinDistribution(t *testing.T) {
@@ -79,7 +79,7 @@ func TestMTMWinDistribution(t *testing.T) {
 	t.Run("Distribute win excess in a scenario where no transfer amount is < 1", testMTMWinNoZero)
 }
 
-func TestSettlingAFundingPeriod(t *testing.T) {
+func testSettlingAFundingPeriod(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
 	ctx := context.Background()
@@ -104,30 +104,36 @@ func TestSettlingAFundingPeriod(t *testing.T) {
 	}
 
 	// 0 funding paymenet produces 0 transfers
-	assert.Len(t, engine.SettleFundingPeriod(ctx, positions, num.IntZero()), 0)
+	transfers, round := engine.SettleFundingPeriod(ctx, positions, num.IntZero())
+	assert.Len(t, transfers, 0)
+	assert.Nil(t, round)
 
 	// no positions produces no transfers
 
 	// positive funding payement, shorts pay long
 	fundingPayment, _ := num.IntFromString("10", 10)
-	transfers := engine.SettleFundingPeriod(ctx, positions, fundingPayment)
+	transfers, round = engine.SettleFundingPeriod(ctx, positions, fundingPayment)
 	require.Len(t, transfers, 2)
+	require.True(t, round.IsZero())
 	assert.Equal(t, "100", transfers[0].Transfer().Amount.Amount.String())
-	assert.Equal(t, types.TransferTypeMTMLoss, transfers[0].Transfer().Type)
+	assert.Equal(t, types.TransferTypePerpFundingLoss, transfers[0].Transfer().Type)
 	assert.Equal(t, "100", transfers[1].Transfer().Amount.Amount.String())
-	assert.Equal(t, types.TransferTypeMTMWin, transfers[1].Transfer().Type)
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[1].Transfer().Type)
 
 	// negative funding payement, long pays short
 	fundingPayment, _ = num.IntFromString("-10", 10)
-	transfers = engine.SettleFundingPeriod(ctx, positions, fundingPayment)
+	transfers, round = engine.SettleFundingPeriod(ctx, positions, fundingPayment)
+	require.True(t, round.IsZero())
 	require.Len(t, transfers, 2)
 	assert.Equal(t, "100", transfers[0].Transfer().Amount.Amount.String())
-	assert.Equal(t, types.TransferTypeMTMWin, transfers[0].Transfer().Type)
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[0].Transfer().Type)
 	assert.Equal(t, "100", transfers[1].Transfer().Amount.Amount.String())
-	assert.Equal(t, types.TransferTypeMTMLoss, transfers[1].Transfer().Type)
+	assert.Equal(t, types.TransferTypePerpFundingLoss, transfers[1].Transfer().Type)
 
 	// no positions produces no transfers
-	assert.Len(t, engine.SettleFundingPeriod(ctx, []events.MarketPosition{}, fundingPayment), 0)
+	transfers, round = engine.SettleFundingPeriod(ctx, []events.MarketPosition{}, fundingPayment)
+	require.True(t, round.IsZero())
+	assert.Len(t, transfers, 0)
 }
 
 func testMTMWinNoZero(t *testing.T) {

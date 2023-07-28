@@ -37,6 +37,7 @@
 - [8913](https://github.com/vegaprotocol/vega/issues/8913) - Add business logic for team management.
 - [8765](https://github.com/vegaprotocol/vega/issues/8765) - Implement snapshots state for `PERPS`.
 - [8918](https://github.com/vegaprotocol/vega/issues/8918) - Implement commands for team management.
+- [8756](https://github.com/vegaprotocol/vega/issues/8756) - Settlement and margin implementation for `PERPS`.
 
 ### 🐛 Fixes
 

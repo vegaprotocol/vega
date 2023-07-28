@@ -69,6 +69,7 @@ func TestCollateralTransfer(t *testing.T) {
 func TestCollateralMarkToMarket(t *testing.T) {
 	t.Run("Mark to Market distribution, insufficient funds - complex scenario", testProcessBothProRatedMTM)
 	t.Run("Mark to Market successful", testMTMSuccess)
+	t.Run("Perp funding settlement - successful", testPerpFundingSuccess)
 	// we panic if settlement account is non-zero, this test doesn't pass anymore
 	t.Run("Mark to Market wins and losses do not match up, settlement not drained", testSettleBalanceNotZero)
 }
@@ -1498,6 +1499,92 @@ func testRemoveDistressedNoBalance(t *testing.T) {
 	_, err = eng.GetAccountByID(marginID)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "account does not exist:")
+}
+
+func testPerpFundingSuccess(t *testing.T) {
+	party := "test-party"
+	moneyParty := "money-party"
+	price := num.NewUint(1000)
+
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	insurancePool, err := eng.GetMarketInsurancePoolAccount(testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+	err = eng.UpdateBalance(context.Background(), insurancePool.ID, num.UintZero().Div(price, num.NewUint(2)))
+	assert.Nil(t, err)
+
+	// create party accounts
+	eng.broker.EXPECT().Send(gomock.Any()).Times(8)
+	gID, _ := eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
+	mID, err := eng.CreatePartyMarginAccount(context.Background(), party, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	assert.NotEmpty(t, mID)
+	assert.NotEmpty(t, gID)
+
+	// create + add balance
+	_, _ = eng.CreatePartyGeneralAccount(context.Background(), moneyParty, testMarketAsset)
+	marginMoneyParty, err := eng.CreatePartyMarginAccount(context.Background(), moneyParty, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	err = eng.UpdateBalance(context.Background(), marginMoneyParty, num.UintZero().Mul(num.NewUint(5), price))
+	assert.Nil(t, err)
+
+	pos := []*types.Transfer{
+		{
+			Owner: party,
+			Amount: &types.FinancialAmount{
+				Amount: price,
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferTypePerpFundingLoss,
+		},
+		{
+			Owner: moneyParty,
+			Amount: &types.FinancialAmount{
+				Amount: price,
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferTypePerpFundingLoss,
+		},
+		{
+			Owner: party,
+			Amount: &types.FinancialAmount{
+				Amount: price,
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferTypePerpFundingWin,
+		},
+		{
+			Owner: moneyParty,
+			Amount: &types.FinancialAmount{
+				Amount: price,
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferTypePerpFundingWin,
+		},
+	}
+
+	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(evt events.Event) {
+		ae, ok := evt.(accEvt)
+		assert.True(t, ok)
+		acc := ae.Account()
+		if acc.Owner == party && acc.Type == types.AccountTypeGeneral {
+			assert.Equal(t, acc.Balance, int64(833))
+		}
+		if acc.Owner == moneyParty && acc.Type == types.AccountTypeGeneral {
+			assert.Equal(t, acc.Balance, int64(1666))
+		}
+	})
+	transfers := eng.getTestMTMTransfer(pos)
+	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
+	assert.NoError(t, err)
+	assert.Equal(t, 4, len(raw))
+	assert.NotEmpty(t, evts)
 }
 
 // most of this function is copied from the MarkToMarket test - we're using channels, sure

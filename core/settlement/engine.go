@@ -553,26 +553,50 @@ func calcMTM(markPrice, price *num.Uint, size int64, trades []*settlementTrade, 
 }
 
 // SettleFundingPeriod takes positions and a funding-payement and returns a slice of transfers.
-func (e *Engine) SettleFundingPeriod(ctx context.Context, positions []events.MarketPosition, fundingPayment *num.Int) []events.Transfer {
+// returns the slice of transfers to perform, and the max remainder on the settlement account due to rounding issues.
+func (e *Engine) SettleFundingPeriod(ctx context.Context, positions []events.MarketPosition, fundingPayment *num.Int) ([]events.Transfer, *num.Uint) {
 	if fundingPayment.IsZero() || len(positions) == 0 {
 		// nothing to do here
-		return nil
+		return nil, nil
 	}
 
 	transfers := make([]events.Transfer, 0, len(positions))
+	var delta num.Decimal
 	for _, p := range positions {
 		// per-party cash flow is -openVolume * fundingPayment
-		openVolume := num.NewInt(p.Size())
-		flow := num.NewInt(-1).Mul(openVolume.Mul(fundingPayment))
+		flow, rem, neg := calcFundingFlow(fundingPayment, p, e.positionFactor)
 
 		if !flow.IsZero() {
-			// TODO: change this to not use the MTM transfer stuff and add a new transfer type
-			// https://github.com/vegaprotocol/vega/issues/8755
-			transfers = append(transfers, e.getMtmTransfer(flow.U, flow.IsNegative(), p, p.Party()))
+			tf := e.getMtmTransfer(flow, neg, p, p.Party())
+			if tf.transfer != nil {
+				if tf.transfer.Type == types.TransferTypeMTMWin {
+					tf.transfer.Type = types.TransferTypePerpFundingWin
+					delta = delta.Add(rem)
+				} else {
+					tf.transfer.Type = types.TransferTypePerpFundingLoss
+					delta = delta.Sub(rem)
+				}
+			}
+			transfers = append(transfers, tf)
 		}
 		if e.log.IsDebug() {
 			e.log.Debug("cash flow", logging.String("mid", e.market), logging.String("pid", p.Party()), logging.String("flow", flow.String()))
 		}
 	}
-	return transfers
+	// we only care about the int part
+	round := num.UintZero()
+	// if delta > 0, the settlement account will have a non-zero balance at the end
+	if !delta.IsNegative() {
+		round, _ = num.UintFromDecimal(delta)
+	}
+	return transfers, round
+}
+
+func calcFundingFlow(fp *num.Int, p events.MarketPosition, posFac num.Decimal) (*num.Uint, num.Decimal, bool) {
+	// -openVolume * fundingPayment
+	// divide by position factor to account for position decimal places
+	flowD := num.DecimalFromInt64(-p.Size()).Mul(fp.U.ToDecimal()).Div(posFac)
+	neg := flowD.IsNegative()
+	flow, frac := num.UintFromDecimalWithFraction(flowD.Abs())
+	return flow, frac, neg
 }
