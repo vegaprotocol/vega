@@ -1076,18 +1076,12 @@ func (e *Engine) getMTMPartyAccounts(party, marketID, asset string) (gen, margin
 // PerpsFundingSettlement will run a funding settlement over given positions.
 // This works exactly the same as a MTM settlement, but uses different transfer types.
 func (e *Engine) PerpsFundingSettlement(ctx context.Context, marketID string, transfers []events.Transfer, asset string, round *num.Uint) ([]events.Margin, []*types.LedgerMovement, error) {
-	if len(transfers) == 0 {
-		return nil, nil, nil
-	}
 	return e.mtmOrFundingSettlement(ctx, marketID, transfers, asset, types.TransferTypePerpFundingWin, round)
 }
 
 // MarkToMarket will run the mark to market settlement over a given set of positions
 // return ledger move stuff here, too (separate return value, because we need to stream those).
 func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.LedgerMovement, error) {
-	if len(transfers) == 0 {
-		return nil, nil, nil
-	}
 	return e.mtmOrFundingSettlement(ctx, marketID, transfers, asset, types.TransferTypeMTMWin, nil)
 }
 
