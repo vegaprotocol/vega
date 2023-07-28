@@ -322,7 +322,7 @@ func NewMarket(
 func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	if epoch.Action == vega.EpochAction_EPOCH_ACTION_START {
 		m.liquidity.OnEpochStart(ctx, m.timeService.GetTimeNow(), m.markPrice, m.midPrice(), m.getTargetStake(), m.positionFactor)
-	} else if epoch.Action == vega.EpochAction_EPOCH_ACTION_END {
+	} else if epoch.Action == vega.EpochAction_EPOCH_ACTION_END && !m.finalFeesDistributed {
 		m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow())
 	}
 

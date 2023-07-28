@@ -846,16 +846,56 @@ func TestMarketClosing(t *testing.T) {
 
 	party1 := "party1"
 	party2 := "party2"
+	lp1 := "lp1"
+	lp2 := "lp2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(20, 0)
-	tm := getTestMarket(t, now, nil, nil)
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{Duration: 1})
 	defer tm.ctrl.Finish()
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
+	addAccount(t, tm, lp1)
+	addAccount(t, tm, lp2)
+
+	// submit liquidity with varying fee levels
+	commitment1 := num.NewUint(30000)
+	fee1 := num.DecimalFromFloat(0.01)
+	commitment2 := num.NewUint(20000)
+	fee2 := num.DecimalFromFloat(0.02)
+	lps := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: commitment1,
+		Fee:              fee1,
+	}
+
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lps, lp1, vgcrypto.RandomHash()))
+	lps.Fee = fee2
+	lps.CommitmentAmount = commitment2
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lps, lp2, vgcrypto.RandomHash()))
+
+	// generate trades so that fees need to be distributed among LPs
+	orders := []*types.Order{
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "order1", types.SideSell, lp1, 1000, 110),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "order1", types.SideBuy, lp1, 1000, 90),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "order1", types.SideSell, party1, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "order2", types.SideBuy, party2, 1, 100),
+	}
+	for _, o := range orders {
+		conf, err := tm.market.SubmitOrder(context.Background(), o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+
+	// leave opening auction
+	now = now.Add(2 * time.Second)
+	tm.now = now
+	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
+	md := tm.market.GetMarketData()
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
 
 	properties := map[string]string{}
 	properties["trading.terminated"] = "true"
-	err := tm.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
+	err := tm.oracleEngine.BroadcastData(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), dstypes.Data{
 		Signers: pubKeys,
 		Data:    properties,
 	})
@@ -926,6 +966,9 @@ func TestMarketClosing(t *testing.T) {
 	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), closingAt)
 	assert.True(t, closed)
 	assert.Equal(t, types.MarketStateSettled, tm.market.State())
+
+	// call on epoch event to replicate system behaviour
+	tm.market.OnEpochEvent(context.Background(), types.Epoch{Action: proto.EpochAction_EPOCH_ACTION_END})
 }
 
 func TestMarketClosingAfterUpdate(t *testing.T) {
