@@ -263,6 +263,7 @@ func (e *Engine) RejectMarket(ctx context.Context, marketID string) error {
 		e.log.Debug("reject market", logging.MarketID(marketID))
 	}
 
+	_, isFuture := e.futureMarkets[marketID]
 	if _, ok := e.allMarkets[marketID]; !ok {
 		return ErrMarketDoesNotExist
 	}
@@ -275,7 +276,7 @@ func (e *Engine) RejectMarket(ctx context.Context, marketID string) error {
 	e.broker.Send(events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
 	e.removeMarket(marketID)
 
-	if _, ok := e.futureMarkets[marketID]; !ok {
+	if !isFuture {
 		return nil
 	}
 
