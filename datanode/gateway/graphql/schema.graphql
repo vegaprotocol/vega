@@ -536,6 +536,40 @@ type Query {
   "Query for historic ethereum key rotations"
   ethereumKeyRotations(nodeId: ID): EthereumKeyRotationsConnection!
 
+  "Funding periods for perpetual markets"
+  fundingPeriods(
+    "ID of the perpetual market to get funding periods for"
+    marketId: ID!
+    """
+    Optional: Date range to retrieve funding periods from/to.
+    The funding period start time will be used to determine whether to include the funding period in the results.
+    Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch.
+    """
+    dateRange: DateRange
+    "Pagination control"
+    pagination: Pagination
+  ): FundingPeriodConnection!
+
+  """
+  Funding period data points for a perpetual market. The data points within a funding period are used to calculate the
+  time-weighted average price (TWAP), funding rate and funding payments for each funding period.
+  """
+  fundingPeriodDataPoints(
+    "ID of the perpetual market to get funding periods for"
+    marketId: ID!
+    """
+    Optional date range to filter funding period data points from/to.
+    The funding period's start date will be used to determine if the funding period's data points should be included in the results.
+    Start and end time should be expressed as an integer value of Unix nanoseconds.
+    """
+    dateRange: DateRange,
+    "Optional filter to only return data points from a specific data source. If omitted, no filtering is applied."
+    source: FundingPeriodDataPointSource
+    "Pagination control"
+    pagination: Pagination
+
+  ): FundingPeriodDataPointConnection!
+
   "Get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided."
   getMarketDataHistoryConnectionByID(
     id: ID!
@@ -1943,18 +1977,6 @@ type Market {
 
   "Optional: Market ID of the successor to this market if one exists"
   successorMarketID: ID
-
-  "Funding periods for perpetual markets"
-  fundingPeriods(
-    """
-    Optional: Date range to retrieve funding periods from/to.
-    The funding period start time will be used to determine whether to include the funding period in the results.
-    Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch.
-    """
-    dateRange: DateRange
-    "Pagination control"
-    pagination: Pagination
-  ): FundingPeriodConnection!
 }
 
 """
@@ -5251,19 +5273,6 @@ type FundingPeriod {
   externalTwap: String
   "Time weighted average price calculated from data points for this period from the internal data source."
   internalTwap: String
-  "Data points associated with this funding period."
-  dataPoints (
-    """
-    Optional date range to filter funding period data points from/to.
-    The funding period's start date will be used to determine if the funding period's data points should be included in the results.
-    Start and end time should be expressed as an integer value of Unix nanoseconds.
-    """
-    dateRange: DateRange,
-    "Optional filter to only return data points from a specific data source. If omitted, no filtering is applied."
-    source: FundingPeriodDataPointSource
-    "Pagination control"
-    pagination: Pagination
-  ): FundingPeriodDataPointConnection
 }
 
 "Sources of funding period data points."
