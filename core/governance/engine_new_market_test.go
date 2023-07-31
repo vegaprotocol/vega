@@ -1553,6 +1553,7 @@ func testSubmittingProposalForNewPerpsMarketSucceeds(t *testing.T) {
 
 	// when
 	toSubmit, err := eng.submitProposal(t, proposal)
+	require.NoError(t, err)
 
 	// the proposal had a nil initial time for the time trigger.
 	// ensure it was set to the enactment time.
@@ -1591,6 +1592,7 @@ func testSubmittingProposalForNewPerpsMarketWithCustomInitialTimeSucceeds(t *tes
 
 	// when
 	toSubmit, err := eng.submitProposal(t, proposal)
+	require.NoError(t, err)
 
 	// the proposal had a nil initial time for the time trigger.
 	// ensure it was set to the enactment time.
@@ -1630,6 +1632,7 @@ func testSubmittingProposalForNewPerpsMarketWithPastInitialTimeFails(t *testing.
 	// when
 	toSubmit, err := eng.submitProposal(t, proposal)
 
+	// then
 	require.EqualError(t, err, "time trigger starts in the past")
 	require.Nil(t, toSubmit)
 }
