@@ -72,7 +72,7 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 
 	marketState, _, _ := exec.engine.GetState("")
 
-	exec2 := getEngine(t, now)
+	exec2 := getEngine(t, paths.New(t.TempDir()), now)
 	marketSnap := &snapshot.Payload{}
 	proto.Unmarshal(marketState, marketSnap)
 
@@ -420,6 +420,12 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 	proto.Unmarshal(accountsState, accountsSnap)
 
 	_, _ = executionEngine2.collateralEngine.LoadState(context.Background(), types.PayloadFromProto(accountsSnap))
+
+	fmt.Printf("accountSnap1: %v\n", accountsSnap.String())
+	accountsState2, _, _ := executionEngine2.collateralEngine.GetState("accounts")
+	accountsSnap2 := &snapshot.Payload{}
+	proto.Unmarshal(accountsState2, accountsSnap2)
+	fmt.Printf("accountSnap2: %v\n", accountsSnap2.String())
 
 	// progress time to trigger any side effect on time ticks
 	executionEngine1.timeService.SetTime(now.Add(2 * time.Second))
