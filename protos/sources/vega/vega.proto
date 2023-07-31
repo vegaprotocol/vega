@@ -789,6 +789,9 @@ enum AccountType {
   // Network controlled liquidity fees bonus distribution account, per market.
   ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION = 20;
 
+  // Network controlled treasury
+  ACCOUNT_TYPE_NETWORK_TREASURY = 21;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
@@ -892,6 +895,10 @@ enum TransferType {
   TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT = 34;
   // Distributes performance bonus from market bonus to liquidity provider's general account.
   TRANSFER_TYPE_SLA_PERFORMANCE_BONUS_DISTRIBUTE = 35;
+  // Funds deducted from margin account after a perpetuals funding loss.
+  TRANSFER_TYPE_PERP_FUNDING_LOSS = 36;
+  // Funds added to margin account after a perpetuals funding gain.
+  TRANSFER_TYPE_PERP_FUNDING_WIN = 37;
 }
 
 // Represents a financial transfer within Vega
@@ -1148,6 +1155,8 @@ message NetworkLimits {
   int64 propose_asset_enabled_from = 9;
   // Are spot market proposals allowed at this point in time.
   bool can_propose_spot_market = 10;
+  // Are perpetuals market proposals allowed at this point in time.
+  bool can_propose_perps_market = 11;
 }
 
 // Represents a liquidity order

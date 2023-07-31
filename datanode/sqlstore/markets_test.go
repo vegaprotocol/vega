@@ -24,6 +24,7 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestMarkets_Add(t *testing.T) {
@@ -237,7 +238,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 	})
 
 	t.Run("should add the updated market record to the database if the block number has changed", func(t *testing.T) {
-		newMarketProto := marketProto.DeepClone()
+		newMarketProto := proto.Clone(marketProto).(*vega.Market)
 		newMarketProto.TradableInstrument.Instrument.Metadata.Tags = append(newMarketProto.TradableInstrument.Instrument.Metadata.Tags, "DDD")
 		newBlock := addTestBlockForTime(t, ctx, bs, time.Now().Add(time.Second))
 

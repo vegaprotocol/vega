@@ -68,23 +68,22 @@ func clearSnapshotDatabases(vegaPaths paths.Paths, log *logging.Logger) {
 		}
 	}
 
-	adapter, err := metadatadb.NewLevelDBAdapter(vegaPaths)
+	metadataDB, err := metadatadb.NewLevelDBDatabase(vegaPaths)
 	if err != nil {
 		log.Error("Could not initialize the local snapshot metadata database adapter", logging.Error(err))
 		log.Error("Skipping clear up of the local snapshot metadata database")
 		return
-	}
-
-	metadataDB := metadatadb.NewDatabase(adapter)
-	defer func() {
-		if err := metadataDB.Close(); err != nil {
-			log.Warn("Could not close the local snapshot metadata database cleanly", logging.Error(err))
-		}
-	}()
-	if err := metadataDB.Clear(); err != nil {
-		log.Error("Could not clear the local snapshot metadata database", logging.Error(err))
 	} else {
-		log.Info("Removed local snapshot metadata")
+		defer func() {
+			if err := metadataDB.Close(); err != nil {
+				log.Warn("Could not close the local snapshot metadata database cleanly", logging.Error(err))
+			}
+		}()
+		if err := metadataDB.Clear(); err != nil {
+			log.Error("Could not clear the local snapshot metadata database", logging.Error(err))
+		} else {
+			log.Info("Removed local snapshot metadata")
+		}
 	}
 }
 

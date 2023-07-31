@@ -101,6 +101,7 @@ func TestFutureSettlement(t *testing.T) {
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	oe := mocks.NewMockOracleEngine(ctrl)
+	broker := mocks.NewMockBroker(ctrl)
 
 	sid1 := spec.SubscriptionID(1)
 	oe.EXPECT().Unsubscribe(ctx, sid1).AnyTimes()
@@ -115,7 +116,7 @@ func TestFutureSettlement(t *testing.T) {
 
 	prodSpec := proto.Product
 	require.NotNil(t, prodSpec)
-	prod, err := products.New(ctx, logging.NewTestLogger(), prodSpec, oe)
+	prod, err := products.New(ctx, logging.NewTestLogger(), prodSpec, oe, broker, 1)
 
 	// Cast back into a future so we can call future specific functions
 	f, ok := prod.(*products.Future)
@@ -150,7 +151,7 @@ func TestFutureSettlement(t *testing.T) {
 		// Use debug function to update the settlement data as if from a Oracle
 		f.SetSettlementData(ctx, "prices.ETH.value", n)
 		ep := num.NewUint(param.entryPrice)
-		fa, _, err := prod.Settle(ep, 0, num.DecimalFromInt64(param.position))
+		fa, _, _, err := prod.Settle(ep, n.Uint(), num.DecimalFromInt64(param.position))
 		assert.NoError(t, err)
 		assert.EqualValues(t, param.result, fa.Amount.Uint64())
 	}

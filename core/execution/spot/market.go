@@ -227,7 +227,7 @@ func NewMarket(
 		peggedOrders:              common.NewPeggedOrders(log, timeService),
 		expiringOrders:            common.NewExpiringOrders(),
 		feeSplitter:               common.NewFeeSplitter(),
-		equityShares:              common.NewEquityShares(num.DecimalZero()),
+		equityShares:              els,
 		lastBestAskPrice:          num.UintZero(),
 		lastMidSellPrice:          num.UintZero(),
 		lastMidBuyPrice:           num.UintZero(),
@@ -420,6 +420,14 @@ func (m *Market) uncrossOrderAtAuctionEnd(ctx context.Context) {
 }
 
 func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error {
+	_, blockHash := vegacontext.TraceIDFromContext(ctx)
+	// make deterministic ID for this market, concatenate
+	// the block hash and the market ID
+	m.idgen = idgeneration.New(blockHash + crypto.HashStrToHex(m.GetID()))
+	// and we call next ID on this directly just so we don't have an ID which have
+	// a different from others, we basically burn the first ID.
+	_ = m.idgen.NextID()
+	defer func() { m.idgen = nil }()
 	if changes.UpdateType == types.MarketStateUpdateTypeTerminate {
 		m.uncrossOrderAtAuctionEnd(ctx)
 		// terminate and settle
@@ -450,13 +458,6 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 				m.mkt.State = types.MarketStateSuspended
 				m.mkt.TradingMode = types.MarketTradingModeMonitoringAuction
 			}
-			_, blockHash := vegacontext.TraceIDFromContext(ctx)
-			// make deterministic ID for this market, concatenate
-			// the block hash and the market ID
-			m.idgen = idgeneration.New(blockHash + crypto.HashStrToHex(m.GetID()))
-			// and we call next ID on this directly just so we don't have an ID which have
-			// a different from others, we basically burn the first ID.
-			_ = m.idgen.NextID()
 			defer func() { m.idgen = nil }()
 			m.checkAuction(ctx, m.timeService.GetTimeNow(), m.idgen)
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
@@ -585,6 +586,7 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	timer.EngineTimeCounterAdd()
 	m.updateMarketValueProxy()
 	m.updateLiquidityFee(ctx)
+	m.liquidity.OnTick(ctx, t)
 	m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
 	return m.closed
 }
@@ -606,7 +608,7 @@ func (m *Market) BlockEnd(ctx context.Context) {
 		m.lastTradedPrice = mp.Clone()
 		m.hasTraded = false
 	}
-
+	m.tsCalc.RecordTotalStake(m.liquidity.CalculateSuppliedStake().Uint64(), m.timeService.GetTimeNow())
 	m.liquidity.EndBlock(m.markPrice, m.midPrice(), m.positionFactor)
 }
 
@@ -661,6 +663,7 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 	m.mkt.State = mktState
 	m.mkt.TradingMode = types.MarketTradingModeNoTrading
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+	m.closed = true
 	return nil
 }
 
@@ -825,7 +828,7 @@ func (m *Market) OnAuctionEnded() {
 // leaveAuction : Return the orderbook and market to continuous trading.
 func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	defer func() {
-		if !m.as.InAuction() && (m.mkt.State == types.MarketStateSuspended || m.mkt.State == types.MarketStatePending) {
+		if !m.as.InAuction() && (m.mkt.State == types.MarketStateSuspended || m.mkt.State == types.MarketStatePending || m.mkt.State == types.MarketStateSuspendedViaGovernance) {
 			if m.mkt.State == types.MarketStatePending {
 				// the market is now properly open,
 				// so set the timestamp to when the opening auction actually ended
@@ -2093,7 +2096,7 @@ func (m *Market) validateOrderAmendment(order *types.Order, amendment *types.Ord
 		}
 		price := order.Price
 		if amendment.Price != nil {
-			price = amendment.Price
+			price = num.UintZero().Mul(amendment.Price, m.priceFactor)
 		}
 		if order.PeggedOrder != nil {
 			p, err := m.getNewPeggedPrice(order)
@@ -2806,9 +2809,6 @@ func scaleQuoteQuantityToAssetDP(sizeUint uint64, priceInAssetDP *num.Uint, posi
 func (m *Market) closeSpotMarket(ctx context.Context) {
 	if m.mkt.State != types.MarketStatePending {
 		m.markPrice = m.lastTradedPrice
-		m.mkt.State = types.MarketStateClosed
-		m.mkt.TradingMode = types.MarketTradingModeNoTrading
-		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		if err := m.closeMarket(ctx); err != nil {
 			m.log.Error("could not close market", logging.Error(err))
 		}
@@ -2828,6 +2828,9 @@ func (m *Market) closeSpotMarket(ctx context.Context) {
 }
 
 func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
+	if m.closed {
+		return
+	}
 	if epoch.Action == vega.EpochAction_EPOCH_ACTION_START {
 		m.liquidity.OnEpochStart(ctx, m.timeService.GetTimeNow(), m.markPrice, m.midPrice(), m.getTargetStake(), m.positionFactor)
 	} else if epoch.Action == vega.EpochAction_EPOCH_ACTION_END {

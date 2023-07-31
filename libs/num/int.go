@@ -259,6 +259,22 @@ func (i *Int) SubSum(vals ...*Int) *Int {
 	return i
 }
 
+// Mul will multiply the passed in value to the base value
+// i = i * m.
+func (i *Int) Mul(m *Int) *Int {
+	i.U.Mul(i.U, m.U)
+	i.s = i.s == m.s
+	return i
+}
+
+// Mul will divide the passed in value to the base value
+// i = i / m.
+func (i *Int) Div(m *Int) *Int {
+	i.U.Div(i.U, m.U)
+	i.s = i.s == m.s
+	return i
+}
+
 // NewInt creates a new Int with the value of the
 // int64 passed as a parameter.
 func NewInt(val int64) *Int {

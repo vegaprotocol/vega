@@ -72,6 +72,12 @@ message InputData {
     StopOrdersSubmission stop_orders_submission = 1016;
     // Command to cancel stop orders.
     StopOrdersCancellation stop_orders_cancellation = 1017;
+    // Command to create a team.
+    CreateTeam create_team = 1018;
+    // Command to update a team.
+    UpdateTeam update_team = 1019;
+    // Command to join a team.
+    JoinTeam join_team = 1020;
 
     // Validator commands
 

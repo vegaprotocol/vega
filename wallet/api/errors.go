@@ -168,7 +168,6 @@ var (
 	ErrWalletIsLocked                                     = errors.New("the wallet is locked")
 	ErrWalletIsRequired                                   = errors.New("the wallet is required")
 	ErrWalletKeyDerivationVersionIsRequired               = errors.New("the wallet key derivation version is required")
-	ErrWrongPassphrase                                    = errors.New("wrong passphrase")
 )
 
 func ApplicationError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {

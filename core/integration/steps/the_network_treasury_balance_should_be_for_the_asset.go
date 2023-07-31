@@ -27,22 +27,22 @@ func TheNetworkTreasuryBalanceShouldBeForTheAsset(
 
 	acc, err := broker.GetAssetNetworkTreasuryAccount(asset)
 	if err != nil {
-		return errCannotGetRewardPoolAccountForAsset(asset, err)
+		return errCannotGetNetworkTreasuryAccountForAsset(asset, err)
 	}
 
 	if amount != stringToU64(acc.Balance) {
-		return errInvalidAssetRewardPoolBalance(amount, acc)
+		return errInvalidAssetNetworkTreasuryBalance(amount, acc)
 	}
 	return nil
 }
 
-func errCannotGetRewardPoolAccountForAsset(asset string, err error) error {
-	return fmt.Errorf("couldn't get reward pool account for asset(%s): %s", asset, err.Error())
+func errCannotGetNetworkTreasuryAccountForAsset(asset string, err error) error {
+	return fmt.Errorf("couldn't get network treasury account for asset(%s): %s", asset, err.Error())
 }
 
-func errInvalidAssetRewardPoolBalance(amount uint64, acc types.Account) error {
+func errInvalidAssetNetworkTreasuryBalance(amount uint64, acc types.Account) error {
 	return fmt.Errorf(
-		"invalid balance for asset reward pool, expected %v, got %v",
+		"invalid balance for network treasury, expected %v, got %v",
 		amount, acc.Balance,
 	)
 }

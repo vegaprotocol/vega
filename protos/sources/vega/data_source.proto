@@ -24,12 +24,21 @@ message DataSourceSpecConfigurationTime {
   repeated vega.data.v1.Condition conditions = 1;
 }
 
+// Internal data source used for emitting timestamps automatically using predefined intervals and conditions.
+message DataSourceSpecConfigurationTimeTrigger {
+  // Conditions that the timestamps need to meet in order to be considered.
+  repeated vega.data.v1.Condition conditions = 1;
+  // An internal time trigger
+  repeated vega.data.v1.InternalTimeTrigger triggers = 2;
+}
+
 // Top level object used for all internal data sources.
 // It contains one of any of the defined source type variants.
 message DataSourceDefinitionInternal {
   // Types of internal data sources
   oneof source_type {
     DataSourceSpecConfigurationTime time = 1;
+    DataSourceSpecConfigurationTimeTrigger time_trigger = 2;
   }
 }
 

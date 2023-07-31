@@ -56,6 +56,7 @@ type ConnectionConfig struct {
 	MaxConnLifetimeJitter encoding.Duration `long:"max-conn-lifetime-jitter"`
 	MaxConnPoolSize       int               `long:"max-conn-pool-size"`
 	MinConnPoolSize       int32             `long:"min-conn-pool-size"`
+	RuntimeParams         map[string]string `long:"runtime-params"`
 }
 
 type HypertableOverride interface {
@@ -129,6 +130,9 @@ func (conf ConnectionConfig) GetPoolConfig() (*pgxpool.Config, error) {
 	cfg.MaxConnLifetimeJitter = conf.MaxConnLifetimeJitter.Duration
 
 	cfg.ConnConfig.RuntimeParams["application_name"] = "Vega Data Node"
+	for paramKey, paramValue := range conf.RuntimeParams {
+		cfg.ConnConfig.RuntimeParams[paramKey] = paramValue
+	}
 	return cfg, nil
 }
 
@@ -143,6 +147,7 @@ func NewDefaultConfig() Config {
 			SocketDir:             "/tmp",
 			MaxConnLifetime:       encoding.Duration{Duration: time.Minute * 30},
 			MaxConnLifetimeJitter: encoding.Duration{Duration: time.Minute * 5},
+			RuntimeParams:         map[string]string{},
 		},
 		Level:            encoding.LogLevel{Level: logging.InfoLevel},
 		UseEmbedded:      false,

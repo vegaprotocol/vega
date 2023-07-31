@@ -1966,6 +1966,20 @@ func (mr *MockLimitsMockRecorder) CanProposeMarket() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanProposeMarket", reflect.TypeOf((*MockLimits)(nil).CanProposeMarket))
 }
 
+// CanProposePerpsMarket mocks base method.
+func (m *MockLimits) CanProposePerpsMarket() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CanProposePerpsMarket")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CanProposePerpsMarket indicates an expected call of CanProposePerpsMarket.
+func (mr *MockLimitsMockRecorder) CanProposePerpsMarket() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanProposePerpsMarket", reflect.TypeOf((*MockLimits)(nil).CanProposePerpsMarket))
+}
+
 // CanProposeSpotMarket mocks base method.
 func (m *MockLimits) CanProposeSpotMarket() bool {
 	m.ctrl.T.Helper()

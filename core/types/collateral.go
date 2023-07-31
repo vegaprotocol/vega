@@ -242,17 +242,20 @@ func (a LedgerEntries) IntoProto() []*proto.LedgerEntry {
 	return out
 }
 
-type Party = proto.Party
-
 type AccountType = proto.AccountType
 
 const (
 	// Default value.
 	AccountTypeUnspecified AccountType = proto.AccountType_ACCOUNT_TYPE_UNSPECIFIED
+	// Per asset network treasury.
+	AccountTypeNetworkTreasury AccountType = proto.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY
 	// Insurance pool accounts contain insurance pool funds for a market.
 	AccountTypeInsurance AccountType = proto.AccountType_ACCOUNT_TYPE_INSURANCE
 	// Settlement accounts exist only during settlement or mark-to-market.
 	AccountTypeSettlement AccountType = proto.AccountType_ACCOUNT_TYPE_SETTLEMENT
+	// Global insurance account for the asset.
+	AccountTypeGlobalInsurance AccountType = proto.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE
+
 	// Margin accounts contain margin funds for a party and each party will
 	// have multiple margin accounts, one for each market they have traded in
 	//

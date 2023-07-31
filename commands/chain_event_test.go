@@ -1,9 +1,11 @@
 package commands_test
 
 import (
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
+	"code.vegaprotocol.io/vega/libs/test"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/stretchr/testify/assert"
@@ -72,8 +74,8 @@ func testBuiltInChainEventWithoutNonceSucceeds(t *testing.T) {
 func checkChainEvent(cmd *commandspb.ChainEvent) commands.Errors {
 	err := commands.CheckChainEvent(cmd)
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 
@@ -83,7 +85,7 @@ func checkChainEvent(cmd *commandspb.ChainEvent) commands.Errors {
 func newErc20ChainEvent() *commandspb.ChainEvent {
 	return &commandspb.ChainEvent{
 		TxId:  "my ID",
-		Nonce: RandomPositiveU64(),
+		Nonce: test.RandomPositiveU64(),
 		Event: &commandspb.ChainEvent_Erc20{
 			Erc20: &proto.ERC20Event{
 				Index:  0,
@@ -97,7 +99,7 @@ func newErc20ChainEvent() *commandspb.ChainEvent {
 func newBuiltInChainEvent() *commandspb.ChainEvent {
 	return &commandspb.ChainEvent{
 		TxId:  "my ID",
-		Nonce: RandomPositiveU64(),
+		Nonce: test.RandomPositiveU64(),
 		Event: &commandspb.ChainEvent_Builtin{
 			Builtin: &proto.BuiltinAssetEvent{},
 		},

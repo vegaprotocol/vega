@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
+	"code.vegaprotocol.io/vega/libs/test"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/stretchr/testify/assert"
@@ -220,7 +221,7 @@ func testNewAssetChangeSubmissionWithDecimalsSucceeds(t *testing.T) {
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
 					Changes: &types.AssetDetails{
-						Decimals: RandomPositiveU64(),
+						Decimals: test.RandomPositiveU64(),
 					},
 				},
 			},

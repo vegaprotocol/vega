@@ -13,7 +13,6 @@
 package entities_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -45,7 +44,6 @@ func TestRewardFromProto(t *testing.T) {
 	assert.Equal(t, int64(42), reward.EpochID)
 	assert.Equal(t, entities.NanosToPostgresTimestamp(timestamp.UnixNano()), reward.Timestamp)
 	assert.InDelta(t, 3.14, reward.PercentOfTotal, 0.001)
-	fmt.Printf("%v - %v\n", now, reward.VegaTime)
 	assert.True(t, vegaTime.Equal(reward.VegaTime))
 	assert.Equal(t, uint64(1), reward.SeqNum)
 }

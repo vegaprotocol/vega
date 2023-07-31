@@ -22,6 +22,8 @@ import (
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
+const VegaTimeKey = "vegaprotocol.builtin.timestamp"
+
 // SpecConfiguration is used internally.
 type SpecConfiguration struct {
 	Conditions []*common.SpecCondition
@@ -52,7 +54,7 @@ func (s SpecConfiguration) DeepClone() common.DataSourceType {
 func (s SpecConfiguration) GetFilters() []*common.SpecFilter {
 	filters := []*common.SpecFilter{}
 	// For the case the internal data source is time based
-	// (as of OT https://github.com/vegaprotocol/specs/blob/master/protocol/0048-DSRI-data_source_internal.md#13-vega-time-changed)
+	// (https://github.com/vegaprotocol/specs/blob/master/protocol/0048-DSRI-data_source_internal.md#13-vega-time-changed)
 	// We add the filter key values manually to match a time based data source
 	// Ensure only a single filter has been created, that holds the first condition
 	if len(s.Conditions) > 0 {
@@ -60,7 +62,7 @@ func (s SpecConfiguration) GetFilters() []*common.SpecFilter {
 			filters,
 			&common.SpecFilter{
 				Key: &common.SpecPropertyKey{
-					Name: "vegaprotocol.builtin.timestamp",
+					Name: VegaTimeKey,
 					Type: datapb.PropertyKey_TYPE_TIMESTAMP,
 				},
 				Conditions: []*common.SpecCondition{

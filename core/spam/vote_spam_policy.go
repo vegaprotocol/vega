@@ -79,6 +79,7 @@ func NewVoteSpamPolicy(minTokensParamName string, maxAllowedParamName string, lo
 		log:                   log,
 		accounts:              accounts,
 		minVotingTokensFactor: num.NewUint(1),
+		minVotingTokens:       num.NewUint(1),
 
 		partyToVote:         map[string]map[string]uint64{},
 		blockPartyToVote:    map[string]map[string]uint64{},

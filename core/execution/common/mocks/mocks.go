@@ -401,18 +401,18 @@ func (mr *MockCollateralMockRecorder) EnableAsset(arg0, arg1 interface{}) *gomoc
 }
 
 // FinalSettlement mocks base method.
-func (m *MockCollateral) FinalSettlement(arg0 context.Context, arg1 string, arg2 []*types.Transfer) ([]*types.LedgerMovement, error) {
+func (m *MockCollateral) FinalSettlement(arg0 context.Context, arg1 string, arg2 []*types.Transfer, arg3 *num.Uint) ([]*types.LedgerMovement, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FinalSettlement", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "FinalSettlement", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].([]*types.LedgerMovement)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FinalSettlement indicates an expected call of FinalSettlement.
-func (mr *MockCollateralMockRecorder) FinalSettlement(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockCollateralMockRecorder) FinalSettlement(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalSettlement", reflect.TypeOf((*MockCollateral)(nil).FinalSettlement), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalSettlement", reflect.TypeOf((*MockCollateral)(nil).FinalSettlement), arg0, arg1, arg2, arg3)
 }
 
 // GetAssetQuantum mocks base method.
@@ -684,6 +684,22 @@ func (m *MockCollateral) PartyHasSufficientBalance(arg0, arg1 string, arg2 *num.
 func (mr *MockCollateralMockRecorder) PartyHasSufficientBalance(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PartyHasSufficientBalance", reflect.TypeOf((*MockCollateral)(nil).PartyHasSufficientBalance), arg0, arg1, arg2)
+}
+
+// PerpsFundingSettlement mocks base method.
+func (m *MockCollateral) PerpsFundingSettlement(arg0 context.Context, arg1 string, arg2 []events.Transfer, arg3 string, arg4 *num.Uint) ([]events.Margin, []*types.LedgerMovement, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PerpsFundingSettlement", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].([]events.Margin)
+	ret1, _ := ret[1].([]*types.LedgerMovement)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// PerpsFundingSettlement indicates an expected call of PerpsFundingSettlement.
+func (mr *MockCollateralMockRecorder) PerpsFundingSettlement(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PerpsFundingSettlement", reflect.TypeOf((*MockCollateral)(nil).PerpsFundingSettlement), arg0, arg1, arg2, arg3, arg4)
 }
 
 // ReleaseFromHoldingAccount mocks base method.

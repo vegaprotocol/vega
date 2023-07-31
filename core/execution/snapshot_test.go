@@ -36,10 +36,12 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
+	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -57,7 +59,7 @@ type stubIDGen struct {
 // TestSnapshotOraclesTerminatingMarketFromSnapshot tests that market loaded from snapshot can be terminated with its oracle.
 func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 	now := time.Now()
-	exec := getEngine(t, now)
+	exec := getEngine(t, paths.New(t.TempDir()), now)
 	pubKey := &dstypes.SignerPubKey{
 		PubKey: &dstypes.PubKey{
 			Key: "0xDEADBEEF",
@@ -69,7 +71,7 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 
 	state, _, _ := exec.engine.GetState("")
 
-	exec2 := getEngine(t, now)
+	exec2 := getEngine(t, paths.New(t.TempDir()), now)
 	snap := &snapshot.Payload{}
 	proto.Unmarshal(state, snap)
 	_, _ = exec2.engine.LoadState(context.Background(), types.PayloadFromProto(snap))
@@ -226,7 +228,7 @@ func TestSnapshotOraclesTerminatingMarketSettleAfterSnapshot(t *testing.T) {
 	// then create snapshot of market
 	state, _, _ := exec.engine.GetState("")
 
-	exec2 := getEngine(t, now)
+	exec2 := getEngine(t, paths.New(t.TempDir()), now)
 	snap := &snapshot.Payload{}
 	proto.Unmarshal(state, snap)
 	vgctx = vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("3deadbeef")))
@@ -265,7 +267,7 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementData(t *test
 	}
 
 	now := time.Now()
-	exec := getEngine(t, now)
+	exec := getEngine(t, paths.New(t.TempDir()), now)
 	mkt := newMarket("MarketID", pubKeys[0].Signer.(*dstypes.SignerPubKey))
 	err := exec.engine.SubmitMarket(context.Background(), mkt, "", time.Now())
 	require.NoError(t, err)
@@ -288,7 +290,7 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementData(t *test
 	state, _, _ := exec.engine.GetState("")
 
 	// load from the snapshot
-	exec2 := getEngine(t, now)
+	exec2 := getEngine(t, paths.New(t.TempDir()), now)
 	snap := &snapshot.Payload{}
 	proto.Unmarshal(state, snap)
 	_, _ = exec2.engine.LoadState(context.Background(), types.PayloadFromProto(snap))
@@ -318,11 +320,15 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementData(t *test
 
 // TestLoadTerminatedMarketFromSnapshot terminates markets, loads them using the snapshot engine and then settles them successfully.
 func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
+	ctx := vgtest.VegaContext("chainid", 100)
+
 	now := time.Now()
-	exec := getEngine(t, now)
-	defer exec.snapshotEngine.Close()
-	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
-	ctx = vgcontext.WithChainID(ctx, "chainid")
+	vegaPath := paths.New(t.TempDir())
+	executionEngine1 := getEngine(t, vegaPath, now)
+	snapshotEngine1CloseFn := vgtest.OnlyOnce(executionEngine1.snapshotEngine.Close)
+	defer snapshotEngine1CloseFn()
+
+	require.NoError(t, executionEngine1.snapshotEngine.Start(ctx))
 
 	pubKeys := []*dstypes.Signer{
 		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
@@ -334,80 +340,95 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 	// submit and terminate all markets
 	for i := 0; i < 3; i++ {
 		mkt := newMarket(marketIDs[i], pubKeys[i].Signer.(*dstypes.SignerPubKey))
-		err := exec.engine.SubmitMarket(ctx, mkt, "", time.Now())
+		err := executionEngine1.engine.SubmitMarket(ctx, mkt, "", time.Now())
 		require.NoError(t, err)
 
 		// verify markets are terminated
-		marketState, err := exec.engine.GetMarketState(marketIDs[i])
+		marketState, err := executionEngine1.engine.GetMarketState(marketIDs[i])
 		require.NoError(t, err)
 		require.Equal(t, types.MarketStateProposed, marketState)
 
-		err = exec.engine.StartOpeningAuction(context.Background(), mkt.ID)
+		err = executionEngine1.engine.StartOpeningAuction(context.Background(), mkt.ID)
 		require.NoError(t, err)
-		marketState, err = exec.engine.GetMarketState(marketIDs[i])
+		marketState, err = executionEngine1.engine.GetMarketState(marketIDs[i])
 		require.NoError(t, err)
 		require.Equal(t, marketState, types.MarketStateActive)
 
 		// terminate all markets
-		exec.oracleEngine.BroadcastData(ctx, dstypes.Data{
+		require.NoError(t, executionEngine1.oracleEngine.BroadcastData(ctx, dstypes.Data{
 			Signers: []*dstypes.Signer{pubKeys[i]},
 			Data:    map[string]string{"trading.terminated": "true"},
-		})
+		}))
 
-		marketState, err = exec.engine.GetMarketState(marketIDs[i])
+		marketState, err = executionEngine1.engine.GetMarketState(marketIDs[i])
 		require.NoError(t, err)
 		require.Equal(t, types.MarketStateTradingTerminated, marketState)
 	}
 
 	// we now have 3 terminated markets in the execution engine
 	// let's take a snapshot
-	_, err := exec.snapshotEngine.Snapshot(ctx)
+	hash1, err := executionEngine1.snapshotEngine.SnapshotNow(ctx)
 	require.NoError(t, err)
-	snaps, err := exec.snapshotEngine.List()
-	require.NoError(t, err)
-	snap1 := snaps[0]
+
+	executionEngine1.timeService.SetTime(now.Add(2 * time.Second))
+
+	for i := 0; i < 3; i++ {
+		require.NoError(t, executionEngine1.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
+			Signers: []*dstypes.Signer{pubKeys[i]},
+			Data:    map[string]string{"prices.ETH.value": "100"},
+		}))
+
+		marketState1, err := executionEngine1.engine.GetMarketState(marketIDs[i])
+		require.NoError(t, err)
+		require.Equal(t, types.MarketStateSettled, marketState1)
+	}
+
+	state1 := map[string][]byte{}
+	for _, key := range executionEngine1.engine.Keys() {
+		state, additionalProvider, err := executionEngine1.engine.GetState(key)
+		require.NoError(t, err)
+		assert.Empty(t, additionalProvider)
+		state1[key] = state
+	}
+
+	snapshotEngine1CloseFn()
 
 	// now let's start from this snapshot
-	exec2 := getEngine(t, now)
-	defer exec2.snapshotEngine.Close()
-	exec2.snapshotEngine.ReceiveSnapshot(snap1)
-	exec2.snapshotEngine.ApplySnapshot(ctx)
-	exec2.snapshotEngine.CheckLoaded()
+	executionEngine2 := getEngine(t, vegaPath, now)
+	defer executionEngine2.snapshotEngine.Close()
+
+	// This triggers the state restoration from the local snapshot.
+	require.NoError(t, executionEngine2.snapshotEngine.Start(context.Background()))
+
+	// Comparing the hash after restoration, to ensure it produces the same result.
+	hash2, _, _ := executionEngine2.snapshotEngine.Info()
+	require.Equal(t, hash1, hash2)
 
 	// progress time to trigger any side effect on time ticks
-	exec.timeService.SetTime(now.Add(2 * time.Second))
-	exec2.timeService.SetTime(now.Add(2 * time.Second))
-
-	// finally take a snapshot of both and compare them
-	snp, err := exec.snapshotEngine.Snapshot(ctx)
-	require.NoError(t, err)
-	snp2, err := exec2.snapshotEngine.Snapshot(ctx)
-	require.NoError(t, err)
-	require.True(t, bytes.Equal(snp, snp2))
+	executionEngine2.timeService.SetTime(now.Add(2 * time.Second))
 
 	// settle the markets
 	for i := 0; i < 3; i++ {
-		exec.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
+		require.NoError(t, executionEngine2.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
 			Signers: []*dstypes.Signer{pubKeys[i]},
 			Data:    map[string]string{"prices.ETH.value": "100"},
-		})
-		exec2.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
-			Signers: []*dstypes.Signer{pubKeys[i]},
-			Data:    map[string]string{"prices.ETH.value": "100"},
-		})
+		}))
 
-		marketState1, _ := exec.engine.GetMarketState(marketIDs[i])
-		marketState2, _ := exec2.engine.GetMarketState(marketIDs[i])
-		require.Equal(t, marketState1.String(), marketState2.String())
-		require.Equal(t, types.MarketStateSettled, marketState1)
+		marketState2, err := executionEngine2.engine.GetMarketState(marketIDs[i])
+		require.NoError(t, err)
 		require.Equal(t, types.MarketStateSettled, marketState2)
+	}
 
-		// finally take a snapshot of both and compare them
-		snp, err := exec.snapshotEngine.Snapshot(ctx)
+	state2 := map[string][]byte{}
+	for _, key := range executionEngine2.engine.Keys() {
+		state, additionalProvider, err := executionEngine2.engine.GetState(key)
 		require.NoError(t, err)
-		snp2, err := exec2.snapshotEngine.Snapshot(ctx)
-		require.NoError(t, err)
-		require.True(t, bytes.Equal(snp, snp2))
+		assert.Empty(t, additionalProvider)
+		state2[key] = state
+	}
+
+	for key := range state1 {
+		assert.Equalf(t, state1[key], state2[key], "Key %q does not have the same data", key)
 	}
 }
 
@@ -523,9 +544,8 @@ func newMarket(ID string, pubKey *dstypes.SignerPubKey) *types.Market {
 	}
 }
 
-func getEngine(t *testing.T, now time.Time) *snapshotTestData {
+func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestData {
 	t.Helper()
-	// ctrl := gomock.NewController(t)
 	cfg := execution.NewDefaultConfig()
 	log := logging.NewTestLogger()
 	broker := stubs.NewBrokerStub()
@@ -544,7 +564,7 @@ func getEngine(t *testing.T, now time.Time) *snapshotTestData {
 			Symbol: "Ethereum/Ether",
 		},
 	}
-	collateralEngine.EnableAsset(context.Background(), ethAsset)
+	require.NoError(t, collateralEngine.EnableAsset(context.Background(), ethAsset))
 
 	eng := execution.NewEngine(
 		log,
@@ -559,11 +579,10 @@ func getEngine(t *testing.T, now time.Time) *snapshotTestData {
 	)
 
 	statsData := stats.New(log, stats.NewDefaultConfig())
-	config := snp.NewDefaultConfig()
-	config.Storage = "memory"
-	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
+	config := snp.DefaultConfig()
+	snapshotEngine, err := snp.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
+	require.NoError(t, err)
 	snapshotEngine.AddProviders(eng)
-	snapshotEngine.ClearAndInitialise()
 
 	return &snapshotTestData{
 		engine:         eng,
@@ -612,11 +631,10 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 	)
 
 	statsData := stats.New(log, stats.NewDefaultConfig())
-	config := snp.NewDefaultConfig()
+	config := snp.DefaultConfig()
 	config.Storage = "memory"
-	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
+	snapshotEngine, _ := snp.NewEngine(&paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
 	snapshotEngine.AddProviders(eng)
-	snapshotEngine.ClearAndInitialise()
 
 	return &snapshotTestData{
 		engine:         eng,

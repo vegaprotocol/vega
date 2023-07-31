@@ -9,15 +9,15 @@ import (
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/types"
-	vgcontext "code.vegaprotocol.io/vega/libs/context"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	vgtest "code.vegaprotocol.io/vega/libs/test"
+	paths2 "code.vegaprotocol.io/vega/paths"
 	"github.com/stretchr/testify/require"
 )
 
 func TestVerifyUpdateMarketState(t *testing.T) {
 	now := time.Now()
-	exec := getEngine(t, now)
+	exec := getEngine(t, paths2.New(t.TempDir()), now)
 	pubKey := &dstypes.SignerPubKey{
 		PubKey: &dstypes.PubKey{
 			Key: "0xDEADBEEF",
@@ -39,8 +39,10 @@ func TestVerifyUpdateMarketState(t *testing.T) {
 }
 
 func TestTerminateMarketViaGovernance(t *testing.T) {
+	ctx := vgtest.VegaContext("chainid", 100)
+
 	now := time.Now()
-	exec := getEngine(t, now)
+	exec := getEngine(t, paths2.New(t.TempDir()), now)
 	pubKey := &dstypes.SignerPubKey{
 		PubKey: &dstypes.PubKey{
 			Key: "0xDEADBEEF",
@@ -57,17 +59,16 @@ func TestTerminateMarketViaGovernance(t *testing.T) {
 		UpdateType:      types.MarketStateUpdateTypeTerminate,
 		SettlementPrice: num.NewUint(100),
 	}
-	require.NoError(t, exec.engine.UpdateMarketState(context.Background(), config))
+	require.NoError(t, exec.engine.UpdateMarketState(ctx, config))
 	state, err := exec.engine.GetMarketState(mkt.ID)
 	require.NoError(t, err)
 	require.Equal(t, types.MarketStateClosed, state)
 }
 
 func TestSuspendMarketViaGovernance(t *testing.T) {
-	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), crypto.RandomHash())
-	ctx = vgcontext.WithChainID(ctx, "chainid")
+	ctx := vgtest.VegaContext("chainid", 100)
 	now := time.Now()
-	exec := getEngine(t, now)
+	exec := getEngine(t, paths2.New(t.TempDir()), now)
 	pubKey := &dstypes.SignerPubKey{
 		PubKey: &dstypes.PubKey{
 			Key: "0xDEADBEEF",

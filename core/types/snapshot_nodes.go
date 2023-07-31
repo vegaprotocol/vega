@@ -29,16 +29,16 @@ import (
 )
 
 type Snapshot struct {
+	// Fields from the snapshot offering.
 	Format SnapshotFormat
 	Height uint64    // the block-height of the snapshot
 	Hash   []byte    // the hash of the snapshot (the root hash of the AVL tree)
 	Meta   *Metadata // the AVL tree metadata
-	// Metadata []byte     // the above metadata serialised
+	Chunks uint32
 
-	Nodes []*Payload // the snapshot payloads in the tree (always leaf nodes)
+	// Used when loading chunks.
 
-	// Chunk stuff
-	Chunks     uint32
+	Nodes      []*Payload // the snapshot payloads in the tree (always leaf nodes)
 	DataChunks []*Chunk
 	ByteChunks [][]byte
 	ChunksSeen uint32
@@ -67,7 +67,6 @@ type Chunk struct {
 
 type Payload struct {
 	Data    isPayload
-	raw     []byte // access to the raw data for chunking
 	treeKey string
 }
 
@@ -79,13 +78,14 @@ type isPayload interface {
 }
 
 type PayloadProofOfWork struct {
-	BlockHeight   []uint64
-	BlockHash     []string
-	HeightToTx    map[uint64][]string
-	HeightToTid   map[uint64][]string
-	BannedParties map[string]int64
-	ActiveParams  []*snapshot.ProofOfWorkParams
-	ActiveStates  []*snapshot.ProofOfWorkState
+	BlockHeight      []uint64
+	BlockHash        []string
+	HeightToTx       map[uint64][]string
+	HeightToTid      map[uint64][]string
+	BannedParties    map[string]int64
+	ActiveParams     []*snapshot.ProofOfWorkParams
+	ActiveStates     []*snapshot.ProofOfWorkState
+	LastPruningBlock uint64
 }
 
 type PayloadActiveAssets struct {
@@ -412,6 +412,7 @@ type ExecMarket struct {
 	IsSucceeded                bool
 	StopOrders                 *snapshot.StopOrders
 	ExpiringStopOrders         []*Order
+	Product                    *snapshot.Product
 }
 
 type ExecSpotMarket struct {
@@ -518,15 +519,16 @@ type EpochState struct {
 }
 
 type LimitState struct {
-	BlockCount               uint32
-	CanProposeMarket         bool
-	CanProposeAsset          bool
-	GenesisLoaded            bool
-	ProposeMarketEnabled     bool
-	ProposeSpotMarketEnabled bool
-	ProposeAssetEnabled      bool
-	ProposeMarketEnabledFrom time.Time
-	ProposeAssetEnabledFrom  time.Time
+	BlockCount                uint32
+	CanProposeMarket          bool
+	CanProposeAsset           bool
+	GenesisLoaded             bool
+	ProposeMarketEnabled      bool
+	ProposeSpotMarketEnabled  bool
+	ProposePerpsMarketEnabled bool
+	ProposeAssetEnabled       bool
+	ProposeMarketEnabledFrom  time.Time
+	ProposeAssetEnabledFrom   time.Time
 }
 
 type EquityShare struct {
@@ -702,17 +704,6 @@ type PayloadLiquiditySupplied struct {
 
 type PayloadLiquidityScores struct {
 	LiquidityScores *snapshot.LiquidityScores
-}
-
-func (s Snapshot) GetRawChunk(idx uint32) (*RawChunk, error) {
-	if s.Chunks < idx {
-		return nil, ErrUnknownSnapshotChunkHeight
-	}
-	i := int(idx)
-	return &RawChunk{
-		Nr:   idx,
-		Data: s.ByteChunks[i],
-	}, nil
 }
 
 func MetadataFromProto(m *snapshot.Metadata) (*Metadata, error) {
@@ -931,7 +922,7 @@ func (p Payload) Key() string {
 	return p.Data.Key()
 }
 
-func (p *Payload) GetTreeKey() string {
+func (p Payload) TreeKey() string {
 	if len(p.treeKey) == 0 {
 		p.treeKey = KeyFromPayload(p.Data)
 	}
@@ -2303,15 +2294,16 @@ func (p PayloadLimitState) IntoProto() *snapshot.Payload_LimitState {
 
 func LimitFromProto(l *snapshot.LimitState) *LimitState {
 	state := &LimitState{
-		BlockCount:               l.BlockCount,
-		CanProposeMarket:         l.CanProposeMarket,
-		CanProposeAsset:          l.CanProposeAsset,
-		GenesisLoaded:            l.GenesisLoaded,
-		ProposeMarketEnabled:     l.ProposeMarketEnabled,
-		ProposeAssetEnabled:      l.ProposeAssetEnabled,
-		ProposeSpotMarketEnabled: l.ProposeSpotMarketEnabled,
-		ProposeAssetEnabledFrom:  time.Time{},
-		ProposeMarketEnabledFrom: time.Time{},
+		BlockCount:                l.BlockCount,
+		CanProposeMarket:          l.CanProposeMarket,
+		CanProposeAsset:           l.CanProposeAsset,
+		GenesisLoaded:             l.GenesisLoaded,
+		ProposeMarketEnabled:      l.ProposeMarketEnabled,
+		ProposeAssetEnabled:       l.ProposeAssetEnabled,
+		ProposeSpotMarketEnabled:  l.ProposeSpotMarketEnabled,
+		ProposePerpsMarketEnabled: l.ProposePerpsMarketEnabled,
+		ProposeAssetEnabledFrom:   time.Time{},
+		ProposeMarketEnabledFrom:  time.Time{},
 	}
 
 	if l.ProposeAssetEnabledFrom != -1 {
@@ -3080,15 +3072,16 @@ func (e *EpochState) IntoProto() *snapshot.EpochState {
 
 func (l *LimitState) IntoProto() *snapshot.LimitState {
 	state := &snapshot.LimitState{
-		BlockCount:               l.BlockCount,
-		CanProposeMarket:         l.CanProposeMarket,
-		CanProposeAsset:          l.CanProposeAsset,
-		GenesisLoaded:            l.GenesisLoaded,
-		ProposeMarketEnabled:     l.ProposeMarketEnabled,
-		ProposeSpotMarketEnabled: l.ProposeSpotMarketEnabled,
-		ProposeAssetEnabled:      l.ProposeAssetEnabled,
-		ProposeMarketEnabledFrom: l.ProposeMarketEnabledFrom.UnixNano(),
-		ProposeAssetEnabledFrom:  l.ProposeAssetEnabledFrom.UnixNano(),
+		BlockCount:                l.BlockCount,
+		CanProposeMarket:          l.CanProposeMarket,
+		CanProposeAsset:           l.CanProposeAsset,
+		GenesisLoaded:             l.GenesisLoaded,
+		ProposeMarketEnabled:      l.ProposeMarketEnabled,
+		ProposeSpotMarketEnabled:  l.ProposeSpotMarketEnabled,
+		ProposePerpsMarketEnabled: l.ProposePerpsMarketEnabled,
+		ProposeAssetEnabled:       l.ProposeAssetEnabled,
+		ProposeMarketEnabledFrom:  l.ProposeMarketEnabledFrom.UnixNano(),
+		ProposeAssetEnabledFrom:   l.ProposeAssetEnabledFrom.UnixNano(),
 	}
 
 	// Use -1 to mean it hasn't been set
@@ -3459,6 +3452,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		Closed:                     em.Closed,
 		IsSucceeded:                em.Succeeded,
 		StopOrders:                 em.StopOrders,
+		Product:                    em.Product,
 	}
 	for _, o := range em.ExpiringOrders {
 		or, _ := OrderFromProto(o)
@@ -3494,6 +3488,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		Closed:                     e.Closed,
 		Succeeded:                  e.IsSucceeded,
 		StopOrders:                 e.StopOrders,
+		Product:                    e.Product,
 	}
 
 	if e.CurrentMarkPrice != nil {
@@ -4559,13 +4554,14 @@ func (*PayloadProofOfWork) isPayload() {}
 
 func PayloadProofOfWorkFromProto(s *snapshot.Payload_ProofOfWork) *PayloadProofOfWork {
 	pow := &PayloadProofOfWork{
-		BlockHeight:   s.ProofOfWork.BlockHeight,
-		BlockHash:     s.ProofOfWork.BlockHash,
-		BannedParties: make(map[string]int64, len(s.ProofOfWork.Banned)),
-		HeightToTx:    make(map[uint64][]string, len(s.ProofOfWork.TxAtHeight)),
-		HeightToTid:   make(map[uint64][]string, len(s.ProofOfWork.TidAtHeight)),
-		ActiveParams:  s.ProofOfWork.PowParams,
-		ActiveStates:  s.ProofOfWork.PowState,
+		BlockHeight:      s.ProofOfWork.BlockHeight,
+		BlockHash:        s.ProofOfWork.BlockHash,
+		BannedParties:    make(map[string]int64, len(s.ProofOfWork.Banned)),
+		HeightToTx:       make(map[uint64][]string, len(s.ProofOfWork.TxAtHeight)),
+		HeightToTid:      make(map[uint64][]string, len(s.ProofOfWork.TidAtHeight)),
+		ActiveParams:     s.ProofOfWork.PowParams,
+		ActiveStates:     s.ProofOfWork.PowState,
+		LastPruningBlock: s.ProofOfWork.LastPruningBlock,
 	}
 
 	for _, bp := range s.ProofOfWork.Banned {
@@ -4600,13 +4596,14 @@ func (p *PayloadProofOfWork) IntoProto() *snapshot.Payload_ProofOfWork {
 	sort.Slice(tidAtHeight, func(i, j int) bool { return tidAtHeight[i].Height < tidAtHeight[j].Height })
 	return &snapshot.Payload_ProofOfWork{
 		ProofOfWork: &snapshot.ProofOfWork{
-			BlockHeight: p.BlockHeight,
-			BlockHash:   p.BlockHash,
-			Banned:      banned,
-			TxAtHeight:  txAtHeight,
-			TidAtHeight: tidAtHeight,
-			PowParams:   p.ActiveParams,
-			PowState:    p.ActiveStates,
+			BlockHeight:      p.BlockHeight,
+			BlockHash:        p.BlockHash,
+			Banned:           banned,
+			TxAtHeight:       txAtHeight,
+			TidAtHeight:      tidAtHeight,
+			PowParams:        p.ActiveParams,
+			PowState:         p.ActiveStates,
+			LastPruningBlock: p.LastPruningBlock,
 		},
 	}
 }

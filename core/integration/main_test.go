@@ -171,6 +171,15 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return nil
 	})
 
+	s.Step(`^the spot markets are updated:$`, func(table *godog.Table) error {
+		markets, err := steps.TheSpotMarketsUpdated(marketConfig, execsetup.executionEngine, execsetup.markets, execsetup.netParams, table)
+		if err != nil {
+			return err
+		}
+		execsetup.markets = markets
+		return nil
+	})
+
 	s.Step(`the successor market "([^"]+)" is enacted$`, func(successor string) error {
 		if err := steps.TheSuccesorMarketIsEnacted(successor, execsetup.markets, execsetup.executionEngine); err != nil {
 			return err
@@ -396,6 +405,16 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the network treasury balance should be "([^"]*)" for the asset "([^"]*)"$`, func(rawAmount, asset string) error {
 		return steps.TheNetworkTreasuryBalanceShouldBeForTheAsset(execsetup.broker, rawAmount, asset)
 	})
+	s.Step(`^the global insurance pool balance should be "([^"]*)" for the asset "([^"]*)"$`, func(rawAmount, asset string) error {
+		return steps.TheGlobalInsuranceBalanceShouldBeForTheAsset(execsetup.broker, rawAmount, asset)
+	})
+	s.Step(`^the party "([^"]*)" lp liquidity fee account balance should be "([^"]*)" for the market "([^"]*)"$`, func(party, rawAmount, market string) error {
+		return steps.TheLPLiquidityFeeBalanceShouldBeForTheMarket(execsetup.broker, party, rawAmount, market)
+	})
+	s.Step(`^the party "([^"]*)" lp liquidity bond account balance should be "([^"]*)" for the market "([^"]*)"$`, func(party, rawAmount, market string) error {
+		return steps.TheLPLiquidityBondBalanceShouldBeForTheMarket(execsetup.broker, party, rawAmount, market)
+	})
+
 	s.Step(`^the following transfers should happen:$`, func(table *godog.Table) error {
 		return steps.TheFollowingTransfersShouldHappen(execsetup.broker, table)
 	})

@@ -38,8 +38,7 @@ func getTestNetParams(t *testing.T) *testNetParams {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	broker := bmocks.NewMockBroker(ctrl)
-	store := netparams.New(
-		logging.NewTestLogger(), netparams.NewDefaultConfig(), broker)
+	store := netparams.New(logging.NewTestLogger(), netparams.NewDefaultConfig(), broker)
 
 	return &testNetParams{
 		Store:  store,

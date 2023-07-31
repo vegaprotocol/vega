@@ -496,6 +496,27 @@ message Market {
   bool succeeded = 23;
   StopOrders stop_orders = 24;
   repeated vega.Order expiring_stop_orders = 25;
+  Product product = 26;
+}
+
+// eventually support multiple products
+message Product {
+  oneof type {
+    Perps perps = 1;
+  }
+}
+
+message DataPoint {
+  string price = 1;
+  int64 timestamp = 2;
+}
+
+message Perps {
+  string id = 1;
+  repeated DataPoint external_data_point = 2;
+  repeated DataPoint internal_data_point = 3;
+  uint64 seq = 4;
+  int64 started_at = 5;
 }
 
 message OrdersAtPrice {
@@ -643,6 +664,7 @@ message LimitState {
   int64 propose_market_enabled_from = 7;
   int64 propose_asset_enabled_from = 8;
   bool propose_spot_market_enabled = 9;
+  bool propose_perps_market_enabled = 10;
 }
 
 message VoteSpamPolicy {
@@ -963,6 +985,7 @@ message ProofOfWork {
   repeated BannedParty banned = 7;
   repeated ProofOfWorkParams pow_params = 8;
   repeated ProofOfWorkState pow_state = 9;
+  uint64 last_pruning_block = 10;
 }
 
 message BannedParty {

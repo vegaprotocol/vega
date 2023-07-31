@@ -40,18 +40,17 @@ func TestCheckpoint(t *testing.T) {
 }
 
 func testCheckpointSuccess(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// when
 	proposer := eng.newValidParty("proposer", 1)
 	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
 	voter2 := eng.newValidPartyTimes("voter2", 1, 0)
 
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(48 * time.Hour)
 	termTimeAfterEnact := now.Add(4 * 48 * time.Hour).Add(1 * time.Second)
 	filter, binding := produceTimeTriggeredDataSourceSpec(termTimeAfterEnact)
-	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), filter, binding, true)
+	proposal := eng.newProposalForNewMarket(proposer.Id, now, filter, binding, true)
 	ctx := context.Background()
 
 	// setup
@@ -119,7 +118,7 @@ func testCheckpointSuccess(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, data)
 
-	eng2 := getTestEngine(t)
+	eng2 := getTestEngine(t, time.Now())
 	defer eng2.ctrl.Finish()
 
 	eng2.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
@@ -149,10 +148,10 @@ func enactNewProposal(t *testing.T, eng *tstEngine) types.Proposal {
 	t.Helper()
 	proposer := eng.newValidPartyTimes("proposer", 1, 0)
 	voter1 := eng.newValidPartyTimes("voter-1", 7, 0)
-	now := eng.tsvc.GetTimeNow()
-	termTimeAfterEnact := now.Add(4 * 48 * time.Hour).Add(1 * time.Second)
+	proposalTime := eng.tsvc.GetTimeNow().Add(48 * time.Hour)
+	termTimeAfterEnact := proposalTime.Add(4 * 48 * time.Hour).Add(1 * time.Second)
 	filter, binding := produceTimeTriggeredDataSourceSpec(termTimeAfterEnact)
-	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), filter, binding, true)
+	proposal := eng.newProposalForNewMarket(proposer.Id, proposalTime, filter, binding, true)
 
 	// setup
 	eng.ensureStakingAssetTotalSupply(t, 9)
@@ -178,8 +177,7 @@ func enactNewProposal(t *testing.T, eng *tstEngine) types.Proposal {
 }
 
 func TestCheckpointSavingAndLoadingWithDroppedMarkets(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// enact a proposal for market 1,2,3
 	proposals := make([]types.Proposal, 0, 3)
@@ -214,7 +212,7 @@ func TestCheckpointSavingAndLoadingWithDroppedMarkets(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, data)
 
-	eng2 := getTestEngine(t)
+	eng2 := getTestEngine(t, time.Now())
 	defer eng2.ctrl.Finish()
 
 	var counter int
@@ -235,8 +233,7 @@ func TestCheckpointSavingAndLoadingWithDroppedMarkets(t *testing.T) {
 }
 
 func testCheckpointLoadingWithMissingRationaleShouldNotBeProblem(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	now := eng.tsvc.GetTimeNow()
 	// given
@@ -327,8 +324,7 @@ func enactUpdateProposal(t *testing.T, eng *tstEngine, marketID string) string {
 }
 
 func TestCheckpointWithMarketUpdateProposals(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// enact a proposal for market 1,2,3
 	proposal := enactNewProposal(t, eng)
@@ -375,7 +371,7 @@ func TestCheckpointWithMarketUpdateProposals(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, data)
 
-	eng2 := getTestEngine(t)
+	eng2 := getTestEngine(t, time.Now())
 	defer eng2.ctrl.Finish()
 
 	var counter int

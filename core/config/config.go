@@ -137,7 +137,7 @@ func NewDefaultConfig() Config {
 		Checkpoint:        checkpoint.NewDefaultConfig(),
 		Staking:           staking.NewDefaultConfig(),
 		Broker:            broker.NewDefaultConfig(),
-		Snapshot:          snapshot.NewDefaultConfig(),
+		Snapshot:          snapshot.DefaultConfig(),
 		StateVar:          statevar.NewDefaultConfig(),
 		ERC20MultiSig:     erc20multisig.NewDefaultConfig(),
 		PoW:               pow.NewDefaultConfig(),

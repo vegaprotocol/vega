@@ -13,6 +13,51 @@ import "vega/vega.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega/events/v1";
 
+// Event notifying on the details of a funding interval for a perpetuals market.
+message FundingPeriod {
+  // ID of the market for which this funding period relates to.
+  string market_id = 1;
+  // Sequence number of the funding period.
+  uint64 seq = 2;
+  // Time in Unix nanoseconds when the funding period started.
+  int64 start = 3;
+  // Time in Unix nanoseconds when the funding period ended.
+  optional int64 end = 4;
+  // Funding payment for this period as the difference between the time-weighted average price of the external and internal data point.
+  optional string funding_payment = 5;
+  // Percentage difference between the time-weighted average price of the external and internal data point.
+  optional string funding_rate = 6;
+  // TWAP for this period based on the internal data-points.
+  optional string internal_twap = 7;
+  // TWAP for this period based on the external data-points.
+  optional string external_twap = 8;
+}
+
+// Event notifying a data point for a funding period.
+message FundingPeriodDataPoint {
+  enum Source {
+    // Default value
+    SOURCE_UNSPECIFIED = 0;
+    // Data point is from an external data source, such as an oracle, and represents the spot price of the underlying asset.
+    SOURCE_EXTERNAL = 1;
+    // Data point from within Vega such as the mark price after performing mark-to-market.
+    SOURCE_INTERNAL = 2;
+  }
+
+  // Market ID which the data point relates to.
+  string market_id = 1;
+  // Sequence number of the funding period this data point belongs to.
+  uint64 seq = 2;
+  // Origin of the data point.
+  Source data_point_type = 3;
+  // Price of the asset as seen by this data point.
+  string price = 4;
+  // Timestamp in Unix nanoseconds of when the data point was received.
+  int64 timestamp = 6;
+  // The TWAP for this source with this data-point added.
+  string twap = 7;
+}
+
 message StopOrderEvent {
   commands.v1.OrderSubmission submission = 1;
   vega.StopOrder stop_order = 2;
@@ -114,6 +159,7 @@ message RecurringTransfer {
 message RecurringGovernanceTransfer {
   uint64 start_epoch = 1;
   optional uint64 end_epoch = 2;
+  optional DispatchStrategy dispatch_strategy = 3;
 }
 
 // StakeLinking - an event notifying of stake being deposited or removed for a given party
@@ -274,6 +320,9 @@ message TransactionResult {
     commands.v1.EthereumKeyRotateSubmission ethereum_key_rotate_submission = 121;
     commands.v1.StopOrdersSubmission stop_order_submission = 122;
     commands.v1.StopOrdersCancellation stop_order_cancellation = 123;
+    commands.v1.CreateTeam create_team = 124;
+    commands.v1.UpdateTeam update_team = 125;
+    commands.v1.JoinTeam join_team = 126;
   }
 
   // extra details about the transaction processing
@@ -754,6 +803,12 @@ enum BusEventType {
   // Event indicating a stop order has been submitted or updated.
   BUS_EVENT_TYPE_STOP_ORDER = 60;
 
+  // Event indicating the start or end of a funding period.
+  BUS_EVENT_TYPE_FUNDING_PERIOD = 61;
+
+  // Event indicating a data point for a funding period has been received.
+  BUS_EVENT_TYPE_FUNDING_PERIOD_DATA_POINT = 62;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -883,6 +938,10 @@ message BusEvent {
     DistressedPositions distressed_positions = 157;
     // A stop order event
     StopOrderEvent stop_order = 158;
+    // Start or end of a funding period.
+    FundingPeriod funding_period = 159;
+    // Data point within a funding period.
+    FundingPeriodDataPoint funding_period_data_point = 160;
 
     // Market tick events
     MarketEvent market = 1001;

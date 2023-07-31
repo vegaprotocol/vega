@@ -36,6 +36,13 @@ func NewDataSourceSpec(sc *DataSourceDefinition) *DataSourceSpec {
 		case *DataSourceDefinition_Internal:
 			in := sc.GetInternal()
 			if in != nil {
+				switch in.SourceType.(type) {
+				case *DataSourceDefinitionInternal_Time:
+					// t := in.GetTime()
+
+				case *DataSourceDefinitionInternal_TimeTrigger:
+					// t := in.GetTimeTrigger()
+				}
 				t := in.GetTime()
 				if t != nil {
 					//

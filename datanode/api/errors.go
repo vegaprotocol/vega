@@ -227,7 +227,8 @@ var (
 	ErrMultiSigServiceGetAdded   = errors.New("failed to get added multisig events")
 	ErrMultiSigServiceGetRemoved = errors.New("failed to get removed multisig events")
 	// LiquidityProvisionService...
-	ErrLiquidityProvisionServiceGet = errors.New("failed to get liquidity provision")
+	ErrLiquidityProvisionServiceGet          = errors.New("failed to get liquidity provision")
+	ErrLiquidityProvisionServiceGetProviders = errors.New("failed to get liquidity providers")
 	// CheckpointService...
 	ErrCheckpointServiceGet = errors.New("failed to get checkpoint")
 	// StakeLinkingService...

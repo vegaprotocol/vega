@@ -47,6 +47,9 @@ type SubmitTransactionRequest struct {
 	//	*SubmitTransactionRequest_BatchMarketInstructions
 	//	*SubmitTransactionRequest_StopOrdersSubmission
 	//	*SubmitTransactionRequest_StopOrdersCancellation
+	//	*SubmitTransactionRequest_CreateTeam
+	//	*SubmitTransactionRequest_UpdateTeam
+	//	*SubmitTransactionRequest_JoinTeam
 	//	*SubmitTransactionRequest_NodeVote
 	//	*SubmitTransactionRequest_NodeSignature
 	//	*SubmitTransactionRequest_ChainEvent
@@ -232,6 +235,27 @@ func (x *SubmitTransactionRequest) GetStopOrdersCancellation() *v1.StopOrdersCan
 	return nil
 }
 
+func (x *SubmitTransactionRequest) GetCreateTeam() *v1.CreateTeam {
+	if x, ok := x.GetCommand().(*SubmitTransactionRequest_CreateTeam); ok {
+		return x.CreateTeam
+	}
+	return nil
+}
+
+func (x *SubmitTransactionRequest) GetUpdateTeam() *v1.UpdateTeam {
+	if x, ok := x.GetCommand().(*SubmitTransactionRequest_UpdateTeam); ok {
+		return x.UpdateTeam
+	}
+	return nil
+}
+
+func (x *SubmitTransactionRequest) GetJoinTeam() *v1.JoinTeam {
+	if x, ok := x.GetCommand().(*SubmitTransactionRequest_JoinTeam); ok {
+		return x.JoinTeam
+	}
+	return nil
+}
+
 func (x *SubmitTransactionRequest) GetNodeVote() *v1.NodeVote {
 	if x, ok := x.GetCommand().(*SubmitTransactionRequest_NodeVote); ok {
 		return x.NodeVote
@@ -375,6 +399,18 @@ type SubmitTransactionRequest_StopOrdersCancellation struct {
 	StopOrdersCancellation *v1.StopOrdersCancellation `protobuf:"bytes,1017,opt,name=stop_orders_cancellation,json=stopOrdersCancellation,proto3,oneof"`
 }
 
+type SubmitTransactionRequest_CreateTeam struct {
+	CreateTeam *v1.CreateTeam `protobuf:"bytes,1018,opt,name=create_team,json=createTeam,proto3,oneof"`
+}
+
+type SubmitTransactionRequest_UpdateTeam struct {
+	UpdateTeam *v1.UpdateTeam `protobuf:"bytes,1019,opt,name=update_team,json=updateTeam,proto3,oneof"`
+}
+
+type SubmitTransactionRequest_JoinTeam struct {
+	JoinTeam *v1.JoinTeam `protobuf:"bytes,1020,opt,name=join_team,json=joinTeam,proto3,oneof"`
+}
+
 type SubmitTransactionRequest_NodeVote struct {
 	// Validator commands
 	NodeVote *v1.NodeVote `protobuf:"bytes,2002,opt,name=node_vote,json=nodeVote,proto3,oneof"`
@@ -452,6 +488,12 @@ func (*SubmitTransactionRequest_StopOrdersSubmission) isSubmitTransactionRequest
 
 func (*SubmitTransactionRequest_StopOrdersCancellation) isSubmitTransactionRequest_Command() {}
 
+func (*SubmitTransactionRequest_CreateTeam) isSubmitTransactionRequest_Command() {}
+
+func (*SubmitTransactionRequest_UpdateTeam) isSubmitTransactionRequest_Command() {}
+
+func (*SubmitTransactionRequest_JoinTeam) isSubmitTransactionRequest_Command() {}
+
 func (*SubmitTransactionRequest_NodeVote) isSubmitTransactionRequest_Command() {}
 
 func (*SubmitTransactionRequest_NodeSignature) isSubmitTransactionRequest_Command() {}
@@ -484,7 +526,7 @@ var file_vega_wallet_v1_wallet_proto_rawDesc = []byte{
 	0x2f, 0x64, 0x61, 0x74, 0x61, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x29, 0x76, 0x65, 0x67,
 	0x61, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x2f, 0x76, 0x31, 0x2f, 0x76, 0x61,
 	0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xff, 0x13, 0x0a, 0x18, 0x53, 0x75, 0x62, 0x6d, 0x69,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xbf, 0x15, 0x0a, 0x18, 0x53, 0x75, 0x62, 0x6d, 0x69,
 	0x74, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75,
 	0x65, 0x73, 0x74, 0x12, 0x17, 0x0a, 0x07, 0x70, 0x75, 0x62, 0x5f, 0x6b, 0x65, 0x79, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x70, 0x75, 0x62, 0x4b, 0x65, 0x79, 0x12, 0x1c, 0x0a, 0x09,
@@ -587,7 +629,19 @@ var file_vega_wallet_v1_wallet_proto_rawDesc = []byte{
 	0x2e, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x74, 0x6f,
 	0x70, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x6c, 0x61, 0x74,
 	0x69, 0x6f, 0x6e, 0x48, 0x00, 0x52, 0x16, 0x73, 0x74, 0x6f, 0x70, 0x4f, 0x72, 0x64, 0x65, 0x72,
-	0x73, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x3a, 0x0a,
+	0x73, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x40, 0x0a,
+	0x0b, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x65, 0x61, 0x6d, 0x18, 0xfa, 0x07, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x63, 0x6f, 0x6d, 0x6d, 0x61,
+	0x6e, 0x64, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x54, 0x65, 0x61,
+	0x6d, 0x48, 0x00, 0x52, 0x0a, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x54, 0x65, 0x61, 0x6d, 0x12,
+	0x40, 0x0a, 0x0b, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x65, 0x61, 0x6d, 0x18, 0xfb,
+	0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x63, 0x6f, 0x6d,
+	0x6d, 0x61, 0x6e, 0x64, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x54,
+	0x65, 0x61, 0x6d, 0x48, 0x00, 0x52, 0x0a, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x54, 0x65, 0x61,
+	0x6d, 0x12, 0x3a, 0x0a, 0x09, 0x6a, 0x6f, 0x69, 0x6e, 0x5f, 0x74, 0x65, 0x61, 0x6d, 0x18, 0xfc,
+	0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x63, 0x6f, 0x6d,
+	0x6d, 0x61, 0x6e, 0x64, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x4a, 0x6f, 0x69, 0x6e, 0x54, 0x65, 0x61,
+	0x6d, 0x48, 0x00, 0x52, 0x08, 0x6a, 0x6f, 0x69, 0x6e, 0x54, 0x65, 0x61, 0x6d, 0x12, 0x3a, 0x0a,
 	0x09, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x76, 0x6f, 0x74, 0x65, 0x18, 0xd2, 0x0f, 0x20, 0x01, 0x28,
 	0x0b, 0x32, 0x1a, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64,
 	0x73, 0x2e, 0x76, 0x31, 0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x56, 0x6f, 0x74, 0x65, 0x48, 0x00, 0x52,
@@ -683,16 +737,19 @@ var file_vega_wallet_v1_wallet_proto_goTypes = []interface{}{
 	(*v1.BatchMarketInstructions)(nil),        // 15: vega.commands.v1.BatchMarketInstructions
 	(*v1.StopOrdersSubmission)(nil),           // 16: vega.commands.v1.StopOrdersSubmission
 	(*v1.StopOrdersCancellation)(nil),         // 17: vega.commands.v1.StopOrdersCancellation
-	(*v1.NodeVote)(nil),                       // 18: vega.commands.v1.NodeVote
-	(*v1.NodeSignature)(nil),                  // 19: vega.commands.v1.NodeSignature
-	(*v1.ChainEvent)(nil),                     // 20: vega.commands.v1.ChainEvent
-	(*v1.KeyRotateSubmission)(nil),            // 21: vega.commands.v1.KeyRotateSubmission
-	(*v1.StateVariableProposal)(nil),          // 22: vega.commands.v1.StateVariableProposal
-	(*v1.ValidatorHeartbeat)(nil),             // 23: vega.commands.v1.ValidatorHeartbeat
-	(*v1.EthereumKeyRotateSubmission)(nil),    // 24: vega.commands.v1.EthereumKeyRotateSubmission
-	(*v1.ProtocolUpgradeProposal)(nil),        // 25: vega.commands.v1.ProtocolUpgradeProposal
-	(*v1.IssueSignatures)(nil),                // 26: vega.commands.v1.IssueSignatures
-	(*v1.OracleDataSubmission)(nil),           // 27: vega.commands.v1.OracleDataSubmission
+	(*v1.CreateTeam)(nil),                     // 18: vega.commands.v1.CreateTeam
+	(*v1.UpdateTeam)(nil),                     // 19: vega.commands.v1.UpdateTeam
+	(*v1.JoinTeam)(nil),                       // 20: vega.commands.v1.JoinTeam
+	(*v1.NodeVote)(nil),                       // 21: vega.commands.v1.NodeVote
+	(*v1.NodeSignature)(nil),                  // 22: vega.commands.v1.NodeSignature
+	(*v1.ChainEvent)(nil),                     // 23: vega.commands.v1.ChainEvent
+	(*v1.KeyRotateSubmission)(nil),            // 24: vega.commands.v1.KeyRotateSubmission
+	(*v1.StateVariableProposal)(nil),          // 25: vega.commands.v1.StateVariableProposal
+	(*v1.ValidatorHeartbeat)(nil),             // 26: vega.commands.v1.ValidatorHeartbeat
+	(*v1.EthereumKeyRotateSubmission)(nil),    // 27: vega.commands.v1.EthereumKeyRotateSubmission
+	(*v1.ProtocolUpgradeProposal)(nil),        // 28: vega.commands.v1.ProtocolUpgradeProposal
+	(*v1.IssueSignatures)(nil),                // 29: vega.commands.v1.IssueSignatures
+	(*v1.OracleDataSubmission)(nil),           // 30: vega.commands.v1.OracleDataSubmission
 }
 var file_vega_wallet_v1_wallet_proto_depIdxs = []int32{
 	1,  // 0: vega.wallet.v1.SubmitTransactionRequest.order_submission:type_name -> vega.commands.v1.OrderSubmission
@@ -712,21 +769,24 @@ var file_vega_wallet_v1_wallet_proto_depIdxs = []int32{
 	15, // 14: vega.wallet.v1.SubmitTransactionRequest.batch_market_instructions:type_name -> vega.commands.v1.BatchMarketInstructions
 	16, // 15: vega.wallet.v1.SubmitTransactionRequest.stop_orders_submission:type_name -> vega.commands.v1.StopOrdersSubmission
 	17, // 16: vega.wallet.v1.SubmitTransactionRequest.stop_orders_cancellation:type_name -> vega.commands.v1.StopOrdersCancellation
-	18, // 17: vega.wallet.v1.SubmitTransactionRequest.node_vote:type_name -> vega.commands.v1.NodeVote
-	19, // 18: vega.wallet.v1.SubmitTransactionRequest.node_signature:type_name -> vega.commands.v1.NodeSignature
-	20, // 19: vega.wallet.v1.SubmitTransactionRequest.chain_event:type_name -> vega.commands.v1.ChainEvent
-	21, // 20: vega.wallet.v1.SubmitTransactionRequest.key_rotate_submission:type_name -> vega.commands.v1.KeyRotateSubmission
-	22, // 21: vega.wallet.v1.SubmitTransactionRequest.state_variable_proposal:type_name -> vega.commands.v1.StateVariableProposal
-	23, // 22: vega.wallet.v1.SubmitTransactionRequest.validator_heartbeat:type_name -> vega.commands.v1.ValidatorHeartbeat
-	24, // 23: vega.wallet.v1.SubmitTransactionRequest.ethereum_key_rotate_submission:type_name -> vega.commands.v1.EthereumKeyRotateSubmission
-	25, // 24: vega.wallet.v1.SubmitTransactionRequest.protocol_upgrade_proposal:type_name -> vega.commands.v1.ProtocolUpgradeProposal
-	26, // 25: vega.wallet.v1.SubmitTransactionRequest.issue_signatures:type_name -> vega.commands.v1.IssueSignatures
-	27, // 26: vega.wallet.v1.SubmitTransactionRequest.oracle_data_submission:type_name -> vega.commands.v1.OracleDataSubmission
-	27, // [27:27] is the sub-list for method output_type
-	27, // [27:27] is the sub-list for method input_type
-	27, // [27:27] is the sub-list for extension type_name
-	27, // [27:27] is the sub-list for extension extendee
-	0,  // [0:27] is the sub-list for field type_name
+	18, // 17: vega.wallet.v1.SubmitTransactionRequest.create_team:type_name -> vega.commands.v1.CreateTeam
+	19, // 18: vega.wallet.v1.SubmitTransactionRequest.update_team:type_name -> vega.commands.v1.UpdateTeam
+	20, // 19: vega.wallet.v1.SubmitTransactionRequest.join_team:type_name -> vega.commands.v1.JoinTeam
+	21, // 20: vega.wallet.v1.SubmitTransactionRequest.node_vote:type_name -> vega.commands.v1.NodeVote
+	22, // 21: vega.wallet.v1.SubmitTransactionRequest.node_signature:type_name -> vega.commands.v1.NodeSignature
+	23, // 22: vega.wallet.v1.SubmitTransactionRequest.chain_event:type_name -> vega.commands.v1.ChainEvent
+	24, // 23: vega.wallet.v1.SubmitTransactionRequest.key_rotate_submission:type_name -> vega.commands.v1.KeyRotateSubmission
+	25, // 24: vega.wallet.v1.SubmitTransactionRequest.state_variable_proposal:type_name -> vega.commands.v1.StateVariableProposal
+	26, // 25: vega.wallet.v1.SubmitTransactionRequest.validator_heartbeat:type_name -> vega.commands.v1.ValidatorHeartbeat
+	27, // 26: vega.wallet.v1.SubmitTransactionRequest.ethereum_key_rotate_submission:type_name -> vega.commands.v1.EthereumKeyRotateSubmission
+	28, // 27: vega.wallet.v1.SubmitTransactionRequest.protocol_upgrade_proposal:type_name -> vega.commands.v1.ProtocolUpgradeProposal
+	29, // 28: vega.wallet.v1.SubmitTransactionRequest.issue_signatures:type_name -> vega.commands.v1.IssueSignatures
+	30, // 29: vega.wallet.v1.SubmitTransactionRequest.oracle_data_submission:type_name -> vega.commands.v1.OracleDataSubmission
+	30, // [30:30] is the sub-list for method output_type
+	30, // [30:30] is the sub-list for method input_type
+	30, // [30:30] is the sub-list for extension type_name
+	30, // [30:30] is the sub-list for extension extendee
+	0,  // [0:30] is the sub-list for field type_name
 }
 
 func init() { file_vega_wallet_v1_wallet_proto_init() }
@@ -766,6 +826,9 @@ func file_vega_wallet_v1_wallet_proto_init() {
 		(*SubmitTransactionRequest_BatchMarketInstructions)(nil),
 		(*SubmitTransactionRequest_StopOrdersSubmission)(nil),
 		(*SubmitTransactionRequest_StopOrdersCancellation)(nil),
+		(*SubmitTransactionRequest_CreateTeam)(nil),
+		(*SubmitTransactionRequest_UpdateTeam)(nil),
+		(*SubmitTransactionRequest_JoinTeam)(nil),
 		(*SubmitTransactionRequest_NodeVote)(nil),
 		(*SubmitTransactionRequest_NodeSignature)(nil),
 		(*SubmitTransactionRequest_ChainEvent)(nil),

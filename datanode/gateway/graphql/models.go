@@ -127,8 +127,8 @@ type Data struct {
 	// signers is the list of public keys/ETH addresses that signed the data
 	Signers []*Signer `json:"signers"`
 	// properties contains all the properties sent by a data source
-	Data                []*v1.Property `json:"data"`
-	EthereumBlockHeight *int           `json:"ethereumBlockHeight"`
+	Data     []*v1.Property `json:"data"`
+	MetaData []*v1.Property `json:"metaData"`
 	// List of all the data specs that matched this source data.
 	// When the array is empty, it means no data spec matched this source data.
 	MatchedSpecIds []string `json:"matchedSpecIds"`
@@ -450,7 +450,7 @@ type OrderInfo struct {
 	IsMarketOrder bool `json:"isMarketOrder"`
 }
 
-// Response for the estimate of the margin level and, if available, collateral was provided in the request, liqudation price for the specified position
+// Response for the estimate of the margin level and, if available, collateral was provided in the request, liquidation price for the specified position
 type PositionEstimate struct {
 	// Margin level range estimate for the specified position
 	Margin *v2.MarginEstimate `json:"margin"`

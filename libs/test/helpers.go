@@ -1,11 +1,13 @@
 package test
 
 import (
-	"path/filepath"
-
-	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	"sync"
 )
 
-func RandomPath() string {
-	return filepath.Join("/tmp", "vega_tests", vgrand.RandomStr(10))
+func OnlyOnce(f func()) func() {
+	var once sync.Once
+
+	return func() {
+		once.Do(f)
+	}
 }

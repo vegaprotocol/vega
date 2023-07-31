@@ -65,7 +65,7 @@ func (s *Spec) String() string {
 }
 
 func SpecFromProto(specProto *vegapb.DataSourceSpec) *Spec {
-	d, _ := definition.FromProto(specProto.Data)
+	d, _ := definition.FromProto(specProto.Data, nil)
 	//if err != nil {
 	// TODO: bubble error
 	//}
@@ -142,6 +142,40 @@ func SpecBindingForFutureFromProto(o *vegapb.DataSourceSpecToFutureBinding) *Spe
 	}
 }
 
+type SpecBindingForPerps struct {
+	SettlementDataProperty     string
+	SettlementScheduleProperty string
+}
+
+func (b SpecBindingForPerps) String() string {
+	return fmt.Sprintf(
+		"settlementData(%s) settlementSchedule(%s)",
+		b.SettlementDataProperty,
+		b.SettlementScheduleProperty,
+	)
+}
+
+func (b SpecBindingForPerps) IntoProto() *vegapb.DataSourceSpecToPerpsBinding {
+	return &vegapb.DataSourceSpecToPerpsBinding{
+		SettlementDataProperty:     b.SettlementDataProperty,
+		SettlementScheduleProperty: b.SettlementScheduleProperty,
+	}
+}
+
+func (b SpecBindingForPerps) DeepClone() *SpecBindingForPerps {
+	return &SpecBindingForPerps{
+		SettlementDataProperty:     b.SettlementDataProperty,
+		SettlementScheduleProperty: b.SettlementScheduleProperty,
+	}
+}
+
+func SpecBindingForPerpsFromProto(o *vegapb.DataSourceSpecToPerpsBinding) *SpecBindingForPerps {
+	return &SpecBindingForPerps{
+		SettlementDataProperty:     o.SettlementDataProperty,
+		SettlementScheduleProperty: o.SettlementScheduleProperty,
+	}
+}
+
 func FromOracleSpecProto(specProto *vegapb.OracleSpec) *Spec {
 	if specProto.ExternalDataSourceSpec != nil {
 		if specProto.ExternalDataSourceSpec.Spec != nil {
@@ -153,10 +187,11 @@ func FromOracleSpecProto(specProto *vegapb.OracleSpec) *Spec {
 }
 
 const (
-	ContentTypeInvalid                 = definition.ContentTypeInvalid
-	ContentTypeOracle                  = definition.ContentTypeOracle
-	ContentTypeEthOracle               = definition.ContentTypeEthOracle
-	ContentTypeInternalTimeTermination = definition.ContentTypeInternalTimeTermination
+	ContentTypeInvalid                        = definition.ContentTypeInvalid
+	ContentTypeOracle                         = definition.ContentTypeOracle
+	ContentTypeEthOracle                      = definition.ContentTypeEthOracle
+	ContentTypeInternalTimeTermination        = definition.ContentTypeInternalTimeTermination
+	ContentTypeInternalTimeTriggerTermination = definition.ContentTypeInternalTimeTriggerTermination
 )
 
 func NewDefinitionWith(tp common.DataSourceType) *definition.Definition {
@@ -168,5 +203,5 @@ func NewDefinition(tp definition.ContentType) *definition.Definition {
 }
 
 func DefinitionFromProto(protoConfig *vegapb.DataSourceDefinition) (common.DataSourceType, error) {
-	return definition.FromProto(protoConfig)
+	return definition.FromProto(protoConfig, nil)
 }

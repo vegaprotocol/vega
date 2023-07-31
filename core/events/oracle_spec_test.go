@@ -21,6 +21,7 @@ import (
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestOracleSpecDeepClone(t *testing.T) {
@@ -66,8 +67,8 @@ func TestOracleSpecDeepClone(t *testing.T) {
 		},
 	}
 
-	osEvent := events.NewOracleSpecEvent(ctx, os)
-	os2 := osEvent.OracleSpec()
+	osEvent := events.NewOracleSpecEvent(ctx, &os)
+	os2 := proto.Clone(osEvent.OracleSpec()).(*vegapb.OracleSpec)
 
 	// Change the original values
 	pk1 := dstypes.CreateSignerFromString("Changed1", dstypes.SignerTypePubKey)
@@ -108,7 +109,7 @@ func TestOracleSpecDeepClone(t *testing.T) {
 
 	// Check things have changed
 	os2DataSourceSpec := os2.ExternalDataSourceSpec.Spec
-	osDataSourceSpec := *os.ExternalDataSourceSpec.Spec
+	osDataSourceSpec := os.ExternalDataSourceSpec.Spec
 	assert.NotEqual(t, osDataSourceSpec.Id, os2DataSourceSpec.Id)
 	assert.NotEqual(t, osDataSourceSpec.CreatedAt, os2DataSourceSpec.CreatedAt)
 	assert.NotEqual(t, osDataSourceSpec.UpdatedAt, os2DataSourceSpec.UpdatedAt)

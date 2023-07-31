@@ -9,6 +9,7 @@ import (
 
 	"code.vegaprotocol.io/vega/commands"
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/libs/test"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -119,6 +120,8 @@ func TestCheckProposalSubmissionForUpdateMarket(t *testing.T) {
 	t.Run("Submitting a market with external data sources for settlement and termination with empty signers fail", testUpdateMarketWithExternalSettlementDataAndTerminationEmptySignerFails)
 	t.Run("Submitting a market with external data sources for settlement and termination with empty pubKey signers fail", testUpdateMarketWithExternalSettlementDataAndTerminationEmptyPubKeySignerFails)
 	t.Run("Submitting a market with external data sources for settlement and termination with empty eth address signers fail", testUpdateMarketWithExternalSettlementDataAndTerminationEmptyEthAddressSignerFails)
+	t.Run("Submitting a market with termination time trigger fails", testUpdateMarketWithTerminationWithTimeTriggerFails)
+	t.Run("Submitting a market withsettlement with time trigger fails", testUpdateMarketWithSettlementWithTimeTriggerFails)
 }
 
 func testUpdateMarketChangeSubmissionWithoutUpdateMarketFails(t *testing.T) {
@@ -323,7 +326,7 @@ func testUpdateMarketLiquidityMonitoringChangeSubmissionWithNonPositiveTimeWindo
 			value: 0,
 		}, {
 			msg:   "with ratio of -1",
-			value: RandomNegativeI64(),
+			value: test.RandomNegativeI64(),
 		},
 	}
 	for _, tc := range testCases {
@@ -358,7 +361,7 @@ func testUpdateMarketLiquidityMonitoringChangeSubmissionWithPositiveTimeWindowSu
 					Changes: &protoTypes.UpdateMarketConfiguration{
 						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
 							TargetStakeParameters: &protoTypes.TargetStakeParameters{
-								TimeWindow: RandomPositiveI64(),
+								TimeWindow: test.RandomPositiveI64(),
 							},
 						},
 					},
@@ -497,10 +500,10 @@ func testUpdateMarketPriceMonitoringChangeSubmissionWithTriggerHorizonSucceeds(t
 						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
 							Triggers: []*protoTypes.PriceMonitoringTrigger{
 								{
-									Horizon: RandomPositiveI64(),
+									Horizon: test.RandomPositiveI64(),
 								},
 								{
-									Horizon: RandomPositiveI64(),
+									Horizon: test.RandomPositiveI64(),
 								},
 							},
 						},
@@ -623,10 +626,10 @@ func testUpdateMarketPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionS
 						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
 							Triggers: []*protoTypes.PriceMonitoringTrigger{
 								{
-									AuctionExtension: RandomPositiveI64(),
+									AuctionExtension: test.RandomPositiveI64(),
 								},
 								{
-									AuctionExtension: RandomPositiveI64(),
+									AuctionExtension: test.RandomPositiveI64(),
 								},
 							},
 						},
@@ -3511,4 +3514,106 @@ func testUpdateMarketWithExternalSettlementDataAndTerminationEmptyEthAddressSign
 
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers.0"), commands.ErrIsNotValid)
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_for_trading_termination.external.oracle.signers.0"), commands.ErrIsNotValid)
+}
+
+func testUpdateMarketWithTerminationWithTimeTriggerFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_UpdateMarket{
+				UpdateMarket: &protoTypes.UpdateMarket{
+					Changes: &protoTypes.UpdateMarketConfiguration{
+						Instrument: &protoTypes.UpdateInstrumentConfiguration{
+							Product: &protoTypes.UpdateInstrumentConfiguration_Future{
+								Future: &protoTypes.UpdateFutureProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_Oracle{
+											Oracle: &vegapb.DataSourceSpecConfiguration{
+												Signers: []*datapb.Signer{
+													{
+														Signer: &datapb.Signer_EthAddress{
+															EthAddress: &datapb.ETHAddress{
+																Address: "",
+															},
+														},
+													},
+												},
+												Filters: []*datapb.Filter{
+													{
+														Key: &datapb.PropertyKey{
+															Name: "vegaprotocol.builtin.prices.ETH.value",
+															Type: datapb.PropertyKey_TYPE_INTEGER,
+														},
+														Conditions: []*datapb.Condition{
+															{
+																Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+															},
+														},
+													},
+												},
+											},
+										},
+									),
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeInternalTimeTriggerTermination,
+									).SetTimeTriggerConditionConfig(
+										[]*datapb.Condition{
+											{
+												// It does not matter what conditions are set here
+												Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_for_trading_termination.internal.timetrigger"), commands.ErrIsNotValid)
+}
+
+func testUpdateMarketWithSettlementWithTimeTriggerFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_UpdateMarket{
+				UpdateMarket: &protoTypes.UpdateMarket{
+					Changes: &protoTypes.UpdateMarketConfiguration{
+						Instrument: &protoTypes.UpdateInstrumentConfiguration{
+							Product: &protoTypes.UpdateInstrumentConfiguration_Future{
+								Future: &protoTypes.UpdateFutureProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeInternalTimeTriggerTermination,
+									).SetTimeTriggerConditionConfig(
+										[]*datapb.Condition{
+											{
+												// It does not matter what conditions are set here
+												Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+											},
+										},
+									),
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeInternalTimeTriggerTermination,
+									).SetTimeTriggerConditionConfig(
+										[]*datapb.Condition{
+											{
+												// It does not matter what conditions are set here
+												Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_for_settlement_data.internal.timetrigger"), commands.ErrIsNotValid)
 }

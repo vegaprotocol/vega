@@ -44,6 +44,8 @@ func TestProposalForMarketUpdate(t *testing.T) {
 	t.Run("Submitting a proposal for market update with empty termination data fails", testSubmittingProposalForMarketUpdateWithEmptyTerminationDataFails)
 	t.Run("Submitting a proposal for market update on unknown market fails", testSubmittingProposalForMarketUpdateForUnknownMarketFails)
 	t.Run("Submitting a proposal with internal time termination for market update on unknown market fails", testSubmittingProposalForMarketUpdateWithInternalTimeTerminationForUnknownMarketFails)
+	t.Run("Submitting a proposal with internal time trigger termination fails", testSubmittingProposalForMarketUpdateWithInternalTimeTriggerTerminationFails)
+	t.Run("Submitting a proposal with internal time trigger settlement fails", testSubmittingProposalForMarketUpdateWithInternalTimeTriggerSettlementFails)
 
 	t.Run("Submitting a proposal for market update for not-enacted market fails", testSubmittingProposalForMarketUpdateForNotEnactedMarketFails)
 	t.Run("Submitting a proposal for market update with insufficient equity-like share fails", testSubmittingProposalForMarketUpdateWithInsufficientEquityLikeShareFails)
@@ -60,8 +62,7 @@ func TestProposalForMarketUpdate(t *testing.T) {
 }
 
 func testSubmittingProposalForMarketUpdateSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
@@ -85,8 +86,7 @@ func testSubmittingProposalForMarketUpdateSucceeds(t *testing.T) {
 }
 
 func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
@@ -110,15 +110,14 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationSucceeds(t 
 }
 
 func testSubmittingProposalForMarketUpdateWithInternalTimeSetllingFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
 
 	id := eng.newProposalID()
-	now := eng.tsvc.GetTimeNow()
-	tm := time.Now().Add(time.Hour * 24 * 365)
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
+	tm := now.Add(time.Hour * 24 * 365)
 	_, termBinding := produceTimeTriggeredDataSourceSpec(tm)
 
 	termination := datasource.NewDefinition(
@@ -207,15 +206,14 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeSetllingFails(t *testi
 }
 
 func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationWithLessThanConditionFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
 
 	id := eng.newProposalID()
-	now := eng.tsvc.GetTimeNow()
-	tm := time.Now().Add(time.Hour * 24 * 365)
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
+	tm := now.Add(time.Hour * 24 * 365)
 
 	_, termBinding := produceTimeTriggeredDataSourceSpec(tm)
 
@@ -383,8 +381,7 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationWithLessTha
 }
 
 func testSubmittingProposalForMarketUpdateWithExternalSourceUsingInternalKeyTimeForTerminationSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
@@ -409,15 +406,14 @@ func testSubmittingProposalForMarketUpdateWithExternalSourceUsingInternalKeyTime
 }
 
 func testSubmittingProposalForMarketUpdateWithEmptySettlementDataFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
 	id := eng.newProposalID()
-	now := eng.tsvc.GetTimeNow()
-	tm := time.Now().Add(time.Hour * 24 * 365)
-	_, binding := produceTimeTriggeredDataSourceSpec(time.Now())
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
+	tm := now.Add(time.Hour * 24 * 365)
+	_, binding := produceTimeTriggeredDataSourceSpec(now.Add(3 * 48 * time.Hour))
 	term := datasource.NewDefinition(
 		datasource.ContentTypeInternalTimeTermination,
 	).SetTimeTriggerConditionConfig(
@@ -496,14 +492,13 @@ func testSubmittingProposalForMarketUpdateWithEmptySettlementDataFails(t *testin
 }
 
 func testSubmittingProposalForMarketUpdateWithEmptyTerminationDataFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
 	id := eng.newProposalID()
-	now := eng.tsvc.GetTimeNow()
-	_, binding := produceTimeTriggeredDataSourceSpec(time.Now())
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
+	_, binding := produceTimeTriggeredDataSourceSpec(now.Add(3 * 48 * time.Hour))
 	settl := datasource.NewDefinition(
 		datasource.ContentTypeOracle,
 	).SetOracleConfig(
@@ -588,8 +583,7 @@ func testSubmittingProposalForMarketUpdateWithEmptyTerminationDataFails(t *testi
 }
 
 func testSubmittingProposalForMarketUpdateWithEarlyTerminationSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// Submit proposal.
 	// given
@@ -709,8 +703,7 @@ func testSubmittingProposalForMarketUpdateWithEarlyTerminationSucceeds(t *testin
 }
 
 func testSubmittingProposalForMarketUpdateForUnknownMarketFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
@@ -733,8 +726,7 @@ func testSubmittingProposalForMarketUpdateForUnknownMarketFails(t *testing.T) {
 }
 
 func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationForUnknownMarketFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
@@ -756,13 +748,209 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationForUnknownM
 	require.Nil(t, toSubmit)
 }
 
-func testSubmittingProposalForMarketUpdateForNotEnactedMarketFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+func testSubmittingProposalForMarketUpdateWithInternalTimeTriggerTerminationFails(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	newMarketProposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
+	id := eng.newProposalID()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
+	tm := now.Add(time.Hour * 24 * 365)
+	_, binding := produceTimeTriggeredDataSourceSpec(tm)
+	settl := datasource.NewDefinition(
+		datasource.ContentTypeOracle,
+	).SetOracleConfig(
+		&signedoracle.SpecConfiguration{
+			Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+			Filters: []*dstypes.SpecFilter{
+				{
+					Key: &dstypes.SpecPropertyKey{
+						Name: "prices.ETH.value",
+						Type: datapb.PropertyKey_TYPE_INTEGER,
+					},
+					Conditions: []*dstypes.SpecCondition{},
+				},
+			},
+		},
+	)
+
+	term := datasource.NewDefinition(
+		datasource.ContentTypeInternalTimeTriggerTermination,
+	).SetTimeTriggerConditionConfig(
+		[]*dstypes.SpecCondition{
+			{
+				Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+				Value:    fmt.Sprintf("%d", tm.UnixNano()),
+			},
+		})
+
+	riskParameters := types.UpdateMarketConfigurationLogNormal{
+		LogNormal: &types.LogNormalRiskModel{
+			RiskAversionParameter: num.DecimalFromFloat(0.01),
+			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
+			Params: &types.LogNormalModelParams{
+				Mu:    num.DecimalZero(),
+				R:     num.DecimalFromFloat(0.016),
+				Sigma: num.DecimalFromFloat(0.09),
+			},
+		},
+	}
+	proposal := types.Proposal{
+		ID:        "market-1",
+		Reference: "ref-" + id,
+		Party:     proposer,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(1 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change: &types.ProposalTermsUpdateMarket{
+				UpdateMarket: &types.UpdateMarket{
+					MarketID: vgrand.RandomStr(5),
+					Changes: &types.UpdateMarketConfiguration{
+						Instrument: &types.UpdateInstrumentConfiguration{
+							Code: "CRYPTO:GBPVUSD/JUN20",
+							Product: &types.UpdateInstrumentConfigurationFuture{
+								Future: &types.UpdateFutureProduct{
+									QuoteName:                           "VUSD",
+									DataSourceSpecForSettlementData:     *settl,
+									DataSourceSpecForTradingTermination: *term,
+									DataSourceSpecBinding:               binding,
+								},
+							},
+						},
+						RiskParameters:          &riskParameters,
+						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
+						LpPriceRange:            num.DecimalFromFloat(0.95),
+						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
+						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+					},
+				},
+			},
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+	marketID := proposal.MarketUpdate().MarketID
+
+	// setup
+	eng.ensureTokenBalanceForParty(t, proposer, 1000)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
+	eng.ensureExistingMarket(t, marketID)
+
+	// expect
+	eng.expectRejectedProposalEvent(t, proposer, proposal.ID, types.ProposalErrorInvalidFutureProduct)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	assert.Error(t, err, governance.ErrInternalTimeTriggerForFuturesInNotAllowed)
+	require.Nil(t, toSubmit)
+}
+
+func testSubmittingProposalForMarketUpdateWithInternalTimeTriggerSettlementFails(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+
+	// given
+	proposer := vgrand.RandomStr(5)
+	id := eng.newProposalID()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
+	tm := now.Add(time.Hour * 24 * 365)
+	_, binding := produceTimeTriggeredDataSourceSpec(tm)
+	settl := datasource.NewDefinition(
+		datasource.ContentTypeInternalTimeTriggerTermination,
+	).SetTimeTriggerConditionConfig(
+		[]*dstypes.SpecCondition{
+			{
+				Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+				Value:    fmt.Sprintf("%d", tm.UnixNano()),
+			},
+		})
+
+	term := datasource.NewDefinition(
+		datasource.ContentTypeInternalTimeTermination,
+	).SetTimeTriggerConditionConfig(
+		[]*dstypes.SpecCondition{
+			{
+				Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+				Value:    fmt.Sprintf("%d", tm.UnixNano()),
+			},
+		},
+	)
+	riskParameters := types.UpdateMarketConfigurationLogNormal{
+		LogNormal: &types.LogNormalRiskModel{
+			RiskAversionParameter: num.DecimalFromFloat(0.01),
+			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
+			Params: &types.LogNormalModelParams{
+				Mu:    num.DecimalZero(),
+				R:     num.DecimalFromFloat(0.016),
+				Sigma: num.DecimalFromFloat(0.09),
+			},
+		},
+	}
+	proposal := types.Proposal{
+		ID:        "market-1",
+		Reference: "ref-" + id,
+		Party:     proposer,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(1 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change: &types.ProposalTermsUpdateMarket{
+				UpdateMarket: &types.UpdateMarket{
+					MarketID: vgrand.RandomStr(5),
+					Changes: &types.UpdateMarketConfiguration{
+						Instrument: &types.UpdateInstrumentConfiguration{
+							Code: "CRYPTO:GBPVUSD/JUN20",
+							Product: &types.UpdateInstrumentConfigurationFuture{
+								Future: &types.UpdateFutureProduct{
+									QuoteName:                           "VUSD",
+									DataSourceSpecForSettlementData:     *settl,
+									DataSourceSpecForTradingTermination: *term,
+									DataSourceSpecBinding:               binding,
+								},
+							},
+						},
+						RiskParameters:          &riskParameters,
+						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
+						LpPriceRange:            num.DecimalFromFloat(0.95),
+						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
+						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+					},
+				},
+			},
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+	marketID := proposal.MarketUpdate().MarketID
+
+	// setup
+	eng.ensureTokenBalanceForParty(t, proposer, 1000)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
+	eng.ensureExistingMarket(t, marketID)
+
+	// expect
+	eng.expectRejectedProposalEvent(t, proposer, proposal.ID, types.ProposalErrorInvalidFutureProduct)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	assert.Error(t, err, governance.ErrInternalTimeTriggerForFuturesInNotAllowed)
+	require.Nil(t, toSubmit)
+}
+
+func testSubmittingProposalForMarketUpdateForNotEnactedMarketFails(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+
+	// given
+	proposer := vgrand.RandomStr(5)
+	newMarketProposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 	marketID := newMarketProposal.ID
 
 	// setup
@@ -798,8 +986,7 @@ func testSubmittingProposalForMarketUpdateForNotEnactedMarketFails(t *testing.T)
 }
 
 func testSubmittingProposalForMarketUpdateWithInsufficientEquityLikeShareFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
@@ -824,8 +1011,7 @@ func testSubmittingProposalForMarketUpdateWithInsufficientEquityLikeShareFails(t
 }
 
 func testPreEnactmentOfMarketUpdateSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// Submit proposal.
 	// given
@@ -940,8 +1126,7 @@ func testPreEnactmentOfMarketUpdateSucceeds(t *testing.T) {
 }
 
 func testPreEnactmentOfMarketUpdateWithInternalTimeTerminationSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// Submit proposal.
 	// given
@@ -1056,8 +1241,7 @@ func testPreEnactmentOfMarketUpdateWithInternalTimeTerminationSucceeds(t *testin
 }
 
 func testRejectingProposalForMarketUpdateSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
@@ -1099,8 +1283,7 @@ func testRejectingProposalForMarketUpdateSucceeds(t *testing.T) {
 }
 
 func testVotingWithoutMinimumTokenHoldersAndEquityLikeShareMakesMarketUpdateProposalPassed(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// Submit proposal.
 	// given
@@ -1180,8 +1363,7 @@ func testVotingWithoutMinimumTokenHoldersAndEquityLikeShareMakesMarketUpdateProp
 }
 
 func testVotingWithMajorityOfYesFromTokenHoldersMakesMarketUpdateProposalPassed(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// Submit proposal.
 	// given
@@ -1293,8 +1475,7 @@ func testVotingWithMajorityOfYesFromTokenHoldersMakesMarketUpdateProposalPassed(
 }
 
 func testVotingWithMajorityOfNoFromTokenHoldersMakesMarketUpdateProposalDeclined(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// Submit proposal.
 	// given
@@ -1406,8 +1587,7 @@ func testVotingWithMajorityOfNoFromTokenHoldersMakesMarketUpdateProposalDeclined
 }
 
 func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarketUpdateProposalPassed(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipation, "0.5")
 
@@ -1506,8 +1686,7 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarket
 }
 
 func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketUpdateProposalDeclined(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// Submit proposal.
 	// given

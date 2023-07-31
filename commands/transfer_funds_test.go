@@ -1,9 +1,11 @@
 package commands_test
 
 import (
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/stretchr/testify/assert"
@@ -216,7 +218,7 @@ func TestTransferFunds(t *testing.T) {
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 0,
-						EndEpoch:   Uint64Ptr(10),
+						EndEpoch:   ptr.From(uint64(10)),
 						Factor:     "1",
 					},
 				},
@@ -234,7 +236,7 @@ func TestTransferFunds(t *testing.T) {
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
-						EndEpoch:   Uint64Ptr(0),
+						EndEpoch:   ptr.From(uint64(0)),
 						Factor:     "1",
 					},
 				},
@@ -252,7 +254,7 @@ func TestTransferFunds(t *testing.T) {
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
-						EndEpoch:   Uint64Ptr(11),
+						EndEpoch:   ptr.From(uint64(11)),
 						Factor:     "-1",
 					},
 				},
@@ -270,7 +272,7 @@ func TestTransferFunds(t *testing.T) {
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
-						EndEpoch:   Uint64Ptr(11),
+						EndEpoch:   ptr.From(uint64(11)),
 						Factor:     "0.01",
 					},
 				},
@@ -356,7 +358,7 @@ func TestTransferFunds(t *testing.T) {
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
-						EndEpoch:   Uint64Ptr(11),
+						EndEpoch:   ptr.From(uint64(11)),
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric: "",
@@ -378,7 +380,7 @@ func TestTransferFunds(t *testing.T) {
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
 						StartEpoch: 10,
-						EndEpoch:   Uint64Ptr(11),
+						EndEpoch:   ptr.From(uint64(11)),
 						Factor:     "1",
 						DispatchStrategy: &vega.DispatchStrategy{
 							AssetForMetric: "",
@@ -444,8 +446,8 @@ func TestTransferFunds(t *testing.T) {
 func checkTransfer(cmd *commandspb.Transfer) commands.Errors {
 	err := commands.CheckTransfer(cmd)
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 

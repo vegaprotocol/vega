@@ -284,6 +284,9 @@ func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, 
 	})
 	successors := make([]*types.Successors, 0, len(e.successors))
 	for pid, ids := range e.successors {
+		if _, ok := e.GetMarket(pid, true); !ok {
+			continue
+		}
 		successors = append(successors, &types.Successors{
 			ParentMarket:     pid,
 			SuccessorMarkets: ids,
@@ -382,7 +385,7 @@ func (e *Engine) restoreSuccessorMaps(successors []*types.Successors) {
 }
 
 func (e *Engine) OnStateLoaded(ctx context.Context) error {
-	for _, m := range e.futureMarkets {
+	for _, m := range e.allMarkets {
 		if err := m.PostRestore(ctx); err != nil {
 			return err
 		}

@@ -33,6 +33,28 @@ message FutureProduct {
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;
 }
 
+// Perpetual product configuration
+message PerpsProduct {
+  // Asset ID for the product's settlement asset.
+  string settlement_asset = 1;
+  // Product quote name.
+  string quote_name = 2;
+  // Controls how much the upcoming funding payment liability contributes to party's margin, in the range [0, 1].
+  string margin_funding_factor = 3;
+  // Continuously compounded interest rate used in funding rate calculation, in the range [-1, 1].
+  string interest_rate = 4;
+  // Lower bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
+  string clamp_lower_bound = 5;
+  // Upper bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
+  string clamp_upper_bound = 6;
+  // Data source spec describing the data source for settlement schedule.
+  vega.DataSourceDefinition data_source_spec_for_settlement_schedule = 7;
+  // Data source spec describing the data source for settlement.
+  vega.DataSourceDefinition data_source_spec_for_settlement_data = 8;
+  // Binding between the data source spec and the settlement data.
+  DataSourceSpecToPerpsBinding data_source_spec_binding = 9;
+}
+
 // Instrument configuration
 message InstrumentConfiguration {
   // Instrument name.
@@ -45,6 +67,8 @@ message InstrumentConfiguration {
     FutureProduct future = 100;
     // Spot.
     SpotProduct spot = 101;
+    // Perps.
+    PerpsProduct perps = 102;
   }
 }
 
@@ -194,6 +218,8 @@ message UpdateInstrumentConfiguration {
   oneof product {
     // Future.
     UpdateFutureProduct future = 100;
+    // Perps.
+    UpdatePerpsProduct perps = 101;
   }
 }
 
@@ -207,6 +233,26 @@ message UpdateFutureProduct {
   vega.DataSourceDefinition data_source_spec_for_trading_termination = 3;
   // The binding between the data source spec and the settlement data.
   DataSourceSpecToFutureBinding data_source_spec_binding = 4;
+}
+
+// Perps product configuration
+message UpdatePerpsProduct {
+  // Human-readable name/abbreviation of the quote name.
+  string quote_name = 1;
+  // Controls how much the upcoming funding payment liability contributes to party's margin, in the range [0, 1].
+  string margin_funding_factor = 2;
+  // Continuously compounded interest rate used in funding rate calculation, in the range [-1, 1].
+  string interest_rate = 3;
+  // Lower bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
+  string clamp_lower_bound = 4;
+  // Upper bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
+  string clamp_upper_bound = 5;
+  // Data source spec describing the data source for settlement schedule.
+  vega.DataSourceDefinition data_source_spec_for_settlement_schedule = 6;
+  // Data source spec describing the data source for settlement.
+  vega.DataSourceDefinition data_source_spec_for_settlement_data = 7;
+  // Binding between the data source spec and the settlement data.
+  DataSourceSpecToPerpsBinding data_source_spec_binding = 8;
 }
 
 // Update network configuration on Vega
@@ -464,6 +510,8 @@ enum ProposalError {
   PROPOSAL_ERROR_INVALID_SLA_PARAMS = 53;
   // Mandatory liquidity provision SLA parameters are missing
   PROPOSAL_ERROR_MISSING_SLA_PARAMS = 54;
+  // Perpetual market proposal contained invalid product definition
+  PROPOSAL_ERROR_INVALID_PERPS_PRODUCT = 55;
 }
 
 // Governance vote
@@ -583,7 +631,10 @@ message OneOffTransfer {
 // Specific details for a recurring transfer
 message RecurringTransfer {
   // First epoch from which this transfer shall be paid.
+
   uint64 start_epoch = 1;
   // Last epoch at which this transfer shall be paid.
   optional uint64 end_epoch = 2;
+  // Optional parameter defining how a transfer is dispatched.
+  optional vega.DispatchStrategy dispatch_strategy = 3;
 }

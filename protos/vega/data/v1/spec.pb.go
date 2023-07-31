@@ -343,6 +343,65 @@ func (x *Condition) GetValue() string {
 	return ""
 }
 
+// Trigger for an internal time data source.
+type InternalTimeTrigger struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Trigger when the vega time is greater or equal to this time, in Unix seconds.
+	Initial *int64 `protobuf:"varint,1,opt,name=initial,proto3,oneof" json:"initial,omitempty"`
+	// Repeat the trigger every n seconds after the initial. If no time for
+	// initial was specified, begin repeating immediately.
+	Every int64 `protobuf:"varint,2,opt,name=every,proto3" json:"every,omitempty"`
+}
+
+func (x *InternalTimeTrigger) Reset() {
+	*x = InternalTimeTrigger{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_data_v1_spec_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *InternalTimeTrigger) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InternalTimeTrigger) ProtoMessage() {}
+
+func (x *InternalTimeTrigger) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_data_v1_spec_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InternalTimeTrigger.ProtoReflect.Descriptor instead.
+func (*InternalTimeTrigger) Descriptor() ([]byte, []int) {
+	return file_vega_data_v1_spec_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *InternalTimeTrigger) GetInitial() int64 {
+	if x != nil && x.Initial != nil {
+		return *x.Initial
+	}
+	return 0
+}
+
+func (x *InternalTimeTrigger) GetEvery() int64 {
+	if x != nil {
+		return x.Every
+	}
+	return 0
+}
+
 var File_vega_data_v1_spec_proto protoreflect.FileDescriptor
 
 var file_vega_data_v1_spec_proto_rawDesc = []byte{
@@ -392,10 +451,16 @@ var file_vega_data_v1_spec_proto_rawDesc = []byte{
 	0x52, 0x41, 0x54, 0x4f, 0x52, 0x5f, 0x4c, 0x45, 0x53, 0x53, 0x5f, 0x54, 0x48, 0x41, 0x4e, 0x10,
 	0x04, 0x12, 0x1f, 0x0a, 0x1b, 0x4f, 0x50, 0x45, 0x52, 0x41, 0x54, 0x4f, 0x52, 0x5f, 0x4c, 0x45,
 	0x53, 0x53, 0x5f, 0x54, 0x48, 0x41, 0x4e, 0x5f, 0x4f, 0x52, 0x5f, 0x45, 0x51, 0x55, 0x41, 0x4c,
-	0x10, 0x05, 0x42, 0x2f, 0x5a, 0x2d, 0x63, 0x6f, 0x64, 0x65, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x2e, 0x69, 0x6f, 0x2f, 0x76, 0x65, 0x67, 0x61, 0x2f,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x73, 0x2f, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x64, 0x61, 0x74, 0x61,
-	0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x10, 0x05, 0x22, 0x56, 0x0a, 0x13, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x54, 0x69,
+	0x6d, 0x65, 0x54, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x12, 0x1d, 0x0a, 0x07, 0x69, 0x6e, 0x69,
+	0x74, 0x69, 0x61, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x48, 0x00, 0x52, 0x07, 0x69, 0x6e,
+	0x69, 0x74, 0x69, 0x61, 0x6c, 0x88, 0x01, 0x01, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x76, 0x65, 0x72,
+	0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x05, 0x65, 0x76, 0x65, 0x72, 0x79, 0x42, 0x0a,
+	0x0a, 0x08, 0x5f, 0x69, 0x6e, 0x69, 0x74, 0x69, 0x61, 0x6c, 0x42, 0x2f, 0x5a, 0x2d, 0x63, 0x6f,
+	0x64, 0x65, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x2e,
+	0x69, 0x6f, 0x2f, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x73, 0x2f, 0x76,
+	0x65, 0x67, 0x61, 0x2f, 0x64, 0x61, 0x74, 0x61, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -411,13 +476,14 @@ func file_vega_data_v1_spec_proto_rawDescGZIP() []byte {
 }
 
 var file_vega_data_v1_spec_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_vega_data_v1_spec_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_vega_data_v1_spec_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_vega_data_v1_spec_proto_goTypes = []interface{}{
-	(PropertyKey_Type)(0),   // 0: vega.data.v1.PropertyKey.Type
-	(Condition_Operator)(0), // 1: vega.data.v1.Condition.Operator
-	(*Filter)(nil),          // 2: vega.data.v1.Filter
-	(*PropertyKey)(nil),     // 3: vega.data.v1.PropertyKey
-	(*Condition)(nil),       // 4: vega.data.v1.Condition
+	(PropertyKey_Type)(0),       // 0: vega.data.v1.PropertyKey.Type
+	(Condition_Operator)(0),     // 1: vega.data.v1.Condition.Operator
+	(*Filter)(nil),              // 2: vega.data.v1.Filter
+	(*PropertyKey)(nil),         // 3: vega.data.v1.PropertyKey
+	(*Condition)(nil),           // 4: vega.data.v1.Condition
+	(*InternalTimeTrigger)(nil), // 5: vega.data.v1.InternalTimeTrigger
 }
 var file_vega_data_v1_spec_proto_depIdxs = []int32{
 	3, // 0: vega.data.v1.Filter.key:type_name -> vega.data.v1.PropertyKey
@@ -473,15 +539,28 @@ func file_vega_data_v1_spec_proto_init() {
 				return nil
 			}
 		}
+		file_vega_data_v1_spec_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*InternalTimeTrigger); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_vega_data_v1_spec_proto_msgTypes[1].OneofWrappers = []interface{}{}
+	file_vega_data_v1_spec_proto_msgTypes[3].OneofWrappers = []interface{}{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_vega_data_v1_spec_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -293,6 +293,10 @@ type TradingDataServiceClient interface {
 	//
 	// Subscribe to a stream of liquidity provision events for a given market and party
 	ObserveLiquidityProvisions(ctx context.Context, in *ObserveLiquidityProvisionsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveLiquidityProvisionsClient, error)
+	// List liquidity providers data
+	//
+	// List information about active liquidity provider(s) for a given market, or liquidity provider's party ID
+	ListLiquidityProviders(ctx context.Context, in *ListLiquidityProvidersRequest, opts ...grpc.CallOption) (*ListLiquidityProvidersResponse, error)
 	// Get governance data
 	//
 	// Get a single proposal's details either by proposal ID or by reference
@@ -1294,6 +1298,15 @@ func (x *tradingDataServiceObserveLiquidityProvisionsClient) Recv() (*ObserveLiq
 	return m, nil
 }
 
+func (c *tradingDataServiceClient) ListLiquidityProviders(ctx context.Context, in *ListLiquidityProvidersRequest, opts ...grpc.CallOption) (*ListLiquidityProvidersResponse, error) {
+	out := new(ListLiquidityProvidersResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListLiquidityProviders", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) GetGovernanceData(ctx context.Context, in *GetGovernanceDataRequest, opts ...grpc.CallOption) (*GetGovernanceDataResponse, error) {
 	out := new(GetGovernanceDataResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetGovernanceData", in, out, opts...)
@@ -1956,6 +1969,10 @@ type TradingDataServiceServer interface {
 	//
 	// Subscribe to a stream of liquidity provision events for a given market and party
 	ObserveLiquidityProvisions(*ObserveLiquidityProvisionsRequest, TradingDataService_ObserveLiquidityProvisionsServer) error
+	// List liquidity providers data
+	//
+	// List information about active liquidity provider(s) for a given market, or liquidity provider's party ID
+	ListLiquidityProviders(context.Context, *ListLiquidityProvidersRequest) (*ListLiquidityProvidersResponse, error)
 	// Get governance data
 	//
 	// Get a single proposal's details either by proposal ID or by reference
@@ -2328,6 +2345,9 @@ func (UnimplementedTradingDataServiceServer) ListLiquidityProvisions(context.Con
 }
 func (UnimplementedTradingDataServiceServer) ObserveLiquidityProvisions(*ObserveLiquidityProvisionsRequest, TradingDataService_ObserveLiquidityProvisionsServer) error {
 	return status.Errorf(codes.Unimplemented, "method ObserveLiquidityProvisions not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListLiquidityProviders(context.Context, *ListLiquidityProvidersRequest) (*ListLiquidityProvidersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListLiquidityProviders not implemented")
 }
 func (UnimplementedTradingDataServiceServer) GetGovernanceData(context.Context, *GetGovernanceDataRequest) (*GetGovernanceDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetGovernanceData not implemented")
@@ -3521,6 +3541,24 @@ func (x *tradingDataServiceObserveLiquidityProvisionsServer) Send(m *ObserveLiqu
 	return x.ServerStream.SendMsg(m)
 }
 
+func _TradingDataService_ListLiquidityProviders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListLiquidityProvidersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListLiquidityProviders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListLiquidityProviders",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListLiquidityProviders(ctx, req.(*ListLiquidityProvidersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_GetGovernanceData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetGovernanceDataRequest)
 	if err := dec(in); err != nil {
@@ -4322,6 +4360,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListLiquidityProvisions",
 			Handler:    _TradingDataService_ListLiquidityProvisions_Handler,
+		},
+		{
+			MethodName: "ListLiquidityProviders",
+			Handler:    _TradingDataService_ListLiquidityProviders_Handler,
 		},
 		{
 			MethodName: "GetGovernanceData",

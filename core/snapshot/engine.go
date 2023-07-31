@@ -13,182 +13,131 @@
 package snapshot
 
 import (
-	"bytes"
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
+	"reflect"
 	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/metrics"
-	metadatadb "code.vegaprotocol.io/vega/core/snapshot/databases/metadata"
-	snapshotdb "code.vegaprotocol.io/vega/core/snapshot/databases/snapshot"
+	"code.vegaprotocol.io/vega/core/snapshot/tree"
 	"code.vegaprotocol.io/vega/core/types"
 	vegactx "code.vegaprotocol.io/vega/libs/context"
-	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
-	snappb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
-	"golang.org/x/exp/slices"
-
-	cometbftdb "github.com/cometbft/cometbft-db"
-	"github.com/cosmos/iavl"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
+	"go.uber.org/zap"
+	"golang.org/x/exp/slices"
 )
 
 const (
 	namedLogger = "snapshot"
 	numWorkers  = 1000
+
+	// This is a limitation by Tendermint. It must be strictly positive, and
+	// non-zero.
+	maxLengthOfSnapshotList = 10
 )
 
-var (
-	ErrCannotReceiveSnapshotFromStateSync = errors.New("cannot receive snapshots from state-sync when reloading from local storage")
-	ErrCouldNotCleanlyCloseDatabases      = errors.New("could not cleanly close the databases")
-)
+var ErrEngineHasAlreadyBeenStarted = errors.New("the engine has already been started")
 
-type StateProviderT interface {
-	// Namespace this provider operates in, basically a prefix for the keys
-	Namespace() types.SnapshotNamespace
-	// Keys gets all the nodes this provider populates
-	Keys() []string
-	// GetState returns the new state as a payload type
-	// NB: GetState must be threadsafe as it may be called from multiple goroutines concurrently!
-	GetState(key string) *types.Payload
-	// PollChanges waits for an update on a channel - if nothing was updated, then nil can be sent
-	// we can call this at the end of a block, so the engines have time until commit to provide the data
-	// rather than a series of blocking calls
-	PollChanges(ctx context.Context, k string, ch chan<- *types.Payload)
-	// Sync is called when polling for changes, but we need the snapshot data now. Similar to wg.Wait()
-	// on all of the state providers
-	Sync() error
-	// Err is called if the provider sent nil on the poll channel. Return nil if all was well (just no changes)
-	// or the relevant error if something failed. The same error can be returned when calling Sync()
-	Err() error
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/snapshot TimeService,StatsService
 
-	// LoadState is called to set the state once again, has to return state providers
-	// in case a new engine is created in the process (e.g. execution engine creating markets, with positions and matching engines)
-	LoadState(ctx context.Context, pl *types.Payload) ([]types.StateProvider, error)
-}
+type DoneCh <-chan interface{}
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_mock.go -package mocks code.vegaprotocol.io/vega/core/snapshot TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
 	SetTimeNow(context.Context, time.Time)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/stats_mock.go -package mocks code.vegaprotocol.io/vega/core/snapshot StatsService
 type StatsService interface {
 	SetHeight(uint64)
 }
 
-type MetadataDatabase interface {
-	Save(int64, *tmtypes.Snapshot) error
-	Load(int64) (*tmtypes.Snapshot, error)
-	Close() error
-	Clear() error
-	ContainsMetadata() bool
-}
-
-type Database interface {
-	cometbftdb.DB
-	Clear() error
-}
-
 // Engine the snapshot engine.
 type Engine struct {
-	Config
-	log *logging.Logger
+	config Config
+	log    *logging.Logger
 
-	ctx          context.Context
-	cfunc        context.CancelFunc
-	initialised  bool
 	timeService  TimeService
 	statsService StatsService
 
-	db     Database
-	metadb MetadataDatabase
+	// started tells if the snapshot engine is started or not. It is set by the
+	// method `Start()`.
+	// Because the snapshot engine requires providers to be registered to be useful,
+	// after being initialized, it can't just load the snapshots during
+	// initialization. As a result, it needs to separate the initialization
+	// and start steps. This also benefits the caller, as it has full control on
+	// when to start the state restoration process, like after additional setup.
+	started atomic.Bool
 
-	avl             *iavl.MutableTree
-	namespaces      []types.SnapshotNamespace
-	nsKeys          map[types.SnapshotNamespace][]string // takes us from a namespace to the provider keys in that namespace e.g governance => {active, enacted}
-	nsTreeKeys      map[types.SnapshotNamespace][][]byte // takes us from a namespace to the AVL tree keys in that namespace e.g governanec => {governance.active, governance.enacted}
-	treeKeyProvider map[string]string                    // takes us from the key of the AVL tree node, to the provider key e.g checkpoint.all => all
-	versions        []int64
-	interval        int64
-	current         int64
+	// snapshotLock is used when accessing the maps below while concurrently
+	// constructing the new snapshot
+	snapshotLock sync.RWMutex
+	// registeredNamespaces holds all the namespaces of the registered providers
+	// when added with the method `AddProvider()`.
+	registeredNamespaces []types.SnapshotNamespace
+	// namespacesToProviderKeys takes us from a namespace to the provider keys in that
+	// namespace (e.g governance => {active, enacted}).
+	namespacesToProviderKeys map[types.SnapshotNamespace][]string
+	// namespacesToTreeKeys takes us from a namespace to the AVL tree keys in
+	// that namespace (e.g governance => {governance.active, governance.enacted}).
+	namespacesToTreeKeys map[types.SnapshotNamespace][][]byte
+	// treeKeysToProviderKeys takes us from the key of the AVL tree node, to the provider
+	// key (e.g checkpoint.all => all).
+	treeKeysToProviderKeys map[string]string
+	// treeKeysToProviders tracks all the components that need state to be reloaded.
+	treeKeysToProviders map[string]types.StateProvider
+	// preRestoreProviders tracks all the components that need to be called
+	// before the state as been reloaded in all providers.
+	preRestoreProviders []types.PreRestore
+	// postRestoreProviders tracks all the components that need to be called
+	// after the state as been reloaded in all providers.
+	postRestoreProviders []types.PostRestore
 
-	providers          map[string]types.StateProvider
-	restoreProvs       []types.PostRestore
-	beforeRestoreProvs []types.PreRestore
-	providersNS        map[types.SnapshotNamespace][]types.StateProvider
+	// offeredSnapshot holds the snapshot that is currently being loaded through
+	// state-sync. If nil, it means there is no snapshot being loaded through
+	// state-sync.
+	offeredSnapshot *types.Snapshot
+	// attemptsToApplySnapshotChunk counts the number of attempts made to apply
+	// a chunk to a snapshot, during a state-sync. When the number of attempts
+	// exceeds Config.RetryLimit, the state-sync is aborted, and the counter
+	// reset.
+	attemptsToApplySnapshotChunk uint
+	// stateRestored tells if the state has been restored already or not. This
+	// is use to guard against multiple state restoration.
+	stateRestored atomic.Bool
 
-	last             *iavl.ImmutableTree
-	lastSnapshotHash []byte // the root hash of the last snapshot that was taken
-	versionHeight    map[uint64]int64
+	// loadedSnapshot holds the snapshot that is currently being used to share
+	// snapshot chunks with peers on the network.
+	loadedSnapshot *types.Snapshot
 
-	snapshot  *types.Snapshot
-	snapRetry uint
+	// appState holds the general state of the application. It is the responsibility
+	// of the snapshot engine to update, and snapshot it.
+	appState *types.AppState
 
-	// the general snapshot info this engine is responsible for
-	wrap *types.PayloadAppState
-	app  *types.AppState
+	// snapshotTree hold the snapshot as an AVL tree.
+	snapshotTree *tree.Tree
+	// snapshotTreeLock is used every time it is needed to read from or writing to
+	// the AVL tree.
+	snapshotTreeLock sync.Mutex
 
-	// unused bit related to experimental channel based snapshot update stuff?
-	providerTS map[string]StateProviderT
-	pollCtx    context.Context
-	pollCfunc  context.CancelFunc
-
-	lock    sync.RWMutex // lock for all the maps and stuff while concurrently constructing the new snapshot
-	avlLock sync.Mutex   // lock on the avl tree for reading/writing to the AVL tree
-
-	// reloadFromLocalStorage indicates whether the snapshot engine is restarting
-	// using the local storage, or not. If it is not reloading from local storage,
-	// then it means we are going to load from state-sync.
-	// This is used as a guard to prevent the node from mixing loading from
-	// state-sync and local storage.
-	reloadFromLocalStorage bool
+	// intervalBetweenSnapshots defines the internal between snapshots. The unit
+	// is based on the network commits. An interval of 10 means a snapshot is taken
+	// every 10 commits.
+	intervalBetweenSnapshots uint64
+	// commitsLeftBeforeSnapshot tracks the number of commits left before the
+	// engine snapshots the state of the node.
+	commitsLeftBeforeSnapshot uint64
 }
 
-// order in which snapshots are to be restored.
-var nodeOrder = []types.SnapshotNamespace{
-	types.AppSnapshot,
-	types.EpochSnapshot,
-	types.AssetsSnapshot,  // needs to happen before banking
-	types.WitnessSnapshot, // needs to happen before banking and governance
-	types.GovernanceSnapshot,
-	types.BankingSnapshot,
-	types.CollateralSnapshot,
-	types.TopologySnapshot,
-	types.NotarySnapshot,
-	types.NetParamsSnapshot,
-	types.CheckpointSnapshot,
-	types.DelegationSnapshot,
-	types.FloatingPointConsensusSnapshot, // shouldn't matter but maybe best before the markets are restored
-	types.ExecutionSnapshot,              // creates the markets, returns matching and positions engines for state providers
-	types.MatchingSnapshot,               // this requires a market
-	types.PositionsSnapshot,              // again, needs a market
-	types.SettlementSnapshot,             // needs the market to exist, too
-	types.HoldingAccountTrackerSnapshot,
-	types.LiquiditySnapshot,
-	types.LiquidityTargetSnapshot,
-	types.StakingSnapshot,
-	types.StakeVerifierSnapshot,
-	types.SpamSnapshot,
-	types.LimitSnapshot,
-	types.RewardSnapshot,
-	types.EventForwarderSnapshot,
-	types.MarketActivityTrackerSnapshot,
-	types.ERC20MultiSigTopologySnapshot,
-	types.PoWSnapshot,
-	types.ProtocolUpgradeSnapshot,
-}
-
-// New returns a new snapshot engine.
-func New(ctx context.Context, vegaPath paths.Paths, conf Config, log *logging.Logger, tm TimeService, stats StatsService) (*Engine, error) {
+// NewEngine returns a new snapshot engine.
+func NewEngine(vegaPath paths.Paths, conf Config, log *logging.Logger, timeSvc TimeService, statsSvc StatsService) (*Engine, error) {
 	if err := conf.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
@@ -196,605 +145,417 @@ func New(ctx context.Context, vegaPath paths.Paths, conf Config, log *logging.Lo
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
 
-	sctx, cfunc := context.WithCancel(ctx)
-	appPL := &types.PayloadAppState{
-		AppState: &types.AppState{},
-	}
-	app := appPL.Namespace()
+	appStatePayload := &types.PayloadAppState{}
+
 	eng := &Engine{
-		Config:       conf,
-		log:          log,
-		ctx:          sctx,
-		cfunc:        cfunc,
-		timeService:  tm,
-		statsService: stats,
-		namespaces:   []types.SnapshotNamespace{},
-		nsKeys: map[types.SnapshotNamespace][]string{
-			app: {appPL.Key()},
+		config: conf,
+		log:    log,
+
+		timeService:  timeSvc,
+		statsService: statsSvc,
+
+		registeredNamespaces: []types.SnapshotNamespace{},
+		namespacesToProviderKeys: map[types.SnapshotNamespace][]string{
+			types.AppSnapshot: {appStatePayload.Key()},
 		},
-		nsTreeKeys: map[types.SnapshotNamespace][][]byte{
-			app: {
-				[]byte(types.KeyFromPayload(appPL)),
+		namespacesToTreeKeys: map[types.SnapshotNamespace][][]byte{
+			types.AppSnapshot: {
+				[]byte(types.KeyFromPayload(appStatePayload)),
 			},
 		},
-		treeKeyProvider: map[string]string{},
-		providers:       map[string]types.StateProvider{},
-		providersNS:     map[types.SnapshotNamespace][]types.StateProvider{},
-		versions:        make([]int64, 0, conf.KeepRecent), // cap determines how many versions we keep
-		versionHeight:   map[uint64]int64{},
-		wrap:            appPL,
-		app:             appPL.AppState,
-		interval:        1, // default to every block
-		current:         -1,
+		treeKeysToProviderKeys: map[string]string{},
+
+		treeKeysToProviders: map[string]types.StateProvider{},
+		appState:            &types.AppState{},
+
+		// By default, a snapshot is triggered after each commit.
+		intervalBetweenSnapshots: 1,
+		// This must not be set to 0, otherwise a snapshot will be generated
+		// right after the state has been reload, leading effectively to a
+		// duplicated snapshot.
+		commitsLeftBeforeSnapshot: 1,
 	}
 
-	if err := eng.initializeDatabases(vegaPath); err != nil {
-		return nil, fmt.Errorf("could not initialize databases: %w", err)
-	}
-
-	if eng.metadb.ContainsMetadata() {
-		eng.reloadFromLocalStorage = true
-	} else {
-		eng.reloadFromLocalStorage = false
+	if err := eng.initializeTree(vegaPath); err != nil {
+		return nil, err
 	}
 
 	return eng, nil
 }
 
+func (e *Engine) Start(ctx context.Context) error {
+	if e.started.Load() {
+		return ErrEngineHasAlreadyBeenStarted
+	}
+
+	if !e.snapshotTree.HasSnapshotsLoaded() {
+		e.started.Store(true)
+		return nil
+	}
+
+	e.log.Info("Local snapshots found, initiating state restoration")
+
+	if err := e.restoreStateFromTree(ctx); err != nil {
+		return fmt.Errorf("could not load local snapshot: %w", err)
+	}
+
+	e.log.Info("The state has been restored", zap.Uint64("block-height", e.appState.Height))
+
+	e.started.Store(true)
+
+	return nil
+}
+
+func (e *Engine) OnSnapshotIntervalUpdate(_ context.Context, newIntervalBetweenSnapshots *num.Uint) error {
+	newIntervalBetweenSnapshotsU := newIntervalBetweenSnapshots.Uint64()
+	if newIntervalBetweenSnapshotsU < e.commitsLeftBeforeSnapshot || e.commitsLeftBeforeSnapshot == 0 {
+		e.commitsLeftBeforeSnapshot = newIntervalBetweenSnapshotsU
+	} else if newIntervalBetweenSnapshotsU > e.intervalBetweenSnapshots {
+		e.commitsLeftBeforeSnapshot += newIntervalBetweenSnapshotsU - e.intervalBetweenSnapshots
+	}
+	e.intervalBetweenSnapshots = newIntervalBetweenSnapshotsU
+	return nil
+}
+
 func (e *Engine) ReloadConfig(cfg Config) {
-	e.log.Info("reloading configuration")
+	e.log.Info("Reloading configuration")
+
 	if e.log.GetLevel() != cfg.Level.Get() {
-		e.log.Info("updating log level",
+		e.log.Info("Updating log level",
 			logging.String("old", e.log.GetLevel().String()),
 			logging.String("new", cfg.Level.String()),
 		)
 		e.log.SetLevel(cfg.Level.Get())
 	}
-	e.Config = cfg
+	e.config = cfg
 }
 
-// ListMeta returns all snapshots available.
-func (e *Engine) ListMeta() ([]*tmtypes.Snapshot, error) {
-	e.avlLock.Lock()
-	defer e.avlLock.Unlock()
+func (e *Engine) Close() {
+	// Locking in case a write operation is happening on the snapshot tree,
+	// before releasing.
+	e.snapshotTreeLock.Lock()
+	defer e.snapshotTreeLock.Unlock()
 
-	snapshots := make([]*tmtypes.Snapshot, 0, len(e.versions))
-	// TM list of snapshots is limited to the 10 most recent ones.
-	i := len(e.versions) - 11
-	if i < 0 {
-		i = 0
+	e.snapshotTree.Release()
+}
+
+func (e *Engine) Info() ([]byte, int64, string) {
+	if !e.stateRestored.Load() {
+		return nil, 0, ""
 	}
-	for j := len(e.versions); i < j; i++ {
-		v := e.versions[i]
 
-		snap, err := e.metadb.Load(v)
-		if err != nil {
-			e.log.Error("could not load snapshot metadata", logging.Int64("version", v), logging.Error(err))
-			// We ignore broken snapshot state.
-			continue
-		}
+	return e.snapshotTree.Hash(), int64(e.appState.Height), e.appState.ChainID
+}
 
-		// then save the version for height
-		snapMeta := &snappb.Metadata{}
-		err = proto.Unmarshal(snap.Metadata, snapMeta)
-		if err != nil {
-			return nil, err
-		}
-		e.versionHeight[snap.Height] = snapMeta.Version
+// AddProviders add a state providers to the engine. Added providers will be called
+// when a snapshot is taken, and when the state is restored.
+// It supports multiple providers on the same namespace, but their generated
+// tree keys (namespace + key) must be unique.
+func (e *Engine) AddProviders(newProviders ...types.StateProvider) {
+	e.snapshotLock.Lock()
+	defer e.snapshotLock.Unlock()
 
-		// then add to the list
-		snapshots = append(snapshots, snap)
+	e.addProviders(newProviders...)
+}
+
+func (e *Engine) HasRestoredStateAlready() bool {
+	return e.stateRestored.Load()
+}
+
+// ListLatestSnapshots list the last N snapshots in accordance to the variable
+// `maxLengthOfSnapshotList`.
+func (e *Engine) ListLatestSnapshots() ([]*tmtypes.Snapshot, error) {
+	e.snapshotTreeLock.Lock()
+	defer e.snapshotTreeLock.Unlock()
+
+	snapshots, err := e.snapshotTree.ListLatestSnapshots(maxLengthOfSnapshotList)
+	if err != nil {
+		return nil, fmt.Errorf("could not list lastest snapshots: %w", err)
 	}
+
 	return snapshots, nil
 }
 
-// IsWillingToAcceptSnapshotFromStateSync tell the snapshot engine won't accept
-// snapshots from state-sync because it reloaded the state from the local storage.
-// Reloading from local storage takes precedence on the state-sync.
-func (e *Engine) IsWillingToAcceptSnapshotFromStateSync() bool {
-	return !e.reloadFromLocalStorage
+// HasSnapshots will return whether we have snapshots, or not. This can be use to
+// safely call Info().
+func (e *Engine) HasSnapshots() (bool, error) {
+	return e.snapshotTree.HasSnapshotsLoaded(), nil
 }
 
-// List returns all snapshots available.
-func (e *Engine) List() ([]*types.Snapshot, error) {
-	e.avlLock.Lock()
-	defer e.avlLock.Unlock()
+// ReceiveSnapshot is called by Tendermint to restore state from state-sync.
+// This must be called before load snapshot chunks.
+// If this method is called while a snapshot is already being loaded, the
+// current snapshot loading is aborted, and the new one is used instead.
+// Proceeding as such allows Tendermint to start over when an error occurs during
+// state-sync.
+func (e *Engine) ReceiveSnapshot(offeredSnapshot *types.Snapshot) tmtypes.ResponseOfferSnapshot {
+	e.ensureEngineIsStarted()
 
-	snapshots := make([]*types.Snapshot, 0, len(e.versions))
-	// TM list of snapshots is limited to the 10 most recent ones.
-	i := len(e.versions) - 11
-	if i < 0 {
-		i = 0
-	}
-	for j := len(e.versions); i < j; i++ {
-		v := e.versions[i]
-		tree, err := e.avl.GetImmutable(v)
-		if err != nil {
-			return nil, err
+	if e.stateRestored.Load() {
+		e.log.Error("Attempt to offer a snapshot whereas the state has already been restored, aborting offer")
+		return tmtypes.ResponseOfferSnapshot{
+			Result: tmtypes.ResponseOfferSnapshot_ABORT,
 		}
-		snap, err := types.SnapshotFromTree(tree)
-		if err != nil {
-			e.log.Error("could not list snapshot",
-				logging.Int64("version", v),
-				logging.Error(err))
-			continue // if we have a borked snapshot we just won't list it
+	}
+
+	e.log.Info("New snapshot received from state-sync",
+		zap.Uint64("snapshot-height", offeredSnapshot.Height),
+	)
+
+	if e.config.StartHeight > 0 && offeredSnapshot.Height != uint64(e.config.StartHeight) {
+		e.log.Info("The block height of the received snapshot does not match the expected one, rejecting offer",
+			zap.Uint64("snapshot-height", offeredSnapshot.Height),
+			zap.Int64("expected-height", e.config.StartHeight),
+		)
+		return tmtypes.ResponseOfferSnapshot{
+			Result: tmtypes.ResponseOfferSnapshot_REJECT,
 		}
-		snapshots = append(snapshots, snap)
-		e.versionHeight[snap.Height] = snap.Meta.Version
 	}
-	return snapshots, nil
+
+	// If Tendermint fails to fetch a chunk after some time, it will reject the
+	// snapshot and try a different one via `OfferSnapshot()`. Therefore, the
+	// ongoing snapshot process must be reset.
+	if e.offeredSnapshot != nil {
+		e.log.Warn("Resetting the process loading from state-sync to accept the new one")
+		e.resetOfferedSnapshot()
+	}
+
+	e.offeredSnapshot = offeredSnapshot
+
+	e.log.Info("New snapshot received from state-sync accepted",
+		zap.Uint64("snapshot-height", offeredSnapshot.Height),
+	)
+
+	return tmtypes.ResponseOfferSnapshot{
+		Result: tmtypes.ResponseOfferSnapshot_ACCEPT,
+	}
 }
 
-// ClearAndInitialise kicks the snapshot engine into its initial state setting up the DB connections
-// and ensuring any pre-existing snapshot database is removed first. It is to be called
-// by a chain that is starting from block 0.
-func (e *Engine) ClearAndInitialise() error {
-	if err := e.db.Clear(); err != nil {
-		return fmt.Errorf("could not clear the snapshot database: %w", err)
-	}
-	if err := e.metadb.Clear(); err != nil {
-		return fmt.Errorf("could not clear the metadata database: %w", err)
-	}
+// ReceiveSnapshotChunk is called by Tendermint to restore state from state-sync.
+// It receives the chunks matching the snapshot received via the `ReceiveSnapshot()`.
+func (e *Engine) ReceiveSnapshotChunk(ctx context.Context, chunk *types.RawChunk, sender string) tmtypes.ResponseApplySnapshotChunk {
+	e.ensureEngineIsStarted()
 
-	e.initialised = false
-
-	if err := e.initialiseTree(); err != nil {
-		return err
+	if e.stateRestored.Load() {
+		e.log.Error("Attempt to load snapshot chunks whereas the state has already been loaded from local snapshots, aborting state-sync")
+		return e.abortStateSync()
 	}
 
-	e.log.Info("snapshot engine successfully initialised")
-	return nil
-}
+	e.log.Info("New snapshot chunk received from state-sync",
+		zap.Uint32("chunk-number", chunk.Nr),
+	)
 
-// this function loads snapshots in local store as though they were generated at runtime.
-// The result is that, whenever we create a new snapshot, the old one gets cleaned up.
-func (e *Engine) populateLocalVersions(versions []int) {
-	// is in ascending order already, so let's just iterate
-	if len(versions) == 0 {
-		versions = e.avl.AvailableVersions()
+	if e.offeredSnapshot == nil {
+		// If this condition is valid, it means the engine is tasked to load
+		// snapshot chunks, without being offered one, first. It does not seem
+		// Tendermint will ever do that, according to the ABCI documentation, so
+		// it seems it would all come down to a programming error.
+		// However, prior the refactoring, this was interpreted as "not being
+		// ready". The reason remains obscure.
+		// Panicking would probably be the best thing to do.
+		// In the meantime, we should monitor the error messages, and see if it's
+		// ever happening, to know if we can safely remove it.
+		e.log.Error("Attempt to load snapshot chunks without offering a snapshot first, this should not have happened, aborting state-sync")
+		return tmtypes.ResponseApplySnapshotChunk{
+			Result: tmtypes.ResponseApplySnapshotChunk_RETRY_SNAPSHOT,
+		}
 	}
 
-	vc := cap(e.versions)
-	for _, v := range versions {
-		if len(e.versions) >= vc {
-			if err := e.avl.DeleteVersion(e.versions[0]); err != nil {
-				e.log.Warn("Could not delete an old version",
-					logging.Int64("old-version", e.versions[0]),
+	if err := e.offeredSnapshot.LoadChunk(chunk); err != nil {
+		if errors.Is(err, types.ErrChunkOutOfRange) {
+			if e.shouldAbortStateSync() {
+				e.log.Error("Engine reached the maximum number of retry for loading snapshot chunk, aborting state-sync", logging.Error(err))
+				return e.abortStateSync()
+			} else {
+				e.log.Warn("Reject offered snapshot as received chunk does not match",
+					zap.String("sender", sender),
 					logging.Error(err),
 				)
+				return tmtypes.ResponseApplySnapshotChunk{
+					Result: tmtypes.ResponseApplySnapshotChunk_REJECT_SNAPSHOT,
+				}
 			}
-			// still, we should drop this from the slice
-			copy(e.versions[0:], e.versions[1:])
-			e.versions[len(e.versions)-1] = int64(v)
-		} else {
-			e.versions = append(e.versions, int64(v))
+		} else if errors.Is(err, types.ErrMissingChunks) {
+			if e.shouldAbortStateSync() {
+				e.log.Error("Engine reached the maximum number of retry for loading snapshot chunk, aborting state-sync", logging.Error(err))
+				return e.abortStateSync()
+			} else {
+				e.log.Warn("Snapshot is missing chunks, retrying",
+					logging.Error(err),
+				)
+				return tmtypes.ResponseApplySnapshotChunk{
+					Result:        tmtypes.ResponseApplySnapshotChunk_RETRY,
+					RefetchChunks: e.offeredSnapshot.MissingChunks(),
+				}
+			}
+		} else if errors.Is(err, types.ErrChunkHashMismatch) {
+			if e.shouldAbortStateSync() {
+				e.log.Error("Engine reached the maximum number of retry for loading snapshot chunk, aborting state-sync", logging.Error(err))
+				return e.abortStateSync()
+			} else {
+				e.log.Warn("Received chunk is not consistent with metadata from the offered snapshot, rejecting sender and retrying",
+					zap.String("rejected-sender", sender),
+					logging.Error(err),
+				)
+				return tmtypes.ResponseApplySnapshotChunk{
+					Result:        tmtypes.ResponseApplySnapshotChunk_RETRY,
+					RejectSenders: []string{sender},
+				}
+			}
 		}
-	}
-}
 
-// CheckLoaded will return whether we have loaded from a snapshot. If we have loaded
-// via stat-sync we will already know if we are loading from local store, then we do that
-// node.
-func (e *Engine) CheckLoaded() (bool, error) {
-	// if the avl has been initialised we must have loaded it earlier via state-sync
-	// we can go straight into loading the state into the providers
-	if e.avl != nil {
-		// OK, but let's make the engine aware of its local store versions
-		e.log.Info("applying snapshot received via statesync")
-		e.populateLocalVersions(nil)
-		return true, e.applySnap(e.ctx)
-	}
-
-	if err := e.initialiseTree(); err != nil {
-		return false, err
-	}
-	versions := e.avl.AvailableVersions()
-	startHeight := e.StartHeight
-
-	if len(versions) == 0 && startHeight == 0 {
-		// forced a replay, as there are no snapshots.
-		e.initialised = false
-		return false, e.ClearAndInitialise()
-	}
-
-	e.populateLocalVersions(versions)
-
-	e.log.Info("loading snapshot for height", logging.Int64("height", startHeight))
-	// setup AVL tree from local store
-	if startHeight == 0 {
-		return true, e.applySnapshotFromLocalStore(e.ctx)
-	}
-
-	height := uint64(startHeight)
-	// descending order, because that makes most sense
-	var last, first uint64
-	for i := len(versions) - 1; i > -1; i-- {
-		version := int64(versions[i])
-		if _, err := e.avl.LoadVersion(version); err != nil {
-			return false, err
-		}
-		app, err := types.AppStateFromTree(e.avl.ImmutableTree)
-		if err != nil {
-			e.log.Error("Failed to get app state data from snapshot",
-				logging.Error(err),
-				logging.Int64("snapshot-version", version),
-			)
-			continue
-		}
-		if app.AppState.Height == height {
-			e.last = e.avl.ImmutableTree
-			return true, e.applySnapshotFromLocalStore(e.ctx)
-		}
-		// we've gone past the specified height, we're not going to find the snapshot
-		// log and error
-		if app.AppState.Height < height {
-			e.log.Error("Unable to find a snapshot for the specified height",
-				logging.Uint64("snapshot-height", height),
-				logging.Uint64("max-height", first),
-			)
-			return false, types.ErrNoSnapshot
-		}
-		last = app.AppState.Height
-		if first == 0 {
-			first = last
-		}
-	}
-	e.log.Error("Specified height too low",
-		logging.Uint64("specified-height", height),
-		logging.Uint64("maximum-height", first),
-		logging.Uint64("minimum-height", last),
-	)
-	return false, types.ErrNoSnapshot
-}
-
-func (e *Engine) initializeDatabases(vegaPaths paths.Paths) error {
-	switch e.Storage {
-	case InMemoryDB:
-		e.db = snapshotdb.NewInMemoryDatabase()
-		e.metadb = metadatadb.NewDatabase(metadatadb.NewInMemoryAdapter())
-	case LevelDB:
-		db, err := snapshotdb.NewLevelDBDatabase(vegaPaths)
-		if err != nil {
-			return fmt.Errorf("could not initialize snapshot database: %w", err)
-		}
-		e.db = db
-		leveldbAdapter, err := metadatadb.NewLevelDBAdapter(vegaPaths)
-		if err != nil {
-			return fmt.Errorf("could not initialize metadata database: %w", err)
-		}
-		e.metadb = metadatadb.NewDatabase(leveldbAdapter)
-	default:
-		return types.ErrInvalidSnapshotStorageMethod
-	}
-	return nil
-}
-
-// initialiseTree connects to the snapshotdb and sets the engine's state to
-// point to the latest version of the tree.
-func (e *Engine) initialiseTree() error {
-	// prevent re-initialising the tree several times over
-	if e.initialised {
-		return nil
-	}
-
-	tree, err := iavl.NewMutableTree(e.db, 0, false)
-	if err != nil {
-		e.log.Error("Could not create AVL tree", logging.Error(err))
-		return err
-	}
-
-	e.avl = tree
-
-	// Either create the first empty tree, or load the latest tree we have in the store
-	if err := e.ensureTreeLoaded(); err != nil {
-		e.log.Error("Failed to create or load AVL version", logging.Error(err))
-		return err
-	}
-	e.initialised = true
-	return nil
-}
-
-func (e *Engine) ensureTreeLoaded() error {
-	if _, err := e.avl.Load(); err != nil {
-		return err
-	}
-	e.last = e.avl.ImmutableTree
-	return nil
-}
-
-func (e *Engine) applySnapshotFromLocalStore(ctx context.Context) error {
-	snap, err := types.SnapshotFromTree(e.last)
-	if err != nil {
-		return err
-	}
-	e.snapshot = snap
-	// apply, no need to set the tree, it's coming from local store
-	return e.applySnap(ctx)
-}
-
-func (e *Engine) ReceiveSnapshot(snap *types.Snapshot) error {
-	if e.reloadFromLocalStorage {
-		return ErrCannotReceiveSnapshotFromStateSync
-	}
-
-	if e.StartHeight > 0 && snap.Height != uint64(e.StartHeight) {
-		return fmt.Errorf("the block height of the received snapshot (%d) does not match the expected one (%d)", snap.Height, e.StartHeight)
-	}
-
-	if e.snapshot != nil {
-		// in case other peers provide snapshots, check if their hashes match what we want
-		if !bytes.Equal(e.snapshot.Hash, snap.Hash) {
-			return types.ErrSnapshotHashMismatch
-		}
-		return e.snapshot.ValidateMeta(snap)
-	}
-
-	e.snapshot = snap
-	return nil
-}
-
-func (e *Engine) RejectSnapshot() error {
-	e.snapRetry++
-	if e.RetryLimit < e.snapRetry {
-		return types.ErrSnapshotRetryLimit
-	}
-	if e.snapshot == nil {
-		return types.ErrUnknownSnapshot
-	}
-	e.snapshot = nil
-	return nil
-}
-
-// ApplySnapshot takes the snapshot data sent over via tendermint and reconstructs the AVL
-// tree from the data. This call does *not* restore the state into the providers.
-func (e *Engine) ApplySnapshot(_ context.Context) error {
-	if e.reloadFromLocalStorage {
-		return ErrCannotReceiveSnapshotFromStateSync
-	}
-
-	// remove all existing snapshot and create an initial empty tree
-	if err := e.ClearAndInitialise(); err != nil {
-		return err
-	}
-
-	// Import the AVL tree from the snapshot data so we have a working copy
-	// that is consistent with the other nodes
-	if err := e.snapshot.TreeFromSnapshot(e.avl); err != nil {
-		e.log.Error("failed to recreate tree", logging.Error(err))
-		return err
-	}
-
-	e.log.Info("snapshot imported via statesync")
-	return nil
-}
-
-func (e *Engine) applySnap(ctx context.Context) error {
-	if e.snapshot == nil {
-		return types.ErrNoSnapshotToApply
-	}
-	// this is the current version
-	version := e.snapshot.Meta.Version
-	loaded, err := e.avl.LoadVersionForOverwriting(version)
-	if err != nil {
-		e.log.Error("Failed to load target version",
+		e.log.Error("An error occurred while loading chunk in the snapshot during state-sync, aborting state-sync",
+			logging.Uint32("chunk-number", chunk.Nr),
 			logging.Error(err),
-			logging.Int64("loaded-version", loaded),
 		)
-	}
-	// we need the versions of the snapshot to match, regardless of the version we actually loaded
-	e.avl.SetInitialVersion(uint64(version))
-	// now let's clear the versions slice and pretend the more recent versions don't exist yet
-	for i := 0; i < len(e.versions); i++ {
-		if e.versions[i] > loaded {
-			e.versions = append(e.versions[0:0], e.versions[:i]...)
-			break
-		}
-	}
-	// iterate over all payloads, add them to the tree
-	ordered := make(map[types.SnapshotNamespace][]*types.Payload, len(nodeOrder))
-	for _, pl := range e.snapshot.Nodes {
-		ns := pl.Namespace()
-		if _, ok := ordered[ns]; !ok {
-			ordered[ns] = []*types.Payload{}
-		}
-		// node was verified and set on tree
-		ordered[ns] = append(ordered[ns], pl)
+		return e.abortStateSync()
 	}
 
-	// start with app state
-	e.wrap = ordered[types.AppSnapshot][0].GetAppState()
-	e.app = e.wrap.AppState
-	// set the context with the height + block + chainid
-	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, int64(e.app.Height)), e.app.Block)
-	ctx = vegactx.WithChainID(ctx, e.app.ChainID)
+	e.log.Info("New snapshot chunk received from state-sync accepted",
+		zap.Uint32("chunk-number", chunk.Nr),
+	)
 
-	// we're done restoring, now save the snapshot locally, so we can provide it moving forwards
-	now := time.Unix(0, e.app.Time)
-	// restore app state
-	e.timeService.SetTimeNow(ctx, now)
-	e.statsService.SetHeight(e.app.Height)
-
-	// before we starts restoring the providers
-	for _, pp := range e.beforeRestoreProvs {
-		if err := pp.OnStateLoadStarts(ctx); err != nil {
-			return err
-		}
-	}
-	// now let's load the data in the correct order, skip app state, we've already handled that
-	for _, ns := range nodeOrder[1:] {
-		for _, n := range ordered[ns] {
-			p, ok := e.providers[n.GetTreeKey()]
-			if !ok {
-				return fmt.Errorf("%w %s", types.ErrUnknownSnapshotNamespace, n.GetTreeKey())
-			}
-			e.log.Debug("Loading provider", logging.String("tree-key", n.GetTreeKey()))
-			nps, err := p.LoadState(ctx, n)
-			if err != nil {
-				return err
-			}
-			if len(nps) != 0 {
-				e.AddProviders(nps...)
-			}
-		}
-	}
-	for _, pp := range e.restoreProvs {
-		if err := pp.OnStateLoaded(ctx); err != nil {
-			return err
+	if !e.offeredSnapshot.Ready() {
+		return tmtypes.ResponseApplySnapshotChunk{
+			Result: tmtypes.ResponseApplySnapshotChunk_ACCEPT,
 		}
 	}
 
-	e.current = e.interval               // set the snapshot counter to the interval so that we do not create a duplicate snapshot on commit
-	e.lastSnapshotHash = e.snapshot.Hash // set the engine's "last snapshot hash" field to the hash of the snapshot we've just loaded
-	e.snapshot = nil                     // we're done, we can clear the snapshot state
+	e.log.Info("All snapshot chunks received, initiating state restoration")
 
-	return nil
+	// Saving snapshot in the tree. At this point, this should be the only snapshot
+	// it has, as restoring state from state-sync require an empty snapshot
+	// database, and thus, an empty tree.
+	e.snapshotTreeLock.Lock()
+	defer e.snapshotTreeLock.Unlock()
+
+	if err := e.snapshotTree.AddSnapshot(e.offeredSnapshot); err != nil {
+		e.log.Error("Could not add offered snapshot to the tree, aborting state-sync", logging.Error(err))
+		return e.abortStateSync()
+	}
+
+	if err := e.restoreStateFromSnapshot(ctx, e.offeredSnapshot.Nodes); err != nil {
+		e.log.Error("Could not restore state, aborting state-sync", logging.Error(err))
+		return e.abortStateSync()
+	}
+
+	// The state has been successfully restored, so resources are released.
+	e.resetOfferedSnapshot()
+
+	e.log.Info("The state has been restored")
+
+	return tmtypes.ResponseApplySnapshotChunk{
+		Result: tmtypes.ResponseApplySnapshotChunk_ACCEPT,
+	}
 }
 
-func (e *Engine) ApplySnapshotChunk(chunk *types.RawChunk) (bool, error) {
-	if e.reloadFromLocalStorage {
-		return false, ErrCannotReceiveSnapshotFromStateSync
-	}
-
-	if e.snapshot == nil {
-		return false, types.ErrNoSnapshotToApply
-	}
-	if err := e.snapshot.LoadChunk(chunk); err != nil {
-		return false, err
-	}
-	return e.snapshot.Ready(), nil
-}
-
-func (e *Engine) LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.RawChunk, error) {
-	if e.snapshot == nil || height != e.snapshot.Height {
-		if err := e.setSnapshotForHeight(height); err != nil {
+// RetrieveSnapshotChunk is called by Tendermint to retrieve a snapshot chunk
+// to help a peer node to restore its state from state-sync.
+func (e *Engine) RetrieveSnapshotChunk(height uint64, format, chunkIndex uint32) (*types.RawChunk, error) {
+	if e.loadedSnapshot == nil || height != e.loadedSnapshot.Height {
+		loadedSnapshot, err := e.findTreeByBlockHeight(height)
+		if err != nil {
 			return nil, err
 		}
-		if e.snapshot == nil {
-			// @TODO try and retrieve the chunk
-			return nil, types.ErrUnknownSnapshotChunkHeight
-		}
+		e.loadedSnapshot = loadedSnapshot
 	}
-	// check format:
-	f, err := types.SnapshotFormatFromU32(format)
+
+	expectedFormat, err := types.SnapshotFormatFromU32(format)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not deserialize snapshot format: %w", err)
 	}
-	if f != e.snapshot.Format {
+
+	if expectedFormat != e.loadedSnapshot.Format {
 		return nil, types.ErrSnapshotFormatMismatch
 	}
-	return e.snapshot.GetRawChunk(chunk)
-}
 
-func (e *Engine) setSnapshotForHeight(height uint64) error {
-	e.avlLock.Lock()
-	defer e.avlLock.Unlock()
-
-	v, ok := e.versionHeight[height]
-	if !ok {
-		return types.ErrMissingSnapshotVersion
+	if e.loadedSnapshot.Chunks == chunkIndex {
+		// The network is asking for the last chunk of the loaded snapshot.
+		// Let's free up some memory.
+		defer func() {
+			e.loadedSnapshot = nil
+		}()
 	}
 
-	tree, err := e.avl.GetImmutable(v)
-	if err != nil {
-		return err
+	return e.loadedSnapshot.RawChunkByIndex(chunkIndex)
+}
+
+// Snapshot triggers the snapshot process at defined interval. Do nothing if the
+// the interval bound is not reached.
+func (e *Engine) Snapshot(ctx context.Context) ([]byte, DoneCh, error) {
+	e.ensureEngineIsStarted()
+
+	e.commitsLeftBeforeSnapshot--
+
+	if e.commitsLeftBeforeSnapshot > 0 {
+		return nil, nil, nil
 	}
-	snap, err := types.SnapshotFromTree(tree)
-	if err != nil {
-		return err
-	}
-	e.snapshot = snap
-	return nil
-}
 
-func (e *Engine) GetMissingChunks() []uint32 {
-	if e.snapshot == nil {
-		return nil
-	}
-	return e.snapshot.GetMissing()
-}
+	e.commitsLeftBeforeSnapshot = e.intervalBetweenSnapshots
 
-// Info simply returns the current snapshot hash
-// Can be used for the TM info call.
-func (e *Engine) Info() ([]byte, int64, string) {
-	return e.lastSnapshotHash, int64(e.app.Height), e.app.ChainID
-}
-
-type nsInput struct {
-	treeKey   []byte
-	namespace types.SnapshotNamespace
-}
-
-type nsSnapResult struct {
-	input    nsInput
-	toRemove bool
-	err      error
-	state    []byte
-	updated  bool
-}
-
-func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
-	e.current--
-	// no snapshot to be taken yet
-	if e.current > 0 {
-		return nil, nil
-	}
-	// recent counter
-	e.current = e.interval
 	return e.snapshotNow(ctx, true)
 }
 
-// SnapshotNow takes a snapshot regardless of current block height as requested.
-func (e *Engine) SnapshotNow(ctx context.Context) (b []byte, errlol error) {
-	return e.snapshotNow(ctx, false)
+// SnapshotNow triggers the snapshot process right now, ignoring the defined
+// interval.
+func (e *Engine) SnapshotNow(ctx context.Context) ([]byte, error) {
+	e.ensureEngineIsStarted()
+
+	now, _, err := e.snapshotNow(ctx, false)
+
+	return now, err
 }
 
-func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, error) {
+func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneCh, error) {
 	defer metrics.StartSnapshot("all")()
-	e.avlLock.Lock()
+	e.snapshotTreeLock.Lock()
 
-	// channel for pushing inputs into workers
-	inputChan := make(chan nsInput, numWorkers)
+	// When a node requests a snapshot, it means it holds state, regardless
+	// it reloaded from a snapshot or not. Therefore, the engine must mark
+	// the state as restored to ensure it won't have multiple state restorations.
+	e.stateRestored.Store(true)
 
-	// workers
-	wg := &sync.WaitGroup{}
-	inputCnt := atomic.Int64{}
-	inputs := make([]nsInput, 0, len(e.namespaces))
+	treeKeysToSnapshot := make([]treeKeyToSnapshot, 0, len(e.registeredNamespaces))
+	for _, namespace := range e.registeredNamespaces {
+		// FIXME: This metric is not used the way it has been thought.
+		//  See https://github.com/vegaprotocol/vega/issues/8775
+		defer metrics.StartSnapshot(namespace.String())()
 
-	// we first iterate over the namespaces and collect all the top level tree keys
-	for _, ns := range e.namespaces {
-		defer metrics.StartSnapshot(ns.String())()
-		treeKeys, ok := e.nsTreeKeys[ns]
-		if !ok || len(treeKeys) == 0 {
-			continue
-		}
+		treeKeys := e.namespacesToTreeKeys[namespace]
 
-		for _, tk := range treeKeys {
-			inputs = append(inputs, nsInput{treeKey: tk, namespace: ns})
-			inputCnt.Add(1)
+		for _, treeKey := range treeKeys {
+			treeKeysToSnapshot = append(treeKeysToSnapshot, treeKeyToSnapshot{treeKey: treeKey, namespace: namespace})
 		}
 	}
-	// channel for the results
-	resChan := make(chan nsSnapResult, numWorkers)
-	// generate <NumWorkers> workers passing the input channel and the result channel
+
+	treeKeysCounter := atomic.Int64{}
+	treeKeysCounter.Store(int64(len(treeKeysToSnapshot)))
+
+	treeKeysToSnapshotChan := make(chan treeKeyToSnapshot, numWorkers)
+	serializedStateChan := make(chan snapshotResult, numWorkers)
+
+	// Start the gathering of providers state asynchronously.
+	wg := &sync.WaitGroup{}
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
-		go worker(e, inputChan, resChan, wg, &inputCnt)
+		go func() {
+			gatherState(e, treeKeysToSnapshotChan, serializedStateChan, &treeKeysCounter)
+			wg.Done()
+		}()
 	}
 
-	// push inputs to the channel
-	// NB: the input channel will be closed once there are no more inputs, i.e. when cnt==0
-	for _, input := range inputs {
-		inputChan <- input
+	for _, treeKeyToSnapshot := range treeKeysToSnapshot {
+		treeKeysToSnapshotChan <- treeKeyToSnapshot
 	}
 
-	if len(inputs) == 0 {
-		close(inputChan)
-		close(resChan)
+	if len(treeKeysToSnapshot) == 0 {
+		close(treeKeysToSnapshotChan)
+		close(serializedStateChan)
 	}
 
 	// analyse the results
-	results := make([]nsSnapResult, 0, numWorkers)
-	for res := range resChan {
+	results := make([]snapshotResult, 0, numWorkers)
+	for res := range serializedStateChan {
 		if res.err != nil {
 			e.log.Panic("Failed to update snapshot namespace",
 				logging.String("snapshot-namespace", res.input.namespace.String()),
@@ -809,53 +570,52 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, error
 
 	// all results are int - split them by namespace first
 	updated := false
-	resultByTreeKey := make(map[string]nsSnapResult, len(results))
+	resultByTreeKey := make(map[string]snapshotResult, len(results))
 	for _, tkRes := range results {
 		resultByTreeKey[string(tkRes.input.treeKey)] = tkRes
 	}
 
-	for _, ns := range e.namespaces {
-		nsTreeKeys, ok := e.nsTreeKeys[ns]
-		toRemove := []int{}
-		// sort the ns keys because providers may be added in a random order
-		sort.Slice(nsTreeKeys, func(i, j int) bool { return string(nsTreeKeys[i]) < string(nsTreeKeys[j]) })
+	for _, ns := range e.registeredNamespaces {
+		treeKeys, ok := e.namespacesToTreeKeys[ns]
 		if !ok {
 			continue
 		}
 
-		for i, tk := range nsTreeKeys {
-			tkRes, ok := resultByTreeKey[string(tk)]
+		// sort the tree keys because providers may be added in a random order
+		sort.Slice(treeKeys, func(i, j int) bool { return string(treeKeys[i]) < string(treeKeys[j]) })
+
+		toRemove := []int{}
+		for i, treeKey := range treeKeys {
+			snapshotRes, ok := resultByTreeKey[string(treeKey)]
 			if !ok {
 				continue
 			}
-			treeKey := tkRes.input.treeKey
-			if !tkRes.updated || tkRes.toRemove {
-				if tkRes.toRemove {
+
+			if !snapshotRes.updated || snapshotRes.toRemove {
+				if snapshotRes.toRemove {
 					toRemove = append(toRemove, i)
 				}
 				continue
 			}
-			e.log.Debug("State updated", logging.String("node-key", string(tkRes.input.treeKey)))
-			if len(tkRes.state) == 0 {
+
+			e.log.Info("State updated", logging.String("tree-key", string(treeKey)))
+
+			if len(snapshotRes.state) == 0 {
 				// empty state -> remove data from snapshot
-				if ok, _ := e.avl.Has(treeKey); ok {
-					_, _, _ = e.avl.Remove(treeKey)
-					updated = true
-					continue
-				}
-				// no value to set, but there was no node in the tree -> no update here
+				updated = e.snapshotTree.RemoveKey(treeKey)
 				continue
 			}
-			// new value needs to be set
-			_, _ = e.avl.Set(treeKey, tkRes.state)
+			e.snapshotTree.AddState(treeKey, snapshotRes.state)
 			updated = true
 		}
+
 		if len(toRemove) == 0 {
 			continue
 		}
+
 		for ind := len(toRemove) - 1; ind >= 0; ind-- {
 			i := toRemove[ind]
-			tk := nsTreeKeys[i]
+			tk := treeKeys[i]
 			tkRes, ok := resultByTreeKey[string(tk)]
 			if !ok {
 				continue
@@ -865,19 +625,15 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, error
 			treeKeyStr := string(treeKey)
 
 			// delete everything we've got stored
-			e.log.Debug("State to be removed", logging.String("node-key", treeKeyStr))
-			delete(e.providers, treeKeyStr)
-			delete(e.treeKeyProvider, treeKeyStr)
+			e.log.Debug("State to be removed", logging.String("tree-key", treeKeyStr))
+			delete(e.treeKeysToProviders, treeKeyStr)
+			delete(e.treeKeysToProviderKeys, treeKeyStr)
 
-			if ok, _ := e.avl.Has(treeKey); !ok {
-				e.log.Panic("trying to remove non-existent payload from tree", logging.String("key", treeKeyStr))
-				continue
-			}
-
-			if _, removed, _ := e.avl.Remove(treeKey); !removed {
+			if !e.snapshotTree.RemoveKey(treeKey) {
 				e.log.Panic("failed to remove node from AVL tree", logging.String("key", treeKeyStr))
 			}
-			e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns][:i], e.nsTreeKeys[ns][i+1:]...)
+
+			e.namespacesToTreeKeys[ns] = append(e.namespacesToTreeKeys[ns][:i], e.namespacesToTreeKeys[ns][i+1:]...)
 		}
 	}
 
@@ -885,202 +641,91 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, error
 	appUpdate := false
 	height, err := vegactx.BlockHeightFromContext(ctx)
 	if err != nil {
-		e.avlLock.Unlock()
-		return nil, err
+		e.snapshotTreeLock.Unlock()
+		return nil, nil, err
 	}
-	if height != int64(e.app.Height) {
+	if height != int64(e.appState.Height) {
 		appUpdate = true
-		e.app.Height = uint64(height)
+		e.appState.Height = uint64(height)
 	}
 	_, block := vegactx.TraceIDFromContext(ctx)
-	if block != e.app.Block {
+	if block != e.appState.Block {
 		appUpdate = true
-		e.app.Block = block
+		e.appState.Block = block
 	}
 	vNow := e.timeService.GetTimeNow().UnixNano()
-	if e.app.Time != vNow {
-		e.app.Time = vNow
+	if e.appState.Time != vNow {
+		e.appState.Time = vNow
 		appUpdate = true
 	}
 
 	cid, err := vegactx.ChainIDFromContext(ctx)
 	if err != nil {
-		e.avlLock.Unlock()
-		return nil, err
+		e.snapshotTreeLock.Unlock()
+		return nil, nil, err
 	}
-	if e.app.ChainID != cid {
-		e.app.ChainID = cid
+	if e.appState.ChainID != cid {
+		e.appState.ChainID = cid
 		appUpdate = true
 	}
 
 	if appUpdate {
 		if err = e.updateAppState(); err != nil {
-			e.avlLock.Unlock()
-			return nil, err
+			e.snapshotTreeLock.Unlock()
+			return nil, nil, err
 		}
 		updated = true
 	}
+
 	if !updated {
-		e.avlLock.Unlock()
-		return e.lastSnapshotHash, nil
+		hash := e.snapshotTree.Hash()
+		e.snapshotTreeLock.Unlock()
+		return hash, nil, nil
 	}
+
+	doneCh := make(chan interface{})
 
 	save := func() {
-		if err := e.saveCurrentTree(); err != nil {
-			// If this fails we are screwed. The tree version is used to construct the root-hash so if we can't save it,
-			// the *next* snapshot we take will mismatch so we need to fail hard here.
-			e.log.Panic("failed to save snapshot to disk", logging.Error(err))
+		defer close(doneCh)
+		if err := e.snapshotTree.SaveVersion(); err != nil {
+			// If this fails, we are screwed. The tree version is used to construct
+			// the root-hash so if we can't save it, the next snapshot we take
+			// will mismatch so we need to fail hard here.
+			e.log.Panic("Could not save the snapshot tree", logging.Error(err))
 		}
-		e.avlLock.Unlock()
 	}
 
-	snapshot, err := e.avl.WorkingHash()
-	if err != nil {
-		return nil, err
-	}
+	var hash []byte
 	if saveAsync {
-		go save()
+		// Using the working hash instead of the hash computed on save. This is an
+		// "optimistic" hack, that comes from the fact the tree is saved asynchronously.
+		// As a result, the hash for the working version of the tree is not computed
+		// yet. So, using calling `Hash()` will either return an empty hash (when first tree),
+		// either is returns the one from the previous version.
+		// Therefore, we have to use the working hash. It shouldn't be a problem
+		// as long as the tree is not modified past this point (this is the
+		// "optimistic" part). In the end, the hashes should match.
+		hash = e.snapshotTree.WorkingHash()
+		go func() {
+			save()
+			e.snapshotTreeLock.Unlock()
+		}()
 	} else {
 		save()
+		hash = e.snapshotTree.Hash()
+		e.snapshotTreeLock.Unlock()
 	}
 
-	e.log.Info("snapshot taken", logging.Int64("height", height), logging.String("hash", hex.EncodeToString(snapshot)))
-	return snapshot, nil
-}
+	e.log.Info("Snapshot taken",
+		logging.Int64("height", height),
+		logging.ByteString("hash", hash),
+	)
 
-// saveCurrentTree writes the current state of the AVL to disk and moves onto the next version of the tree
-// read for the next snapshot. Callers of this function must protect it with e.avlLock.
-func (e *Engine) saveCurrentTree() error {
-	t0 := time.Now()
-	h, v, err := e.avl.SaveVersion()
-	if err != nil {
-		return err
-	}
-	e.log.Info("#### saving snapshot took ", logging.Float64("time", time.Since(t0).Seconds()))
-	e.lastSnapshotHash = h
-	if len(e.versions) >= cap(e.versions) {
-		if err := e.avl.DeleteVersion(e.versions[0]); err != nil {
-			// this is not a fatal error, but still we should be paying attention.
-			e.log.Error("Could not delete old version",
-				logging.Int64("old-version", e.versions[0]),
-				logging.Error(err),
-			)
-		} else {
-			e.log.Info("old snapshot version deleted", logging.Int64("old-version", v))
-		}
-		// drop first version
-		copy(e.versions[0:], e.versions[1:])
-		// set the last value in the slice to the current version
-		e.versions[len(e.versions)-1] = v
-	} else {
-		// we're still building a backlog of versions
-		e.versions = append(e.versions, v)
-	}
-	// get ptr to current version
-	e.last = e.avl.ImmutableTree
-
-	snap, err := types.SnapshotFromTree(e.last)
-	if err != nil {
-		return err
-	}
-
-	tmSnap, err := snap.ToTM()
-	if err != nil {
-		return err
-	}
-
-	return e.metadb.
-		Save(v, tmSnap)
-}
-
-func worker(e *Engine, nsInputChan chan nsInput, resChan chan<- nsSnapResult, wg *sync.WaitGroup, cnt *atomic.Int64) {
-	// Decreasing internal counter for wait-group as soon as goroutine finishes
-	defer wg.Done()
-
-	for input := range nsInputChan {
-		treeKeyStr := string(input.treeKey)
-		t0 := time.Now()
-		e.lock.RLock()
-		p := e.providers[treeKeyStr] // get the specific provider for this key
-		providerKey := e.treeKeyProvider[treeKeyStr]
-		e.lock.RUnlock()
-		stopped := p.Stopped()
-		// nothing has changed (or both values were nil)
-		if stopped {
-			resChan <- nsSnapResult{input: input, updated: true, toRemove: stopped}
-			if cnt.Add(-1) <= 0 {
-				close(nsInputChan)
-				close(resChan)
-			}
-			continue
-		}
-		// hashes were different, we need to update
-		v, generatedProviders, err := p.GetState(providerKey)
-		if err != nil {
-			resChan <- nsSnapResult{input: input, err: err, updated: true}
-			close(nsInputChan)
-			close(resChan)
-			return
-		}
-		var tks [][]byte
-		var ok bool
-		inputs := []nsInput{}
-		genCnt := int64(0)
-		if len(generatedProviders) > 0 {
-			// The provider has generated new providers, register them with the engine
-			// add them to the AVL tree
-			for _, n := range generatedProviders {
-				knownTreeKeys := map[string]struct{}{}
-				// need to atomicall check what's in there for the tree key and then add the provider
-				e.lock.Lock()
-				tks, ok = e.nsTreeKeys[n.Namespace()]
-				if ok {
-					for _, tk := range tks {
-						knownTreeKeys[string(tk)] = struct{}{}
-					}
-				}
-				e.AddProviders(n)
-				e.lock.Unlock()
-				e.log.Debug("Provider generated",
-					logging.String("namespace", n.Namespace().String()),
-				)
-				e.lock.RLock()
-				tks, ok = e.nsTreeKeys[n.Namespace()]
-				e.lock.RUnlock()
-				if !ok || len(tks) == 0 {
-					continue
-				}
-				for _, tk := range tks {
-					// ignore tree keys we've already done
-					if _, ok := knownTreeKeys[string(tk)]; ok {
-						continue
-					}
-					genCnt++
-					inputs = append(inputs, nsInput{treeKey: tk, namespace: n.Namespace()})
-				}
-			}
-		}
-		e.log.Info("State updated",
-			logging.String("node-key", treeKeyStr),
-			logging.String("hash", hex.EncodeToString(crypto.Hash(v))),
-			logging.Float64("took", time.Since(t0).Seconds()),
-		)
-
-		cnt.Add(genCnt)
-		for _, inp := range inputs {
-			nsInputChan <- inp
-		}
-
-		resChan <- nsSnapResult{input: input, state: v, updated: true}
-		if cnt.Add(-1) <= 0 {
-			close(nsInputChan)
-			close(resChan)
-		}
-	}
+	return hash, doneCh, nil
 }
 
 func (e *Engine) updateAppState() error {
-	keys, ok := e.nsTreeKeys[e.wrap.Namespace()]
+	keys, ok := e.namespacesToTreeKeys[types.AppSnapshot]
 	if !ok {
 		return types.ErrNoPrefixFound
 	}
@@ -1088,129 +733,218 @@ func (e *Engine) updateAppState() error {
 	if len(keys) > 1 || len(keys) == 0 {
 		return types.ErrUnexpectedKey
 	}
-	// we only have 1 key
+
 	pl := types.Payload{
-		Data: e.wrap,
+		Data: &types.PayloadAppState{
+			AppState: e.appState,
+		},
 	}
+
 	data, err := proto.Marshal(pl.IntoProto())
 	if err != nil {
-		return err
+		return fmt.Errorf("could not serialize the payload to proto: %w", err)
 	}
-	_, _ = e.avl.Set(keys[0], data)
+
+	e.snapshotTree.AddState(keys[0], data)
 	return nil
 }
 
-func (e *Engine) Hash(ctx context.Context) ([]byte, error) {
-	if len(e.lastSnapshotHash) != 0 {
-		return e.lastSnapshotHash, nil
+func (e *Engine) findTreeByBlockHeight(height uint64) (*types.Snapshot, error) {
+	e.snapshotTreeLock.Lock()
+	defer e.snapshotTreeLock.Unlock()
+
+	immutableTree, err := e.snapshotTree.FindImmutableTreeByHeight(height)
+	if err != nil {
+		return nil, fmt.Errorf("could not find snapshot associated to block height %d: %w", height, err)
 	}
-	return e.Snapshot(ctx)
+
+	loadedSnapshot, err := types.SnapshotFromTree(immutableTree)
+	if err != nil {
+		return nil, fmt.Errorf("could not convert tree into snapshot: %w", err)
+	}
+
+	return loadedSnapshot, nil
 }
 
-// AddProviders adds the provider keys and namespaces to the mappings
-// N.B. if happens during taking a snapshot must be called within the lock.
-func (e *Engine) AddProviders(provs ...types.StateProvider) {
-	for _, p := range provs {
-		keys := p.Keys()
-		ns := p.Namespace()
-		haveKeys, ok := e.nsKeys[ns]
+func (e *Engine) shouldAbortStateSync() bool {
+	e.attemptsToApplySnapshotChunk++
+
+	return e.attemptsToApplySnapshotChunk >= e.config.RetryLimit
+}
+
+func (e *Engine) abortStateSync() tmtypes.ResponseApplySnapshotChunk {
+	e.resetOfferedSnapshot()
+
+	return tmtypes.ResponseApplySnapshotChunk{
+		Result: tmtypes.ResponseApplySnapshotChunk_ABORT,
+	}
+}
+
+func (e *Engine) resetOfferedSnapshot() {
+	e.offeredSnapshot = nil
+	e.attemptsToApplySnapshotChunk = 0
+}
+
+func (e *Engine) restoreStateFromTree(ctx context.Context) error {
+	e.snapshotTreeLock.Lock()
+	defer e.snapshotTreeLock.Unlock()
+
+	lastSnapshotPayloads, err := e.snapshotTree.AsPayloads()
+	if err != nil {
+		return fmt.Errorf("could not generate the immutable AVL tree: %w", err)
+	}
+
+	if err := e.restoreStateFromSnapshot(ctx, lastSnapshotPayloads); err != nil {
+		return fmt.Errorf("could not restore the state from the local snapshot: %w", err)
+	}
+
+	return nil
+}
+
+func (e *Engine) restoreStateFromSnapshot(ctx context.Context, payloads []*types.Payload) error {
+	payloadsPerNamespace := groupPayloadsPerNamespace(payloads)
+
+	// The snapshot engine is responsible of snapshotting the general state
+	// of the node.
+	e.appState = payloadsPerNamespace[types.AppSnapshot][0].GetAppState().AppState
+
+	// These values are needed in the context by providers, to send events.
+	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, int64(e.appState.Height)), e.appState.Block)
+	ctx = vegactx.WithChainID(ctx, e.appState.ChainID)
+
+	// Restoring state in globally shared services.
+	e.timeService.SetTimeNow(ctx, time.Unix(0, e.appState.Time))
+	e.statsService.SetHeight(e.appState.Height)
+
+	// Calling providers that need to be called before restoring their state.
+	for _, provider := range e.preRestoreProviders {
+		if err := provider.OnStateLoadStarts(ctx); err != nil {
+			return fmt.Errorf("an error occurred on provider %q during snapshot pre-restoration: %w", provider.Namespace(), err)
+		}
+	}
+
+	// Restoring state in providers.
+	for _, namespace := range providersInCallOrder {
+		for _, payload := range payloadsPerNamespace[namespace] {
+			provider, ok := e.treeKeysToProviders[payload.TreeKey()]
+			if !ok {
+				return fmt.Errorf("%w %s", types.ErrUnknownSnapshotNamespace, payload.TreeKey())
+			}
+
+			e.log.Info("Restoring state in provider", logging.String("tree-key", payload.TreeKey()))
+
+			newProviders, err := provider.LoadState(ctx, payload)
+			if err != nil {
+				return fmt.Errorf("an error occurred on provider %q while restoring state on tree-key %q: %w", provider.Namespace(), payload.TreeKey(), err)
+			}
+
+			// Some providers depend on resources that also need to have their
+			// state restored. Therefore, we add them, on the fly, to the existing
+			// provider list.
+			if len(newProviders) != 0 {
+				e.addProviders(newProviders...)
+			}
+		}
+	}
+
+	// Calling providers that need to be called after their state has been restored.
+	for _, provider := range e.postRestoreProviders {
+		if err := provider.OnStateLoaded(ctx); err != nil {
+			return fmt.Errorf("an error occurred on provider %q during snapshot post-restoration: %w", provider.Namespace(), err)
+		}
+	}
+
+	e.stateRestored.Store(true)
+
+	return nil
+}
+
+func (e *Engine) initializeTree(vegaPaths paths.Paths) error {
+	var storageOption tree.Options
+	switch e.config.Storage {
+	case InMemoryDB:
+		storageOption = tree.WithInMemoryDatabase()
+	case LevelDB:
+		storageOption = tree.WithLevelDBDatabase(vegaPaths)
+	default:
+		return types.ErrInvalidSnapshotStorageMethod
+	}
+
+	snapshotTree, err := tree.New(
+		e.log,
+		tree.WithMaxNumberOfSnapshotsToKeep(uint64(e.config.KeepRecent)),
+		tree.StartingAtBlockHeight(uint64(e.config.StartHeight)),
+		storageOption,
+	)
+	if err != nil {
+		return fmt.Errorf("could not initialize the snapshot tree: %w", err)
+	}
+	e.snapshotTree = snapshotTree
+
+	return nil
+}
+
+func (e *Engine) addProviders(newProviders ...types.StateProvider) {
+	for _, newProvider := range newProviders {
+		newKeys := newProvider.Keys()
+		namespace := newProvider.Namespace()
+
+		if !slices.Contains(providersInCallOrder, namespace) {
+			// This is a programming error that can happen when introducing a new
+			// provider. All namespaces must be listed to the list providersInCallOrder,
+			// otherwise their state won't be restored, as the state restoration
+			// iterates through this list, is strict order, to know in which order
+			// state must be restored.
+			e.log.Panic(fmt.Sprintf("The provider %q is not listed in the sorted provider list", namespace))
+		}
+
+		existingKeys, ok := e.namespacesToProviderKeys[namespace]
 		if !ok {
-			e.providersNS[ns] = []types.StateProvider{
-				p,
-			}
-			e.nsTreeKeys[ns] = make([][]byte, 0, len(keys))
-			e.namespaces = append(e.namespaces, ns)
-			for _, k := range keys {
-				fullKey := types.GetNodeKey(ns, k)
-				e.treeKeyProvider[fullKey] = k
-				e.providers[fullKey] = p
-				e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns], []byte(fullKey))
-			}
-			if pp, ok := p.(types.PostRestore); ok {
-				e.restoreProvs = append(e.restoreProvs, pp)
-			}
-			if pp, ok := p.(types.PreRestore); ok {
-				e.beforeRestoreProvs = append(e.beforeRestoreProvs, pp)
-			}
-			e.nsKeys[ns] = keys
-			continue
+			e.namespacesToTreeKeys[namespace] = make([][]byte, 0, len(newKeys))
+			e.registeredNamespaces = append(e.registeredNamespaces, namespace)
 		}
 
-		dedup := uniqueSubset(haveKeys, keys)
-		if len(dedup) == 0 {
-			continue // no new keys were added
+		duplicatedKeys := findDuplicatedKeys(existingKeys, newKeys)
+		if len(duplicatedKeys) > 0 {
+			// This is a programming error that might happen when adding a
+			// provider to the codebase, during an .
+			e.log.Panic("A state provider in the same namespace is already using these keys",
+				zap.String("namespace", namespace.String()),
+				zap.Any("keys", duplicatedKeys),
+				zap.String("culprit", reflect.TypeOf(newProvider).String()),
+			)
 		}
-		e.nsKeys[ns] = append(e.nsKeys[ns], dedup...)
-		// new provider in the same namespace
-		e.providersNS[ns] = append(e.providersNS[ns], p)
-		for _, k := range dedup {
-			fullKey := types.GetNodeKey(ns, k)
-			e.treeKeyProvider[fullKey] = k
-			e.providers[fullKey] = p
-			e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns], []byte(fullKey))
+
+		e.namespacesToProviderKeys[namespace] = append(e.namespacesToProviderKeys[namespace], newKeys...)
+		for _, newKey := range newKeys {
+			treeKey := types.GetNodeKey(namespace, newKey)
+			e.treeKeysToProviderKeys[treeKey] = newKey
+			e.treeKeysToProviders[treeKey] = newProvider
+			e.namespacesToTreeKeys[namespace] = append(e.namespacesToTreeKeys[namespace], []byte(treeKey))
 		}
-		if pp, ok := p.(types.PostRestore); ok {
-			e.restoreProvs = append(e.restoreProvs, pp)
+
+		if p, ok := newProvider.(types.PostRestore); ok {
+			e.postRestoreProviders = append(e.postRestoreProviders, p)
 		}
-		if pp, ok := p.(types.PreRestore); ok {
-			e.beforeRestoreProvs = append(e.beforeRestoreProvs, pp)
+		if p, ok := newProvider.(types.PreRestore); ok {
+			e.preRestoreProviders = append(e.preRestoreProviders, p)
 		}
 	}
 }
 
-func (e *Engine) Close() error {
-	// we need to lock in case a snapshot-write is still happening when we try to close the DB
-	e.avlLock.Lock()
-	defer e.avlLock.Unlock()
-
-	// keeps linters happy for now
-	if e.pollCfunc != nil {
-		e.pollCfunc()
-		<-e.pollCtx.Done()
-		for _, p := range e.providerTS {
-			p.Sync()
-		}
+func (e *Engine) ensureEngineIsStarted() {
+	if !e.started.Load() {
+		// This is a programming error.
+		e.log.Panic("The snapshot engine has not started!")
 	}
-
-	var dbErr error
-	if e.db != nil {
-		dbErr = e.db.Close()
-		if dbErr != nil {
-			e.log.Error("could not cleanly close the snapshot database", logging.Error(dbErr))
-		}
-	}
-
-	var metadbErr error
-	if e.metadb != nil {
-		metadbErr = e.metadb.Close()
-		if metadbErr != nil {
-			e.log.Error("could not cleanly close the metadata database", logging.Error(metadbErr))
-		}
-	}
-
-	if dbErr != nil || metadbErr != nil {
-		return ErrCouldNotCleanlyCloseDatabases
-	}
-
-	return nil
 }
 
-func (e *Engine) OnSnapshotIntervalUpdate(_ context.Context, interval int64) error {
-	if interval < e.current || e.current < 0 {
-		e.current = interval
-	} else if interval > e.interval {
-		e.current += interval - e.interval
-	}
-	e.interval = interval
-	return nil
-}
-
-func uniqueSubset(have, add []string) []string {
-	ret := make([]string, 0, len(add))
-	for _, a := range add {
-		if !slices.Contains(have, a) {
-			ret = append(ret, a)
+func findDuplicatedKeys(existingKeys, newKeys []string) []string {
+	duplicatedKeys := []string{}
+	for _, newKey := range newKeys {
+		if slices.Contains(existingKeys, newKey) {
+			duplicatedKeys = append(duplicatedKeys, newKey)
 		}
 	}
-	return ret
+	return duplicatedKeys
 }

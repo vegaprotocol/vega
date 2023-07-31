@@ -14,28 +14,28 @@ func TestEngineConfig(t *testing.T) {
 }
 
 func testEngineConfigDefaultConfigIsValid(t *testing.T) {
-	defaultConfig := snapshot.NewDefaultConfig()
+	defaultConfig := snapshot.DefaultConfig()
 
 	require.NoError(t, defaultConfig.Validate())
 }
 
 func testEngineConfigInvalidConfigFails(t *testing.T) {
 	// StartHeight
-	defaultConfig := snapshot.NewDefaultConfig()
+	defaultConfig := snapshot.DefaultConfig()
 
 	defaultConfig.StartHeight = -1
 
 	require.Error(t, defaultConfig.Validate())
 
 	// KeepRecent
-	defaultConfig = snapshot.NewDefaultConfig()
+	defaultConfig = snapshot.DefaultConfig()
 
 	defaultConfig.KeepRecent = 0
 
 	require.Error(t, defaultConfig.Validate())
 
 	// Storage
-	defaultConfig = snapshot.NewDefaultConfig()
+	defaultConfig = snapshot.DefaultConfig()
 
 	defaultConfig.Storage = vgrand.RandomStr(3)
 	require.Error(t, defaultConfig.Validate())

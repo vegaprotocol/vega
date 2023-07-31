@@ -191,7 +191,7 @@ func newExecutionTestSetup() *executionTestSetup {
 		),
 		execsetup.broker,
 	)
-
+	execsetup.epochEngine.NotifyOnEpoch(execsetup.executionEngine.OnEpochEvent, execsetup.executionEngine.OnEpochRestore)
 	execsetup.positionPlugin = plugins.NewPositions(context.Background())
 	execsetup.broker.Subscribe(execsetup.positionPlugin)
 
@@ -228,6 +228,31 @@ func newExecutionTestSetup() *executionTestSetup {
 		netparams.WatchParam{
 			Param:   netparams.SpamProtectionMaxStopOrdersPerMarket,
 			Watcher: execsetup.executionEngine.OnMarketPartiesMaximumStopOrdersUpdate,
+		},
+
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2EarlyExitPenalty,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2EarlyExitPenaltyUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltyMax,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltySlope,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2BondPenaltyParameter,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2BondPenaltyUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2MaximumLiquidityFeeFactorLevel,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2SuppliedStakeToObligationFactorUpdate,
 		},
 	)
 	return execsetup

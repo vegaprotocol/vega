@@ -33,16 +33,16 @@ func (m *MockEthereumConfirmations) EXPECT() *MockEthereumConfirmationsMockRecor
 	return m.recorder
 }
 
-// Check mocks base method.
-func (m *MockEthereumConfirmations) Check(arg0 uint64) error {
+// CheckRequiredConfirmations mocks base method.
+func (m *MockEthereumConfirmations) CheckRequiredConfirmations(arg0, arg1 uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Check", arg0)
+	ret := m.ctrl.Call(m, "CheckRequiredConfirmations", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Check indicates an expected call of Check.
-func (mr *MockEthereumConfirmationsMockRecorder) Check(arg0 interface{}) *gomock.Call {
+// CheckRequiredConfirmations indicates an expected call of CheckRequiredConfirmations.
+func (mr *MockEthereumConfirmationsMockRecorder) CheckRequiredConfirmations(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Check", reflect.TypeOf((*MockEthereumConfirmations)(nil).Check), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckRequiredConfirmations", reflect.TypeOf((*MockEthereumConfirmations)(nil).CheckRequiredConfirmations), arg0, arg1)
 }

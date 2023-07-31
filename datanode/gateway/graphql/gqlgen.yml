@@ -487,6 +487,12 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProvisionsEdge
   LiquidityProvisionsConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProvisionsConnection
+  LiquidityProvider:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProvider
+  LiquidityProviderEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProviderEdge
+  LiquidityProviderConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProviderConnection
   TransferEdge:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TransferEdge
   TransferConnection:

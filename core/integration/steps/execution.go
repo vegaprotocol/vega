@@ -47,4 +47,5 @@ type Execution interface {
 	StartBatch(party string) error
 	AddSubmitOrderToBatch(submission *types.OrderSubmission, party string) error
 	ProcessBatch(ctx context.Context, party string) error
+	OnEpochEvent(ctx context.Context, epoch types.Epoch)
 }

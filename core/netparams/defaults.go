@@ -68,6 +68,9 @@ func defaultNetParams() map[string]value {
 		// spots
 		SpotMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
 
+		// perps
+		PerpsMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
+
 		// ethereum oracles
 		EthereumOraclesEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
 
@@ -214,7 +217,7 @@ func defaultNetParams() map[string]value {
 		NetworkCheckpointTimeElapsedBetweenCheckpoints: NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1m"),
 		// take a snapshot every 1000 blocks, ~20 minutes
 		// if we assume a block time of anything between 1 to 2 seconds
-		SnapshotIntervalLength: NewInt(gteI0).Mutable(true).MustUpdate("1000"),
+		SnapshotIntervalLength: NewUint(gteU1).Mutable(true).MustUpdate("1000"),
 
 		FloatingPointUpdatesDuration: NewDuration(DurationGTE(10*time.Second), DurationLTE(1*time.Hour)).Mutable(true).MustUpdate("5m"),
 

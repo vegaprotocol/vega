@@ -34,6 +34,7 @@ type ProductType int32
 const (
 	ProductTypeFuture ProductType = iota
 	ProductTypeSpot
+	ProductTypePerps
 )
 
 type ProposalTermsNewMarket struct {
@@ -268,6 +269,14 @@ func (n NewMarketConfiguration) GetFuture() *InstrumentConfigurationFuture {
 	return nil
 }
 
+func (n NewMarketConfiguration) GetPerps() *InstrumentConfigurationPerps {
+	if n.ProductType() == ProductTypePerps {
+		p, _ := n.Instrument.Product.(*InstrumentConfigurationPerps)
+		return p
+	}
+	return nil
+}
+
 func (n NewMarketConfiguration) GetSpot() *InstrumentConfigurationSpot {
 	if n.ProductType() == ProductTypeSpot {
 		f, _ := n.Instrument.Product.(*InstrumentConfigurationSpot)
@@ -485,11 +494,64 @@ func (InstrumentConfigurationFuture) Type() ProductType {
 	return ProductTypeFuture
 }
 
+func (i InstrumentConfigurationFuture) IntoProto() *vegapb.InstrumentConfiguration_Future {
+	return &vegapb.InstrumentConfiguration_Future{
+		Future: i.Future.IntoProto(),
+	}
+}
+
+func (i InstrumentConfigurationFuture) icpIntoProto() interface{} {
+	return i.IntoProto()
+}
+
+func (InstrumentConfigurationFuture) isInstrumentConfigurationProduct() {}
+
+type InstrumentConfigurationPerps struct {
+	Perps *PerpsProduct
+}
+
+func (i InstrumentConfigurationPerps) String() string {
+	return fmt.Sprintf(
+		"perps(%s)",
+		stringer.ReflectPointerToString(i.Perps),
+	)
+}
+
+func (i InstrumentConfigurationPerps) DeepClone() instrumentConfigurationProduct {
+	if i.Perps == nil {
+		return &InstrumentConfigurationPerps{}
+	}
+	return &InstrumentConfigurationPerps{
+		Perps: i.Perps.DeepClone(),
+	}
+}
+
+func (i InstrumentConfigurationPerps) Assets() []string {
+	return i.Perps.Assets()
+}
+
+func (InstrumentConfigurationPerps) Type() ProductType {
+	return ProductTypePerps
+}
+
+func (i InstrumentConfigurationPerps) IntoProto() *vegapb.InstrumentConfiguration_Perps {
+	return &vegapb.InstrumentConfiguration_Perps{
+		Perps: i.Perps.IntoProto(),
+	}
+}
+
+func (i InstrumentConfigurationPerps) icpIntoProto() interface{} {
+	return i.IntoProto()
+}
+
+func (InstrumentConfigurationPerps) isInstrumentConfigurationProduct() {}
+
 type InstrumentConfiguration struct {
 	Name string
 	Code string
 	// *InstrumentConfigurationFuture
 	// *InstrumentConfigurationSpot
+	// *InstrumentConfigurationPerps
 	Product instrumentConfigurationProduct
 }
 
@@ -512,6 +574,8 @@ func (i InstrumentConfiguration) IntoProto() *vegapb.InstrumentConfiguration {
 	}
 	switch pr := p.(type) {
 	case *vegapb.InstrumentConfiguration_Future:
+		r.Product = pr
+	case *vegapb.InstrumentConfiguration_Perps:
 		r.Product = pr
 	case *vegapb.InstrumentConfiguration_Spot:
 		r.Product = pr
@@ -556,6 +620,44 @@ func InstrumentConfigurationFromProto(
 				DataSourceSpecBinding:               datasource.SpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
 			},
 		}
+	case *vegapb.InstrumentConfiguration_Perps:
+		settlement, err := datasource.DefinitionFromProto(pr.Perps.DataSourceSpecForSettlementData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse settlement data source spec: %w", err)
+		}
+
+		settlementSchedule, err := datasource.DefinitionFromProto(pr.Perps.DataSourceSpecForSettlementSchedule)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse settlement schedule data source spec: %w", err)
+		}
+
+		var marginFundingFactor, interestRate, clampLowerBound, clampUpperBound num.Decimal
+		if marginFundingFactor, err = num.DecimalFromString(pr.Perps.MarginFundingFactor); err != nil {
+			return nil, fmt.Errorf("failed to parse margin funding factor: %w", err)
+		}
+		if interestRate, err = num.DecimalFromString(pr.Perps.InterestRate); err != nil {
+			return nil, fmt.Errorf("failed to parse interest rate: %w", err)
+		}
+		if clampLowerBound, err = num.DecimalFromString(pr.Perps.ClampLowerBound); err != nil {
+			return nil, fmt.Errorf("failed to parse clamp lower bound: %w", err)
+		}
+		if clampUpperBound, err = num.DecimalFromString(pr.Perps.ClampUpperBound); err != nil {
+			return nil, fmt.Errorf("failed to parse clamp upper bound: %w", err)
+		}
+
+		r.Product = &InstrumentConfigurationPerps{
+			Perps: &PerpsProduct{
+				SettlementAsset:                     pr.Perps.SettlementAsset,
+				QuoteName:                           pr.Perps.QuoteName,
+				MarginFundingFactor:                 marginFundingFactor,
+				InterestRate:                        interestRate,
+				ClampLowerBound:                     clampLowerBound,
+				ClampUpperBound:                     clampUpperBound,
+				DataSourceSpecForSettlementData:     *datasource.NewDefinitionWith(settlement),
+				DataSourceSpecForSettlementSchedule: *datasource.NewDefinitionWith(settlementSchedule),
+				DataSourceSpecBinding:               datasource.SpecBindingForPerpsFromProto(pr.Perps.DataSourceSpecBinding),
+			},
+		}
 	case *vegapb.InstrumentConfiguration_Spot:
 		r.Product = &InstrumentConfigurationSpot{
 			Spot: &SpotProduct{
@@ -567,18 +669,6 @@ func InstrumentConfigurationFromProto(
 	}
 	return r, nil
 }
-
-func (i InstrumentConfigurationFuture) IntoProto() *vegapb.InstrumentConfiguration_Future {
-	return &vegapb.InstrumentConfiguration_Future{
-		Future: i.Future.IntoProto(),
-	}
-}
-
-func (i InstrumentConfigurationFuture) icpIntoProto() interface{} {
-	return i.IntoProto()
-}
-
-func (InstrumentConfigurationFuture) isInstrumentConfigurationProduct() {}
 
 type FutureProduct struct {
 	SettlementAsset                     string
@@ -621,6 +711,67 @@ func (f FutureProduct) String() string {
 
 func (f FutureProduct) Assets() []string {
 	return []string{f.SettlementAsset}
+}
+
+type PerpsProduct struct {
+	SettlementAsset string
+	QuoteName       string
+
+	MarginFundingFactor num.Decimal
+	InterestRate        num.Decimal
+	ClampLowerBound     num.Decimal
+	ClampUpperBound     num.Decimal
+
+	DataSourceSpecForSettlementData     dsdefinition.Definition
+	DataSourceSpecForSettlementSchedule dsdefinition.Definition
+	DataSourceSpecBinding               *datasource.SpecBindingForPerps
+}
+
+func (p PerpsProduct) IntoProto() *vegapb.PerpsProduct {
+	return &vegapb.PerpsProduct{
+		SettlementAsset:                     p.SettlementAsset,
+		QuoteName:                           p.QuoteName,
+		MarginFundingFactor:                 p.MarginFundingFactor.String(),
+		InterestRate:                        p.InterestRate.String(),
+		ClampLowerBound:                     p.ClampLowerBound.String(),
+		ClampUpperBound:                     p.ClampUpperBound.String(),
+		DataSourceSpecForSettlementData:     p.DataSourceSpecForSettlementData.IntoProto(),
+		DataSourceSpecForSettlementSchedule: p.DataSourceSpecForSettlementSchedule.IntoProto(),
+		DataSourceSpecBinding:               p.DataSourceSpecBinding.IntoProto(),
+	}
+}
+
+func (p PerpsProduct) DeepClone() *PerpsProduct {
+	return &PerpsProduct{
+		SettlementAsset:                     p.SettlementAsset,
+		QuoteName:                           p.QuoteName,
+		MarginFundingFactor:                 p.MarginFundingFactor,
+		InterestRate:                        p.InterestRate,
+		ClampLowerBound:                     p.ClampLowerBound,
+		ClampUpperBound:                     p.ClampUpperBound,
+		DataSourceSpecForSettlementData:     *p.DataSourceSpecForSettlementData.DeepClone().(*dsdefinition.Definition),
+		DataSourceSpecForSettlementSchedule: *p.DataSourceSpecForSettlementSchedule.DeepClone().(*dsdefinition.Definition),
+		DataSourceSpecBinding:               p.DataSourceSpecBinding.DeepClone(),
+	}
+}
+
+func (p PerpsProduct) String() string {
+	return fmt.Sprintf(
+		"quote(%s) settlementAsset(%s) marginFundingFactor(%s) interestRate(%s) clampLowerBound(%s) clampUpperBound(%s) settlementData(%s) settlementSchedule(%s) binding(%s)",
+		p.QuoteName,
+		p.SettlementAsset,
+		p.MarginFundingFactor.String(),
+		p.InterestRate.String(),
+		p.ClampLowerBound.String(),
+		p.ClampUpperBound.String(),
+		stringer.ReflectPointerToString(p.DataSourceSpecForSettlementData),
+		stringer.ReflectPointerToString(p.DataSourceSpecForSettlementSchedule),
+		stringer.ReflectPointerToString(p.DataSourceSpecBinding),
+	)
+}
+
+func (p PerpsProduct) Assets() []string {
+	return []string{p.SettlementAsset}
 }
 
 type MetadataList []string

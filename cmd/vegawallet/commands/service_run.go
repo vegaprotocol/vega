@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -31,7 +30,7 @@ import (
 	serviceV1 "code.vegaprotocol.io/vega/wallet/service/v1"
 	serviceV2 "code.vegaprotocol.io/vega/wallet/service/v2"
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
-	"code.vegaprotocol.io/vega/wallet/service/v2/connections/store/longliving/v1"
+	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/longliving/v1"
 	sessionStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/session/v1"
 	"code.vegaprotocol.io/vega/wallet/version"
 	"code.vegaprotocol.io/vega/wallet/wallets"
@@ -230,9 +229,9 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 	if f.LoadTokens {
 		cliLog.Warn("Long-living tokens enabled")
 		p.Print(p.String().WarningBangMark().WarningText("Long-living tokens enabled").NextLine())
-		s, err := v1.InitialiseStore(vegaPaths, f.tokensPassphrase)
+		s, err := tokenStoreV1.InitialiseStore(vegaPaths, f.tokensPassphrase)
 		if err != nil {
-			if errors.Is(err, walletapi.ErrWrongPassphrase) {
+			if errors.Is(err, tokenStoreV1.ErrWrongPassphrase) {
 				return err
 			}
 			return fmt.Errorf("couldn't load the token store: %w", err)
@@ -240,7 +239,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		closer.Add(s.Close)
 		tokenStore = s
 	} else {
-		s := v1.NewEmptyStore()
+		s := tokenStoreV1.NewEmptyStore()
 		tokenStore = s
 	}
 
@@ -755,22 +754,37 @@ func yesOrNo(ctx context.Context, controlCh <-chan error, question *printer.Form
 	}
 }
 
-func readString(reader cancelreader.CancelReader) (string, error) {
+func readString(reader io.Reader) (string, error) {
 	var line string
 	for {
-		var input [1024]byte
-		_, err := reader.Read(input[:])
-		if err != nil {
+		var input [50]byte
+		bytesRead, err := reader.Read(input[:])
+
+		// As said in the Read documentation:
+		//     Callers should treat a return of 0 and nil as indicating that
+		//     nothing happened; in particular it does not indicate EOF.
+		if bytesRead == 0 && err == nil {
+			continue
+		}
+
+		if bytesRead == 0 && err != nil && !errors.Is(err, io.EOF) {
 			return "", err
 		}
-		index := bytes.IndexByte(input[:], '\n')
-		line += string(input[:index])
-		if index != -1 {
+
+		// As said in the Read documentation:
+		//     Callers should always process the n > 0 bytes returned before
+		//     considering the error err. Doing so correctly handles I/O errors
+		//     that happen after reading some bytes and also both of the
+		//     allowed EOF behaviors.
+		line += string(input[:bytesRead])
+
+		// Verify if the input chunk contains the "enter" key.
+		if strings.ContainsAny(line, "\r\n") || err != nil {
 			break
 		}
 	}
 
-	return strings.Trim(line, " \r\n\t"), nil
+	return strings.Trim(line, " \r\n\t"), nil // nolint:nilerr
 }
 
 // ensureNotRunningInMsys verifies if the underlying shell is not running on

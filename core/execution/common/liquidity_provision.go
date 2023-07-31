@@ -121,17 +121,15 @@ func (m *MarketLiquidity) applyPendingProvisions(
 		// originalCommitment - amendedCommitment
 		proposedCommitmentVariation := provision.CommitmentAmount.ToDecimal().Sub(amendment.CommitmentAmount.ToDecimal())
 
-		zero := num.DecimalZero()
-
 		// if commitment is increased, there is not penalty applied
-		if proposedCommitmentVariation.GreaterThanOrEqual(zero) {
-			return nil
+		if !proposedCommitmentVariation.IsPositive() {
+			continue
 		}
 
 		// min(-proposedCommitmentVariation, bondAccountBalance)
 		commitmentVariation := num.MinD(proposedCommitmentVariation.Neg(), acc.Balance.ToDecimal())
 		commitmentVariationPerParty[partyID] = commitmentVariation
-		sumOfCommitmentVariations.Add(commitmentVariation)
+		sumOfCommitmentVariations = sumOfCommitmentVariations.Add(commitmentVariation)
 	}
 
 	ledgerMovements := make([]*types.LedgerMovement, 0, len(commitmentVariationPerParty))
@@ -147,7 +145,7 @@ func (m *MarketLiquidity) applyPendingProvisions(
 
 		// transfer entire decreased commitment to their general account, no penalty will be applied
 		if commitmentVariation.LessThanOrEqual(partyMaxPenaltyFreeReductionAmount) {
-			commitmentVariationU, _ := num.UintFromDecimal(commitmentVariation)
+			commitmentVariationU, _ := num.UintFromDecimal(commitmentVariation.Neg())
 			if commitmentVariationU.IsZero() {
 				continue
 			}
@@ -503,7 +501,7 @@ func (m *MarketLiquidity) AmendLiquidityProvision(
 	proposedCommitmentVariation := lp.CommitmentAmount.ToDecimal().Sub(lpa.CommitmentAmount.ToDecimal())
 
 	// if increase commitment transfer funds to bond account
-	if proposedCommitmentVariation.GreaterThan(num.DecimalZero()) {
+	if proposedCommitmentVariation.IsNegative() {
 		_, err := m.ensureAndTransferCollateral(ctx, lpa.CommitmentAmount, party)
 		if err != nil {
 			m.log.Debug("could not submit update bond for lp amendment",

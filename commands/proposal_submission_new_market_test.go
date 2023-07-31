@@ -9,7 +9,9 @@ import (
 
 	"code.vegaprotocol.io/vega/commands"
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
-	protoTypes "code.vegaprotocol.io/vega/protos/vega"
+	"code.vegaprotocol.io/vega/libs/ptr"
+	"code.vegaprotocol.io/vega/libs/test"
+	"code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -133,12 +135,41 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a future market with external data sources for settlement and termination with empty pubKey signer fail", testFutureMarketSubmissionWithExternalSettlementDataAndTerminationEmptyPubKeySignerFails)
 	t.Run("Submitting a future market with external data sources for settlement and termination with empty eth address signer fail", testFutureMarketSubmissionWithExternalSettlementDataAndTerminationEmptyEthAddressSignerFails)
 	t.Run("Submitting a future market with external data sources for settlement and termination with no signers fail", testFutureMarketSubmissionWithExternalSettlementDataAndTerminationNoSignerFails)
+	t.Run("Submitting a future market with internal time trigger termination data fails", testFutureMarketSubmissionWithInternalTimeTriggerTerminationDataFails)
+	t.Run("Submitting a future market with internal time trigger settlement data fails", testFutureMarketSubmissionWithInternalTimeTriggerSettlementDataFails)
+
+	t.Run("Submitting a perps market change without perps fails", testNewPerpsMarketChangeSubmissionWithoutPerpsFails)
+	t.Run("Submitting a perps market change with perps succeeds", testNewPerpsMarketChangeSubmissionWithPerpsSucceeds)
+	t.Run("Submitting a perps market change without settlement asset fails", testNewPerpsMarketChangeSubmissionWithoutSettlementAssetFails)
+	t.Run("Submitting a perps market change with settlement asset succeeds", testNewPerpsMarketChangeSubmissionWithSettlementAssetSucceeds)
+	t.Run("Submitting a perps market change without quote name fails", testNewPerpsMarketChangeSubmissionWithoutQuoteNameFails)
+	t.Run("Submitting a perps market change with quote name succeeds", testNewPerpsMarketChangeSubmissionWithQuoteNameSucceeds)
+	t.Run("Submitting a perps market change without oracle spec fails", testNewPerpsMarketChangeSubmissionWithoutOracleSpecFails)
+	t.Run("Submitting a perps market change with oracle spec succeeds", testNewPerpsMarketChangeSubmissionWithOracleSpecSucceeds)
+	t.Run("Submitting a perps market change without filters fails", testNewPerpsMarketChangeSubmissionWithoutFiltersFails)
+	t.Run("Submitting a perps market change with filters succeeds", testNewPerpsMarketChangeSubmissionWithFiltersSucceeds)
+	t.Run("Submitting a perps market change with filter without key fails", testNewPerpsMarketChangeSubmissionWithFilterWithoutKeyFails)
+	t.Run("Submitting a perps market change with filter with key succeeds", testNewPerpsMarketChangeSubmissionWithFilterWithKeySucceeds)
+	t.Run("Submitting a perps market change with filter without key name fails", testNewPerpsMarketChangeSubmissionWithFilterWithoutKeyNameFails)
+	t.Run("Submitting a perps market change with filter with key name succeeds", testNewPerpsMarketChangeSubmissionWithFilterWithKeyNameSucceeds)
+	t.Run("Submitting a perps market change with filter without key type fails", testNewPerpsMarketChangeSubmissionWithFilterWithoutKeyTypeFails)
+	t.Run("Submitting a perps market change with filter with key type succeeds", testNewPerpsMarketChangeSubmissionWithFilterWithKeyTypeSucceeds)
+	t.Run("Submitting a perps market change with filter without condition succeeds", testNewPerpsMarketChangeSubmissionWithFilterWithoutConditionsSucceeds)
+	t.Run("Submitting a perps market change with filter without condition operator fails", testNewPerpsMarketChangeSubmissionWithFilterWithoutConditionOperatorFails)
+	t.Run("Submitting a perps market change with filter with condition operator succeeds", testNewPerpsMarketChangeSubmissionWithFilterWithConditionOperatorSucceeds)
+	t.Run("Submitting a perps market change with filter without condition value fails", testNewPerpsMarketChangeSubmissionWithFilterWithoutConditionValueFails)
+	t.Run("Submitting a perps market change with filter with condition value succeeds", testNewPerpsMarketChangeSubmissionWithFilterWithConditionValueSucceeds)
+	t.Run("Submitting a perps market change without oracle spec bindings fails", testNewPerpsMarketChangeSubmissionWithoutDataSourceSpecBindingFails)
+	t.Run("Submitting a perps market change with oracle spec binding succeeds", testNewPerpsMarketChangeSubmissionWithDataSourceSpecBindingSucceeds)
+	t.Run("Submitting a perps market change with a mismatch between binding property name and filter fails", testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingFails)
+	t.Run("Submitting a perps market change with match between binding property name and filter succeeds", testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingSucceeds)
+	t.Run("Submitting a perps market change with settlement data and trading termination properties succeeds", testNewPerpsMarketChangeSubmissionWithSettlementDataPropertySucceeds)
 }
 
 func testNewMarketChangeSubmissionWithoutNewMarketFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{},
 		},
 	})
 
@@ -147,9 +178,9 @@ func testNewMarketChangeSubmissionWithoutNewMarketFails(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithoutChangesFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{},
 			},
 		},
 	})
@@ -159,10 +190,10 @@ func testNewMarketChangeSubmissionWithoutChangesFails(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithoutDecimalPlacesSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{},
 				},
 			},
 		},
@@ -173,10 +204,10 @@ func testNewMarketChangeSubmissionWithoutDecimalPlacesSucceeds(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithDecimalPlacesEqualTo0Succeeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
 						DecimalPlaces: 0,
 					},
 				},
@@ -203,10 +234,10 @@ func testNewMarketChangeSubmissionWithDecimalPlacesAboveOrEqualTo150Fails(t *tes
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &protoTypes.ProposalTerms{
-					Change: &protoTypes.ProposalTerms_NewMarket{
-						NewMarket: &protoTypes.NewMarket{
-							Changes: &protoTypes.NewMarketConfiguration{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
 								DecimalPlaces: tc.value,
 							},
 						},
@@ -221,11 +252,11 @@ func testNewMarketChangeSubmissionWithDecimalPlacesAboveOrEqualTo150Fails(t *tes
 
 func testNewMarketChangeSubmissionWithDecimalPlacesBelow150Succeeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						DecimalPlaces: RandomPositiveU64Before(150),
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						DecimalPlaces: test.RandomPositiveU64Before(150),
 					},
 				},
 			},
@@ -238,10 +269,10 @@ func testNewMarketChangeSubmissionWithDecimalPlacesBelow150Succeeds(t *testing.T
 
 func testNewMarketChangeSubmissionWithPositionDecimalPlacesEqualTo0Succeeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
 						PositionDecimalPlaces: 0,
 					},
 				},
@@ -277,10 +308,10 @@ func testNewMarketChangeSubmissionWithPositionDecimalPlacesAboveOrEqualTo7Fails(
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &protoTypes.ProposalTerms{
-					Change: &protoTypes.ProposalTerms_NewMarket{
-						NewMarket: &protoTypes.NewMarket{
-							Changes: &protoTypes.NewMarketConfiguration{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
 								PositionDecimalPlaces: tc.value,
 							},
 						},
@@ -295,11 +326,11 @@ func testNewMarketChangeSubmissionWithPositionDecimalPlacesAboveOrEqualTo7Fails(
 
 func testNewMarketChangeSubmissionWithPositionDecimalPlacesBelow7Succeeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						PositionDecimalPlaces: RandomPositiveI64Before(7),
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						PositionDecimalPlaces: test.RandomPositiveI64Before(7),
 					},
 				},
 			},
@@ -311,10 +342,10 @@ func testNewMarketChangeSubmissionWithPositionDecimalPlacesBelow7Succeeds(t *tes
 
 func testNewMarketChangeSubmissionWithLpRangeBananaFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
 						LpPriceRange: "banana",
 					},
 				},
@@ -327,10 +358,10 @@ func testNewMarketChangeSubmissionWithLpRangeBananaFails(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithSlippageFactorBananaFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
 						LinearSlippageFactor: "banana",
 					},
 				},
@@ -340,10 +371,10 @@ func testNewMarketChangeSubmissionWithSlippageFactorBananaFails(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.linear_slippage_factor"), commands.ErrIsNotValidNumber)
 
 	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
 						QuadraticSlippageFactor: "banana",
 					},
 				},
@@ -355,10 +386,10 @@ func testNewMarketChangeSubmissionWithSlippageFactorBananaFails(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithSlippageFactorNegativeFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
 						LinearSlippageFactor: "-0.1",
 					},
 				},
@@ -368,10 +399,10 @@ func testNewMarketChangeSubmissionWithSlippageFactorNegativeFails(t *testing.T) 
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.linear_slippage_factor"), commands.ErrMustBePositiveOrZero)
 
 	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
 						QuadraticSlippageFactor: "-0.1",
 					},
 				},
@@ -383,10 +414,10 @@ func testNewMarketChangeSubmissionWithSlippageFactorNegativeFails(t *testing.T) 
 
 func testNewMarketChangeSubmissionWithSlippageFactorTooLargeFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
 						LinearSlippageFactor: "1000000.000001",
 					},
 				},
@@ -396,10 +427,10 @@ func testNewMarketChangeSubmissionWithSlippageFactorTooLargeFails(t *testing.T) 
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.linear_slippage_factor"), commands.ErrMustBeAtMost1M)
 
 	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
 						QuadraticSlippageFactor: "1000000.000001",
 					},
 				},
@@ -411,10 +442,10 @@ func testNewMarketChangeSubmissionWithSlippageFactorTooLargeFails(t *testing.T) 
 
 func testNewMarketChangeSubmissionWithEmptySlippageFactorPasses(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{},
 				},
 			},
 		},
@@ -425,10 +456,10 @@ func testNewMarketChangeSubmissionWithEmptySlippageFactorPasses(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithLpRangeNegativeFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
 						LpPriceRange: "-1e-17",
 					},
 				},
@@ -441,10 +472,10 @@ func testNewMarketChangeSubmissionWithLpRangeNegativeFails(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithLpRangeGreaterThan100(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
 						LpPriceRange: "100.0000000000001",
 					},
 				},
@@ -457,10 +488,10 @@ func testNewMarketChangeSubmissionWithLpRangeGreaterThan100(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithLpRangeZeroFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
 						LpPriceRange: "0",
 					},
 				},
@@ -473,10 +504,10 @@ func testNewMarketChangeSubmissionWithLpRangeZeroFails(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithLpRangePositiveSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
 						LpPriceRange: "1e-17",
 					},
 				},
@@ -489,10 +520,10 @@ func testNewMarketChangeSubmissionWithLpRangePositiveSucceeds(t *testing.T) {
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBeAtMost100)
 
 	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
 						LpPriceRange: "0.95",
 					},
 				},
@@ -505,10 +536,10 @@ func testNewMarketChangeSubmissionWithLpRangePositiveSucceeds(t *testing.T) {
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBeAtMost100)
 
 	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
 						LpPriceRange: "100",
 					},
 				},
@@ -523,10 +554,10 @@ func testNewMarketChangeSubmissionWithLpRangePositiveSucceeds(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithoutLiquidityMonitoringSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{},
 				},
 			},
 		},
@@ -537,11 +568,11 @@ func testNewMarketChangeSubmissionWithoutLiquidityMonitoringSucceeds(t *testing.
 
 func testNewMarketChangeSubmissionWithLiquidityMonitoringSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{},
 					},
 				},
 			},
@@ -567,11 +598,11 @@ func testLiquidityMonitoringChangeSubmissionWithWrongTriggeringRatioFails(t *tes
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &protoTypes.ProposalTerms{
-					Change: &protoTypes.ProposalTerms_NewMarket{
-						NewMarket: &protoTypes.NewMarket{
-							Changes: &protoTypes.NewMarketConfiguration{
-								LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
 									TriggeringRatio: tc.value,
 								},
 							},
@@ -605,11 +636,11 @@ func testLiquidityMonitoringChangeSubmissionWithRightTriggeringRatioSucceeds(t *
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &protoTypes.ProposalTerms{
-					Change: &protoTypes.ProposalTerms_NewMarket{
-						NewMarket: &protoTypes.NewMarket{
-							Changes: &protoTypes.NewMarketConfiguration{
-								LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
 									TriggeringRatio: tc.value,
 								},
 							},
@@ -626,11 +657,11 @@ func testLiquidityMonitoringChangeSubmissionWithRightTriggeringRatioSucceeds(t *
 
 func testLiquidityMonitoringChangeSubmissionWithoutTriggeringRatioFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{},
 					},
 				},
 			},
@@ -642,11 +673,11 @@ func testLiquidityMonitoringChangeSubmissionWithoutTriggeringRatioFails(t *testi
 
 func testLiquidityMonitoringChangeSubmissionWithoutTargetStakeParametersFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
 							TriggeringRatio: "1",
 						},
 					},
@@ -660,12 +691,12 @@ func testLiquidityMonitoringChangeSubmissionWithoutTargetStakeParametersFails(t 
 
 func testLiquidityMonitoringChangeSubmissionWithTargetStakeParametersSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
-							TargetStakeParameters: &protoTypes.TargetStakeParameters{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
+							TargetStakeParameters: &vegapb.TargetStakeParameters{},
 						},
 					},
 				},
@@ -686,19 +717,19 @@ func testLiquidityMonitoringChangeSubmissionWithNonPositiveTimeWindowFails(t *te
 			value: 0,
 		}, {
 			msg:   "with ratio of -1",
-			value: RandomNegativeI64(),
+			value: test.RandomNegativeI64(),
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &protoTypes.ProposalTerms{
-					Change: &protoTypes.ProposalTerms_NewMarket{
-						NewMarket: &protoTypes.NewMarket{
-							Changes: &protoTypes.NewMarketConfiguration{
-								LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
 									TriggeringRatio: "1",
-									TargetStakeParameters: &protoTypes.TargetStakeParameters{
+									TargetStakeParameters: &vegapb.TargetStakeParameters{
 										TimeWindow: tc.value,
 									},
 								},
@@ -715,13 +746,13 @@ func testLiquidityMonitoringChangeSubmissionWithNonPositiveTimeWindowFails(t *te
 
 func testLiquidityMonitoringChangeSubmissionWithPositiveTimeWindowSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
-							TargetStakeParameters: &protoTypes.TargetStakeParameters{
-								TimeWindow: RandomPositiveI64(),
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
+							TargetStakeParameters: &vegapb.TargetStakeParameters{
+								TimeWindow: test.RandomPositiveI64(),
 							},
 						},
 					},
@@ -749,13 +780,13 @@ func testLiquidityMonitoringChangeSubmissionWithNonPositiveScalingFactorFails(t 
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &protoTypes.ProposalTerms{
-					Change: &protoTypes.ProposalTerms_NewMarket{
-						NewMarket: &protoTypes.NewMarket{
-							Changes: &protoTypes.NewMarketConfiguration{
-								LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
 									TriggeringRatio: "1",
-									TargetStakeParameters: &protoTypes.TargetStakeParameters{
+									TargetStakeParameters: &vegapb.TargetStakeParameters{
 										ScalingFactor: tc.value,
 									},
 								},
@@ -772,12 +803,12 @@ func testLiquidityMonitoringChangeSubmissionWithNonPositiveScalingFactorFails(t 
 
 func testLiquidityMonitoringChangeSubmissionWithPositiveScalingFactorSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
-							TargetStakeParameters: &protoTypes.TargetStakeParameters{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
+							TargetStakeParameters: &vegapb.TargetStakeParameters{
 								ScalingFactor: 1.5,
 							},
 						},
@@ -792,12 +823,12 @@ func testLiquidityMonitoringChangeSubmissionWithPositiveScalingFactorSucceeds(t 
 
 func testPriceMonitoringChangeSubmissionWithoutTriggersSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
-							Triggers: []*protoTypes.PriceMonitoringTrigger{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						PriceMonitoringParameters: &vegapb.PriceMonitoringParameters{
+							Triggers: []*vegapb.PriceMonitoringTrigger{},
 						},
 					},
 				},
@@ -810,12 +841,12 @@ func testPriceMonitoringChangeSubmissionWithoutTriggersSucceeds(t *testing.T) {
 
 func testPriceMonitoringChangeSubmissionWithTriggersSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
-							Triggers: []*protoTypes.PriceMonitoringTrigger{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						PriceMonitoringParameters: &vegapb.PriceMonitoringParameters{
+							Triggers: []*vegapb.PriceMonitoringTrigger{
 								{},
 								{},
 							},
@@ -831,12 +862,12 @@ func testPriceMonitoringChangeSubmissionWithTriggersSucceeds(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithTooManyPMTriggersFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
-							Triggers: []*protoTypes.PriceMonitoringTrigger{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						PriceMonitoringParameters: &vegapb.PriceMonitoringParameters{
+							Triggers: []*vegapb.PriceMonitoringTrigger{
 								{},
 								{},
 								{},
@@ -856,12 +887,12 @@ func testNewMarketChangeSubmissionWithTooManyPMTriggersFails(t *testing.T) {
 
 func testPriceMonitoringChangeSubmissionWithoutTriggerHorizonFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
-							Triggers: []*protoTypes.PriceMonitoringTrigger{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						PriceMonitoringParameters: &vegapb.PriceMonitoringParameters{
+							Triggers: []*vegapb.PriceMonitoringTrigger{
 								{},
 								{},
 							},
@@ -878,17 +909,17 @@ func testPriceMonitoringChangeSubmissionWithoutTriggerHorizonFails(t *testing.T)
 
 func testPriceMonitoringChangeSubmissionWithTriggerHorizonSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
-							Triggers: []*protoTypes.PriceMonitoringTrigger{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						PriceMonitoringParameters: &vegapb.PriceMonitoringParameters{
+							Triggers: []*vegapb.PriceMonitoringTrigger{
 								{
-									Horizon: RandomPositiveI64(),
+									Horizon: test.RandomPositiveI64(),
 								},
 								{
-									Horizon: RandomPositiveI64(),
+									Horizon: test.RandomPositiveI64(),
 								},
 							},
 						},
@@ -924,12 +955,12 @@ func testPriceMonitoringChangeSubmissionWithWrongTriggerProbabilityFails(t *test
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &protoTypes.ProposalTerms{
-					Change: &protoTypes.ProposalTerms_NewMarket{
-						NewMarket: &protoTypes.NewMarket{
-							Changes: &protoTypes.NewMarketConfiguration{
-								PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
-									Triggers: []*protoTypes.PriceMonitoringTrigger{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								PriceMonitoringParameters: &vegapb.PriceMonitoringParameters{
+									Triggers: []*vegapb.PriceMonitoringTrigger{
 										{
 											Probability: fmt.Sprintf("%f", tc.value),
 										},
@@ -954,12 +985,12 @@ func testPriceMonitoringChangeSubmissionWithWrongTriggerProbabilityFails(t *test
 
 func testPriceMonitoringChangeSubmissionWithRightTriggerProbabilitySucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
-							Triggers: []*protoTypes.PriceMonitoringTrigger{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						PriceMonitoringParameters: &vegapb.PriceMonitoringParameters{
+							Triggers: []*vegapb.PriceMonitoringTrigger{
 								{
 									Probability: "0.01",
 								},
@@ -982,12 +1013,12 @@ func testPriceMonitoringChangeSubmissionWithRightTriggerProbabilitySucceeds(t *t
 
 func testPriceMonitoringChangeSubmissionWithoutTriggerAuctionExtensionFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
-							Triggers: []*protoTypes.PriceMonitoringTrigger{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						PriceMonitoringParameters: &vegapb.PriceMonitoringParameters{
+							Triggers: []*vegapb.PriceMonitoringTrigger{
 								{},
 								{},
 							},
@@ -1004,17 +1035,17 @@ func testPriceMonitoringChangeSubmissionWithoutTriggerAuctionExtensionFails(t *t
 
 func testPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
-							Triggers: []*protoTypes.PriceMonitoringTrigger{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						PriceMonitoringParameters: &vegapb.PriceMonitoringParameters{
+							Triggers: []*vegapb.PriceMonitoringTrigger{
 								{
-									AuctionExtension: RandomPositiveI64(),
+									AuctionExtension: test.RandomPositiveI64(),
 								},
 								{
-									AuctionExtension: RandomPositiveI64(),
+									AuctionExtension: test.RandomPositiveI64(),
 								},
 							},
 						},
@@ -1030,10 +1061,10 @@ func testPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds(t *t
 
 func testNewMarketChangeSubmissionWithoutPriceMonitoringSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{},
 				},
 			},
 		},
@@ -1044,11 +1075,11 @@ func testNewMarketChangeSubmissionWithoutPriceMonitoringSucceeds(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithPriceMonitoringSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						PriceMonitoringParameters: &vegapb.PriceMonitoringParameters{},
 					},
 				},
 			},
@@ -1060,11 +1091,11 @@ func testNewMarketChangeSubmissionWithPriceMonitoringSucceeds(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithoutInstrumentNameFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
 							Name: "",
 						},
 					},
@@ -1078,11 +1109,11 @@ func testNewMarketChangeSubmissionWithoutInstrumentNameFails(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithInstrumentNameSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
 							Name: "My name",
 						},
 					},
@@ -1096,11 +1127,11 @@ func testNewMarketChangeSubmissionWithInstrumentNameSucceeds(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithoutInstrumentCodeFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
 							Code: "",
 						},
 					},
@@ -1114,11 +1145,11 @@ func testNewMarketChangeSubmissionWithoutInstrumentCodeFails(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithInstrumentCodeSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
 							Code: "My code",
 						},
 					},
@@ -1132,11 +1163,11 @@ func testNewMarketChangeSubmissionWithInstrumentCodeSucceeds(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithoutProductFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{},
 					},
 				},
 			},
@@ -1148,12 +1179,12 @@ func testNewMarketChangeSubmissionWithoutProductFails(t *testing.T) {
 
 func testNewMarketChangeSubmissionWithProductSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{},
 						},
 					},
 				},
@@ -1166,12 +1197,12 @@ func testNewMarketChangeSubmissionWithProductSucceeds(t *testing.T) {
 
 func testNewFutureMarketChangeSubmissionWithoutFutureFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{},
 						},
 					},
 				},
@@ -1184,13 +1215,13 @@ func testNewFutureMarketChangeSubmissionWithoutFutureFails(t *testing.T) {
 
 func testNewFutureMarketChangeSubmissionWithFutureSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{},
 							},
 						},
 					},
@@ -1204,13 +1235,13 @@ func testNewFutureMarketChangeSubmissionWithFutureSucceeds(t *testing.T) {
 
 func testNewFutureMarketChangeSubmissionWithoutSettlementAssetFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									SettlementAsset: "",
 								},
 							},
@@ -1226,13 +1257,13 @@ func testNewFutureMarketChangeSubmissionWithoutSettlementAssetFails(t *testing.T
 
 func testNewFutureMarketChangeSubmissionWithSettlementAssetSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									SettlementAsset: "BTC",
 								},
 							},
@@ -1248,13 +1279,13 @@ func testNewFutureMarketChangeSubmissionWithSettlementAssetSucceeds(t *testing.T
 
 func testNewFutureMarketChangeSubmissionWithoutQuoteNameFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									QuoteName: "",
 								},
 							},
@@ -1270,13 +1301,13 @@ func testNewFutureMarketChangeSubmissionWithoutQuoteNameFails(t *testing.T) {
 
 func testNewFutureMarketChangeSubmissionWithQuoteNameSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									QuoteName: "BTC",
 								},
 							},
@@ -1292,13 +1323,13 @@ func testNewFutureMarketChangeSubmissionWithQuoteNameSucceeds(t *testing.T) {
 
 func testNewFutureMarketChangeSubmissionWithoutOracleSpecFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{},
 							},
 						},
 					},
@@ -1313,15 +1344,15 @@ func testNewFutureMarketChangeSubmissionWithoutOracleSpecFails(t *testing.T) {
 
 // func testNewFutureMarketChangeSubmissionWithInvalidOracleSpecVegaPubkeySignerFails(t *testing.T) {
 // 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-// 		Terms: &protoTypes.ProposalTerms{
-// 			Change: &protoTypes.ProposalTerms_NewMarket{
-// 				NewMarket: &protoTypes.NewMarket{
-// 					Changes: &protoTypes.NewMarketConfiguration{
-// 						Instrument: &protoTypes.InstrumentConfiguration{
-// 							Product: &protoTypes.InstrumentConfiguration_Future{
-// 								Future: &protoTypes.FutureProduct{
-// 									DataSourceSpecForSettlementData: &protoTypes.DataSourceDefinition{
-// 										SourceType: &protoTypes.DataSourceDefinitionExternal_Oracle{
+// 		Terms: &vegapb.ProposalTerms{
+// 			Change: &vegapb.ProposalTerms_NewMarket{
+// 				NewMarket: &vegapb.NewMarket{
+// 					Changes: &vegapb.NewMarketConfiguration{
+// 						Instrument: &vegapb.InstrumentConfiguration{
+// 							Product: &vegapb.InstrumentConfiguration_Future{
+// 								Future: &vegapb.FutureProduct{
+// 									DataSourceSpecForSettlementData: &vegapb.DataSourceDefinition{
+// 										SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
 
 // 										}
 // 									}
@@ -1345,7 +1376,7 @@ func testNewFutureMarketChangeSubmissionMissingSingleOracleSpecFails(t *testing.
 
 func testNewFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t *testing.T, oracleSpecName string) {
 	t.Helper()
-	future := &protoTypes.FutureProduct{}
+	future := &vegapb.FutureProduct{}
 	if oracleSpecName == "data_source_spec_for_settlement_data" {
 		future.DataSourceSpecForTradingTermination = &vegapb.DataSourceDefinition{}
 	} else {
@@ -1353,13 +1384,13 @@ func testNewFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t *testing.
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{},
 							},
 						},
 					},
@@ -1373,13 +1404,13 @@ func testNewFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t *testing.
 
 func testNewFutureMarketChangeSubmissionWithEmptyOracleSpecFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData:     &vegapb.DataSourceDefinition{},
 									DataSourceSpecForTradingTermination: &vegapb.DataSourceDefinition{},
 								},
@@ -1397,13 +1428,13 @@ func testNewFutureMarketChangeSubmissionWithEmptyOracleSpecFails(t *testing.T) {
 
 func testNewFutureMarketChangeSubmissionWithEmptyOracleSpecTypeFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: &vegapb.DataSourceDefinition{
 										SourceType: &vegapb.DataSourceDefinition_External{
 											External: &vegapb.DataSourceDefinitionExternal{
@@ -1437,13 +1468,13 @@ func testNewFutureMarketChangeSubmissionWithEmptyOracleSpecTypeFails(t *testing.
 
 func testNewFutureMarketChangeSubmissionWithEmptyInternalSpecTypeFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: &vegapb.DataSourceDefinition{
 										SourceType: &vegapb.DataSourceDefinition_Internal{
 											Internal: &vegapb.DataSourceDefinitionInternal{
@@ -1477,13 +1508,13 @@ func testNewFutureMarketChangeSubmissionWithEmptyInternalSpecTypeFails(t *testin
 
 func testNewFutureMarketChangeSubmissionWithoutPubKeysFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(vegapb.DataSourceContentTypeOracle),
 								},
 							},
@@ -1517,13 +1548,13 @@ func testNewFutureMarketChangeSubmissionWithWrongPubKeysFails(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &protoTypes.ProposalTerms{
-					Change: &protoTypes.ProposalTerms_NewMarket{
-						NewMarket: &protoTypes.NewMarket{
-							Changes: &protoTypes.NewMarketConfiguration{
-								Instrument: &protoTypes.InstrumentConfiguration{
-									Product: &protoTypes.InstrumentConfiguration_Future{
-										Future: &protoTypes.FutureProduct{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								Instrument: &vegapb.InstrumentConfiguration{
+									Product: &vegapb.InstrumentConfiguration_Future{
+										Future: &vegapb.FutureProduct{
 											DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 												vegapb.DataSourceContentTypeOracle,
 											).SetOracleConfig(
@@ -1556,13 +1587,13 @@ func testNewFutureMarketChangeSubmissionWithBadPubKeysOrderAddressFail(t *testin
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -1607,13 +1638,13 @@ func testNewFutureMarketChangeSubmissionWithGoodPubKeysOrderAddressSucceed(t *te
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -1651,13 +1682,13 @@ func testNewFutureMarketChangeSubmissionWithGoodPubKeysOrderAddressSucceed(t *te
 
 func testNewFutureMarketChangeSubmissionWithoutFiltersFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									),
@@ -1675,13 +1706,13 @@ func testNewFutureMarketChangeSubmissionWithoutFiltersFails(t *testing.T) {
 
 func testNewFutureMarketChangeSubmissionWithFiltersSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -1718,13 +1749,13 @@ func testNewFutureMarketChangeSubmissionWithFiltersSucceeds(t *testing.T) {
 
 func testNewFutureMarketChangeSubmissionWithFilterWithoutKeyFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -1751,13 +1782,13 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutKeyFails(t *testing.T) 
 
 func testNewFutureMarketChangeSubmissionWithFilterWithKeySucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -1803,13 +1834,13 @@ func testNewFutureMarketChangeSubmissionWithFilterWithKeySucceeds(t *testing.T) 
 
 func testNewFutureMarketChangeSubmissionWithFilterWithoutKeyNameFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -1844,13 +1875,13 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutKeyNameFails(t *testing
 
 func testNewFutureMarketChangeSubmissionWithFilterWithKeyNameSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -1904,13 +1935,13 @@ func testNewFutureMarketChangeSubmissionWithFilterWithKeyNameSucceeds(t *testing
 
 func testNewFutureMarketChangeSubmissionWithFilterWithoutKeyTypeFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -1986,13 +2017,13 @@ func testNewFutureMarketChangeSubmissionWithFilterWithKeyTypeSucceeds(t *testing
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &protoTypes.ProposalTerms{
-					Change: &protoTypes.ProposalTerms_NewMarket{
-						NewMarket: &protoTypes.NewMarket{
-							Changes: &protoTypes.NewMarketConfiguration{
-								Instrument: &protoTypes.InstrumentConfiguration{
-									Product: &protoTypes.InstrumentConfiguration_Future{
-										Future: &protoTypes.FutureProduct{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								Instrument: &vegapb.InstrumentConfiguration{
+									Product: &vegapb.InstrumentConfiguration_Future{
+										Future: &vegapb.FutureProduct{
 											DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 												vegapb.DataSourceContentTypeOracle,
 											).SetOracleConfig(
@@ -2029,13 +2060,13 @@ func testNewFutureMarketChangeSubmissionWithFilterWithKeyTypeSucceeds(t *testing
 
 func testNewFutureMarketChangeSubmissionWithFilterWithoutConditionsSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -2063,13 +2094,13 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutConditionsSucceeds(t *t
 
 func testNewFutureMarketChangeSubmissionWithFilterWithoutConditionOperatorFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -2126,13 +2157,13 @@ func testNewFutureMarketChangeSubmissionWithFilterWithConditionOperatorSucceeds(
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &protoTypes.ProposalTerms{
-					Change: &protoTypes.ProposalTerms_NewMarket{
-						NewMarket: &protoTypes.NewMarket{
-							Changes: &protoTypes.NewMarketConfiguration{
-								Instrument: &protoTypes.InstrumentConfiguration{
-									Product: &protoTypes.InstrumentConfiguration_Future{
-										Future: &protoTypes.FutureProduct{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								Instrument: &vegapb.InstrumentConfiguration{
+									Product: &vegapb.InstrumentConfiguration_Future{
+										Future: &vegapb.FutureProduct{
 											DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 												vegapb.DataSourceContentTypeOracle,
 											).SetOracleConfig(
@@ -2170,13 +2201,13 @@ func testNewFutureMarketChangeSubmissionWithFilterWithConditionOperatorSucceeds(
 
 func testNewFutureMarketChangeSubmissionWithFilterWithoutConditionValueFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -2212,13 +2243,13 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutConditionValueFails(t *
 
 func testNewFutureMarketChangeSubmissionWithFilterWithConditionValueSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -2254,13 +2285,13 @@ func testNewFutureMarketChangeSubmissionWithFilterWithConditionValueSucceeds(t *
 
 func testNewFutureMarketChangeSubmissionWithoutDataSourceSpecBindingFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{},
 							},
 						},
 					},
@@ -2274,14 +2305,14 @@ func testNewFutureMarketChangeSubmissionWithoutDataSourceSpecBindingFails(t *tes
 
 func testNewFutureMarketChangeSubmissionWithDataSourceSpecBindingSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
-									DataSourceSpecBinding: &protoTypes.DataSourceSpecToFutureBinding{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
+									DataSourceSpecBinding: &vegapb.DataSourceSpecToFutureBinding{},
 								},
 							},
 						},
@@ -2296,25 +2327,25 @@ func testNewFutureMarketChangeSubmissionWithDataSourceSpecBindingSucceeds(t *tes
 
 func testNewFutureMarketChangeSubmissionMissingOracleBindingPropertyFails(t *testing.T, property string) {
 	t.Helper()
-	var binding *protoTypes.DataSourceSpecToFutureBinding
+	var binding *vegapb.DataSourceSpecToFutureBinding
 	if property == "settlement_data_property" {
-		binding = &protoTypes.DataSourceSpecToFutureBinding{
+		binding = &vegapb.DataSourceSpecToFutureBinding{
 			SettlementDataProperty: "",
 		}
 	} else {
-		binding = &protoTypes.DataSourceSpecToFutureBinding{
+		binding = &vegapb.DataSourceSpecToFutureBinding{
 			TradingTerminationProperty: "",
 		}
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecBinding: binding,
 								},
 							},
@@ -2337,20 +2368,20 @@ func testNewFutureMarketChangeSubmissionWithoutSettlementDataPropertyFails(t *te
 }
 
 func testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingSucceeds(t *testing.T) {
-	testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t, &protoTypes.DataSourceSpecToFutureBinding{SettlementDataProperty: "key1"}, "settlement_data_property", "key1")
-	testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t, &protoTypes.DataSourceSpecToFutureBinding{TradingTerminationProperty: "key2"}, "settlement_data_property", "key2")
+	testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t, &vegapb.DataSourceSpecToFutureBinding{SettlementDataProperty: "key1"}, "settlement_data_property", "key1")
+	testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t, &vegapb.DataSourceSpecToFutureBinding{TradingTerminationProperty: "key2"}, "settlement_data_property", "key2")
 }
 
-func testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t *testing.T, binding *protoTypes.DataSourceSpecToFutureBinding, bindingName string, bindingKey string) {
+func testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t *testing.T, binding *vegapb.DataSourceSpecToFutureBinding, bindingName string, bindingKey string) {
 	t.Helper()
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -2381,16 +2412,16 @@ func testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingFor
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_binding."+bindingName), commands.ErrIsMismatching)
 }
 
-func testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t *testing.T, binding *protoTypes.DataSourceSpecToFutureBinding, bindingName string) {
+func testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t *testing.T, binding *vegapb.DataSourceSpecToFutureBinding, bindingName string) {
 	t.Helper()
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecBinding: binding,
 								},
 							},
@@ -2405,20 +2436,20 @@ func testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSp
 }
 
 func testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingFails(t *testing.T) {
-	testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t, &protoTypes.DataSourceSpecToFutureBinding{SettlementDataProperty: "My property"}, "settlement_data_property")
-	testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t, &protoTypes.DataSourceSpecToFutureBinding{TradingTerminationProperty: "My property"}, "trading_termination_property")
+	testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t, &vegapb.DataSourceSpecToFutureBinding{SettlementDataProperty: "My property"}, "settlement_data_property")
+	testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t, &vegapb.DataSourceSpecToFutureBinding{TradingTerminationProperty: "My property"}, "trading_termination_property")
 }
 
 func testNewFutureMarketChangeSubmissionWithSettlementDataPropertySucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
-									DataSourceSpecBinding: &protoTypes.DataSourceSpecToFutureBinding{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
+									DataSourceSpecBinding: &vegapb.DataSourceSpecToFutureBinding{
 										SettlementDataProperty: "My property",
 									},
 								},
@@ -2435,11 +2466,11 @@ func testNewFutureMarketChangeSubmissionWithSettlementDataPropertySucceeds(t *te
 
 func testNewSimpleRiskParametersChangeSubmissionWithoutSimpleRiskParametersFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_Simple{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_Simple{},
 					},
 				},
 			},
@@ -2451,12 +2482,12 @@ func testNewSimpleRiskParametersChangeSubmissionWithoutSimpleRiskParametersFails
 
 func testNewSimpleRiskParametersChangeSubmissionWithSimpleRiskParametersSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_Simple{
-							Simple: &protoTypes.SimpleModelParams{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_Simple{
+							Simple: &vegapb.SimpleModelParams{},
 						},
 					},
 				},
@@ -2469,12 +2500,12 @@ func testNewSimpleRiskParametersChangeSubmissionWithSimpleRiskParametersSucceeds
 
 func testNewSimpleRiskParametersChangeSubmissionWithPositiveMinMoveDownFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_Simple{
-							Simple: &protoTypes.SimpleModelParams{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_Simple{
+							Simple: &vegapb.SimpleModelParams{
 								MinMoveDown: 1,
 							},
 						},
@@ -2503,12 +2534,12 @@ func testNewSimpleRiskParametersChangeSubmissionWithNonPositiveMinMoveDownSuccee
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &protoTypes.ProposalTerms{
-					Change: &protoTypes.ProposalTerms_NewMarket{
-						NewMarket: &protoTypes.NewMarket{
-							Changes: &protoTypes.NewMarketConfiguration{
-								RiskParameters: &protoTypes.NewMarketConfiguration_Simple{
-									Simple: &protoTypes.SimpleModelParams{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								RiskParameters: &vegapb.NewMarketConfiguration_Simple{
+									Simple: &vegapb.SimpleModelParams{
 										MinMoveDown: tc.value,
 									},
 								},
@@ -2525,12 +2556,12 @@ func testNewSimpleRiskParametersChangeSubmissionWithNonPositiveMinMoveDownSuccee
 
 func testNewSpotSimpleRiskParametersChangeSubmissionWithNegativeMaxMoveUpFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_Simple{
-							Simple: &protoTypes.SimpleModelParams{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_Simple{
+							Simple: &vegapb.SimpleModelParams{
 								MaxMoveUp: -1,
 							},
 						},
@@ -2559,12 +2590,12 @@ func testNewSimpleRiskParametersChangeSubmissionWithNonNegativeMaxMoveUpSucceeds
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &protoTypes.ProposalTerms{
-					Change: &protoTypes.ProposalTerms_NewMarket{
-						NewMarket: &protoTypes.NewMarket{
-							Changes: &protoTypes.NewMarketConfiguration{
-								RiskParameters: &protoTypes.NewMarketConfiguration_Simple{
-									Simple: &protoTypes.SimpleModelParams{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								RiskParameters: &vegapb.NewMarketConfiguration_Simple{
+									Simple: &vegapb.SimpleModelParams{
 										MaxMoveUp: tc.value,
 									},
 								},
@@ -2595,12 +2626,12 @@ func testNewSimpleRiskParametersChangeSubmissionWithWrongProbabilityOfTradingFai
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &protoTypes.ProposalTerms{
-					Change: &protoTypes.ProposalTerms_NewMarket{
-						NewMarket: &protoTypes.NewMarket{
-							Changes: &protoTypes.NewMarketConfiguration{
-								RiskParameters: &protoTypes.NewMarketConfiguration_Simple{
-									Simple: &protoTypes.SimpleModelParams{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								RiskParameters: &vegapb.NewMarketConfiguration_Simple{
+									Simple: &vegapb.SimpleModelParams{
 										ProbabilityOfTrading: tc.value,
 									},
 								},
@@ -2635,12 +2666,12 @@ func testNewSimpleRiskParametersChangeSubmissionWithRightProbabilityOfTradingSuc
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &protoTypes.ProposalTerms{
-					Change: &protoTypes.ProposalTerms_NewMarket{
-						NewMarket: &protoTypes.NewMarket{
-							Changes: &protoTypes.NewMarketConfiguration{
-								RiskParameters: &protoTypes.NewMarketConfiguration_Simple{
-									Simple: &protoTypes.SimpleModelParams{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								RiskParameters: &vegapb.NewMarketConfiguration_Simple{
+									Simple: &vegapb.SimpleModelParams{
 										ProbabilityOfTrading: tc.value,
 									},
 								},
@@ -2658,11 +2689,11 @@ func testNewSimpleRiskParametersChangeSubmissionWithRightProbabilityOfTradingSuc
 
 func testNewLogNormalRiskParametersChangeSubmissionWithoutLogNormalRiskParametersFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{},
 					},
 				},
 			},
@@ -2674,15 +2705,15 @@ func testNewLogNormalRiskParametersChangeSubmissionWithoutLogNormalRiskParameter
 
 func testNewLogNormalRiskParametersChangeSubmissionWithLogNormalRiskParametersSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 1,
 								Tau:                   2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2700,12 +2731,12 @@ func testNewLogNormalRiskParametersChangeSubmissionWithLogNormalRiskParametersSu
 
 func testNewLogNormalRiskParametersChangeSubmissionWithoutParamsFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{},
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{},
 						},
 					},
 				},
@@ -2718,15 +2749,15 @@ func testNewLogNormalRiskParametersChangeSubmissionWithoutParamsFails(t *testing
 
 func testNewLogNormalRiskParametersChangeSubmissionInvalidRiskAversion(t *testing.T) {
 	cTooSmall := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 5e-9,
 								Tau:                   1.0,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0.0,
 									Sigma: 0.1,
 									R:     0,
@@ -2742,15 +2773,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidRiskAversion(t *testin
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_aversion_parameter"), errors.New("must be between [1e-8, 0.1]"))
 
 	cNeg := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 1e-9,
 								Tau:                   2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2766,15 +2797,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidRiskAversion(t *testin
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_aversion_parameter"), errors.New("must be between [1e-8, 0.1]"))
 
 	cTooBig := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1 + 1e-8,
 								Tau:                   2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2790,15 +2821,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidRiskAversion(t *testin
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_aversion_parameter"), errors.New("must be between [1e-8, 0.1]"))
 
 	cJustAboutRight1 := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 1e-8,
 								Tau:                   2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2814,15 +2845,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidRiskAversion(t *testin
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_aversion_parameter"), errors.New("must be between [1e-8, 1)"))
 
 	cJustAboutRight2 := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 1 - 1e-12,
 								Tau:                   2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2840,15 +2871,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidRiskAversion(t *testin
 
 func testNewLogNormalRiskParametersChangeSubmissionInvalidTau(t *testing.T) {
 	cZero := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2864,15 +2895,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidTau(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.tau"), errors.New("must be between [1e-8, 1]"))
 
 	cNeg := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   1e-9,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2888,15 +2919,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidTau(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.tau"), errors.New("must be between [1e-8, 1]"))
 
 	cTooLarge := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   1 + 1e-12,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2912,15 +2943,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidTau(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.tau"), errors.New("must be between [1e-8, 1]"))
 
 	cJustAboutRight1 := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   1e-12,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2936,15 +2967,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidTau(t *testing.T) {
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.tau"), errors.New("must be between (0, 1]"))
 
 	cJustAboutRight2 := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   1,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0,
 									Sigma: 0.1,
 									R:     0,
@@ -2962,15 +2993,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidTau(t *testing.T) {
 
 func testNewLogNormalRiskParametersChangeSubmissionInvalidMu(t *testing.T) {
 	cNaN := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    math.NaN(),
 									Sigma: 0.1,
 									R:     0,
@@ -2986,15 +3017,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidMu(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.mu"), commands.ErrIsNotValidNumber)
 
 	cTooSmall := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    -1e-6 - 1e-12,
 									Sigma: 0.1,
 									R:     0,
@@ -3010,15 +3041,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidMu(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.mu"), errors.New("must be between [-1e-6,1e-6]"))
 
 	cTooLarge := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    1e-6 + 1e-12,
 									Sigma: 0.1,
 									R:     0,
@@ -3034,15 +3065,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidMu(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.mu"), errors.New("must be between [-1e-6,1e-6]"))
 
 	cJustAboutRight1 := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    -20,
 									Sigma: 0.1,
 									R:     0,
@@ -3058,15 +3089,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidMu(t *testing.T) {
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.mu"), errors.New("must be between [-20,20]"))
 
 	cJustAboutRight2 := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    20,
 									Sigma: 0.1,
 									R:     0,
@@ -3084,15 +3115,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidMu(t *testing.T) {
 
 func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 	cNaN := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0.0,
 									Sigma: 0.1,
 									R:     math.NaN(),
@@ -3108,15 +3139,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.r"), commands.ErrIsNotValidNumber)
 
 	cTooSmall := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0.0,
 									Sigma: 0.1,
 									R:     -1 - 1e-12,
@@ -3132,15 +3163,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.r"), errors.New("must be between [-1,1]"))
 
 	cTooLarge := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0.0,
 									Sigma: 0.1,
 									R:     1 + 1e-12,
@@ -3156,15 +3187,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.r"), errors.New("must be between [-1,1]"))
 
 	cJustAboutRight1 := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0.0,
 									Sigma: 0.1,
 									R:     -20,
@@ -3180,15 +3211,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.r"), errors.New("must be between [-20,20]"))
 
 	cJustAboutRight2 := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0.0,
 									Sigma: 0.1,
 									R:     20,
@@ -3206,15 +3237,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 
 func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 	cNaN := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0.0,
 									Sigma: math.NaN(),
 									R:     0,
@@ -3230,15 +3261,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), commands.ErrIsNotValidNumber)
 
 	cNeg := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0.0,
 									Sigma: 1e-4,
 									R:     0,
@@ -3254,15 +3285,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-3,50]"))
 
 	cTooSmall := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0.0,
 									Sigma: 1e-3 - 1e-12,
 									R:     0,
@@ -3278,15 +3309,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-3,50]"))
 
 	cTooLarge := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0.0,
 									Sigma: 50 + 1e-12,
 									R:     0,
@@ -3302,15 +3333,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-3,50]"))
 
 	cJustAboutRight1 := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0.0,
 									Sigma: 1e-4,
 									R:     0,
@@ -3326,15 +3357,15 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma"), errors.New("must be between [1e-4,100]"))
 
 	cJustAboutRight2 := &commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						RiskParameters: &protoTypes.NewMarketConfiguration_LogNormal{
-							LogNormal: &protoTypes.LogNormalRiskModel{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_LogNormal{
+							LogNormal: &vegapb.LogNormalRiskModel{
 								RiskAversionParameter: 0.1,
 								Tau:                   0.2,
-								Params: &protoTypes.LogNormalModelParams{
+								Params: &vegapb.LogNormalModelParams{
 									Mu:    0.0,
 									Sigma: 50,
 									R:     0,
@@ -3360,13 +3391,13 @@ func testNewMarketSubmissionWithTooLongReferenceFails(t *testing.T) {
 
 func testFutureMarketSubmissionWithInternalTimestampForTradingTerminationSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForTradingTermination: &vegapb.DataSourceDefinition{
 										SourceType: &vegapb.DataSourceDefinition_Internal{
 											Internal: &vegapb.DataSourceDefinitionInternal{
@@ -3397,13 +3428,13 @@ func testFutureMarketSubmissionWithInternalTimestampForTradingTerminationSucceed
 
 func testFutureMarketSubmissionWithInvalidOracleConditionOrType(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -3441,13 +3472,13 @@ func testFutureMarketSubmissionWithInvalidOracleConditionOrType(t *testing.T) {
 
 func testFutureMarketSubmissionWithExternalTradingTerminationNoPublicKeyFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -3480,13 +3511,13 @@ func testFutureMarketSubmissionWithExternalTradingTerminationNoPublicKeyFails(t 
 
 func testFutureMarketSubmissionWithInternalTradingTerminationSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeInternalTimeTermination,
 									).SetOracleConfig(
@@ -3520,13 +3551,13 @@ func testFutureMarketSubmissionWithInternalTradingTerminationSucceeds(t *testing
 
 func testFutureMarketSubmissionWithInternalTradingInvalidOperatorTerminationFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeInternalTimeTermination,
 									).SetOracleConfig(
@@ -3559,13 +3590,13 @@ func testFutureMarketSubmissionWithInternalTradingInvalidOperatorTerminationFail
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data"), commands.ErrIsRequired)
 
 	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeInternalTimeTermination,
 									).SetTimeTriggerConditionConfig(
@@ -3590,13 +3621,13 @@ func testFutureMarketSubmissionWithInternalTradingInvalidOperatorTerminationFail
 
 func testFutureMarketSubmissionWithExternalTradingTerminationBuiltInKeyNoPublicKeyFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -3634,13 +3665,13 @@ func testFutureMarketSubmissionWithExternalTradingTerminationBuiltInKeyNoPublicK
 
 func testFutureMarketSubmissionWithExternalTradingSettlementBuiltInKeyNoPublicKeyFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -3684,13 +3715,13 @@ func testFutureMarketSubmissionWithExternalTradingSettlementTimestampKeySucceeds
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -3745,13 +3776,13 @@ func testFutureMarketSubmissionWithExternalTradingTerminationBuiltInKeySucceeds(
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -3816,13 +3847,13 @@ func testFutureMarketSubmissionWithExternalTradingTerminationNoSignerFails(t *te
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -3881,13 +3912,13 @@ func testFutureMarketSubmissionWithExternalSettlementDataNoSignerFails(t *testin
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -3946,13 +3977,13 @@ func testFutureMarketSubmissionWithInternalSettlementDataFails(t *testing.T) {
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeInternalTimeTermination,
 									).SetTimeTriggerConditionConfig(
@@ -3995,13 +4026,13 @@ func testFutureMarketSubmissionWithInternalSettlementDataFails(t *testing.T) {
 
 func testFutureMarketSubmissionWithExternalSettlementDataAndTerminationEmptySignerFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -4057,13 +4088,13 @@ func testFutureMarketSubmissionWithExternalSettlementDataAndTerminationEmptySign
 
 func testFutureMarketSubmissionWithExternalSettlementDataAndTerminationNoSignerFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -4117,13 +4148,13 @@ func testFutureMarketSubmissionWithExternalSettlementDataAndTerminationNoSignerF
 
 func testFutureMarketSubmissionWithExternalSettlementDataAndTerminationEmptyPubKeySignerFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -4193,13 +4224,13 @@ func testFutureMarketSubmissionWithExternalSettlementDataAndTerminationEmptyPubK
 
 func testFutureMarketSubmissionWithExternalSettlementDataAndTerminationEmptyEthAddressSignerFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{
-								Future: &protoTypes.FutureProduct{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeOracle,
 									).SetOracleConfig(
@@ -4265,4 +4296,1352 @@ func testFutureMarketSubmissionWithExternalSettlementDataAndTerminationEmptyEthA
 
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers.0"), commands.ErrIsNotValid)
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination.external.oracle.signers.0"), commands.ErrIsNotValid)
+}
+
+func testNewPerpsMarketChangeSubmissionWithoutPerpsFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithPerpsSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithoutSettlementAssetFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									SettlementAsset: "",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.settlement_asset"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithSettlementAssetSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									SettlementAsset: "BTC",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.settlement_asset"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithoutQuoteNameFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									QuoteName: "",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.quote_name"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithQuoteNameSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									QuoteName: "BTC",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.quote_name"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithoutOracleSpecFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithOracleSpecSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									DataSourceSpecForSettlementData: &vegapb.DataSourceDefinition{},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithoutFiltersFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeEthOracle,
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.ethoracle.filters"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFiltersSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeEthOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_EthOracle{
+											EthOracle: &vegapb.EthCallSpec{
+												Filters: []*datapb.Filter{
+													{},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.ethoracle.filters"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithoutKeyFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeEthOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_EthOracle{
+											EthOracle: &vegapb.EthCallSpec{
+												Filters: []*datapb.Filter{
+													{}, {},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.ethoracle.filters.0.key"), commands.ErrIsNotValid)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.ethoracle.filters.1.key"), commands.ErrIsNotValid)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithKeySucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeEthOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_EthOracle{
+											EthOracle: &vegapb.EthCallSpec{
+												Filters: []*datapb.Filter{
+													{
+														Key: &datapb.PropertyKey{},
+													}, {
+														Key: &datapb.PropertyKey{},
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.ethoracle.filters.0.key"), commands.ErrIsNotValid)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.ethoracle.filters.1.key"), commands.ErrIsNotValid)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithoutKeyNameFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeEthOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_EthOracle{
+											EthOracle: &vegapb.EthCallSpec{
+												Filters: []*datapb.Filter{
+													{
+														Key: &datapb.PropertyKey{
+															Name: "",
+														},
+													}, {
+														Key: &datapb.PropertyKey{
+															Name: "",
+														},
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.ethoracle.filters.0.key.name"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.ethoracle.filters.1.key.name"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithKeyNameSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeEthOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_EthOracle{
+											EthOracle: &vegapb.EthCallSpec{
+												Filters: []*datapb.Filter{
+													{
+														Key: &datapb.PropertyKey{
+															Name: "key1",
+														},
+													}, {
+														Key: &datapb.PropertyKey{
+															Name: "key2",
+														},
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.ethoracle.filters.0.key.name"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.ethoracle.filters.1.key.name"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithoutKeyTypeFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeEthOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_EthOracle{
+											EthOracle: &vegapb.EthCallSpec{
+												Filters: []*datapb.Filter{
+													{
+														Key: &datapb.PropertyKey{
+															Type: datapb.PropertyKey_TYPE_UNSPECIFIED,
+														},
+													}, {
+														Key: &datapb.PropertyKey{},
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.ethoracle.filters.0.key.type"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.ethoracle.filters.1.key.type"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithKeyTypeSucceeds(t *testing.T) {
+	testCases := []struct {
+		msg   string
+		value datapb.PropertyKey_Type
+	}{
+		{
+			msg:   "with EMPTY",
+			value: datapb.PropertyKey_TYPE_EMPTY,
+		}, {
+			msg:   "with INTEGER",
+			value: datapb.PropertyKey_TYPE_INTEGER,
+		}, {
+			msg:   "with STRING",
+			value: datapb.PropertyKey_TYPE_STRING,
+		}, {
+			msg:   "with BOOLEAN",
+			value: datapb.PropertyKey_TYPE_BOOLEAN,
+		}, {
+			msg:   "with DECIMAL",
+			value: datapb.PropertyKey_TYPE_DECIMAL,
+		}, {
+			msg:   "with TIMESTAMP",
+			value: datapb.PropertyKey_TYPE_TIMESTAMP,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.msg, func(t *testing.T) {
+			err := checkProposalSubmission(&commandspb.ProposalSubmission{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								Instrument: &vegapb.InstrumentConfiguration{
+									Product: &vegapb.InstrumentConfiguration_Perps{
+										Perps: &vegapb.PerpsProduct{
+											DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+												vegapb.DataSourceContentTypeEthOracle,
+											).SetOracleConfig(
+												&vegapb.DataSourceDefinitionExternal_EthOracle{
+													EthOracle: &vegapb.EthCallSpec{
+														Filters: []*datapb.Filter{
+															{
+																Key: &datapb.PropertyKey{
+																	Type: tc.value,
+																},
+															}, {
+																Key: &datapb.PropertyKey{
+																	Type: tc.value,
+																},
+															},
+														},
+													},
+												},
+											),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+
+			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec.external.ethoracle.filters.0.key.type"), commands.ErrIsRequired)
+			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec.external.ethoracle.filters.1.key.type"), commands.ErrIsRequired)
+		})
+	}
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithoutConditionsSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeEthOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_EthOracle{
+											EthOracle: &vegapb.EthCallSpec{
+												Filters: []*datapb.Filter{
+													{
+														Conditions: []*datapb.Condition{},
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec.external.ethoracle.filters.0.conditions"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithoutConditionOperatorFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeEthOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_EthOracle{
+											EthOracle: &vegapb.EthCallSpec{
+												Filters: []*datapb.Filter{
+													{
+														Conditions: []*datapb.Condition{
+															{
+																Operator: datapb.Condition_OPERATOR_UNSPECIFIED,
+															},
+															{},
+														},
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.ethoracle.filters.0.conditions.0.operator"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.ethoracle.filters.0.conditions.1.operator"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithConditionOperatorSucceeds(t *testing.T) {
+	testCases := []struct {
+		msg   string
+		value datapb.Condition_Operator
+	}{
+		{
+			msg:   "with EQUALS",
+			value: datapb.Condition_OPERATOR_EQUALS,
+		}, {
+			msg:   "with GREATER_THAN",
+			value: datapb.Condition_OPERATOR_GREATER_THAN,
+		}, {
+			msg:   "with GREATER_THAN_OR_EQUAL",
+			value: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+		}, {
+			msg:   "with LESS_THAN",
+			value: datapb.Condition_OPERATOR_LESS_THAN,
+		}, {
+			msg:   "with LESS_THAN_OR_EQUAL",
+			value: datapb.Condition_OPERATOR_LESS_THAN_OR_EQUAL,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.msg, func(t *testing.T) {
+			err := checkProposalSubmission(&commandspb.ProposalSubmission{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								Instrument: &vegapb.InstrumentConfiguration{
+									Product: &vegapb.InstrumentConfiguration_Perps{
+										Perps: &vegapb.PerpsProduct{
+											DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+												vegapb.DataSourceContentTypeEthOracle,
+											).SetOracleConfig(
+												&vegapb.DataSourceDefinitionExternal_EthOracle{
+													EthOracle: &vegapb.EthCallSpec{
+														Filters: []*datapb.Filter{
+															{
+																Conditions: []*datapb.Condition{
+																	{
+																		Operator: tc.value,
+																	},
+																	{
+																		Operator: tc.value,
+																	},
+																},
+															},
+														},
+													},
+												},
+											),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+
+			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec.external.ethoracle.filters.0.conditions.0.operator"), commands.ErrIsRequired)
+			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec.external.ethoracle.filters.1.conditions.0.operator"), commands.ErrIsRequired)
+		})
+	}
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithoutConditionValueFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeEthOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_EthOracle{
+											EthOracle: &vegapb.EthCallSpec{
+												Filters: []*datapb.Filter{
+													{
+														Conditions: []*datapb.Condition{
+															{
+																Value: "",
+															},
+															{
+																Value: "",
+															},
+														},
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.ethoracle.filters.0.conditions.0.value"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.ethoracle.filters.0.conditions.1.value"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithConditionValueSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeEthOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_EthOracle{
+											EthOracle: &vegapb.EthCallSpec{
+												Filters: []*datapb.Filter{
+													{
+														Conditions: []*datapb.Condition{
+															{
+																Value: "value 1",
+															},
+															{
+																Value: "value 2",
+															},
+														},
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec.external.ethoracle.filters.0.conditions.0.value"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec.external.ethoracle.filters.0.conditions.1.value"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithoutDataSourceSpecBindingFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithDataSourceSpecBindingSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									DataSourceSpecBinding: &vegapb.DataSourceSpecToPerpsBinding{},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingSucceeds(t *testing.T) {
+	testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t, &vegapb.DataSourceSpecToPerpsBinding{SettlementDataProperty: "key1"}, "settlement_data_property", "key1")
+}
+
+func testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t *testing.T, binding *vegapb.DataSourceSpecToPerpsBinding, bindingName string, bindingKey string) {
+	t.Helper()
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeEthOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_EthOracle{
+											EthOracle: &vegapb.EthCallSpec{
+												Filters: []*datapb.Filter{
+													{
+														Key: &datapb.PropertyKey{
+															Name: bindingKey,
+														},
+													}, {
+														Key: &datapb.PropertyKey{},
+													},
+												},
+											},
+										},
+									),
+									DataSourceSpecBinding: binding,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding."+bindingName), commands.ErrIsMismatching)
+}
+
+func testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t *testing.T, binding *vegapb.DataSourceSpecToPerpsBinding, bindingName string) {
+	t.Helper()
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									DataSourceSpecBinding: binding,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding."+bindingName), commands.ErrIsMismatching)
+}
+
+func testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingFails(t *testing.T) {
+	testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t, &vegapb.DataSourceSpecToPerpsBinding{SettlementDataProperty: "My property"}, "settlement_data_property")
+}
+
+func testNewPerpsMarketChangeSubmissionWithSettlementDataPropertySucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Perps{
+								Perps: &vegapb.PerpsProduct{
+									DataSourceSpecBinding: &vegapb.DataSourceSpecToPerpsBinding{
+										SettlementDataProperty: "My property",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property"), commands.ErrIsRequired)
+}
+
+func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
+	cases := []struct {
+		product vegapb.PerpsProduct
+		err     error
+		path    string
+		desc    string
+	}{
+		// margin_funding_factor
+		{
+			product: vegapb.PerpsProduct{
+				MarginFundingFactor: "",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor",
+			err:  commands.ErrIsRequired,
+			desc: "margin_funding_factor is empty",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				MarginFundingFactor: "nope",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor",
+			err:  commands.ErrIsNotValidNumber,
+			desc: "margin_funding_factor is not a valid number",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				MarginFundingFactor: "-10",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor",
+			err:  commands.ErrMustBeWithinRange01,
+			desc: "margin_funding_factor is not within range (< 0)",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				MarginFundingFactor: "10",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor",
+			err:  commands.ErrMustBeWithinRange01,
+			desc: "margin_funding_factor is not within range (> 1)",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				MarginFundingFactor: "0.5",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor",
+			desc: "margin_funding_factor is valid",
+		},
+		// interest_rate
+		{
+			product: vegapb.PerpsProduct{
+				InterestRate: "",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
+			err:  commands.ErrIsRequired,
+			desc: "interest_rate is empty",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				InterestRate: "nope",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
+			err:  commands.ErrIsNotValidNumber,
+			desc: "interest_rate is not a valid number",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				InterestRate: "-10",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "interest_rate is not within range (< -1)",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				InterestRate: "10",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "interest_rate is not within range (> 1)",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				InterestRate: "0.5",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
+			desc: "interest_rate is valid",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				InterestRate: "-0.5",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
+			desc: "interest_rate is valid",
+		},
+		// clamp_lower_bound
+		{
+			product: vegapb.PerpsProduct{
+				ClampLowerBound: "",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
+			err:  commands.ErrIsRequired,
+			desc: "clamp_lower_bound is empty",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampLowerBound: "nope",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
+			err:  commands.ErrIsNotValidNumber,
+			desc: "clamp_lower_bound is not a valid number",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampLowerBound: "-10",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "clamp_lower_bound is not within range (< -1)",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampLowerBound: "10",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "clamp_lower_bound is not within range (> 1)",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampLowerBound: "0.5",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
+			desc: "clamp_lower_bound is valid",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampLowerBound: "-0.5",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
+			desc: "clamp_lower_bound is valid",
+		},
+		// clamp_upper_bound
+		{
+			product: vegapb.PerpsProduct{
+				ClampUpperBound: "",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrIsRequired,
+			desc: "clamp_upper_bound is empty",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampUpperBound: "nope",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrIsNotValidNumber,
+			desc: "clamp_upper_bound is not a valid number",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampUpperBound: "-10",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "clamp_upper_bound is not within range (< -1)",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampUpperBound: "10",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "clamp_upper_bound is not within range (> 1)",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampUpperBound: "0.5",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
+			desc: "clamp_upper_bound is valid",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampUpperBound: "-0.5",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
+			desc: "clamp_upper_bound is valid",
+		},
+		// clamp lower and upper
+		{
+			product: vegapb.PerpsProduct{
+				ClampLowerBound: "0.5",
+				ClampUpperBound: "0.5",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
+			desc: "clamp_upper_bound == clamp_lower_bound is valid",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampLowerBound: "0.4",
+				ClampUpperBound: "0.5",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
+			desc: "clamp_upper_bound > clamp_lower_bound is valid",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				ClampLowerBound: "0.5",
+				ClampUpperBound: "0.4",
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrMustBeGTEClampLowerBound,
+			desc: "clamp_upper_bound < clamp_lower_bound is invalid",
+		},
+	}
+
+	for _, v := range cases {
+		t.Run(v.desc, func(t *testing.T) {
+			err := checkProposalSubmission(&commandspb.ProposalSubmission{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								Instrument: &vegapb.InstrumentConfiguration{
+									Product: &vegapb.InstrumentConfiguration_Perps{
+										Perps: &v.product,
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+
+			errs := err.Get(v.path)
+
+			// no errors expected
+			if v.err == nil {
+				assert.Len(t, errs, 0, v.desc)
+				return
+			}
+
+			assert.Contains(t, errs, v.err, v.desc)
+		})
+	}
+}
+
+func TestNewPerpsMarketChangeSubmissionSettlementSchedule(t *testing.T) {
+	cases := []struct {
+		product vegapb.PerpsProduct
+		err     error
+		path    string
+		desc    string
+	}{
+		{
+			product: vegapb.PerpsProduct{
+				DataSourceSpecForSettlementSchedule: &vegapb.DataSourceDefinition{
+					SourceType: &vegapb.DataSourceDefinition_Internal{
+						Internal: &vega.DataSourceDefinitionInternal{
+							SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+								TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
+									Triggers: []*datapb.InternalTimeTrigger{
+										{
+											Initial: nil,
+											Every:   0,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_schedule.internal.timetrigger.triggers.0.every",
+			err:  commands.ErrIsNotValid,
+			desc: "not a valid every",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				DataSourceSpecForSettlementSchedule: &vegapb.DataSourceDefinition{
+					SourceType: &vegapb.DataSourceDefinition_Internal{
+						Internal: &vega.DataSourceDefinitionInternal{
+							SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+								TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
+									Triggers: []*datapb.InternalTimeTrigger{
+										{
+											Initial: nil,
+											Every:   -1,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_schedule.internal.timetrigger.triggers.0.every",
+			err:  commands.ErrIsNotValid,
+			desc: "not a valid every",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				DataSourceSpecForSettlementSchedule: &vegapb.DataSourceDefinition{
+					SourceType: &vegapb.DataSourceDefinition_Internal{
+						Internal: &vega.DataSourceDefinitionInternal{
+							SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+								TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
+									Triggers: []*datapb.InternalTimeTrigger{
+										{
+											Initial: ptr.From(int64(-1)),
+											Every:   100,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_schedule.internal.timetrigger.triggers.0.initial",
+			err:  commands.ErrIsNotValid,
+			desc: "not a valid every",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				DataSourceSpecForSettlementSchedule: &vegapb.DataSourceDefinition{
+					SourceType: &vegapb.DataSourceDefinition_Internal{
+						Internal: &vega.DataSourceDefinitionInternal{
+							SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+								TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
+									Triggers: []*datapb.InternalTimeTrigger{
+										{
+											Initial: nil,
+											Every:   100,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_schedule.internal.timetrigger",
+			desc: "valid with initial nil",
+		},
+		{
+			product: vegapb.PerpsProduct{
+				DataSourceSpecForSettlementSchedule: &vegapb.DataSourceDefinition{
+					SourceType: &vegapb.DataSourceDefinition_Internal{
+						Internal: &vega.DataSourceDefinitionInternal{
+							SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+								TimeTrigger: &vegapb.DataSourceSpecConfigurationTimeTrigger{
+									Triggers: []*datapb.InternalTimeTrigger{
+										{
+											Initial: ptr.From(int64(100)),
+											Every:   100,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_schedule.internal.timetrigger",
+			desc: "valid",
+		},
+	}
+
+	for _, v := range cases {
+		t.Run(v.desc, func(t *testing.T) {
+			err := checkProposalSubmission(&commandspb.ProposalSubmission{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								Instrument: &vegapb.InstrumentConfiguration{
+									Product: &vegapb.InstrumentConfiguration_Perps{
+										Perps: &v.product,
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+
+			errs := err.Get(v.path)
+
+			// no errors expected
+			if v.err == nil {
+				assert.Len(t, errs, 0, v.desc)
+				return
+			}
+
+			assert.Contains(t, errs, v.err, v.desc)
+		})
+	}
+}
+
+func testFutureMarketSubmissionWithInternalTimeTriggerTerminationDataFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_Oracle{
+											Oracle: &vegapb.DataSourceSpecConfiguration{
+												Signers: []*datapb.Signer{
+													{
+														Signer: &datapb.Signer_EthAddress{
+															EthAddress: &datapb.ETHAddress{
+																Address: "",
+															},
+														},
+													},
+												},
+												Filters: []*datapb.Filter{
+													{
+														Key: &datapb.PropertyKey{
+															Name: "vegaprotocol.builtin.prices.ETH.value",
+															Type: datapb.PropertyKey_TYPE_INTEGER,
+														},
+														Conditions: []*datapb.Condition{
+															{
+																Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+															},
+														},
+													},
+												},
+											},
+										},
+									),
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeInternalTimeTriggerTermination,
+									).SetTimeTriggerConditionConfig(
+										[]*datapb.Condition{
+											{
+												// It does not matter what conditions are set here
+												Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination.internal.timetrigger"), commands.ErrIsNotValid)
+}
+
+func testFutureMarketSubmissionWithInternalTimeTriggerSettlementDataFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeInternalTimeTriggerTermination,
+									).SetTimeTriggerConditionConfig(
+										[]*datapb.Condition{
+											{
+												// It does not matter what conditions are set here
+												Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+											},
+										},
+									),
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeInternalTimeTriggerTermination,
+									).SetTimeTriggerConditionConfig(
+										[]*datapb.Condition{
+											{
+												// It does not matter what conditions are set here
+												Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.internal.timetrigger"), commands.ErrIsNotValid)
 }

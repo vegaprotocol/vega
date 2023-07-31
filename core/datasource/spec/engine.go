@@ -185,7 +185,7 @@ func (e *Engine) sendNewSpecSubscription(ctx context.Context, update updatedSubs
 	}
 	proto.Spec.CreatedAt = update.specActivatedAt.UnixNano()
 	proto.Spec.Status = vegapb.DataSourceSpec_STATUS_ACTIVE
-	e.broker.Send(events.NewOracleSpecEvent(ctx, vegapb.OracleSpec{ExternalDataSourceSpec: proto}))
+	e.broker.Send(events.NewOracleSpecEvent(ctx, &vegapb.OracleSpec{ExternalDataSourceSpec: proto}))
 }
 
 // sendSpecDeactivation send an event to the broker to inform of
@@ -198,7 +198,7 @@ func (e *Engine) sendSpecDeactivation(ctx context.Context, update updatedSubscri
 
 	proto.Spec.CreatedAt = update.specActivatedAt.UnixNano()
 	proto.Spec.Status = vegapb.DataSourceSpec_STATUS_DEACTIVATED
-	e.broker.Send(events.NewOracleSpecEvent(ctx, vegapb.OracleSpec{ExternalDataSourceSpec: proto}))
+	e.broker.Send(events.NewOracleSpecEvent(ctx, &vegapb.OracleSpec{ExternalDataSourceSpec: proto}))
 }
 
 // sendMatchedData send an event to the broker to inform of

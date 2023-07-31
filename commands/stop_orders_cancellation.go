@@ -15,11 +15,11 @@ func checkStopOrdersCancellation(cmd *commandspb.StopOrdersCancellation) Errors 
 		return errs.FinalAddForProperty("stop_orders_cancellation", ErrIsRequired)
 	}
 
-	if cmd.MarketId != nil && len(*cmd.MarketId) > 0 && !IsVegaPubkey(*cmd.MarketId) {
+	if cmd.MarketId != nil && len(*cmd.MarketId) > 0 && !IsVegaID(*cmd.MarketId) {
 		errs.AddForProperty("stop_orders_cancellation.market_id", ErrShouldBeAValidVegaID)
 	}
 
-	if cmd.StopOrderId != nil && len(*cmd.StopOrderId) > 0 && !IsVegaPubkey(*cmd.StopOrderId) {
+	if cmd.StopOrderId != nil && len(*cmd.StopOrderId) > 0 && !IsVegaID(*cmd.StopOrderId) {
 		errs.AddForProperty("stop_orders_cancellation.stop_order_id", ErrShouldBeAValidVegaID)
 	}
 

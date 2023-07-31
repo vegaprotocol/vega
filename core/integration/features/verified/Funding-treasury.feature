@@ -214,13 +214,13 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | name             | value |
       | prices.ETH.value | 80    |
 
-    # When a market ETH/DEC19 is closed, the insurance pool account has its outstanding funds transferred to the [network treasury]
+    # When a market ETH/DEC19 is closed, the insurance pool account has its outstanding funds transferred to the global insurance account
     When the network moves ahead "3" blocks
     And the orders should have the following status:
       | party | reference | status         |
       | aux   | aux-1-19  | STATUS_STOPPED |
 
-    And the network treasury balance should be "1824" for the asset "USD"
+    And the global insurance pool balance should be "1824" for the asset "USD"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "1823" for the market "ETH/DEC20"
     And the insurance pool balance should be "1823" for the market "ETH/DEC21"
@@ -236,5 +236,5 @@ Feature: check the insurance pool getting shared equally between all markets wit
 
     And the network moves ahead "3" blocks
     # When a market ETH/DEC20 is closed, the insurance pool account has its outstanding funds transferred to the [network treasury]
-    And the network treasury balance should be "2736" for the asset "USD"
+    And the global insurance pool balance should be "2736" for the asset "USD"
 

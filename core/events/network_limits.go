@@ -25,10 +25,9 @@ type NetworkLimits struct {
 }
 
 func NewNetworkLimitsEvent(ctx context.Context, limits *proto.NetworkLimits) *NetworkLimits {
-	limitsCopy := limits.DeepClone()
 	return &NetworkLimits{
 		Base: newBase(ctx, NetworkLimitsEvent),
-		nl:   limitsCopy,
+		nl:   limits,
 	}
 }
 
