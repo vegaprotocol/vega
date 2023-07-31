@@ -41,10 +41,10 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | lp1 | party0 | ETH/MAR22 | 5000000           | 0.001 | submission |
       | lp1 | party0 | ETH/MAR22 | 5000000           | 0.001 | amendment  |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party0 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 20     |
-      | party0 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 20     |
- 
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party0 | ETH/MAR22 | 4855      | 1                    | sell | ASK              | 6000   | 20     |
+      | party0 | ETH/MAR22 | 5155      | 1                    | buy  | BID              | 6000   | 20     |
+
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
@@ -151,10 +151,10 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | submission |
       | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | amendment  |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party0 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 20     |
-      | party0 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 20     |
- 
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party0 | ETH/MAR22 | 4855      | 1                    | sell | ASK              | 6000   | 20     |
+      | party0 | ETH/MAR22 | 5155      | 1                    | buy  | BID              | 6000   | 20     |
+
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
