@@ -648,7 +648,6 @@ type ComplexityRoot struct {
 	}
 
 	FundingPeriod struct {
-		DataPoints     func(childComplexity int, dateRange *v2.DateRange, source *v1.FundingPeriodDataPoint_Source, pagination *v2.Pagination) int
 		EndTime        func(childComplexity int) int
 		ExternalTwap   func(childComplexity int) int
 		FundingPayment func(childComplexity int) int
@@ -919,7 +918,6 @@ type ComplexityRoot struct {
 		DecimalPlaces                 func(childComplexity int) int
 		Depth                         func(childComplexity int, maxDepth *int) int
 		Fees                          func(childComplexity int) int
-		FundingPeriods                func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		Id                            func(childComplexity int) int
 		InsurancePoolFraction         func(childComplexity int) int
 		LinearSlippageFactor          func(childComplexity int) int
@@ -1608,6 +1606,8 @@ type ComplexityRoot struct {
 		EstimateOrder                      func(childComplexity int, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *int64, typeArg vega.Order_Type) int
 		EstimatePosition                   func(childComplexity int, marketID string, openVolume string, orders []*OrderInfo, collateralAvailable *string) int
 		EthereumKeyRotations               func(childComplexity int, nodeID *string) int
+		FundingPeriodDataPoints            func(childComplexity int, marketID string, dateRange *v2.DateRange, source *v1.FundingPeriodDataPoint_Source, pagination *v2.Pagination) int
+		FundingPeriods                     func(childComplexity int, marketID string, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		GetMarketDataHistoryConnectionByID func(childComplexity int, id string, start *int64, end *int64, pagination *v2.Pagination) int
 		KeyRotationsConnection             func(childComplexity int, id *string, pagination *v2.Pagination) int
 		LastBlockHeight                    func(childComplexity int) int
@@ -2219,8 +2219,6 @@ type FundingPeriodResolver interface {
 	Seq(ctx context.Context, obj *v1.FundingPeriod) (int, error)
 	StartTime(ctx context.Context, obj *v1.FundingPeriod) (int64, error)
 	EndTime(ctx context.Context, obj *v1.FundingPeriod) (*int64, error)
-
-	DataPoints(ctx context.Context, obj *v1.FundingPeriod, dateRange *v2.DateRange, source *v1.FundingPeriodDataPoint_Source, pagination *v2.Pagination) (*v2.FundingPeriodDataPointConnection, error)
 }
 type FundingPeriodDataPointResolver interface {
 	Seq(ctx context.Context, obj *v1.FundingPeriodDataPoint) (int, error)
@@ -2299,8 +2297,6 @@ type MarketResolver interface {
 	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Market, partyID *string, live *bool, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
 
 	RiskFactors(ctx context.Context, obj *vega.Market) (*vega.RiskFactor, error)
-
-	FundingPeriods(ctx context.Context, obj *vega.Market, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.FundingPeriodConnection, error)
 }
 type MarketDataResolver interface {
 	Market(ctx context.Context, obj *vega.MarketData) (*vega.Market, error)
@@ -2540,6 +2536,8 @@ type QueryResolver interface {
 	EstimateFees(ctx context.Context, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *int64, typeArg vega.Order_Type) (*FeeEstimate, error)
 	EstimatePosition(ctx context.Context, marketID string, openVolume string, orders []*OrderInfo, collateralAvailable *string) (*PositionEstimate, error)
 	EthereumKeyRotations(ctx context.Context, nodeID *string) (*v2.EthereumKeyRotationsConnection, error)
+	FundingPeriods(ctx context.Context, marketID string, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.FundingPeriodConnection, error)
+	FundingPeriodDataPoints(ctx context.Context, marketID string, dateRange *v2.DateRange, source *v1.FundingPeriodDataPoint_Source, pagination *v2.Pagination) (*v2.FundingPeriodDataPointConnection, error)
 	GetMarketDataHistoryConnectionByID(ctx context.Context, id string, start *int64, end *int64, pagination *v2.Pagination) (*v2.MarketDataConnection, error)
 	LedgerEntries(ctx context.Context, filter *v2.LedgerEntryFilter, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedLedgerEntriesConnection, error)
 	LiquidityProviders(ctx context.Context, partyID *string, marketID *string, pagination *v2.Pagination) (*v2.LiquidityProviderConnection, error)
@@ -4697,18 +4695,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Filter.Key(childComplexity), true
 
-	case "FundingPeriod.dataPoints":
-		if e.complexity.FundingPeriod.DataPoints == nil {
-			break
-		}
-
-		args, err := ec.field_FundingPeriod_dataPoints_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.FundingPeriod.DataPoints(childComplexity, args["dateRange"].(*v2.DateRange), args["source"].(*v1.FundingPeriodDataPoint_Source), args["pagination"].(*v2.Pagination)), true
-
 	case "FundingPeriod.endTime":
 		if e.complexity.FundingPeriod.EndTime == nil {
 			break
@@ -5794,18 +5780,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.Fees(childComplexity), true
-
-	case "Market.fundingPeriods":
-		if e.complexity.Market.FundingPeriods == nil {
-			break
-		}
-
-		args, err := ec.field_Market_fundingPeriods_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Market.FundingPeriods(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination)), true
 
 	case "Market.id":
 		if e.complexity.Market.Id == nil {
@@ -9080,6 +9054,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.EthereumKeyRotations(childComplexity, args["nodeId"].(*string)), true
 
+	case "Query.fundingPeriodDataPoints":
+		if e.complexity.Query.FundingPeriodDataPoints == nil {
+			break
+		}
+
+		args, err := ec.field_Query_fundingPeriodDataPoints_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.FundingPeriodDataPoints(childComplexity, args["marketId"].(string), args["dateRange"].(*v2.DateRange), args["source"].(*v1.FundingPeriodDataPoint_Source), args["pagination"].(*v2.Pagination)), true
+
+	case "Query.fundingPeriods":
+		if e.complexity.Query.FundingPeriods == nil {
+			break
+		}
+
+		args, err := ec.field_Query_fundingPeriods_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.FundingPeriods(childComplexity, args["marketId"].(string), args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination)), true
+
 	case "Query.getMarketDataHistoryConnectionByID":
 		if e.complexity.Query.GetMarketDataHistoryConnectionByID == nil {
 			break
@@ -11531,39 +11529,6 @@ func (ec *executionContext) field_Epoch_validatorsConnection_args(ctx context.Co
 	return args, nil
 }
 
-func (ec *executionContext) field_FundingPeriod_dataPoints_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *v2.DateRange
-	if tmp, ok := rawArgs["dateRange"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateRange"))
-		arg0, err = ec.unmarshalODateRange2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDateRange(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["dateRange"] = arg0
-	var arg1 *v1.FundingPeriodDataPoint_Source
-	if tmp, ok := rawArgs["source"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
-		arg1, err = ec.unmarshalOFundingPeriodDataPointSource2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐFundingPeriodDataPoint_Source(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["source"] = arg1
-	var arg2 *v2.Pagination
-	if tmp, ok := rawArgs["pagination"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["pagination"] = arg2
-	return args, nil
-}
-
 func (ec *executionContext) field_Market_accountsConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -11642,30 +11607,6 @@ func (ec *executionContext) field_Market_depth_args(ctx context.Context, rawArgs
 		}
 	}
 	args["maxDepth"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Market_fundingPeriods_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *v2.DateRange
-	if tmp, ok := rawArgs["dateRange"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateRange"))
-		arg0, err = ec.unmarshalODateRange2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDateRange(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["dateRange"] = arg0
-	var arg1 *v2.Pagination
-	if tmp, ok := rawArgs["pagination"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["pagination"] = arg1
 	return args, nil
 }
 
@@ -12776,6 +12717,81 @@ func (ec *executionContext) field_Query_ethereumKeyRotations_args(ctx context.Co
 		}
 	}
 	args["nodeId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_fundingPeriodDataPoints_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["marketId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketId"] = arg0
+	var arg1 *v2.DateRange
+	if tmp, ok := rawArgs["dateRange"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateRange"))
+		arg1, err = ec.unmarshalODateRange2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDateRange(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["dateRange"] = arg1
+	var arg2 *v1.FundingPeriodDataPoint_Source
+	if tmp, ok := rawArgs["source"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
+		arg2, err = ec.unmarshalOFundingPeriodDataPointSource2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐFundingPeriodDataPoint_Source(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["source"] = arg2
+	var arg3 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg3, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_fundingPeriods_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["marketId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketId"] = arg0
+	var arg1 *v2.DateRange
+	if tmp, ok := rawArgs["dateRange"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateRange"))
+		arg1, err = ec.unmarshalODateRange2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDateRange(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["dateRange"] = arg1
+	var arg2 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg2
 	return args, nil
 }
 
@@ -14152,8 +14168,6 @@ func (ec *executionContext) fieldContext_AccountBalance_market(ctx context.Conte
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
 			case "successorMarketID":
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
-			case "fundingPeriods":
-				return ec.fieldContext_Market_fundingPeriods(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -14758,8 +14772,6 @@ func (ec *executionContext) fieldContext_AccountEvent_market(ctx context.Context
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
 			case "successorMarketID":
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
-			case "fundingPeriods":
-				return ec.fieldContext_Market_fundingPeriods(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -23208,8 +23220,6 @@ func (ec *executionContext) fieldContext_Entities_markets(ctx context.Context, f
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
 			case "successorMarketID":
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
-			case "fundingPeriods":
-				return ec.fieldContext_Market_fundingPeriods(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -27495,64 +27505,6 @@ func (ec *executionContext) fieldContext_FundingPeriod_internalTwap(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _FundingPeriod_dataPoints(ctx context.Context, field graphql.CollectedField, obj *v1.FundingPeriod) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_FundingPeriod_dataPoints(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.FundingPeriod().DataPoints(rctx, obj, fc.Args["dateRange"].(*v2.DateRange), fc.Args["source"].(*v1.FundingPeriodDataPoint_Source), fc.Args["pagination"].(*v2.Pagination))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*v2.FundingPeriodDataPointConnection)
-	fc.Result = res
-	return ec.marshalOFundingPeriodDataPointConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFundingPeriodDataPointConnection(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_FundingPeriod_dataPoints(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "FundingPeriod",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "edges":
-				return ec.fieldContext_FundingPeriodDataPointConnection_edges(ctx, field)
-			case "pageInfo":
-				return ec.fieldContext_FundingPeriodDataPointConnection_pageInfo(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type FundingPeriodDataPointConnection", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_FundingPeriod_dataPoints_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _FundingPeriodConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.FundingPeriodConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_FundingPeriodConnection_edges(ctx, field)
 	if err != nil {
@@ -28176,8 +28128,6 @@ func (ec *executionContext) fieldContext_FundingPeriodEdge_node(ctx context.Cont
 				return ec.fieldContext_FundingPeriod_externalTwap(ctx, field)
 			case "internalTwap":
 				return ec.fieldContext_FundingPeriod_internalTwap(ctx, field)
-			case "dataPoints":
-				return ec.fieldContext_FundingPeriod_dataPoints(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type FundingPeriod", field.Name)
 		},
@@ -31685,8 +31635,6 @@ func (ec *executionContext) fieldContext_LiquidityProvision_market(ctx context.C
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
 			case "successorMarketID":
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
-			case "fundingPeriods":
-				return ec.fieldContext_Market_fundingPeriods(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -33632,8 +33580,6 @@ func (ec *executionContext) fieldContext_MarginLevels_market(ctx context.Context
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
 			case "successorMarketID":
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
-			case "fundingPeriods":
-				return ec.fieldContext_Market_fundingPeriods(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -35728,67 +35674,6 @@ func (ec *executionContext) fieldContext_Market_successorMarketID(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _Market_fundingPeriods(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Market_fundingPeriods(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().FundingPeriods(rctx, obj, fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*v2.FundingPeriodConnection)
-	fc.Result = res
-	return ec.marshalNFundingPeriodConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFundingPeriodConnection(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Market_fundingPeriods(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Market",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "edges":
-				return ec.fieldContext_FundingPeriodConnection_edges(ctx, field)
-			case "pageInfo":
-				return ec.fieldContext_FundingPeriodConnection_pageInfo(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type FundingPeriodConnection", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Market_fundingPeriods_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _MarketConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.MarketConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MarketConnection_edges(ctx, field)
 	if err != nil {
@@ -35984,8 +35869,6 @@ func (ec *executionContext) fieldContext_MarketData_market(ctx context.Context, 
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
 			case "successorMarketID":
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
-			case "fundingPeriods":
-				return ec.fieldContext_Market_fundingPeriods(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -37755,8 +37638,6 @@ func (ec *executionContext) fieldContext_MarketDepth_market(ctx context.Context,
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
 			case "successorMarketID":
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
-			case "fundingPeriods":
-				return ec.fieldContext_Market_fundingPeriods(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -38202,8 +38083,6 @@ func (ec *executionContext) fieldContext_MarketDepthUpdate_market(ctx context.Co
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
 			case "successorMarketID":
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
-			case "fundingPeriods":
-				return ec.fieldContext_Market_fundingPeriods(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -38488,8 +38367,6 @@ func (ec *executionContext) fieldContext_MarketEdge_node(ctx context.Context, fi
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
 			case "successorMarketID":
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
-			case "fundingPeriods":
-				return ec.fieldContext_Market_fundingPeriods(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -45816,8 +45693,6 @@ func (ec *executionContext) fieldContext_Order_market(ctx context.Context, field
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
 			case "successorMarketID":
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
-			case "fundingPeriods":
-				return ec.fieldContext_Market_fundingPeriods(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -49982,8 +49857,6 @@ func (ec *executionContext) fieldContext_Position_market(ctx context.Context, fi
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
 			case "successorMarketID":
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
-			case "fundingPeriods":
-				return ec.fieldContext_Market_fundingPeriods(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -56082,6 +55955,128 @@ func (ec *executionContext) fieldContext_Query_ethereumKeyRotations(ctx context.
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_fundingPeriods(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_fundingPeriods(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().FundingPeriods(rctx, fc.Args["marketId"].(string), fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.FundingPeriodConnection)
+	fc.Result = res
+	return ec.marshalNFundingPeriodConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFundingPeriodConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_fundingPeriods(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_FundingPeriodConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_FundingPeriodConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type FundingPeriodConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_fundingPeriods_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_fundingPeriodDataPoints(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_fundingPeriodDataPoints(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().FundingPeriodDataPoints(rctx, fc.Args["marketId"].(string), fc.Args["dateRange"].(*v2.DateRange), fc.Args["source"].(*v1.FundingPeriodDataPoint_Source), fc.Args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.FundingPeriodDataPointConnection)
+	fc.Result = res
+	return ec.marshalNFundingPeriodDataPointConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFundingPeriodDataPointConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_fundingPeriodDataPoints(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_FundingPeriodDataPointConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_FundingPeriodDataPointConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type FundingPeriodDataPointConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_fundingPeriodDataPoints_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_getMarketDataHistoryConnectionByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_getMarketDataHistoryConnectionByID(ctx, field)
 	if err != nil {
@@ -56452,8 +56447,6 @@ func (ec *executionContext) fieldContext_Query_market(ctx context.Context, field
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
 			case "successorMarketID":
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
-			case "fundingPeriods":
-				return ec.fieldContext_Market_fundingPeriods(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -65500,8 +65493,6 @@ func (ec *executionContext) fieldContext_SuccessorMarket_market(ctx context.Cont
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
 			case "successorMarketID":
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
-			case "fundingPeriods":
-				return ec.fieldContext_Market_fundingPeriods(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -66190,8 +66181,6 @@ func (ec *executionContext) fieldContext_Trade_market(ctx context.Context, field
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
 			case "successorMarketID":
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
-			case "fundingPeriods":
-				return ec.fieldContext_Market_fundingPeriods(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -70225,8 +70214,6 @@ func (ec *executionContext) fieldContext_UpdateMarketState_market(ctx context.Co
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
 			case "successorMarketID":
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
-			case "fundingPeriods":
-				return ec.fieldContext_Market_fundingPeriods(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -78568,23 +78555,6 @@ func (ec *executionContext) _FundingPeriod(ctx context.Context, sel ast.Selectio
 
 			out.Values[i] = ec._FundingPeriod_internalTwap(ctx, field, obj)
 
-		case "dataPoints":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._FundingPeriod_dataPoints(ctx, field, obj)
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -80998,26 +80968,6 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 
 			out.Values[i] = ec._Market_successorMarketID(ctx, field, obj)
 
-		case "fundingPeriods":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Market_fundingPeriods(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -87349,6 +87299,52 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "fundingPeriods":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_fundingPeriods(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "fundingPeriodDataPoints":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_fundingPeriodDataPoints(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "getMarketDataHistoryConnectionByID":
 			field := field
 
@@ -93509,6 +93505,20 @@ func (ec *executionContext) marshalNFundingPeriodDataPoint2ᚖcodeᚗvegaprotoco
 	return ec._FundingPeriodDataPoint(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNFundingPeriodDataPointConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFundingPeriodDataPointConnection(ctx context.Context, sel ast.SelectionSet, v v2.FundingPeriodDataPointConnection) graphql.Marshaler {
+	return ec._FundingPeriodDataPointConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNFundingPeriodDataPointConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFundingPeriodDataPointConnection(ctx context.Context, sel ast.SelectionSet, v *v2.FundingPeriodDataPointConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._FundingPeriodDataPointConnection(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNFundingPeriodDataPointEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFundingPeriodDataPointEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.FundingPeriodDataPointEdge) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -97348,13 +97358,6 @@ func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel as
 	}
 	res := graphql.MarshalFloatContext(*v)
 	return graphql.WrapContextMarshaler(ctx, res)
-}
-
-func (ec *executionContext) marshalOFundingPeriodDataPointConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFundingPeriodDataPointConnection(ctx context.Context, sel ast.SelectionSet, v *v2.FundingPeriodDataPointConnection) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._FundingPeriodDataPointConnection(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOFundingPeriodDataPointSource2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐFundingPeriodDataPoint_Source(ctx context.Context, v interface{}) (*v1.FundingPeriodDataPoint_Source, error) {

@@ -240,19 +240,3 @@ func (r *myMarketResolver) CandlesConnection(ctx context.Context, market *types.
 ) (*v2.CandleDataConnection, error) {
 	return handleCandleConnectionRequest(ctx, r.tradingDataClientV2, market, sinceRaw, toRaw, interval, pagination)
 }
-
-func (r *myMarketResolver) FundingPeriods(ctx context.Context, obj *vega.Market, dateRange *v2.DateRange, pagination *v2.Pagination) (
-	*v2.FundingPeriodConnection, error,
-) {
-	req := v2.ListFundingPeriodsRequest{
-		MarketId:   obj.Id,
-		DateRange:  dateRange,
-		Pagination: pagination,
-	}
-
-	res, err := r.tradingDataClientV2.ListFundingPeriods(ctx, &req)
-	if err != nil {
-		return nil, err
-	}
-	return res.FundingPeriods, nil
-}

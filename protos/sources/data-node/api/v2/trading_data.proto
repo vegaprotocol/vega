@@ -723,7 +723,7 @@ service TradingDataService {
   // List funding period data points
   //
   // Get a list of data points for a perpetual market's funding periods.
-  rpc ListFundingPeriodDataPoints(ListFundingPeriodDataPointsRequest) returns  (ListFundingPeriodDataPointsResponse) {
+  rpc ListFundingPeriodDataPoints(ListFundingPeriodDataPointsRequest) returns (ListFundingPeriodDataPointsResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Markets"};
   }
 
