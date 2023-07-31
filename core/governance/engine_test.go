@@ -1381,7 +1381,6 @@ func newPerpsMarketTerms(termFilter *dstypes.SpecFilter, binding *datasource.Spe
 				},
 				Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
 				DecimalPlaces:           0,
-				LpPriceRange:            num.DecimalFromFloat(0.95),
 				LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 				QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 			},
