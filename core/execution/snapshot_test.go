@@ -414,22 +414,8 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 	executionEngine2 := getEngine(t, vegaPath, now)
 	defer executionEngine2.snapshotEngine.Close()
 
-	// restore collateral
-	accountsState, _, _ := executionEngine1.collateralEngine.GetState("accounts")
-	accountsSnap := &snapshot.Payload{}
-	proto.Unmarshal(accountsState, accountsSnap)
-
-	_, _ = executionEngine2.collateralEngine.LoadState(context.Background(), types.PayloadFromProto(accountsSnap))
-
-	fmt.Printf("accountSnap1: %v\n", accountsSnap.String())
-	accountsState2, _, _ := executionEngine2.collateralEngine.GetState("accounts")
-	accountsSnap2 := &snapshot.Payload{}
-	proto.Unmarshal(accountsState2, accountsSnap2)
-	fmt.Printf("accountSnap2: %v\n", accountsSnap2.String())
-
-	// progress time to trigger any side effect on time ticks
-	executionEngine1.timeService.SetTime(now.Add(2 * time.Second))
-	executionEngine2.timeService.SetTime(now.Add(2 * time.Second))
+	// This triggers the state restoration from the local snapshot.
+	require.NoError(t, executionEngine2.snapshotEngine.Start(context.Background()))
 
 	// Comparing the hash after restoration, to ensure it produces the same result.
 	hash2, _, _ := executionEngine2.snapshotEngine.Info()
