@@ -15,9 +15,10 @@ import (
 )
 
 var (
-	txDirectory    string
-	protoDiffs     = 0
-	jsonMarshaller = jsonpb.Marshaler{
+	txDirectory      string
+	transactionDiffs = 0
+	inputDataDiffs   = 0
+	jsonMarshaller   = jsonpb.Marshaler{
 		Indent: "   ",
 	}
 	inspectTxDirCmd = &cobra.Command{
@@ -78,20 +79,18 @@ func inspectTxsInDirectoryCmd(cmd *cobra.Command, args []string) error {
 		runInspectTx(transactionData)
 	}
 
-	if protoDiffs != 0 {
-		return fmt.Errorf("there were diffs in the transactions sent from your application vs the marshalled equivalents from core, check your protos are up to date\nnumber of transactions with diffs: %d", protoDiffs)
+	if transactionDiffs != 0 {
+		return fmt.Errorf("there were diffs in the transactions sent from your application vs the marshalled equivalents from core, check your protos are up to date\nnumber of transactions with diffs: %d", transactionDiffs)
 	}
 
 	return nil
 }
 
-func areRawTransactionsEqual(originalRawTransaction string, decodedRawTransaction string) jsondiff.Difference {
+func compareJson(firstJson []byte, secondJson []byte) (jsondiff.Difference, string) {
 	options := jsondiff.DefaultConsoleOptions()
-	result, dunno := jsondiff.Compare([]byte(originalRawTransaction), []byte(decodedRawTransaction), &options)
-	fmt.Println(result.String())
-	fmt.Println(dunno)
+	result, diffString := jsondiff.Compare(firstJson, secondJson, &options)
 
-	return result
+	return result, diffString
 }
 
 func getUnmarshalledTransactionAndInputData(decodedTransactionByes []byte) (*commandspb.Transaction, *commandspb.InputData, error) {
@@ -141,14 +140,17 @@ func runInspectTx(transactionData TransactionData) error {
 	fmt.Println("------input data------")
 	fmt.Println(marshalledInputData)
 
-	fmt.Println("raw transaction:")
-	fmt.Println(string(transactionData.Transaction))
-
 	//compare the transaction marshalled back to a string with the raw json from the json file
-	diff := areRawTransactionsEqual(string(transactionData.Transaction), marshalledTransaction)
+	result, diffString := compareJson(transactionData.Transaction, []byte(marshalledTransaction))
+	//TODO- add another comparison comparing the input data from the file vs the marshalled input data from core
 
-	if diff == jsondiff.NoMatch {
-		protoDiffs += 1
+	if result == jsondiff.NoMatch {
+		transactionDiffs += 1
+		fmt.Println("diff found between json from app vs marshalled json in core, writing to file")
+		// TODO- add functionality to write diff to file here as it will be tough to analyse everything in cli
+
+		//diff here for debugging purposes for now
+		fmt.Println(diffString)
 	}
 
 	return nil
