@@ -607,6 +607,7 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 	snapshotEngine, err := snp.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
 	require.NoError(t, err)
 	snapshotEngine.AddProviders(eng)
+	snapshotEngine.AddProviders(collateralEngine)
 
 	return &snapshotTestData{
 		engine:           eng,
