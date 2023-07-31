@@ -63,7 +63,7 @@ type Engine struct {
 	hashKeys                []string
 	banDuration             time.Duration
 
-	noSpamProtection bool // flag that disables chesk for the spam policies, that is usefull for the nullchain
+	noSpamProtection bool // flag that disables chesk for the spam policies, that is useful for the nullchain
 }
 
 type Policy interface {

@@ -36,13 +36,9 @@
 - [8758](https://github.com/vegaprotocol/vega/issues/8758) - Internal recurring time trigger for `PERPS`.
 - [8913](https://github.com/vegaprotocol/vega/issues/8913) - Add business logic for team management.
 - [8765](https://github.com/vegaprotocol/vega/issues/8765) - Implement snapshots state for `PERPS`.
-<<<<<<< HEAD
 - [8918](https://github.com/vegaprotocol/vega/issues/8918) - Implement commands for team management.
 - [8756](https://github.com/vegaprotocol/vega/issues/8756) - Settlement and margin implementation for `PERPS`.
-- [8887](https://github.com/vegaprotocol/vega/pull/8887) - Remove differences for snapshot loading when the nullchain is used instead of tendermint
-=======
 - [8887](https://github.com/vegaprotocol/vega/pull/8887) - Remove differences for snapshot loading when the `nullchain` is used instead of `tendermint`
->>>>>>> d0ab9968e (fix: fix linter issue for CHANGELOG)
 
 ### 🐛 Fixes
 
