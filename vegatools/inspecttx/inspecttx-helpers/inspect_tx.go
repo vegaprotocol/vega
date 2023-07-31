@@ -1,23 +1,24 @@
 package inspecttx_helpers
 
 import (
-	"code.vegaprotocol.io/vega/commands"
-	"code.vegaprotocol.io/vega/libs/proto"
-	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+
+	"code.vegaprotocol.io/vega/commands"
+	"code.vegaprotocol.io/vega/libs/proto"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/nsf/jsondiff"
 	"github.com/spf13/cobra"
-	"os"
-	"path/filepath"
 )
 
 var (
 	txDirectory      string
 	transactionDiffs = 0
-	inputDataDiffs   = 0
 	jsonMarshaller   = jsonpb.Marshaler{
 		Indent: "   ",
 	}
@@ -32,7 +33,7 @@ var (
 func init() {
 	rootCmd.AddCommand(inspectTxDirCmd)
 	inspectTxDirCmd.Flags().StringVarP(&txDirectory, "txdir", "d", "", "directory containing json files with base64 encoded data and rawjson for a transaction")
-	inspectTxDirCmd.MarkFlagRequired("txdir")
+	_ = inspectTxDirCmd.MarkFlagRequired("txdir")
 }
 
 type TransactionData struct {
@@ -45,11 +46,16 @@ func getFilesInDirectory() ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error occurred when attempting to open the given directory. \nerr: %w", err)
 	}
-	defer files.Close()
+	defer func(files *os.File) {
+		err := files.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(files)
 
 	fileInfo, err := files.Readdir(-1)
 	if err != nil {
-		return nil, fmt.Errorf("an error occured when attempting to read files in the given directory. \nerr: %w", err)
+		return nil, fmt.Errorf("an error occurred when attempting to read files in the given directory. \nerr: %w", err)
 	}
 
 	var transactionFiles []string
@@ -61,7 +67,7 @@ func getFilesInDirectory() ([]string, error) {
 	return transactionFiles, nil
 }
 
-func inspectTxsInDirectoryCmd(cmd *cobra.Command, args []string) error {
+func inspectTxsInDirectoryCmd(_ *cobra.Command, _ []string) error {
 	transactionFiles, err := getFilesInDirectory()
 	if err != nil {
 		return fmt.Errorf("error when attempting to get files in the given directory. \nerr: %w", err)
@@ -70,13 +76,19 @@ func inspectTxsInDirectoryCmd(cmd *cobra.Command, args []string) error {
 	for _, file := range transactionFiles {
 		fileContents, err := os.ReadFile(file)
 		if err != nil {
-			fmt.Sprintf("error reading file")
+			return fmt.Errorf("error reading file. \nerr: %w", err)
 		}
 		transactionData := TransactionData{}
 
-		json.Unmarshal(fileContents, &transactionData)
-		fmt.Sprintf(string(transactionData.Transaction))
-		runInspectTx(transactionData)
+		err = json.Unmarshal(fileContents, &transactionData)
+		if err != nil {
+			return fmt.Errorf("error unmarshalling the json in file '%s'. \nerr: %w", file, err)
+		}
+
+		err = runInspectTx(transactionData)
+		if err != nil {
+			return fmt.Errorf("error when attempting to inspect transaction in file '%s' \nerr: %w", file, err)
+		}
 	}
 
 	if transactionDiffs != 0 {
@@ -94,8 +106,8 @@ func compareJson(firstJson []byte, secondJson []byte) (jsondiff.Difference, stri
 }
 
 func getUnmarshalledTransactionAndInputData(decodedTransactionByes []byte) (*commandspb.Transaction, *commandspb.InputData, error) {
-	var unmarshalledTransaction = &commandspb.Transaction{}
-	var unmarshalledInputData = &commandspb.InputData{}
+	unmarshalledTransaction := &commandspb.Transaction{}
+	unmarshalledInputData := &commandspb.InputData{}
 	if err := proto.Unmarshal(decodedTransactionByes, unmarshalledTransaction); err != nil {
 		return unmarshalledTransaction, unmarshalledInputData, fmt.Errorf("unable to unmarshal transaction. \nerr: %w", err)
 	}
@@ -127,7 +139,7 @@ func runInspectTx(transactionData TransactionData) error {
 
 	unmarshalledTransaction, unmarshalledInputData, err := getUnmarshalledTransactionAndInputData(decodedBytes)
 	if err != nil {
-		return fmt.Errorf("an error occured when attempting to unmarshal the decoded transaction byte array. \nerr: %w", err)
+		return fmt.Errorf("an error occurred when attempting to unmarshal the decoded transaction byte array. \nerr: %w", err)
 	}
 
 	marshalledTransaction, marshalledInputData, err := marshalTransactionAndInputDataToString(unmarshalledTransaction, unmarshalledInputData)
@@ -140,16 +152,16 @@ func runInspectTx(transactionData TransactionData) error {
 	fmt.Println("------input data------")
 	fmt.Println(marshalledInputData)
 
-	//compare the transaction marshalled back to a string with the raw json from the json file
+	// compare the transaction marshalled back to a string with the raw json from the json file
 	result, diffString := compareJson(transactionData.Transaction, []byte(marshalledTransaction))
-	//TODO- add another comparison comparing the input data from the file vs the marshalled input data from core
+	// TODO- add another comparison comparing the input data from the file vs the marshalled input data from core
 
 	if result == jsondiff.NoMatch {
 		transactionDiffs += 1
 		fmt.Println("diff found between json from app vs marshalled json in core, writing to file")
 		// TODO- add functionality to write diff to file here as it will be tough to analyse everything in cli
 
-		//diff here for debugging purposes for now
+		// diff here for debugging purposes for now
 		fmt.Println(diffString)
 	}
 
