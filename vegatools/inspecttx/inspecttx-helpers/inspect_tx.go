@@ -56,7 +56,7 @@ func inspectTxsInDirectoryCmd(_ *cobra.Command, _ []string) error {
 	}
 
 	if transactionDiffs != 0 {
-		return fmt.Errorf("there were diffs in the transactions sent from your application vs the marshalled equivalents from core, check your protos are up to date\nnumber of transactions with diffs: %d", transactionDiffs)
+		return fmt.Errorf("there were diffs in the transactions sent from your application vs the marshalled equivalents from core, check your protos are up to date. Diffs can be found in '%s'\nnumber of transactions with diffs: %d", diffOutputDirectory, transactionDiffs)
 	}
 
 	return nil
@@ -64,6 +64,9 @@ func inspectTxsInDirectoryCmd(_ *cobra.Command, _ []string) error {
 
 func inspectTransaction(transactionData TransactionData) error {
 	decodedBytes, err := base64.StdEncoding.DecodeString(transactionData.EncodedData)
+	if err != nil {
+		return fmt.Errorf("error occurred when decoding the transaction encoded data.\nerr: %v", err)
+	}
 
 	unmarshalledTransaction, unmarshalledInputData, err := unmarshalTransaction(decodedBytes)
 	if err != nil {
@@ -75,8 +78,8 @@ func inspectTransaction(transactionData TransactionData) error {
 		return fmt.Errorf("an error occurred when attempting to marshal the structs back to a json string. \nerr: %v", err)
 	}
 
-	transactionCompareResult, transactionDiffHtml, err := compareJson(transactionData.Transaction, []byte(marshalledTransaction))
-	inputDataCompareResult, inputDataDiffHtml, err := compareJson(transactionData.InputData, []byte(marshalledInputData))
+	transactionCompareResult, transactionDiffHtml := compareJson(transactionData.Transaction, []byte(marshalledTransaction))
+	inputDataCompareResult, inputDataDiffHtml := compareJson(transactionData.InputData, []byte(marshalledInputData))
 
 	if transactionCompareResult == jsondiff.NoMatch || inputDataCompareResult == jsondiff.NoMatch {
 		transactionDiffs += 1

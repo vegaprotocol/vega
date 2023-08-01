@@ -13,7 +13,7 @@ var rootCmd = &cobra.Command{
 }
 
 // Execute is the main function of `cmd` package.
-// Usually called by the `main.main().`
+// Usually called by the `main.main()`.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)

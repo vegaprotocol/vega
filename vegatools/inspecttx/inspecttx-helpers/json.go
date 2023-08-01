@@ -28,20 +28,19 @@ func unmarshalTransaction(decodedTransactionBytes []byte) (*commandspb.Transacti
 	unmarshalledTransaction := &commandspb.Transaction{}
 	unmarshalledInputData := &commandspb.InputData{}
 	if err := proto.Unmarshal(decodedTransactionBytes, unmarshalledTransaction); err != nil {
-		return unmarshalledTransaction, unmarshalledInputData, fmt.Errorf("unable to unmarshal transaction. \nerr: %w", err)
+		return unmarshalledTransaction, unmarshalledInputData, fmt.Errorf("unable to unmarshal transaction: %w", err)
 	}
 
-	unmarshalledInputData, err := commands.UnmarshalInputData(unmarshalledTransaction.InputData)
+	inputData, err := commands.UnmarshalInputData(unmarshalledTransaction.InputData)
 	if err != nil {
-		return unmarshalledTransaction, unmarshalledInputData, fmt.Errorf("unable to unmarshal input data. \nerr: %w", err)
+		return unmarshalledTransaction, unmarshalledInputData, fmt.Errorf("unable to unmarshal input data: %w", err)
 	}
 
-	return unmarshalledTransaction, unmarshalledInputData, nil
+	return unmarshalledTransaction, inputData, nil
 }
 
-func compareJson(firstJson []byte, secondJson []byte) (jsondiff.Difference, string, error) {
+func compareJson(firstJson []byte, secondJson []byte) (jsondiff.Difference, string) {
 	options := jsondiff.DefaultHTMLOptions()
 	result, diffHtml := jsondiff.Compare(firstJson, secondJson, &options)
-	fmt.Println(diffHtml)
-	return result, diffHtml, nil
+	return result, diffHtml
 }

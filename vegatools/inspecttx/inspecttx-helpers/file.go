@@ -82,6 +82,14 @@ func trimExtensionFromCurrentFileName() string {
 	return trimmedFileName
 }
 
+func writeToFile(filePath string, data []byte, fileMode os.FileMode) error {
+	err := os.WriteFile(filePath, data, fileMode)
+	if err != nil {
+		return fmt.Errorf("error writing file '%s': %w", filePath, err)
+	}
+	return nil
+}
+
 func writeDiffToFile(diffData ComparableJson, html string) {
 	marshalledDiffData, err := json.MarshalIndent(diffData, " ", "	")
 	if err != nil {
@@ -97,14 +105,12 @@ func writeDiffToFile(diffData ComparableJson, html string) {
 	}
 
 	jsonFileName := fmt.Sprintf("%s-tocompare.json", string(diffData.DiffType))
-	err = os.WriteFile(path.Join(filePath, jsonFileName), marshalledDiffData, 0o644)
-	if err != nil {
-		logrus.Warnf("error when attempting to write diffs to file.\nerr: %v", err)
+	if err := writeToFile(path.Join(filePath, jsonFileName), marshalledDiffData, 0o644); err != nil {
+		logrus.Warnf("error when attempting to write diffs to JSON file.\nerr: %v", err)
 	}
 
 	htmlFileName := fmt.Sprintf("%s-diff.html", string(diffData.DiffType))
-	err = os.WriteFile(path.Join(filePath, htmlFileName), []byte(html), 0o644)
-	if err != nil {
-		logrus.Warnf("error when attempting to write diffs to html file.\nerr: %v", err)
+	if err := writeToFile(path.Join(filePath, htmlFileName), []byte(html), 0o644); err != nil {
+		logrus.Warnf("error when attempting to write diffs to HTML file.\nerr: %v", err)
 	}
 }
