@@ -428,3 +428,86 @@ func testEarlyStopCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 	require.Equal(t, num.NewUint(207142), res.partyToAmount["node3"])
 	require.Equal(t, num.NewUint(999999), res.totalReward)
 }
+
+func TestValidatorIsNotBeingStarved(t *testing.T) {
+	delegatorShare, _ := num.DecimalFromString("0.3")
+	delegatorForVal1 := map[string]*num.Uint{}
+	delegatorForVal1["party1"] = num.NewUint(6000)
+	delegatorForVal1["party2"] = num.NewUint(3000)
+	delegatorForVal1["n2"] = num.NewUint(1000)
+	validator1 := &types.ValidatorData{
+		NodeID:            "node1",
+		PubKey:            "n1",
+		SelfStake:         num.UintZero(),
+		StakeByDelegators: num.NewUint(10000),
+		Delegators:        delegatorForVal1,
+	}
+	validator2 := &types.ValidatorData{
+		NodeID:            "node2",
+		PubKey:            "n2",
+		SelfStake:         num.NewUint(20000),
+		StakeByDelegators: num.UintZero(),
+		Delegators:        map[string]*num.Uint{},
+	}
+
+	delegatorForVal3 := map[string]*num.Uint{}
+	delegatorForVal3["party1"] = num.NewUint(40000)
+	validator3 := &types.ValidatorData{
+		NodeID:            "node3",
+		PubKey:            "n3",
+		SelfStake:         num.NewUint(30000),
+		StakeByDelegators: num.NewUint(40000),
+		Delegators:        delegatorForVal3,
+	}
+
+	validator4 := &types.ValidatorData{
+		NodeID:            "node4",
+		PubKey:            "n4",
+		SelfStake:         num.UintZero(),
+		StakeByDelegators: num.UintZero(),
+		Delegators:        map[string]*num.Uint{},
+	}
+	ctrl := gomock.NewController(t)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	valPerformance := vmock.NewMockValidatorPerformance(ctrl)
+	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
+
+	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
+	valScores := map[string]num.Decimal{"node1": num.DecimalFromFloat(0.25), "node2": num.DecimalFromFloat(0.5), "node3": num.DecimalFromFloat(0.25), "node4": num.DecimalZero()}
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(1000000000), logging.NewTestLogger())
+
+	// 0.1% of 1000000000 = 1000000 - this test is demonstrating that regardless of the remaining balance to give to delegators is less than 0.1% of the max
+	// payout per participant, we still run one round and then stop.
+
+	// the normalised scores are as follows (from the test above)
+	// node1 - 0.25
+	// node2 - 0.5
+	// node3 - 0.25
+	// node4 - 0
+	// as node4 has 0 score they get nothing.
+	// given a reward of 1000000,
+	//
+	// node1 and its delegators get 250,000
+	// node2 and its delegators get 500,000
+	// node3 and its delegators get 250,000
+	// with a delegator share of 0.3,
+	// delegators to node1 get 0.3 * 250000 = 75000
+	// party1 gets 0.6 * 75000 = 45000
+	// party2 gets 0.3 * 75000 = 22500
+	// n2 gets 0.1 * 75000 = 7500
+	// node1 gets 175000
+	// node2 gets 1 * 500000 = 500000 + 7500 (from the delegation to node1) = 507500
+	// delegators to node3 get 0.3 * 4/7 * 250000 = 42857
+	// party1 gets 42857
+	// node3 gets 1 - (0.3*4/7) = 207142 -> 207142
+	// node1, node2, party1, party2
+	require.Equal(t, 5, len(res.partyToAmount))
+
+	require.Equal(t, num.NewUint(87857), res.partyToAmount["party1"])
+	require.Equal(t, num.NewUint(22500), res.partyToAmount["party2"])
+	require.Equal(t, num.NewUint(175000), res.partyToAmount["n1"])
+	require.Equal(t, num.NewUint(507500), res.partyToAmount["n2"])
+	require.Equal(t, num.NewUint(207142), res.partyToAmount["n3"])
+	require.Equal(t, num.NewUint(999999), res.totalReward)
+}
