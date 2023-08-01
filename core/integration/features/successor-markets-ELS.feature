@@ -131,6 +131,7 @@ Feature: Simple example of successor markets
       | lp2 | lpprov2 | ETH/DEC20 | 8000              | 0.1 | submission |
       | lp3 | lpprov3 | ETH/DEC21 | 8000              | 0.1 | submission |
       | lp3 | lpprov3 | ETH/DEC21 | 8000              | 0.1 | submission |
+    When the network moves ahead "5" blocks
 
     # check LP bond account after LP commitment submission
     Then the parties should have the following account balances:
@@ -139,9 +140,9 @@ Feature: Simple example of successor markets
       | lpprov2 | USD | ETH/DEC19 | 0 | 19999991000 | 1000 |
       | lpprov1 | USD | ETH/DEC20 | 0 | 1999989000  | 2000 |
       | lpprov2 | USD | ETH/DEC20 | 0 | 19999991000 | 8000 |
-      | lpprov3 | USD   | ETH/DEC21 | 0      | 19999992000 | 8000 |
+      | lpprov3 | USD | ETH/DEC21 | 0 | 19999992000 | 8000 |
 
-# market ETH/DEC19 is not settled yet, it still active
+#market ETH/DEC19 is not settled yet, it still active
     And the insurance pool balance should be "5077" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
     And the global insurance pool balance should be "0" for the asset "USD"
@@ -172,7 +173,7 @@ Feature: Simple example of successor markets
 
     #check all the orders in market ETH/DEC21 is canceled
     And the orders should have the following status:
-      | party   | reference    | status        |
+      | party | reference | status |
       | trader1 | order1-DEC21 | STATUS_STOPPED |
       | trader1 | order2-DEC21 | STATUS_STOPPED |
 
@@ -181,16 +182,17 @@ Feature: Simple example of successor markets
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the global insurance pool balance should be "0" for the asset "USD"
 
-    # check LP account is released after the market ETH/DEC21 is rejceted
     Then the parties should have the following account balances:
-      | party   | asset | market id | margin | general     |
-      | lpprov3 | USD   | ETH/DEC21 | 0      | 20000000000 |
+      | party   | asset | market id | margin | general     | bond |
+      | lpprov1 | USD   | ETH/DEC19 | 0      | 1999989000  | 9000 |
+      | lpprov2 | USD   | ETH/DEC19 | 0      | 19999991000 | 1000 |
+      | lpprov1 | USD   | ETH/DEC20 | 0      | 1999989000  | 2000 |
+      | lpprov2 | USD   | ETH/DEC20 | 0      | 19999991000 | 8000 |
+      | lpprov3 | USD   | ETH/DEC21 | 0      | 20000000000 | 0    |
 
-    # this is from ETH/DEC19 market
+# ELS is from ETH/DEC19 market
     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
-      | party   | equity like share | average entry valuation |
-      # | lpprov1 | 0.2               | 9000                    |
-      # | lpprov2 | 0.8               | 10000                   |
+      | party | equity like share | average entry valuation |
       | lpprov1 | 0.9 | 9000  |
       | lpprov2 | 0.1 | 10000 |
 
@@ -201,6 +203,13 @@ Feature: Simple example of successor markets
       | lpprov1 | 0.9               | 9000                    |
       | lpprov2 | 0.1               | 10000                   |
 
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general     | bond |
+      | lpprov1 | USD   | ETH/DEC19 | 0      | 1999989000  | 9000 |
+      | lpprov2 | USD   | ETH/DEC19 | 0      | 19999991000 | 1000 |
+      | lpprov1 | USD   | ETH/DEC20 | 0      | 1999989000  | 2000 |
+      | lpprov2 | USD   | ETH/DEC20 | 0      | 19999991000 | 8000 |
+
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC20"
 
     When the parties submit the following liquidity provision:
@@ -208,13 +217,25 @@ Feature: Simple example of successor markets
       | lp2 | lpprov2 | ETH/DEC19 | 2000              | 0.1 | amendment |
       | lp2 | lpprov2 | ETH/DEC19 | 2000              | 0.1 | amendment |
     Then the liquidity provider fee shares for the market "ETH/DEC19" should be:
-      | party   | equity like share | average entry valuation |
-      # | lpprov1 | 0.8181818181818182 | 9000                    |
-      # | lpprov2 | 0.1818181818181818 | 10500                   |
+      | party | equity like share | average entry valuation |
       | lpprov1 | 0.9               | 9000                    |
       | lpprov2 | 0.1               | 10000                   |
 
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general     | bond |
+      | lpprov1 | USD   | ETH/DEC19 | 0      | 1999989000  | 9000 |
+      | lpprov2 | USD   | ETH/DEC19 | 0      | 19999990000 | 2000 |
+      | lpprov1 | USD   | ETH/DEC20 | 0      | 1999989000  | 2000 |
+      | lpprov2 | USD   | ETH/DEC20 | 0      | 19999990000 | 8000 |
+
     When the network moves ahead "5" blocks
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general     | bond |
+      | lpprov1 | USD   | ETH/DEC19 | 0      | 1999989000  | 9000 |
+      | lpprov2 | USD   | ETH/DEC19 | 0      | 19999990000 | 2000 |
+      | lpprov1 | USD   | ETH/DEC20 | 0      | 1999989000  | 2000 |
+      | lpprov2 | USD   | ETH/DEC20 | 0      | 19999990000 | 8000 |
 
     Then the liquidity provider fee shares for the market "ETH/DEC19" should be:
       | party   | equity like share  | average entry valuation |
@@ -232,6 +253,13 @@ Feature: Simple example of successor markets
       | lp1 | lpprov1 | ETH/DEC20 | 3000              | 0.1 | amendment |
       | lp1 | lpprov1 | ETH/DEC20 | 3000              | 0.1 | amendment |
 
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general     | bond |
+      | lpprov1 | USD   | ETH/DEC19 | 0      | 2000003417  | 0    |
+      | lpprov2 | USD   | ETH/DEC19 | 0      | 19999993426 | 0    |
+      | lpprov1 | USD   | ETH/DEC20 | 0      | 2000003417  | 3000 |
+      | lpprov2 | USD   | ETH/DEC20 | 0      | 19999993426 | 8000 |
+
     When the network moves ahead "5" blocks
 
     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
@@ -244,107 +272,127 @@ Feature: Simple example of successor markets
     And the insurance pool balance should be "4062" for the market "ETH/DEC20"
     And the global insurance pool balance should be "1016" for the asset "USD"
 
-#   @SuccessorMarketSimple
-#   Scenario: 002 Successor market enacted with parent market still active, ELS is copied over and both states can change independently. 0042-LIQF-031, 0042-LIQF-048, 0042-LIQF-033
-#     Given the markets:
-#       | id        | quote name | asset | risk model                | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params |
-#       | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1       | 1                | default-none | default-none     | ethDec19Oracle         | 0.1                    | 0                         | 0              | 0                       |                  |                         |                   | SLA        |
-#       | ETH/DEC20 | ETH        | USD   | default-st-risk-model     | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 0              | 0                       | ETH/DEC19        | 0.6                     | 10                | SLA        |
-#     And the parties submit the following liquidity provision:
-#       | id  | party   | market id | commitment amount | fee | lp type    |
-#       | lp1 | lpprov1 | ETH/DEC19 | 9000              | 0.1 | submission |
-#       | lp1 | lpprov1 | ETH/DEC19 | 9000              | 0.1 | submission |
-#       | lp2 | lpprov2 | ETH/DEC19 | 1000              | 0.1 | submission |
-#       | lp2 | lpprov2 | ETH/DEC19 | 1000              | 0.1 | submission |
-#     And the parties place the following orders:
-#       | party | market id | side | volume | price | resulting trades | type | tif |
-#       | trader1 | ETH/DEC19 | buy  | 10     | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-#       | trader1 | ETH/DEC19 | sell | 10     | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
-#       | trader1 | ETH/DEC19 | buy  | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
-#       | trader2 | ETH/DEC19 | sell | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
-#     When the opening auction period ends for market "ETH/DEC19"
-#     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-#     Then the market data for the market "ETH/DEC19" should be:
-#       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-#       | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 731          | 10000          | 1             |
-#     When the parties place the following orders with ticks:
-#       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference       |
-#       | trader4 | ETH/DEC19 | sell | 290    | 150   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
-#       | trader3 | ETH/DEC19 | buy  | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
+  @SuccessorMarketSimple
+  Scenario: 002 Successor market enacted with parent market still active, ELS is copied over and both states can change independently. 0042-LIQF-031, 0042-LIQF-048, 0042-LIQF-033
+    Given the markets:
+      | id        | quote name | asset | risk model                | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params |
+      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1       | 1                | default-none | default-none     | ethDec19Oracle         | 0.1                    | 0                         | 0              | 0                       |                  |                         |                   | SLA        |
+      | ETH/DEC20 | ETH        | USD   | default-st-risk-model     | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 0              | 0                       | ETH/DEC19        | 0.6                     | 10                | SLA        |
+    And the parties submit the following liquidity provision:
+      | id  | party   | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov1 | ETH/DEC19 | 9000              | 0.1 | submission |
+      | lp1 | lpprov1 | ETH/DEC19 | 9000              | 0.1 | submission |
+      | lp2 | lpprov2 | ETH/DEC19 | 1000              | 0.1 | submission |
+      | lp2 | lpprov2 | ETH/DEC19 | 1000              | 0.1 | submission |
+    When the network moves ahead "5" blocks
+    And the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC19 | buy  | 10     | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | sell | 10     | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | buy  | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
+    When the opening auction period ends for market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    Then the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 731          | 10000          | 1             |
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | trader4 | ETH/DEC19 | sell | 290    | 150   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
+      | trader3 | ETH/DEC19 | buy  | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
 
-#     And the market data for the market "ETH/DEC19" should be:
-#       | mark price | trading mode            | target stake | supplied stake | open interest |
-#       | 150        | TRADING_MODE_CONTINUOUS | 731          | 10000          | 1             |
-#     When the parties place the following orders with ticks:
-#       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
-#       | trader5 | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+    And the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest |
+      | 150        | TRADING_MODE_CONTINUOUS | 731          | 10000          | 1             |
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | trader5 | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
-#     Then the parties should have the following account balances:
-#       | party   | asset | market id | margin | general |
-#       | trader5 | USD   | ETH/DEC19 | 17432  | 0       |
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader5 | USD   | ETH/DEC19 | 17432  | 0       |
 
-#     Then the parties cancel the following orders:
-#       | party   | reference      |
-#       | trader3 | buy-provider-1 |
-#     When the parties place the following orders with ticks:
-#       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
-#       | trader3 | ETH/DEC19 | buy  | 290    | 120   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
+    Then the parties cancel the following orders:
+      | party   | reference      |
+      | trader3 | buy-provider-1 |
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
+      | trader3 | ETH/DEC19 | buy  | 290    | 120   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
 
-#     When the parties place the following orders with ticks:
-#       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
-#       | trader4 | ETH/DEC19 | sell | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-#       | trader3 | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | trader4 | ETH/DEC19 | sell | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | trader3 | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+    # trader5 got closed out
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader3 | USD   | ETH/DEC19 | 27856  | 1978068 |
+      | trader4 | USD   | ETH/DEC19 | 41369  | 1961706 |
+      | trader5 | USD   | ETH/DEC19 | 0      | 0       |
 
-#     And the insurance pool balance should be "5077" for the market "ETH/DEC19"
-#     And the global insurance pool balance should be "0" for the asset "USD"
-#     And the liquidity provider fee shares for the market "ETH/DEC19" should be:
-#       | party   | equity like share | average entry valuation |
-#       | lpprov1 | 0.9               | 9000                    |
-#       | lpprov2 | 0.1               | 10000                   |
+    And the insurance pool balance should be "5077" for the market "ETH/DEC19"
+    And the insurance pool balance should be "0" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "0" for the asset "USD"
+    And the liquidity provider fee shares for the market "ETH/DEC19" should be:
+      | party   | equity like share | average entry valuation |
+      | lpprov1 | 0.9               | 9000                    |
+      | lpprov2 | 0.1               | 10000                   |
 
-# # make LP commitment while market is still pending
-#     And the parties submit the following liquidity provision:
-#       | id  | party   | market id | commitment amount | fee | lp type    |
-#       | lp1 | lpprov1 | ETH/DEC20 | 4000              | 0.1 | submission |
-#       | lp1 | lpprov1 | ETH/DEC20 | 4000              | 0.1 | submission |
-#       | lp2 | lpprov2 | ETH/DEC20 | 8000              | 0.1 | submission |
-#       | lp2 | lpprov2 | ETH/DEC20 | 8000              | 0.1 | submission |
+    # make LP commitment while market is still pending
+    And the parties submit the following liquidity provision:
+      | id  | party   | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov1 | ETH/DEC20 | 4000              | 0.1 | submission |
+      | lp1 | lpprov1 | ETH/DEC20 | 4000              | 0.1 | submission |
+      | lp2 | lpprov2 | ETH/DEC20 | 8000              | 0.1 | submission |
+      | lp2 | lpprov2 | ETH/DEC20 | 8000              | 0.1 | submission |
 
-#     Then the oracles broadcast data signed with "0xCAFECAFE1":
-#       | name               | value |
-#       | trading.terminated | true  |
-#       | prices.ETH.value   | 975   |
+    Then the oracles broadcast data signed with "0xCAFECAFE1":
+      | name               | value |
+      | trading.terminated | true  |
+      | prices.ETH.value   | 975   |
 
-#     # pass succession window
-#     When the network moves ahead "1" blocks
+    # pass succession window
+    When the network moves ahead "1" blocks
 
-#     Then the successor market "ETH/DEC20" is enacted
+    Then the successor market "ETH/DEC20" is enacted
 
-#     And the parties place the following orders:
-#       | party   | market id | side | volume | price | resulting trades | type       | tif     |
-#       | trader1 | ETH/DEC20 | buy  | 10     | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-#       | trader1 | ETH/DEC20 | sell | 10     | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
-#       | trader1 | ETH/DEC20 | buy  | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
-#       | trader2 | ETH/DEC20 | sell | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
+    And the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC20 | buy  | 10     | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC20 | sell | 10     | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC20 | buy  | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | sell | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
 
-#     # make LP commitment change  while market is still pending
-#     And the parties submit the following liquidity provision:
-#       | id  | party   | market id | commitment amount | fee | lp type   |
-#       | lp1 | lpprov1 | ETH/DEC20 | 2000              | 0.1 | amendment |
-#       | lp1 | lpprov1 | ETH/DEC20 | 2000              | 0.1 | amendment |
-#     When the opening auction period ends for market "ETH/DEC20"
-#     Then the market data for the market "ETH/DEC20" should be:
-#       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-#       | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 82           | 10000          | 1             |
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader1 | USD   | ETH/DEC20 | 1327   | 1998523 |
+      | trader2 | USD   | ETH/DEC20 | 10     | 2000140 |
 
-#     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-#     And the insurance pool balance should be "4062" for the market "ETH/DEC20"
-#     And the global insurance pool balance should be "1016" for the asset "USD"
-#     # this is from ETH/DEC19 market
-#     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
-#       | party   | equity like share | average entry valuation |
-#       | lpprov1 | 0.2               | 9000                    |
-#       | lpprov2 | 0.8               | 10000                   |
+    # make LP commitment change  while market is still pending
+    And the parties submit the following liquidity provision:
+      | id  | party   | market id | commitment amount | fee | lp type   |
+      | lp1 | lpprov1 | ETH/DEC20 | 2000              | 0.1 | amendment |
+      | lp1 | lpprov1 | ETH/DEC20 | 2000              | 0.1 | amendment |
+    When the opening auction period ends for market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 82           | 12000          | 1             |
+
+    When the network moves ahead "5" blocks
+
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
+    # And the insurance pool balance should be "4062" for the market "ETH/DEC20"
+    And the insurance pool balance should be "10336" for the market "ETH/DEC20"
+    # And the global insurance pool balance should be "1016" for the asset "USD"
+    And the global insurance pool balance should be "2585" for the asset "USD"
+
+    # this is from ETH/DEC19 market
+    And the liquidity provider fee shares for the market "ETH/DEC20" should be:
+      | party   | equity like share | average entry valuation |
+      # | lpprov1 | 0.2               | 9000                    |
+      # | lpprov2 | 0.8               | 10000                   |
+      | lpprov1 | 0.2               | 9000                    |
+      | lpprov2 | 0.8               | 11750                   |
 
 #     And the accumulated liquidity fees should be "0" for the market "ETH/DEC20"
 
