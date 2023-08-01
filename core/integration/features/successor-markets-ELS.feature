@@ -378,6 +378,13 @@ Feature: Simple example of successor markets
       | trading.terminated | true  |
       | prices.ETH.value   | 975   |
 
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general     | bond |
+      | lpprov1 | USD   | ETH/DEC19 | 0      | 1999996000  | 0    |
+      | lpprov2 | USD   | ETH/DEC19 | 0      | 19999992000 | 0    |
+      | lpprov1 | USD   | ETH/DEC20 | 0      | 1999996000  | 4000 |
+      | lpprov2 | USD   | ETH/DEC20 | 0      | 19999992000 | 8000 |
+
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
       | trader1 | 1      | -10            | 0            |
@@ -386,6 +393,7 @@ Feature: Simple example of successor markets
       | trader4 | -291   | 2900           | 0            |
       | trader5 | 0      | 0              | -17432       |
 
+    Then debug transfers
     # pass succession window
     When the network moves ahead "1" blocks
     Then the successor market "ETH/DEC20" is enacted
