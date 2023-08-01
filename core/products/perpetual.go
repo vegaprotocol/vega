@@ -14,9 +14,7 @@ package products
 
 import (
 	"context"
-	"fmt"
 	"strconv"
-	"strings"
 
 	"code.vegaprotocol.io/vega/core/datasource"
 	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
@@ -52,14 +50,6 @@ type dataPoint struct {
 	t int64
 }
 
-/*type oracle struct {
-	settlementDataSubscriptionID    spec.SubscriptionID
-	tradingTerminatedSubscriptionID spec.SubscriptionID
-	unsubscribe                     spec.Unsubscriber
-	binding                         oracleBinding
-	data                            oracleData
-}*/
-
 // Perpetual represents a Perpetual as describe by the market framework.
 type Perpetual struct {
 	p   *types.Perps
@@ -67,7 +57,7 @@ type Perpetual struct {
 	// oracle                 oracle
 	settlementDataListener func(context.Context, *num.Numeric)
 	broker                 Broker
-	oracle                 oracle
+	oracle                 scheduledOracle
 
 	// id should be the same as the market id
 	id string
@@ -88,7 +78,7 @@ func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, oe O
 	if p.DataSourceSpecForSettlementData == nil || p.DataSourceSpecForSettlementSchedule == nil || p.DataSourceSpecBinding == nil {
 		return nil, ErrDataSourceSpecAndBindingAreRequired
 	}
-	oracleBinding, err := newPerpOracleBinding(p)
+	oracle, err := newPerpOracle(p)
 	if err != nil {
 		return nil, err
 	}
@@ -98,12 +88,12 @@ func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, oe O
 	// check decimal places for settlement data
 	for _, f := range dsSpec.GetFilters() {
 		if f.Key.Type == datapb.PropertyKey_TYPE_INTEGER && f.Key.NumberDecimalPlaces != nil {
-			oracleBinding.settlementDataPropertyType = f.Key.Type
-			oracleBinding.settlementDataDecimals = *f.Key.NumberDecimalPlaces
+			oracle.binding.settlementType = f.Key.Type
+			oracle.binding.settlementDecimals = *f.Key.NumberDecimalPlaces
 		}
 		// we may want to support 2 timestamp types here
 		if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP && f.Key.NumberDecimalPlaces == nil {
-			oracleBinding.settlementSchedulePropertyType = f.Key.Type
+			oracle.binding.scheduleType = f.Key.Type
 		}
 	}
 	perp := &Perpetual{
@@ -111,46 +101,19 @@ func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, oe O
 		log:     log,
 		broker:  broker,
 		assetDP: assetDP,
-		oracle: oracle{
-			binding: oracleBinding,
-		},
+		oracle:  oracle,
 	}
-	// bind the external data-points oracle
-	oracleSpecForSettlementData, err := spec.New(*datasource.SpecFromDefinition(*p.DataSourceSpecForSettlementData.Data))
+	// create specs from source
+	osForSettle, err := spec.New(*datasource.SpecFromDefinition(*p.DataSourceSpecForSettlementData.Data))
 	if err != nil {
 		return nil, err
 	}
-	switch oracleBinding.settlementDataPropertyType {
-	case datapb.PropertyKey_TYPE_INTEGER:
-		err := oracleSpecForSettlementData.EnsureBoundableProperty(oracleBinding.settlementDataProperty, datapb.PropertyKey_TYPE_INTEGER)
-		if err != nil {
-			return nil, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
-		}
-	case datapb.PropertyKey_TYPE_DECIMAL:
-		err := oracleSpecForSettlementData.EnsureBoundableProperty(oracleBinding.settlementDataProperty, datapb.PropertyKey_TYPE_DECIMAL)
-		if err != nil {
-			return nil, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
-		}
-	}
-	perp.oracle.settlementDataSubscriptionID, perp.oracle.unsubscribe, err = oe.Subscribe(ctx, *oracleSpecForSettlementData, perp.receiveDataPoint)
-	if err != nil {
-		return nil, fmt.Errorf("could not subscribe to oracle engine for settlement data: %w", err)
-	}
-
-	// bind the schedule oracle
-	oracleSpecForSchedule, err := spec.New(*datasource.SpecFromDefinition(*p.DataSourceSpecForSettlementSchedule.Data))
+	osForSchedule, err := spec.New(*datasource.SpecFromDefinition(*p.DataSourceSpecForSettlementSchedule.Data))
 	if err != nil {
 		return nil, err
 	}
-	switch oracleBinding.settlementSchedulePropertyType {
-	case datapb.PropertyKey_TYPE_TIMESTAMP:
-		if err := oracleSpecForSchedule.EnsureBoundableProperty(oracleBinding.settlementScheduleProperty, oracleBinding.settlementSchedulePropertyType); err != nil {
-			return nil, fmt.Errorf("invalid oracle spec binding for settlement schedule: %w", err)
-		}
-	}
-	perp.oracle.settlementScheduleSubscriptionID, perp.oracle.unsubscribeSchedule, err = oe.Subscribe(ctx, *oracleSpecForSchedule, perp.receiveSettlementCue)
-	if err != nil {
-		return nil, fmt.Errorf("could not subscribe to oracle engine for schedule data: %w", err)
+	if err = oracle.bindAll(ctx, oe, osForSettle, osForSchedule, perp.receiveDataPoint, perp.receiveSettlementCue); err != nil {
+		return nil, err
 	}
 
 	return perp, nil
@@ -196,13 +159,14 @@ func (p *Perpetual) GetAsset() string {
 }
 
 func (p *Perpetual) UnsubscribeTradingTerminated(ctx context.Context) {
+	// we could just use this call to indicate the underlying perp was terminted
+	// p.oracle.unsubAll(ctx)
 	p.log.Panic("not expecting trading terminated with perpetual")
 }
 
 func (p *Perpetual) UnsubscribeSettlementData(ctx context.Context) {
 	p.log.Info("unsubscribed trading settlement data for", logging.String("quote-name", p.p.QuoteName))
-	p.oracle.unsubscribe(ctx, p.oracle.settlementDataSubscriptionID)
-	p.oracle.unsubscribeSchedule(ctx, p.oracle.settlementScheduleSubscriptionID)
+	p.oracle.unsubAll(ctx)
 }
 
 func (p *Perpetual) OnLeaveOpeningAuction(ctx context.Context, t int64) {
@@ -231,13 +195,13 @@ func (p *Perpetual) receiveDataPoint(ctx context.Context, data dscommon.Data) er
 		p.log.Debug("new oracle data received", data.Debug()...)
 	}
 
-	settlDataDecimals := int64(p.oracle.binding.settlementDataDecimals)
+	settlDataDecimals := int64(p.oracle.binding.settlementDecimals)
 	odata := &oracleData{
 		settlData: &num.Numeric{},
 	}
-	switch p.oracle.binding.settlementDataPropertyType {
+	switch p.oracle.binding.settlementType {
 	case datapb.PropertyKey_TYPE_DECIMAL:
-		settlDataAsDecimal, err := data.GetDecimal(p.oracle.binding.settlementDataProperty)
+		settlDataAsDecimal, err := data.GetDecimal(p.oracle.binding.settlementProperty)
 		if err != nil {
 			p.log.Error(
 				"could not parse decimal type property acting as settlement data",
@@ -249,7 +213,7 @@ func (p *Perpetual) receiveDataPoint(ctx context.Context, data dscommon.Data) er
 		odata.settlData.SetDecimal(&settlDataAsDecimal)
 
 	default:
-		settlDataAsUint, err := data.GetUint(p.oracle.binding.settlementDataProperty)
+		settlDataAsUint, err := data.GetUint(p.oracle.binding.settlementProperty)
 		if err != nil {
 			p.log.Error(
 				"could not parse integer type property acting as settlement data",
@@ -311,7 +275,7 @@ func (p *Perpetual) receiveSettlementCue(ctx context.Context, data dscommon.Data
 	if p.log.GetLevel() == logging.DebugLevel {
 		p.log.Debug("new schedule oracle data received", data.Debug()...)
 	}
-	t, err := data.GetTimestamp(p.oracle.binding.settlementScheduleProperty)
+	t, err := data.GetTimestamp(p.oracle.binding.scheduleProperty)
 	if err != nil {
 		p.log.Error("schedule data not valid", data.Debug()...)
 		return err
@@ -540,20 +504,4 @@ func twap(points []*dataPoint, start, end int64) *num.Uint {
 	sum.Add(sum, num.UintZero().Mul(prev.price, tdiff))
 
 	return sum.Div(sum, num.NewUint(uint64(end-num.MaxV(start, points[0].t))))
-}
-
-func newPerpOracleBinding(p *types.Perps) (oracleBinding, error) {
-	settleDataProp := strings.TrimSpace(p.DataSourceSpecBinding.SettlementDataProperty)
-	settleScheduleProp := strings.TrimSpace(p.DataSourceSpecBinding.SettlementScheduleProperty)
-	if len(settleDataProp) == 0 {
-		return oracleBinding{}, errors.New("binding for settlement data cannot be blank")
-	}
-	if len(settleScheduleProp) == 0 {
-		return oracleBinding{}, errors.New("binding for settlement schedule cannot be blank")
-	}
-
-	return oracleBinding{
-		settlementDataProperty:     settleDataProp,
-		settlementScheduleProperty: settleScheduleProp,
-	}, nil
 }
