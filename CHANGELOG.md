@@ -38,6 +38,7 @@
 - [8765](https://github.com/vegaprotocol/vega/issues/8765) - Implement snapshots state for `PERPS`.
 - [8918](https://github.com/vegaprotocol/vega/issues/8918) - Implement commands for team management.
 - [8756](https://github.com/vegaprotocol/vega/issues/8756) - Settlement and margin implementation for `PERPS`.
+- [8887](https://github.com/vegaprotocol/vega/pull/8887) - Remove differences for snapshot loading when the `nullchain` is used instead of `tendermint`
 
 ### 🐛 Fixes
 
@@ -75,6 +76,7 @@
 - [8855](https://github.com/vegaprotocol/vega/issues/8855) - Preserve reference to parent market when restoring checkpoint data
 - [8909](https://github.com/vegaprotocol/vega/issues/8909) - initialise id generator for all branches of market state update
 - [8908](https://github.com/vegaprotocol/vega/issues/8908) - A rejected parent market should result in all successors getting rejected, too.
+- [8953](https://github.com/vegaprotocol/vega/issues/8953) - Fix reward distribution when validator delegate to other validators
 
 ## 0.72.1
 

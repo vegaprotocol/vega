@@ -72,13 +72,13 @@ func calculateRewardsByStake(epochSeq, asset, accountID string, rewardBalance *n
 			logging.String("amountToKeepByValidator", amountToKeepByValidator.String()))
 
 		// check how much reward the validator can accept with the cap per participant
-		rewardForNode, ok := rewards[vd.NodeID]
+		rewardForNode, ok := rewards[vd.PubKey]
 		if !ok {
 			rewardForNode = num.UintZero()
 		}
 		// if there is no cap just add the total payout for the validator
 		if maxPayout.IsZero() {
-			rewards[vd.PubKey] = num.UintZero().Add(rewardForNode, amountToKeepByValidator)
+			rewards[vd.PubKey] = num.Sum(rewardForNode, amountToKeepByValidator)
 			totalRewardPayout.AddSum(amountToKeepByValidator)
 		} else {
 			balanceWithPayout := num.UintZero().Add(rewardForNode, amountToKeepByValidator)
