@@ -300,6 +300,9 @@ func testRegisteredCallbacks(t *testing.T) {
 			"eth-block-time": "2020",
 		},
 	})
+	// make sure the data-point outside of the period doesn't trigger the schedule callback
+	// that has to come from the oracle, too
+	assert.False(t, received)
 
 	// end period
 	period(ctx, dscommon.Data{
@@ -320,7 +323,7 @@ func testRegisteredCallbacksWithDifferentData(t *testing.T) {
 	oe := mocks.NewMockOracleEngine(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
 	exp := &num.Numeric{}
-	// shoudl be 2
+	// should be 2
 	exp.SetUint(num.Sum(num.UintOne(), num.UintOne()))
 	ctx := context.Background()
 	received := false
