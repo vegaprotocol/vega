@@ -136,6 +136,8 @@ Feature: Simple example of successor markets
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general     | bond |
       | lpprov1 | USD | ETH/DEC19 | 0 | 1999989000  | 9000 |
+      | lpprov2 | USD | ETH/DEC19 | 0 | 19999991000 | 1000 |
+      | lpprov1 | USD | ETH/DEC20 | 0 | 1999989000  | 2000 |
       | lpprov2 | USD | ETH/DEC20 | 0 | 19999991000 | 8000 |
       | lpprov3 | USD   | ETH/DEC21 | 0      | 19999992000 | 8000 |
 
