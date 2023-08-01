@@ -43,6 +43,7 @@
 - [8887](https://github.com/vegaprotocol/vega/pull/8887) - Remove differences for snapshot loading when the `nullchain` is used instead of `tendermint`
 - [8973](https://github.com/vegaprotocol/vega/issues/8973) - Do some more validation on Ethereum call specifications, add explicit error types to improve reporting
 - [8957](https://github.com/vegaprotocol/vega/issues/8957) - Oracle bindings for `PERPS`.
+- [8770](https://github.com/vegaprotocol/vega/issues/8770) - Add `PERPS` to integration tests.
 
 ### 🐛 Fixes
 

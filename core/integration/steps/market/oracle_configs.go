@@ -25,12 +25,16 @@ import (
 )
 
 var (
-	//go:embed defaults/oracle-config/*.json
+	//go:embed defaults/oracle-config/*future.json
 	defaultOracleConfigs         embed.FS
 	defaultOracleConfigFileNames = []string{
 		"defaults/oracle-config/default-eth-for-future.json",
 		"defaults/oracle-config/default-usd-for-future.json",
 		"defaults/oracle-config/default-dai-for-future.json",
+	}
+	//go:embed defaults/oracle-config/*perps.json
+	defaultOraclePerpsConfigs         embed.FS
+	defaultPerpsOracleConfigFileNames = []string{
 		"defaults/oracle-config/default-eth-for-perps.json",
 	}
 )
@@ -38,6 +42,7 @@ var (
 type oracleConfigs struct {
 	configForSettlementData    map[string]*OracleConfig
 	configFoTradingTermination map[string]*OracleConfig
+	configForSchedule          map[string]*OracleConfig
 	settlementDataDecimals     map[string]uint32
 }
 
@@ -50,6 +55,7 @@ func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 	specs := &oracleConfigs{
 		configForSettlementData:    map[string]*OracleConfig{},
 		configFoTradingTermination: map[string]*OracleConfig{},
+		configForSchedule:          map[string]*OracleConfig{},
 		settlementDataDecimals:     map[string]uint32{},
 	}
 
@@ -63,6 +69,19 @@ func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 			panic(fmt.Errorf("failed to add default data source config %s: %v", name, err))
 		}
 		if err := specs.Add(name, "trading termination", future.DataSourceSpecForTradingTermination, future.DataSourceSpecBinding); err != nil {
+			panic(fmt.Errorf("failed to add default data source config %s: %v", name, err))
+		}
+	}
+	contentReaders = defaults.ReadAll(defaultOraclePerpsConfigs, defaultPerpsOracleConfigFileNames)
+	for name, contentReader := range contentReaders {
+		perp, err := unmarshaller.UnmarshalPerpsDataSourceConfig(contentReader)
+		if err != nil {
+			panic(fmt.Errorf("couldn't unmarshal default data source config %s: %v", name, err))
+		}
+		if err := specs.Add(name, "settlement data", perp.DataSourceSpecForSettlementData, perp.DataSourceSpecBinding); err != nil {
+			panic(fmt.Errorf("failed to add default data source config %s: %v", name, err))
+		}
+		if err := specs.Add(name, "settlement schedule", perp.DataSourceSpecForSettlementSchedule, perp.DataSourceSpecBinding); err != nil {
 			panic(fmt.Errorf("failed to add default data source config %s: %v", name, err))
 		}
 	}
@@ -106,6 +125,15 @@ func (f *oracleConfigs) Add(
 			},
 			Binding: binding,
 		}
+	} else if specType == "settlement schedule" {
+		f.configForSchedule[name] = &OracleConfig{
+			Spec: &vegapb.OracleSpec{
+				ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
+					Spec: spec,
+				},
+			},
+			Binding: binding,
+		}
 	} else {
 		return errors.New("unknown oracle spec type definition - expecting settlement data or trading termination")
 	}
@@ -120,6 +148,8 @@ func (f *oracleConfigs) Get(name string, specType string) (*OracleConfig, error)
 		cfg = f.configForSettlementData
 	} else if specType == "trading termination" {
 		cfg = f.configFoTradingTermination
+	} else if specType == "settlement schedule" {
+		cfg = f.configForSchedule
 	} else {
 		return nil, errors.New("unknown oracle spec type definition - expecting settlement data or trading termination")
 	}
