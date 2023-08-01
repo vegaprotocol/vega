@@ -3,8 +3,6 @@ name: "Release Documentation"
 
 "on":
   push:
-    branches:
-      - #1986
     tags:
       - '**'
 
