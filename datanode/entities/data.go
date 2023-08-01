@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/types"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -39,7 +39,7 @@ type Property struct {
 	Value string
 }
 
-func SerializeSigners(signers []*types.Signer) (Signers, error) {
+func SerializeSigners(signers []*dstypes.Signer) (Signers, error) {
 	if len(signers) > 0 {
 		sigList := Signers{}
 
@@ -57,11 +57,11 @@ func SerializeSigners(signers []*types.Signer) (Signers, error) {
 	return Signers{}, nil
 }
 
-func DeserializeSigners(data Signers) []*types.Signer {
+func DeserializeSigners(data Signers) []*dstypes.Signer {
 	if len(data) > 0 {
-		signers := []*types.Signer{}
+		signers := []*dstypes.Signer{}
 		for _, s := range data {
-			signer := types.DeserializeSigner(s)
+			signer := dstypes.DeserializeSigner(s)
 			signers = append(signers, signer)
 		}
 
@@ -74,8 +74,10 @@ func DeserializeSigners(data Signers) []*types.Signer {
 type Data struct {
 	Signers        Signers
 	Data           []Property
+	MetaData       []Property
 	MatchedSpecIds [][]byte // pgx automatically handles [][]byte to Postgres ByteaArray mappings
 	BroadcastAt    time.Time
+	Error          *string
 	TxHash         TxHash
 	VegaTime       time.Time
 	SeqNum         uint64
@@ -89,6 +91,7 @@ func ExternalDataFromProto(data *datapb.ExternalData, txHash TxHash, vegaTime ti
 	properties := []Property{}
 	specIDs := [][]byte{}
 	signers := Signers{}
+	var metaDataProperties []Property
 
 	if data.Data != nil {
 		properties = make([]Property, 0, len(data.Data.Data))
@@ -101,6 +104,17 @@ func ExternalDataFromProto(data *datapb.ExternalData, txHash TxHash, vegaTime ti
 			})
 		}
 
+		if len(data.Data.MetaData) > 0 {
+			metaDataProperties = make([]Property, 0, len(data.Data.MetaData))
+
+			for _, m := range data.Data.MetaData {
+				metaDataProperties = append(metaDataProperties, Property{
+					Name:  m.Name,
+					Value: m.Value,
+				})
+			}
+		}
+
 		for _, specID := range data.Data.MatchedSpecIds {
 			id := SpecID(specID)
 			idBytes, err := id.Bytes()
@@ -111,7 +125,7 @@ func ExternalDataFromProto(data *datapb.ExternalData, txHash TxHash, vegaTime ti
 		}
 
 		var err error
-		signers, err = SerializeSigners(types.SignersFromProto(data.Data.Signers))
+		signers, err = SerializeSigners(dstypes.SignersFromProto(data.Data.Signers))
 		if err != nil {
 			return nil, err
 		}
@@ -121,8 +135,10 @@ func ExternalDataFromProto(data *datapb.ExternalData, txHash TxHash, vegaTime ti
 		Data: &Data{
 			Signers:        signers,
 			Data:           properties,
+			MetaData:       metaDataProperties,
 			MatchedSpecIds: specIDs,
 			BroadcastAt:    NanosToPostgresTimestamp(data.Data.BroadcastAt),
+			Error:          data.Data.Error,
 			TxHash:         txHash,
 			VegaTime:       vegaTime,
 			SeqNum:         seqNum,
@@ -134,16 +150,25 @@ func (od *ExternalData) ToProto() *datapb.ExternalData {
 	properties := []*datapb.Property{}
 	specIDs := []string{}
 	signersAsProto := []*datapb.Signer{}
+	metaDataProperties := []*datapb.Property{}
 
 	if od.Data != nil {
 		if od.Data.Data != nil {
 			properties = make([]*datapb.Property, 0, len(od.Data.Data))
 			specIDs = make([]string, 0, len(od.Data.MatchedSpecIds))
+			metaDataProperties = make([]*datapb.Property, 0, len(od.Data.MetaData))
 
 			for _, prop := range od.Data.Data {
 				properties = append(properties, &datapb.Property{
 					Name:  prop.Name,
 					Value: prop.Value,
+				})
+			}
+
+			for _, m := range od.Data.MetaData {
+				metaDataProperties = append(metaDataProperties, &datapb.Property{
+					Name:  m.Name,
+					Value: m.Value,
 				})
 			}
 
@@ -154,15 +179,17 @@ func (od *ExternalData) ToProto() *datapb.ExternalData {
 		}
 
 		signers := DeserializeSigners(od.Data.Signers)
-		signersAsProto = types.SignersIntoProto(signers)
+		signersAsProto = dstypes.SignersIntoProto(signers)
 	}
 
 	return &datapb.ExternalData{
 		Data: &datapb.Data{
 			Signers:        signersAsProto,
 			Data:           properties,
+			MetaData:       metaDataProperties,
 			MatchedSpecIds: specIDs,
 			BroadcastAt:    od.Data.BroadcastAt.UnixNano(),
+			Error:          od.Data.Error,
 		},
 	}
 }

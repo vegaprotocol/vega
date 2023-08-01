@@ -18,6 +18,8 @@ import (
 	"path/filepath"
 
 	"code.vegaprotocol.io/vega/core/config"
+	metadatadb "code.vegaprotocol.io/vega/core/snapshot/databases/metadata"
+	snapshotdb "code.vegaprotocol.io/vega/core/snapshot/databases/snapshot"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 
@@ -37,12 +39,7 @@ func (cmd *UnsafeResetAllCmd) Execute(_ []string) error {
 
 	vegaPaths := paths.New(cmd.VegaHome)
 
-	snapshotsPath := vegaPaths.StatePathFor(paths.SnapshotStateHome)
-	if err := deleteAll(log, snapshotsPath); err != nil {
-		log.Error("Unable to remove snapshot state", logging.Error(err))
-	} else {
-		log.Info("Removed snapshot state", logging.String("path", snapshotsPath))
-	}
+	clearSnapshotDatabases(vegaPaths, log)
 
 	checkpointsPath := vegaPaths.StatePathFor(paths.CheckpointStateHome)
 	if err := deleteAll(log, checkpointsPath); err != nil {
@@ -51,6 +48,43 @@ func (cmd *UnsafeResetAllCmd) Execute(_ []string) error {
 		log.Info("Removed checkpoint state", logging.String("path", checkpointsPath))
 	}
 	return nil
+}
+
+func clearSnapshotDatabases(vegaPaths paths.Paths, log *logging.Logger) {
+	snapshotDB, err := snapshotdb.NewLevelDBDatabase(vegaPaths)
+	if err != nil {
+		log.Error("Could not initialize the local snapshot database", logging.Error(err))
+		log.Error("Skipping clear up of the local snapshot database")
+	} else {
+		defer func() {
+			if err := snapshotDB.Close(); err != nil {
+				log.Warn("Could not close the local snapshot database cleanly", logging.Error(err))
+			}
+		}()
+		if err := snapshotDB.Clear(); err != nil {
+			log.Error("Could not clear up the local snapshot database", logging.Error(err))
+		} else {
+			log.Info("Removed local snapshots")
+		}
+	}
+
+	metadataDB, err := metadatadb.NewLevelDBDatabase(vegaPaths)
+	if err != nil {
+		log.Error("Could not initialize the local snapshot metadata database adapter", logging.Error(err))
+		log.Error("Skipping clear up of the local snapshot metadata database")
+		return
+	} else {
+		defer func() {
+			if err := metadataDB.Close(); err != nil {
+				log.Warn("Could not close the local snapshot metadata database cleanly", logging.Error(err))
+			}
+		}()
+		if err := metadataDB.Clear(); err != nil {
+			log.Error("Could not clear the local snapshot metadata database", logging.Error(err))
+		} else {
+			log.Info("Removed local snapshot metadata")
+		}
+	}
 }
 
 func deleteAll(log *logging.Logger, dir string) error {

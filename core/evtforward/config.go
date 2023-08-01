@@ -15,6 +15,7 @@ package evtforward
 import (
 	"time"
 
+	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
 	"code.vegaprotocol.io/vega/core/evtforward/ethereum"
 	"code.vegaprotocol.io/vega/libs/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
@@ -37,6 +38,7 @@ type Config struct {
 	// Ethereum groups the configuration related to Ethereum implementation of
 	// the Event Forwarder.
 	Ethereum ethereum.Config `group:"Ethereum" namespace:"ethereum"`
+	EthCall  ethcall.Config  `group:"EthCall"  namespace:"ethcall"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration.
@@ -46,5 +48,6 @@ func NewDefaultConfig() Config {
 		RetryRate:                encoding.Duration{Duration: defaultRetryRate},
 		BlockchainQueueAllowlist: []string{},
 		Ethereum:                 ethereum.NewDefaultConfig(),
+		EthCall:                  ethcall.NewDefaultConfig(),
 	}
 }

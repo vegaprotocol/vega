@@ -80,6 +80,7 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 		defer embeddedPostgres.Stop()
 
 		if err = sqlstore.WipeDatabaseAndMigrateSchemaToLatestVersion(log, sqlConfig.ConnectionConfig, sqlFs, false); err != nil {
+			log.Errorf("failed to wipe database and migrate schema, dumping postgres log:\n %s", postgresLog.String())
 			panic(err)
 		}
 

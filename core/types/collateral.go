@@ -17,6 +17,7 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -94,7 +95,7 @@ func (a Account) String() string {
 		"ID(%s) owner(%s) balance(%s) asset(%s) marketID(%s) type(%s)",
 		a.ID,
 		a.Owner,
-		uintPointerToString(a.Balance),
+		stringer.UintPointerToString(a.Balance),
 		a.Asset,
 		a.MarketID,
 		a.Type.String(),
@@ -241,17 +242,20 @@ func (a LedgerEntries) IntoProto() []*proto.LedgerEntry {
 	return out
 }
 
-type Party = proto.Party
-
 type AccountType = proto.AccountType
 
 const (
 	// Default value.
 	AccountTypeUnspecified AccountType = proto.AccountType_ACCOUNT_TYPE_UNSPECIFIED
+	// Per asset network treasury.
+	AccountTypeNetworkTreasury AccountType = proto.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY
 	// Insurance pool accounts contain insurance pool funds for a market.
 	AccountTypeInsurance AccountType = proto.AccountType_ACCOUNT_TYPE_INSURANCE
 	// Settlement accounts exist only during settlement or mark-to-market.
 	AccountTypeSettlement AccountType = proto.AccountType_ACCOUNT_TYPE_SETTLEMENT
+	// Global insurance account for the asset.
+	AccountTypeGlobalInsurance AccountType = proto.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE
+
 	// Margin accounts contain margin funds for a party and each party will
 	// have multiple margin accounts, one for each market they have traded in
 	//
@@ -290,4 +294,8 @@ const (
 	AccountTypeMarketProposerReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS
 	// Market account for holding in-flight spot passive orders funds.
 	AccountTypeHolding AccountType = proto.AccountType_ACCOUNT_TYPE_HOLDING
+	// Market account per LP to receive liquidity fees.
+	AccountTypeLPLiquidityFees AccountType = proto.AccountType_ACCOUNT_TYPE_LP_LIQUIDITY_FEES
+
+	AccountTypeLiquidityFeesBonusDistribution AccountType = proto.AccountType_ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION
 )

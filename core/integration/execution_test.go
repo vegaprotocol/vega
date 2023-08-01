@@ -75,14 +75,14 @@ func (e *exEng) SubmitStopOrder(
 	party string,
 ) (*types.OrderConfirmation, error) {
 	idgen := idgeneration.New(vgcrypto.RandomHash())
-	var fallsBellowID, risesAboveID *string
+	var fallsBelowID, risesAboveID *string
 	if submission.FallsBelow != nil {
-		fallsBellowID = ptr.From(idgen.NextID())
+		fallsBelowID = ptr.From(idgen.NextID())
 	}
 	if submission.RisesAbove != nil {
 		risesAboveID = ptr.From(idgen.NextID())
 	}
-	conf, err := e.Engine.SubmitStopOrders(ctx, submission, party, idgen, fallsBellowID, risesAboveID)
+	conf, err := e.Engine.SubmitStopOrders(ctx, submission, party, idgen, fallsBelowID, risesAboveID)
 	// if err != nil {
 	// 	e.broker.Send(events.NewTxErrEvent(ctx, err, party, submission.IntoProto(), "submitOrder"))
 	// }
@@ -105,6 +105,11 @@ func (e *exEng) CancelOrder(ctx context.Context, cancel *types.OrderCancellation
 		e.broker.Send(events.NewTxErrEvent(ctx, err, party, cancel.IntoProto(), "cancelOrder"))
 	}
 	return conf, err
+}
+
+func (e *exEng) CancelStopOrder(ctx context.Context, cancel *types.StopOrdersCancellation, party string) error {
+	idgen := idgeneration.New(vgcrypto.RandomHash())
+	return e.Engine.CancelStopOrders(ctx, cancel, party, idgen)
 }
 
 func (e *exEng) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, lpID,

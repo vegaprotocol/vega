@@ -72,6 +72,12 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 		cmdErr = commands.CheckStopOrdersSubmission(cmd.StopOrdersSubmission)
 	case *walletpb.SubmitTransactionRequest_StopOrdersCancellation:
 		cmdErr = commands.CheckStopOrdersCancellation(cmd.StopOrdersCancellation)
+	case *walletpb.SubmitTransactionRequest_CreateTeam:
+		cmdErr = commands.CheckCreateTeam(cmd.CreateTeam)
+	case *walletpb.SubmitTransactionRequest_UpdateTeam:
+		cmdErr = commands.CheckUpdateTeam(cmd.UpdateTeam)
+	case *walletpb.SubmitTransactionRequest_JoinTeam:
+		cmdErr = commands.CheckJoinTeam(cmd.JoinTeam)
 	default:
 		errs.AddForProperty("input_data.command", commands.ErrIsNotSupported)
 	}
@@ -186,6 +192,14 @@ func WrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.S
 	case *walletpb.SubmitTransactionRequest_BatchMarketInstructions:
 		data.Command = &commandspb.InputData_BatchMarketInstructions{
 			BatchMarketInstructions: req.GetBatchMarketInstructions(),
+		}
+	case *walletpb.SubmitTransactionRequest_StopOrdersSubmission:
+		data.Command = &commandspb.InputData_StopOrdersSubmission{
+			StopOrdersSubmission: req.GetStopOrdersSubmission(),
+		}
+	case *walletpb.SubmitTransactionRequest_StopOrdersCancellation:
+		data.Command = &commandspb.InputData_StopOrdersCancellation{
+			StopOrdersCancellation: req.GetStopOrdersCancellation(),
 		}
 	default:
 		panic(fmt.Sprintf("command %v is not supported", cmd))

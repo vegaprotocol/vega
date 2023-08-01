@@ -35,6 +35,18 @@ func (m *MockAuctionState) EXPECT() *MockAuctionStateMockRecorder {
 	return m.recorder
 }
 
+// EndGovernanceSuspensionAuction mocks base method.
+func (m *MockAuctionState) EndGovernanceSuspensionAuction() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "EndGovernanceSuspensionAuction")
+}
+
+// EndGovernanceSuspensionAuction indicates an expected call of EndGovernanceSuspensionAuction.
+func (mr *MockAuctionStateMockRecorder) EndGovernanceSuspensionAuction() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndGovernanceSuspensionAuction", reflect.TypeOf((*MockAuctionState)(nil).EndGovernanceSuspensionAuction))
+}
+
 // ExpiresAt mocks base method.
 func (m *MockAuctionState) ExpiresAt() *time.Time {
 	m.ctrl.T.Helper()
@@ -139,6 +151,18 @@ func (m *MockAuctionState) SetReadyToLeave() {
 func (mr *MockAuctionStateMockRecorder) SetReadyToLeave() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetReadyToLeave", reflect.TypeOf((*MockAuctionState)(nil).SetReadyToLeave))
+}
+
+// StartGovernanceSuspensionAuction mocks base method.
+func (m *MockAuctionState) StartGovernanceSuspensionAuction(arg0 time.Time) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "StartGovernanceSuspensionAuction", arg0)
+}
+
+// StartGovernanceSuspensionAuction indicates an expected call of StartGovernanceSuspensionAuction.
+func (mr *MockAuctionStateMockRecorder) StartGovernanceSuspensionAuction(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartGovernanceSuspensionAuction", reflect.TypeOf((*MockAuctionState)(nil).StartGovernanceSuspensionAuction), arg0)
 }
 
 // StartLiquidityAuctionNoOrders mocks base method.

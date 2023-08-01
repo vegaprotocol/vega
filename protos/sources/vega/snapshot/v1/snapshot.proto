@@ -32,8 +32,9 @@ message Snapshot {
   bytes metadata = 5;
 }
 
-// NodeHash represents an exported node from the AVL tree and contains all the data necessary to reconstruct an identical copy of the
-// AVL tree after it's been serialised
+// NodeHash represents an exported node from the AVL tree and contains all the
+// data necessary to reconstruct an identical copy of the AVL tree after it's
+// been serialised
 message NodeHash {
   // Node's full key, for example epoch.all
   string key = 3;
@@ -41,16 +42,19 @@ message NodeHash {
   string hash = 4;
   // Height of the node in the tree
   int32 height = 5;
-  // Version of that node i.e., how many times its value has changed during tree updates
+  // Version of that node i.e., how many times its value has changed during tree
+  // updates
   int64 version = 6;
-  // Whether or not the node contains a snapshot payload, only leaf nodes in the AVL contain payloads
+  // Whether or not the node contains a snapshot payload, only leaf nodes in the
+  // AVL contain payloads
   bool is_leaf = 7;
 }
 
 message Metadata {
   int64 version = 1;
   repeated string chunk_hashes = 2;
-  repeated NodeHash node_hashes = 3; // hashes used by snapshot engine, different to chunk hash if data was split up, or combined into a single chunk
+  repeated NodeHash node_hashes = 3; // hashes used by snapshot engine, different to chunk hash if data was
+  // split up, or combined into a single chunk
 }
 
 // Chunk is simply an as-is chunk belonging to a snapshot
@@ -119,7 +123,26 @@ message Payload {
     SpotLiquidityTarget spot_liquidity_target = 59;
     BankingRecurringGovernanceTransfers banking_recurring_governance_transfers = 60;
     BankingScheduledGovernanceTransfers banking_scheduled_governance_transfers = 61;
+    EthContractCallResults eth_contract_call_results = 62;
+    EthOracleVerifierLastBlock eth_oracle_verifier_last_block = 63;
+    LiquidityV2Provisions liquidity_v2_provisions = 64;
+    LiquidityV2PendingProvisions liquidity_v2_pending_provisions = 65;
+    LiquidityV2Performances liquidity_v2_performances = 66;
+    LiquidityV2Supplied liquidity_v2_supplied = 67;
+    LiquidityV2Scores liquidity_v2_scores = 68;
+    HoldingAccountTracker holding_account_tracker = 69;
   }
+}
+
+message OrderHoldingQuantities {
+  string id = 1;
+  string quantity = 2;
+  string fee = 3;
+}
+
+message HoldingAccountTracker {
+  string market_id = 1;
+  repeated OrderHoldingQuantities order_holding = 2;
 }
 
 message TimestampedTotalStake {
@@ -169,6 +192,7 @@ message OracleDataBatch {
 message OracleData {
   repeated vega.data.v1.Signer signers = 1;
   repeated OracleDataPair data = 2;
+  repeated vega.data.v1.Property meta_data = 3;
 }
 
 message OracleDataPair {
@@ -442,6 +466,8 @@ message SpotMarket {
   string last_traded_price = 16;
   repeated string parties = 17;
   bool closed = 18;
+  StopOrders stop_orders = 19;
+  repeated vega.Order expiring_stop_orders = 20;
 }
 
 message Market {
@@ -470,6 +496,27 @@ message Market {
   bool succeeded = 23;
   StopOrders stop_orders = 24;
   repeated vega.Order expiring_stop_orders = 25;
+  Product product = 26;
+}
+
+// eventually support multiple products
+message Product {
+  oneof type {
+    Perps perps = 1;
+  }
+}
+
+message DataPoint {
+  string price = 1;
+  int64 timestamp = 2;
+}
+
+message Perps {
+  string id = 1;
+  repeated DataPoint external_data_point = 2;
+  repeated DataPoint internal_data_point = 3;
+  uint64 seq = 4;
+  int64 started_at = 5;
 }
 
 message OrdersAtPrice {
@@ -512,6 +559,13 @@ message ExecutionMarkets {
   repeated Market markets = 1;
   repeated SpotMarket spot_markets = 2;
   repeated vega.checkpoint.v1.MarketState settled_markets = 3;
+  repeated Successors successors = 4;
+  repeated string market_ids = 5;
+}
+
+message Successors {
+  string parent_market = 1;
+  repeated string successor_markets = 2;
 }
 
 message Position {
@@ -609,6 +663,8 @@ message LimitState {
   bool propose_asset_enabled = 6;
   int64 propose_market_enabled_from = 7;
   int64 propose_asset_enabled_from = 8;
+  bool propose_spot_market_enabled = 9;
+  bool propose_perps_market_enabled = 10;
 }
 
 message VoteSpamPolicy {
@@ -680,6 +736,22 @@ message StakeVerifierPending {
   uint64 log_index = 6;
   string tx_id = 7;
   string id = 8;
+}
+
+message EthOracleVerifierLastBlock {
+  uint64 block_height = 1;
+  uint64 block_time = 2;
+}
+
+message EthContractCallResults {
+  repeated EthContractCallResult pending_contract_call_result = 1;
+}
+
+message EthContractCallResult {
+  uint64 block_height = 1;
+  uint64 block_time = 2;
+  string spec_id = 3;
+  bytes result = 4;
 }
 
 message PendingKeyRotation {
@@ -807,6 +879,55 @@ message LiquidityScore {
   string party_id = 2;
 }
 
+message LiquidityV2Provisions {
+  // Market ID these liquidity parameters apply to. Required for key generation
+  string market_id = 1;
+
+  repeated vega.LiquidityProvision liquidity_provisions = 2;
+}
+
+message LiquidityV2PendingProvisions {
+  // Market ID these liquidity parameters apply to. Required for key generation
+  string market_id = 1;
+
+  repeated vega.LiquidityProvision pending_liquidity_provisions = 2;
+}
+
+message LiquidityV2Performances {
+  // Market ID these liquidity parameters apply to. Required for key generation
+  string market_id = 1;
+
+  int64 epoch_start_time = 2;
+
+  repeated LiquidityV2PerformancePerParty performance_per_party = 3;
+}
+
+message LiquidityV2PerformancePerParty {
+  string party = 1;
+
+  int64 elapsed_time_meeting_sla_during_epoch = 2;
+  int64 commitment_start_time = 3;
+  repeated string registered_penalties_per_epoch = 4;
+  uint32 position_in_penalties_per_epoch = 5;
+}
+
+message LiquidityV2Scores {
+  // Market ID these liquidity parameters apply to. Required for key generation
+  string market_id = 1;
+
+  int32 running_average_counter = 2;
+  repeated LiquidityScore scores = 3;
+}
+
+message LiquidityV2Supplied {
+  // Market ID these liquidity parameters apply to. Required for key generation
+  string market_id = 1;
+
+  bool consensus_reached = 2;
+  repeated LiquidityOffsetProbabilityPair bid_cache = 3;
+  repeated LiquidityOffsetProbabilityPair ask_cache = 4;
+}
+
 // Snapshot payload for floating point consensus
 message FloatingPointConsensus {
   repeated NextTimeTrigger next_time_trigger = 1;
@@ -864,6 +985,7 @@ message ProofOfWork {
   repeated BannedParty banned = 7;
   repeated ProofOfWorkParams pow_params = 8;
   repeated ProofOfWorkState pow_state = 9;
+  uint64 last_pruning_block = 10;
 }
 
 message BannedParty {

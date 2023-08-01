@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -103,8 +104,8 @@ func TestValidatorHeartbeat(t *testing.T) {
 func checkValidatorHeartbeat(cmd *commandspb.ValidatorHeartbeat) commands.Errors {
 	err := commands.CheckValidatorHeartbeat(cmd)
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 

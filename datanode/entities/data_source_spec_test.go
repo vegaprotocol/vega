@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/types"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
@@ -73,22 +73,24 @@ func TestExternalDataSourceSpecFromProto(t *testing.T) {
 			CreatedAt: timeCreated.UnixNano(),
 			UpdatedAt: timeUpdated.UnixNano(),
 			Data: vegapb.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
+				vegapb.DataSourceContentTypeOracle,
 			).SetOracleConfig(
-				&vegapb.DataSourceSpecConfiguration{
-					Signers: types.SignersIntoProto(
-						[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
-					),
-					Filters: []*datapb.Filter{
-						{
-							Key: &datapb.PropertyKey{
-								Name: "trading.terminated",
-								Type: datapb.PropertyKey_TYPE_BOOLEAN,
-							},
-							Conditions: []*datapb.Condition{
-								{
-									Operator: datapb.Condition_OPERATOR_EQUALS,
-									Value:    "12",
+				&vega.DataSourceDefinitionExternal_Oracle{
+					Oracle: &vegapb.DataSourceSpecConfiguration{
+						Signers: dstypes.SignersIntoProto(
+							[]*dstypes.Signer{dstypes.CreateSignerFromString("0xTESTSIGN", dstypes.SignerTypePubKey)},
+						),
+						Filters: []*datapb.Filter{
+							{
+								Key: &datapb.PropertyKey{
+									Name: "trading.terminated",
+									Type: datapb.PropertyKey_TYPE_BOOLEAN,
+								},
+								Conditions: []*datapb.Condition{
+									{
+										Operator: datapb.Condition_OPERATOR_EQUALS,
+										Value:    "12",
+									},
 								},
 							},
 						},
@@ -131,7 +133,7 @@ func TestExternalDataSourceSpecFromProto(t *testing.T) {
 			CreatedAt: timeCreated.UnixNano(),
 			UpdatedAt: timeUpdated.UnixNano(),
 			Data: vegapb.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeInt,
+				vegapb.DataSourceContentTypeInternalTimeTermination,
 			).SetTimeTriggerConditionConfig(
 				[]*datapb.Condition{
 					{
@@ -198,22 +200,24 @@ func TestExternalDataSourceSpecToProto(t *testing.T) {
 			CreatedAt: timeCreated.Unix(),
 			UpdatedAt: timeUpdated.Unix(),
 			Data: vegapb.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
+				vegapb.DataSourceContentTypeOracle,
 			).SetOracleConfig(
-				&vegapb.DataSourceSpecConfiguration{
-					Signers: types.SignersIntoProto(
-						[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
-					),
-					Filters: []*datapb.Filter{
-						{
-							Key: &datapb.PropertyKey{
-								Name: "trading.terminated",
-								Type: datapb.PropertyKey_TYPE_BOOLEAN,
-							},
-							Conditions: []*datapb.Condition{
-								{
-									Operator: datapb.Condition_OPERATOR_EQUALS,
-									Value:    "12",
+				&vega.DataSourceDefinitionExternal_Oracle{
+					Oracle: &vegapb.DataSourceSpecConfiguration{
+						Signers: dstypes.SignersIntoProto(
+							[]*dstypes.Signer{dstypes.CreateSignerFromString("0xTESTSIGN", dstypes.SignerTypePubKey)},
+						),
+						Filters: []*datapb.Filter{
+							{
+								Key: &datapb.PropertyKey{
+									Name: "trading.terminated",
+									Type: datapb.PropertyKey_TYPE_BOOLEAN,
+								},
+								Conditions: []*datapb.Condition{
+									{
+										Operator: datapb.Condition_OPERATOR_EQUALS,
+										Value:    "12",
+									},
 								},
 							},
 						},
@@ -246,7 +250,7 @@ func TestExternalDataSourceSpecToProto(t *testing.T) {
 			CreatedAt: timeCreated.Unix(),
 			UpdatedAt: timeUpdated.Unix(),
 			Data: vegapb.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeInt,
+				vegapb.DataSourceContentTypeInternalTimeTermination,
 			).SetTimeTriggerConditionConfig(
 				[]*datapb.Condition{
 					{

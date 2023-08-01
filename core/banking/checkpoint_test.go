@@ -33,7 +33,6 @@ func TestCheckpoint(t *testing.T) {
 
 func TestDepositFinalisedAfterCheckpoint(t *testing.T) {
 	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
 
 	eng.tsvc.EXPECT().GetTimeNow().AnyTimes()
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -50,7 +49,7 @@ func TestDepositFinalisedAfterCheckpoint(t *testing.T) {
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
-	eng.erc.r.Check()
+	eng.erc.r.Check(context.Background())
 	eng.erc.f(eng.erc.r, true)
 
 	// now we take a checkpoint
@@ -58,7 +57,6 @@ func TestDepositFinalisedAfterCheckpoint(t *testing.T) {
 	require.NoError(t, err)
 
 	loadEng := getTestEngine(t)
-	defer loadEng.ctrl.Finish()
 
 	loadEng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
 	loadEng.tsvc.EXPECT().GetTimeNow().AnyTimes()
@@ -76,7 +74,6 @@ func TestDepositFinalisedAfterCheckpoint(t *testing.T) {
 
 func testSimpledScheduledTransfer(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
 		func() time.Time {
@@ -202,7 +199,6 @@ func testSimpledScheduledTransfer(t *testing.T) {
 
 func TestGovernancedScheduledTransfer(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
 		func() time.Time {
@@ -270,7 +266,6 @@ func TestGovernancedScheduledTransfer(t *testing.T) {
 
 func TestGovernanceRecurringTransfer(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	ctx := context.Background()
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(

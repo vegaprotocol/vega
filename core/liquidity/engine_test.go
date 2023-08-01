@@ -593,7 +593,7 @@ func TestLiquidityScoresMechanics(t *testing.T) {
 	// initialise PoT
 	tng.engine.SetGetStaticPricesFunc(func() (num.Decimal, num.Decimal, error) { return bestBid, bestAsk, nil })
 	tng.stateVar.OnTick(ctx, now)
-	require.True(t, tng.engine.IsPoTInitialised())
+	require.True(t, tng.engine.IsProbabilityOfTradingInitialised())
 
 	// party1 submission
 	tng.sortOutLpSubAndOrders(t, ctx, party1, commitment, offset, minLpPrice, maxLpPrice, bestBid, bestAsk, 9)

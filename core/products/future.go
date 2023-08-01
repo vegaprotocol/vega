@@ -17,11 +17,14 @@ import (
 	"fmt"
 	"strings"
 
-	"code.vegaprotocol.io/vega/core/oracles"
+	"code.vegaprotocol.io/vega/core/datasource"
+	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"github.com/pkg/errors"
 )
 
@@ -46,6 +49,7 @@ type Future struct {
 	oracle                     oracle
 	tradingTerminationListener func(context.Context, bool)
 	settlementDataListener     func(context.Context, *num.Numeric)
+	assetDP                    uint32
 }
 
 func (f *Future) UnsubscribeTradingTerminated(ctx context.Context) {
@@ -64,11 +68,13 @@ func (f *Future) Unsubscribe(ctx context.Context) {
 }
 
 type oracle struct {
-	settlementDataSubscriptionID    oracles.SubscriptionID
-	tradingTerminatedSubscriptionID oracles.SubscriptionID
-	unsubscribe                     oracles.Unsubscriber
-	binding                         oracleBinding
-	data                            oracleData
+	settlementDataSubscriptionID     spec.SubscriptionID
+	settlementScheduleSubscriptionID spec.SubscriptionID
+	tradingTerminatedSubscriptionID  spec.SubscriptionID
+	unsubscribe                      spec.Unsubscriber
+	unsubscribeSchedule              spec.Unsubscriber
+	binding                          oracleBinding
+	data                             oracleData
 }
 
 type oracleData struct {
@@ -103,7 +109,21 @@ type oracleBinding struct {
 	settlementDataPropertyType datapb.PropertyKey_Type
 	settlementDataDecimals     uint64
 
+	settlementScheduleProperty     string
+	settlementSchedulePropertyType datapb.PropertyKey_Type
+
 	tradingTerminationProperty string
+}
+
+func (f *Future) SubmitDataPoint(_ context.Context, _ *num.Uint, _ int64) error {
+	return nil
+}
+
+func (f *Future) OnLeaveOpeningAuction(_ context.Context, _ int64) {
+}
+
+func (f *Future) GetMarginIncrease(_ int64) *num.Uint {
+	return num.UintZero()
 }
 
 func (f *Future) NotifyOnSettlementData(listener func(context.Context, *num.Numeric)) {
@@ -128,12 +148,7 @@ func (f *Future) ScaleSettlementDataToDecimalPlaces(price *num.Numeric, dp uint3
 }
 
 // Settle a position against the future.
-func (f *Future) Settle(entryPriceInAsset *num.Uint, assetDecimals uint32, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error) {
-	settlementData, err := f.oracle.data.SettlementData(uint32(f.oracle.binding.settlementDataDecimals), assetDecimals)
-	if err != nil {
-		return nil, false, err
-	}
-
+func (f *Future) Settle(entryPriceInAsset, settlementData *num.Uint, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, rounding num.Decimal, err error) {
 	amount, neg := settlementData.Delta(settlementData, entryPriceInAsset)
 	// Make sure net position is positive
 	if netFractionalPosition.IsNegative() {
@@ -150,12 +165,12 @@ func (f *Future) Settle(entryPriceInAsset *num.Uint, assetDecimals uint32, netFr
 			logging.String("amount-in-uint", amount.String()),
 		)
 	}
-	amount, _ = num.UintFromDecimal(netFractionalPosition.Mul(amount.ToDecimal()))
+	a, rem := num.UintFromDecimalWithFraction(netFractionalPosition.Mul(amount.ToDecimal()))
 
 	return &types.FinancialAmount{
 		Asset:  f.SettlementAsset,
-		Amount: amount,
-	}, neg, nil
+		Amount: a,
+	}, neg, rem, nil
 }
 
 // Value - returns the nominal value of a unit given a current mark price.
@@ -173,7 +188,7 @@ func (f *Future) GetAsset() string {
 	return f.SettlementAsset
 }
 
-func (f *Future) updateTradingTerminated(ctx context.Context, data oracles.OracleData) error {
+func (f *Future) updateTradingTerminated(ctx context.Context, data dscommon.Data) error {
 	if f.log.GetLevel() == logging.DebugLevel {
 		f.log.Debug("new oracle data received", data.Debug()...)
 	}
@@ -183,7 +198,7 @@ func (f *Future) updateTradingTerminated(ctx context.Context, data oracles.Oracl
 	return f.setTradingTerminated(ctx, tradingTerminated, err)
 }
 
-func (f *Future) updateTradingTerminatedByTimestamp(ctx context.Context, data oracles.OracleData) error {
+func (f *Future) updateTradingTerminatedByTimestamp(ctx context.Context, data dscommon.Data) error {
 	if f.log.GetLevel() == logging.DebugLevel {
 		f.log.Debug("new oracle data received", data.Debug()...)
 	}
@@ -191,7 +206,7 @@ func (f *Future) updateTradingTerminatedByTimestamp(ctx context.Context, data or
 	var tradingTerminated bool
 	var err error
 
-	if _, err = data.GetTimestamp(oracles.BuiltinOracleTimestamp); err == nil {
+	if _, err = data.GetTimestamp(spec.BuiltinTimestamp); err == nil {
 		// we have received a trading termination timestamp from the internal vega time oracle
 		tradingTerminated = true
 	}
@@ -215,7 +230,7 @@ func (f *Future) setTradingTerminated(ctx context.Context, tradingTerminated boo
 	return nil
 }
 
-func (f *Future) updateSettlementData(ctx context.Context, data oracles.OracleData) error {
+func (f *Future) updateSettlementData(ctx context.Context, data dscommon.Data) error {
 	if f.log.GetLevel() == logging.DebugLevel {
 		f.log.Debug("new oracle data received", data.Debug()...)
 	}
@@ -264,7 +279,11 @@ func (f *Future) updateSettlementData(ctx context.Context, data oracles.OracleDa
 	return nil
 }
 
-func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine) (*Future, error) {
+func (f *Future) Serialize() *snapshotpb.Product {
+	return &snapshotpb.Product{}
+}
+
+func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine, assetDP uint32) (*Future, error) {
 	if f.DataSourceSpecForSettlementData == nil || f.DataSourceSpecForTradingTermination == nil || f.DataSourceSpecBinding == nil {
 		return nil, ErrDataSourceSpecAndBindingAreRequired
 	}
@@ -274,17 +293,16 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		return nil, err
 	}
 
-	dSrcSpec := f.DataSourceSpecForSettlementData.Data.GetDataSourceSpecConfiguration()
-	if dSrcSpec != nil {
-		for _, f := range dSrcSpec.Filters {
-			// Oracle specs with more than one unique filter names are not allowed to exists, so we do not have to make that check here.
-			// We are good to only check if the type is `PropertyKey_TYPE_DECIMAL` or `PropertyKey_TYPE_INTEGER`, because we take decimals
-			// into consideration only in those cases.
-			if f.Key.Type == datapb.PropertyKey_TYPE_INTEGER && f.Key.NumberDecimalPlaces != nil {
-				oracleBinding.settlementDataPropertyType = f.Key.Type
-				oracleBinding.settlementDataDecimals = *f.Key.NumberDecimalPlaces
-				break
-			}
+	dSrcSpec := f.DataSourceSpecForSettlementData.GetDefinition()
+
+	for _, f := range dSrcSpec.GetFilters() {
+		// Oracle specs with more than one unique filter names are not allowed to exists, so we do not have to make that check here.
+		// We are good to only check if the type is `PropertyKey_TYPE_DECIMAL` or `PropertyKey_TYPE_INTEGER`, because we take decimals
+		// into consideration only in those cases.
+		if f.Key.Type == datapb.PropertyKey_TYPE_INTEGER && f.Key.NumberDecimalPlaces != nil {
+			oracleBinding.settlementDataPropertyType = f.Key.Type
+			oracleBinding.settlementDataDecimals = *f.Key.NumberDecimalPlaces
+			break
 		}
 	}
 
@@ -295,10 +313,11 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		oracle: oracle{
 			binding: oracleBinding,
 		},
+		assetDP: assetDP,
 	}
 
 	// Oracle spec for settlement data.
-	oracleSpecForSettlementData, err := oracles.NewOracleSpec(*f.DataSourceSpecForSettlementData.ToExternalDataSourceSpec())
+	oracleSpecForSettlementData, err := spec.New(*datasource.SpecFromDefinition(*f.DataSourceSpecForSettlementData.Data))
 	if err != nil {
 		return nil, err
 	}
@@ -318,7 +337,10 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 
 	// Subscribe registers a callback for a given OracleSpec that is called when an
 	// OracleData matches the spec.
-	future.oracle.settlementDataSubscriptionID, future.oracle.unsubscribe = oe.Subscribe(ctx, *oracleSpecForSettlementData, future.updateSettlementData)
+	future.oracle.settlementDataSubscriptionID, future.oracle.unsubscribe, err = oe.Subscribe(ctx, *oracleSpecForSettlementData, future.updateSettlementData)
+	if err != nil {
+		return nil, fmt.Errorf("could not subscribe to oracle engine for settlement data: %w", err)
+	}
 
 	if log.IsDebug() {
 		log.Debug("future subscribed to oracle engine for settlement data",
@@ -327,14 +349,14 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 	}
 
 	// Oracle spec for trading termination.
-	oracleSpecForTerminatedMarket, err := oracles.NewOracleSpec(*f.DataSourceSpecForTradingTermination.ToExternalDataSourceSpec())
+	oracleSpecForTerminatedMarket, err := spec.New(*datasource.SpecFromDefinition(*f.DataSourceSpecForTradingTermination.Data))
 	if err != nil {
 		return nil, err
 	}
 
 	var tradingTerminationPropType datapb.PropertyKey_Type
-	var tradingTerminationCb oracles.OnMatchedOracleData
-	if oracleBinding.tradingTerminationProperty == oracles.BuiltinOracleTimestamp {
+	var tradingTerminationCb spec.OnMatchedData
+	if oracleBinding.tradingTerminationProperty == spec.BuiltinTimestamp {
 		tradingTerminationPropType = datapb.PropertyKey_TYPE_TIMESTAMP
 		tradingTerminationCb = future.updateTradingTerminatedByTimestamp
 	} else {
@@ -349,7 +371,10 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		return nil, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
 	}
 
-	future.oracle.tradingTerminatedSubscriptionID, _ = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, tradingTerminationCb)
+	future.oracle.tradingTerminatedSubscriptionID, _, err = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, tradingTerminationCb)
+	if err != nil {
+		return nil, fmt.Errorf("could not subscribe to oracle engine for trading termination: %w", err)
+	}
 
 	if log.IsDebug() {
 		log.Debug("future subscribed to oracle engine for market termination event",

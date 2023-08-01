@@ -65,6 +65,16 @@ func (r *proposalTermsResolver) Change(ctx context.Context, obj *types.ProposalT
 		return obj.GetNewFreeform(), nil
 	case *types.ProposalTerms_UpdateAsset:
 		return obj.GetUpdateAsset(), nil
+	case *types.ProposalTerms_CancelTransfer:
+		return obj.GetCancelTransfer(), nil
+	case *types.ProposalTerms_NewTransfer:
+		return obj.GetNewTransfer(), nil
+	case *types.ProposalTerms_NewSpotMarket:
+		return obj.GetNewSpotMarket(), nil
+	case *types.ProposalTerms_UpdateSpotMarket:
+		return obj.GetUpdateSpotMarket(), nil
+	case *types.ProposalTerms_UpdateMarketState:
+		return obj.GetUpdateMarketState(), nil
 	default:
 		return nil, ErrUnsupportedProposalTermsChanges
 	}

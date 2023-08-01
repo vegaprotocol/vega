@@ -45,20 +45,16 @@ func (m *Market) OnMarginScalingFactorsUpdate(ctx context.Context, sf *types.Sca
 	return nil
 }
 
-func (m *Market) OnFeeFactorsMakerFeeUpdate(ctx context.Context, d num.Decimal) error {
+func (m *Market) OnFeeFactorsMakerFeeUpdate(ctx context.Context, d num.Decimal) {
 	m.fee.OnFeeFactorsMakerFeeUpdate(d)
 	m.mkt.Fees.Factors.MakerFee = d
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-
-	return nil
 }
 
-func (m *Market) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, d num.Decimal) error {
+func (m *Market) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, d num.Decimal) {
 	m.fee.OnFeeFactorsInfrastructureFeeUpdate(d)
 	m.mkt.Fees.Factors.InfrastructureFee = d
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-
-	return nil
 }
 
 func (m *Market) OnSuppliedStakeToObligationFactorUpdate(d num.Decimal) {
@@ -101,6 +97,7 @@ func (m *Market) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context
 func (m *Market) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d time.Duration) {
 	m.pMonitor.SetMinDuration(d)
 	m.lMonitor.SetMinDuration(d)
+	m.minDuration = d
 	evt := m.as.UpdateMinDuration(ctx, d)
 	// we were in an auction, and the duration of the auction was updated
 	if evt != nil {

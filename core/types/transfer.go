@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -80,7 +81,7 @@ func (f FinancialAmount) String() string {
 	return fmt.Sprintf(
 		"asset(%s) amount(%s)",
 		f.Asset,
-		uintPointerToString(f.Amount),
+		stringer.UintPointerToString(f.Amount),
 	)
 }
 
@@ -137,9 +138,9 @@ func (t *Transfer) String() string {
 	return fmt.Sprintf(
 		"owner(%s) amount(%s) type(%s) minAmount(%s)",
 		t.Owner,
-		reflectPointerToString(t.Amount),
+		stringer.ReflectPointerToString(t.Amount),
 		t.Type.String(),
-		uintPointerToString(t.MinAmount),
+		stringer.UintPointerToString(t.MinAmount),
 	)
 }
 
@@ -194,4 +195,14 @@ const (
 	TransferTypeSpot                       TransferType = proto.TransferType_TRANSFER_TYPE_SPOT
 	TransferTypeHoldingAccount             TransferType = proto.TransferType_TRANSFER_TYPE_HOLDING_LOCK
 	TransferTypeReleaseHoldingAccount      TransferType = proto.TransferType_TRANSFER_TYPE_HOLDING_RELEASE
+	// Liquidity fees.
+	TransferTypeLiquidityFeeAllocate          TransferType = proto.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE
+	TransferTypeLiquidityFeeNetDistribute     TransferType = proto.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_NET_DISTRIBUTE
+	TransferTypeSLAPenaltyBondApply           TransferType = proto.TransferType_TRANSFER_TYPE_SLA_PENALTY_BOND_APPLY
+	TransferTypeSLAPenaltyLpFeeApply          TransferType = proto.TransferType_TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY
+	TransferTypeLiquidityFeeUnpaidCollect     TransferType = proto.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT
+	TransferTypeSlaPerformanceBonusDistribute TransferType = proto.TransferType_TRANSFER_TYPE_SLA_PERFORMANCE_BONUS_DISTRIBUTE
+	// perps funding.
+	TransferTypePerpFundingLoss TransferType = proto.TransferType_TRANSFER_TYPE_PERP_FUNDING_LOSS
+	TransferTypePerpFundingWin  TransferType = proto.TransferType_TRANSFER_TYPE_PERP_FUNDING_WIN
 )

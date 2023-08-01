@@ -158,6 +158,60 @@ func TestMarketAmendIceberg(t *testing.T) {
 	assert.Equal(t, uint64(0), amended.IcebergOrder.ReservedRemaining)
 }
 
+func TestMarketAmendIcebergToNoReserve(t *testing.T) {
+	party1 := "party1"
+	now := time.Unix(100000, 0)
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	tm := getTestMarket(t, now, nil, nil)
+	defer tm.ctrl.Finish()
+
+	addAccount(t, tm, party1)
+	iceberg := &types.Order{
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Status:      types.OrderStatusActive,
+		ID:          "someid",
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       num.NewUint(100),
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party1-buy-order",
+		Version:     common.InitialOrderVersion,
+		IcebergOrder: &types.IcebergOrder{
+			PeakSize:           100,
+			MinimumVisibleSize: 5,
+		},
+	}
+
+	// submit order
+	_, err := tm.market.SubmitOrder(context.Background(), iceberg)
+	require.NoError(t, err)
+
+	tm.now = tm.now.Add(time.Second)
+	tm.market.OnTick(ctx, tm.now)
+	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
+
+	// now reduce the size of the iceberg so that only the reserved amount is reduced
+	amendedOrder := &types.OrderAmendment{
+		OrderID:     iceberg.ID,
+		Price:       nil,
+		SizeDelta:   -75,
+		TimeInForce: types.OrderTimeInForceGTC,
+	}
+
+	tm.eventCount = 0
+	tm.events = tm.events[:0]
+	_, err = tm.market.AmendOrder(context.Background(), amendedOrder, party1, vgcrypto.RandomHash())
+	require.NoError(t, err)
+	amended := requireOrderEvent(t, tm.events)
+	assert.Equal(t, uint64(25), amended.Size)
+	assert.Equal(t, uint64(25), amended.Remaining)
+	assert.Equal(t, uint64(0), amended.IcebergOrder.ReservedRemaining)
+}
+
 func requireOrderEvent(t *testing.T, evts []events.Event) *types.Order {
 	t.Helper()
 	for _, e := range evts {

@@ -41,8 +41,8 @@ func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 
 	if len(cmd.To) <= 0 {
 		errs.AddForProperty("transfer.to", ErrIsRequired)
-	} else if !IsVegaPubkey(cmd.To) {
-		errs.AddForProperty("transfer_to", ErrShouldBeAValidVegaPubkey)
+	} else if !IsVegaPublicKey(cmd.To) {
+		errs.AddForProperty("transfer_to", ErrShouldBeAValidVegaPublicKey)
 	}
 
 	if cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
@@ -62,7 +62,7 @@ func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 
 	if len(cmd.Asset) <= 0 {
 		errs.AddForProperty("transfer.asset", ErrIsRequired)
-	} else if !IsVegaPubkey(cmd.Asset) {
+	} else if !IsVegaID(cmd.Asset) {
 		errs.AddForProperty("transfer.asset", ErrShouldBeAValidVegaID)
 	}
 
@@ -119,7 +119,7 @@ func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 				if len(k.Recurring.DispatchStrategy.AssetForMetric) <= 0 && cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
 					errs.AddForProperty("transfer.kind.dispatch_strategy.asset_for_metric", ErrUnknownAsset)
 				}
-				if len(k.Recurring.DispatchStrategy.AssetForMetric) > 0 && !IsVegaPubkey(k.Recurring.DispatchStrategy.AssetForMetric) {
+				if len(k.Recurring.DispatchStrategy.AssetForMetric) > 0 && !IsVegaID(k.Recurring.DispatchStrategy.AssetForMetric) {
 					errs.AddForProperty("transfer.kind.dispatch_strategy.asset_for_metric", ErrShouldBeAValidVegaID)
 				}
 				// check that that the metric makes sense for the account type

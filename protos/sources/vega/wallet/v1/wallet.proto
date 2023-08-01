@@ -33,6 +33,9 @@ message SubmitTransactionRequest {
     commands.v1.BatchMarketInstructions batch_market_instructions = 1015;
     commands.v1.StopOrdersSubmission stop_orders_submission = 1016;
     commands.v1.StopOrdersCancellation stop_orders_cancellation = 1017;
+    commands.v1.CreateTeam create_team = 1018;
+    commands.v1.UpdateTeam update_team = 1019;
+    commands.v1.JoinTeam join_team = 1020;
 
     // Validator commands
     commands.v1.NodeVote node_vote = 2002;

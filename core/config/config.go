@@ -30,6 +30,7 @@ import (
 	"code.vegaprotocol.io/vega/core/collateral"
 	cfgencoding "code.vegaprotocol.io/vega/core/config/encoding"
 	"code.vegaprotocol.io/vega/core/coreapi"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/delegation"
 	"code.vegaprotocol.io/vega/core/epochtime"
 	"code.vegaprotocol.io/vega/core/evtforward"
@@ -41,7 +42,6 @@ import (
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/notary"
-	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/pow"
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/protocolupgrade"
@@ -71,7 +71,7 @@ type Config struct {
 	Ethereum          eth.Config             `group:"Ethereum"          namespace:"ethereum"`
 	Processor         processor.Config       `group:"Processor"         namespace:"processor"`
 	Logging           logging.Config         `group:"Logging"           namespace:"logging"`
-	Oracles           oracles.Config         `group:"Oracles"           namespace:"oracles"`
+	Oracles           spec.Config            `group:"Oracles"           namespace:"oracles"`
 	Time              vegatime.Config        `group:"Time"              namespace:"time"`
 	Epoch             epochtime.Config       `group:"Epoch"             namespace:"epochtime"`
 	Metrics           metrics.Config         `group:"Metrics"           namespace:"metrics"`
@@ -116,7 +116,7 @@ func NewDefaultConfig() Config {
 		Execution:         execution.NewDefaultConfig(),
 		Ethereum:          eth.NewDefaultConfig(),
 		Processor:         processor.NewDefaultConfig(),
-		Oracles:           oracles.NewDefaultConfig(),
+		Oracles:           spec.NewDefaultConfig(),
 		Time:              vegatime.NewDefaultConfig(),
 		Epoch:             epochtime.NewDefaultConfig(),
 		Pprof:             pprof.NewDefaultConfig(),
@@ -137,7 +137,7 @@ func NewDefaultConfig() Config {
 		Checkpoint:        checkpoint.NewDefaultConfig(),
 		Staking:           staking.NewDefaultConfig(),
 		Broker:            broker.NewDefaultConfig(),
-		Snapshot:          snapshot.NewDefaultConfig(),
+		Snapshot:          snapshot.DefaultConfig(),
 		StateVar:          statevar.NewDefaultConfig(),
 		ERC20MultiSig:     erc20multisig.NewDefaultConfig(),
 		PoW:               pow.NewDefaultConfig(),
@@ -165,10 +165,7 @@ func (c Config) GetMaxMemoryFactor() (float64, error) {
 }
 
 func (c Config) HaveEthClient() bool {
-	if c.Blockchain.ChainProvider == blockchain.ProviderNullChain {
-		return false
-	}
-	return c.IsValidator()
+	return c.IsValidator() && len(c.Ethereum.RPCEndpoint) > 0
 }
 
 type Loader struct {

@@ -65,7 +65,7 @@ func (n *nodeProposal) GetType() types.NodeVoteType {
 	return types.NodeVoteTypeGovernanceValidateAsset
 }
 
-func (n *nodeProposal) Check() error {
+func (n *nodeProposal) Check(ctx context.Context) error {
 	// always keep the last error
 	err := n.checker()
 	if err != nil {

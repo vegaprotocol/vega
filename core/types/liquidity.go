@@ -16,8 +16,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
@@ -42,6 +44,55 @@ const (
 	// margin check fails, then they will be cancelled without any penalties.
 	LiquidityProvisionStatusPending LiquidityProvisionStatus = proto.LiquidityProvision_STATUS_PENDING
 )
+
+type LiquiditySLAParams struct {
+	PriceRange                      num.Decimal
+	CommitmentMinTimeFraction       num.Decimal
+	ProvidersFeeCalculationTimeStep time.Duration
+	PerformanceHysteresisEpochs     uint64
+	SlaCompetitionFactor            num.Decimal
+}
+
+func (l LiquiditySLAParams) IntoProto() *proto.LiquiditySLAParameters {
+	return &proto.LiquiditySLAParameters{
+		PriceRange:                      l.PriceRange.String(),
+		CommitmentMinTimeFraction:       l.CommitmentMinTimeFraction.String(),
+		ProvidersFeeCalculationTimeStep: int64(l.ProvidersFeeCalculationTimeStep.Seconds()),
+		PerformanceHysteresisEpochs:     l.PerformanceHysteresisEpochs,
+		SlaCompetitionFactor:            l.SlaCompetitionFactor.String(),
+	}
+}
+
+func LiquiditySLAParamsFromProto(l *proto.LiquiditySLAParameters) *LiquiditySLAParams {
+	return &LiquiditySLAParams{
+		PriceRange:                      num.MustDecimalFromString(l.PriceRange),
+		CommitmentMinTimeFraction:       num.MustDecimalFromString(l.CommitmentMinTimeFraction),
+		ProvidersFeeCalculationTimeStep: time.Second * time.Duration(l.ProvidersFeeCalculationTimeStep),
+		PerformanceHysteresisEpochs:     l.PerformanceHysteresisEpochs,
+		SlaCompetitionFactor:            num.MustDecimalFromString(l.SlaCompetitionFactor),
+	}
+}
+
+func (l LiquiditySLAParams) String() string {
+	return fmt.Sprintf(
+		"priceRange(%s) commitmentMinTimeFraction(%s) providersFeeCalculationTimeStep(%v) performanceHysteresisEpochs(%v) slaCompetitionFactor(%s)",
+		l.PriceRange.String(),
+		l.CommitmentMinTimeFraction.String(),
+		l.ProvidersFeeCalculationTimeStep,
+		l.PerformanceHysteresisEpochs,
+		l.SlaCompetitionFactor.String(),
+	)
+}
+
+func (l LiquiditySLAParams) DeepClone() *LiquiditySLAParams {
+	return &LiquiditySLAParams{
+		PriceRange:                      l.PriceRange,
+		CommitmentMinTimeFraction:       l.CommitmentMinTimeFraction,
+		ProvidersFeeCalculationTimeStep: l.ProvidersFeeCalculationTimeStep,
+		PerformanceHysteresisEpochs:     l.PerformanceHysteresisEpochs,
+		SlaCompetitionFactor:            l.SlaCompetitionFactor,
+	}
+}
 
 type TargetStakeParameters struct {
 	TimeWindow    int64
@@ -160,7 +211,7 @@ func (l LiquidityProvisionSubmission) String() string {
 		"marketID(%s) reference(%s) commitmentAmount(%s) fee(%s) sells(%s) buys(%s)",
 		l.MarketID,
 		l.Reference,
-		uintPointerToString(l.CommitmentAmount),
+		stringer.UintPointerToString(l.CommitmentAmount),
 		l.Fee.String(),
 		LiquidityOrders(l.Sells).String(),
 		LiquidityOrders(l.Buys).String(),
@@ -204,7 +255,7 @@ func (l LiquidityProvision) String() string {
 		l.Party,
 		l.Status.String(),
 		l.Reference,
-		uintPointerToString(l.CommitmentAmount),
+		stringer.UintPointerToString(l.CommitmentAmount),
 		l.Fee.String(),
 		LiquidityOrderReferences(l.Sells).String(),
 		LiquidityOrderReferences(l.Buys).String(),
@@ -308,7 +359,7 @@ func (l LiquidityOrderReference) String() string {
 	return fmt.Sprintf(
 		"orderID(%s) liquidityOrder(%s)",
 		l.OrderID,
-		reflectPointerToString(l.LiquidityOrder),
+		stringer.ReflectPointerToString(l.LiquidityOrder),
 	)
 }
 
@@ -362,7 +413,7 @@ func (l LiquidityOrder) String() string {
 		"reference(%s) proportion(%v) offset(%s)",
 		l.Reference.String(),
 		l.Proportion,
-		uintPointerToString(l.Offset),
+		stringer.UintPointerToString(l.Offset),
 	)
 }
 
@@ -433,7 +484,7 @@ func (l LiquidityMonitoringParameters) String() string {
 		"auctionExtension(%v) trigerringRatio(%s) targetStake(%s)",
 		l.AuctionExtension,
 		l.TriggeringRatio.String(),
-		reflectPointerToString(l.TargetStakeParameters),
+		stringer.ReflectPointerToString(l.TargetStakeParameters),
 	)
 }
 
@@ -572,7 +623,7 @@ func (a LiquidityProvisionAmendment) String() string {
 		"marketID(%s) reference(%s) commitmentAmount(%s) fee(%s) sells(%v) buys(%v)",
 		a.MarketID,
 		a.Reference,
-		uintPointerToString(a.CommitmentAmount),
+		stringer.UintPointerToString(a.CommitmentAmount),
 		a.Fee.String(),
 		LiquidityOrders(a.Sells).String(),
 		LiquidityOrders(a.Buys).String(),

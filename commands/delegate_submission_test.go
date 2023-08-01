@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -38,8 +39,8 @@ func TestSubmittingNoDelegateAmountFails(t *testing.T) {
 func checkDelegateSubmission(cmd *commandspb.DelegateSubmission) commands.Errors {
 	err := commands.CheckDelegateSubmission(cmd)
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 	return e
@@ -93,8 +94,8 @@ func TestSubmittingNoUndelegateAmountSucceeds(t *testing.T) {
 func checkUndelegateSubmission(cmd *commandspb.UndelegateSubmission) commands.Errors {
 	err := commands.CheckUndelegateSubmission(cmd)
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 	return e

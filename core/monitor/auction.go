@@ -30,19 +30,16 @@ type AuctionState struct {
 	m                  *types.Market           // keep market definition handy, useful to end auctions when default is FBA
 	extension          *types.AuctionTrigger   // Set if the current auction was extended, reset after the event was created
 	extensionEventSent bool
-
-	stateChanged bool
 }
 
 func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
 	s := AuctionState{
-		mode:         types.MarketTradingModeOpeningAuction,
-		defMode:      types.MarketTradingModeContinuous,
-		trigger:      types.AuctionTriggerOpening,
-		begin:        &now,
-		start:        true,
-		m:            mkt,
-		stateChanged: true,
+		mode:    types.MarketTradingModeOpeningAuction,
+		defMode: types.MarketTradingModeContinuous,
+		trigger: types.AuctionTriggerOpening,
+		begin:   &now,
+		start:   true,
+		m:       mkt,
 	}
 	// no opening auction
 	if mkt.OpeningAuction == nil {
@@ -95,7 +92,6 @@ func (a *AuctionState) startLiquidityAuction(t time.Time, d *types.AuctionDurati
 	a.stop = false
 	a.begin = &t
 	a.end = d
-	a.stateChanged = true
 }
 
 // StartPriceAuction - set the state to start a price triggered auction
@@ -107,7 +103,24 @@ func (a *AuctionState) StartPriceAuction(t time.Time, d *types.AuctionDuration) 
 	a.stop = false
 	a.begin = &t
 	a.end = d
-	a.stateChanged = true
+}
+
+func (a *AuctionState) StartGovernanceSuspensionAuction(t time.Time) {
+	a.mode = types.MarketTradingModeSuspendedViaGovernance
+	a.trigger = types.AuctionTriggerGovernanceSuspension
+	a.start = true
+	a.stop = false
+	a.begin = &t
+	a.end = &types.AuctionDuration{Duration: 0}
+}
+
+func (a *AuctionState) EndGovernanceSuspensionAuction() {
+	a.mode = types.MarketTradingModeContinuous
+	a.trigger = types.AuctionTriggerUnspecified
+	a.start = false
+	a.stop = true
+	a.begin = nil
+	a.end = nil
 }
 
 // StartOpeningAuction - set the state to start an opening auction (used for testing)
@@ -119,13 +132,18 @@ func (a *AuctionState) StartOpeningAuction(t time.Time, d *types.AuctionDuration
 	a.stop = false
 	a.begin = &t
 	a.end = d
-	a.stateChanged = true
 }
 
 // ExtendAuctionPrice - call from price monitoring to extend the auction
 // sets the extension trigger field accordingly.
 func (a *AuctionState) ExtendAuctionPrice(delta types.AuctionDuration) {
 	t := types.AuctionTriggerPrice
+	a.extension = &t
+	a.ExtendAuction(delta)
+}
+
+func (a *AuctionState) ExtendAuctionSuspension(delta types.AuctionDuration) {
+	t := types.AuctionTriggerGovernanceSuspension
 	a.extension = &t
 	a.ExtendAuction(delta)
 }
@@ -152,13 +170,15 @@ func (a *AuctionState) ExtendAuction(delta types.AuctionDuration) {
 	a.end.Duration += delta.Duration
 	a.end.Volume += delta.Volume
 	a.stop = false // the auction was supposed to stop, but we've extended it
-	a.stateChanged = true
 }
 
 // SetReadyToLeave is called by monitoring engines to mark if an auction period has expired.
 func (a *AuctionState) SetReadyToLeave() {
+	// we can't leave the auction if it was triggered by governance suspension
+	if a.trigger == types.AuctionTriggerGovernanceSuspension {
+		return
+	}
 	a.stop = true
-	a.stateChanged = true
 }
 
 // Duration returns a copy of the current auction duration object.
@@ -273,7 +293,6 @@ func (a *AuctionState) AuctionExtended(ctx context.Context, now time.Time) *even
 	ext := *a.extension
 	// set extension flag to nil
 	a.extensionEventSent = true
-	a.stateChanged = true
 	return events.NewAuctionEvent(ctx, a.m.ID, false, a.begin.UnixNano(), end, a.trigger, ext)
 }
 
@@ -287,7 +306,6 @@ func (a *AuctionState) AuctionStarted(ctx context.Context, now time.Time) *event
 	if a.end != nil && a.end.Duration > 0 {
 		end = a.begin.Add(time.Duration(a.end.Duration) * time.Second).UnixNano()
 	}
-	a.stateChanged = true
 	return events.NewAuctionEvent(ctx, a.m.ID, false, a.begin.UnixNano(), end, a.trigger)
 }
 
@@ -308,7 +326,6 @@ func (a *AuctionState) Left(ctx context.Context, now time.Time) *events.Auction 
 	if a.mode == types.MarketTradingModeBatchAuction {
 		a.trigger = types.AuctionTriggerBatch
 	}
-	a.stateChanged = true
 	return evt
 }
 
@@ -321,7 +338,6 @@ func (a *AuctionState) UpdateMinDuration(ctx context.Context, d time.Duration) *
 		newMin := a.begin.Add(d)
 		// no need to check for nil, we already have
 		if newMin.After(*oldExp) {
-			a.stateChanged = true
 			a.end.Duration = int64(d / time.Second)
 			// this would increase the duration by delta new - old, effectively setting duration == new min. Instead, we can just assign new min duraiton.
 			// a.end.Duration += int64(newMin.Sub(*oldExp) / time.Second) // we have to divide by seconds as we're using seconds in AuctionDuration type

@@ -15,6 +15,7 @@ package liquidity_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/idgeneration"
@@ -23,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -51,7 +53,8 @@ func testSubmissionCreateAndCancel(t *testing.T) {
 	idGen := idgeneration.New(deterministicID)
 
 	lpID := idGen.NextID()
-	now := te.tsvc.GetTimeNow().UnixNano()
+	now := te.tsvc.GetTimeNow()
+	nowNano := now.UnixNano()
 
 	expected := &types.LiquidityProvision{
 		ID:               lpID,
@@ -59,28 +62,41 @@ func testSubmissionCreateAndCancel(t *testing.T) {
 		Party:            party,
 		Fee:              num.DecimalFromFloat(0.5),
 		CommitmentAmount: lps.CommitmentAmount.Clone(),
-		CreatedAt:        now,
-		UpdatedAt:        now,
+		CreatedAt:        nowNano,
+		UpdatedAt:        nowNano,
 		Status:           types.LiquidityProvisionStatusActive,
 		Version:          1,
 	}
 
 	// Creating a submission should fire an event
-	te.broker.EXPECT().Send(
-		events.NewLiquidityProvisionEvent(ctx, expected),
-	).Times(1)
+	te.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	idgen := idgeneration.New(deterministicID)
-	err = te.engine.SubmitLiquidityProvision(ctx, lps, party, idgen)
+	_, err = te.engine.SubmitLiquidityProvision(ctx, lps, party, idgen)
 	require.NoError(t, err)
 
+	// first validate that the amendment is pending
+	pendingLp := te.engine.PendingProvisionByPartyID(party)
+	assert.Equal(t, expected.CommitmentAmount.String(), pendingLp.CommitmentAmount.String())
+	assert.Equal(t, expected.Fee.String(), pendingLp.Fee.String())
+
 	got := te.engine.LiquidityProvisionByPartyID(party)
-	require.Equal(t, expected, got)
+	require.Nil(t, got)
+
+	zero := num.UintZero()
+
+	te.engine.ResetSLAEpoch(now, zero, zero, num.DecimalZero())
+	te.engine.ApplyPendingProvisions(ctx, now)
+
+	got = te.engine.LiquidityProvisionByPartyID(party)
+	require.Equal(t, expected.CommitmentAmount.String(), got.CommitmentAmount.String())
+	require.Equal(t, expected.Fee, got.Fee)
+	require.Equal(t, expected.Version, got.Version)
 
 	expected.Status = types.LiquidityProvisionStatusCancelled
 	te.broker.EXPECT().Send(
 		events.NewLiquidityProvisionEvent(ctx, expected),
-	).Times(1)
+	).AnyTimes()
 
 	err = te.engine.CancelLiquidityProvision(ctx, party)
 	require.NoError(t, err)
@@ -114,6 +130,12 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	tng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
+	zero := num.UintZero()
+	tng.orderbook.EXPECT().GetBestStaticBidPrice().Return(zero, nil).AnyTimes()
+	tng.orderbook.EXPECT().GetBestStaticAskPrice().Return(zero, nil).AnyTimes()
+
+	tng.auctionState.EXPECT().InAuction().Return(false).AnyTimes()
+
 	// Send a submission
 	lp1pb := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: "100", Fee: "0.5",
@@ -122,9 +144,14 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	require.NoError(t, err)
 
 	idgen := idgeneration.New(crypto.RandomHash())
-	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lp1, party1, idgen),
-	)
+	_, err = tng.engine.SubmitLiquidityProvision(ctx, lp1, party1, idgen)
+	require.NoError(t, err)
+
+	now := tng.tsvc.GetTimeNow()
+
+	tng.engine.ApplyPendingProvisions(ctx, now)
+	tng.engine.ResetSLAEpoch(time.Now(), zero, zero, num.DecimalOne())
+
 	suppliedStake := tng.engine.CalculateSuppliedStake()
 	require.Equal(t, lp1.CommitmentAmount, suppliedStake)
 
@@ -135,9 +162,12 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	require.NoError(t, err)
 
 	idgen = idgeneration.New(crypto.RandomHash())
-	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lp2, party2, idgen),
-	)
+	_, err = tng.engine.SubmitLiquidityProvision(ctx, lp2, party2, idgen)
+	require.NoError(t, err)
+
+	tng.engine.ResetSLAEpoch(now, zero, zero, num.DecimalZero())
+	tng.engine.ApplyPendingProvisions(ctx, now)
+
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, num.Sum(lp1.CommitmentAmount, lp2.CommitmentAmount), suppliedStake)
 
@@ -148,9 +178,9 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	require.NoError(t, err)
 
 	idgen = idgeneration.New(crypto.RandomHash())
-	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lp3, party3, idgen),
-	)
+	_, err = tng.engine.SubmitLiquidityProvision(ctx, lp3, party3, idgen)
+	require.NoError(t, err)
+
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, num.Sum(lp1.CommitmentAmount, lp2.CommitmentAmount, lp3.CommitmentAmount), suppliedStake)
 

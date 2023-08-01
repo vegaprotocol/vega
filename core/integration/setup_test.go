@@ -29,11 +29,11 @@ import (
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/libs/num"
 
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/integration/helpers"
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/netparams"
-	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/plugins"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
@@ -70,8 +70,8 @@ type executionTestSetup struct {
 	broker           *stubs.BrokerStub
 	executionEngine  *exEng
 	collateralEngine *collateral.Engine
-	oracleEngine     *oracles.Engine
-	builtinOracle    *oracles.Builtin
+	oracleEngine     *spec.Engine
+	builtinOracle    *spec.Builtin
 	epochEngine      *epochtime.Svc
 	delegationEngine *delegation.Engine
 	positionPlugin   *plugins.Positions
@@ -159,7 +159,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	marketActivityTracker := common.NewMarketActivityTracker(execsetup.log, execsetup.epochEngine)
 	commander := stubs.NewCommanderStub()
 	execsetup.netDeposits = num.UintZero()
-	execsetup.witness = validators.NewWitness(execsetup.log, validators.NewDefaultConfig(), execsetup.topology, commander, execsetup.timeService)
+	execsetup.witness = validators.NewWitness(context.Background(), execsetup.log, validators.NewDefaultConfig(), execsetup.topology, commander, execsetup.timeService)
 
 	execsetup.ntry = notary.NewWithSnapshot(execsetup.log, notary.NewDefaultConfig(), execsetup.topology, execsetup.broker, commander)
 	execsetup.assetsEngine = stubs.NewAssetStub()
@@ -169,11 +169,10 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine, execsetup.timeService)
 	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, marketActivityTracker, execsetup.topology)
 
-	execsetup.oracleEngine = oracles.NewEngine(
-		execsetup.log, oracles.NewDefaultConfig(), execsetup.timeService, execsetup.broker,
-	)
+	execsetup.oracleEngine = spec.NewEngine(
+		execsetup.log, spec.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
 
-	execsetup.builtinOracle = oracles.NewBuiltinOracle(execsetup.oracleEngine, execsetup.timeService)
+	execsetup.builtinOracle = spec.NewBuiltin(execsetup.oracleEngine, execsetup.timeService)
 
 	execsetup.stateVarEngine = stubs.NewStateVar()
 	// @TODO stub assets engine and pass it in
@@ -192,7 +191,7 @@ func newExecutionTestSetup() *executionTestSetup {
 		),
 		execsetup.broker,
 	)
-
+	execsetup.epochEngine.NotifyOnEpoch(execsetup.executionEngine.OnEpochEvent, execsetup.executionEngine.OnEpochRestore)
 	execsetup.positionPlugin = plugins.NewPositions(context.Background())
 	execsetup.broker.Subscribe(execsetup.positionPlugin)
 
@@ -229,6 +228,31 @@ func newExecutionTestSetup() *executionTestSetup {
 		netparams.WatchParam{
 			Param:   netparams.SpamProtectionMaxStopOrdersPerMarket,
 			Watcher: execsetup.executionEngine.OnMarketPartiesMaximumStopOrdersUpdate,
+		},
+
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2EarlyExitPenalty,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2EarlyExitPenaltyUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltyMax,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltySlope,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2BondPenaltyParameter,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2BondPenaltyUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2MaximumLiquidityFeeFactorLevel,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2SuppliedStakeToObligationFactorUpdate,
 		},
 	)
 	return execsetup

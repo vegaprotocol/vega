@@ -17,14 +17,16 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/broker/mocks"
+	"code.vegaprotocol.io/vega/core/datasource"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	emock "code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/markets"
-	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/logging"
 
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/types"
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
 	"github.com/golang/mock/gomock"
@@ -35,7 +37,7 @@ import (
 func TestInstrument(t *testing.T) {
 	t.Run("Create a valid new instrument", func(t *testing.T) {
 		pinst := getValidInstrumentProto()
-		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t))
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t), mocks.NewMockBroker(gomock.NewController(t)), 1)
 		assert.NotNil(t, inst)
 		assert.Nil(t, err)
 	})
@@ -43,7 +45,7 @@ func TestInstrument(t *testing.T) {
 	t.Run("nil product", func(t *testing.T) {
 		pinst := getValidInstrumentProto()
 		pinst.Product = nil
-		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t))
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t), mocks.NewMockBroker(gomock.NewController(t)), 1)
 		assert.Nil(t, inst)
 		assert.NotNil(t, err)
 		assert.Equal(t, err.Error(), "unable to instantiate product from instrument configuration: nil product")
@@ -56,13 +58,13 @@ func TestInstrument(t *testing.T) {
 				SettlementAsset:                     "Ethereum/Ether",
 				DataSourceSpecForSettlementData:     nil,
 				DataSourceSpecForTradingTermination: nil,
-				DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
+				DataSourceSpecBinding: &datasource.SpecBindingForFuture{
 					SettlementDataProperty:     "prices.ETH.value",
 					TradingTerminationProperty: "trading.terminated",
 				},
 			},
 		}
-		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t))
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t), mocks.NewMockBroker(gomock.NewController(t)), 1)
 		require.NotNil(t, err)
 		assert.Nil(t, inst)
 		assert.Equal(t, "unable to instantiate product from instrument configuration: a data source spec and spec binding are required", err.Error())
@@ -73,37 +75,37 @@ func TestInstrument(t *testing.T) {
 		pinst.Product = &types.InstrumentFuture{
 			Future: &types.Future{
 				SettlementAsset: "Ethereum/Ether",
-				DataSourceSpecForSettlementData: &types.DataSourceSpec{
-					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+				DataSourceSpecForSettlementData: &datasource.Spec{
+					Data: datasource.NewDefinition(
+						datasource.ContentTypeOracle,
 					).SetOracleConfig(
-						&types.DataSourceSpecConfiguration{
-							Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-							Filters: []*types.DataSourceSpecFilter{
+						&signedoracle.SpecConfiguration{
+							Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+							Filters: []*dstypes.SpecFilter{
 								{
-									Key: &types.DataSourceSpecPropertyKey{
+									Key: &dstypes.SpecPropertyKey{
 										Name: "prices.ETH.value",
 										Type: datapb.PropertyKey_TYPE_INTEGER,
 									},
-									Conditions: []*types.DataSourceSpecCondition{},
+									Conditions: []*dstypes.SpecCondition{},
 								},
 							},
 						},
 					),
 				},
-				DataSourceSpecForTradingTermination: &types.DataSourceSpec{
-					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+				DataSourceSpecForTradingTermination: &datasource.Spec{
+					Data: datasource.NewDefinition(
+						datasource.ContentTypeOracle,
 					).SetOracleConfig(
-						&types.DataSourceSpecConfiguration{
-							Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-							Filters: []*types.DataSourceSpecFilter{
+						&signedoracle.SpecConfiguration{
+							Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+							Filters: []*dstypes.SpecFilter{
 								{
-									Key: &types.DataSourceSpecPropertyKey{
+									Key: &dstypes.SpecPropertyKey{
 										Name: "trading.terminated",
 										Type: datapb.PropertyKey_TYPE_BOOLEAN,
 									},
-									Conditions: []*types.DataSourceSpecCondition{},
+									Conditions: []*dstypes.SpecCondition{},
 								},
 							},
 						},
@@ -112,7 +114,7 @@ func TestInstrument(t *testing.T) {
 				DataSourceSpecBinding: nil,
 			},
 		}
-		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t))
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t), mocks.NewMockBroker(gomock.NewController(t)), 1)
 		require.NotNil(t, err)
 		assert.Nil(t, inst)
 		assert.Equal(t, "unable to instantiate product from instrument configuration: a data source spec and spec binding are required", err.Error())
@@ -128,9 +130,9 @@ func newOracleEngine(t *testing.T) products.OracleEngine {
 	ts := emock.NewMockTimeService(ctrl)
 	ts.EXPECT().GetTimeNow().AnyTimes()
 
-	return oracles.NewEngine(
+	return spec.NewEngine(
 		logging.NewTestLogger(),
-		oracles.NewDefaultConfig(),
+		spec.NewDefaultConfig(),
 		ts,
 		broker,
 	)
@@ -151,43 +153,43 @@ func getValidInstrumentProto() *types.Instrument {
 			Future: &types.Future{
 				QuoteName:       "USD",
 				SettlementAsset: "Ethereum/Ether",
-				DataSourceSpecForSettlementData: &types.DataSourceSpec{
-					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+				DataSourceSpecForSettlementData: &datasource.Spec{
+					Data: datasource.NewDefinition(
+						datasource.ContentTypeOracle,
 					).SetOracleConfig(
-						&types.DataSourceSpecConfiguration{
-							Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-							Filters: []*types.DataSourceSpecFilter{
+						&signedoracle.SpecConfiguration{
+							Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+							Filters: []*dstypes.SpecFilter{
 								{
-									Key: &types.DataSourceSpecPropertyKey{
+									Key: &dstypes.SpecPropertyKey{
 										Name: "prices.ETH.value",
 										Type: datapb.PropertyKey_TYPE_INTEGER,
 									},
-									Conditions: []*types.DataSourceSpecCondition{},
+									Conditions: []*dstypes.SpecCondition{},
 								},
 							},
 						},
 					),
 				},
-				DataSourceSpecForTradingTermination: &types.DataSourceSpec{
-					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+				DataSourceSpecForTradingTermination: &datasource.Spec{
+					Data: datasource.NewDefinition(
+						datasource.ContentTypeOracle,
 					).SetOracleConfig(
-						&types.DataSourceSpecConfiguration{
-							Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-							Filters: []*types.DataSourceSpecFilter{
+						&signedoracle.SpecConfiguration{
+							Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+							Filters: []*dstypes.SpecFilter{
 								{
-									Key: &types.DataSourceSpecPropertyKey{
+									Key: &dstypes.SpecPropertyKey{
 										Name: "trading.terminated",
 										Type: datapb.PropertyKey_TYPE_BOOLEAN,
 									},
-									Conditions: []*types.DataSourceSpecCondition{},
+									Conditions: []*dstypes.SpecCondition{},
 								},
 							},
 						},
 					),
 				},
-				DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
+				DataSourceSpecBinding: &datasource.SpecBindingForFuture{
 					SettlementDataProperty:     "prices.ETH.value",
 					TradingTerminationProperty: "trading.terminated",
 				},

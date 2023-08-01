@@ -13,7 +13,9 @@
 package netparams
 
 const (
-	SpotMarketTradingEnabled = "spot.market.trading.enabled"
+	SpotMarketTradingEnabled  = "limits.markets.proposeSpotEnabled"
+	PerpsMarketTradingEnabled = "limits.markets.proposePerpsEnabled"
+	EthereumOraclesEnabled    = "ethereum.oracles.enabled"
 
 	// market related parameters.
 	MarketMarginScalingFactors                      = "market.margin.scalingFactors"
@@ -206,6 +208,8 @@ var Deprecated = map[string]struct{}{
 
 var AllKeys = map[string]struct{}{
 	SpotMarketTradingEnabled:                                 {},
+	PerpsMarketTradingEnabled:                                {},
+	EthereumOraclesEnabled:                                   {},
 	MaxPeggedOrders:                                          {},
 	MaxGasPerBlock:                                           {},
 	DefaultGas:                                               {},

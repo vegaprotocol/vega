@@ -14,7 +14,6 @@ import (
 
 func TestCheckTransfer(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	transfer := &types.TransferBase{
 		From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",

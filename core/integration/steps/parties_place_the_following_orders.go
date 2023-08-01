@@ -517,7 +517,7 @@ func (r submitOrderRow) StopOrderExpirationDate(now time.Time) int64 {
 	if !r.row.HasColumn("so expires in") {
 		return 0
 	}
-	return now.Add(r.row.MustDurationSec("so expires in")).Local().UnixNano()
+	return now.Add(r.row.MustDurationSec2("so expires in")).Local().UnixNano()
 }
 
 func (r submitOrderRow) ExpiryStrategy() types.StopOrderExpiryStrategy {

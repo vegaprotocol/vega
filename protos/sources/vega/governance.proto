@@ -33,6 +33,28 @@ message FutureProduct {
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;
 }
 
+// Perpetual product configuration
+message PerpsProduct {
+  // Asset ID for the product's settlement asset.
+  string settlement_asset = 1;
+  // Product quote name.
+  string quote_name = 2;
+  // Controls how much the upcoming funding payment liability contributes to party's margin, in the range [0, 1].
+  string margin_funding_factor = 3;
+  // Continuously compounded interest rate used in funding rate calculation, in the range [-1, 1].
+  string interest_rate = 4;
+  // Lower bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
+  string clamp_lower_bound = 5;
+  // Upper bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
+  string clamp_upper_bound = 6;
+  // Data source spec describing the data source for settlement schedule.
+  vega.DataSourceDefinition data_source_spec_for_settlement_schedule = 7;
+  // Data source spec describing the data source for settlement.
+  vega.DataSourceDefinition data_source_spec_for_settlement_data = 8;
+  // Binding between the data source spec and the settlement data.
+  DataSourceSpecToPerpsBinding data_source_spec_binding = 9;
+}
+
 // Instrument configuration
 message InstrumentConfiguration {
   // Instrument name.
@@ -45,6 +67,8 @@ message InstrumentConfiguration {
     FutureProduct future = 100;
     // Spot.
     SpotProduct spot = 101;
+    // Perps.
+    PerpsProduct perps = 102;
   }
 }
 
@@ -69,6 +93,8 @@ message NewSpotMarketConfiguration {
   }
   // Decimal places for order sizes, sets what size the smallest order / position on the spot market can be.
   int64 position_decimal_places = 6;
+  // Specifies the liquidity provision SLA parameters.
+  LiquiditySLAParameters sla_params = 7;
 }
 
 // Configuration for a new futures market on Vega
@@ -180,6 +206,8 @@ message UpdateSpotMarketConfiguration {
     // Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected.
     LogNormalRiskModel log_normal = 101;
   }
+  // Specifies the liquidity provision SLA parameters.
+  LiquiditySLAParameters sla_params = 4;
 }
 
 // Instrument configuration
@@ -190,6 +218,8 @@ message UpdateInstrumentConfiguration {
   oneof product {
     // Future.
     UpdateFutureProduct future = 100;
+    // Perps.
+    UpdatePerpsProduct perps = 101;
   }
 }
 
@@ -203,6 +233,26 @@ message UpdateFutureProduct {
   vega.DataSourceDefinition data_source_spec_for_trading_termination = 3;
   // The binding between the data source spec and the settlement data.
   DataSourceSpecToFutureBinding data_source_spec_binding = 4;
+}
+
+// Perps product configuration
+message UpdatePerpsProduct {
+  // Human-readable name/abbreviation of the quote name.
+  string quote_name = 1;
+  // Controls how much the upcoming funding payment liability contributes to party's margin, in the range [0, 1].
+  string margin_funding_factor = 2;
+  // Continuously compounded interest rate used in funding rate calculation, in the range [-1, 1].
+  string interest_rate = 3;
+  // Lower bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
+  string clamp_lower_bound = 4;
+  // Upper bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
+  string clamp_upper_bound = 5;
+  // Data source spec describing the data source for settlement schedule.
+  vega.DataSourceDefinition data_source_spec_for_settlement_schedule = 6;
+  // Data source spec describing the data source for settlement.
+  vega.DataSourceDefinition data_source_spec_for_settlement_data = 7;
+  // Binding between the data source spec and the settlement data.
+  DataSourceSpecToPerpsBinding data_source_spec_binding = 8;
 }
 
 // Update network configuration on Vega
@@ -263,6 +313,8 @@ message ProposalTerms {
     NewTransfer new_transfer = 109;
     // Cancel a governance transfer.
     CancelTransfer cancel_transfer = 110;
+    // Proposal change for updating the state of a market.
+    UpdateMarketState update_market_state = 111;
   }
 }
 
@@ -452,6 +504,14 @@ enum ProposalError {
   PROPOSAL_ERROR_GOVERNANCE_TRANSFER_PROPOSAL_INVALID = 50;
   // Proposal for cancelling transfer is invalid, check proposal ID
   PROPOSAL_ERROR_GOVERNANCE_CANCEL_TRANSFER_PROPOSAL_INVALID = 51;
+  // Proposal for updating market state is invalid
+  PROPOSAL_ERROR_INVALID_MARKET_STATE_UPDATE = 52;
+  // Liquidity provision SLA parameters are invalid
+  PROPOSAL_ERROR_INVALID_SLA_PARAMS = 53;
+  // Mandatory liquidity provision SLA parameters are missing
+  PROPOSAL_ERROR_MISSING_SLA_PARAMS = 54;
+  // Perpetual market proposal contained invalid product definition
+  PROPOSAL_ERROR_INVALID_PERPS_PRODUCT = 55;
 }
 
 // Governance vote
@@ -484,6 +544,31 @@ message Vote {
   string total_governance_token_weight = 6;
   // The weight of the vote compared to the total amount of equity-like share on the market.
   string total_equity_like_share_weight = 7;
+}
+
+message UpdateMarketState {
+  // Configuration for governance-initiated change of a market's state
+  UpdateMarketStateConfiguration changes = 1;
+}
+
+enum MarketStateUpdateType {
+  // Default value, always invalid
+  MARKET_STATE_UPDATE_TYPE_UNSPECIFIED = 0;
+  // Request to terminate a market via governance
+  MARKET_STATE_UPDATE_TYPE_TERMINATE = 1;
+  // Request to suspend a market via governance
+  MARKET_STATE_UPDATE_TYPE_SUSPEND = 2;
+  // Request to resume a market via governance
+  MARKET_STATE_UPDATE_TYPE_RESUME = 3;
+}
+
+message UpdateMarketStateConfiguration {
+  // ID of the market
+  string market_id = 1;
+  // Type of the market update
+  MarketStateUpdateType update_type = 2;
+  // Settlement price, relevant only for market termination for futures markets
+  optional string price = 3;
 }
 
 message CancelTransfer {
@@ -546,7 +631,10 @@ message OneOffTransfer {
 // Specific details for a recurring transfer
 message RecurringTransfer {
   // First epoch from which this transfer shall be paid.
+
   uint64 start_epoch = 1;
   // Last epoch at which this transfer shall be paid.
   optional uint64 end_epoch = 2;
+  // Optional parameter defining how a transfer is dispatched.
+  optional vega.DispatchStrategy dispatch_strategy = 3;
 }

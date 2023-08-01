@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -36,8 +37,8 @@ func testNodeVoteWithReferenceSucceeds(t *testing.T) {
 func checkNodeVote(cmd *commandspb.NodeVote) commands.Errors {
 	err := commands.CheckNodeVote(cmd)
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 

@@ -15,6 +15,7 @@ package liquidity_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -53,14 +54,24 @@ func TestAmendments(t *testing.T) {
 		Reference:        "ref-lp-submission-1",
 	})
 
+	now := time.Now()
+	zero := num.UintZero()
+	zeroD := num.DecimalZero()
+
 	idgen := idgeneration.New(crypto.RandomHash())
 	// initially submit our provision to be amended, does not matter what's in
-	tng.broker.EXPECT().Send(gomock.Any()).Times(2)
-	err := tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen)
+	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	tng.auctionState.EXPECT().InAuction().Return(false).AnyTimes()
+	tng.auctionState.EXPECT().IsOpeningAuction().Return(false).AnyTimes()
+
+	_, err := tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen)
 	assert.NoError(t, err)
-	lp := tng.engine.LiquidityProvisionByPartyID(party)
-	require.NotNil(t, lp)
-	require.EqualValues(t, 1, lp.Version)
+	tng.engine.ResetSLAEpoch(now, zero, zero, zeroD)
+	tng.engine.ApplyPendingProvisions(ctx, now)
+	originalLp := tng.engine.LiquidityProvisionByPartyID(party)
+
+	require.NotNil(t, originalLp)
+	require.EqualValues(t, 1, originalLp.Version)
 
 	lpa, _ := types.LiquidityProvisionAmendmentFromProto(&commandspb.LiquidityProvisionAmendment{
 		MarketId:         market,
@@ -72,6 +83,21 @@ func TestAmendments(t *testing.T) {
 	assert.NoError(t, tng.engine.CanAmend(lpa, party))
 
 	assert.NoError(t, tng.engine.AmendLiquidityProvision(ctx, lpa, party))
+
+	// first validate that the amendment is pending
+	pendingLp := tng.engine.PendingProvisionByPartyID(party)
+
+	assert.Equal(t, lpa.CommitmentAmount.String(), pendingLp.CommitmentAmount.String())
+	assert.Equal(t, lpa.Fee.String(), pendingLp.Fee.String())
+
+	lp := tng.engine.LiquidityProvisionByPartyID(party)
+	assert.Equal(t, originalLp.CommitmentAmount.String(), lp.CommitmentAmount.String())
+	assert.Equal(t, originalLp.Fee.String(), lp.Fee.String())
+	assert.Equal(t, originalLp.Version, lp.Version)
+
+	// amendment should take place at the start of new epoch
+	tng.engine.ResetSLAEpoch(now, zero, zero, zeroD)
+	tng.engine.ApplyPendingProvisions(ctx, now)
 
 	lp = tng.engine.LiquidityProvisionByPartyID(party)
 	assert.Equal(t, lpa.CommitmentAmount.String(), lp.CommitmentAmount.String())

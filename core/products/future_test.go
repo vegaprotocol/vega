@@ -16,13 +16,15 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/vega/core/oracles"
+	"code.vegaprotocol.io/vega/core/datasource"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/products/mocks"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -155,23 +157,23 @@ func testFuture(t *testing.T, propertyTpe datapb.PropertyKey_Type) *tstFuture {
 	ctrl := gomock.NewController(t)
 	oe := mocks.NewMockOracleEngine(ctrl)
 
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
 
 	var dp uint64 = 5
 	f := &types.Future{
 		SettlementAsset: "ETH",
 		QuoteName:       "ETH",
-		DataSourceSpecForTradingTermination: &types.DataSourceSpec{
-			Data: types.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
+		DataSourceSpecForTradingTermination: &datasource.Spec{
+			Data: datasource.NewDefinition(
+				datasource.ContentTypeOracle,
 			).SetOracleConfig(
-				&types.DataSourceSpecConfiguration{
+				&signedoracle.SpecConfiguration{
 					Signers: pubKeys,
-					Filters: []*types.DataSourceSpecFilter{
+					Filters: []*dstypes.SpecFilter{
 						{
-							Key: &types.DataSourceSpecPropertyKey{
+							Key: &dstypes.SpecPropertyKey{
 								Name: "trading.termination",
 								Type: datapb.PropertyKey_TYPE_BOOLEAN,
 							},
@@ -181,21 +183,21 @@ func testFuture(t *testing.T, propertyTpe datapb.PropertyKey_Type) *tstFuture {
 				},
 			),
 		},
-		DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
+		DataSourceSpecBinding: &datasource.SpecBindingForFuture{
 			SettlementDataProperty:     "price.ETH.value",
 			TradingTerminationProperty: "trading.termination",
 		},
 	}
 
-	f.DataSourceSpecForSettlementData = &types.DataSourceSpec{
-		Data: types.NewDataSourceDefinition(
-			vegapb.DataSourceDefinitionTypeExt,
+	f.DataSourceSpecForSettlementData = &datasource.Spec{
+		Data: datasource.NewDefinition(
+			datasource.ContentTypeOracle,
 		).SetOracleConfig(
-			&types.DataSourceSpecConfiguration{
+			&signedoracle.SpecConfiguration{
 				Signers: pubKeys,
-				Filters: []*types.DataSourceSpecFilter{
+				Filters: []*dstypes.SpecFilter{
 					{
-						Key: &types.DataSourceSpecPropertyKey{
+						Key: &dstypes.SpecPropertyKey{
 							Name:                "price.ETH.value",
 							Type:                propertyTpe,
 							NumberDecimalPlaces: &dp,
@@ -211,14 +213,14 @@ func testFuture(t *testing.T, propertyTpe datapb.PropertyKey_Type) *tstFuture {
 	oe.EXPECT().
 		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
-		Return(subscriptionID(1), func(ctx context.Context, sid oracles.SubscriptionID) {})
+		Return(subscriptionID(1), func(ctx context.Context, sid spec.SubscriptionID) {}, nil)
 
 	oe.EXPECT().
 		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
-		Return(subscriptionID(2), func(ctx context.Context, sid oracles.SubscriptionID) {})
+		Return(subscriptionID(2), func(ctx context.Context, sid spec.SubscriptionID) {}, nil)
 
-	future, err := products.NewFuture(ctx, log, f, oe)
+	future, err := products.NewFuture(ctx, log, f, oe, uint32(dp))
 	if err != nil {
 		t.Fatalf("couldn't create a Future for testing: %v", err)
 	}
@@ -228,6 +230,6 @@ func testFuture(t *testing.T, propertyTpe datapb.PropertyKey_Type) *tstFuture {
 	}
 }
 
-func subscriptionID(i uint64) oracles.SubscriptionID {
-	return oracles.SubscriptionID(i)
+func subscriptionID(i uint64) spec.SubscriptionID {
+	return spec.SubscriptionID(i)
 }

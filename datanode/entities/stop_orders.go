@@ -165,7 +165,6 @@ func StopOrderFromProto(so *pbevents.StopOrderEvent, vegaTime time.Time, seqNum 
 		ocoLinkID                          StopOrderID
 		expiresAt, updatedAt               *time.Time
 		expiryStrategy                     = StopOrderExpiryStrategyUnspecified
-		triggerDirection                   = StopOrderTriggerDirectionUnspecified
 		triggerPrice, triggerPercentOffset *string
 	)
 
@@ -175,9 +174,6 @@ func StopOrderFromProto(so *pbevents.StopOrderEvent, vegaTime time.Time, seqNum 
 
 	if so.StopOrder.ExpiresAt != nil {
 		expiresAt = ptr.From(NanosToPostgresTimestamp(*so.StopOrder.ExpiresAt))
-		if expiresAt.Before(vegaTime) {
-			return StopOrder{}, fmt.Errorf("stop order expiry time has already elapsed")
-		}
 	}
 
 	if so.StopOrder.ExpiryStrategy != nil {
@@ -218,7 +214,7 @@ func StopOrderFromProto(so *pbevents.StopOrderEvent, vegaTime time.Time, seqNum 
 		OCOLinkID:            ocoLinkID,
 		ExpiresAt:            expiresAt,
 		ExpiryStrategy:       expiryStrategy,
-		TriggerDirection:     triggerDirection,
+		TriggerDirection:     StopOrderTriggerDirection(so.StopOrder.TriggerDirection),
 		Status:               StopOrderStatus(so.StopOrder.Status),
 		CreatedAt:            NanosToPostgresTimestamp(so.StopOrder.CreatedAt),
 		UpdatedAt:            updatedAt,

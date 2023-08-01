@@ -35,7 +35,7 @@ func newCheckpointTestEngine(t *testing.T) *checkpointTestEngine {
 	conf := collateral.NewDefaultConfig()
 	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
 
-	broker.EXPECT().Send(gomock.Any()).Times(4)
+	broker.EXPECT().Send(gomock.Any()).Times(6)
 
 	e := collateral.New(logging.NewTestLogger(), conf, timeSvc, broker)
 	e.EnableAsset(context.Background(), types.Asset{
@@ -62,16 +62,15 @@ func newCheckpointTestEngine(t *testing.T) *checkpointTestEngine {
 
 func TestCheckPointLoadingWithAlias(t *testing.T) {
 	e := newCheckpointTestEngine(t)
-	defer e.ctrl.Finish()
 
-	e.broker.EXPECT().Send(gomock.Any()).Times(3).Do(func(e events.Event) {
+	e.broker.EXPECT().Send(gomock.Any()).Times(4).Do(func(e events.Event) {
 		ledgerMovmenentsE, ok := e.(*events.LedgerMovements)
 		if !ok {
 			return
 		}
 
 		mvts := ledgerMovmenentsE.LedgerMovements()
-		assert.Len(t, mvts, 2)
+		assert.Len(t, mvts, 3)
 		assert.Len(t, mvts[0].Entries, 1)
 		// no owner + from externa
 		assert.Nil(t, mvts[0].Entries[0].FromAccount.Owner)
@@ -79,22 +78,33 @@ func TestCheckPointLoadingWithAlias(t *testing.T) {
 		assert.Equal(t, mvts[0].Entries[0].Amount, "1000")
 		// to no owner + to reward
 		assert.Nil(t, mvts[0].Entries[0].ToAccount.Owner)
-		assert.Equal(t, mvts[0].Entries[0].ToAccount.Type, types.AccountTypeGlobalReward)
+		assert.Equal(t, mvts[0].Entries[0].ToAccount.Type, types.AccountTypeNetworkTreasury)
 
 		// second transfer
 		assert.Len(t, mvts[1].Entries, 1)
-		// no owner + from externa
+		// no owner + from external
 		assert.Nil(t, mvts[1].Entries[0].FromAccount.Owner)
 		assert.Equal(t, mvts[1].Entries[0].FromAccount.Type, types.AccountTypeExternal)
 		assert.Equal(t, mvts[1].Entries[0].Amount, "2000")
 		// to no owner + to reward
 		assert.Nil(t, mvts[1].Entries[0].ToAccount.Owner)
-		assert.Equal(t, mvts[1].Entries[0].ToAccount.Type, types.AccountTypeGlobalReward)
+		assert.Equal(t, mvts[1].Entries[0].ToAccount.Type, types.AccountTypeNetworkTreasury)
+
+		// third transfer
+		assert.Len(t, mvts[2].Entries, 1)
+		// no owner + from external
+		assert.Nil(t, mvts[2].Entries[0].FromAccount.Owner)
+		assert.Equal(t, mvts[2].Entries[0].FromAccount.Type, types.AccountTypeExternal)
+		assert.Equal(t, mvts[2].Entries[0].Amount, "9000")
+		// to no owner + to global insurnace
+		assert.Nil(t, mvts[2].Entries[0].ToAccount.Owner)
+		assert.Equal(t, mvts[2].Entries[0].ToAccount.Type, types.AccountTypeGlobalInsurance)
 	})
 
 	ab := []*checkpoint.AssetBalance{
 		{Party: "*", Asset: "VEGA", Balance: "1000"},
-		{Party: "*ACCOUNT_TYPE_GLOBAL_REWARD", Asset: "VEGA", Balance: "2000"},
+		{Party: "*ACCOUNT_TYPE_NETWORK_TREASURY", Asset: "VEGA", Balance: "2000"},
+		{Party: "*ACCOUNT_TYPE_GLOBAL_INSURANCE", Asset: "VEGA", Balance: "9000"},
 	}
 
 	msg := &checkpoint.Collateral{
@@ -106,9 +116,13 @@ func TestCheckPointLoadingWithAlias(t *testing.T) {
 
 	e.Load(context.Background(), ret)
 
-	acc, err := e.GetGlobalRewardAccount("VEGA")
+	acc, err := e.GetNetworkTreasuryAccount("VEGA")
 	require.NoError(t, err)
 	require.Equal(t, "3000", acc.Balance.String())
+
+	acc, err = e.GetGlobalInsuranceAccount("VEGA")
+	require.NoError(t, err)
+	require.Equal(t, "9000", acc.Balance.String())
 
 	_, err = e.GetPartyGeneralAccount("*ACCOUNT_TYPE_GLOBAL_REWARD", "VEGA")
 	require.Error(t, err)
@@ -132,7 +146,6 @@ func (f *feesTransfer) Transfers() []*types.Transfer { return f.transfers }
 // back to the network treasury of the asset as takes a checkpoint.
 func TestCheckPointWithUndistributedLPFees(t *testing.T) {
 	e := newCheckpointTestEngine(t)
-	defer e.ctrl.Finish()
 
 	e.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
@@ -183,6 +196,14 @@ func TestCheckPointWithUndistributedLPFees(t *testing.T) {
 	require.NoError(t, err)
 	e.IncrementBalance(context.Background(), marginAccount3, num.NewUint(500000))
 
+	_, err = e.GetOrCreateLiquidityFeesBonusDistributionAccount(context.Background(), "market1", "MYASSET1")
+	require.NoError(t, err)
+
+	partyLiquidityFeeAccountID, err := e.CreatePartyLiquidityFeeAccount(context.Background(), "zohar", "market1", "MYASSET1")
+	require.NoError(t, err)
+
+	e.IncrementBalance(context.Background(), partyLiquidityFeeAccountID, num.NewUint(1234))
+
 	// setup some balance on the LP fee pay account for MYASSET1/market1
 	lpTransfers := &types.Transfer{
 		Owner: "zohar",
@@ -193,6 +214,19 @@ func TestCheckPointWithUndistributedLPFees(t *testing.T) {
 		Type: types.TransferTypeLiquidityFeePay,
 	}
 	_, err = e.TransferFees(context.Background(), "market1", "MYASSET1", &feesTransfer{transfers: []*types.Transfer{lpTransfers}})
+	require.NoError(t, err)
+
+	// artificially fill the LP fee account for spots to demonstrate that the unpaid collected goes to the network treasury and what's left
+	// on the party LP fee account goes to the general party account
+	lpSpotTransfers := &types.Transfer{
+		Owner: "zohar",
+		Amount: &types.FinancialAmount{
+			Asset:  "MYASSET1",
+			Amount: num.NewUint(1230),
+		},
+		Type: types.TransferTypeLiquidityFeeUnpaidCollect,
+	}
+	_, err = e.TransferSpotFees(context.Background(), "market1", "MYASSET1", &feesTransfer{transfers: []*types.Transfer{lpSpotTransfers}})
 	require.NoError(t, err)
 
 	// setup some balance on the LP fee pay account for MYASSET1/market2
@@ -225,11 +259,16 @@ func TestCheckPointWithUndistributedLPFees(t *testing.T) {
 
 	e.Load(context.Background(), ret)
 
-	netTreasury1, err := e.GetGlobalRewardAccount("MYASSET1")
+	netTreasury1, err := e.GetNetworkTreasuryAccount("MYASSET1")
 	require.NoError(t, err)
-	require.Equal(t, "5000", netTreasury1.Balance.String())
+	require.Equal(t, "6230", netTreasury1.Balance.String())
 
-	netTreasury2, err := e.GetGlobalRewardAccount("MYASSET2")
+	netTreasury2, err := e.GetNetworkTreasuryAccount("MYASSET2")
 	require.NoError(t, err)
 	require.Equal(t, "7000", netTreasury2.Balance.String())
+
+	// 1000000 - 5000 + 4
+	acc, err := e.GetPartyGeneralAccount("zohar", "MYASSET1")
+	require.NoError(t, err)
+	require.Equal(t, "995004", acc.Balance.String())
 }

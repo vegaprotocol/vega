@@ -1,10 +1,11 @@
 package fs_test
 
 import (
-	"os"
+	path2 "path"
 	"testing"
 
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 
 	"github.com/stretchr/testify/assert"
@@ -26,16 +27,14 @@ func TestFileSystemHelpers(t *testing.T) {
 }
 
 func testEnsuringPresenceOfNonExistingDirectoriesSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := t.TempDir()
 	err := vgfs.EnsureDir(path)
 	require.NoError(t, err)
 	vgtest.AssertDirAccess(t, path)
 }
 
 func testEnsuringPresenceOfExistingDirectoriesSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := t.TempDir()
 
 	err := vgfs.EnsureDir(path)
 	require.NoError(t, err)
@@ -47,15 +46,13 @@ func testEnsuringPresenceOfExistingDirectoriesSucceeds(t *testing.T) {
 }
 
 func testVerifyingPathExistenceOfNonExistingOneFails(t *testing.T) {
-	path := vgtest.RandomPath()
-	exists, err := vgfs.PathExists(path)
+	exists, err := vgfs.PathExists("/" + vgrand.RandomStr(10))
 	require.NoError(t, err)
 	assert.False(t, exists)
 }
 
 func testVerifyingPathExistenceOfExistingOneSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := t.TempDir()
 
 	err := vgfs.EnsureDir(path)
 	require.NoError(t, err)
@@ -67,15 +64,13 @@ func testVerifyingPathExistenceOfExistingOneSucceeds(t *testing.T) {
 }
 
 func testVerifyingFileExistenceOfNonExistingOneFails(t *testing.T) {
-	path := vgtest.RandomPath()
-	exists, err := vgfs.FileExists(path)
+	exists, err := vgfs.FileExists("/" + vgrand.RandomStr(10))
 	require.NoError(t, err)
 	assert.False(t, exists)
 }
 
 func testVerifyingFileExistenceOfExistingOneSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := path2.Join(t.TempDir(), "file.txt")
 
 	err := vgfs.WriteFile(path, []byte("Hello, World!"))
 	require.NoError(t, err)
@@ -87,8 +82,7 @@ func testVerifyingFileExistenceOfExistingOneSucceeds(t *testing.T) {
 }
 
 func testVerifyingExistenceOnDirectoryFails(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := t.TempDir()
 
 	err := vgfs.EnsureDir(path)
 	require.NoError(t, err)
@@ -100,8 +94,7 @@ func testVerifyingExistenceOnDirectoryFails(t *testing.T) {
 }
 
 func testWritingFileSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := path2.Join(t.TempDir(), "file.txt")
 	data := []byte("Hello, World!")
 
 	err := vgfs.WriteFile(path, data)
@@ -114,8 +107,7 @@ func testWritingFileSucceeds(t *testing.T) {
 }
 
 func testRewritingFileSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := path2.Join(t.TempDir(), "file.txt")
 	data := []byte("Hello, World!")
 
 	err := vgfs.WriteFile(path, data)
@@ -138,8 +130,7 @@ func testRewritingFileSucceeds(t *testing.T) {
 }
 
 func testReadingExistingFileSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := path2.Join(t.TempDir(), "file.txt")
 	data := []byte("Hello, World!")
 
 	err := vgfs.WriteFile(path, data)
@@ -152,7 +143,7 @@ func testReadingExistingFileSucceeds(t *testing.T) {
 }
 
 func testReadingNonExistingFileFails(t *testing.T) {
-	path := vgtest.RandomPath()
+	path := t.TempDir()
 
 	readData, err := vgfs.ReadFile(path)
 	require.Error(t, err)

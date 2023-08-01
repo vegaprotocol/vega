@@ -22,6 +22,11 @@ func (UpdateAsset) IsProposalChange()                                     {}
 func (UpdateMarket) IsProposalChange()                                    {}
 func (UpdateNetworkParameter) IsProposalChange()                          {}
 func (NewFreeform) IsProposalChange()                                     {}
+func (CancelTransfer) IsProposalChange()                                  {}
+func (NewTransfer) IsProposalChange()                                     {}
+func (UpdateMarketState) IsProposalChange()                               {}
+func (NewSpotMarket) IsProposalChange()                                   {}
+func (UpdateSpotMarket) IsProposalChange()                                {}
 func (LogNormalRiskModel) IsRiskModel()                                   {}
 func (SimpleRiskModel) IsRiskModel()                                      {}
 func (SimpleModelParams) IsRiskModel()                                    {}
@@ -30,4 +35,7 @@ func (UpdateMarketConfiguration_LogNormal) IsUpdateMarketRiskParameters() {}
 func (DataSourceDefinitionInternal) IsDataSourceKind()                    {}
 func (DataSourceDefinitionExternal) IsDataSourceKind()                    {}
 func (DataSourceSpecConfiguration) IsExternalDataSourceKind()             {}
+func (EthCallSpec) IsExternalDataSourceKind()                             {}
 func (DataSourceSpecConfigurationTime) IsInternalDataSourceKind()         {}
+func (OneOffTransfer) IsGovernanceTransferKind()                          {}
+func (RecurringTransfer) IsGovernanceTransferKind()                       {}

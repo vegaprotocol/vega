@@ -83,7 +83,7 @@ func NewWithStore(ctx context.Context, log *logging.Logger, chainID string, cfg 
 				case <-ctx.Done():
 					return
 				case <-ticker.C:
-					err = s.publishSnapshots(ctx)
+					err = s.PublishSegments(ctx)
 					if err != nil {
 						s.log.Errorf("failed to add all snapshot data to store:%s", err)
 					}
@@ -111,7 +111,7 @@ func (d *Service) RollbackToHeight(ctx context.Context, log snapshot.LoadLog, he
 		return fmt.Errorf("failed to get history segment for height %d: %w", height, err)
 	}
 
-	stagedSegment, err := d.store.StagedSegment(rollbackToSegment)
+	stagedSegment, err := d.store.StagedSegment(ctx, rollbackToSegment)
 	if err != nil {
 		return fmt.Errorf("failed to get staged segment for height %d: %w", height, err)
 	}
@@ -191,7 +191,7 @@ func (d *Service) CreateAndPublishSegment(ctx context.Context, chainID string, t
 		}
 	}
 
-	if err = d.publishSnapshots(ctx); err != nil {
+	if err = d.PublishSegments(ctx); err != nil {
 		return fmt.Errorf("failed to publish snapshots: %w", err)
 	}
 
@@ -283,7 +283,7 @@ func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, log
 	start := time.Now()
 
 	chunkToLoad := chunk.Slice(datanodeBlockSpan.ToHeight+1, chunk.HeightTo)
-	stagedChunk, err := d.store.StagedContiguousHistory(chunkToLoad)
+	stagedChunk, err := d.store.StagedContiguousHistory(ctx, chunkToLoad)
 	if err != nil {
 		return snapshot.LoadResult{}, fmt.Errorf("failed to load history:%w", err)
 	}
@@ -322,7 +322,7 @@ func (d *Service) GetDatanodeBlockSpan(ctx context.Context) (sqlstore.DatanodeBl
 	return sqlstore.GetDatanodeBlockSpan(ctx, d.connPool)
 }
 
-func (d *Service) publishSnapshots(ctx context.Context) error {
+func (d *Service) PublishSegments(ctx context.Context) error {
 	d.publishLock.Lock()
 	defer d.publishLock.Unlock()
 

@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	"code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
@@ -62,7 +63,7 @@ func (d Delegate) String() string {
 	return fmt.Sprintf(
 		"nodeID(%s) amount(%s)",
 		d.NodeID,
-		uintPointerToString(d.Amount),
+		stringer.UintPointerToString(d.Amount),
 	)
 }
 
@@ -84,7 +85,7 @@ func (u Undelegate) String() string {
 	return fmt.Sprintf(
 		"nodeID(%s) amount(%s) method(%s)",
 		u.NodeID,
-		uintPointerToString(u.Amount),
+		stringer.UintPointerToString(u.Amount),
 		u.Method,
 	)
 }

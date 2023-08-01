@@ -104,10 +104,7 @@ type Subscription {
   ): [ObservableMarketDepthUpdate!]!
 
   "Subscribe to orders updates"
-  orders(
-    "Filter orders"
-    filter: OrderByMarketAndPartyIdsFilter
-  ): [OrderUpdate!]
+  orders("Filter orders" filter: OrderByMarketAndPartyIdsFilter): [OrderUpdate!]
 
   "Subscribe to the positions updates"
   positions(
@@ -129,7 +126,10 @@ type Subscription {
     marketId: ID
     "ID of the party from which you want trades updates"
     partyId: ID
-  ): [TradeUpdate!] @deprecated(reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once")
+  ): [TradeUpdate!]
+    @deprecated(
+      reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once"
+    )
 
   "Subscribe to the trades updates"
   tradesStream(
@@ -393,8 +393,8 @@ input LedgerEntryFilter {
 input RewardSummaryFilter {
   assetIds: [ID!]
   marketIds: [ID!]
-  fromEpoch: Int,
-  toEpoch: Int,
+  fromEpoch: Int
+  toEpoch: Int
 }
 
 "Queries allow a caller to read data and filter data via GraphQL."
@@ -405,6 +405,16 @@ type Query {
   "The list of all assets in use in the Vega network or the specified asset if ID is provided"
   assetsConnection(id: ID, pagination: Pagination): AssetsConnection
 
+  "Get historical balances for an account within the given date range"
+  balanceChanges(
+    "Optional filter to restrict queried accounts to those of a specific asset, party, market or type"
+    filter: AccountFilter
+    "Date range to retrieve historical balances from/to. Start and end time should be expressed as an integer value of Unix nanoseconds"
+    dateRange: DateRange
+    "Optional pagination information"
+    pagination: Pagination
+  ): AggregatedBalanceConnection!
+
   "List core snapshots"
   coreSnapshots(pagination: Pagination): CoreSnapshotConnection
 
@@ -414,9 +424,9 @@ type Query {
   "Fetch all deposits"
   deposits(
     "Date range to fetch deposits between"
-    dateRange: DateRange,
+    dateRange: DateRange
     "Pagination options"
-    pagination: Pagination,
+    pagination: Pagination
   ): DepositsConnection
 
   "Fetch all entities for a given transaction hash"
@@ -427,15 +437,12 @@ type Query {
 
   "List reward summary per epoch by asset, market, reward type"
   epochRewardSummaries(
-    filter: RewardSummaryFilter,
+    filter: RewardSummaryFilter
     pagination: Pagination
   ): EpochRewardSummaryConnection
 
   "Get the signatures bundle to allowlist an ERC20 token in the collateral bridge"
-  erc20ListAssetBundle(
-    "ID of the asset"
-    assetId: ID!
-  ): Erc20ListAssetBundle
+  erc20ListAssetBundle("ID of the asset" assetId: ID!): Erc20ListAssetBundle
 
   "Get the signature bundle to add a particular validator to the signer list of the multisig contract"
   erc20MultiSigSignerAddedBundles(
@@ -491,7 +498,8 @@ type Query {
     expiration: Timestamp
     "Type of the order"
     type: OrderType!
-  ): OrderEstimate! @deprecated (reason: "Use estimateFees and estimatePosition instead")
+  ): OrderEstimate!
+    @deprecated(reason: "Use estimateFees and estimatePosition instead")
 
   "Return an estimation of the potential cost for a new order"
   estimateFees(
@@ -515,7 +523,7 @@ type Query {
 
   "Return a margin range for the specified position and liquidation price range if available collateral is supplied"
   estimatePosition(
-     "ID of the market to place the order on"
+    "ID of the market to place the order on"
     marketId: ID!
     "Open volume - negative for short position (int64)"
     openVolume: String!
@@ -527,7 +535,6 @@ type Query {
 
   "Query for historic ethereum key rotations"
   ethereumKeyRotations(nodeId: ID): EthereumKeyRotationsConnection!
-
 
   "Get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided."
   getMarketDataHistoryConnectionByID(
@@ -545,24 +552,25 @@ type Query {
     """
     end: Timestamp
     "Optional Pagination"
-    pagination: Pagination): MarketDataConnection
-
-  "Get historical balances for an account within the given date range"
-  balanceChanges(
-    "Optional filter to restrict queried accounts to those of a specific asset, party, market or type"
-    filter: AccountFilter,
-    "Date range to retrieve historical balances from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
-    dateRange: DateRange,
-    "Optional pagination information"
     pagination: Pagination
-  ) : AggregatedBalanceConnection!
+  ): MarketDataConnection
 
   "Get ledger entries by asset, market, party, account type, transfer type within the given date range."
   ledgerEntries(
-    filter: LedgerEntryFilter,
-    dateRange: DateRange,
+    filter: LedgerEntryFilter
+    dateRange: DateRange
     pagination: Pagination
-  ) : AggregatedLedgerEntriesConnection!
+  ): AggregatedLedgerEntriesConnection!
+
+  "List all active liquidity providers for a specific market"
+  liquidityProviders(
+    "Party ID of the liquidity provider"
+    partyId: ID
+    "Market ID to retrieve liquidity providers for"
+    marketId: ID
+    "Optional Pagination"
+    pagination: Pagination
+  ): LiquidityProviderConnection
 
   "Query for historic key rotations"
   keyRotationsConnection(id: ID, pagination: Pagination): KeyRotationConnection!
@@ -596,7 +604,9 @@ type Query {
   ): NetworkParameter
 
   "Return the full list of network parameters"
-  networkParametersConnection(pagination: Pagination): NetworkParametersConnection!
+  networkParametersConnection(
+    pagination: Pagination
+  ): NetworkParametersConnection!
 
   "Specific node in network"
   node("required ID of node" id: ID!): Node
@@ -608,7 +618,10 @@ type Query {
   nodesConnection(pagination: Pagination): NodesConnection!
 
   "Return a list of aggregated node signature for a given resource ID"
-  nodeSignaturesConnection(resourceId: ID!, pagination: Pagination): NodeSignaturesConnection
+  nodeSignaturesConnection(
+    resourceId: ID!
+    pagination: Pagination
+  ): NodeSignaturesConnection
 
   "All oracle data for a given oracle spec ID"
   oracleDataBySpecConnection(
@@ -665,10 +678,7 @@ type Query {
   party("ID of a party" id: ID!): Party
 
   "Fetch all positions"
-  positions(
-    filter: PositionsFilter,
-    pagination: Pagination
-  ): PositionConnection
+  positions(filter: PositionsFilter, pagination: Pagination): PositionConnection
 
   "A governance proposal located by either its ID or reference. If both are set, ID is used."
   proposal(
@@ -692,7 +702,11 @@ type Query {
   protocolUpgradeStatus: ProtocolUpgradeStatus
 
   "List protocol upgrade proposals, optionally filtering on status or approver"
-  protocolUpgradeProposals(inState: ProtocolUpgradeProposalStatus, approvedBy: String, pagination: Pagination): ProtocolUpgradeProposalConnection
+  protocolUpgradeProposals(
+    inState: ProtocolUpgradeProposalStatus
+    approvedBy: String
+    pagination: Pagination
+  ): ProtocolUpgradeProposalConnection
 
   "Get statistics about the Vega node"
   statistics: Statistics!
@@ -703,7 +717,7 @@ type Query {
   "Get a list of stop orders. If provided, the filter will be applied to the list of stop orders to restrict the results."
   stopOrders(
     "Optional filter to restrict the results of the list."
-    filter: StopOrderFilter,
+    filter: StopOrderFilter
     "Optional pagination information"
     pagination: Pagination
   ): StopOrderConnection
@@ -711,13 +725,13 @@ type Query {
   "List markets in a succession line"
   successorMarkets(
     "Market ID of any market in the succession line"
-    marketId: ID!,
+    marketId: ID!
     """
     Flag indicating whether to include the full succession line or not.
     If not specified, the default is false.
     When false, only the requested market and its children are returned.
     """
-    fullHistory: Boolean,
+    fullHistory: Boolean
     "Optional pagination information"
     pagination: Pagination
   ): SuccessorMarketConnection
@@ -747,9 +761,9 @@ type Query {
   "Fetch all withdrawals"
   withdrawals(
     "Date range to fetch withdrawals between"
-    dateRange: DateRange,
+    dateRange: DateRange
     "Pagination options"
-    pagination: Pagination,
+    pagination: Pagination
   ): WithdrawalsConnection
 }
 
@@ -809,7 +823,27 @@ type Transfer {
   reason: String
 }
 
-union TransferKind = OneOffTransfer | RecurringTransfer
+union TransferKind =
+    OneOffTransfer
+  | RecurringTransfer
+  | OneOffGovernanceTransfer
+  | RecurringGovernanceTransfer
+
+"The specific details for a one-off governance transfer"
+type OneOffGovernanceTransfer {
+  "An optional time when the transfer should be delivered"
+  deliverOn: Timestamp
+}
+
+"The specific details for a recurring governance transfer"
+type RecurringGovernanceTransfer {
+  "The epoch at which this recurring transfer will start"
+  startEpoch: Int!
+  "An optional epoch at which this transfer will stop"
+  endEpoch: Int
+  "An optional dispatch strategy for the recurring transfer"
+  dispatchStrategy: DispatchStrategy
+}
 
 "The specific details for a one-off transfer"
 type OneOffTransfer {
@@ -932,7 +966,7 @@ type Epoch {
     "Optional node ID to filter on"
     nodeId: ID
     "Pagination information"
-   pagination: Pagination
+    pagination: Pagination
   ): DelegationsConnection
 }
 
@@ -1052,7 +1086,7 @@ type Node {
 
   "All delegation for a node by a given party if specified, or all delegations."
   delegationsConnection(
-    partyId: ID,
+    partyId: ID
     pagination: Pagination
   ): DelegationsConnection
 
@@ -1181,9 +1215,13 @@ type Asset {
   "The infrastructure fee account for this asset"
   infrastructureFeeAccount: AccountBalance
 
-  "The global reward pool account for this asset"
+  "The staking reward pool account for this asset"
   globalRewardPoolAccount: AccountBalance
 
+  "The global insurance account for this asset"
+  globalInsuranceAccount: AccountBalance
+  "The network treasury account for this asset"
+  networkTreasuryAccount: AccountBalance
   "The taker fee reward account for this asset"
   takerFeeRewardAccount: AccountBalance
   "The maker fee reward account for this asset"
@@ -1589,6 +1627,8 @@ type Data {
   "properties contains all the properties sent by a data source"
   data: [Property!]
 
+  metaData: [Property]
+
   """
   List of all the data specs that matched this source data.
   When the array is empty, it means no data spec matched this source data.
@@ -1836,10 +1876,13 @@ type Market {
 
   tradesConnection(
     "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
-    dateRange: DateRange,
+    dateRange: DateRange
     "Pagination information"
     pagination: Pagination
-  ): TradeConnection @deprecated(reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead")
+  ): TradeConnection
+    @deprecated(
+      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+    )
 
   "Current depth on the order book for this market"
   depth(
@@ -1863,13 +1906,13 @@ type Market {
   data: MarketData
 
   "The list of the liquidity provision commitments for this market"
-   liquidityProvisionsConnection(
-     "An optional party ID"
-     partyId: ID
-     "An optional live flag to determine whether to list only live LPs or not"
-     live: Boolean
-     "Pagination information"
-     pagination: Pagination
+  liquidityProvisionsConnection(
+    "An optional party ID"
+    partyId: ID
+    "An optional live flag to determine whether to list only live LPs or not"
+    live: Boolean
+    "Pagination information"
+    pagination: Pagination
   ): LiquidityProvisionsConnection
 
   "Timestamps for state changes in the market"
@@ -2031,6 +2074,9 @@ type Candle {
 
   "Volume price (uint64)"
   volume: String!
+
+  "Total notional value of trades (uint64)"
+  notional: String!
 }
 
 "Represents a party on Vega, could be an ethereum wallet address in the future"
@@ -2048,12 +2094,15 @@ type Party {
 
   tradesConnection(
     "ID of the market you want to get trades for"
-    marketId: ID,
+    marketId: ID
     "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
-    dataRange: DateRange,
+    dataRange: DateRange
     "Pagination information"
     pagination: Pagination
-  ): TradeConnection @deprecated(reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead")
+  ): TradeConnection
+    @deprecated(
+      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+    )
 
   "Collateral accounts relating to a party"
   accountsConnection(
@@ -2068,7 +2117,8 @@ type Party {
   ): AccountsConnection
 
   "Trading positions relating to a party"
-  positionsConnection(market: ID, pagination: Pagination): PositionConnection @deprecated (reason: "Use root positions query instead of sub-query")
+  positionsConnection(market: ID, pagination: Pagination): PositionConnection
+    @deprecated(reason: "Use root positions query instead of sub-query")
 
   "Margin levels for a market"
   marginsConnection(
@@ -2097,7 +2147,7 @@ type Party {
   "The list of all withdrawals initiated by the party"
   withdrawalsConnection(
     "Date range to retrieve withdrawals from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
-    dateRange: DateRange,
+    dateRange: DateRange
     "Optional Pagination information"
     pagination: Pagination
   ): WithdrawalsConnection
@@ -2105,7 +2155,7 @@ type Party {
   "The list of all deposits for a party by the party"
   depositsConnection(
     "Date range to retrieve deposits from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
-    dateRange: DateRange,
+    dateRange: DateRange
     "Optional Pagination information"
     pagination: Pagination
   ): DepositsConnection
@@ -2146,10 +2196,7 @@ type Party {
   ): RewardsConnection
 
   "Return net reward information"
-  rewardSummaries(
-    "An asset ID (optional)"
-    assetId: ID
-  ): [RewardSummary]
+  rewardSummaries("An asset ID (optional)" assetId: ID): [RewardSummary]
 
   "All transfers for a public key"
   transfersConnection(
@@ -2365,9 +2412,12 @@ type Order {
   "Trades relating to this order"
   tradesConnection(
     "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
-    dateRange: DateRange,
+    dateRange: DateRange
     pagination: Pagination
-  ): TradeConnection @deprecated(reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead")
+  ): TradeConnection
+    @deprecated(
+      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+    )
 
   "The order type"
   type: OrderType
@@ -2525,39 +2575,38 @@ type OrderUpdate {
   icebergOrder: IcebergOrder
 }
 
-"Response for the estimate of the margin level and, if available, collateral was provided in the request, liqudation price for the specified position"
+"Response for the estimate of the margin level and, if available, collateral was provided in the request, liquidation price for the specified position"
 type PositionEstimate {
-    "Margin level range estimate for the specified position"
-    margin: MarginEstimate!
-    "Liquidation price range estimate for the specified position. Only populated if available collateral was specified in the request"
-    liquidation: LiquidationEstimate
+  "Margin level range estimate for the specified position"
+  margin: MarginEstimate!
+  "Liquidation price range estimate for the specified position. Only populated if available collateral was specified in the request"
+  liquidation: LiquidationEstimate
 }
 
 "Margin level estimate for both worst and best case possible"
 type MarginEstimate {
-    "Margin level estimate assuming slippage cap is applied"
-    worstCase: MarginLevels!
-    "Margin level estimate assuming no slippage"
-    bestCase: MarginLevels!
+  "Margin level estimate assuming slippage cap is applied"
+  worstCase: MarginLevels!
+  "Margin level estimate assuming no slippage"
+  bestCase: MarginLevels!
 }
-
 
 "Liquidation estimate for both worst and best case possible"
 type LiquidationEstimate {
-    "Liquidation price estimate assuming slippage cap is applied"
-    worstCase: LiquidationPrice!
-    "Liquidation price estimate assuming no slippage"
-    bestCase: LiquidationPrice!
+  "Liquidation price estimate assuming slippage cap is applied"
+  worstCase: LiquidationPrice!
+  "Liquidation price estimate assuming no slippage"
+  bestCase: LiquidationPrice!
 }
 
 "Liquidation price estimate for either only the current open volume and position given some or all buy orders get filled, or position given some or all sell orders get filled"
 type LiquidationPrice {
-    "Liquidation price for current open volume ignoring any active orders"
-    open_volume_only: String!
-    "Liquidation price assuming buy orders start getting filled"
-    including_buy_orders: String!
-    "Liquidation price assuming sell orders start getting filled"
-    including_sell_orders: String!
+  "Liquidation price for current open volume ignoring any active orders"
+  open_volume_only: String!
+  "Liquidation price assuming buy orders start getting filled"
+  including_buy_orders: String!
+  "Liquidation price assuming sell orders start getting filled"
+  including_sell_orders: String!
 }
 
 "An estimate of the fee to be paid by the order"
@@ -2728,7 +2777,6 @@ type AccountEvent {
   "Owner of the account"
   party: Party
 }
-
 
 "An account record"
 type AccountDetails {
@@ -3127,6 +3175,12 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_SPOT_PRODUCT_DISABLED
   "Validation of successor market has failed"
   PROPOSAL_ERROR_INVALID_SUCCESSOR_MARKET
+  "Validation of market state update has failed"
+  PROPOSAL_ERROR_INVALID_MARKET_STATE_UPDATE
+  "Validation of liquidity provision SLA parameters has failed"
+  PROPOSAL_ERROR_MISSING_SLA_PARAMS
+  "Mandatory liquidity provision SLA parameters are missing from the proposal"
+  PROPOSAL_ERROR_INVALID_SLA_PARAMS
 }
 
 "Why the order was rejected by the core node"
@@ -3308,6 +3362,8 @@ enum MarketState {
   STATE_ACTIVE
   "Price monitoring or liquidity monitoring trigger"
   STATE_SUSPENDED
+  "Market suspended via governance"
+  STATE_SUSPENDED_VIA_GOVERNANCE
   "Governance vote (to close)"
   STATE_CLOSED
   """
@@ -3335,6 +3391,9 @@ enum MarketTradingMode {
 
   "No trading allowed"
   TRADING_MODE_NO_TRADING
+
+  "Special auction mode triggered via governance market suspension"
+  TRADING_MODE_SUSPENDED_VIA_GOVERNANCE
 }
 
 "Whether the placer of an order is aiming to buy or sell on the market"
@@ -3415,6 +3474,10 @@ enum AccountType {
   ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS
   "AccountTypeHolding - an account for holding funds covering for active unfilled orders"
   ACCOUNT_TYPE_HOLDING
+  "Per liquidity provider, per market account for holding LPs' fees before distribution"
+  ACCOUNT_TYPE_LP_LIQUIDITY_FEES
+  "Network treasury, per-asset treasury controlled by the network"
+  ACCOUNT_TYPE_NETWORK_TREASURY
 }
 
 "Types that describe why a transfer has been made"
@@ -3473,7 +3536,6 @@ enum TransferType {
   TRANSFER_TYPE_HOLDING_LOCK
   "An internal instruction to transfer an excess quantity corresponding to an active spot order from a holding account into a party general account"
   TRANSFER_TYPE_HOLDING_RELEASE
-
 }
 
 type FutureProduct {
@@ -3513,6 +3575,31 @@ type DataSourceSpecConfiguration {
   the product (or the risk model).
   """
   filters: [Filter!]
+}
+
+"""
+EthCallTrigger is the type of trigger used to make calls to Ethereum network.
+"""
+type EthCallTrigger {
+  trigger: TriggerKind!
+}
+
+union TriggerKind = EthTimeTrigger
+
+type EthTimeTrigger {
+  Initial: Timestamp
+  Every: Timestamp
+  Until: Timestamp
+}
+
+type EthCallSpec {
+  Address: String!
+  Abi: [String!]
+  Method: String!
+  Args: [String!]
+  Trigger: EthCallTrigger!
+  RequiredConfirmations: Int!
+  Filters: [Filter!]
 }
 
 type InstrumentConfiguration {
@@ -3585,7 +3672,9 @@ type UpdateFutureProduct {
   dataSourceSpecBinding: DataSourceSpecToFutureBinding!
 }
 
-union UpdateMarketRiskParameters = UpdateMarketSimpleRiskModel | UpdateMarketLogNormalRiskModel
+union UpdateMarketRiskParameters =
+    UpdateMarketSimpleRiskModel
+  | UpdateMarketLogNormalRiskModel
 
 type UpdateMarketSimpleRiskModel {
   simple: SimpleRiskModelParams
@@ -3634,9 +3723,69 @@ type NewFreeform {
   _doNotUse: Boolean
 }
 
+enum GovernanceTransferType {
+  "Default value, always invalid"
+  GOVERNANCE_TRANSFER_TYPE_UNSPECIFIED
+  "Transfers the specified amount or does not transfer anything"
+  GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING
+  "Transfers the specified amount or the max allowable amount if this is less than the specified amount"
+  GOVERNANCE_TRANSFER_TYPE_BEST_EFFORT
+}
+
+type NewTransfer {
+  "The source account"
+  source: String!
+  "The type of source account"
+  sourceType: AccountType!
+  "The destination account"
+  destination: String!
+  "The type of destination account"
+  destinationType: AccountType!
+  "The asset to transfer"
+  asset: Asset!
+  "The fraction of the balance to be transferred"
+  fraction_of_balance: String!
+  "The maximum amount to be transferred"
+  amount: String!
+  "The type of the governance transfer"
+  transferType: GovernanceTransferType!
+  "The type of governance transfer being made, i.e. a one-off or recurring transfer"
+  kind: GovernanceTransferKind!
+}
+
+union GovernanceTransferKind =
+    OneOffGovernanceTransfer
+  | RecurringGovernanceTransfer
+
+"Allows for cancellation of an existing governance transfer"
+type CancelTransfer {
+  "The governance transfer to cancel"
+  transferId: ID!
+}
+
 "Allows submitting a proposal for changing network parameters"
 type UpdateNetworkParameter {
   networkParameter: NetworkParameter!
+}
+
+enum MarketUpdateType {
+  "Default value, always invalid"
+  MARKET_STATE_UPDATE_TYPE_UNSPECIFIED
+  "Terminate the market"
+  MARKET_STATE_UPDATE_TYPE_TERMINATE
+  "Suspend the market"
+  MARKET_STATE_UPDATE_TYPE_SUSPEND
+  "Resume a suspended market"
+  MARKET_STATE_UPDATE_TYPE_RESUME
+}
+
+type UpdateMarketState {
+  "The market for which to update the state"
+  market: Market!
+  "The type of update"
+  updateType: MarketUpdateType!
+  "Optional settlement price for terminating and settling futures market. Must be empty for other types of updates and other types of markets"
+  price: String
 }
 
 "Representation of a network parameter"
@@ -3648,12 +3797,15 @@ type NetworkParameter {
 }
 
 union ProposalChange =
-  NewMarket
+    NewMarket
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
   | UpdateAsset
   | NewFreeform
+  | NewTransfer
+  | CancelTransfer
+  | UpdateMarketState
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalRationale {
@@ -3987,6 +4139,8 @@ enum AuctionTrigger {
   AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET
   "Liquidity monitoring due to not being able to deploy LP orders because there's nothing to peg on one or both sides of the book"
   AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS
+  "Auction triggered by governance market suspension"
+  AUCTION_TRIGGER_GOVERNANCE_SUSPENSION
 }
 
 "Event types"
@@ -4002,11 +4156,7 @@ enum BusEventType {
 }
 
 "Union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
-union Event =
-  TimeUpdate
-  | Deposit
-  | Withdrawal
-  | TransactionResult
+union Event = TimeUpdate | Deposit | Withdrawal | TransactionResult
 
 type BusEvent {
   "The ID for this event"
@@ -4248,12 +4398,12 @@ type NetworkLimits {
 
 "A segment of data node history"
 type HistorySegment {
-    "From block height of the history segment"
-    fromHeight:       Int!
-    "To block height of the history segment"
-    toHeight: Int!
-    "ID of the history segment"
-    historySegmentId: String!
+  "From block height of the history segment"
+  fromHeight: Int!
+  "To block height of the history segment"
+  toHeight: Int!
+  "ID of the history segment"
+  historySegmentId: String!
 }
 
 """
@@ -4439,14 +4589,14 @@ type StopOrderConnection {
   "The stop orders in this connection"
   edges: [StopOrderEdge!]
   "The pagination information"
-    pageInfo: PageInfo
+  pageInfo: PageInfo
 }
 
 "Edge type containing the position and cursor information returned by a PositionConnection"
 type PositionEdge {
   "The position"
   node: Position!
-    "The cursor for this position"
+  "The cursor for this position"
   cursor: String
 }
 
@@ -4596,10 +4746,10 @@ type AssetEdge {
 
 "Connection type for retrieving cursor-based paginated assets information"
 type AssetsConnection {
-    "The assets"
-    edges: [AssetEdge]
-    "The pagination information"
-    pageInfo: PageInfo
+  "The assets"
+  edges: [AssetEdge]
+  "The pagination information"
+  pageInfo: PageInfo
 }
 
 type OracleSpecEdge {
@@ -4636,8 +4786,34 @@ type LiquidityProvisionsEdge {
 
 "Connection type for retrieving cursor-based paginated liquidity provision information"
 type LiquidityProvisionsConnection {
-    edges: [LiquidityProvisionsEdge]
-    pageInfo: PageInfo!
+  edges: [LiquidityProvisionsEdge]
+  pageInfo: PageInfo!
+}
+
+"Information about a liquidity provider"
+type LiquidityProvider {
+  "Party ID of the liquidity provider"
+  partyId: ID!
+  "Market ID the liquidity provision is for"
+  marketId: ID!
+  "Information used for calculating an LP's fee share, such as the equity like share, average entry valuation and liquidity score, for the given liquidity provider and market"
+  feeShare: LiquidityProviderFeeShare
+}
+
+"Edge type containing the liquidity provider and cursor information"
+type LiquidityProviderEdge {
+  "Liquidity provider's information"
+  node: LiquidityProvider!
+  "Cursor for the liquidity provider"
+  cursor: String!
+}
+
+"Connection type for retrieving cursor-based paginated liquidity provider information"
+type LiquidityProviderConnection {
+  "Page of liquidity provider edges for the connection"
+  edges: [LiquidityProviderEdge!]!
+  "Current page information"
+  pageInfo: PageInfo
 }
 
 "Edge type containing the transfer and cursor information returned by a TransferConnection"
@@ -4648,8 +4824,8 @@ type TransferEdge {
 
 "Connection type for retrieving cursor-based paginated transfers information"
 type TransferConnection {
-    edges: [TransferEdge]
-    pageInfo: PageInfo!
+  edges: [TransferEdge]
+  pageInfo: PageInfo!
 }
 
 "Filter type for specifying the types of transfers to filter for"
@@ -4669,10 +4845,10 @@ type ProposalEdge {
 
 "Connection type for retrieving cursor-based paginated proposals information"
 type ProposalsConnection {
-    "List of proposals available for the connection"
-    edges: [ProposalEdge]
-    "Page information for the connection"
-    pageInfo: PageInfo!
+  "List of proposals available for the connection"
+  edges: [ProposalEdge]
+  "Page information for the connection"
+  pageInfo: PageInfo!
 }
 
 "Edge type containing the delegation and cursor information returned by a DelegationsConnection"
@@ -4928,7 +5104,7 @@ type DataSourceDefinitionInternal {
   sourceType: InternalDataSourceKind!
 }
 
-union ExternalDataSourceKind = DataSourceSpecConfiguration
+union ExternalDataSourceKind = DataSourceSpecConfiguration | EthCallSpec
 
 """
 DataSourceDefinitionExternal is the top level object used for all external data sources.
@@ -4938,7 +5114,9 @@ type DataSourceDefinitionExternal {
   sourceType: ExternalDataSourceKind!
 }
 
-union DataSourceKind = DataSourceDefinitionInternal | DataSourceDefinitionExternal
+union DataSourceKind =
+    DataSourceDefinitionInternal
+  | DataSourceDefinitionExternal
 
 """
 DataSourceDefinition represents the top level object that deals with data sources.

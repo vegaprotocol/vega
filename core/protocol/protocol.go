@@ -14,6 +14,7 @@ package protocol
 
 import (
 	"context"
+	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/subscribers"
 
@@ -108,8 +109,9 @@ func New(
 			svcs.topology,
 			svcs.netParams,
 			&processor.Oracle{
-				Engine:   svcs.oracle,
-				Adaptors: svcs.oracleAdaptors,
+				Engine:                  svcs.oracle,
+				Adaptors:                svcs.oracleAdaptors,
+				EthereumOraclesVerifier: svcs.ethereumOraclesVerifier,
 			},
 			svcs.delegation,
 			svcs.limits,
@@ -118,7 +120,7 @@ func New(
 			svcs.spam,
 			svcs.pow,
 			svcs.stakingAccounts,
-			svcs.snapshot,
+			svcs.snapshotEngine,
 			svcs.statevar,
 			svcs.blockchainClient,
 			svcs.erc20MultiSigTopology,
@@ -144,7 +146,10 @@ func New(
 
 // Start will start the protocol, this means it's ready to process
 // blocks from the blockchain.
-func (n *Protocol) Start() error {
+func (n *Protocol) Start(ctx context.Context) error {
+	if err := n.services.snapshotEngine.Start(ctx); err != nil {
+		return fmt.Errorf("could not start the snapshot engine: %w", err)
+	}
 	return nil
 }
 

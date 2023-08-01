@@ -111,6 +111,23 @@ func UintFromDecimal(d Decimal) (*Uint, bool) {
 	return &Uint{*u}, ok
 }
 
+func UintFromDecimalWithFraction(d Decimal) (*Uint, Decimal) {
+	u, ok := UintFromDecimal(d)
+	if ok {
+		return u, Decimal{}
+	}
+	return u, DecimalPart(d)
+}
+
+// UintFromUint64 allows for the conversion from uint64.
+func UintFromUint64(ui uint64) *Uint {
+	u := &Uint{
+		u: uint256.Int{},
+	}
+	u.u.SetUint64(ui)
+	return u
+}
+
 // ToDecimal returns the value of the Uint as a Decimal.
 func (u *Uint) ToDecimal() Decimal {
 	return DecimalFromUint(u)

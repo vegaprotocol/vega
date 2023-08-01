@@ -22,10 +22,15 @@ import (
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 
+	"code.vegaprotocol.io/vega/core/datasource"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/collateral"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	dserrors "code.vegaprotocol.io/vega/core/datasource/errors"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/common/mocks"
@@ -34,7 +39,6 @@ import (
 	"code.vegaprotocol.io/vega/core/liquidity"
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/monitor"
-	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/settlement"
@@ -136,9 +140,9 @@ type testMarket struct {
 	events           []events.Event
 	orderEvents      []events.Event
 	mktCfg           *types.Market
-	oracleEngine     *oracles.Engine
+	oracleEngine     *spec.Engine
 	stateVar         *stubs.StateVarStub
-	builtinOracle    *oracles.Builtin
+	builtinOracle    *spec.Builtin
 
 	// Options
 	Assets []types.Asset
@@ -180,8 +184,8 @@ func newTestMarket(t *testing.T, now time.Time) *testMarket {
 
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(eventFn)
 	tm.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(eventsFn)
-	tm.oracleEngine = oracles.NewEngine(tm.log, oracles.NewDefaultConfig(), tm.timeService, tm.broker)
-	tm.builtinOracle = oracles.NewBuiltinOracle(tm.oracleEngine, tm.timeService)
+	tm.oracleEngine = spec.NewEngine(tm.log, spec.NewDefaultConfig(), tm.timeService, tm.broker)
+	tm.builtinOracle = spec.NewBuiltin(tm.oracleEngine, tm.timeService)
 	return tm
 }
 
@@ -209,7 +213,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	)
 	positionConfig.StreamPositionVerbose = true
 
-	oracleEngine := oracles.NewEngine(tm.log, oracles.NewDefaultConfig(), tm.timeService, tm.broker)
+	oracleEngine := spec.NewEngine(tm.log, spec.NewDefaultConfig(), tm.timeService, tm.broker)
 
 	mas := monitor.NewAuctionState(&mktCfg, tm.now)
 	monitor.NewAuctionState(&mktCfg, tm.now)
@@ -389,9 +393,9 @@ func getTestMarket2WithDP(
 	// create asset stub to match the test asset:
 	cfgAsset := NewAssetStub("ETH", 0)
 
-	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), timeService, broker)
+	oracleEngine := spec.NewEngine(log, spec.NewDefaultConfig(), timeService, broker)
 	tm.oracleEngine = oracleEngine
-	tm.builtinOracle = oracles.NewBuiltinOracle(tm.oracleEngine, tm.timeService)
+	tm.builtinOracle = spec.NewBuiltin(tm.oracleEngine, tm.timeService)
 
 	// add the token asset
 	tokAsset := types.Asset{
@@ -475,8 +479,8 @@ func getMarket(pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDu
 }
 
 func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration, decimalPlaces uint64, lpRange float64) types.Market {
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
 
 	mkt := types.Market{
@@ -503,45 +507,45 @@ func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuc
 					Future: &types.Future{
 						SettlementAsset: "ETH",
 						QuoteName:       "USD",
-						DataSourceSpecForSettlementData: &types.DataSourceSpec{
+						DataSourceSpecForSettlementData: &datasource.Spec{
 							ID: "1",
-							Data: types.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+							Data: datasource.NewDefinition(
+								datasource.ContentTypeOracle,
 							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
+								&signedoracle.SpecConfiguration{
 									Signers: pubKeys,
-									Filters: []*types.DataSourceSpecFilter{
+									Filters: []*dstypes.SpecFilter{
 										{
-											Key: &types.DataSourceSpecPropertyKey{
+											Key: &dstypes.SpecPropertyKey{
 												Name: "prices.ETH.value",
 												Type: datapb.PropertyKey_TYPE_INTEGER,
 											},
-											Conditions: []*types.DataSourceSpecCondition{},
+											Conditions: []*dstypes.SpecCondition{},
 										},
 									},
 								},
 							),
 						},
-						DataSourceSpecForTradingTermination: &types.DataSourceSpec{
+						DataSourceSpecForTradingTermination: &datasource.Spec{
 							ID: "2",
-							Data: types.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+							Data: datasource.NewDefinition(
+								datasource.ContentTypeOracle,
 							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
+								&signedoracle.SpecConfiguration{
 									Signers: pubKeys,
-									Filters: []*types.DataSourceSpecFilter{
+									Filters: []*dstypes.SpecFilter{
 										{
-											Key: &types.DataSourceSpecPropertyKey{
+											Key: &dstypes.SpecPropertyKey{
 												Name: "trading.terminated",
 												Type: datapb.PropertyKey_TYPE_BOOLEAN,
 											},
-											Conditions: []*types.DataSourceSpecCondition{},
+											Conditions: []*dstypes.SpecCondition{},
 										},
 									},
 								},
 							),
 						},
-						DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
+						DataSourceSpecBinding: &datasource.SpecBindingForFuture{
 							SettlementDataProperty:     "prices.ETH.value",
 							TradingTerminationProperty: "trading.terminated",
 						},
@@ -642,8 +646,8 @@ func (tm *testMarket) EventHasBeenEmitted(t *testing.T, e events.Event) {
 }
 
 func TestMarketClosing(t *testing.T) {
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
 
 	party1 := "party1"
@@ -657,7 +661,7 @@ func TestMarketClosing(t *testing.T) {
 
 	properties := map[string]string{}
 	properties["trading.terminated"] = "true"
-	err := tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+	err := tm.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
 		Signers: pubKeys,
 		Data:    properties,
 	})
@@ -679,15 +683,15 @@ func TestMarketClosing(t *testing.T) {
 	assert.Equal(t, types.MarketStateTradingTerminated, tm.market.State())
 
 	// now update the market with different trading terminated key
-	tm.mktCfg.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination = &types.DataSourceSpec{
+	tm.mktCfg.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination = &datasource.Spec{
 		ID: "2",
-		Data: types.NewDataSourceDefinition(
-			vegapb.DataSourceDefinitionTypeExt,
-		).SetOracleConfig(&types.DataSourceSpecConfiguration{
+		Data: datasource.NewDefinition(
+			datasource.ContentTypeOracle,
+		).SetOracleConfig(&signedoracle.SpecConfiguration{
 			Signers: pubKeys,
-			Filters: []*types.DataSourceSpecFilter{
+			Filters: []*dstypes.SpecFilter{
 				{
-					Key: &types.DataSourceSpecPropertyKey{
+					Key: &dstypes.SpecPropertyKey{
 						Name: "tradingTerminated",
 						Type: datapb.PropertyKey_TYPE_BOOLEAN,
 					},
@@ -705,7 +709,7 @@ func TestMarketClosing(t *testing.T) {
 
 	properties = map[string]string{}
 	properties["tradingTerminated"] = "true"
-	err = tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+	err = tm.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
 		Signers: pubKeys,
 		Data:    properties,
 	})
@@ -714,11 +718,15 @@ func TestMarketClosing(t *testing.T) {
 	// let the oracle update settlement data
 	delete(properties, "tradingTerminated")
 	properties["prices.ETH.value"] = "100"
-	err = tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+	err = tm.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
 		Signers: pubKeys,
 		Data:    properties,
 	})
 	require.NoError(t, err)
+
+	assert.Equal(t, closingAt.UnixNano(), tm.market.Mkt().MarketTimestamps.Close)
+	assert.Equal(t, types.MarketStateSettled, tm.market.State())
+
 	closingAt = closingAt.Add(time.Second)
 	tm.now = closingAt
 	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), closingAt)
@@ -735,8 +743,8 @@ func TestMarketClosingAfterUpdate(t *testing.T) {
 	tm := getTestMarket(t, now, nil, nil)
 	defer tm.ctrl.Finish()
 
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
 
 	// setup
@@ -747,7 +755,7 @@ func TestMarketClosingAfterUpdate(t *testing.T) {
 	assert.Equal(t, types.MarketStateActive.String(), tm.market.State().String())
 
 	// when
-	err := tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+	err := tm.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
 		Signers: pubKeys,
 		Data: map[string]string{
 			"trading.terminated": "true",
@@ -773,9 +781,9 @@ func TestMarketClosingAfterUpdate(t *testing.T) {
 	// given
 	updatedMkt := tm.mktCfg.DeepClone()
 	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForSettlementData.Data.UpdateFilters(
-		[]*types.DataSourceSpecFilter{
+		[]*dstypes.SpecFilter{
 			{
-				Key: &types.OracleSpecPropertyKey{
+				Key: &dstypes.SpecPropertyKey{
 					Name: "prices.ETHEREUM.value",
 					Type: datapb.PropertyKey_TYPE_INTEGER,
 				},
@@ -794,7 +802,7 @@ func TestMarketClosingAfterUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	// when
-	err = tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+	err = tm.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
 		Signers: pubKeys,
 		Data: map[string]string{
 			"prices.ETH.value": "10",
@@ -822,7 +830,7 @@ func TestMarketClosingAfterUpdate(t *testing.T) {
 	// update.
 
 	// when
-	err = tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+	err = tm.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
 		Signers: pubKeys,
 		Data: map[string]string{
 			"prices.ETHEREUM.value": "100",
@@ -860,9 +868,9 @@ func TestUnsubscribeTradingTerminatedOracle(t *testing.T) {
 	assert.Equal(t, types.MarketStateActive.String(), tm.market.State().String())
 
 	// when
-	err := tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
-		Signers: []*types.Signer{
-			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	err := tm.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
+		Signers: []*dstypes.Signer{
+			dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 		},
 		Data: map[string]string{
 			"trading.terminated": "true",
@@ -875,9 +883,9 @@ func TestUnsubscribeTradingTerminatedOracle(t *testing.T) {
 	count := tm.eventCount
 
 	for i := 0; i < 10; i++ {
-		err := tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
-			Signers: []*types.Signer{
-				types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+		err := tm.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
+			Signers: []*dstypes.Signer{
+				dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 			},
 			Data: map[string]string{
 				"trading.terminated": "true",
@@ -905,9 +913,9 @@ func TestMarketLiquidityFeeAfterUpdate(t *testing.T) {
 	previousLiqFee := tm.market.GetLiquidityFee()
 	updatedMkt := tm.mktCfg.DeepClone()
 	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForSettlementData.Data.UpdateFilters(
-		[]*types.DataSourceSpecFilter{
+		[]*dstypes.SpecFilter{
 			{
-				Key: &types.OracleSpecPropertyKey{
+				Key: &dstypes.SpecPropertyKey{
 					Name: "prices.ETHEREUM.value",
 					Type: datapb.PropertyKey_TYPE_INTEGER,
 				},
@@ -922,7 +930,6 @@ func TestMarketLiquidityFeeAfterUpdate(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	fmt.Println(previousLiqFee, tm.market.GetLiquidityFee())
 	assert.Equal(t, previousLiqFee, tm.market.GetLiquidityFee())
 }
 
@@ -1123,8 +1130,8 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	// this will also output the closed accounts
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
 
 	// submit orders
@@ -1165,7 +1172,6 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
-	fmt.Printf("%s\n", orderBuy.String())
 	_, err := tm.market.SubmitOrder(ctx, orderBuy)
 	assert.Nil(t, err)
 	if err != nil {
@@ -1173,7 +1179,6 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	}
 	tm.now = tm.now.Add(time.Second)
 	tm.market.OnTick(ctx, tm.now)
-	fmt.Printf("%s\n", orderBuy.String())
 	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
 
 	_, err = tm.market.SubmitOrder(ctx, orderSell)
@@ -1188,7 +1193,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	futureTime := closingAt.Add(1 * time.Second)
 	properties := map[string]string{}
 	properties["trading.terminated"] = "true"
-	err = tm.oracleEngine.BroadcastData(ctx, oracles.OracleData{
+	err = tm.oracleEngine.BroadcastData(ctx, dstypes.Data{
 		Signers: pubKeys,
 		Data:    properties,
 	})
@@ -1196,7 +1201,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 
 	properties = map[string]string{}
 	properties["prices.ETH.value"] = "100"
-	err = tm.oracleEngine.BroadcastData(ctx, oracles.OracleData{
+	err = tm.oracleEngine.BroadcastData(ctx, dstypes.Data{
 		Signers: pubKeys,
 		Data:    properties,
 	})
@@ -1260,7 +1265,6 @@ func TestUpdateMarketWithOracleSpecEarlyTermination(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
-	fmt.Printf("%s\n", orderBuy.String())
 	_, err := tm.market.SubmitOrder(ctx, orderBuy)
 	assert.Nil(t, err)
 	if err != nil {
@@ -1268,7 +1272,6 @@ func TestUpdateMarketWithOracleSpecEarlyTermination(t *testing.T) {
 	}
 	tm.now = tm.now.Add(time.Second)
 	tm.market.OnTick(ctx, tm.now)
-	fmt.Printf("%s\n", orderBuy.String())
 	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
 
 	_, err = tm.market.SubmitOrder(ctx, orderSell)
@@ -1283,13 +1286,13 @@ func TestUpdateMarketWithOracleSpecEarlyTermination(t *testing.T) {
 	updatedMkt := tm.mktCfg.DeepClone()
 
 	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination.Data.UpdateFilters(
-		[]*types.DataSourceSpecFilter{
+		[]*dstypes.SpecFilter{
 			{
-				Key: &types.OracleSpecPropertyKey{
-					Name: oracles.BuiltinOracleTimestamp,
+				Key: &dstypes.SpecPropertyKey{
+					Name: spec.BuiltinTimestamp,
 					Type: datapb.PropertyKey_TYPE_TIMESTAMP,
 				},
-				Conditions: []*types.OracleSpecCondition{
+				Conditions: []*dstypes.SpecCondition{
 					{
 						Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 						Value:    "0",
@@ -1299,7 +1302,7 @@ func TestUpdateMarketWithOracleSpecEarlyTermination(t *testing.T) {
 		},
 	)
 
-	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecBinding.TradingTerminationProperty = oracles.BuiltinOracleTimestamp
+	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecBinding.TradingTerminationProperty = spec.BuiltinTimestamp
 
 	err = tm.market.Update(context.Background(), updatedMkt, tm.oracleEngine)
 	require.NoError(t, err)
@@ -1307,12 +1310,12 @@ func TestUpdateMarketWithOracleSpecEarlyTermination(t *testing.T) {
 	tm.market.OnTick(ctx, tm.now)
 	require.Equal(t, types.MarketStateTradingTerminated, tm.market.State())
 
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
 	properties := map[string]string{}
 	properties["prices.ETH.value"] = "100"
-	err = tm.oracleEngine.BroadcastData(ctx, oracles.OracleData{
+	err = tm.oracleEngine.BroadcastData(ctx, dstypes.Data{
 		Signers: pubKeys,
 		Data:    properties,
 	})
@@ -1376,7 +1379,6 @@ func Test6056(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
-	fmt.Printf("%s\n", orderBuy.String())
 	_, err := tm.market.SubmitOrder(ctx, orderBuy)
 	assert.Nil(t, err)
 	if err != nil {
@@ -1384,7 +1386,6 @@ func Test6056(t *testing.T) {
 	}
 	tm.now = tm.now.Add(time.Second)
 	tm.market.OnTick(ctx, tm.now)
-	fmt.Printf("%s\n", orderBuy.String())
 	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
 
 	_, err = tm.market.SubmitOrder(ctx, orderSell)
@@ -1399,13 +1400,13 @@ func Test6056(t *testing.T) {
 	updatedMkt := tm.mktCfg.DeepClone()
 
 	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForSettlementData.Data.UpdateFilters(
-		[]*types.DataSourceSpecFilter{
+		[]*dstypes.SpecFilter{
 			{
-				Key: &types.OracleSpecPropertyKey{
+				Key: &dstypes.SpecPropertyKey{
 					Name: "prices.ETH.value",
 					Type: datapb.PropertyKey_TYPE_INTEGER,
 				},
-				Conditions: []*types.OracleSpecCondition{
+				Conditions: []*dstypes.SpecCondition{
 					{
 						Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 						Value:    "1",
@@ -1416,13 +1417,13 @@ func Test6056(t *testing.T) {
 	)
 
 	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination.Data.UpdateFilters(
-		[]*types.DataSourceSpecFilter{
+		[]*dstypes.SpecFilter{
 			{
-				Key: &types.DataSourceSpecPropertyKey{
+				Key: &dstypes.SpecPropertyKey{
 					Name: "trading.terminated",
 					Type: datapb.PropertyKey_TYPE_BOOLEAN,
 				},
-				Conditions: []*types.DataSourceSpecCondition{
+				Conditions: []*dstypes.SpecCondition{
 					{
 						Operator: datapb.Condition_OPERATOR_EQUALS,
 						Value:    "false",
@@ -1432,15 +1433,15 @@ func Test6056(t *testing.T) {
 		},
 	)
 
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
 	err = tm.market.Update(context.Background(), updatedMkt, tm.oracleEngine)
 	require.NoError(t, err)
 
 	properties := map[string]string{}
 	properties["trading.terminated"] = "false"
-	err = tm.oracleEngine.BroadcastData(ctx, oracles.OracleData{
+	err = tm.oracleEngine.BroadcastData(ctx, dstypes.Data{
 		Signers: pubKeys,
 		Data:    properties,
 	})
@@ -1450,7 +1451,7 @@ func Test6056(t *testing.T) {
 
 	properties = map[string]string{}
 	properties["prices.ETH.value"] = "100"
-	err = tm.oracleEngine.BroadcastData(ctx, oracles.OracleData{
+	err = tm.oracleEngine.BroadcastData(ctx, dstypes.Data{
 		Signers: pubKeys,
 		Data:    properties,
 	})
@@ -1512,9 +1513,7 @@ func TestOraclesWithMultipleFilterNameFails(t *testing.T) {
 
 	// submit orders
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
-	fmt.Printf("%s\n", orderBuy.String())
 	_, err := tm.market.SubmitOrder(ctx, orderBuy)
 	assert.Nil(t, err)
 	if err != nil {
@@ -1522,7 +1521,6 @@ func TestOraclesWithMultipleFilterNameFails(t *testing.T) {
 	}
 	tm.now = tm.now.Add(time.Second)
 	tm.market.OnTick(ctx, tm.now)
-	fmt.Printf("%s\n", orderBuy.String())
 	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
 
 	_, err = tm.market.SubmitOrder(ctx, orderSell)
@@ -1539,14 +1537,14 @@ func TestOraclesWithMultipleFilterNameFails(t *testing.T) {
 	f1 := uint64(12)
 	f2 := uint64(21)
 	err = updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForSettlementData.Data.UpdateFilters(
-		[]*types.DataSourceSpecFilter{
+		[]*dstypes.SpecFilter{
 			{
-				Key: &types.OracleSpecPropertyKey{
+				Key: &dstypes.SpecPropertyKey{
 					Name:                "prices.ETH.value",
 					Type:                datapb.PropertyKey_TYPE_INTEGER,
 					NumberDecimalPlaces: &f1,
 				},
-				Conditions: []*types.OracleSpecCondition{
+				Conditions: []*dstypes.SpecCondition{
 					{
 						Operator: datapb.Condition_OPERATOR_GREATER_THAN,
 						Value:    "717098987000000000000000000000000000000",
@@ -1554,12 +1552,12 @@ func TestOraclesWithMultipleFilterNameFails(t *testing.T) {
 				},
 			},
 			{
-				Key: &types.OracleSpecPropertyKey{
+				Key: &dstypes.SpecPropertyKey{
 					Name:                "prices.ETH.value",
 					Type:                datapb.PropertyKey_TYPE_INTEGER,
 					NumberDecimalPlaces: &f2,
 				},
-				Conditions: []*types.OracleSpecCondition{
+				Conditions: []*dstypes.SpecCondition{
 					{
 						Operator: datapb.Condition_OPERATOR_GREATER_THAN,
 						Value:    "957586060000000000000000000000000000000000000000",
@@ -1569,16 +1567,16 @@ func TestOraclesWithMultipleFilterNameFails(t *testing.T) {
 		},
 	)
 
-	assert.ErrorIs(t, types.ErrDataSourceSpecHasMultipleSameKeyNamesInFilterList, err)
+	assert.ErrorIs(t, dserrors.ErrDataSourceSpecHasMultipleSameKeyNamesInFilterList, err)
 
 	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination.Data.UpdateFilters(
-		[]*types.DataSourceSpecFilter{
+		[]*dstypes.SpecFilter{
 			{
-				Key: &types.DataSourceSpecPropertyKey{
+				Key: &dstypes.SpecPropertyKey{
 					Name: "trading.terminated",
 					Type: datapb.PropertyKey_TYPE_BOOLEAN,
 				},
-				Conditions: []*types.DataSourceSpecCondition{
+				Conditions: []*dstypes.SpecCondition{
 					{
 						Operator: datapb.Condition_OPERATOR_EQUALS,
 						Value:    "false",
@@ -1588,15 +1586,15 @@ func TestOraclesWithMultipleFilterNameFails(t *testing.T) {
 		},
 	)
 
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
 	err = tm.market.Update(context.Background(), updatedMkt, tm.oracleEngine)
 	require.NoError(t, err)
 
 	properties := map[string]string{}
 	properties["trading.terminated"] = "false"
-	err = tm.oracleEngine.BroadcastData(ctx, oracles.OracleData{
+	err = tm.oracleEngine.BroadcastData(ctx, dstypes.Data{
 		Signers: pubKeys,
 		Data:    properties,
 	})
@@ -1606,7 +1604,7 @@ func TestOraclesWithMultipleFilterNameFails(t *testing.T) {
 
 	properties = map[string]string{}
 	properties["prices.ETH.value"] = "100"
-	err = tm.oracleEngine.BroadcastData(ctx, oracles.OracleData{
+	err = tm.oracleEngine.BroadcastData(ctx, dstypes.Data{
 		Signers: pubKeys,
 		Data:    properties,
 	})
@@ -1709,8 +1707,6 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, conf)
 	}
-	mktD := tm.market.GetMarketData()
-	fmt.Printf("TS: %s\nSS: %s\n", mktD.TargetStake, mktD.SuppliedStake)
 	lp := &types.LiquidityProvisionSubmission{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(500),
@@ -7272,7 +7268,6 @@ func TestAverageEntryValuation(t *testing.T) {
 	tm.EndOpeningAuction(t, auctionEnd, false)
 
 	marketData := tm.market.GetMarketData()
-	fmt.Printf("TS: %s\nSS: %s\n", marketData.TargetStake, marketData.SuppliedStake)
 	/*
 		expects := map[string]struct {
 			found bool
@@ -7911,9 +7906,6 @@ func TestAmendTrade(t *testing.T) {
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	tm.EndOpeningAuction(t, auctionEnd, false)
-	mktD := tm.market.GetMarketData()
-	fmt.Printf("TS: %s\nSS: %s\n", mktD.TargetStake, mktD.SuppliedStake)
-	fmt.Printf("MS: %s\nTS: %s\nSS: %s\n", mktD.MarketTradingMode.String(), mktD.TargetStake, mktD.SuppliedStake)
 
 	assert.Equal(t, types.MarketTradingModeContinuous, tm.market.GetMarketData().MarketTradingMode)
 
@@ -7994,7 +7986,7 @@ func Test_7017_UpdatingMarketDuringOpeningAuction(t *testing.T) {
 	tm.now = tm.now.Add(time.Minute)
 	tm.market.OnTick(ctx, tm.now)
 
-	tm.market.Update(ctx, &mktCfg, tm.oracleEngine)
+	require.NoError(t, tm.market.Update(ctx, &mktCfg, tm.oracleEngine))
 
 	tm.now = tm.now.Add(time.Minute)
 	tm.market.OnTick(ctx, tm.now)

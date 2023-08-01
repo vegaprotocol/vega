@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -13,7 +14,7 @@ type ProposalTermsCancelTransfer struct {
 func (a ProposalTermsCancelTransfer) String() string {
 	return fmt.Sprintf(
 		"cancelTransfer(%s)",
-		reflectPointerToString(a.CancelTransfer),
+		stringer.ReflectPointerToString(a.CancelTransfer),
 	)
 }
 
@@ -74,7 +75,7 @@ func (c CancelTransfer) IntoProto() *vegapb.CancelTransfer {
 func (c CancelTransfer) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		reflectPointerToString(c.Changes),
+		stringer.ReflectPointerToString(c.Changes),
 	)
 }
 

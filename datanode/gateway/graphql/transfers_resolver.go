@@ -37,8 +37,12 @@ func (r *transferResolver) Kind(ctx context.Context, obj *eventspb.Transfer) (Tr
 	switch obj.GetKind().(type) {
 	case *eventspb.Transfer_OneOff:
 		return obj.GetOneOff(), nil
+	case *eventspb.Transfer_OneOffGovernance:
+		return obj.GetOneOffGovernance(), nil
 	case *eventspb.Transfer_Recurring:
 		return obj.GetRecurring(), nil
+	case *eventspb.Transfer_RecurringGovernance:
+		return obj.GetRecurringGovernance(), nil
 	default:
 		return nil, ErrUnsupportedTransferKind
 	}
@@ -59,6 +63,31 @@ func (r *recurringTransferResolver) EndEpoch(ctx context.Context, obj *eventspb.
 }
 
 func (r *recurringTransferResolver) DispatchStrategy(ctx context.Context, obj *eventspb.RecurringTransfer) (*DispatchStrategy, error) {
+	if obj.DispatchStrategy != nil {
+		return &DispatchStrategy{
+			DispatchMetric:        obj.DispatchStrategy.Metric,
+			DispatchMetricAssetID: obj.DispatchStrategy.AssetForMetric,
+			MarketIdsInScope:      obj.DispatchStrategy.Markets,
+		}, nil
+	}
+	return nil, nil
+}
+
+type recurringGovernanceTransferResolver VegaResolverRoot
+
+func (r *recurringGovernanceTransferResolver) StartEpoch(ctx context.Context, obj *eventspb.RecurringGovernanceTransfer) (int, error) {
+	return int(obj.StartEpoch), nil
+}
+
+func (r *recurringGovernanceTransferResolver) EndEpoch(ctx context.Context, obj *eventspb.RecurringGovernanceTransfer) (*int, error) {
+	if obj.EndEpoch != nil {
+		i := int(*obj.EndEpoch)
+		return &i, nil
+	}
+	return nil, nil
+}
+
+func (r *recurringGovernanceTransferResolver) DispatchStrategy(ctx context.Context, obj *eventspb.RecurringGovernanceTransfer) (*DispatchStrategy, error) {
 	if obj.DispatchStrategy != nil {
 		return &DispatchStrategy{
 			DispatchMetric:        obj.DispatchStrategy.Metric,

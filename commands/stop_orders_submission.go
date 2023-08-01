@@ -23,7 +23,7 @@ func checkStopOrdersSubmission(cmd *commandspb.StopOrdersSubmission) Errors {
 	var market1, market2 string
 	if cmd.FallsBelow != nil {
 		checkStopOrderSetup(
-			"stop_orders_submission.falls_below", errs, cmd.FallsBelow)
+			"stop_orders_submission.falls_below", errs, cmd.FallsBelow, cmd.RisesAbove != nil)
 		if cmd.FallsBelow.OrderSubmission != nil {
 			market1 = cmd.FallsBelow.OrderSubmission.MarketId
 		}
@@ -31,7 +31,7 @@ func checkStopOrdersSubmission(cmd *commandspb.StopOrdersSubmission) Errors {
 
 	if cmd.RisesAbove != nil {
 		checkStopOrderSetup(
-			"stop_orders_submission.rises_below", errs, cmd.RisesAbove)
+			"stop_orders_submission.rises_below", errs, cmd.RisesAbove, cmd.FallsBelow != nil)
 		if cmd.RisesAbove.OrderSubmission != nil {
 			market2 = cmd.RisesAbove.OrderSubmission.MarketId
 		}
@@ -52,6 +52,7 @@ func checkStopOrderSetup(
 	fieldName string,
 	errs Errors,
 	setup *commandspb.StopOrderSetup,
+	isOCO bool,
 ) {
 	if err := checkOrderSubmission(setup.OrderSubmission); !err.Empty() {
 		errs.Merge(err)
@@ -70,9 +71,10 @@ func checkStopOrderSetup(
 		} else {
 			if *setup.ExpiryStrategy == types.StopOrder_EXPIRY_STRATEGY_UNSPECIFIED {
 				errs.AddForProperty(fmt.Sprintf("%s.expiry_strategy", fieldName), ErrIsRequired)
-			}
-			if _, ok := types.StopOrder_ExpiryStrategy_name[int32(*setup.ExpiryStrategy)]; !ok {
+			} else if _, ok := types.StopOrder_ExpiryStrategy_name[int32(*setup.ExpiryStrategy)]; !ok {
 				errs.AddForProperty(fmt.Sprintf("%s.expiry_strategy", fieldName), ErrIsNotValid)
+			} else if isOCO && *setup.ExpiryStrategy == types.StopOrder_EXPIRY_STRATEGY_SUBMIT {
+				errs.AddForProperty(fmt.Sprintf("%s.expiry_strategy", fieldName), ErrIsNotValidWithOCO)
 			}
 		}
 	}
@@ -98,7 +100,7 @@ func checkStopOrderSetup(
 				} else if poffset.LessThanOrEqual(num.DecimalZero()) || poffset.GreaterThanOrEqual(num.DecimalOne()) {
 					errs.AddForProperty(fmt.Sprintf("%s.trigger.trailing_percent_offset", fieldName), ErrMustBeWithinRange01)
 				} else if !poffset.Mod(num.MustDecimalFromString("0.001")).Equal(num.DecimalZero()) {
-					errs.AddForProperty(fmt.Sprintf("%s.trigger.trailing_percent_offset", fieldName), ErrTrailingPercentOffsetMinimalIncrementMustBe)
+					errs.AddForProperty(fmt.Sprintf("%s.trigger.trailing_percent_offset", fieldName), ErrTrailingPercentOffsetMinimalIncrementNotReached)
 				}
 			}
 		}

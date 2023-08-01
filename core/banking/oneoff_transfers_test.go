@@ -39,7 +39,6 @@ func TestTransfers(t *testing.T) {
 
 func testRejectedIfDoesntReachMinimalAmount(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	ctx := context.Background()
 	transfer := &types.TransferFunds{
@@ -71,7 +70,6 @@ func testRejectedIfDoesntReachMinimalAmount(t *testing.T) {
 
 func testInvalidTransferKind(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	ctx := context.Background()
 	transfer := &types.TransferFunds{
@@ -86,7 +84,7 @@ func testInvalidTransferKind(t *testing.T) {
 
 func testOneOffTransferNotEnoughFundsToTransfer(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
+
 	e.tsvc.EXPECT().GetTimeNow().Times(1)
 
 	ctx := context.Background()
@@ -122,7 +120,6 @@ func testOneOffTransferNotEnoughFundsToTransfer(t *testing.T) {
 
 func testOneOffTransferInvalidTransfers(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	ctx := context.Background()
 	transfer := types.TransferFunds{
@@ -207,7 +204,6 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 
 func testValidOneOffTransfer(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	// let's do a massive fee, easy to test
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
@@ -284,7 +280,6 @@ func testValidOneOffTransfer(t *testing.T) {
 
 func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
 		func() time.Time {
@@ -366,7 +361,6 @@ func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {
 
 func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	// Time given to OnTick call - base time Unix(10, 0)
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(

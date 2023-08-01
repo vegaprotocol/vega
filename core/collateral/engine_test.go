@@ -69,6 +69,7 @@ func TestCollateralTransfer(t *testing.T) {
 func TestCollateralMarkToMarket(t *testing.T) {
 	t.Run("Mark to Market distribution, insufficient funds - complex scenario", testProcessBothProRatedMTM)
 	t.Run("Mark to Market successful", testMTMSuccess)
+	t.Run("Perp funding settlement - successful", testPerpFundingSuccess)
 	// we panic if settlement account is non-zero, this test doesn't pass anymore
 	t.Run("Mark to Market wins and losses do not match up, settlement not drained", testSettleBalanceNotZero)
 }
@@ -123,6 +124,64 @@ func TestTransferRewards(t *testing.T) {
 	t.Run("transfer rewards empty slice", testTransferRewardsEmptySlice)
 	t.Run("transfer rewards missing rewards account", testTransferRewardsNoRewardsAccount)
 	t.Run("transfer rewards success", testTransferRewardsSuccess)
+}
+
+func TestClearAccounts(t *testing.T) {
+	t.Run("clear fee accounts", testClearFeeAccounts)
+}
+
+func testClearFeeAccounts(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+	ctx := context.Background()
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	mktID := "market"
+	asset := "ETH"
+	party := "myparty"
+	assetT := types.Asset{
+		ID: asset,
+		Details: &types.AssetDetails{
+			Symbol: asset,
+		},
+	}
+
+	eng.EnableAsset(ctx, assetT)
+	_, _ = eng.GetGlobalRewardAccount(asset)
+	_, _, err := eng.CreateMarketAccounts(ctx, mktID, asset)
+	require.NoError(t, err)
+	general, err := eng.CreatePartyGeneralAccount(ctx, party, asset)
+	require.NoError(t, err)
+
+	_, err = eng.CreatePartyMarginAccount(ctx, party, mktID, asset)
+	require.NoError(t, err)
+
+	// add funds
+	err = eng.UpdateBalance(ctx, general, num.NewUint(10000))
+	assert.Nil(t, err)
+
+	transferFeesReq := transferFees{
+		tfs: []*types.Transfer{
+			{
+				Owner: party,
+				Amount: &types.FinancialAmount{
+					Amount: num.NewUint(1000),
+				},
+				Type:      types.TransferTypeMakerFeePay,
+				MinAmount: num.NewUint(1000),
+			},
+		},
+		tfa: map[string]uint64{party: 1000},
+	}
+
+	transfers, err := eng.TransferFeesContinuousTrading(ctx, mktID, asset, transferFeesReq)
+	assert.NotNil(t, transfers)
+	assert.NoError(t, err, collateral.ErrInsufficientFundsToPayFees.Error())
+	assert.Len(t, transfers, 1)
+
+	assert.Equal(t, 1, len(transfers[0].Entries))
+	assert.Equal(t, num.NewUint(9000), transfers[0].Entries[0].FromAccountBalance)
+	assert.Equal(t, num.NewUint(1000), transfers[0].Entries[0].ToAccountBalance)
+	eng.ClearInsurancepool(ctx, mktID, asset, true)
 }
 
 func testTransferRewardsEmptySlice(t *testing.T) {
@@ -675,7 +734,7 @@ func testEnableAssetSuccess(t *testing.T) {
 			Symbol: "MYASSET",
 		},
 	}
-	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(6)
 	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 
@@ -692,7 +751,7 @@ func testEnableAssetFailureDuplicate(t *testing.T) {
 			Symbol: "MYASSET",
 		},
 	}
-	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(6)
 	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 
@@ -820,7 +879,7 @@ func testTransferLoss(t *testing.T) {
 	}
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
+	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(responses))
 	resp := responses[0]
@@ -891,7 +950,7 @@ func testTransferComplexLoss(t *testing.T) {
 	}
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
+	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
 	assert.Equal(t, 2, len(responses))
 	resp := responses[0]
 	assert.NoError(t, err)
@@ -929,7 +988,7 @@ func testTransferLossMissingPartyAccounts(t *testing.T) {
 			Type: types.TransferTypeLoss,
 		},
 	}
-	resp, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
+	resp, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
 	assert.Nil(t, resp)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "account does not exist:")
@@ -1008,7 +1067,7 @@ func testProcessBoth(t *testing.T) {
 			assert.Equal(t, int64(2000), acc.Balance)
 		}
 	})
-	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
+	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
 	assert.Equal(t, 4, len(responses))
 	assert.NoError(t, err)
 	resp := responses[0]
@@ -1117,7 +1176,7 @@ func TestLossSocialization(t *testing.T) {
 			assert.Equal(t, 534, stringToInt(acc.Balance))
 		}
 	})
-	raw, err := eng.FinalSettlement(context.Background(), testMarketID, transfers)
+	raw, err := eng.FinalSettlement(context.Background(), testMarketID, transfers, num.UintOne())
 	assert.NoError(t, err)
 	assert.Equal(t, 4, len(raw))
 
@@ -1257,7 +1316,7 @@ func testProcessBothProRated(t *testing.T) {
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(2)
-	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
+	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
 	assert.Equal(t, 4, len(responses))
 	assert.NoError(t, err)
 
@@ -1440,6 +1499,92 @@ func testRemoveDistressedNoBalance(t *testing.T) {
 	_, err = eng.GetAccountByID(marginID)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "account does not exist:")
+}
+
+func testPerpFundingSuccess(t *testing.T) {
+	party := "test-party"
+	moneyParty := "money-party"
+	price := num.NewUint(1000)
+
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	insurancePool, err := eng.GetMarketInsurancePoolAccount(testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+	err = eng.UpdateBalance(context.Background(), insurancePool.ID, num.UintZero().Div(price, num.NewUint(2)))
+	assert.Nil(t, err)
+
+	// create party accounts
+	eng.broker.EXPECT().Send(gomock.Any()).Times(8)
+	gID, _ := eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
+	mID, err := eng.CreatePartyMarginAccount(context.Background(), party, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	assert.NotEmpty(t, mID)
+	assert.NotEmpty(t, gID)
+
+	// create + add balance
+	_, _ = eng.CreatePartyGeneralAccount(context.Background(), moneyParty, testMarketAsset)
+	marginMoneyParty, err := eng.CreatePartyMarginAccount(context.Background(), moneyParty, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	err = eng.UpdateBalance(context.Background(), marginMoneyParty, num.UintZero().Mul(num.NewUint(5), price))
+	assert.Nil(t, err)
+
+	pos := []*types.Transfer{
+		{
+			Owner: party,
+			Amount: &types.FinancialAmount{
+				Amount: price,
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferTypePerpFundingLoss,
+		},
+		{
+			Owner: moneyParty,
+			Amount: &types.FinancialAmount{
+				Amount: price,
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferTypePerpFundingLoss,
+		},
+		{
+			Owner: party,
+			Amount: &types.FinancialAmount{
+				Amount: price,
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferTypePerpFundingWin,
+		},
+		{
+			Owner: moneyParty,
+			Amount: &types.FinancialAmount{
+				Amount: price,
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferTypePerpFundingWin,
+		},
+	}
+
+	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(evt events.Event) {
+		ae, ok := evt.(accEvt)
+		assert.True(t, ok)
+		acc := ae.Account()
+		if acc.Owner == party && acc.Type == types.AccountTypeGeneral {
+			assert.Equal(t, acc.Balance, int64(833))
+		}
+		if acc.Owner == moneyParty && acc.Type == types.AccountTypeGeneral {
+			assert.Equal(t, acc.Balance, int64(1666))
+		}
+	})
+	transfers := eng.getTestMTMTransfer(pos)
+	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
+	assert.NoError(t, err)
+	assert.Equal(t, 4, len(raw))
+	assert.NotEmpty(t, evts)
 }
 
 // most of this function is copied from the MarkToMarket test - we're using channels, sure
@@ -1718,7 +1863,7 @@ func TestFinalSettlementNoTransfers(t *testing.T) {
 
 	pos := []*types.Transfer{}
 
-	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
+	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(responses))
 }
@@ -1746,7 +1891,7 @@ func TestFinalSettlementNoSystemAccounts(t *testing.T) {
 		},
 	}
 
-	responses, err := eng.FinalSettlement(context.Background(), "invalidMarketID", pos)
+	responses, err := eng.FinalSettlement(context.Background(), "invalidMarketID", pos, num.UintOne())
 	assert.Error(t, err)
 	assert.Equal(t, 0, len(responses))
 }
@@ -1789,7 +1934,7 @@ func TestFinalSettlementNotEnoughMargin(t *testing.T) {
 
 	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
+	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(responses))
 
@@ -2371,10 +2516,10 @@ func TestClearMarket(t *testing.T) {
 	assert.Equal(t, num.NewUint(1250), entry.ToAccountBalance)
 	assert.Equal(t, num.NewUint(250), entry.Amount)
 
-	// This will be the insurance account going into the global rewards pool
+	// This will be the insurance account going into the global insurance pool
 	entry = responses[2].Entries[0]
 	assert.Equal(t, types.AccountTypeInsurance, entry.FromAccount.Type)
-	assert.Equal(t, types.AccountTypeGlobalReward, entry.ToAccount.Type)
+	assert.Equal(t, types.AccountTypeGlobalInsurance, entry.ToAccount.Type)
 	assert.Equal(t, num.NewUint(0), entry.FromAccountBalance)
 	assert.Equal(t, num.NewUint(1250), entry.ToAccountBalance)
 	assert.Equal(t, num.NewUint(1250), entry.Amount)
@@ -2627,7 +2772,7 @@ func getTestEngine(t *testing.T) *testEngine {
 	broker := bmocks.NewMockBroker(ctrl)
 	conf := collateral.NewDefaultConfig()
 	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
-	broker.EXPECT().Send(gomock.Any()).Times(16)
+	broker.EXPECT().Send(gomock.Any()).Times(22)
 	// system accounts created
 
 	eng := collateral.New(logging.NewTestLogger(), conf, timeSvc, broker)
@@ -2701,17 +2846,27 @@ func TestCheckLeftOverBalance(t *testing.T) {
 		ID:      settleAccountID,
 		Balance: num.UintZero(),
 	}
-	leftoverTransfer, err := e.CheckLeftOverBalance(ctx, settle, []*types.Transfer{}, asset)
+	leftoverTransfer, err := e.CheckLeftOverBalance(ctx, settle, []*types.Transfer{}, asset, num.UintOne())
 	require.NoError(t, err)
 	require.Nil(t, leftoverTransfer)
 
 	// settle has balance greater than 1, panic
 	settle.Balance = num.NewUint(100)
-	require.Panics(t, func() { e.CheckLeftOverBalance(ctx, settle, []*types.Transfer{}, asset) })
+	require.Panics(t, func() { e.CheckLeftOverBalance(ctx, settle, []*types.Transfer{}, asset, num.UintOne()) })
+
+	// settle has balance greater than 1, market factor of 10, still panic
+	settle.Balance = num.NewUint(100)
+	require.Panics(t, func() { e.CheckLeftOverBalance(ctx, settle, []*types.Transfer{}, asset, num.NewUint(10)) })
+
+	// settle has balance greater than 1, for a market with price factor 1000 is fine
+	settle.Balance = num.NewUint(100)
+	leftoverTransfer, err = e.CheckLeftOverBalance(ctx, settle, []*types.Transfer{}, asset, num.NewUint(1000))
+	require.NoError(t, err)
+	require.NotNil(t, leftoverTransfer)
 
 	// settle has balance of exactly 1, transfer balance to the reward account
 	settle.Balance = num.NewUint(1)
-	leftoverTransfer, err = e.CheckLeftOverBalance(ctx, settle, []*types.Transfer{}, asset)
+	leftoverTransfer, err = e.CheckLeftOverBalance(ctx, settle, []*types.Transfer{}, asset, num.UintOne())
 	require.NoError(t, err)
 	require.NotNil(t, leftoverTransfer)
 }
@@ -2853,7 +3008,7 @@ func TestHash(t *testing.T) {
 
 	hash := eng.Hash()
 	require.Equal(t,
-		"4fc5846d26f3faffcd37b082f136d6daeee6084acbc073a90a1e49aa44a33374",
+		"589c48274f3ab644f725d9abc4de9cb07b6ea9069dd3bd8f41f35dc55d062550",
 		hex.EncodeToString(hash),
 		"It should match against the known hash",
 	)
@@ -2962,9 +3117,9 @@ func TestClearSpotMarket(t *testing.T) {
 	_, err = eng.ClearSpotMarket(context.Background(), testMarketID, "BTC")
 	require.NoError(t, err)
 
-	globalReward, err := eng.GetGlobalRewardAccount("BTC")
+	treasury, err := eng.GetNetworkTreasuryAccount("BTC")
 	require.NoError(t, err)
-	require.Equal(t, num.NewUint(1000), globalReward.Balance)
+	require.Equal(t, num.NewUint(1000), treasury.Balance)
 
 	// the liquidity and makes fees should be removed at this point
 	_, err = eng.GetMarketLiquidityFeeAccount(testMarketID, "BTC")
@@ -2977,6 +3132,7 @@ func TestClearSpotMarket(t *testing.T) {
 func TestCreateSpotMarketAccounts(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.Finish()
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	err := eng.CreateSpotMarketAccounts(context.Background(), testMarketID, "BTC")
 	require.NoError(t, err)
@@ -2996,7 +3152,7 @@ func TestPartyHasSufficientBalance(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// first check when general account of the source does not exist
-	err := eng.PartyHasSufficientBalance("zohar", "BTC", num.NewUint(1000))
+	err := eng.PartyHasSufficientBalance("BTC", "zohar", num.NewUint(1000))
 	require.Error(t, err)
 
 	ctx := context.Background()
@@ -3007,11 +3163,11 @@ func TestPartyHasSufficientBalance(t *testing.T) {
 	// topup the source general account
 	require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(1000)))
 
-	err = eng.PartyHasSufficientBalance("zohar", "BTC", num.NewUint(1001))
+	err = eng.PartyHasSufficientBalance("BTC", "zohar", num.NewUint(1001))
 	require.Error(t, err)
-	err = eng.PartyHasSufficientBalance("zohar", "BTC", num.NewUint(1000))
+	err = eng.PartyHasSufficientBalance("BTC", "zohar", num.NewUint(1000))
 	require.NoError(t, err)
-	err = eng.PartyHasSufficientBalance("zohar", "BTC", num.NewUint(900))
+	err = eng.PartyHasSufficientBalance("BTC", "zohar", num.NewUint(900))
 	require.NoError(t, err)
 }
 
@@ -3022,7 +3178,7 @@ func TestCreatePartyHoldingAccount(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	ctx := context.Background()
 
-	_, err := eng.CreatePartyHoldingAccount(ctx, "zohar", "BTC2")
+	_, err := eng.CreatePartyHoldingAccount(ctx, "BTC2", "zohar")
 	// asset does not exist
 	require.Error(t, err)
 

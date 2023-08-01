@@ -232,7 +232,7 @@ func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination e
 
 	settledClause := ""
 	if !includeSettled {
-		settledClause = " AND state != 'STATE_SETTLED'"
+		settledClause = " AND state != 'STATE_SETTLED' AND state != 'STATE_CLOSED'"
 	}
 
 	query := fmt.Sprintf(`%s
@@ -335,6 +335,21 @@ left join lineage s on l.successor_market_id = s.parent_id
 			if p.Terms.ProposalTerms.GetNewMarket().Changes.Successor.ParentMarketId == m.ID.String() {
 				edge.Proposals = append(edge.Proposals, &proposals[i])
 			}
+		}
+
+		edges = append(edges, edge)
+	}
+
+	if len(markets) == 0 {
+		// We do not have any markets in the given succession line, so we need to return the market
+		// associated with the given market ID, which should be the parent market.
+		market, err := m.GetByID(ctx, marketID)
+		if err != nil {
+			return nil, entities.PageInfo{}, err
+		}
+
+		edge := entities.SuccessorMarket{
+			Market: market,
 		}
 
 		edges = append(edges, edge)

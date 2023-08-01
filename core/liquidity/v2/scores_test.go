@@ -14,7 +14,6 @@ package liquidity_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -66,10 +65,17 @@ func TestLiquidityScoresMechanics(t *testing.T) {
 	// We don't care about the following calls
 	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
+	tng.auctionState.EXPECT().InAuction().Return(false).AnyTimes()
+
+	zero := num.UintZero()
+
+	tng.orderbook.EXPECT().GetBestStaticBidPrice().Return(zero, nil).AnyTimes()
+	tng.orderbook.EXPECT().GetBestStaticAskPrice().Return(zero, nil).AnyTimes()
+
 	// initialise PoT
 	tng.engine.SetGetStaticPricesFunc(func() (num.Decimal, num.Decimal, error) { return bestBid, bestAsk, nil })
 	tng.stateVar.OnTick(ctx, now)
-	require.True(t, tng.engine.IsPoTInitialised())
+	require.True(t, tng.engine.IsProbabilityOfTradingInitialised())
 
 	idgen := idgeneration.New(crypto.RandomHash())
 
@@ -81,11 +87,10 @@ func TestLiquidityScoresMechanics(t *testing.T) {
 	}
 
 	// party1 submission
-	tng.submitLiquidityProvisionAndCreateOrders(t, ctx, party1, commitment, idgen, partyOneOrders, 9)
+	tng.submitLiquidityProvisionAndCreateOrders(t, ctx, party1, commitment, idgen, partyOneOrders)
 
 	cLiq1, t1 := tng.engine.GetCurrentLiquidityScores(bestBid, bestAsk, minLpPrice, maxLpPrice)
 	require.Len(t, cLiq1, 1)
-	fmt.Println(t1)
 	require.True(t, t1.GreaterThan(num.DecimalZero()))
 
 	tng.engine.UpdateAverageLiquidityScores(bestBid, bestAsk, minLpPrice, maxLpPrice)
@@ -101,7 +106,7 @@ func TestLiquidityScoresMechanics(t *testing.T) {
 		{Side: types.SideSell, Price: num.NewUint(107), Size: 14019},
 	}
 
-	tng.submitLiquidityProvisionAndCreateOrders(t, ctx, party2, 3*commitment, idgen, partyTwoOrders, 100)
+	tng.submitLiquidityProvisionAndCreateOrders(t, ctx, party2, 3*commitment, idgen, partyTwoOrders)
 
 	cLiq2, t2 := tng.engine.GetCurrentLiquidityScores(bestBid, bestAsk, minLpPrice, maxLpPrice)
 	require.Len(t, cLiq2, 2)
@@ -127,7 +132,7 @@ func TestLiquidityScoresMechanics(t *testing.T) {
 		{Side: types.SideSell, Price: num.NewUint(111), Size: 4505},
 	}
 
-	tng.submitLiquidityProvisionAndCreateOrders(t, ctx, party3, commitment, idgen, partyThreeOrders, 100)
+	tng.submitLiquidityProvisionAndCreateOrders(t, ctx, party3, commitment, idgen, partyThreeOrders)
 
 	cLiq3, t3 := tng.engine.GetCurrentLiquidityScores(bestBid, bestAsk, minLpPrice, maxLpPrice)
 	require.Len(t, cLiq3, 3)
@@ -142,8 +147,9 @@ func TestLiquidityScoresMechanics(t *testing.T) {
 	// now add 1 LP, remove 1 LP and change
 	//    remove party3
 	require.NoError(t, tng.engine.CancelLiquidityProvision(ctx, party3))
+
 	//    add same submission as party3, but by party4
-	tng.submitLiquidityProvisionAndCreateOrders(t, ctx, party4, commitment, idgen, partyThreeOrders, 100)
+	tng.submitLiquidityProvisionAndCreateOrders(t, ctx, party4, commitment, idgen, partyThreeOrders)
 
 	cLiq4, t4 := tng.engine.GetCurrentLiquidityScores(bestBid, bestAsk, minLpPrice, maxLpPrice)
 	require.Len(t, cLiq4, 3)
@@ -171,7 +177,6 @@ func (tng *testEngine) submitLiquidityProvisionAndCreateOrders(
 	commitment int,
 	idgen *idgeneration.IDGenerator,
 	orders []*types.Order,
-	maxTimes int,
 ) {
 	t.Helper()
 
@@ -181,9 +186,13 @@ func (tng *testEngine) submitLiquidityProvisionAndCreateOrders(
 		Fee:              num.DecimalFromFloat(0.5),
 	}
 
-	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgeneration.New(crypto.RandomHash())),
-	)
+	_, err := tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgeneration.New(crypto.RandomHash()))
+	require.NoError(t, err)
+
+	zero := num.UintOne()
+	now := tng.tsvc.GetTimeNow()
+	tng.engine.ResetSLAEpoch(now, zero, zero, num.DecimalZero())
+	tng.engine.ApplyPendingProvisions(ctx, now)
 
 	for _, o := range orders {
 		o.ID = idgen.NextID()
@@ -195,7 +204,7 @@ func (tng *testEngine) submitLiquidityProvisionAndCreateOrders(
 	}
 
 	require.Equal(t, types.LiquidityProvisionStatusActive, tng.engine.LiquidityProvisionByPartyID(party).Status)
-	tng.orderbook.EXPECT().GetOrdersPerParty(party).Return(orders).MaxTimes(maxTimes)
+	tng.orderbook.EXPECT().GetOrdersPerParty(party).Return(orders).AnyTimes()
 }
 
 func lScoresSumTo1(t *testing.T, lScores map[string]num.Decimal) {

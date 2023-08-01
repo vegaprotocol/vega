@@ -19,10 +19,11 @@ import (
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/broker"
+	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/governance"
-	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -43,6 +44,7 @@ var (
 	ErrMarketBatchInstructionTooBig           = func(got, expected uint64) error {
 		return fmt.Errorf("market batch instructions too big, got(%d), expected(%d)", got, expected)
 	}
+	ErrParentMarketAlreadySucceeded = errors.New("parent market already was already succeeded")
 )
 
 type TimeService interface {
@@ -76,17 +78,23 @@ type ExecutionEngine interface {
 	SubmitStopOrders(ctx context.Context, stopOrdersSubmission *types.StopOrdersSubmission, party string, idgen common.IDGenerator, stopOrderID1, stopOrderID2 *string) (*types.OrderConfirmation, error)
 	CancelStopOrders(ctx context.Context, stopOrdersCancellation *types.StopOrdersCancellation, party string, idgen common.IDGenerator) error
 
-	// market stuff
+	// Future stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string, oos time.Time) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 	RejectMarket(ctx context.Context, marketid string) error
 	StartOpeningAuction(ctx context.Context, marketid string) error
 	SucceedMarket(ctx context.Context, successor, parent string) error
 
+	// Spot stuff
+	SubmitSpotMarket(ctx context.Context, marketConfig *types.Market, proposer string, oos time.Time) error
+	UpdateSpotMarket(ctx context.Context, marketConfig *types.Market) error
+
 	// LP stuff
 	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, deterministicID string) error
 	CancelLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionCancellation, party string) error
 	AmendLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionAmendment, party string, deterministicID string) error
+	VerifyUpdateMarketState(changes *types.MarketStateUpdateConfiguration) error
+	UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error
 	Hash() []byte
 
 	// End of block
@@ -216,26 +224,34 @@ type NetworkParameters interface {
 	Update(ctx context.Context, key, value string) error
 	DispatchChanges(ctx context.Context)
 	IsUpdateAllowed(key string) error
+	GetInt(key string) (int64, error)
 }
 
 type Oracle struct {
-	Engine   OraclesEngine
-	Adaptors OracleAdaptors
+	Engine                  OraclesEngine
+	Adaptors                OracleAdaptors
+	EthereumOraclesVerifier EthereumOracleVerifier
 }
 
 type OraclesEngine interface {
-	BroadcastData(context.Context, oracles.OracleData) error
-	ListensToSigners(oracles.OracleData) bool
-	HasMatch(data oracles.OracleData) (bool, error)
+	BroadcastData(context.Context, dscommon.Data) error
+	ListensToSigners(dscommon.Data) bool
+	HasMatch(data dscommon.Data) (bool, error)
 }
 
 type OracleAdaptors interface {
-	Normalise(crypto.PublicKey, commandspb.OracleDataSubmission) (*oracles.OracleData, error)
+	Normalise(crypto.PublicKey, commandspb.OracleDataSubmission) (*dscommon.Data, error)
+}
+
+type EthereumOracleVerifier interface {
+	ProcessEthereumContractCallResult(callEvent ethcall.ContractCallEvent) error
 }
 
 type Limits interface {
 	CanProposeMarket() bool
 	CanProposeAsset() bool
+	CanProposeSpotMarket() bool
+	CanProposePerpsMarket() bool
 	CanTrade() bool
 }
 

@@ -16,18 +16,19 @@ import (
 	"context"
 	"testing"
 
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/types"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestOracleSpecDeepClone(t *testing.T) {
 	ctx := context.Background()
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("PubKey1", types.DataSignerTypePubKey),
-		types.CreateSignerFromString("PubKey1", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("PubKey1", dstypes.SignerTypePubKey),
+		dstypes.CreateSignerFromString("PubKey1", dstypes.SignerTypePubKey),
 	}
 
 	os := vegapb.OracleSpec{
@@ -41,7 +42,7 @@ func TestOracleSpecDeepClone(t *testing.T) {
 						External: &vegapb.DataSourceDefinitionExternal{
 							SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
 								Oracle: &vegapb.DataSourceSpecConfiguration{
-									Signers: types.SignersIntoProto(pubKeys),
+									Signers: dstypes.SignersIntoProto(pubKeys),
 									Filters: []*datapb.Filter{
 										{
 											Key: &datapb.PropertyKey{
@@ -66,12 +67,12 @@ func TestOracleSpecDeepClone(t *testing.T) {
 		},
 	}
 
-	osEvent := events.NewOracleSpecEvent(ctx, os)
-	os2 := osEvent.OracleSpec()
+	osEvent := events.NewOracleSpecEvent(ctx, &os)
+	os2 := proto.Clone(osEvent.OracleSpec()).(*vegapb.OracleSpec)
 
 	// Change the original values
-	pk1 := types.CreateSignerFromString("Changed1", types.DataSignerTypePubKey)
-	pk2 := types.CreateSignerFromString("Changed2", types.DataSignerTypePubKey)
+	pk1 := dstypes.CreateSignerFromString("Changed1", dstypes.SignerTypePubKey)
+	pk2 := dstypes.CreateSignerFromString("Changed2", dstypes.SignerTypePubKey)
 
 	os.ExternalDataSourceSpec.Spec.Id = "Changed"
 	os.ExternalDataSourceSpec.Spec.CreatedAt = 999
@@ -98,15 +99,17 @@ func TestOracleSpecDeepClone(t *testing.T) {
 	}
 
 	os.ExternalDataSourceSpec.Spec.Data.SetOracleConfig(
-		&vegapb.DataSourceSpecConfiguration{
-			Signers: signers,
-			Filters: filters,
+		&vegapb.DataSourceDefinitionExternal_Oracle{
+			Oracle: &vegapb.DataSourceSpecConfiguration{
+				Signers: signers,
+				Filters: filters,
+			},
 		},
 	)
 
 	// Check things have changed
 	os2DataSourceSpec := os2.ExternalDataSourceSpec.Spec
-	osDataSourceSpec := *os.ExternalDataSourceSpec.Spec
+	osDataSourceSpec := os.ExternalDataSourceSpec.Spec
 	assert.NotEqual(t, osDataSourceSpec.Id, os2DataSourceSpec.Id)
 	assert.NotEqual(t, osDataSourceSpec.CreatedAt, os2DataSourceSpec.CreatedAt)
 	assert.NotEqual(t, osDataSourceSpec.UpdatedAt, os2DataSourceSpec.UpdatedAt)

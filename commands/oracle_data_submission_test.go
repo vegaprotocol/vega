@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -74,8 +75,8 @@ func testOracleDataSubmissionWithSourceSucceeds(t *testing.T) {
 func checkOracleDataSubmission(cmd *commandspb.OracleDataSubmission) commands.Errors {
 	err := commands.CheckOracleDataSubmission(cmd)
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 

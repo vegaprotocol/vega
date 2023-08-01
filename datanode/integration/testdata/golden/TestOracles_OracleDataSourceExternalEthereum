@@ -1,0 +1,125 @@
+{
+	"TestName": "TestOracles_OracleDataSourceExternalEthereum",
+    "Query": "{ oracleSpecsConnection { edges { node { dataSourceSpec { spec { id createdAt updatedAt status data { sourceType { ... on DataSourceDefinitionExternal { sourceType { ... on EthCallSpec { address method requiredConfirmations } } } } } } } } } } }",
+	"Result": {
+		"oracleSpecsConnection": {
+			"edges": [
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "2023-03-10T10:28:12.711669Z",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"address": "0xf4a2b939592564feb35ab10a8e04f6f2fe0943579fb3c9c33505298978b74893"
+										}
+									}
+								},
+								"id": "ae14ccd9f8df5b0eb43d43fbe6625d4020f4cc609d6ee1235db48e94fa789e85",
+								"status": "STATUS_ACTIVE",
+								"updatedAt": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "2023-03-10T10:23:18.09062Z",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"address": "0xf4a2b939592564feb35ab10a8e04f6f2fe0943579fb3c9c33505298978b74893"
+										}
+									}
+								},
+								"id": "a59ef4c8e651c5aebc81cb82c665b94d47735da1d2aff8868a79f1e25b354d6d",
+								"status": "STATUS_ACTIVE",
+								"updatedAt": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "2023-03-10T10:24:05.588573Z",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"address": "0xf4a2b939592564feb35ab10a8e04f6f2fe0943579fb3c9c33505298978b74893"
+										}
+									}
+								},
+								"id": "36c0d99cee5d8c2b974995818e4bcb095bfa38558c5485b935dc7781ed954ce6",
+								"status": "STATUS_DEACTIVATED",
+								"updatedAt": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "2023-03-10T10:28:12.711669Z",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"address": "0xf4a2b939592564feb35ab10a8e04f6f2fe0943579fb3c9c33505298978b74893"
+										}
+									}
+								},
+								"id": "31020fd12ab5ea856a1b9e9d464c98205f7d9ac0d8b287c7b5ed5bdfbceb30cf",
+								"status": "STATUS_ACTIVE",
+								"updatedAt": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "2023-03-10T10:24:05.588573Z",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"address": "0xf4a2b939592564feb35ab10a8e04f6f2fe0943579fb3c9c33505298978b74893"
+										}
+									}
+								},
+								"id": "1937e8eceed19c8b5cdb92fe87cb062f2fd80b230d7cc441312d1b1af318481d",
+								"status": "STATUS_DEACTIVATED",
+								"updatedAt": null
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"dataSourceSpec": {
+							"spec": {
+								"createdAt": "2023-03-10T10:23:18.09062Z",
+								"data": {
+									"sourceType": {
+										"sourceType": {
+											"address": "0xf4a2b939592564feb35ab10a8e04f6f2fe0943579fb3c9c33505298978b74893"
+										}
+									}
+								},
+								"id": "1152f1fad600a97069e35d24bcd94e4883ea6d48e96573707766333b01f08f14",
+								"status": "STATUS_ACTIVE",
+								"updatedAt": null
+							}
+						}
+					}
+				}
+			]
+		}
+	},
+	"Duration": 4581455
+}

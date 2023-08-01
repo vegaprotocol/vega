@@ -74,6 +74,23 @@ func (p *Pool) ToProto() *v1.StopOrders {
 	return out
 }
 
+func (p *Pool) GetStopOrderCount() uint64 {
+	return uint64(len(p.orderToParty))
+}
+
+func (p *Pool) Settled() []*types.StopOrder {
+	out := []*types.StopOrder{}
+	for _, v := range p.orders {
+		for _, so := range v {
+			so.Status = types.StopOrderStatusStopped
+			out = append(out, so)
+		}
+	}
+
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out
+}
+
 func (p *Pool) PriceUpdated(newPrice *num.Uint) (triggered, cancelled []*types.StopOrder) {
 	// first update prices and get triggered orders
 	ids := append(
@@ -181,6 +198,11 @@ func (p *Pool) removeWithOCO(
 ) ([]*types.StopOrder, error) {
 	partyOrders, ok := p.orders[partyID]
 	if !ok {
+		// return an error only when trying to find a specific stop order
+		if len(orderID) > 0 {
+			return nil, ErrStopOrderNotFound
+		}
+
 		// this party have no stop orders, move on
 		return nil, nil
 	}

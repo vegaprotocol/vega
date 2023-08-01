@@ -12,6 +12,26 @@ import (
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
+var (
+	validSources = map[types.AccountType]struct{}{
+		types.AccountTypeInsurance:       {},
+		types.AccountTypeGlobalInsurance: {},
+		types.AccountTypeGlobalReward:    {},
+		types.AccountTypeNetworkTreasury: {},
+	}
+	validDestinations = map[types.AccountType]struct{}{
+		types.AccountTypeInsurance:              {},
+		types.AccountTypeGlobalInsurance:        {},
+		types.AccountTypeGlobalReward:           {},
+		types.AccountTypeNetworkTreasury:        {},
+		types.AccountTypeGeneral:                {},
+		types.AccountTypeMakerPaidFeeReward:     {},
+		types.AccountTypeMakerReceivedFeeReward: {},
+		types.AccountTypeMarketProposerReward:   {},
+		types.AccountTypeLPFeeReward:            {},
+	}
+)
+
 func (e *Engine) distributeScheduledGovernanceTransfers(ctx context.Context) {
 	timepoints := []int64{}
 	now := e.timeService.GetTimeNow()
@@ -44,11 +64,14 @@ func (e *Engine) distributeRecurringGovernanceTransfers(ctx context.Context) {
 	)
 
 	for _, gTransfer := range e.recurringGovernanceTransfers {
+		e.log.Info("distributeRecurringGovernanceTransfers", logging.Uint64("epoch", e.currentEpoch), logging.String("transfer", gTransfer.IntoProto().String()))
 		if gTransfer.Config.RecurringTransferConfig.StartEpoch > e.currentEpoch {
 			continue
 		}
 
 		amount, err := e.processGovernanceTransfer(ctx, gTransfer)
+		e.log.Info("processed transfer", logging.String("amount", amount.String()))
+
 		if err != nil {
 			e.log.Error("error calculating transfer amount for governance transfer", logging.Error(err))
 			gTransfer.Status = types.TransferStatusStopped
@@ -61,6 +84,7 @@ func (e *Engine) distributeRecurringGovernanceTransfers(ctx context.Context) {
 			gTransfer.Status = types.TransferStatusDone
 			transfersDone = append(transfersDone, events.NewGovTransferFundsEvent(ctx, gTransfer, amount))
 			doneIDs = append(doneIDs, gTransfer.ID)
+			e.log.Info("recurrent transfer is done", logging.String("transfer ID", gTransfer.ID))
 			continue
 		}
 		e.broker.Send(events.NewGovTransferFundsEvent(ctx, gTransfer, amount))
@@ -70,6 +94,10 @@ func (e *Engine) distributeRecurringGovernanceTransfers(ctx context.Context) {
 		for _, id := range doneIDs {
 			e.deleteGovTransfer(id)
 		}
+		for _, d := range transfersDone {
+			e.log.Info("transfersDone", logging.String("event", d.StreamMessage().String()))
+		}
+
 		e.broker.SendBatch(transfersDone)
 	}
 }
@@ -158,13 +186,46 @@ func (e *Engine) processGovernanceTransfer(
 		to = "*"
 	}
 
+	if gTransfer.Config.RecurringTransferConfig != nil && gTransfer.Config.RecurringTransferConfig.DispatchStrategy != nil {
+		var resps []*types.LedgerMovement
+		marketScores := e.getMarketScores(gTransfer.Config.RecurringTransferConfig.DispatchStrategy, gTransfer.Config.Asset, from)
+		for _, fms := range marketScores {
+			amt, _ := num.UintFromDecimal(transferAmount.ToDecimal().Mul(fms.Score))
+			if amt.IsZero() {
+				continue
+			}
+
+			fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, fms.Market, transferAmount)
+			transfers := []*types.Transfer{fromTransfer, toTransfer}
+			accountTypes := []types.AccountType{gTransfer.Config.SourceType, gTransfer.Config.DestinationType}
+			references := []string{gTransfer.Reference, gTransfer.Reference}
+			tresps, err := e.col.GovernanceTransferFunds(ctx, transfers, accountTypes, references)
+			if err != nil {
+				e.log.Error("error transferring governance transfer funds", logging.Error(err))
+				return num.UintZero(), err
+			}
+
+			if gTransfer.Config.RecurringTransferConfig.DispatchStrategy.Metric == vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE && fms.Score.IsPositive() {
+				e.marketActivityTracker.MarkPaidProposer(fms.Market, gTransfer.Config.Asset, gTransfer.Config.RecurringTransferConfig.DispatchStrategy.Markets, from)
+			}
+			resps = append(resps, tresps...)
+		}
+		e.broker.Send(events.NewLedgerMovements(ctx, resps))
+		return transferAmount, nil
+	}
+
 	fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, toMarket, transferAmount)
 	transfers := []*types.Transfer{fromTransfer, toTransfer}
 	accountTypes := []types.AccountType{gTransfer.Config.SourceType, gTransfer.Config.DestinationType}
 	references := []string{gTransfer.Reference, gTransfer.Reference}
 	tresps, err := e.col.GovernanceTransferFunds(ctx, transfers, accountTypes, references)
 	if err != nil {
+		e.log.Error("error transferring governance transfer funds", logging.Error(err))
 		return num.UintZero(), err
+	}
+
+	for _, lm := range tresps {
+		e.log.Info("processGovernanceTransfer", logging.String("ledger-movement", lm.IntoProto().String()))
 	}
 
 	e.broker.Send(events.NewLedgerMovements(ctx, tresps))
@@ -215,21 +276,25 @@ func (e *Engine) VerifyGovernanceTransfer(transfer *types.NewTransferConfigurati
 	}
 
 	// check source type is valid
-	if transfer.SourceType != types.AccountTypeInsurance &&
-		transfer.SourceType != types.AccountTypeGlobalReward {
+	if _, ok := validSources[transfer.SourceType]; !ok {
 		return errors.New("invalid source type for governance transfer")
 	}
 
 	// check destination type is valid
-	if transfer.DestinationType != types.AccountTypeGeneral &&
-		transfer.DestinationType != types.AccountTypeGlobalReward &&
-		transfer.DestinationType != types.AccountTypeInsurance {
+	if _, ok := validDestinations[transfer.DestinationType]; !ok {
 		return errors.New("invalid destination for governance transfer")
 	}
 
 	// check asset is not empty
 	if len(transfer.Asset) == 0 {
 		return errors.New("missing asset for governance transfer")
+	}
+
+	if transfer.RecurringTransferConfig != nil && transfer.RecurringTransferConfig.DispatchStrategy != nil {
+		if len(transfer.RecurringTransferConfig.DispatchStrategy.AssetForMetric) > 0 {
+			_, err := e.assets.Get(transfer.RecurringTransferConfig.DispatchStrategy.AssetForMetric)
+			return fmt.Errorf("could not transfer funds, invalid asset for metric: %w", err)
+		}
 	}
 
 	// check source account exists

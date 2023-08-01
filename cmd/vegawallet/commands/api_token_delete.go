@@ -10,7 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	vgterm "code.vegaprotocol.io/vega/libs/term"
 	"code.vegaprotocol.io/vega/paths"
-	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
 	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/longliving/v1"
 	"github.com/spf13/cobra"
@@ -38,8 +37,8 @@ func NewCmdDeleteAPIToken(w io.Writer, rf *RootFlags) *cobra.Command {
 
 		tokenStore, err := tokenStoreV1.InitialiseStore(vegaPaths, f.passphrase)
 		if err != nil {
-			if errors.Is(err, api.ErrWrongPassphrase) {
-				return err
+			if errors.Is(err, tokenStoreV1.ErrWrongPassphrase) {
+				return fmt.Errorf("could not unlock the token store: %w", err)
 			}
 			return fmt.Errorf("couldn't load the token store: %w", err)
 		}

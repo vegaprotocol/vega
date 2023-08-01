@@ -17,8 +17,8 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/types"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type _Party struct{}
@@ -31,15 +31,15 @@ type Party struct {
 	VegaTime *time.Time // Can be NULL for built-in party 'network'
 }
 
-func PartyFromProto(pp *types.Party, txHash TxHash) Party {
+func PartyFromProto(pp *vegapb.Party, txHash TxHash) Party {
 	return Party{
 		ID:     PartyID(pp.Id),
 		TxHash: txHash,
 	}
 }
 
-func (p Party) ToProto() *types.Party {
-	return &types.Party{Id: p.ID.String()}
+func (p Party) ToProto() *vegapb.Party {
+	return &vegapb.Party{Id: p.ID.String()}
 }
 
 func (p Party) Cursor() *Cursor {

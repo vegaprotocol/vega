@@ -10,7 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	"code.vegaprotocol.io/vega/paths"
-	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
 	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/longliving/v1"
 	"github.com/spf13/cobra"
@@ -35,8 +34,8 @@ func NewCmdListAPITokens(w io.Writer, rf *RootFlags) *cobra.Command {
 
 		tokenStore, err := tokenStoreV1.InitialiseStore(vegaPaths, f.passphrase)
 		if err != nil {
-			if errors.Is(err, api.ErrWrongPassphrase) {
-				return connections.ListAPITokensResult{}, err
+			if errors.Is(err, tokenStoreV1.ErrWrongPassphrase) {
+				return connections.ListAPITokensResult{}, fmt.Errorf("could not unlock the token store: %w", err)
 			}
 			return connections.ListAPITokensResult{}, fmt.Errorf("couldn't load the token store: %w", err)
 		}

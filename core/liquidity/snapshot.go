@@ -91,7 +91,7 @@ func (e *SnapshotEngine) UpdateMarketConfig(model risk.Model, monitor PriceMonit
 }
 
 func (e *SnapshotEngine) StopSnapshots() {
-	e.log.Debug("market has been cleared, stopping snapshot production", logging.String("marketid", e.marketID))
+	e.log.Debug("market has been cleared, stopping snapshot production", logging.MarketID(e.marketID))
 	e.stopped = true
 }
 

@@ -15,6 +15,7 @@ package types
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -25,7 +26,7 @@ type ProposalTermsUpdateNetworkParameter struct {
 func (a ProposalTermsUpdateNetworkParameter) String() string {
 	return fmt.Sprintf(
 		"updateNetworkParameter(%s)",
-		reflectPointerToString(a.UpdateNetworkParameter),
+		stringer.ReflectPointerToString(a.UpdateNetworkParameter),
 	)
 }
 
@@ -84,7 +85,7 @@ func (n UpdateNetworkParameter) IntoProto() *vegapb.UpdateNetworkParameter {
 func (n UpdateNetworkParameter) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		reflectPointerToString(n.Changes),
+		stringer.ReflectPointerToString(n.Changes),
 	)
 }
 

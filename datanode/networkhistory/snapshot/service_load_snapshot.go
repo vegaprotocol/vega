@@ -122,15 +122,15 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, ch segment.
 		return LoadResult{}, fmt.Errorf("failed to validate span of history to load: %w", err)
 	}
 
-	heightToLoadFrom := int64(0)
+	loadedFromHeight := int64(0)
 	if datanodeBlockSpan.HasData {
-		heightToLoadFrom = datanodeBlockSpan.ToHeight + 1
+		loadedFromHeight = datanodeBlockSpan.ToHeight + 1
 	} else {
 		err = sqlstore.RevertToSchemaVersionZero(b.log, connConfig, sqlstore.EmbedMigrations, verbose)
 		if err != nil {
 			return LoadResult{}, fmt.Errorf("failed to revert scheam to version zero: %w", err)
 		}
-		heightToLoadFrom = ch.HeightFrom
+		loadedFromHeight = ch.HeightFrom
 	}
 
 	_, err = b.connPool.Exec(ctx, "SET TIME ZONE 0")
@@ -214,7 +214,7 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, ch segment.
 	}
 
 	return LoadResult{
-		LoadedFromHeight: heightToLoadFrom,
+		LoadedFromHeight: loadedFromHeight,
 		LoadedToHeight:   ch.HeightTo,
 		RowsLoaded:       totalRowsCopied,
 	}, nil

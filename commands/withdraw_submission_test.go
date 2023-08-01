@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -114,8 +115,8 @@ func TestWithdrawSubmission(t *testing.T) {
 func checkWithdrawSubmission(cmd *commandspb.WithdrawSubmission) commands.Errors {
 	err := commands.CheckWithdrawSubmission(cmd)
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 

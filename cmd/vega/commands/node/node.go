@@ -115,13 +115,30 @@ func (n *Command) Run(
 	// to run, most likely via configuration, so we can use legacy or current
 	var err error
 	n.protocol, err = protocol.New(
-		n.ctx, n.confWatcher, n.Log, n.cancel, n.stopBlockchain, n.nodeWallets, n.ethClient, n.ethConfirmations, n.blockchainClient, vegaPaths, n.stats)
+		n.ctx,
+		n.confWatcher,
+		n.Log,
+		n.cancel,
+		n.stopBlockchain,
+		n.nodeWallets,
+		n.ethClient,
+		n.ethConfirmations,
+		n.blockchainClient,
+		vegaPaths,
+		n.stats)
 	if err != nil {
 		return err
 	}
 
 	if err := n.startAPIs(); err != nil {
-		return err
+		return fmt.Errorf("could not start the core APIs: %w", err)
+	}
+
+	// The protocol must be started after the API, otherwise nobody is listening
+	// to the internal events emitted during that phase (like during the state
+	// restoration), which will cause issues to APIs consumer like system tests.
+	if err := n.protocol.Start(n.ctx); err != nil {
+		return fmt.Errorf("could not start the core: %w", err)
 	}
 
 	// if a chain is being replayed tendermint does this during the initial handshake with the
@@ -159,10 +176,7 @@ func (n *Command) Run(
 		return err
 	}
 
-	// cleanup
-	n.Stop()
-
-	return nil
+	return n.Stop()
 }
 
 func (n *Command) wait(errCh <-chan error) error {
@@ -428,14 +442,19 @@ func (n *Command) startBlockchainClients() error {
 		return nil
 	}
 
-	if n.conf.Blockchain.ChainProvider != blockchain.ProviderNullChain {
-		var err error
-		n.ethClient, err = ethclient.Dial(n.ctx, n.conf.Ethereum)
-		if err != nil {
-			return fmt.Errorf("could not instantiate ethereum client: %w", err)
-		}
-		n.ethConfirmations = ethclient.NewEthereumConfirmations(n.conf.Ethereum, n.ethClient, nil)
+	// We may not need ethereum client initialized when we have not
+	// provided the ethereum endpoint. We skip creating client here
+	// when RPCEnpoint is empty and the nullchain present.
+	if len(n.conf.Ethereum.RPCEndpoint) < 1 {
+		return nil
 	}
+
+	var err error
+	n.ethClient, err = ethclient.Dial(n.ctx, n.conf.Ethereum)
+	if err != nil {
+		return fmt.Errorf("could not instantiate ethereum client: %w", err)
+	}
+	n.ethConfirmations = ethclient.NewEthereumConfirmations(n.conf.Ethereum, n.ethClient, nil)
 
 	return nil
 }

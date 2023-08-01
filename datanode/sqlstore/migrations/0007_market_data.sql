@@ -1,7 +1,11 @@
 -- +goose Up
 
-ALTER TABLE market_data ADD COLUMN market_growth VARCHAR(255);
-ALTER TABLE current_market_data ADD COLUMN market_growth VARCHAR(255);
+ALTER TABLE market_data ADD COLUMN market_growth HUGEINT;
+ALTER TABLE current_market_data ADD COLUMN market_growth HUGEINT;
+UPDATE market_data SET market_growth = 0;
+UPDATE current_market_data SET market_growth = 0;
+
+
 
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION update_current_market_data()

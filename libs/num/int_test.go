@@ -192,6 +192,70 @@ func TestAdd(t *testing.T) {
 	assert.Equal(t, "-5", i.String())
 }
 
+func TestMul(t *testing.T) {
+	// Mul positive-positive
+	i := num.NewInt(100)
+	i.Mul(num.NewInt(100))
+	assert.Equal(t, "10000", i.String())
+
+	// Mul negative-negative
+	i = num.NewInt(-100)
+	i.Mul(num.NewInt(-100))
+	assert.Equal(t, "10000", i.String())
+
+	// Mul positive-negative
+	i = num.NewInt(100)
+	i.Mul(num.NewInt(-100))
+	assert.Equal(t, "-10000", i.String())
+
+	// Mul negative-positive
+	i = num.NewInt(-100)
+	i.Mul(num.NewInt(100))
+	assert.Equal(t, "-10000", i.String())
+
+	// Mul zero-positive
+	i = num.NewInt(0)
+	i.Mul(num.NewInt(100))
+	assert.Equal(t, "0", i.String())
+
+	// Mul zero-negative
+	i = num.NewInt(0)
+	i.Mul(num.NewInt(-100))
+	assert.Equal(t, "0", i.String())
+}
+
+func TestDiv(t *testing.T) {
+	// Div positive-positive
+	i := num.NewInt(1000)
+	i.Div(num.NewInt(100))
+	assert.Equal(t, "10", i.String())
+
+	// Div negative-negative
+	i = num.NewInt(-1000)
+	i.Div(num.NewInt(-100))
+	assert.Equal(t, "10", i.String())
+
+	// Div positive-negative
+	i = num.NewInt(1000)
+	i.Div(num.NewInt(-100))
+	assert.Equal(t, "-10", i.String())
+
+	// Div negative-positive
+	i = num.NewInt(-1000)
+	i.Div(num.NewInt(100))
+	assert.Equal(t, "-10", i.String())
+
+	// Div zero-positive
+	i = num.NewInt(0)
+	i.Div(num.NewInt(100))
+	assert.Equal(t, "0", i.String())
+
+	// Div zero-negative
+	i = num.NewInt(0)
+	i.Div(num.NewInt(-100))
+	assert.Equal(t, "0", i.String())
+}
+
 func TestAddSum(t *testing.T) {
 	num1 := num.NewInt(10)
 	num2 := num.NewInt(20)
@@ -230,7 +294,6 @@ func testAddLoop(t *testing.T) {
 		bigNum1.Add(bigNum2)
 
 		assert.Equal(t, num1+num2, bigNum1.Int64())
-		// fmt.Println(num1, num2, num1-num2, bigNum1.String())
 	}
 }
 
@@ -245,7 +308,6 @@ func testSubLoop(t *testing.T) {
 		bigNum1.Sub(bigNum2)
 
 		assert.Equal(t, num1-num2, bigNum1.Int64())
-		// fmt.Println(num1, num2, num1-num2, bigNum1.String())
 	}
 }
 

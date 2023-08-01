@@ -15,8 +15,8 @@ package types_test
 import (
 	"testing"
 
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/types"
-	proto "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/require"
@@ -36,20 +36,20 @@ var testFilter1 = &datapb.Filter{
 }
 
 func TestMarketFromIntoProto(t *testing.T) {
-	pk := types.CreateSignerFromString("pubkey", types.DataSignerTypePubKey)
+	pk := dstypes.CreateSignerFromString("pubkey", dstypes.SignerTypePubKey)
 
-	pMarket := &proto.Market{
+	pMarket := &vegapb.Market{
 		Id: "foo",
-		TradableInstrument: &proto.TradableInstrument{
-			Instrument: &proto.Instrument{
+		TradableInstrument: &vegapb.TradableInstrument{
+			Instrument: &vegapb.Instrument{
 				Id:   "bar",
 				Code: "FB",
 				Name: "FooBar",
-				Metadata: &proto.InstrumentMetadata{
+				Metadata: &vegapb.InstrumentMetadata{
 					Tags: []string{"test", "foo", "bar", "foobar"},
 				},
-				Product: &proto.Instrument_Future{
-					Future: &proto.Future{
+				Product: &vegapb.Instrument_Future{
+					Future: &vegapb.Future{
 						SettlementAsset: "GBP",
 						QuoteName:       "USD",
 						DataSourceSpecForSettlementData: &vegapb.DataSourceSpec{
@@ -57,11 +57,13 @@ func TestMarketFromIntoProto(t *testing.T) {
 							CreatedAt: 0,
 							UpdatedAt: 1,
 							Data: vegapb.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+								vegapb.DataSourceContentTypeOracle,
 							).SetOracleConfig(
-								&vegapb.DataSourceSpecConfiguration{
-									Signers: []*datapb.Signer{pk.IntoProto()},
-									Filters: []*datapb.Filter{testFilter1},
+								&vegapb.DataSourceDefinitionExternal_Oracle{
+									Oracle: &vegapb.DataSourceSpecConfiguration{
+										Signers: []*datapb.Signer{pk.IntoProto()},
+										Filters: []*datapb.Filter{testFilter1},
+									},
 								},
 							),
 							Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
@@ -71,33 +73,35 @@ func TestMarketFromIntoProto(t *testing.T) {
 							CreatedAt: 0,
 							UpdatedAt: 1,
 							Data: vegapb.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+								vegapb.DataSourceContentTypeOracle,
 							).SetOracleConfig(
-								&vegapb.DataSourceSpecConfiguration{
-									Signers: []*datapb.Signer{pk.IntoProto()},
-									Filters: []*datapb.Filter{},
+								&vegapb.DataSourceDefinitionExternal_Oracle{
+									Oracle: &vegapb.DataSourceSpecConfiguration{
+										Signers: []*datapb.Signer{pk.IntoProto()},
+										Filters: []*datapb.Filter{},
+									},
 								},
 							),
 							Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
 						},
-						DataSourceSpecBinding: &proto.DataSourceSpecToFutureBinding{
+						DataSourceSpecBinding: &vegapb.DataSourceSpecToFutureBinding{
 							SettlementDataProperty: "something",
 						},
 					},
 				},
 			},
-			MarginCalculator: &proto.MarginCalculator{
-				ScalingFactors: &proto.ScalingFactors{
+			MarginCalculator: &vegapb.MarginCalculator{
+				ScalingFactors: &vegapb.ScalingFactors{
 					SearchLevel:       0.02,
 					InitialMargin:     0.05,
 					CollateralRelease: 0.1,
 				},
 			},
-			RiskModel: &proto.TradableInstrument_LogNormalRiskModel{
-				LogNormalRiskModel: &proto.LogNormalRiskModel{
+			RiskModel: &vegapb.TradableInstrument_LogNormalRiskModel{
+				LogNormalRiskModel: &vegapb.LogNormalRiskModel{
 					RiskAversionParameter: 0.01,
 					Tau:                   0.2,
-					Params: &proto.LogNormalModelParams{
+					Params: &vegapb.LogNormalModelParams{
 						Mu:    0.12323,
 						R:     0.125,
 						Sigma: 0.3,
@@ -106,20 +110,20 @@ func TestMarketFromIntoProto(t *testing.T) {
 			},
 		},
 		DecimalPlaces: 3,
-		Fees: &proto.Fees{
-			Factors: &proto.FeeFactors{
+		Fees: &vegapb.Fees{
+			Factors: &vegapb.FeeFactors{
 				MakerFee:          "0.002",
 				InfrastructureFee: "0.001",
 				LiquidityFee:      "0.003",
 			},
 		},
-		OpeningAuction: &proto.AuctionDuration{
+		OpeningAuction: &vegapb.AuctionDuration{
 			Duration: 1,
 			Volume:   0,
 		},
-		PriceMonitoringSettings: &proto.PriceMonitoringSettings{
-			Parameters: &proto.PriceMonitoringParameters{
-				Triggers: []*proto.PriceMonitoringTrigger{
+		PriceMonitoringSettings: &vegapb.PriceMonitoringSettings{
+			Parameters: &vegapb.PriceMonitoringParameters{
+				Triggers: []*vegapb.PriceMonitoringTrigger{
 					{
 						Horizon:          5,
 						Probability:      "0.99",
@@ -133,17 +137,17 @@ func TestMarketFromIntoProto(t *testing.T) {
 				},
 			},
 		},
-		LiquidityMonitoringParameters: &proto.LiquidityMonitoringParameters{
-			TargetStakeParameters: &proto.TargetStakeParameters{
+		LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
+			TargetStakeParameters: &vegapb.TargetStakeParameters{
 				TimeWindow:    20,
 				ScalingFactor: 0.7,
 			},
 			TriggeringRatio:  "0.8",
 			AuctionExtension: 5,
 		},
-		TradingMode: proto.Market_TRADING_MODE_CONTINUOUS,
-		State:       proto.Market_STATE_ACTIVE,
-		MarketTimestamps: &proto.MarketTimestamps{
+		TradingMode: vegapb.Market_TRADING_MODE_CONTINUOUS,
+		State:       vegapb.Market_STATE_ACTIVE,
+		MarketTimestamps: &vegapb.MarketTimestamps{
 			Proposed: 0,
 			Pending:  1,
 			Open:     2,

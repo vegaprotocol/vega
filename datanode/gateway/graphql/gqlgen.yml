@@ -271,6 +271,12 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.UpdateMarket
   UpdateNetworkParameter:
     model: code.vegaprotocol.io/vega/protos/vega.UpdateNetworkParameter
+  CancelTransfer:
+    model: code.vegaprotocol.io/vega/protos/vega.CancelTransfer
+  NewTransfer:
+    model: code.vegaprotocol.io/vega/protos/vega.NewTransfer
+  UpdateMarketState:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdateMarketState
   InstrumentConfiguration:
     model: code.vegaprotocol.io/vega/protos/vega.InstrumentConfiguration
   SuccessorConfiguration:
@@ -303,6 +309,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceDefinitionInternal
   DataSourceSpecConfiguration:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecConfiguration
+  EthCallSpec:
+    model: code.vegaprotocol.io/vega/protos/vega.EthCallSpec
   DataSourceSpecConfigurationTime:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecConfigurationTime
   OracleSpec:
@@ -372,6 +380,10 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.OneOffTransfer
   RecurringTransfer:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.RecurringTransfer
+  OneOffGovernanceTransfer:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.OneOffGovernanceTransfer
+  RecurringGovernanceTransfer:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.RecurringGovernanceTransfer
   Statistics:
     model: code.vegaprotocol.io/vega/protos/vega/api/v1.Statistics
   AccountType:
@@ -475,6 +487,12 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProvisionsEdge
   LiquidityProvisionsConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProvisionsConnection
+  LiquidityProvider:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProvider
+  LiquidityProviderEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProviderEdge
+  LiquidityProviderConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProviderConnection
   TransferEdge:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TransferEdge
   TransferConnection:

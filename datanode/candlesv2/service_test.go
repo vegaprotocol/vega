@@ -35,7 +35,7 @@ func TestCandleSubscribe(t *testing.T) {
 		gomock.Any(),
 		gomock.Any()).Return(true, nil)
 
-	expectedCandle := createCandle(time.Now(), time.Now(), 1, 2, 2, 1, 10)
+	expectedCandle := createCandle(time.Now(), time.Now(), 1, 2, 2, 1, 10, 100)
 
 	store.EXPECT().GetCandleDataForTimeSpan(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return([]entities.Candle{expectedCandle}, entities.PageInfo{}, nil).AnyTimes()
@@ -73,7 +73,7 @@ func TestCandleUnsubscribe(t *testing.T) {
 		t.Fatalf("failed to Subscribe: %s", err)
 	}
 
-	expectedCandle := createCandle(time.Now(), time.Now(), 1, 2, 2, 1, 10)
+	expectedCandle := createCandle(time.Now(), time.Now(), 1, 2, 2, 1, 10, 100)
 	testStore.candles <- []entities.Candle{expectedCandle}
 
 	candle1 := <-out1

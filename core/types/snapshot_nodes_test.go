@@ -13,20 +13,22 @@
 package types_test
 
 import (
+	"sort"
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/snapshot"
+	"code.vegaprotocol.io/vega/core/datasource"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
+	cometbftdb "github.com/cometbft/cometbft-db"
 	"github.com/cosmos/iavl"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
-	db "github.com/tendermint/tm-db"
 )
 
 func getDummyData() *types.Chunk {
@@ -397,29 +399,29 @@ func getDummyData() *types.Chunk {
 										Future: &types.Future{
 											SettlementAsset: "AST",
 											QuoteName:       "AST",
-											DataSourceSpecForSettlementData: &types.DataSourceSpec{
+											DataSourceSpecForSettlementData: &datasource.Spec{
 												ID: "o1",
-												Data: types.NewDataSourceDefinition(
-													vegapb.DataSourceDefinitionTypeExt,
+												Data: datasource.NewDefinition(
+													datasource.ContentTypeOracle,
 												).SetOracleConfig(
-													&types.DataSourceSpecConfiguration{
-														Signers: []*types.Signer{},
-														Filters: []*types.DataSourceSpecFilter{},
+													&signedoracle.SpecConfiguration{
+														Signers: []*dstypes.Signer{},
+														Filters: []*dstypes.SpecFilter{},
 													},
 												),
 											},
-											DataSourceSpecForTradingTermination: &types.DataSourceSpec{
+											DataSourceSpecForTradingTermination: &datasource.Spec{
 												ID: "os1",
-												Data: types.NewDataSourceDefinition(
-													vegapb.DataSourceDefinitionTypeExt,
+												Data: datasource.NewDefinition(
+													datasource.ContentTypeOracle,
 												).SetOracleConfig(
-													&types.DataSourceSpecConfiguration{
-														Signers: []*types.Signer{},
-														Filters: []*types.DataSourceSpecFilter{},
+													&signedoracle.SpecConfiguration{
+														Signers: []*dstypes.Signer{},
+														Filters: []*dstypes.SpecFilter{},
 													},
 												),
 											},
-											DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{},
+											DataSourceSpecBinding: &datasource.SpecBindingForFuture{},
 										},
 									},
 								},
@@ -739,7 +741,7 @@ func TestSnapFromTree(t *testing.T) {
 	data := getDummyData()
 	// load the tree up with the data
 	for _, n := range data.Data {
-		k := n.GetTreeKey()
+		k := n.TreeKey()
 		serialised, err := proto.Marshal(n.IntoProto())
 		require.NoError(t, err)
 		_, _ = tree.Set([]byte(k), serialised)
@@ -760,7 +762,7 @@ func TestListSnapFromTree(t *testing.T) {
 	tree := createTree(t)
 	data := getDummyData()
 	for _, n := range data.Data {
-		k := n.GetTreeKey()
+		k := n.TreeKey()
 		serialised, err := proto.Marshal(n.IntoProto())
 		require.NoError(t, err)
 		_, _ = tree.Set([]byte(k), serialised)
@@ -770,7 +772,7 @@ func TestListSnapFromTree(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, hash) // @TODO see if storing it again produces the same hash
 
-	snapshotsHeights, invalidVersions, err := snapshot.SnapshotsHeightsFromTree(tree)
+	snapshotsHeights, invalidVersions, err := snapshotsHeightsFromTree(tree)
 
 	require.NoError(t, err)
 	require.Empty(t, invalidVersions)
@@ -785,8 +787,55 @@ func TestListSnapFromTree(t *testing.T) {
 
 func createTree(t *testing.T) *iavl.MutableTree {
 	t.Helper()
-	db := db.NewMemDB()
+	db := cometbftdb.NewMemDB()
 	tree, err := iavl.NewMutableTreeWithOpts(db, 0, nil, false)
 	require.NoError(t, err)
 	return tree
+}
+
+type data struct {
+	Version int64  `json:"version"`
+	Hash    []byte `json:"hash"`
+	Height  uint64 `json:"height"`
+	Size    int64  `json:"size"`
+}
+
+func snapshotsHeightsFromTree(tree *iavl.MutableTree) ([]data, []data, error) {
+	trees := make([]data, 0, 4)
+	invalidVersions := make([]data, 0, 4)
+	versions := tree.AvailableVersions()
+
+	for _, version := range versions {
+		v, err := tree.LazyLoadVersion(int64(version))
+		if err != nil {
+			return nil, nil, err
+		}
+
+		app, err := types.AppStateFromTree(tree.ImmutableTree)
+		if err != nil {
+			hash, _ := tree.Hash()
+			invalidVersions = append(invalidVersions, data{
+				Version: v,
+				Hash:    hash,
+			})
+			continue
+		}
+
+		snap, err := types.SnapshotFromTree(tree.ImmutableTree)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		trees = append(trees, data{
+			Version: v,
+			Height:  app.AppState.Height,
+			Hash:    snap.Hash,
+			Size:    tree.Size(),
+		})
+	}
+	sort.SliceStable(trees, func(i, j int) bool {
+		return trees[i].Height > trees[j].Height
+	})
+
+	return trees, invalidVersions, nil
 }

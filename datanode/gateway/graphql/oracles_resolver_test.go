@@ -62,7 +62,8 @@ func Test_oracleSpecResolver_DataSourceSpec(t *testing.T) {
 			},
 			wantJsn: `{"spec":{"id":"","createdAt":0,"updatedAt":null,"data":{"SourceType":{"External":{"SourceType":{"Oracle":{"signers":[{"Signer":{"PubKey":{"key":"key"}}},{"Signer":{"EthAddress":{"address":"address"}}}]}}}}},"status":"STATUS_ACTIVE"}}`,
 			wantErr: assert.NoError,
-		}, {
+		},
+		{
 			name: "success: DataSourceDefinition_Internal",
 			args: args{
 				obj: &vegapb.OracleSpec{
@@ -90,6 +91,40 @@ func Test_oracleSpecResolver_DataSourceSpec(t *testing.T) {
 				},
 			},
 			wantJsn: `{"spec":{"id":"","createdAt":0,"updatedAt":null,"data":{"SourceType":{"Internal":{"SourceType":{"Time":{"conditions":[{"operator":12,"value":"blah"}]}}}}},"status":"STATUS_ACTIVE"}}`,
+			wantErr: assert.NoError,
+		},
+		{
+			name: "success: DataSourceDefinition_External",
+			args: args{
+				obj: &vegapb.OracleSpec{
+					ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
+						Spec: &vegapb.DataSourceSpec{
+							Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
+							Data: &vegapb.DataSourceDefinition{
+								SourceType: &vegapb.DataSourceDefinition_External{
+									External: &vegapb.DataSourceDefinitionExternal{
+										SourceType: &vegapb.DataSourceDefinitionExternal_EthOracle{
+											EthOracle: &vegapb.EthCallSpec{
+												Address: "test-address",
+												Method:  "stake",
+												Filters: []*v1.Filter{
+													{
+														Key: &v1.PropertyKey{
+															Name: "property-name",
+															Type: v1.PropertyKey_TYPE_BOOLEAN,
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantJsn: `{"spec":{"id":"","createdAt":0,"updatedAt":null,"data":{"SourceType":{"External":{"SourceType":{"EthOracle":{"address":"test-address","method":"stake","filters":[{"key":{"name":"property-name","type":4}}]}}}}},"status":"STATUS_ACTIVE"}}`,
 			wantErr: assert.NoError,
 		},
 	}

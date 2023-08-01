@@ -30,6 +30,10 @@ type ExternalDataSourceKind interface {
 	IsExternalDataSourceKind()
 }
 
+type GovernanceTransferKind interface {
+	IsGovernanceTransferKind()
+}
+
 type InternalDataSourceKind interface {
 	IsInternalDataSourceKind()
 }
@@ -60,6 +64,10 @@ type StopOrderTrigger interface {
 
 type TransferKind interface {
 	IsTransferKind()
+}
+
+type TriggerKind interface {
+	IsTriggerKind()
 }
 
 // One of the possible asset sources for update assets proposals
@@ -119,7 +127,8 @@ type Data struct {
 	// signers is the list of public keys/ETH addresses that signed the data
 	Signers []*Signer `json:"signers"`
 	// properties contains all the properties sent by a data source
-	Data []*v1.Property `json:"data"`
+	Data     []*v1.Property `json:"data"`
+	MetaData []*v1.Property `json:"metaData"`
 	// List of all the data specs that matched this source data.
 	// When the array is empty, it means no data spec matched this source data.
 	MatchedSpecIds []string `json:"matchedSpecIds"`
@@ -271,6 +280,19 @@ type Erc20WithdrawalDetails struct {
 }
 
 func (Erc20WithdrawalDetails) IsWithdrawalDetails() {}
+
+// EthCallTrigger is the type of trigger used to make calls to Ethereum network.
+type EthCallTrigger struct {
+	Trigger TriggerKind `json:"trigger"`
+}
+
+type EthTimeTrigger struct {
+	Initial *int64 `json:"Initial"`
+	Every   *int64 `json:"Every"`
+	Until   *int64 `json:"Until"`
+}
+
+func (EthTimeTrigger) IsTriggerKind() {}
 
 // An Ethereum data source
 type EthereumEvent struct {
@@ -428,7 +450,7 @@ type OrderInfo struct {
 	IsMarketOrder bool `json:"isMarketOrder"`
 }
 
-// Response for the estimate of the margin level and, if available, collateral was provided in the request, liqudation price for the specified position
+// Response for the estimate of the margin level and, if available, collateral was provided in the request, liquidation price for the specified position
 type PositionEstimate struct {
 	// Margin level range estimate for the specified position
 	Margin *v2.MarginEstimate `json:"margin"`
@@ -782,6 +804,101 @@ func (e *DataSourceSpecStatus) UnmarshalGQL(v interface{}) error {
 }
 
 func (e DataSourceSpecStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type GovernanceTransferType string
+
+const (
+	// Default value, always invalid
+	GovernanceTransferTypeGovernanceTransferTypeUnspecified GovernanceTransferType = "GOVERNANCE_TRANSFER_TYPE_UNSPECIFIED"
+	// Transfers the specified amount or does not transfer anything
+	GovernanceTransferTypeGovernanceTransferTypeAllOrNothing GovernanceTransferType = "GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING"
+	// Transfers the specified amount or the max allowable amount if this is less than the specified amount
+	GovernanceTransferTypeGovernanceTransferTypeBestEffort GovernanceTransferType = "GOVERNANCE_TRANSFER_TYPE_BEST_EFFORT"
+)
+
+var AllGovernanceTransferType = []GovernanceTransferType{
+	GovernanceTransferTypeGovernanceTransferTypeUnspecified,
+	GovernanceTransferTypeGovernanceTransferTypeAllOrNothing,
+	GovernanceTransferTypeGovernanceTransferTypeBestEffort,
+}
+
+func (e GovernanceTransferType) IsValid() bool {
+	switch e {
+	case GovernanceTransferTypeGovernanceTransferTypeUnspecified, GovernanceTransferTypeGovernanceTransferTypeAllOrNothing, GovernanceTransferTypeGovernanceTransferTypeBestEffort:
+		return true
+	}
+	return false
+}
+
+func (e GovernanceTransferType) String() string {
+	return string(e)
+}
+
+func (e *GovernanceTransferType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = GovernanceTransferType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid GovernanceTransferType", str)
+	}
+	return nil
+}
+
+func (e GovernanceTransferType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type MarketUpdateType string
+
+const (
+	// Default value, always invalid
+	MarketUpdateTypeMarketStateUpdateTypeUnspecified MarketUpdateType = "MARKET_STATE_UPDATE_TYPE_UNSPECIFIED"
+	// Terminate the market
+	MarketUpdateTypeMarketStateUpdateTypeTerminate MarketUpdateType = "MARKET_STATE_UPDATE_TYPE_TERMINATE"
+	// Suspend the market
+	MarketUpdateTypeMarketStateUpdateTypeSuspend MarketUpdateType = "MARKET_STATE_UPDATE_TYPE_SUSPEND"
+	// Resume a suspended market
+	MarketUpdateTypeMarketStateUpdateTypeResume MarketUpdateType = "MARKET_STATE_UPDATE_TYPE_RESUME"
+)
+
+var AllMarketUpdateType = []MarketUpdateType{
+	MarketUpdateTypeMarketStateUpdateTypeUnspecified,
+	MarketUpdateTypeMarketStateUpdateTypeTerminate,
+	MarketUpdateTypeMarketStateUpdateTypeSuspend,
+	MarketUpdateTypeMarketStateUpdateTypeResume,
+}
+
+func (e MarketUpdateType) IsValid() bool {
+	switch e {
+	case MarketUpdateTypeMarketStateUpdateTypeUnspecified, MarketUpdateTypeMarketStateUpdateTypeTerminate, MarketUpdateTypeMarketStateUpdateTypeSuspend, MarketUpdateTypeMarketStateUpdateTypeResume:
+		return true
+	}
+	return false
+}
+
+func (e MarketUpdateType) String() string {
+	return string(e)
+}
+
+func (e *MarketUpdateType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MarketUpdateType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MarketUpdateType", str)
+	}
+	return nil
+}
+
+func (e MarketUpdateType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

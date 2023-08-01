@@ -1,8 +1,12 @@
 package entities
 
 import (
-	"code.vegaprotocol.io/vega/core/types"
+	"fmt"
+
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	ethcallcommon "code.vegaprotocol.io/vega/core/datasource/external/ethcall/common"
 	"code.vegaprotocol.io/vega/protos/vega"
+
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -29,12 +33,43 @@ func (s *DataSourceDefinition) GetOracle() (*DataSourceSpecConfiguration, error)
 	if data != nil {
 		switch tp := data.(type) {
 		case *vega.DataSourceSpecConfiguration:
-			signers, err := SerializeSigners(types.SignersFromProto(tp.GetSigners()))
+			signers, err := SerializeSigners(dstypes.SignersFromProto(tp.GetSigners()))
 			if err != nil {
 				return nil, err
 			}
 			ds.Signers = signers
 			ds.Filters = FiltersFromProto(tp.GetFilters())
+		}
+	}
+
+	return ds, nil
+}
+
+func (s *DataSourceDefinition) GetEthOracle() (*EthCallSpec, error) {
+	ds := &EthCallSpec{}
+	data := s.Content()
+	if data != nil {
+		switch tp := data.(type) {
+		case *vega.EthCallSpec:
+			ds.Address = tp.Address
+			abi := tp.GetAbi()
+			ds.Abi = []byte(abi)
+			ds.Method = tp.Method
+			args := tp.GetArgs()
+			for _, arg := range args {
+				jsonArg, err := arg.MarshalJSON()
+				if err != nil {
+					return nil, err // TODO: Fix all of the errors
+				}
+				ds.ArgsJson = append(ds.ArgsJson, string(jsonArg))
+			}
+			trigger, err := ethcallcommon.TriggerFromProto(tp.Trigger)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get trigger from proto: %w", err)
+			}
+			ds.Trigger = EthCallTrigger{Trigger: trigger}
+			ds.RequiredConfirmations = tp.RequiredConfirmations
+			ds.Filters = s.GetFilters()
 		}
 	}
 
@@ -67,7 +102,7 @@ func (s *DataSourceDefinition) GetSigners() (Signers, error) {
 		switch tp := data.(type) {
 		case *vega.DataSourceSpecConfiguration:
 			var err error
-			signers, err = SerializeSigners(types.SignersFromProto(tp.GetSigners()))
+			signers, err = SerializeSigners(dstypes.SignersFromProto(tp.GetSigners()))
 			if err != nil {
 				return nil, err
 			}
@@ -84,7 +119,9 @@ func (s *DataSourceDefinition) GetFilters() []Filter {
 	if data != nil {
 		switch tp := data.(type) {
 		case *vega.DataSourceSpecConfiguration:
-			filters = FiltersFromProto(tp.GetFilters())
+			filters = FiltersFromProto(tp.Filters)
+		case *vega.EthCallSpec:
+			filters = FiltersFromProto(tp.Filters)
 		}
 	}
 
@@ -116,6 +153,76 @@ func DataSourceDefinitionFromProto(dsp *vega.DataSourceDefinition) DataSourceDef
 type DataSourceSpecConfiguration struct {
 	Signers Signers
 	Filters []Filter
+}
+
+type EthCallTrigger struct {
+	ethcallcommon.Trigger
+}
+
+type EthCallSpec struct {
+	Address               string
+	Abi                   []byte
+	Method                string
+	ArgsJson              []string
+	Trigger               EthCallTrigger
+	RequiredConfirmations uint64
+	Filters               []Filter
+}
+
+func (es *EthCallSpec) GetFilters() []Filter {
+	if es != nil {
+		return es.Filters
+	}
+
+	return []Filter{}
+}
+
+func (es *EthCallSpec) GetAddress() string {
+	if es != nil {
+		return es.Address
+	}
+
+	return ""
+}
+
+func (es *EthCallSpec) GetAbi() []byte {
+	if es != nil {
+		return es.Abi
+	}
+
+	return nil
+}
+
+func (es *EthCallSpec) GetMethod() string {
+	if es != nil {
+		return es.Method
+	}
+
+	return ""
+}
+
+func (es *EthCallSpec) GetArgs() []string {
+	if es != nil {
+		return es.ArgsJson
+	}
+
+	return []string{}
+}
+
+func (es *EthCallSpec) GetTrigger() EthCallTrigger {
+	if es != nil {
+		return es.Trigger
+	}
+
+	return EthCallTrigger{}
+}
+
+func (es *EthCallSpec) GetRequiredConfirmations() uint64 {
+	if es != nil {
+		return es.RequiredConfirmations
+	}
+
+	return uint64(0)
 }
 
 // DataSourceSpecConfigurationTime is a simplified version of the internal time

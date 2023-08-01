@@ -72,14 +72,14 @@ func (s stopOrderResolver) PartyID(_ context.Context, obj *eventspb.StopOrderEve
 	if obj == nil || obj.StopOrder == nil {
 		return "", ErrInvalidStopOrder
 	}
-	return obj.StopOrder.Id, nil
+	return obj.StopOrder.PartyId, nil
 }
 
 func (s stopOrderResolver) MarketID(_ context.Context, obj *eventspb.StopOrderEvent) (string, error) {
 	if obj == nil || obj.StopOrder == nil {
 		return "", ErrInvalidStopOrder
 	}
-	return obj.StopOrder.Id, nil
+	return obj.StopOrder.MarketId, nil
 }
 
 func (s stopOrderResolver) Trigger(_ context.Context, obj *eventspb.StopOrderEvent) (StopOrderTrigger, error) {

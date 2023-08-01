@@ -1140,7 +1140,7 @@ func (t *TradingDataServiceV2) ListSuccessorMarkets(ctx context.Context, req *v2
 	}
 
 	return &v2.ListSuccessorMarketsResponse{
-		Markets: marketsConnection,
+		SuccessorMarkets: marketsConnection,
 	}, nil
 }
 
@@ -1802,11 +1802,9 @@ func (t *TradingDataServiceV2) ListOracleData(ctx context.Context, req *v2.ListO
 		pageInfo entities.PageInfo
 	)
 
-	if oracleSpecID := ptr.UnBox(req.OracleSpecId); oracleSpecID != "" {
-		data, pageInfo, err = t.oracleDataService.GetOracleDataBySpecID(ctx, oracleSpecID, pagination)
-	} else {
-		data, pageInfo, err = t.oracleDataService.ListOracleData(ctx, pagination)
-	}
+	oracleSpecID := ptr.UnBox(req.OracleSpecId)
+	data, pageInfo, err = t.oracleDataService.ListOracleData(ctx, oracleSpecID, pagination)
+
 	if err != nil {
 		return nil, formatE(ErrOracleDataServiceGet, err)
 	}
@@ -1887,6 +1885,63 @@ func (t *TradingDataServiceV2) ObserveLiquidityProvisions(req *v2.ObserveLiquidi
 		}
 		return nil
 	})
+}
+
+func (t *TradingDataServiceV2) ListLiquidityProviders(ctx context.Context, req *v2.ListLiquidityProvidersRequest) (
+	*v2.ListLiquidityProvidersResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListLiquidityProviders")
+
+	if req.MarketId == nil && req.PartyId == nil {
+		return nil, formatE(ErrMalformedRequest, errors.New("marketId or partyId or both must be provided"))
+	}
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	var (
+		marketID *entities.MarketID
+		partyID  *entities.PartyID
+	)
+
+	if req.MarketId != nil {
+		marketID = ptr.From(entities.MarketID(ptr.UnBox(req.MarketId)))
+	}
+
+	if req.PartyId != nil {
+		partyID = ptr.From(entities.PartyID(ptr.UnBox(req.PartyId)))
+	}
+
+	providers, pageInfo, err := t.liquidityProvisionService.ListProviders(ctx, partyID, marketID, pagination)
+	if err != nil {
+		return nil, formatE(ErrLiquidityProvisionServiceGetProviders, errors.Wrapf(err,
+			"marketID: %s", marketID))
+	}
+
+	if len(providers) == 0 {
+		return &v2.ListLiquidityProvidersResponse{
+			LiquidityProviders: &v2.LiquidityProviderConnection{
+				Edges:    []*v2.LiquidityProviderEdge{},
+				PageInfo: pageInfo.ToProto(),
+			},
+		}, nil
+	}
+
+	edges, err := makeEdges[*v2.LiquidityProviderEdge](providers)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	conn := &v2.LiquidityProviderConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListLiquidityProvidersResponse{
+		LiquidityProviders: conn,
+	}, nil
 }
 
 // GetGovernanceData gets governance data.

@@ -167,6 +167,7 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.ethereumKeyRotationsSub,
 		s.pupSub,
 		s.snapSub,
+		s.stopOrdersSub,
 	}
 }
 

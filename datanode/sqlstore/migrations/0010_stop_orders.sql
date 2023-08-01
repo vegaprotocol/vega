@@ -2,7 +2,7 @@
 
 create type stop_order_expiry_strategy as enum('EXPIRY_STRATEGY_UNSPECIFIED', 'EXPIRY_STRATEGY_CANCELS', 'EXPIRY_STRATEGY_SUBMIT');
 create type stop_order_trigger_direction as enum('TRIGGER_DIRECTION_UNSPECIFIED', 'TRIGGER_DIRECTION_RISES_ABOVE', 'TRIGGER_DIRECTION_FALLS_BELOW');
-create type stop_order_status as enum('STATUS_UNSPECIFIED', 'STATUS_PENDING', 'STATUS_CANCELLED', 'STATUS_STOPPED', 'STATUS_TRIGGERED', 'STATUS_EXPIRED', 'STATE_REJECTED');
+create type stop_order_status as enum('STATUS_UNSPECIFIED', 'STATUS_PENDING', 'STATUS_CANCELLED', 'STATUS_STOPPED', 'STATUS_TRIGGERED', 'STATUS_EXPIRED', 'STATUS_REJECTED');
 
 create table if not exists stop_orders(
     id bytea not null,

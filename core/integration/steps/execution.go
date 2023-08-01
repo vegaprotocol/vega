@@ -26,15 +26,18 @@ type Execution interface {
 	GetMarketState(mktID string) (types.MarketState, error)
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment, party string) (*types.OrderConfirmation, error)
 	CancelOrder(ctx context.Context, cancel *types.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error)
+	CancelStopOrder(ctx context.Context, cancel *types.StopOrdersCancellation, party string) error
 	SubmitOrder(ctx context.Context, submission *types.OrderSubmission, party string) (*types.OrderConfirmation, error)
 	SubmitStopOrder(ctx context.Context, submission *types.StopOrdersSubmission, party string) (*types.OrderConfirmation, error)
 	SubmitLiquidityProvision(ctx context.Context, submission *types.LiquidityProvisionSubmission, party string, lpID string,
 		deterministicID string) error
 	AmendLiquidityProvision(ctx context.Context, amendment *types.LiquidityProvisionAmendment, party string) error
 	CancelLiquidityProvision(ctx context.Context, cancel *types.LiquidityProvisionCancellation, party string) error
+	SubmitSpotMarket(ctx context.Context, marketConfig *types.Market, proposer string, oos time.Time) error
 	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string, oos time.Time) error
 	StartOpeningAuction(ctx context.Context, marketID string) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
+	UpdateSpotMarket(ctx context.Context, marketConfig *types.Market) error
 	BlockEnd(ctx context.Context)
 	GetMarket(parentID string, settled bool) (types.Market, bool)
 	SucceedMarket(ctx context.Context, successor, parent string) error
@@ -44,4 +47,5 @@ type Execution interface {
 	StartBatch(party string) error
 	AddSubmitOrderToBatch(submission *types.OrderSubmission, party string) error
 	ProcessBatch(ctx context.Context, party string) error
+	OnEpochEvent(ctx context.Context, epoch types.Epoch)
 }

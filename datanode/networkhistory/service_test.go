@@ -363,12 +363,12 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "Qmew5qc3ibm3XNDCJhRkB3nrQCTsC39FiZQEziBUp68ZNn", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmPJ5VTSxv7sEy9jGxY8QeEJaifcmoigUL251kYHSJcakM", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmYopxKWjLr6yPhAYke9ssL7oK1txdwXXAWcJtmnutZ9Xm", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmRD7f3FLKUd2dJ4Tjf7fKBDfPiAye5oErmCpg6C8rCeU3", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmeNRXW8PjueK6gxRynzRS7GnVBwhEoM52BFhVNACfnEK6", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmS4Zbjq7G8g2bUKiFLiXRinKGfcEnxMk3Sb6sregzZnEz", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmdsWSb8qyQhGMVBogGpdfPQAdv5U62V9UFSQZg9vf8KMT", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmTJtz8P1oFwv5cGdrf2uBSCMCBMBw4MRriEJQVb9KqiPo", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmewZUHtHX1q6zScTWmKP3M1z68umdQ8zfmzNQzBzb3CAg", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmVD9VjWZMQc6UzqbSyrng8RrrR1Q4W3JpqxUq49hnYtW6", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmaoVJNrwfKa35RSncr6NKtiD2QFtn18nX7YhZeHNzBD1x", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmUfzNPdAiyf2xkT7rEUp8D6d7PcpG6g1SEQUdCxPoePeo", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {
@@ -386,6 +386,103 @@ func updateAllContinuousAggregateData(ctx context.Context) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func TestLoadingDataFetchedAsynchronously(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	log := logging.NewTestLogger()
+
+	require.NoError(t, networkHistoryStore.ResetIndex())
+	emptyDatabaseAndSetSchemaVersion(highestMigrationNumber)
+
+	snapshotCopyToPath := t.TempDir()
+	snapshotService := setupSnapshotService(snapshotCopyToPath)
+
+	fetched, err := fetchBlocks(ctx, log, networkHistoryStore, goldenSourceHistorySegment[4000].HistorySegmentID, 1000)
+	require.NoError(t, err)
+	require.Equal(t, int64(1000), fetched)
+
+	networkhistoryService := setupNetworkHistoryService(ctx, log, snapshotService, networkHistoryStore, snapshotCopyToPath)
+	segments, err := networkhistoryService.ListAllHistorySegments()
+	require.NoError(t, err)
+
+	chunk, err := segments.MostRecentContiguousHistory()
+	require.NoError(t, err)
+
+	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, chunk, sqlConfig.ConnectionConfig, false, false)
+	require.NoError(t, err)
+	assert.Equal(t, int64(3001), loaded.LoadedFromHeight)
+	assert.Equal(t, int64(4000), loaded.LoadedToHeight)
+
+	dbSummary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[4].currentTableSummaries, dbSummary.currentTableSummaries)
+
+	// Run events to height 5000
+	ctxWithCancel, cancelFn := context.WithCancel(ctx)
+	evtSource := newTestEventSourceWithProtocolUpdateMessage()
+
+	pus := service.NewProtocolUpgrade(nil, log)
+	puh := networkhistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context, chainID string,
+		toHeight int64,
+	) error {
+		return nil
+	})
+
+	var md5Hash string
+	broker, err := setupSQLBroker(ctx, sqlConfig, snapshotService,
+		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
+			if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
+				ss, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
+				require.NoError(t, err)
+
+				waitForSnapshotToComplete(ss)
+
+				md5Hash, err = fsutil.Md5Hash(ss.ZipFilePath())
+				require.NoError(t, err)
+
+				fromEventHashes = append(fromEventHashes, md5Hash)
+			}
+
+			if lastCommittedBlockHeight == 5000 {
+				cancelFn()
+			}
+		},
+		evtSource, puh)
+	require.NoError(t, err)
+
+	err = broker.Receive(ctxWithCancel)
+	if err != nil && !errors.Is(err, context.Canceled) {
+		require.NoError(t, err)
+	}
+
+	require.Equal(t, fromEventHashes[5], md5Hash)
+
+	networkhistoryService.PublishSegments(ctx)
+
+	// Now simulate the situation where the previous history segments were fetched asynchronously during event processing
+	// and full history is then subsequently loaded
+	emptyDatabaseAndSetSchemaVersion(0)
+
+	fetched, err = fetchBlocks(ctx, log, networkHistoryStore, goldenSourceHistorySegment[3000].HistorySegmentID, 3000)
+	require.NoError(t, err)
+	require.Equal(t, int64(3000), fetched)
+
+	segments, err = networkhistoryService.ListAllHistorySegments()
+	require.NoError(t, err)
+
+	segmentsInRange, err := segments.ContiguousHistoryInRange(1, 5000)
+	require.NoError(t, err)
+	loaded, err = networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, segmentsInRange, sqlConfig.ConnectionConfig, false, false)
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), loaded.LoadedFromHeight)
+	assert.Equal(t, int64(5000), loaded.LoadedToHeight)
+
+	dbSummary = getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[5].currentTableSummaries, dbSummary.currentTableSummaries)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[5].historyTableSummaries, dbSummary.historyTableSummaries)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[5].caggSummaries, dbSummary.caggSummaries)
 }
 
 func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {

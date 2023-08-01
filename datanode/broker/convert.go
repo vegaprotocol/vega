@@ -135,6 +135,10 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.DistressedPositionsEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_STOP_ORDER:
 		return events.StopOrderEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PERIOD:
+		return events.FundingPeriodEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PERIOD_DATA_POINT:
+		return events.FundingPeriodDataPointEventFromStream(ctx, be)
 	}
 
 	return nil

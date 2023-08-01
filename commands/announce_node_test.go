@@ -2,7 +2,7 @@ package commands_test
 
 import (
 	"encoding/hex"
-	"fmt"
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -46,7 +46,7 @@ func testAnnounceNodeWithInvalidEncodingOfVegaPubKeyFails(t *testing.T) {
 	err := checkAnnounceNode(&commandspb.AnnounceNode{
 		VegaPubKey: "invalid-hex-encoding",
 	})
-	assert.Contains(t, err.Get("announce_node.vega_pub_key"), commands.ErrShouldBeAValidVegaPubkey)
+	assert.Contains(t, err.Get("announce_node.vega_pub_key"), commands.ErrShouldBeAValidVegaPublicKey)
 }
 
 func testAnnounceNodeWithoutEthereumAddressFails(t *testing.T) {
@@ -88,7 +88,6 @@ func testAnnounceNodeWithNonhexSignaturesFails(t *testing.T) {
 			Value: "helloagain",
 		},
 	})
-	fmt.Println(err)
 	assert.Contains(t, err.Get("announce_node.ethereum_signature.value"), commands.ErrShouldBeHexEncoded)
 	assert.Contains(t, err.Get("announce_node.vega_signature.value"), commands.ErrShouldBeHexEncoded)
 }
@@ -96,8 +95,8 @@ func testAnnounceNodeWithNonhexSignaturesFails(t *testing.T) {
 func checkAnnounceNode(cmd *commandspb.AnnounceNode) commands.Errors {
 	err := commands.CheckAnnounceNode(cmd)
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 

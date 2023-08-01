@@ -18,13 +18,15 @@ import (
 
 	"github.com/golang/mock/gomock"
 
+	"code.vegaprotocol.io/vega/core/datasource"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers/mocks"
 	"code.vegaprotocol.io/vega/libs/num"
 
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
@@ -45,14 +47,14 @@ func shouldCallMarketSQLStoreAdd(t *testing.T) {
 }
 
 func getTestMarket(termInt bool) types.Market {
-	term := &types.DataSourceSpec{
+	term := &datasource.Spec{
 		ID:        "",
 		CreatedAt: 0,
 		UpdatedAt: 0,
-		Data: types.NewDataSourceDefinition(
-			vegapb.DataSourceDefinitionTypeExt,
+		Data: datasource.NewDefinition(
+			datasource.ContentTypeOracle,
 		).SetOracleConfig(
-			&types.DataSourceSpecConfiguration{
+			&signedoracle.SpecConfiguration{
 				Signers: nil,
 				Filters: nil,
 			},
@@ -61,14 +63,14 @@ func getTestMarket(termInt bool) types.Market {
 	}
 
 	if termInt {
-		term = &types.DataSourceSpec{
+		term = &datasource.Spec{
 			ID:        "",
 			CreatedAt: 0,
 			UpdatedAt: 0,
-			Data: types.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeInt,
+			Data: datasource.NewDefinition(
+				datasource.ContentTypeInternalTimeTermination,
 			).SetTimeTriggerConditionConfig(
-				[]*types.DataSourceSpecCondition{
+				[]*dstypes.SpecCondition{
 					{
 						Operator: datapb.Condition_OPERATOR_EQUALS,
 						Value:    "test-value",
@@ -93,14 +95,14 @@ func getTestMarket(termInt bool) types.Market {
 					Future: &types.Future{
 						SettlementAsset: "",
 						QuoteName:       "",
-						DataSourceSpecForSettlementData: &types.DataSourceSpec{
+						DataSourceSpecForSettlementData: &datasource.Spec{
 							ID:        "",
 							CreatedAt: 0,
 							UpdatedAt: 0,
-							Data: types.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+							Data: datasource.NewDefinition(
+								datasource.ContentTypeOracle,
 							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
+								&signedoracle.SpecConfiguration{
 									Signers: nil,
 									Filters: nil,
 								},
@@ -108,7 +110,7 @@ func getTestMarket(termInt bool) types.Market {
 							Status: 0,
 						},
 						DataSourceSpecForTradingTermination: term,
-						DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
+						DataSourceSpecBinding: &datasource.SpecBindingForFuture{
 							SettlementDataProperty:     "",
 							TradingTerminationProperty: "",
 						},

@@ -42,13 +42,14 @@ func (e *Engine) serialise() ([]byte, error) {
 	}
 
 	payloadProofOfWork := &types.PayloadProofOfWork{
-		BlockHeight:   e.blockHeight[:ringSize],
-		BlockHash:     e.blockHash[:ringSize],
-		HeightToTx:    e.heightToTx,
-		HeightToTid:   e.heightToTid,
-		BannedParties: bannedParties,
-		ActiveParams:  e.paramsToSnapshotParams(),
-		ActiveStates:  e.statesToSnapshotStates(),
+		BlockHeight:      e.blockHeight[:ringSize],
+		BlockHash:        e.blockHash[:ringSize],
+		HeightToTx:       e.heightToTx,
+		HeightToTid:      e.heightToTid,
+		BannedParties:    bannedParties,
+		ActiveParams:     e.paramsToSnapshotParams(),
+		ActiveStates:     e.statesToSnapshotStates(),
+		LastPruningBlock: e.lastPruningBlock,
 	}
 	payload := types.Payload{
 		Data: payloadProofOfWork,
@@ -186,5 +187,6 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	}
 	e.activeParams = e.snapshotParamsToParams(pl.ActiveParams)
 	e.activeStates = e.snapshotStatesToStates(pl.ActiveStates)
+	e.lastPruningBlock = pl.LastPruningBlock
 	return nil, nil
 }

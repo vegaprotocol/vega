@@ -15,33 +15,9 @@ package future
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/types"
 )
-
-const (
-	// PriceMoveMid used to indicate that the mid price has moved.
-	PriceMoveMid = 1
-
-	// PriceMoveBestBid used to indicate that the best bid price has moved.
-	PriceMoveBestBid = 2
-
-	// PriceMoveBestAsk used to indicate that the best ask price has moved.
-	PriceMoveBestAsk = 4
-
-	// PriceMoveAll used to indicate everything has moved.
-	PriceMoveAll = PriceMoveMid + PriceMoveBestBid + PriceMoveBestAsk
-)
-
-type OrderReferenceCheck types.Order
-
-func (o OrderReferenceCheck) HasMoved(changes uint8) bool {
-	return (o.PeggedOrder.Reference == types.PeggedReferenceMid &&
-		changes&PriceMoveMid > 0) ||
-		(o.PeggedOrder.Reference == types.PeggedReferenceBestBid &&
-			changes&PriceMoveBestBid > 0) ||
-		(o.PeggedOrder.Reference == types.PeggedReferenceBestAsk &&
-			changes&PriceMoveBestAsk > 0)
-}
 
 func (m *Market) checkForReferenceMoves(
 	ctx context.Context, orderUpdates []*types.Order, forceUpdate bool,
@@ -62,16 +38,16 @@ func (m *Market) checkForReferenceMoves(
 	var changes uint8
 	if !forceUpdate {
 		if newMidBuy.NEQ(m.lastMidBuyPrice) || newMidSell.NEQ(m.lastMidSellPrice) {
-			changes |= PriceMoveMid
+			changes |= common.PriceMoveMid
 		}
 		if newBestBid.NEQ(m.lastBestBidPrice) {
-			changes |= PriceMoveBestBid
+			changes |= common.PriceMoveBestBid
 		}
 		if newBestAsk.NEQ(m.lastBestAskPrice) {
-			changes |= PriceMoveBestAsk
+			changes |= common.PriceMoveBestAsk
 		}
 	} else {
-		changes = PriceMoveAll
+		changes = common.PriceMoveAll
 	}
 
 	// now we can start all special order repricing...

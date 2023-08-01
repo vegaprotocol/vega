@@ -25,7 +25,6 @@ func NewAuctionStateFromSnapshot(mkt *types.Market, as *types.AuctionState) *Auc
 		start:              as.Start,
 		stop:               as.Stop,
 		m:                  mkt,
-		stateChanged:       true,
 		extensionEventSent: as.ExtensionEventSent,
 	}
 
@@ -44,7 +43,7 @@ func NewAuctionStateFromSnapshot(mkt *types.Market, as *types.AuctionState) *Auc
 }
 
 func (a AuctionState) Changed() bool {
-	return a.stateChanged
+	return true
 }
 
 func (a *AuctionState) GetState() *types.AuctionState {
@@ -65,6 +64,5 @@ func (a *AuctionState) GetState() *types.AuctionState {
 		as.Begin = *a.begin
 	}
 
-	a.stateChanged = false
 	return as
 }

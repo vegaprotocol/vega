@@ -28,6 +28,9 @@ type AuctionState interface {
 	IsLiquidityExtension() bool
 	StartLiquidityAuctionNoOrders(t time.Time, d *types.AuctionDuration)
 	StartLiquidityAuctionUnmetTarget(t time.Time, d *types.AuctionDuration)
+	StartGovernanceSuspensionAuction(t time.Time)
+	EndGovernanceSuspensionAuction()
+
 	SetReadyToLeave()
 	InAuction() bool
 	ExtendAuctionLiquidityNoOrders(delta types.AuctionDuration)

@@ -38,6 +38,36 @@ func (m *MockETHClient) EXPECT() *MockETHClientMockRecorder {
 	return m.recorder
 }
 
+// BlockByHash mocks base method.
+func (m *MockETHClient) BlockByHash(arg0 context.Context, arg1 common.Hash) (*types.Block, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BlockByHash", arg0, arg1)
+	ret0, _ := ret[0].(*types.Block)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BlockByHash indicates an expected call of BlockByHash.
+func (mr *MockETHClientMockRecorder) BlockByHash(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BlockByHash", reflect.TypeOf((*MockETHClient)(nil).BlockByHash), arg0, arg1)
+}
+
+// BlockByNumber mocks base method.
+func (m *MockETHClient) BlockByNumber(arg0 context.Context, arg1 *big.Int) (*types.Block, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BlockByNumber", arg0, arg1)
+	ret0, _ := ret[0].(*types.Block)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BlockByNumber indicates an expected call of BlockByNumber.
+func (mr *MockETHClientMockRecorder) BlockByNumber(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BlockByNumber", reflect.TypeOf((*MockETHClient)(nil).BlockByNumber), arg0, arg1)
+}
+
 // CallContract mocks base method.
 func (m *MockETHClient) CallContract(arg0 context.Context, arg1 ethereum.CallMsg, arg2 *big.Int) ([]byte, error) {
 	m.ctrl.T.Helper()
@@ -141,6 +171,21 @@ func (mr *MockETHClientMockRecorder) FilterLogs(arg0, arg1 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilterLogs", reflect.TypeOf((*MockETHClient)(nil).FilterLogs), arg0, arg1)
 }
 
+// HeaderByHash mocks base method.
+func (m *MockETHClient) HeaderByHash(arg0 context.Context, arg1 common.Hash) (*types.Header, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HeaderByHash", arg0, arg1)
+	ret0, _ := ret[0].(*types.Header)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HeaderByHash indicates an expected call of HeaderByHash.
+func (mr *MockETHClientMockRecorder) HeaderByHash(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HeaderByHash", reflect.TypeOf((*MockETHClient)(nil).HeaderByHash), arg0, arg1)
+}
+
 // HeaderByNumber mocks base method.
 func (m *MockETHClient) HeaderByNumber(arg0 context.Context, arg1 *big.Int) (*types.Header, error) {
 	m.ctrl.T.Helper()
@@ -215,6 +260,21 @@ func (mr *MockETHClientMockRecorder) SubscribeFilterLogs(arg0, arg1, arg2 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeFilterLogs", reflect.TypeOf((*MockETHClient)(nil).SubscribeFilterLogs), arg0, arg1, arg2)
 }
 
+// SubscribeNewHead mocks base method.
+func (m *MockETHClient) SubscribeNewHead(arg0 context.Context, arg1 chan<- *types.Header) (ethereum.Subscription, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubscribeNewHead", arg0, arg1)
+	ret0, _ := ret[0].(ethereum.Subscription)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubscribeNewHead indicates an expected call of SubscribeNewHead.
+func (mr *MockETHClientMockRecorder) SubscribeNewHead(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeNewHead", reflect.TypeOf((*MockETHClient)(nil).SubscribeNewHead), arg0, arg1)
+}
+
 // SuggestGasPrice mocks base method.
 func (m *MockETHClient) SuggestGasPrice(arg0 context.Context) (*big.Int, error) {
 	m.ctrl.T.Helper()
@@ -243,4 +303,34 @@ func (m *MockETHClient) SuggestGasTipCap(arg0 context.Context) (*big.Int, error)
 func (mr *MockETHClientMockRecorder) SuggestGasTipCap(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SuggestGasTipCap", reflect.TypeOf((*MockETHClient)(nil).SuggestGasTipCap), arg0)
+}
+
+// TransactionCount mocks base method.
+func (m *MockETHClient) TransactionCount(arg0 context.Context, arg1 common.Hash) (uint, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TransactionCount", arg0, arg1)
+	ret0, _ := ret[0].(uint)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TransactionCount indicates an expected call of TransactionCount.
+func (mr *MockETHClientMockRecorder) TransactionCount(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransactionCount", reflect.TypeOf((*MockETHClient)(nil).TransactionCount), arg0, arg1)
+}
+
+// TransactionInBlock mocks base method.
+func (m *MockETHClient) TransactionInBlock(arg0 context.Context, arg1 common.Hash, arg2 uint) (*types.Transaction, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TransactionInBlock", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*types.Transaction)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TransactionInBlock indicates an expected call of TransactionInBlock.
+func (mr *MockETHClientMockRecorder) TransactionInBlock(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransactionInBlock", reflect.TypeOf((*MockETHClient)(nil).TransactionInBlock), arg0, arg1, arg2)
 }

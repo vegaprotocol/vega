@@ -14,74 +14,56 @@ package snapshot
 
 import (
 	"errors"
-	"os"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/paths"
 )
 
 const (
-	namedLogger = "snapshot"
-	goLevelDB   = "GOLevelDB"
-	memDB       = "memory"
+	LevelDB    = "GOLevelDB"
+	InMemoryDB = "memory"
+)
+
+var (
+	ErrStartHeightCannotBeNegative      = errors.New("the value for \"load-from-block-height\" must be positive, or zero")
+	ErrKeepRecentMustBeHigherOrEqualTo1 = errors.New("the value for \"snapshot-keep-recent\" must higher or equal to 1")
 )
 
 type Config struct {
-	Level       encoding.LogLevel `choice:"debug"                                                                                                                                                                    choice:"info"                 choice:"warning"                  choice:"error" choice:"panic" choice:"fatal" description:"Logging level (default: info)" long:"log-level"`
-	KeepRecent  int               `description:"Number of historic snapshots to keep on disk. Limited to the 10 most recent ones"                                                                                    long:"snapshot-keep-recent"`
-	RetryLimit  int               `description:"Maximum number of times to try and apply snapshot chunk"                                                                                                             long:"max-retries"`
-	Storage     string            `choice:"GOLevelDB"                                                                                                                                                                choice:"memory"               description:"Storage type to use" long:"storage"`
-	DBPath      string            `description:"Path to database"                                                                                                                                                    long:"db-path"`
-	StartHeight int64             `description:"Load from a snapshot at the given block-height. Setting to -1 will load from the latest snapshot available, 0 will force the chain to replay if not using statesync" long:"load-from-block-height"`
+	Level       encoding.LogLevel `choice:"debug"                                                                                                                                                                                                                                                                                            choice:"info"                 choice:"warning"                  choice:"error" choice:"panic" choice:"fatal" description:"Logging level (default: info)" long:"log-level"`
+	KeepRecent  uint              `description:"Number of historic snapshots to keep on disk. The minimum value is 1."                                                                                                                                                                                                                       long:"snapshot-keep-recent"`
+	RetryLimit  uint              `description:"Maximum number of times to try and apply snapshot chunk coming from state-sync"                                                                                                                                                                                                              long:"max-retries"`
+	Storage     string            `choice:"GOLevelDB"                                                                                                                                                                                                                                                                                        choice:"memory"               description:"Storage type to use" long:"storage"`
+	StartHeight int64             `description:"If there are local snapshots, load the one matching the specified block height. If there is no local snapshot, and state-sync is enabled, the node waits for a snapshot to match the specified block height to be offered by the network peers. If set to 0, the latest snapshot is loaded." long:"load-from-block-height"`
 }
 
-// NewDefaultConfig creates an instance of the package specific configuration, given a
+// DefaultConfig creates an instance of the package specific configuration, given a
 // pointer to a logger instance to be used for logging within the package.
-func NewDefaultConfig() Config {
+func DefaultConfig() Config {
 	return Config{
 		Level:       encoding.LogLevel{Level: logging.InfoLevel},
 		KeepRecent:  10,
 		RetryLimit:  5,
-		Storage:     goLevelDB,
-		StartHeight: -1,
+		Storage:     LevelDB,
+		StartHeight: 0,
 	}
 }
 
-func NewTestConfig() Config {
-	cfg := NewDefaultConfig()
-	cfg.Storage = memDB
-	return cfg
-}
+// Validate checks the values in the config file are sensible.
+func (c *Config) Validate() error {
+	if c.KeepRecent < 1 {
+		return ErrKeepRecentMustBeHigherOrEqualTo1
+	}
 
-// validate checks the values in the config file are sensible, and returns the path
-// which is create/load the snapshots from.
-func (c *Config) validate(vegapath paths.Paths) (string, error) {
-	if len(c.DBPath) != 0 && c.Storage == memDB {
-		return "", errors.New("dbpath cannot be set when storage method is in-memory")
+	if c.StartHeight < 0 {
+		return ErrStartHeightCannotBeNegative
 	}
 
 	switch c.Storage {
-	case memDB:
-		return "", nil
-	case goLevelDB:
-
-		if len(c.DBPath) == 0 {
-			return vegapath.StatePathFor(paths.SnapshotStateHome), nil
-		}
-
-		stat, err := os.Stat(c.DBPath)
-		if err != nil {
-			return "", err
-		}
-
-		if !stat.IsDir() {
-			return "", errors.New("snapshot DB path is not a directory")
-		}
-
-		return c.DBPath, nil
+	case InMemoryDB, LevelDB:
+		return nil
 	default:
-		return "", types.ErrInvalidSnapshotStorageMethod
+		return types.ErrInvalidSnapshotStorageMethod
 	}
 }

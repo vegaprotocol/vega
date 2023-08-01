@@ -20,6 +20,8 @@ import (
 	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/core/collateral"
+	"code.vegaprotocol.io/vega/core/datasource"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
@@ -84,10 +86,16 @@ func TheMarkets(
 		return nil, err
 	}
 
-	if err := submitMarkets(markets, executionEngine, now); err != nil {
-		return nil, err
+	for i, row := range rows {
+		if err := executionEngine.SubmitMarket(context.Background(), &markets[i], "proposerID", now); err != nil {
+			return nil, fmt.Errorf("couldn't submit market(%s): %v", markets[i].ID, err)
+		}
+		if !row.HasColumn("is passed") || row.Bool("is passed") {
+			if err := executionEngine.StartOpeningAuction(context.Background(), markets[i].ID); err != nil {
+				return nil, fmt.Errorf("could not start opening auction for market %s: %v", markets[i].ID, err)
+			}
+		}
 	}
-
 	return markets, nil
 }
 
@@ -102,18 +110,6 @@ func TheSuccesorMarketIsEnacted(sID string, markets []types.Market, exec Executi
 		}
 	}
 	return fmt.Errorf("couldn't enact successor market %s - no such market ID", sID)
-}
-
-func submitMarkets(markets []types.Market, executionEngine Execution, now time.Time) error {
-	for i := range markets {
-		if err := executionEngine.SubmitMarket(context.Background(), &markets[i], "proposerID", now); err != nil {
-			return fmt.Errorf("couldn't submit market(%s): %v", markets[i].ID, err)
-		}
-		if err := executionEngine.StartOpeningAuction(context.Background(), markets[i].ID); err != nil {
-			return fmt.Errorf("could not start opening auction for market %s: %v", markets[i].ID, err)
-		}
-	}
-	return nil
 }
 
 func updateMarkets(markets []*types.Market, updates []types.UpdateMarket, executionEngine Execution) error {
@@ -185,38 +181,38 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 			panic(err)
 		}
 		// we probably want to X-check the current spec, and make sure only filters + pubkeys are changed
-		settleSpec := types.OracleSpecFromProto(oracleSettlement.Spec)
-		termSpec := types.OracleSpecFromProto(oracleTermination.Spec)
+		settleSpec := datasource.FromOracleSpecProto(oracleSettlement.Spec)
+		termSpec := datasource.FromOracleSpecProto(oracleTermination.Spec)
 		settlementDecimals := config.OracleConfigs.GetSettlementDataDP(oracle)
 		// update product -> use type switch even though currently only futures exist
 		switch ti := existing.TradableInstrument.Instrument.Product.(type) {
 		case *types.InstrumentFuture:
-			filters := settleSpec.ExternalDataSourceSpec.Spec.Data.GetFilters()
+			filters := settleSpec.Data.GetFilters()
 			futureUp := &types.UpdateFutureProduct{
 				QuoteName: ti.Future.QuoteName,
-				DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
-					proto.DataSourceDefinitionTypeExt,
+				DataSourceSpecForSettlementData: *datasource.NewDefinition(
+					datasource.ContentTypeOracle,
 				).SetOracleConfig(
-					&types.DataSourceSpecConfiguration{
-						Signers: settleSpec.ExternalDataSourceSpec.Spec.Data.GetSigners(),
+					&signedoracle.SpecConfiguration{
+						Signers: settleSpec.Data.GetSigners(),
 						Filters: filters,
 					},
 				),
-				DataSourceSpecForTradingTermination: *types.NewDataSourceDefinition(
-					proto.DataSourceDefinitionTypeExt,
+				DataSourceSpecForTradingTermination: *datasource.NewDefinition(
+					datasource.ContentTypeOracle,
 				).SetOracleConfig(
-					&types.DataSourceSpecConfiguration{
-						Signers: settleSpec.ExternalDataSourceSpec.Spec.Data.GetSigners(),
+					&signedoracle.SpecConfiguration{
+						Signers: settleSpec.Data.GetSigners(),
 						Filters: filters,
 					},
 				),
-				DataSourceSpecBinding: types.DataSourceSpecBindingForFutureFromProto(&proto.DataSourceSpecToFutureBinding{
+				DataSourceSpecBinding: datasource.SpecBindingForFutureFromProto(&proto.DataSourceSpecToFutureBinding{
 					SettlementDataProperty:     oracleSettlement.Binding.SettlementDataProperty,
 					TradingTerminationProperty: oracleTermination.Binding.TradingTerminationProperty,
 				}),
 			}
-			ti.Future.DataSourceSpecForSettlementData = settleSpec.ExternalDataSourceSpec.Spec.Data.SetFilterDecimals(uint64(settlementDecimals)).ToDataSourceSpec()
-			ti.Future.DataSourceSpecForTradingTermination = termSpec.ExternalDataSourceSpec.Spec
+			ti.Future.DataSourceSpecForSettlementData = datasource.SpecFromDefinition(*settleSpec.Data.SetFilterDecimals(uint64(settlementDecimals)))
+			ti.Future.DataSourceSpecForTradingTermination = termSpec
 			ti.Future.DataSourceSpecBinding = futureUp.DataSourceSpecBinding
 			// ensure we update the existing market
 			existing.TradableInstrument.Instrument.Product = ti
@@ -313,7 +309,7 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 	}
 
 	settlementDataDecimals := config.OracleConfigs.GetSettlementDataDP(row.oracleConfig())
-	settlSpec := types.OracleSpecFromProto(oracleConfigForSettlement.Spec)
+	settlSpec := datasource.FromOracleSpecProto(oracleConfigForSettlement.Spec)
 	var binding proto.DataSourceSpecToFutureBinding
 	binding.SettlementDataProperty = oracleConfigForSettlement.Binding.SettlementDataProperty
 	binding.TradingTerminationProperty = oracleConfigForTradingTermination.Binding.TradingTerminationProperty
@@ -361,9 +357,9 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 					Future: &types.Future{
 						SettlementAsset:                     row.asset(),
 						QuoteName:                           row.quoteName(),
-						DataSourceSpecForSettlementData:     settlSpec.ExternalDataSourceSpec.Spec.Data.SetFilterDecimals(uint64(settlementDataDecimals)).ToDataSourceSpec(),
-						DataSourceSpecForTradingTermination: types.DataSourceSpecFromProto(oracleConfigForTradingTermination.Spec.ExternalDataSourceSpec.Spec),
-						DataSourceSpecBinding:               types.DataSourceSpecBindingForFutureFromProto(&binding),
+						DataSourceSpecForSettlementData:     datasource.SpecFromDefinition(*settlSpec.Data.SetFilterDecimals(uint64(settlementDataDecimals))),
+						DataSourceSpecForTradingTermination: datasource.SpecFromProto(oracleConfigForTradingTermination.Spec.ExternalDataSourceSpec.Spec),
+						DataSourceSpecBinding:               datasource.SpecBindingForFutureFromProto(&binding),
 					},
 				},
 			},
@@ -442,6 +438,7 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"parent market id",
 		"insurance pool fraction",
 		"successor auction",
+		"is passed",
 	})
 }
 

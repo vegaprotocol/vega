@@ -17,6 +17,7 @@ import (
 	"errors"
 	"strings"
 
+	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
 	vgproto "code.vegaprotocol.io/vega/protos/vega"
@@ -131,6 +132,9 @@ func (app *App) processChainEvent(
 		default:
 			return errors.New("unsupported erc20 multisig event")
 		}
+	case *commandspb.ChainEvent_ContractCall:
+		callResult := ethcall.EthereumContractCallResultFromProto(c.ContractCall)
+		return app.oracles.EthereumOraclesVerifier.ProcessEthereumContractCallResult(callResult)
 	default:
 		return ErrUnsupportedChainEvent
 	}

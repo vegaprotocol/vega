@@ -46,6 +46,28 @@ message Future {
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;
 }
 
+// Perpetual product definition
+message Perps {
+  // Underlying asset for the perpetual.
+  string settlement_asset = 1;
+  // Quote name of the instrument.
+  string quote_name = 2;
+  // Controls how much the upcoming funding payment liability contributes to party's margin, in the range [0, 1].
+  string margin_funding_factor = 3;
+  // Continuously compounded interest rate used in funding rate calculation, in the range [-1, 1].
+  string interest_rate = 4;
+  // Lower bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
+  string clamp_lower_bound = 5;
+  // Upper bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1].
+  string clamp_upper_bound = 6;
+  // Data source spec describing the data source for settlement schedule.
+  vega.DataSourceSpec data_source_spec_for_settlement_schedule = 7;
+  // Data source spec describing the data source for settlement.
+  vega.DataSourceSpec data_source_spec_for_settlement_data = 8;
+  // Binding between the data source spec and the settlement data.
+  DataSourceSpecToPerpsBinding data_source_spec_binding = 9;
+}
+
 // DataSourceSpecToFutureBinding describes which property of the data source data is to be
 // used as settlement data and which to use as the trading terminated trigger
 message DataSourceSpecToFutureBinding {
@@ -55,6 +77,19 @@ message DataSourceSpecToFutureBinding {
   string settlement_data_property = 1;
   // Name of the property in the data source data that signals termination of trading.
   string trading_termination_property = 2;
+}
+
+// Describes which property of the data source data is to be
+// used as settlement data and which to use as the trading terminated trigger
+message DataSourceSpecToPerpsBinding {
+  // Name of the property in the source data that should be used as settlement data.
+  // If it is set to "prices.BTC.value", then the perpetual market will use the value of
+  // this property as settlement data.
+  string settlement_data_property = 1;
+  // Name of the property in the source data that should be used as settlement data.
+  // If it is set to "prices.BTC.value", then the perpetual market will use the value of
+  // this property as settlement data.
+  string settlement_schedule_property = 2;
 }
 
 // Instrument metadata definition
@@ -79,6 +114,8 @@ message Instrument {
     Future future = 100;
     // Spot.
     Spot spot = 101;
+    // Perpetual.
+    Perps perps = 102;
   }
 }
 
@@ -207,6 +244,19 @@ message LiquidityMonitoringParameters {
   int64 auction_extension = 3;
 }
 
+message LiquiditySLAParameters {
+  string price_range = 1;
+  // Specifies the minimum fraction of time LPs must spend "on the book" providing their committed liquidity.
+  string commitment_min_time_fraction = 2;
+  // Specifies how often the quality of liquidity supplied by the LPs is evaluated and fees arising from that period are earmarked for specific parties.
+  int64 providers_fee_calculation_time_step = 3;
+  // Specifies the number of liquidity epochs over which past performance will continue to affect rewards.
+  uint64 performance_hysteresis_epochs = 4;
+  // Specifies the maximum fraction of their accrued fees an LP that meets the SLA implied by market.liquidity.commitmentMinTimeFraction will lose to liquidity providers
+  // that achieved a higher SLA performance than them.
+  string sla_competition_factor = 5;
+}
+
 // TargetStakeParameters contains parameters used in target stake calculation
 message TargetStakeParameters {
   // Specifies length of time window expressed in seconds for target stake calculation.
@@ -241,6 +291,8 @@ message Market {
     STATE_TRADING_TERMINATED = 8;
     // Settlement triggered and completed as defined by product
     STATE_SETTLED = 9;
+    // Market has been suspended via governance
+    STATE_SUSPENDED_VIA_GOVERNANCE = 10;
   }
 
   // Trading mode the market is currently running, also referred to as 'market state'
@@ -257,6 +309,8 @@ message Market {
     TRADING_MODE_MONITORING_AUCTION = 4;
     // No trading is allowed
     TRADING_MODE_NO_TRADING = 5;
+    // Special auction mode triggered via governance
+    TRADING_MODE_SUSPENDED_VIA_GOVERNANCE = 6;
 
     // Note: If adding an enum value, add a matching entry in:
     //       - gateway/graphql/helpers_enum.go
@@ -301,6 +355,8 @@ message Market {
   optional string insurance_pool_fraction = 16;
   // ID of the market that succeeds this market if it exists. This will be populated by the system when the successor market is enabled.
   optional string successor_market_id = 17;
+  // Liquidity SLA parameters for the market.
+  optional LiquiditySLAParameters liquidity_sla_params = 18;
 }
 
 // Time stamps for important times about creating, enacting etc the market

@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	vgproto "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
@@ -57,7 +58,7 @@ func (s *StakeTotalSupply) String() string {
 	return fmt.Sprintf(
 		"tokenAddress(%s) totalSupply(%s)",
 		s.TokenAddress,
-		uintPointerToString(s.TotalSupply),
+		stringer.UintPointerToString(s.TotalSupply),
 	)
 }
 
@@ -107,7 +108,7 @@ func (s *StakeLinking) String() string {
 		s.Type.String(),
 		s.TS,
 		s.Party,
-		uintPointerToString(s.Amount),
+		stringer.UintPointerToString(s.Amount),
 		s.Status.String(),
 		s.FinalizedAt,
 		s.TxHash,
@@ -214,7 +215,7 @@ func (s StakeDeposited) String() string {
 		s.LogIndex,
 		s.VegaPubKey,
 		s.EthereumAddress,
-		uintPointerToString(s.Amount),
+		stringer.UintPointerToString(s.Amount),
 		s.BlockTime,
 	)
 }
@@ -265,7 +266,7 @@ func (s StakeRemoved) String() string {
 		s.LogIndex,
 		s.VegaPubKey,
 		s.EthereumAddress,
-		uintPointerToString(s.Amount),
+		stringer.UintPointerToString(s.Amount),
 		s.BlockTime,
 	)
 }

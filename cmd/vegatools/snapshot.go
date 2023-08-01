@@ -38,7 +38,7 @@ func (opts *snapshotCmd) Execute(_ []string) error {
 		return nil
 	}
 
-	snapshots, invalid, err := snapshotdb.SnapshotData(db, opts.SnapshotContentsPath, opts.BlockHeight)
+	snapshots, invalid, err := snapshotdb.SnapshotData(db, opts.BlockHeight)
 	if err != nil {
 		return err
 	}

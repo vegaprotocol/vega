@@ -3,7 +3,6 @@ package paths_test
 import (
 	"testing"
 
-	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/paths"
 
 	"github.com/stretchr/testify/assert"
@@ -21,7 +20,7 @@ func testCreatingPathsWithoutPathReturnsDefaultImplementation(t *testing.T) {
 }
 
 func testCreatingPathsWithPathReturnsCustomImplementation(t *testing.T) {
-	p := paths.New(vgtest.RandomPath())
+	p := paths.New(t.TempDir())
 
 	assert.IsType(t, &paths.CustomPaths{}, p)
 }

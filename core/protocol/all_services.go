@@ -16,6 +16,10 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/datasource"
+	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
+	"code.vegaprotocol.io/vega/core/datasource/external/ethverifier"
+
 	"code.vegaprotocol.io/vega/libs/subscribers"
 
 	"code.vegaprotocol.io/vega/core/assets"
@@ -29,6 +33,9 @@ import (
 	ethclient "code.vegaprotocol.io/vega/core/client/eth"
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
+	"code.vegaprotocol.io/vega/core/datasource/spec/adaptors"
+	oracleAdaptors "code.vegaprotocol.io/vega/core/datasource/spec/adaptors"
 	"code.vegaprotocol.io/vega/core/delegation"
 	"code.vegaprotocol.io/vega/core/epochtime"
 	"code.vegaprotocol.io/vega/core/evtforward"
@@ -42,9 +49,6 @@ import (
 	"code.vegaprotocol.io/vega/core/netparams/dispatch"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/notary"
-	"code.vegaprotocol.io/vega/core/oracles"
-	"code.vegaprotocol.io/vega/core/oracles/adaptors"
-	oracleAdaptors "code.vegaprotocol.io/vega/core/oracles/adaptors"
 	"code.vegaprotocol.io/vega/core/pow"
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/protocolupgrade"
@@ -62,6 +66,17 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/version"
 )
+
+type EthCallEngine interface {
+	Start()
+	Stop()
+	MakeResult(specID string, bytes []byte) (ethcall.Result, error)
+	CallSpec(ctx context.Context, id string, atBlock uint64) (ethcall.Result, error)
+	GetRequiredConfirmations(id string) (uint64, error)
+	OnSpecActivated(ctx context.Context, spec datasource.Spec) error
+	OnSpecDeactivated(ctx context.Context, spec datasource.Spec)
+	UpdatePreviousEthBlock(height uint64, timestamp uint64)
+}
 
 type allServices struct {
 	ctx             context.Context
@@ -82,29 +97,31 @@ type allServices struct {
 
 	vegaPaths paths.Paths
 
-	marketActivityTracker *common.MarketActivityTracker
-	statevar              *statevar.Engine
-	snapshot              *snapshot.Engine
-	executionEngine       *execution.Engine
-	governance            *governance.Engine
-	collateral            *collateral.Engine
-	oracle                *oracles.Engine
-	oracleAdaptors        *adaptors.Adaptors
-	netParams             *netparams.Store
-	delegation            *delegation.Engine
-	limits                *limits.Engine
-	rewards               *rewards.Engine
-	checkpoint            *checkpoint.Engine
-	spam                  *spam.Engine
-	pow                   processor.PoWEngine
-	builtinOracle         *oracles.Builtin
-	codec                 abci.Codec
+	marketActivityTracker   *common.MarketActivityTracker
+	statevar                *statevar.Engine
+	snapshotEngine          *snapshot.Engine
+	executionEngine         *execution.Engine
+	governance              *governance.Engine
+	collateral              *collateral.Engine
+	oracle                  *spec.Engine
+	oracleAdaptors          *adaptors.Adaptors
+	netParams               *netparams.Store
+	delegation              *delegation.Engine
+	limits                  *limits.Engine
+	rewards                 *rewards.Engine
+	checkpoint              *checkpoint.Engine
+	spam                    *spam.Engine
+	pow                     processor.PoWEngine
+	builtinOracle           *spec.Builtin
+	codec                   abci.Codec
+	ethereumOraclesVerifier *ethverifier.Verifier
 
 	assets                *assets.Service
 	topology              *validators.Topology
 	notary                *notary.SnapshotNotary
 	eventForwarder        *evtforward.Forwarder
 	eventForwarderEngine  EventForwarderEngine
+	ethCallEngine         EthCallEngine
 	witness               *validators.Witness
 	banking               *banking.Engine
 	genesisHandler        *genesis.Handler
@@ -175,10 +192,6 @@ func newServices(
 
 	svcs.eventService = subscribers.NewService(svcs.log, svcs.broker, svcs.conf.Broker.EventBusClientBufferSize)
 	svcs.collateral = collateral.New(svcs.log, svcs.conf.Collateral, svcs.timeService, svcs.broker)
-	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
-
-	svcs.builtinOracle = oracles.NewBuiltinOracle(svcs.oracle, svcs.timeService)
-	svcs.oracleAdaptors = oracleAdaptors.New()
 
 	svcs.limits = limits.New(svcs.log, svcs.conf.Limits, svcs.timeService, svcs.broker)
 
@@ -196,7 +209,7 @@ func newServices(
 	}
 
 	svcs.protocolUpgradeEngine = protocolupgrade.New(svcs.log, svcs.conf.ProtocolUpgrade, svcs.broker, svcs.topology, version.Get())
-	svcs.witness = validators.NewWitness(svcs.log, svcs.conf.Validators, svcs.topology, svcs.commander, svcs.timeService)
+	svcs.witness = validators.NewWitness(svcs.ctx, svcs.log, svcs.conf.Validators, svcs.topology, svcs.commander, svcs.timeService)
 
 	// this is done to go around circular deps...
 	svcs.erc20MultiSigTopology.SetWitness(svcs.witness)
@@ -208,7 +221,24 @@ func newServices(
 		svcs.eventForwarderEngine = evtforward.NewNoopEngine(svcs.log, svcs.conf.EvtForward)
 	}
 
-	// this is done to go around circular deps again...
+	svcs.oracle = spec.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
+
+	svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.ethClient, svcs.eventForwarder)
+
+	if svcs.conf.IsValidator() && ethClient != nil {
+		go svcs.ethCallEngine.Start()
+	}
+
+	svcs.ethereumOraclesVerifier = ethverifier.New(svcs.log, svcs.witness, svcs.timeService, svcs.broker,
+		svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations)
+
+	// Not using the activation event bus event here as on recovery the ethCallEngine needs to have all specs - is this necessary?
+	svcs.oracle.AddSpecActivationListener(svcs.ethCallEngine)
+
+	svcs.builtinOracle = spec.NewBuiltin(svcs.oracle, svcs.timeService)
+	svcs.oracleAdaptors = oracleAdaptors.New()
+
+	// this is done to go around circular deps again..s
 	svcs.erc20MultiSigTopology.SetEthereumEventSource(svcs.eventForwarderEngine)
 
 	svcs.stakingAccounts, svcs.stakeVerifier, svcs.stakeCheckpoint = staking.New(
@@ -235,16 +265,21 @@ func newServices(
 	svcs.executionEngine = execution.NewEngine(
 		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar, svcs.marketActivityTracker, svcs.assets,
 	)
+	svcs.epochService.NotifyOnEpoch(svcs.executionEngine.OnEpochEvent, svcs.executionEngine.OnEpochRestore)
 
 	svcs.gastimator = processor.NewGastimator(svcs.executionEngine)
 
 	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.epochService, svcs.marketActivityTracker, svcs.erc20BridgeView, svcs.eventForwarderEngine)
+	svcs.spam = spam.New(svcs.log, svcs.conf.Spam, svcs.epochService, svcs.stakingAccounts)
+
 	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
 		// Use staking-loop to pretend a dummy builtin assets deposited with the faucet was staked
 		svcs.codec = &processor.NullBlockchainTxCodec{}
 		stakingLoop := nullchain.NewStakingLoop(svcs.collateral, svcs.assets)
 		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, stakingLoop, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams, svcs.banking)
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, stakingLoop, svcs.epochService, svcs.timeService)
+
+		svcs.spam.DisableSpamProtection() // Disable evaluation for the spam policies by the Spam Engine
 	} else {
 		svcs.codec = &processor.TxCodec{}
 		svcs.spam = spam.New(svcs.log, svcs.conf.Spam, svcs.epochService, svcs.stakingAccounts)
@@ -267,7 +302,6 @@ func newServices(
 		// checkpoint have been loaded
 		// which means that genesis has been loaded as well
 		// we should be fully ready to start the event sourcing from ethereum
-		svcs.eventForwarderEngine.Start()
 	})
 
 	svcs.genesisHandler.OnGenesisAppStateLoaded(
@@ -286,55 +320,52 @@ func newServices(
 		svcs.checkpoint.UponGenesis,
 	)
 
-	svcs.snapshot, err = snapshot.New(svcs.ctx, svcs.vegaPaths, svcs.conf.Snapshot, svcs.log, svcs.timeService, svcs.stats.Blockchain)
+	svcs.snapshotEngine, err = snapshot.NewEngine(svcs.vegaPaths, svcs.conf.Snapshot, svcs.log, svcs.timeService, svcs.stats.Blockchain)
 	if err != nil {
-		return nil, fmt.Errorf("failed to start snapshot engine: %w", err)
+		return nil, fmt.Errorf("could not initialize the snapshot engine: %w", err)
 	}
 
 	// notify delegation, rewards, and accounting on changes in the validator pub key
 	svcs.topology.NotifyOnKeyChange(svcs.governance.ValidatorKeyChanged)
 
-	svcs.snapshot.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
+	svcs.snapshotEngine.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
 		svcs.notary, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar,
-		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine)
+		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier)
 
-	if svcs.spam != nil {
-		svcs.snapshot.AddProviders(svcs.spam)
-	}
-	powWatchers := []netparams.WatchParam{}
+	svcs.snapshotEngine.AddProviders(svcs.spam)
 
+	pow := pow.New(svcs.log, svcs.conf.PoW, svcs.timeService)
 	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
-		svcs.pow = pow.NewNoop()
-	} else {
-		pow := pow.New(svcs.log, svcs.conf.PoW, svcs.timeService)
-		svcs.pow = pow
-		svcs.snapshot.AddProviders(pow)
-		powWatchers = []netparams.WatchParam{
-			{
-				Param:   netparams.SpamPoWNumberOfPastBlocks,
-				Watcher: pow.UpdateSpamPoWNumberOfPastBlocks,
-			},
-			{
-				Param:   netparams.SpamPoWDifficulty,
-				Watcher: pow.UpdateSpamPoWDifficulty,
-			},
-			{
-				Param:   netparams.SpamPoWHashFunction,
-				Watcher: pow.UpdateSpamPoWHashFunction,
-			},
-			{
-				Param:   netparams.SpamPoWIncreasingDifficulty,
-				Watcher: pow.UpdateSpamPoWIncreasingDifficulty,
-			},
-			{
-				Param:   netparams.SpamPoWNumberOfTxPerBlock,
-				Watcher: pow.UpdateSpamPoWNumberOfTxPerBlock,
-			},
-			{
-				Param:   netparams.ValidatorsEpochLength,
-				Watcher: pow.OnEpochDurationChanged,
-			},
-		}
+		pow.DisableVerification()
+	}
+
+	svcs.pow = pow
+	svcs.snapshotEngine.AddProviders(pow)
+	powWatchers := []netparams.WatchParam{
+		{
+			Param:   netparams.SpamPoWNumberOfPastBlocks,
+			Watcher: pow.UpdateSpamPoWNumberOfPastBlocks,
+		},
+		{
+			Param:   netparams.SpamPoWDifficulty,
+			Watcher: pow.UpdateSpamPoWDifficulty,
+		},
+		{
+			Param:   netparams.SpamPoWHashFunction,
+			Watcher: pow.UpdateSpamPoWHashFunction,
+		},
+		{
+			Param:   netparams.SpamPoWIncreasingDifficulty,
+			Watcher: pow.UpdateSpamPoWIncreasingDifficulty,
+		},
+		{
+			Param:   netparams.SpamPoWNumberOfTxPerBlock,
+			Watcher: pow.UpdateSpamPoWNumberOfTxPerBlock,
+		},
+		{
+			Param:   netparams.ValidatorsEpochLength,
+			Watcher: pow.OnEpochDurationChanged,
+		},
 	}
 
 	// setup config reloads for all engines / services /etc
@@ -368,13 +399,16 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 		svcs.banking.OnTick,
 		svcs.assets.OnTick,
 		svcs.limits.OnTick,
+
+		svcs.ethereumOraclesVerifier.OnTick,
 	)
 }
 
 func (svcs *allServices) Stop() {
 	svcs.confWatcher.Unregister(svcs.confListenerIDs)
 	svcs.eventForwarderEngine.Stop()
-	svcs.snapshot.Close()
+	svcs.snapshotEngine.Close()
+	svcs.ethCallEngine.Stop()
 }
 
 func (svcs *allServices) registerConfigWatchers() {
@@ -661,7 +695,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		},
 		{
 			Param:   netparams.SnapshotIntervalLength,
-			Watcher: svcs.snapshot.OnSnapshotIntervalUpdate,
+			Watcher: svcs.snapshotEngine.OnSnapshotIntervalUpdate,
 		},
 		{
 			Param:   netparams.ValidatorsVoteRequired,
@@ -710,6 +744,14 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.LimitsProposeMarketEnabledFrom,
 			Watcher: svcs.limits.OnLimitsProposeMarketEnabledFromUpdate,
+		},
+		{
+			Param:   netparams.SpotMarketTradingEnabled,
+			Watcher: svcs.limits.OnLimitsProposeSpotMarketEnabledFromUpdate,
+		},
+		{
+			Param:   netparams.PerpsMarketTradingEnabled,
+			Watcher: svcs.limits.OnLimitsProposePerpsMarketEnabledFromUpdate,
 		},
 		{
 			Param:   netparams.LimitsProposeAssetEnabledFrom,

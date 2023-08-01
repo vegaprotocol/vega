@@ -16,7 +16,6 @@ import (
 	"context"
 	"errors"
 
-	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/statevar"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -94,7 +93,7 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID s
 	return e
 }
 
-func (e *Engine) UpdateMarketConfig(riskModel risk.Model, monitor PriceMonitor) {
+func (e *Engine) UpdateMarketConfig(riskModel RiskModel, monitor PriceMonitor) {
 	e.rm = riskModel
 	e.pm = monitor
 	e.horizon = riskModel.GetProjectionHorizon()

@@ -8,11 +8,11 @@ import (
 	"os"
 	"sort"
 
+	cometbftdb "github.com/cometbft/cometbft-db"
 	"github.com/cosmos/iavl"
 	"github.com/gogo/protobuf/jsonpb"
 	pb "github.com/gogo/protobuf/proto"
 	"github.com/syndtr/goleveldb/leveldb/opt"
-	db "github.com/tendermint/tm-db"
 	"google.golang.org/protobuf/proto"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -27,8 +27,13 @@ type Data struct {
 	Hash    string `json:"hash"`
 }
 
-func initialiseTree(dbPath string) (*db.GoLevelDB, *iavl.MutableTree, error) {
-	conn, err := db.NewGoLevelDBWithOpts(
+type Database interface {
+	cometbftdb.DB
+	Clear() error
+}
+
+func initialiseTree(dbPath string) (*cometbftdb.GoLevelDB, *iavl.MutableTree, error) {
+	conn, err := cometbftdb.NewGoLevelDBWithOpts(
 		"snapshot",
 		dbPath,
 		&opt.Options{
@@ -50,7 +55,7 @@ func initialiseTree(dbPath string) (*db.GoLevelDB, *iavl.MutableTree, error) {
 }
 
 // SnapshotData returns an overview of each snapshot saved to disk, namely the height and its hash.
-func SnapshotData(dbPath string, outputPath string, heightToOutput uint64) ([]Data, []Data, error) {
+func SnapshotData(dbPath string, heightToOutput uint64) ([]Data, []Data, error) {
 	conn, tree, err := initialiseTree(dbPath)
 	defer func() {
 		if conn != nil {

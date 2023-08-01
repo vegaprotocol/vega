@@ -61,7 +61,6 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 			errRow = row
 		}
 		id := row.ID()
-		ref := id
 
 		lp, ok := lps[id]
 		if !ok {
@@ -71,7 +70,6 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 				Fee:              row.Fee(),
 				Sells:            []*types.LiquidityOrder{},
 				Buys:             []*types.LiquidityOrder{},
-				Reference:        ref,
 				LpType:           row.LpType(),
 				Err:              row.Error(),
 			}
@@ -79,6 +77,12 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 			lps[id] = lp
 			keys = append(keys, id)
 		}
+
+		lp.Reference = id
+		if row.Side() == types.SideUnspecified {
+			continue
+		}
+
 		lo := &types.LiquidityOrder{
 			Reference:  row.PeggedReference(),
 			Proportion: row.Proportion(),
@@ -162,12 +166,12 @@ func parseSubmitLiquidityProvisionTable(table *godog.Table) []RowWrapper {
 		"market id",
 		"commitment amount",
 		"fee",
-		"side",
-		"pegged reference",
-		"proportion",
-		"offset",
 		"lp type",
 	}, []string{
+		"pegged reference",
+		"side",
+		"proportion",
+		"offset",
 		"reference",
 		"error",
 	})
@@ -190,6 +194,9 @@ func (r submitLiquidityProvisionRow) MarketID() string {
 }
 
 func (r submitLiquidityProvisionRow) Side() types.Side {
+	if len(r.row.Str("side")) == 0 {
+		return types.SideUnspecified
+	}
 	return r.row.MustSide("side")
 }
 

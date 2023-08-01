@@ -15,6 +15,7 @@ package evtforward_test
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -24,9 +25,9 @@ import (
 	snp "code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
-	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/proto"
+	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	prototypes "code.vegaprotocol.io/vega/protos/vega"
@@ -96,7 +97,6 @@ func TestEvtForwarder(t *testing.T) {
 
 func testEventEmitterNotAllowlisted(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
-	defer evtfwd.ctrl.Finish()
 	evt := getTestChainEvent("some")
 	evtfwd.top.EXPECT().AllNodeIDs().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
@@ -107,7 +107,6 @@ func testEventEmitterNotAllowlisted(t *testing.T) {
 
 func testForwardSuccessNodeIsForwarder(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
-	defer evtfwd.ctrl.Finish()
 	evt := getTestChainEvent("some")
 	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	evtfwd.top.EXPECT().AllNodeIDs().Times(1).Return(testAllPubKeys)
@@ -120,7 +119,6 @@ func testForwardSuccessNodeIsForwarder(t *testing.T) {
 
 func testForwardFailureDuplicateEvent(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
-	defer evtfwd.ctrl.Finish()
 	evt := getTestChainEvent("some")
 	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	evtfwd.top.EXPECT().AllNodeIDs().Times(1).Return(testAllPubKeys)
@@ -136,7 +134,6 @@ func testForwardFailureDuplicateEvent(t *testing.T) {
 
 func testUpdateValidatorList(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
-	defer evtfwd.ctrl.Finish()
 	// no event, just call callback to ensure the validator list is updated
 	evtfwd.top.EXPECT().AllNodeIDs().Times(1).Return(testAllPubKeys)
 	evtfwd.cb(context.Background(), initTime.Add(time.Second))
@@ -144,7 +141,6 @@ func testUpdateValidatorList(t *testing.T) {
 
 func testAckSuccess(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
-	defer evtfwd.ctrl.Finish()
 	evt := getTestChainEvent("some")
 	state1, _, err := evtfwd.GetState("all")
 	require.Nil(t, err)
@@ -189,7 +185,6 @@ func testAckSuccess(t *testing.T) {
 
 func testAckFailureAlreadyAcked(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
-	defer evtfwd.ctrl.Finish()
 	evt := getTestChainEvent("some")
 	ok := evtfwd.Ack(evt)
 	assert.True(t, ok)
@@ -215,57 +210,75 @@ func getTestChainEvent(txid string) *commandspb.ChainEvent {
 	}
 }
 
-func TestSnapshotRoundtripViaEngine(t *testing.T) {
-	evtfwd := getTestEvtFwd(t)
-	defer evtfwd.ctrl.Finish()
+func TestSnapshotRoundTripViaEngine(t *testing.T) {
+	eventForwarder1 := getTestEvtFwd(t)
 
 	for i := 0; i < 100; i++ {
-		evtfwd.Ack(getTestChainEvent(crypto.RandomHash()))
+		eventForwarder1.Ack(getTestChainEvent(crypto.RandomHash()))
 	}
-	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
-	ctx = vgcontext.WithChainID(ctx, "chainid")
+
+	ctx := vgtest.VegaContext("chainid", 100)
+	vegaPath := paths.New(t.TempDir())
 	now := time.Now()
 	log := logging.NewTestLogger()
 	timeService := stubs.NewTimeStub()
 	timeService.SetTime(now)
 	statsData := stats.New(log, stats.NewDefaultConfig())
-	config := snp.NewDefaultConfig()
-	config.Storage = "memory"
-	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
-	snapshotEngine.AddProviders(evtfwd)
-	snapshotEngine.ClearAndInitialise()
-	defer snapshotEngine.Close()
+	config := snp.DefaultConfig()
 
-	_, err := snapshotEngine.Snapshot(ctx)
+	snapshotEngine1, err := snp.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
 	require.NoError(t, err)
-	snaps, err := snapshotEngine.List()
-	require.NoError(t, err)
-	snap1 := snaps[0]
+	snapshotEngine1CloseFn := vgtest.OnlyOnce(snapshotEngine1.Close)
+	defer snapshotEngine1CloseFn()
 
-	evtfwdLoad := getTestEvtFwd(t)
-	snapshotEngineLoad, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
-	defer snapshotEngineLoad.Close()
-	snapshotEngineLoad.AddProviders(evtfwdLoad)
-	snapshotEngineLoad.ClearAndInitialise()
-	snapshotEngineLoad.ReceiveSnapshot(snap1)
-	snapshotEngineLoad.ApplySnapshot(ctx)
-	snapshotEngineLoad.CheckLoaded()
+	snapshotEngine1.AddProviders(eventForwarder1)
 
-	b, err := snapshotEngine.Snapshot(ctx)
+	require.NoError(t, snapshotEngine1.Start(ctx))
+
+	hash1, err := snapshotEngine1.SnapshotNow(ctx)
 	require.NoError(t, err)
-	bLoad, err := snapshotEngineLoad.Snapshot(ctx)
-	require.NoError(t, err)
-	require.True(t, bytes.Equal(b, bLoad))
 
 	for i := 0; i < 10; i++ {
-		txID := crypto.RandomHash()
-		evtfwd.Ack(getTestChainEvent(txID))
-		evtfwdLoad.Ack(getTestChainEvent(txID))
+		eventForwarder1.Ack(getTestChainEvent(fmt.Sprintf("txHash%d", i)))
 	}
 
-	b, err = snapshotEngine.Snapshot(ctx)
+	state1 := map[string][]byte{}
+	for _, key := range eventForwarder1.Keys() {
+		state, additionalProvider, err := eventForwarder1.GetState(key)
+		require.NoError(t, err)
+		assert.Empty(t, additionalProvider)
+		state1[key] = state
+	}
+
+	snapshotEngine1CloseFn()
+
+	eventForwarder2 := getTestEvtFwd(t)
+	snapshotEngine2, err := snp.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
 	require.NoError(t, err)
-	bLoad, err = snapshotEngineLoad.Snapshot(ctx)
-	require.NoError(t, err)
-	require.True(t, bytes.Equal(b, bLoad))
+	defer snapshotEngine2.Close()
+
+	snapshotEngine2.AddProviders(eventForwarder2)
+
+	// This triggers the state restoration from the local snapshot.
+	require.NoError(t, snapshotEngine2.Start(ctx))
+
+	// Comparing the hash after restoration, to ensure it produces the same result.
+	hash2, _, _ := snapshotEngine2.Info()
+	require.Equal(t, hash1, hash2)
+
+	for i := 0; i < 10; i++ {
+		eventForwarder2.Ack(getTestChainEvent(fmt.Sprintf("txHash%d", i)))
+	}
+
+	state2 := map[string][]byte{}
+	for _, key := range eventForwarder2.Keys() {
+		state, additionalProvider, err := eventForwarder2.GetState(key)
+		require.NoError(t, err)
+		assert.Empty(t, additionalProvider)
+		state2[key] = state
+	}
+
+	for key := range state1 {
+		assert.Equalf(t, state1[key], state2[key], "Key %q does not have the same data", key)
+	}
 }

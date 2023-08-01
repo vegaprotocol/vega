@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -26,7 +27,7 @@ type ProposalTermsUpdateSpotMarket struct {
 func (a ProposalTermsUpdateSpotMarket) String() string {
 	return fmt.Sprintf(
 		"updateSpotMarket(%s)",
-		reflectPointerToString(a.UpdateSpotMarket),
+		stringer.ReflectPointerToString(a.UpdateSpotMarket),
 	)
 }
 
@@ -82,7 +83,7 @@ func (n UpdateSpotMarket) String() string {
 	return fmt.Sprintf(
 		"marketID(%s) changes(%s)",
 		n.MarketID,
-		reflectPointerToString(n.Changes),
+		stringer.ReflectPointerToString(n.Changes),
 	)
 }
 
@@ -113,22 +114,25 @@ type UpdateSpotMarketConfiguration struct {
 	PriceMonitoringParameters *PriceMonitoringParameters
 	TargetStakeParameters     *TargetStakeParameters
 	RiskParameters            updateRiskParams
+	SLAParams                 *LiquiditySLAParams
 }
 
 func (n UpdateSpotMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"instrument(%s) metadata(%v) priceMonitoring(%s) targetStakeParameters(%s) risk(%s)",
-		reflectPointerToString(n.Instrument),
+		"instrument(%s) metadata(%v) priceMonitoring(%s) targetStakeParameters(%s) risk(%s) slaParams(%s)",
+		stringer.ReflectPointerToString(n.Instrument),
 		MetadataList(n.Metadata).String(),
-		reflectPointerToString(n.PriceMonitoringParameters),
-		reflectPointerToString(n.TargetStakeParameters),
-		reflectPointerToString(n.RiskParameters),
+		stringer.ReflectPointerToString(n.PriceMonitoringParameters),
+		stringer.ReflectPointerToString(n.TargetStakeParameters),
+		stringer.ReflectPointerToString(n.RiskParameters),
+		stringer.ReflectPointerToString(n.SLAParams),
 	)
 }
 
 func (n UpdateSpotMarketConfiguration) DeepClone() *UpdateSpotMarketConfiguration {
 	cpy := &UpdateSpotMarketConfiguration{
-		Metadata: make([]string, len(n.Metadata)),
+		Metadata:  make([]string, len(n.Metadata)),
+		SLAParams: n.SLAParams.DeepClone(),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -161,6 +165,7 @@ func (n UpdateSpotMarketConfiguration) IntoProto() *vegapb.UpdateSpotMarketConfi
 		Metadata:                  md,
 		PriceMonitoringParameters: priceMonitoring,
 		TargetStakeParameters:     targetStakeParameters,
+		SlaParams:                 n.SLAParams.IntoProto(),
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.UpdateSpotMarketConfiguration_Simple:
@@ -184,6 +189,7 @@ func UpdateSpotMarketConfigurationFromProto(p *vegapb.UpdateSpotMarketConfigurat
 		Metadata:                  md,
 		PriceMonitoringParameters: priceMonitoring,
 		TargetStakeParameters:     targetStakeParameters,
+		SLAParams:                 LiquiditySLAParamsFromProto(p.SlaParams),
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {
@@ -203,7 +209,7 @@ type UpdateSpotMarketConfigurationSimple struct {
 func (n UpdateSpotMarketConfigurationSimple) String() string {
 	return fmt.Sprintf(
 		"simple(%s)",
-		reflectPointerToString(n.Simple),
+		stringer.ReflectPointerToString(n.Simple),
 	)
 }
 
@@ -239,7 +245,7 @@ type UpdateSpotMarketConfigurationLogNormal struct {
 func (n UpdateSpotMarketConfigurationLogNormal) String() string {
 	return fmt.Sprintf(
 		"logNormal(%s)",
-		reflectPointerToString(n.LogNormal),
+		stringer.ReflectPointerToString(n.LogNormal),
 	)
 }
 

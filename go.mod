@@ -6,7 +6,7 @@ require (
 	code.vegaprotocol.io/quant v0.2.5
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/cosmos/iavl v0.19.4
+	github.com/cosmos/iavl v0.20.0
 	github.com/cucumber/godog v0.12.5
 	github.com/ethereum/go-ethereum v1.11.6
 	github.com/fatih/color v1.13.0
@@ -31,7 +31,6 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.8.2
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a
-	github.com/tendermint/tm-db v0.6.7
 	go.elastic.co/apm/module/apmhttp v1.8.0
 	go.nanomsg.org/mangos/v3 v3.2.1
 	go.uber.org/zap v1.24.0
@@ -43,9 +42,12 @@ require (
 require (
 	github.com/99designs/gqlgen v0.17.20
 	github.com/BurntSushi/toml v1.2.1
+	github.com/PaesslerAG/gval v1.0.0
+	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/adrg/xdg v0.4.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/cenkalti/backoff/v4 v4.2.0
+	github.com/cometbft/cometbft-db v0.7.0
 	github.com/cucumber/messages-go/v16 v16.0.1
 	github.com/dgraph-io/badger/v2 v2.2007.4
 	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
@@ -110,11 +112,9 @@ require (
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/pebble v0.0.0-20230209160836-829675f94811 // indirect
 	github.com/cockroachdb/redact v1.1.3 // indirect
-	github.com/cometbft/cometbft-db v0.7.0 // indirect
 	github.com/containerd/cgroups v1.1.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d // indirect
-	github.com/cosmos/gorocksdb v1.2.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/crackcomm/go-gitignore v0.0.0-20170627025303-887ab5e44cc3 // indirect
 	github.com/creachadair/taskgroup v0.3.2 // indirect
@@ -294,7 +294,7 @@ require (
 	github.com/btcsuite/btcd/btcec/v2 v2.2.1 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/confio/ics23/go v0.7.0 // indirect
+	github.com/confio/ics23/go v0.9.0 // indirect
 	github.com/cucumber/gherkin-go/v19 v19.0.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
@@ -379,6 +379,7 @@ require (
 replace (
 	github.com/btcsuite/btcd => github.com/btcsuite/btcd v0.23.3
 	github.com/fergusstrange/embedded-postgres => github.com/vegaprotocol/embedded-postgres v1.13.1-0.20221123183204-2e7a2feee5bb
+	github.com/muesli/cancelreader => github.com/vegaprotocol/cancelreader v0.0.0-20230724130739-6f2217a69449
 	github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.3.1-uint256
 	github.com/tendermint/tendermint => github.com/vegaprotocol/cometbft v0.34.28-0.20230322133204-3d8588de736e
 	github.com/tendermint/tm-db => github.com/cometbft/cometbft-db v0.6.7

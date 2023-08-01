@@ -88,6 +88,22 @@ func (e *Engine) getUpdateSpotMarketProposalParameters() *ProposalParameters {
 	)
 }
 
+// getUpdatetMarketStateProposalParameters is reusing the net params defined for market update!
+func (e *Engine) getUpdateMarketStateProposalParameters() *ProposalParameters {
+	return e.getProposalParametersFromNetParams(netparams.GovernanceProposalUpdateMarketMinClose,
+		netparams.GovernanceProposalUpdateMarketMaxClose,
+		netparams.GovernanceProposalUpdateMarketMinEnact,
+		netparams.GovernanceProposalUpdateMarketMaxEnact,
+		netparams.GovernanceProposalUpdateMarketRequiredParticipation,
+		netparams.GovernanceProposalUpdateMarketRequiredMajority,
+		netparams.GovernanceProposalUpdateMarketMinProposerBalance,
+		netparams.GovernanceProposalUpdateMarketMinVoterBalance,
+		netparams.GovernanceProposalUpdateMarketRequiredParticipationLP,
+		netparams.GovernanceProposalUpdateMarketRequiredMajorityLP,
+		netparams.GovernanceProposalUpdateMarketMinProposerEquityLikeShare,
+	)
+}
+
 func (e *Engine) getNewAssetProposalParameters() *ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalAssetMinClose,

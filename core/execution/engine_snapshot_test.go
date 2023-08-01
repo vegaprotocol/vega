@@ -19,19 +19,23 @@ import (
 	"testing"
 	"time"
 
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
+	"code.vegaprotocol.io/vega/core/datasource"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
+
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/common/mocks"
-	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
@@ -106,8 +110,13 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	collateralService.EXPECT().CreateMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	collateralService.EXPECT().GetMarketLiquidityFeeAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
 	collateralService.EXPECT().GetInsurancePoolBalance(gomock.Any(), gomock.Any()).AnyTimes().Return(num.UintZero(), true)
+	collateralService.EXPECT().CreateSpotMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	collateralService.EXPECT().GetAssetQuantum("ETH").AnyTimes().Return(num.DecimalFromInt64(1), nil)
+	collateralService.EXPECT().GetOrCreatePartyBondAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
+	collateralService.EXPECT().GetOrCreatePartyLiquidityFeeAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	collateralService.EXPECT().BondSpotUpdate(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.LedgerMovement{}, nil)
 	oracleService := mocks.NewMockOracleEngine(ctrl)
-	oracleService.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(oracles.SubscriptionID(0), func(_ context.Context, _ oracles.SubscriptionID) {})
+	oracleService.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(spec.SubscriptionID(0), func(_ context.Context, _ spec.SubscriptionID) {}, nil)
 	oracleService.EXPECT().Unsubscribe(gomock.Any(), gomock.Any()).AnyTimes()
 
 	statevar := mocks.NewMockStateVarEngine(ctrl)
@@ -141,9 +150,81 @@ func TestEmptyMarkets(t *testing.T) {
 	assert.Empty(t, providers)
 }
 
+func getSpotMarketConfig() *types.Market {
+	return &types.Market{
+		ID: "SpotMarketID", // ID will be generated
+		PriceMonitoringSettings: &types.PriceMonitoringSettings{
+			Parameters: &types.PriceMonitoringParameters{
+				Triggers: []*types.PriceMonitoringTrigger{
+					{
+						Horizon:          1000,
+						HorizonDec:       num.DecimalFromFloat(1000.0),
+						Probability:      num.DecimalFromFloat(0.3),
+						AuctionExtension: 10000,
+					},
+				},
+			},
+		},
+		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
+			TargetStakeParameters: &types.TargetStakeParameters{
+				TimeWindow:    101,
+				ScalingFactor: num.DecimalFromFloat(1.0),
+			},
+			TriggeringRatio:  num.DecimalZero(),
+			AuctionExtension: 0,
+		},
+		Fees: &types.Fees{
+			Factors: &types.FeeFactors{
+				MakerFee:          num.DecimalFromFloat(0.1),
+				InfrastructureFee: num.DecimalFromFloat(0.1),
+				LiquidityFee:      num.DecimalFromFloat(0.1),
+			},
+		},
+		LiquiditySLAParams: &types.LiquiditySLAParams{
+			PriceRange:                      num.DecimalFromFloat(0.05),
+			CommitmentMinTimeFraction:       num.DecimalFromFloat(0.5),
+			SlaCompetitionFactor:            num.DecimalFromFloat(0.5),
+			ProvidersFeeCalculationTimeStep: time.Second,
+			PerformanceHysteresisEpochs:     1,
+		},
+		TradableInstrument: &types.TradableInstrument{
+			Instrument: &types.Instrument{
+				ID:   "Crypto/BTC/ETH",
+				Code: "SPOT:BTC/ETH",
+				Name: "BTC/ETH SPOT",
+				Metadata: &types.InstrumentMetadata{
+					Tags: []string{
+						"asset_class:spot/crypto",
+						"product:spot",
+					},
+				},
+				Product: &types.InstrumentSpot{
+					Spot: &types.Spot{
+						BaseAsset:  "BTC",
+						QuoteAsset: "ETH",
+						Name:       "BTC/ETH",
+					},
+				},
+			},
+			RiskModel: &types.TradableInstrumentLogNormalRiskModel{
+				LogNormalRiskModel: &types.LogNormalRiskModel{
+					RiskAversionParameter: num.DecimalFromFloat(0.01),
+					Tau:                   num.DecimalFromFloat(1.0 / 365.25 / 24),
+					Params: &types.LogNormalModelParams{
+						Mu:    num.DecimalZero(),
+						R:     num.DecimalFromFloat(0.016),
+						Sigma: num.DecimalFromFloat(0.09),
+					},
+				},
+			},
+		},
+		State: types.MarketStateActive,
+	}
+}
+
 func getMarketConfig() *types.Market {
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
 
 	return &types.Market{
@@ -196,45 +277,45 @@ func getMarketConfig() *types.Market {
 				Product: &types.InstrumentFuture{
 					Future: &types.Future{
 						SettlementAsset: "Ethereum/Ether",
-						DataSourceSpecForSettlementData: &types.DataSourceSpec{
+						DataSourceSpecForSettlementData: &datasource.Spec{
 							ID: "1",
-							Data: types.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+							Data: datasource.NewDefinition(
+								datasource.ContentTypeOracle,
 							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
+								&signedoracle.SpecConfiguration{
 									Signers: pubKeys,
-									Filters: []*types.DataSourceSpecFilter{
+									Filters: []*dstypes.SpecFilter{
 										{
-											Key: &types.DataSourceSpecPropertyKey{
+											Key: &dstypes.SpecPropertyKey{
 												Name: "prices.ETH.value",
 												Type: datapb.PropertyKey_TYPE_INTEGER,
 											},
-											Conditions: []*types.DataSourceSpecCondition{},
+											Conditions: []*dstypes.SpecCondition{},
 										},
 									},
 								},
 							),
 						},
-						DataSourceSpecForTradingTermination: &types.DataSourceSpec{
+						DataSourceSpecForTradingTermination: &datasource.Spec{
 							ID: "2",
-							Data: types.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+							Data: datasource.NewDefinition(
+								datasource.ContentTypeOracle,
 							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
+								&signedoracle.SpecConfiguration{
 									Signers: pubKeys,
-									Filters: []*types.DataSourceSpecFilter{
+									Filters: []*dstypes.SpecFilter{
 										{
-											Key: &types.DataSourceSpecPropertyKey{
+											Key: &dstypes.SpecPropertyKey{
 												Name: "trading.terminated",
 												Type: datapb.PropertyKey_TYPE_BOOLEAN,
 											},
-											Conditions: []*types.DataSourceSpecCondition{},
+											Conditions: []*dstypes.SpecCondition{},
 										},
 									},
 								},
 							),
 						},
-						DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
+						DataSourceSpecBinding: &datasource.SpecBindingForFuture{
 							SettlementDataProperty:     "prices.ETH.value",
 							TradingTerminationProperty: "trading.terminated",
 						},
@@ -282,6 +363,13 @@ func TestValidMarketSnapshot(t *testing.T) {
 	err := engine.SubmitMarket(ctx, marketConfig, "", time.Now())
 	assert.NoError(t, err)
 
+	// submit successor
+	marketConfig2 := getMarketConfig()
+	marketConfig2.ParentMarketID = marketConfig.ID
+	marketConfig2.InsurancePoolFraction = num.DecimalOne()
+	err = engine.SubmitMarket(ctx, marketConfig2, "", time.Now())
+	assert.NoError(t, err)
+
 	keys := engine.Keys()
 	require.Equal(t, 1, len(keys))
 	key := keys[0]
@@ -300,8 +388,17 @@ func TestValidMarketSnapshot(t *testing.T) {
 	snap := &snapshot.Payload{}
 	err = proto.Unmarshal(b, snap)
 	assert.NoError(t, err)
+
+	// check expected successors are in there
+	tt, ok := snap.Data.(*snapshot.Payload_ExecutionMarkets)
+	require.True(t, ok)
+	require.Equal(t, 1, len(tt.ExecutionMarkets.Successors))
+	require.Equal(t, marketConfig.ID, tt.ExecutionMarkets.Successors[0].ParentMarket)
+	require.Equal(t, 1, len(tt.ExecutionMarkets.Successors[0].SuccessorMarkets))
+	require.Equal(t, marketConfig2.ID, tt.ExecutionMarkets.Successors[0].SuccessorMarkets[0])
+
 	loadStateProviders, err := engine2.LoadState(ctx, types.PayloadFromProto(snap))
-	assert.Len(t, loadStateProviders, 5)
+	assert.Len(t, loadStateProviders, 10)
 	assert.NoError(t, err)
 
 	providerMap := map[string]map[string]types.StateProvider{}
@@ -316,6 +413,99 @@ func TestValidMarketSnapshot(t *testing.T) {
 	state2, _, err := engine2.GetState(key)
 	assert.NoError(t, err)
 	assert.True(t, bytes.Equal(b, state2))
+
+	snap = &snapshot.Payload{}
+	err = proto.Unmarshal(state2, snap)
+	assert.NoError(t, err)
+	tt, ok = snap.Data.(*snapshot.Payload_ExecutionMarkets)
+	require.True(t, ok)
+	require.Equal(t, 1, len(tt.ExecutionMarkets.Successors))
+	require.Equal(t, marketConfig.ID, tt.ExecutionMarkets.Successors[0].ParentMarket)
+	require.Equal(t, 1, len(tt.ExecutionMarkets.Successors[0].SuccessorMarkets))
+	require.Equal(t, marketConfig2.ID, tt.ExecutionMarkets.Successors[0].SuccessorMarkets[0])
+
+	// now load the providers state
+	for _, p := range providers {
+		for _, k := range p.Keys() {
+			b, _, err := p.GetState(k)
+			require.NoError(t, err)
+
+			snap := &snapshot.Payload{}
+			err = proto.Unmarshal(b, snap)
+			assert.NoError(t, err)
+
+			toRestore := providerMap[p.Namespace().String()][k]
+			_, err = toRestore.LoadState(ctx, types.PayloadFromProto(snap))
+			require.NoError(t, err)
+			b2, _, err := toRestore.GetState(k)
+			require.NoError(t, err)
+			assert.True(t, bytes.Equal(b, b2))
+		}
+	}
+
+	m2, ok := engine2.GetMarket(marketConfig2.ID, false)
+	require.True(t, ok)
+	require.NotEmpty(t, marketConfig2.ParentMarketID, m2.ParentMarketID)
+}
+
+func TestValidSpotMarketSnapshot(t *testing.T) {
+	ctx := context.Background()
+	engine, ctrl := createEngine(t)
+	defer ctrl.Finish()
+	assert.NotNil(t, engine)
+
+	marketConfig := getSpotMarketConfig()
+	err := engine.SubmitSpotMarket(ctx, marketConfig, "", time.Now())
+	assert.NoError(t, err)
+
+	err = engine.SubmitLiquidityProvision(ctx, &types.LiquidityProvisionSubmission{
+		MarketID:         marketConfig.ID,
+		CommitmentAmount: num.NewUint(1000),
+		Fee:              num.DecimalFromFloat(0.5),
+	}, "zohar", crypto.RandomHash())
+	require.NoError(t, err)
+
+	keys := engine.Keys()
+	require.Equal(t, 1, len(keys))
+	key := keys[0]
+
+	// Take the snapshot and hash
+	b, providers, err := engine.GetState(key)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, b)
+	assert.Len(t, providers, 4)
+
+	// Turn the bytes back into a payload and restore to a new engine
+	engine2, ctrl := createEngine(t)
+
+	defer ctrl.Finish()
+	assert.NotNil(t, engine2)
+	snap := &snapshot.Payload{}
+	err = proto.Unmarshal(b, snap)
+	assert.NoError(t, err)
+
+	loadStateProviders, err := engine2.LoadState(ctx, types.PayloadFromProto(snap))
+	assert.Len(t, loadStateProviders, 4)
+	assert.NoError(t, err)
+
+	providerMap := map[string]map[string]types.StateProvider{}
+	for _, p := range loadStateProviders {
+		providerMap[p.Namespace().String()] = map[string]types.StateProvider{}
+		for _, k := range p.Keys() {
+			providerMap[p.Namespace().String()][k] = p
+		}
+	}
+
+	// Check the hashes are the same
+	state2, _, err := engine2.GetState(key)
+	assert.NoError(t, err)
+	assert.True(t, bytes.Equal(b, state2))
+
+	snap = &snapshot.Payload{}
+	err = proto.Unmarshal(state2, snap)
+	assert.NoError(t, err)
+	_, ok := snap.Data.(*snapshot.Payload_ExecutionMarkets)
+	require.True(t, ok)
 
 	// now load the providers state
 	for _, p := range providers {
@@ -344,7 +534,7 @@ func TestValidSettledMarketSnapshot(t *testing.T) {
 	engine.collateral.EXPECT().CreateMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	engine.collateral.EXPECT().GetMarketLiquidityFeeAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
 	engine.collateral.EXPECT().GetInsurancePoolBalance(gomock.Any(), gomock.Any()).AnyTimes().Return(num.UintZero(), true)
-	engine.collateral.EXPECT().FinalSettlement(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	engine.collateral.EXPECT().FinalSettlement(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	engine.collateral.EXPECT().ClearMarket(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).AnyTimes().Return(nil, nil)
 	engine.timeSvc.EXPECT().GetTimeNow().AnyTimes()
 	engine.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -363,26 +553,26 @@ func TestValidSettledMarketSnapshot(t *testing.T) {
 	// ensure CP state doesn't get invalidated the moment the market is settled
 	engine.OnSuccessorMarketTimeWindowUpdate(ctx, time.Hour)
 	// now let's set up the settlement and trading terminated callbacks
-	var ttCB, sCB oracles.OnMatchedOracleData
-	ttData := oracles.OracleData{
+	var ttCB, sCB spec.OnMatchedData
+	ttData := dstypes.Data{
 		Signers: marketConfig.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination.Data.GetSigners(),
 		Data: map[string]string{
 			"trading.terminated": "true",
 		},
 	}
-	sData := oracles.OracleData{
+	sData := dstypes.Data{
 		Signers: marketConfig.TradableInstrument.Instrument.GetFuture().DataSourceSpecForSettlementData.Data.GetSigners(),
 		Data: map[string]string{
 			"prices.ETH.value": "100000",
 		},
 	}
-	engine.oracle.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(_ context.Context, spec oracles.OracleSpec, cb oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber) {
-		if ok, _ := spec.MatchData(ttData); ok {
+	engine.oracle.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(_ context.Context, s spec.Spec, cb spec.OnMatchedData) (spec.SubscriptionID, spec.Unsubscriber, error) {
+		if ok, _ := s.MatchData(ttData); ok {
 			ttCB = cb
-		} else if ok, _ := spec.MatchData(sData); ok {
+		} else if ok, _ := s.MatchData(sData); ok {
 			sCB = cb
 		}
-		return oracles.SubscriptionID(0), func(_ context.Context, _ oracles.SubscriptionID) {}
+		return spec.SubscriptionID(0), func(_ context.Context, _ spec.SubscriptionID) {}, nil
 	})
 	defer engine.ctrl.Finish()
 	assert.NotNil(t, engine)
@@ -397,6 +587,10 @@ func TestValidSettledMarketSnapshot(t *testing.T) {
 	ttCB(ctx, ttData)
 	sCB(ctx, sData)
 	require.Equal(t, marketConfig.State, types.MarketStateSettled)
+	// ensure the market data returns no trading
+	md, err := engine.GetMarketData(marketConfig.ID)
+	require.NoError(t, err)
+	require.Equal(t, types.MarketTradingModeNoTrading, md.MarketTradingMode)
 	engine.OnTick(ctx, time.Now())
 
 	keys := engine.Keys()
@@ -457,4 +651,74 @@ func TestValidSettledMarketSnapshot(t *testing.T) {
 	// ensure the market is restored as settled
 	_, ok := engine2.GetMarket(marketConfig.ID, true)
 	require.True(t, ok)
+}
+
+func TestSuccessorMapSnapshot(t *testing.T) {
+	ctx := vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("0deadbeef")))
+	engine := getMockedEngine(t)
+	engine.collateral.EXPECT().AssetExists(gomock.Any()).AnyTimes().Return(true)
+	engine.collateral.EXPECT().CreateMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	engine.collateral.EXPECT().GetMarketLiquidityFeeAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
+	engine.collateral.EXPECT().GetInsurancePoolBalance(gomock.Any(), gomock.Any()).AnyTimes().Return(num.UintZero(), true)
+	engine.collateral.EXPECT().FinalSettlement(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	engine.collateral.EXPECT().ClearMarket(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	engine.timeSvc.EXPECT().GetTimeNow().AnyTimes()
+	engine.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	engine.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	// engine.oracle.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	engine.statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	engine.statevar.EXPECT().UnregisterStateVariable(gomock.Any(), gomock.Any()).AnyTimes()
+	engine.statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	engine.epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).AnyTimes()
+	engine.asset.EXPECT().Get(gomock.Any()).AnyTimes().DoAndReturn(func(a string) (*assets.Asset, error) {
+		as := NewAssetStub(a, 0)
+		return as, nil
+	})
+	// create a market
+	marketConfig := getMarketConfig()
+	// ensure CP state doesn't get invalidated the moment the market is settled
+	engine.OnSuccessorMarketTimeWindowUpdate(ctx, time.Hour)
+	// now let's set up the settlement and trading terminated callbacks
+	engine.oracle.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(_ context.Context, s spec.Spec, cb spec.OnMatchedData) (spec.SubscriptionID, spec.Unsubscriber, error) {
+		return spec.SubscriptionID(0), func(_ context.Context, _ spec.SubscriptionID) {}, nil
+	})
+	defer engine.ctrl.Finish()
+	assert.NotNil(t, engine)
+
+	err := engine.SubmitMarket(ctx, marketConfig, "", time.Now())
+	assert.NoError(t, err)
+	// now let's settle the market by:
+	// 1. Create successor
+	successor := marketConfig.DeepClone()
+	successor.ID = "successor-id"
+	successor.ParentMarketID = marketConfig.ID
+	successor.InsurancePoolFraction = num.DecimalFromFloat(1)
+	successor.State = types.MarketStateProposed
+	successor.TradingMode = types.MarketTradingModeNoTrading
+	// submit the successor market
+	engine.SubmitMarket(ctx, successor, "", time.Now())
+	engine.OnTick(ctx, time.Now())
+	// 2. cancel the parent market (before leaving opening auction)
+	engine.RejectMarket(ctx, marketConfig.ID)
+	engine.OnTick(ctx, time.Now())
+
+	// 3. Check the successor map in the snapshot
+
+	keys := engine.Keys()
+	require.Equal(t, 1, len(keys))
+	key := keys[0]
+
+	// Take the snapshot and hash
+	b, _, err := engine.GetState(key)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, b)
+
+	snap := &snapshot.Payload{}
+	err = proto.Unmarshal(b, snap)
+	assert.NoError(t, err)
+
+	// Check the hashes are the same
+	execMkts := snap.GetExecutionMarkets()
+	require.NotNil(t, execMkts)
+	require.Empty(t, execMkts.Successors)
 }

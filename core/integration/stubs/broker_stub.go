@@ -720,11 +720,55 @@ func (b *BrokerStub) GetMarketInsurancePoolAccount(market string) (types.Account
 	return types.Account{}, errors.New("account does not exist")
 }
 
-func (b *BrokerStub) GetAssetNetworkTreasuryAccount(asset string) (types.Account, error) {
+func (b *BrokerStub) GetStakingRewardAccount(asset string) (types.Account, error) {
 	batch := b.GetAccountEvents()
 	for _, e := range batch {
 		v := e.Account()
 		if v.Owner == "*" && v.Asset == asset && v.Type == types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD {
+			return v, nil
+		}
+	}
+	return types.Account{}, errors.New("account does not exist")
+}
+
+func (b *BrokerStub) GetAssetNetworkTreasuryAccount(asset string) (types.Account, error) {
+	batch := b.GetAccountEvents()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == "*" && v.Asset == asset && v.Type == types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY {
+			return v, nil
+		}
+	}
+	return types.Account{}, errors.New("account does not exist")
+}
+
+func (b *BrokerStub) GetMarketLPLiquidityFeePoolAccount(party, market string) (types.Account, error) {
+	batch := b.GetAccountEvents()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == party && v.MarketId == market && v.Type == types.AccountType_ACCOUNT_TYPE_LP_LIQUIDITY_FEES {
+			return v, nil
+		}
+	}
+	return types.Account{}, errors.New("account does not exist")
+}
+
+func (b *BrokerStub) GetAssetGlobalInsuranceAccount(asset string) (types.Account, error) {
+	batch := b.GetAccountEvents()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == "*" && v.Asset == asset && v.Type == types.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE {
+			return v, nil
+		}
+	}
+	return types.Account{}, errors.New("account does not exist")
+}
+
+func (b *BrokerStub) GetMarketLPLiquidityBondAccount(party, market string) (types.Account, error) {
+	batch := b.GetAccountEvents()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == party && v.MarketId == market && v.Type == types.AccountType_ACCOUNT_TYPE_BOND {
 			return v, nil
 		}
 	}
@@ -782,6 +826,21 @@ func (b *BrokerStub) GetPartyGeneralAccount(party, asset string) (ga types.Accou
 	for _, e := range batch {
 		v := e.Account()
 		if v.Owner == party && v.Type == types.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
+			ga = v
+			err = nil
+		}
+	}
+
+	return
+}
+
+// GetPartyGeneralAccount returns the latest event WRT the party's general account.
+func (b *BrokerStub) GetPartyHoldingAccount(party, asset string) (ga types.Account, err error) {
+	batch := b.GetAccountEvents()
+	err = errors.New("account does not exist")
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == party && v.Type == types.AccountType_ACCOUNT_TYPE_HOLDING && v.Asset == asset {
 			ga = v
 			err = nil
 		}
@@ -884,6 +943,24 @@ func (b *BrokerStub) GetByReference(party, ref string) (types.Order, error) {
 		return last, nil
 	}
 	return types.Order{}, fmt.Errorf("no order for party %v and reference %v", party, ref)
+}
+
+func (b *BrokerStub) GetStopByReference(party, ref string) (eventspb.StopOrderEvent, error) {
+	data := b.GetStopOrderEvents()
+
+	var last eventspb.StopOrderEvent // we need the most recent event, the order object is not updated (copy v pointer, issue 2353)
+	matched := false
+	for _, o := range data {
+		v := o.StopOrder()
+		if v.Submission.Reference == ref && v.StopOrder.PartyId == party {
+			last = *v
+			matched = true
+		}
+	}
+	if matched {
+		return last, nil
+	}
+	return eventspb.StopOrderEvent{}, fmt.Errorf("no order for party %v and reference %v", party, ref)
 }
 
 func (b *BrokerStub) GetTxErrors() []events.TxErr {
