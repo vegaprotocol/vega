@@ -1,6 +1,7 @@
 package inspecttx_helpers
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -9,6 +10,12 @@ import (
 
 	"github.com/nsf/jsondiff"
 )
+
+type ComparableJson struct {
+	OriginalJson json.RawMessage
+	CoreJson     json.RawMessage
+	DiffType     DiffType
+}
 
 func marshalTransactionAndInputDataToString(transaction *commandspb.Transaction, inputData *commandspb.InputData) (string, string, error) {
 	marshalledTransaction, err := jsonMarshaller.MarshalToString(transaction)

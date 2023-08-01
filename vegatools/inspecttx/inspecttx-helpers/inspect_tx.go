@@ -92,7 +92,10 @@ func inspectTransaction(transactionData TransactionData) error {
 			}
 
 			logrus.Errorf("transaction data did not match, writing diff data to %s", diffOutputDirectory)
-			writeDiffToFile(comparableTransactionJson, transactionDiffHtml)
+			err = writeDiffToFile(comparableTransactionJson, transactionDiffHtml)
+			if err != nil {
+				return fmt.Errorf("error occured when attempting to write transaction diffs to file. \nerr: %v", err)
+			}
 		}
 
 		if inputDataCompareResult == jsondiff.NoMatch {
@@ -103,7 +106,10 @@ func inspectTransaction(transactionData TransactionData) error {
 			}
 
 			logrus.Errorf("input data did not match, writing diff data to %s", diffOutputDirectory)
-			writeDiffToFile(comparableInputDataJson, inputDataDiffHtml)
+			err = writeDiffToFile(comparableInputDataJson, inputDataDiffHtml)
+			if err != nil {
+				return fmt.Errorf("error occured when attempting to write input data diffs to file. \nerr: %v", err)
+			}
 		}
 	}
 

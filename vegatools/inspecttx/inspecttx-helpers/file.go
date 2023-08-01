@@ -7,20 +7,12 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 )
 
 type TransactionData struct {
 	Transaction json.RawMessage
 	InputData   json.RawMessage
 	EncodedData string
-}
-
-type ComparableJson struct {
-	OriginalJson json.RawMessage
-	CoreJson     json.RawMessage
-	DiffType     DiffType
 }
 
 type DiffType string
@@ -90,27 +82,28 @@ func writeToFile(filePath string, data []byte, fileMode os.FileMode) error {
 	return nil
 }
 
-func writeDiffToFile(diffData ComparableJson, html string) {
+func writeDiffToFile(diffData ComparableJson, html string) error {
 	marshalledDiffData, err := json.MarshalIndent(diffData, " ", "	")
 	if err != nil {
-		logrus.Warnf("error marshalling diffs to json when preparing to write diffs to file. \nerr: %v", err)
+		return fmt.Errorf("error marshalling diffs to json when preparing to write diffs to file. \nerr: %v", err)
 	}
 
 	folderName := trimExtensionFromCurrentFileName()
 	filePath := path.Join(diffOutputDirectory, folderName)
 
 	if err := os.MkdirAll(filePath, 0o755); err != nil {
-		logrus.Warn("Error creating directory:", err)
-		return
+		return fmt.Errorf("error creating directory for diff files. \nerr: %v", err)
 	}
 
 	jsonFileName := fmt.Sprintf("%s-tocompare.json", string(diffData.DiffType))
 	if err := writeToFile(path.Join(filePath, jsonFileName), marshalledDiffData, 0o644); err != nil {
-		logrus.Warnf("error when attempting to write diffs to JSON file.\nerr: %v", err)
+		return fmt.Errorf("error when attempting to write diffs to JSON file.\nerr: %v", err)
 	}
 
 	htmlFileName := fmt.Sprintf("%s-diff.html", string(diffData.DiffType))
 	if err := writeToFile(path.Join(filePath, htmlFileName), []byte(html), 0o644); err != nil {
-		logrus.Warnf("error when attempting to write diffs to HTML file.\nerr: %v", err)
+		return fmt.Errorf("error when attempting to write diffs to HTML file.\nerr: %v", err)
 	}
+
+	return nil
 }
