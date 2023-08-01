@@ -284,6 +284,12 @@ Feature: Simple example of successor markets
       | lp1 | lpprov1 | ETH/DEC19 | 9000              | 0.1 | submission |
       | lp2 | lpprov2 | ETH/DEC19 | 1000              | 0.1 | submission |
       | lp2 | lpprov2 | ETH/DEC19 | 1000              | 0.1 | submission |
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general     | bond |
+      | lpprov1 | USD   | ETH/DEC19 | 0      | 1999991000  | 9000 |
+      | lpprov2 | USD   | ETH/DEC19 | 0      | 19999999000 | 1000 |
+
     When the network moves ahead "5" blocks
     And the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
@@ -346,15 +352,46 @@ Feature: Simple example of successor markets
       | lp2 | lpprov2 | ETH/DEC20 | 8000              | 0.1 | submission |
       | lp2 | lpprov2 | ETH/DEC20 | 8000              | 0.1 | submission |
 
+    When the network moves ahead "5" blocks
+
+    And the insurance pool balance should be "5077" for the market "ETH/DEC19"
+    And the global insurance pool balance should be "0" for the asset "USD"
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general     | bond |
+      | lpprov1 | USD   | ETH/DEC19 | 0      | 1999987000  | 9000 |
+      | lpprov2 | USD   | ETH/DEC19 | 0      | 19999991000 | 1000 |
+      | lpprov1 | USD   | ETH/DEC20 | 0      | 1999987000  | 4000 |
+      | lpprov2 | USD   | ETH/DEC20 | 0      | 19999991000 | 8000 |
+
+    And the insurance pool balance should be "5077" for the market "ETH/DEC19"
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | trader1 | 1      | -10            | 0            |
+      | trader2 | -1     | 10             | 0            |
+      | trader3 | 291    | 5800           | 0            |
+      | trader4 | -291   | 2900           | 0            |
+      | trader5 | 0      | 0              | -17432       |
+
     Then the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |
       | trading.terminated | true  |
       | prices.ETH.value   | 975   |
 
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | trader1 | 1      | -10            | 0            |
+      | trader2 | -1     | 10             | 0            |
+      | trader3 | 291    | 5800           | 0            |
+      | trader4 | -291   | 2900           | 0            |
+      | trader5 | 0      | 0              | -17432       |
+
     # pass succession window
     When the network moves ahead "1" blocks
-
     Then the successor market "ETH/DEC20" is enacted
+    And the insurance pool balance should be "12921" for the market "ETH/DEC19"
+    And the insurance pool balance should be "0" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "0" for the asset "USD"
 
     And the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
@@ -368,15 +405,34 @@ Feature: Simple example of successor markets
       | trader1 | USD   | ETH/DEC20 | 1327   | 1998523 |
       | trader2 | USD   | ETH/DEC20 | 10     | 2000140 |
 
+    And the insurance pool balance should be "12921" for the market "ETH/DEC19"
+    And the global insurance pool balance should be "0" for the asset "USD"
+
     # make LP commitment change  while market is still pending
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | lp type   |
       | lp1 | lpprov1 | ETH/DEC20 | 2000              | 0.1 | amendment |
       | lp1 | lpprov1 | ETH/DEC20 | 2000              | 0.1 | amendment |
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general     | bond |
+      | lpprov1 | USD   | ETH/DEC19 | 0      | 1999996000  | 0    |
+      | lpprov2 | USD   | ETH/DEC19 | 0      | 19999992000 | 0    |
+      | lpprov1 | USD   | ETH/DEC20 | 0      | 1999996000  | 4000 |
+      | lpprov2 | USD   | ETH/DEC20 | 0      | 19999992000 | 8000 |
+    When the network moves ahead "5" blocks
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general     | bond |
+      | lpprov1 | USD   | ETH/DEC19 | 0      | 1999998000  | 0    |
+      | lpprov2 | USD   | ETH/DEC19 | 0      | 19999992000 | 0    |
+      | lpprov1 | USD   | ETH/DEC20 | 0      | 1999998000  | 2000 |
+      | lpprov2 | USD   | ETH/DEC20 | 0      | 19999992000 | 8000 |
+
     When the opening auction period ends for market "ETH/DEC20"
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 82           | 12000          | 1             |
+      | 150 | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 82 | 10000 | 1 |
 
     When the network moves ahead "5" blocks
 
@@ -391,20 +447,21 @@ Feature: Simple example of successor markets
       | party   | equity like share | average entry valuation |
       # | lpprov1 | 0.2               | 9000                    |
       # | lpprov2 | 0.8               | 10000                   |
-      | lpprov1 | 0.2               | 9000                    |
-      | lpprov2 | 0.8               | 11750                   |
+      | lpprov1 | 0.2 | 9000  |
+      | lpprov2 | 0.8 | 11750 |
+    When the network moves ahead "5" blocks
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC20"
 
-#     And the accumulated liquidity fees should be "0" for the market "ETH/DEC20"
+    And the parties submit the following liquidity provision:
+      | id  | party   | market id | commitment amount | fee | lp type   |
+      | lp1 | lpprov1 | ETH/DEC20 | 3000              | 0.1 | amendment |
+      | lp1 | lpprov1 | ETH/DEC20 | 3000              | 0.1 | amendment |
+    When the network moves ahead "5" blocks
 
-#     And the parties submit the following liquidity provision:
-#       | id  | party   | market id | commitment amount | fee | lp type   |
-#       | lp1 | lpprov1 | ETH/DEC20 | 3000              | 0.1 | amendment |
-#       | lp1 | lpprov1 | ETH/DEC20 | 3000              | 0.1 | amendment |
-
-#     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
-#       | party   | equity like share  | average entry valuation |
-#       | lpprov1 | 0.2727272727272727 | 9666.6666666666666      |
-#       | lpprov2 | 0.7272727272727273 | 10000                   |
+    And the liquidity provider fee shares for the market "ETH/DEC20" should be:
+      | party   | equity like share  | average entry valuation |
+      | lpprov1 | 0.2727272727272727 | 9666.6666666666666      |
+      | lpprov2 | 0.7272727272727273 | 11750                   |
 
 
 #   @SuccessorMarketActive
