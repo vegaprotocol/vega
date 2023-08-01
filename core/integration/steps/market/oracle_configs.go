@@ -31,6 +31,7 @@ var (
 		"defaults/oracle-config/default-eth-for-future.json",
 		"defaults/oracle-config/default-usd-for-future.json",
 		"defaults/oracle-config/default-dai-for-future.json",
+		"defaults/oracle-config/default-eth-for-perps.json",
 	}
 )
 
