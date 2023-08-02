@@ -72,4 +72,10 @@ Feature: Simple test creating a perpetual market.
       | trader1 | ETH/DEC19 | 94501904587 | 103952095045 | 113402285504 | 132302666421 |
     And debug orders
     And debug detailed orderbook volumes for market "ETH/DEC19"
+    # example of how to use the oracle
+	When the oracles broadcast data with block time signed with "0xCAFECAFE1":
+      | name             | value      | time offset |
+      | perp.funding.cue | 1511924180 | -100s       |
+      | perp.ETH.value   | 975        | -2s         |
+      | perp.ETH.value   | 977        | -1s         |
 
