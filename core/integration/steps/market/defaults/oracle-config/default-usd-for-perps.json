@@ -1,6 +1,6 @@
 {
-  "settlementAsset": "ETH",
-  "quoteName": "ETH",
+  "settlementAsset": "USD",
+  "quoteName": "USD",
   "marginFundingFactor": "0",
   "interestRate": "0",
   "clampLowerBound": "0",
@@ -15,19 +15,14 @@
           "signers": [
             {
               "pubKey": {
-                "key": "0xDEADBEEF"
-              }
-            },
-            {
-              "pubKey": {
-                "key": "0xCAFEDOOD"
+                "key": "0xBADCAFFE"
               }
             }
           ],
           "filters": [
             {
               "key": {
-                "name": "prices.ETH.value",
+                "name": "prices.USD.value",
                 "type": "TYPE_INTEGER",
                 "numberDecimalPlaces": "2"
               },
@@ -50,19 +45,14 @@
           "signers": [
             {
               "pubKey": {
-                "key": "0xDEADBEEF"
-              }
-            },
-            {
-              "pubKey": {
-                "key": "0xCAFEDOOD"
+                "key": "0xBADCAFFE"
               }
             }
           ],
           "filters": [
             {
               "key": {
-                "name": "funding.ETH.period",
+                "name": "funding.USD.period",
                 "type": "TYPE_TIMESTAMP"
               },
               "conditions": [
@@ -75,7 +65,7 @@
     "status": "STATUS_UNSPECIFIED"
   },
   "dataSourceSpecBinding": {
-    "settlementDataProperty": "prices.ETH.value",
-    "settlementScheduleProperty": "funding.ETH.period"
+    "settlementDataProperty": "prices.USD.value",
+    "settlementScheduleProperty": "funding.USD.period"
   }
 }

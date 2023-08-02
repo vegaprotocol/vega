@@ -1,33 +1,26 @@
 {
-  "settlementAsset": "ETH",
-  "quoteName": "ETH",
+  "quoteName": "DAI",
+  "settlementAsset": "DAI",
   "marginFundingFactor": "0",
   "interestRate": "0",
   "clampLowerBound": "0",
   "clampUpperBound": "0",
   "dataSourceSpecForSettlementData": {
-    "id": "1",
-    "createdAt": "0",
-    "updatedAt": "0",
+    "id": "100",
     "data": {
       "external": {
         "oracle": {
           "signers": [
             {
               "pubKey": {
-                "key": "0xDEADBEEF"
-              }
-            },
-            {
-              "pubKey": {
-                "key": "0xCAFEDOOD"
+                "key": "0x0000"
               }
             }
           ],
           "filters": [
             {
               "key": {
-                "name": "prices.ETH.value",
+                "name": "price.DAI.value",
                 "type": "TYPE_INTEGER",
                 "numberDecimalPlaces": "2"
               },
@@ -50,19 +43,14 @@
           "signers": [
             {
               "pubKey": {
-                "key": "0xDEADBEEF"
-              }
-            },
-            {
-              "pubKey": {
-                "key": "0xCAFEDOOD"
+                "key": "0x0000"
               }
             }
           ],
           "filters": [
             {
               "key": {
-                "name": "funding.ETH.period",
+                "name": "funding.DAI.period",
                 "type": "TYPE_TIMESTAMP"
               },
               "conditions": [
@@ -75,7 +63,7 @@
     "status": "STATUS_UNSPECIFIED"
   },
   "dataSourceSpecBinding": {
-    "settlementDataProperty": "prices.ETH.value",
-    "settlementScheduleProperty": "funding.ETH.period"
+    "settlementDataProperty": "price.DAI.value",
+    "settlementScheduleProperty": "funding.DAI.period"
   }
 }

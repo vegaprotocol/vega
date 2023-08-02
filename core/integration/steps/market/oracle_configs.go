@@ -35,6 +35,15 @@ var (
 	defaultOraclePerpsConfigs         embed.FS
 	defaultPerpsOracleConfigFileNames = []string{
 		"defaults/oracle-config/default-eth-for-perps.json",
+		"defaults/oracle-config/default-usd-for-perps.json",
+		"defaults/oracle-config/default-dai-for-perps.json",
+	}
+
+	// swap out the oracle names for future with perp oracles
+	perpsSwapMapping = map[string]string{
+		"oracle-config/default-eth-for-future": "oracle-config/default-eth-for-perps",
+		"oracle-config/default-usd-for-future": "oracle-config/default-usd-for-perps",
+		"oracle-config/default-dai-for-future": "oracle-config/default-dai-for-perps",
 	}
 )
 
@@ -53,6 +62,7 @@ type oracleConfigs struct {
 	perps       *oConfig[*vegapb.DataSourceSpecToPerpetualBinding]
 	fullPerps   map[string]*vegapb.Perpetual
 	fullFutures map[string]*vegapb.Future
+	perpSwap    bool
 }
 
 type oConfig[T BindType] struct {
@@ -86,6 +96,20 @@ func newOConfig[T BindType]() *oConfig[T] {
 		configForSchedule:          map[string]*OracleConfig[T]{},
 		settlementDataDecimals:     map[string]uint32{},
 	}
+}
+
+func (c *oracleConfigs) SwapToPerps() {
+	c.perpSwap = true
+}
+
+func (c *oracleConfigs) CheckName(name string) string {
+	if !c.perpSwap {
+		return name
+	}
+	if alt, ok := perpsSwapMapping[name]; ok {
+		return alt
+	}
+	return name
 }
 
 func (c *oracleConfigs) futureOracleSpecs(unmarshaler *defaults.Unmarshaler) {
@@ -246,6 +270,10 @@ func (c *oracleConfigs) GetPerps(name, specType string) (*OracleConfig[*vegapb.D
 }
 
 func (c *oracleConfigs) GetFullPerp(name string) (*vegapb.Perpetual, error) {
+	// if we're swapping to perps, ensure we have the correct oracle name
+	if c.perpSwap {
+		name = c.CheckName(name)
+	}
 	perp, ok := c.fullPerps[name]
 	if !ok {
 		return nil, fmt.Errorf("perpetual product with name %s not found", name)

@@ -75,8 +75,15 @@ func TheMarkets(
 
 	for _, row := range rows {
 		mRow := marketRow{row: row}
+		isPerp := mRow.isPerp()
+		if !isPerp {
+			// check if we have a perp counterpart for this oracle, if so, swap to that
+			if oName := mRow.oracleConfig(); oName != config.OracleConfigs.CheckName(oName) {
+				isPerp = true
+			}
+		}
 		var mkt types.Market
-		if mRow.isPerp() {
+		if isPerp {
 			mkt = newPerpMarket(config, netparams, mRow)
 		} else {
 			mkt = newMarket(config, netparams, mRow)
