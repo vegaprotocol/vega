@@ -14,6 +14,7 @@ package gql
 
 import (
 	"context"
+	"errors"
 
 	types "code.vegaprotocol.io/vega/protos/vega"
 )
@@ -24,9 +25,15 @@ func (r *myInstrumentConfigurationResolver) FutureProduct(ctx context.Context, o
 	return obj.GetFuture(), nil
 }
 
-// func (r *myInstrumentConfigurationResolver) Metadata(ctx context.Context, obj *types.InstrumentConfiguration) (*InstrumentMetadata, error) {
-// 	return InstrumentMetadataFromProto(obj.Metadata)
-// }
-// func (r *myInstrumentResolver) Product(ctx context.Context, obj *proto.Instrument) (Product, error) {
-// 	return obj.GetFuture(), nil
-//}
+func (r *myInstrumentConfigurationResolver) Product(ctx context.Context, obj *types.InstrumentConfiguration) (ProductConfiguration, error) {
+	switch obj.GetProduct().(type) {
+	case *types.InstrumentConfiguration_Future:
+		return obj.GetFuture(), nil
+	case *types.InstrumentConfiguration_Spot:
+		return obj.GetSpot(), nil
+	case *types.InstrumentConfiguration_Perpetual:
+		return obj.GetPerpetual(), nil
+	default:
+		return nil, errors.New("unknown product type")
+	}
+}

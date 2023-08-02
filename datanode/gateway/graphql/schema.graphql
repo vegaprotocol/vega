@@ -1509,6 +1509,57 @@ type Future {
   dataSourceSpecBinding: DataSourceSpecToFutureBinding!
 }
 
+"A spot FX product"
+type Spot {
+  "The underlying base asset for the spot product"
+  baseAsset: Asset!
+  "The underlying quote asset for the spot product"
+  quoteAsset: Asset!
+  "Name of the instrument"
+  name: String!
+}
+
+"A perpetual future product"
+type Perpetual {
+  "Underlying asset for the perpetual instrument"
+  settlementAsset: Asset!
+  "Quote name of the instrument"
+  quoteName: String!
+  "Controls how much the upcoming funding paymnent liability contributes to party's margin, in the range [0, 1]"
+  marginFundingFactor: String!
+  "Continuously compounded interest rate used in funding rate calculation, in the range [-1, 1]"
+  interestRate: String!
+  "Lower bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1]"
+  clampLowerBound: String!
+  "Upper bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1]"
+  clampUpperBound: String!
+  "Data source specification describing the data source for settlement schedule"
+  dataSourceSpecForSettlementSchedule: DataSourceSpec!
+  "Data source specification describing the data source for settlement"
+  dataSourceSpecForSettlementData: DataSourceSpec!
+  "Binding between the data source spec and the settlement data"
+  dataSourceSpecBinding: DataSourceSpecPerpetualBinding!
+}
+
+"""
+Bindings to describe which property of the data source data is to be used as settlement data
+and which to use as the trading termination trigger.
+"""
+type DataSourceSpecPerpetualBinding {
+  """
+  Name of the property in the source data that should be used as settlement data.
+  For example, if it is set to "prices.BTC.value", then the perpetual market will use the value of this property
+  as settlement data.
+  """
+  settlementDataProperty: String!
+  """
+  Name of the property in the source data that should be used as settlement schedule.
+  For example, if it is set to "prices.BTC.timestamp", then the perpetual market will use the value of this property
+  """
+  settlementScheduleProperty: String!
+}
+
+
 """
 DataSourceSpecToFutureBinding tells on which property data source data should be
 used as settlement data and trading termination.
@@ -1693,7 +1744,7 @@ type Property {
   value: String!
 }
 
-union Product = Future
+union Product = Future | Spot | Perpetual
 
 "Describes something that can be traded on Vega"
 type Instrument {
@@ -3596,6 +3647,8 @@ enum TransferType {
   TRANSFER_TYPE_REWARDS_VESTED
 }
 
+union ProductConfiguration = FutureProduct | SpotProduct | PerpetualProduct
+
 type FutureProduct {
   "Product asset"
   settlementAsset: Asset!
@@ -3614,6 +3667,36 @@ type FutureProduct {
   used as settlement data.
   """
   dataSourceSpecBinding: DataSourceSpecToFutureBinding!
+}
+
+type SpotProduct {
+  "The underlying base asset for the spot product"
+  baseAsset: Asset!
+  "The underlying quote asset for the spot product"
+  quoteAsset: Asset!
+  "Name of the instrument"
+  name: String!
+}
+
+type PerpetualProduct {
+  "Underlying asset for the perpetual instrument"
+  settlementAsset: Asset!
+  "Quote name of the instrument"
+  quoteName: String!
+  "Controls how much the upcoming funding paymnent liability contributes to party's margin, in the range [0, 1]"
+  marginFundingFactor: String!
+  "Continuously compounded interest rate used in funding rate calculation, in the range [-1, 1]"
+  interestRate: String!
+  "Lower bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1]"
+  clampLowerBound: String!
+  "Upper bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1]"
+  clampUpperBound: String!
+  "Data source specification describing the data source for settlement schedule"
+  dataSourceSpecForSettlementSchedule: DataSourceDefinition!
+  "Data source specification describing the data source for settlement"
+  dataSourceSpecForSettlementData: DataSourceDefinition!
+  "Binding between the data source spec and the settlement data"
+  dataSourceSpecBinding: DataSourceSpecPerpetualBinding!
 }
 
 """
@@ -3667,6 +3750,8 @@ type InstrumentConfiguration {
   code: String!
   "Future product specification"
   futureProduct: FutureProduct
+  "Product specification"
+  product: ProductConfiguration
 }
 
 type NewMarket {
@@ -3720,14 +3805,35 @@ type UpdateMarketConfiguration {
 
 type UpdateInstrumentConfiguration {
   code: String!
-  product: UpdateFutureProduct!
+  product: UpdateProductConfiguration!
 }
+
+union UpdateProductConfiguration = UpdateFutureProduct | UpdatePerpetualProduct
 
 type UpdateFutureProduct {
   quoteName: String!
   dataSourceSpecForSettlementData: DataSourceDefinition!
   dataSourceSpecForTradingTermination: DataSourceDefinition!
   dataSourceSpecBinding: DataSourceSpecToFutureBinding!
+}
+
+type UpdatePerpetualProduct {
+  "Quote name of the instrument"
+  quoteName: String!
+  "Controls how much the upcoming funding payment liability contributes to party's margin, in the range [0, 1]"
+  marginFundingFactor: String!
+  "Continuously compounded interest rate used in funding rate calculation, in the range [-1, 1]"
+  interestRate: String!
+  "Lower bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1]"
+  clampLowerBound: String!
+  "Upper bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1]"
+  clampUpperBound: String!
+  "Data source specification describing the data source for settlement schedule"
+  dataSourceSpecForSettlementSchedule: DataSourceDefinition!
+  "Data source specification describing the data source for settlement"
+  dataSourceSpecForSettlementData: DataSourceDefinition!
+  "Binding between the data source spec and the settlement data"
+  dataSourceSpecBinding: DataSourceSpecPerpetualBinding!
 }
 
 union UpdateMarketRiskParameters =
@@ -3846,6 +3952,62 @@ type UpdateMarketState {
   price: String
 }
 
+"Configuration for a new spot market on Vega"
+type NewSpotMarket {
+  "New spot market instrument configuration"
+  instrument: InstrumentConfiguration!
+  "Decimal places used for the new market, sets the smallest price increment on the book"
+  decimal_places: Int!
+  "Optional spot market metadata tags"
+  metadata: [String!]!
+  "Price monitoring parameters"
+  priceMonitoringParameters: PriceMonitoringParameters!
+  "Specifies parameters related to target stake calculation"
+  targetStakeParameters: TargetStakeParameters!
+  "New spot market risk model parameters"
+  riskParameters: RiskModel
+  "Decimal placesfor order sizes, sets what size the smallest order / position on the spot market can be"
+  positionDecimalPlaces: Int!
+  "Specifies the liquidity provision SLA parameters"
+  liquiditySLAParams: LiquiditySLAParameters!
+}
+
+"Update an existing spot market on Vega"
+type UpdateSpotMarket {
+  "Market ID the update is for"
+  marketId: ID!
+  "Updated configuration of the spot market"
+  updateSpotMarketConfiguration: UpdateSpotMarketConfiguration!
+}
+
+type UpdateSpotMarketConfiguration {
+  "Optional spot market metadata tags"
+  metadata: [String!]!
+  "Price monitoring parameters"
+  priceMonitoringParameters: PriceMonitoringParameters!
+  "Specifies parameters related to target stake calculation"
+  targetStakeParameters: TargetStakeParameters!
+  "Update spot market risk model parameters"
+  riskParameters: RiskModel!
+  "Specifies the liquidity provision SLA parameters"
+  liquiditySLAParams: LiquiditySLAParameters!
+}
+
+type LiquiditySLAParameters {
+  priceRange: String!
+  "Specifies the minimum fraction of time LPs must spend 'on the book' providing their committed liquidity"
+  commitmentMinTimeFraction: String!
+  "Specifies how often the quality of liquidity supplied by the LPS is evaluated and fees arising from that period are earmarked for specific parties"
+  providersFeeCalculationTimeStep: Int!
+  "Specified the number of liquidity epochs over which past performance will continue to affect rewards"
+  performanceHysteresisEpochs: Int!
+  """
+  Specifies the maximum fraction of their accrued fees an LP that meets the SLA implied by market.liquidity.commitmentMinTimeFraction will
+  lose to liquidity providers that achieved a higher SLA performance than them.
+  """
+  slaCompletionFactor: String!
+}
+
 "Representation of a network parameter"
 type NetworkParameter {
   "The name of the network parameter"
@@ -3864,6 +4026,9 @@ union ProposalChange =
   | NewTransfer
   | CancelTransfer
   | UpdateMarketState
+  | NewSpotMarket
+  | UpdateSpotMarket
+
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalRationale {

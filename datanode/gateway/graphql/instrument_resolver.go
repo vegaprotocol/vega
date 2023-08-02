@@ -27,6 +27,10 @@ func (r *myInstrumentResolver) Product(ctx context.Context, obj *types.Instrumen
 	switch obj.GetProduct().(type) {
 	case *types.Instrument_Future:
 		return obj.GetFuture(), nil
+	case *types.Instrument_Spot:
+		return obj.GetSpot(), nil
+	case *types.Instrument_Perpetual:
+		return obj.GetPerpetual(), nil
 	default:
 		return nil, ErrUnsupportedProduct
 	}
