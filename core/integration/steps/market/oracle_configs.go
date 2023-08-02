@@ -237,7 +237,6 @@ func (c *oracleConfigs) GetFullInstrument(name string) (*vegapb.Instrument, erro
 	return nil, fmt.Errorf("no products with name %s found", name)
 }
 
-// *vegapb.DataSourceSpecToFutureBinding | *vegapb.DataSourceSpecToPerpetualBinding
 func (c *oracleConfigs) GetFuture(name, specType string) (*OracleConfig[*vegapb.DataSourceSpecToFutureBinding], error) {
 	return c.futures.Get(name, specType)
 }
