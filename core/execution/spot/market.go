@@ -407,6 +407,10 @@ func (m *Market) uncrossOnLeaveAuction(ctx context.Context) ([]*types.OrderConfi
 		evts = append(evts, events.NewOrderEvent(ctx, uncrossedOrder.Order))
 	}
 
+	for _, uncrossedOrder := range uncrossedOrders {
+		m.handleConfirmationPassiveOrders(ctx, uncrossedOrder)
+	}
+
 	// send order events in a single batch, it's more efficient
 	m.broker.SendBatch(evts)
 	return uncrossedOrders, ordersToCancel
@@ -1335,6 +1339,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 
 	orderUpdates := m.handleConfirmation(ctx, confirmation)
+	m.handleConfirmationPassiveOrders(ctx, confirmation)
 	return confirmation, orderUpdates, nil
 }
 
@@ -1481,8 +1486,6 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	if conf.Order.IsFinished() {
 		m.releaseOrderFromHoldingAccount(ctx, conf.Order.ID, conf.Order.Party, conf.Order.Side)
 	}
-
-	m.handleConfirmationPassiveOrders(ctx, conf)
 
 	if len(transfers) > 0 {
 		m.broker.Send(events.NewLedgerMovements(ctx, transfers))
@@ -2145,6 +2148,7 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 		}
 
 		orders = m.handleConfirmation(ctx, conf)
+		m.handleConfirmationPassiveOrders(ctx, conf)
 		if !conf.Order.IsFinished() && !m.as.InAuction() {
 			amt := m.calculateAmountBySide(newOrder.Side, newOrder.Price, newOrder.TrueRemaining())
 			asset := m.quoteAsset
@@ -2627,6 +2631,10 @@ func (m *Market) handleTrade(ctx context.Context, trade *types.Trade) []*types.L
 		fee := num.UintZero()
 		if fees != nil {
 			fee = fees.TotalFeesAmountPerParty()[trade.Buyer]
+		}
+
+		if trade.Seller == "fac43f8b56111cac2e135b09122af24fc38dac9321bbc884c9e0f945c351357f" {
+			println()
 		}
 
 		// release buyer's trade + fees quote quantity from the holding account
