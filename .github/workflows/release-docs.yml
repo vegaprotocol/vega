@@ -17,17 +17,13 @@ jobs:
           path: 'vega'
           fetch-depth: '0'
       -
-        name: "Setup ssh key for PR"
-        uses: webfactory/ssh-agent@v0.5.4
-        with:
-          ssh-private-key: ${{ secrets.DOCUMENTATION_KEY }}
-      -
         name: Check out docs code
         uses: actions/checkout@v3
         with:
           path: 'documentation'
           repository: 'vegaprotocol/documentation'
-          ssh-key: ${{ secrets.DOCUMENTATION_KEY }}
+          fetch-depth: '0'
+          token: ${{ secrets.VEGA_CI_BOT_GITHUB_TOKEN }}
       -
         name: Set up Go
         uses: actions/setup-go@v2
@@ -57,7 +53,7 @@ jobs:
           cd documentation
           git config --global user.email "vega-ci-bot@vega.xyz"
           git config --global user.name "vega-ci-bot"
-          branch_name="spec-update-${ref}"
+          branch_name="spec-update-${ref}-$(date '+%Y-%-m-%d-%H-%M')"
           git checkout -b "$branch_name"
           commit_msg="Automated specs update from vegaprotocol/vega#${short_sha}"
           git add specs

@@ -47,7 +47,7 @@ message Future {
 }
 
 // Perpetual product definition
-message Perps {
+message Perpetual {
   // Underlying asset for the perpetual.
   string settlement_asset = 1;
   // Quote name of the instrument.
@@ -65,7 +65,7 @@ message Perps {
   // Data source spec describing the data source for settlement.
   vega.DataSourceSpec data_source_spec_for_settlement_data = 8;
   // Binding between the data source spec and the settlement data.
-  DataSourceSpecToPerpsBinding data_source_spec_binding = 9;
+  DataSourceSpecToPerpetualBinding data_source_spec_binding = 9;
 }
 
 // DataSourceSpecToFutureBinding describes which property of the data source data is to be
@@ -81,7 +81,7 @@ message DataSourceSpecToFutureBinding {
 
 // Describes which property of the data source data is to be
 // used as settlement data and which to use as the trading terminated trigger
-message DataSourceSpecToPerpsBinding {
+message DataSourceSpecToPerpetualBinding {
   // Name of the property in the source data that should be used as settlement data.
   // If it is set to "prices.BTC.value", then the perpetual market will use the value of
   // this property as settlement data.
@@ -115,7 +115,7 @@ message Instrument {
     // Spot.
     Spot spot = 101;
     // Perpetual.
-    Perps perps = 102;
+    Perpetual perpetual = 102;
   }
 }
 

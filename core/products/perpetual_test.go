@@ -14,9 +14,11 @@ package products_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/datasource"
+	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
@@ -40,6 +42,8 @@ func TestPeriodicSettlement(t *testing.T) {
 	t.Run("constant difference long pays short", testConstantDifferenceLongPaysShort)
 	t.Run("data points outside of period", testDataPointsOutsidePeriod)
 	t.Run("data points not on boundary", testDataPointsNotOnBoundary)
+	t.Run("matching data points outside of period through callbacks", testRegisteredCallbacks)
+	t.Run("non-matching data points outside of period through callbacks", testRegisteredCallbacksWithDifferentData)
 }
 
 func testCannotSubmitDataPointBeforeOpeningAuction(t *testing.T) {
@@ -223,6 +227,187 @@ func testDataPointsNotOnBoundary(t *testing.T) {
 	assert.Equal(t, "10", fundingPayment.String())
 }
 
+func testRegisteredCallbacks(t *testing.T) {
+	log := logging.NewTestLogger()
+	ctrl := gomock.NewController(t)
+	oe := mocks.NewMockOracleEngine(ctrl)
+	broker := mocks.NewMockBroker(ctrl)
+	exp := &num.Numeric{}
+	exp.SetUint(num.UintZero())
+	ctx := context.Background()
+	received := false
+	points := getTestDataPoints(t)
+	marketSettle := func(_ context.Context, data *num.Numeric) {
+		received = true
+		require.Equal(t, exp.String(), data.String())
+	}
+	var settle, period spec.OnMatchedData
+	oe.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(2).DoAndReturn(func(_ context.Context, s spec.Spec, cb spec.OnMatchedData) (spec.SubscriptionID, spec.Unsubscriber, error) {
+		filters := s.OriginalSpec.GetDefinition().DataSourceType.GetFilters()
+		for _, f := range filters {
+			if f.Key.Type == datapb.PropertyKey_TYPE_INTEGER || f.Key.Type == datapb.PropertyKey_TYPE_DECIMAL {
+				settle = cb
+				return spec.SubscriptionID(1), func(_ context.Context, _ spec.SubscriptionID) {}, nil
+			}
+		}
+		period = cb
+		return spec.SubscriptionID(1), func(_ context.Context, _ spec.SubscriptionID) {}, nil
+	})
+	broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	perp := getTestPerpProd(t)
+	perpetual, err := products.NewPerpetual(context.Background(), log, perp, oe, broker, 1)
+	require.NoError(t, err)
+	require.NotNil(t, settle)
+	require.NotNil(t, period)
+	// register the callback
+	perpetual.NotifyOnSettlementData(marketSettle)
+
+	perpetual.OnLeaveOpeningAuction(ctx, 1000)
+
+	require.NoError(t, perpetual.SubmitDataPoint(ctx, num.UintOne(), 890))
+	// callback to receive settlement data
+	settle(ctx, dscommon.Data{
+		Data: map[string]string{
+			perp.DataSourceSpecBinding.SettlementDataProperty: "1",
+		},
+		MetaData: map[string]string{
+			"eth-block-time": "900",
+		},
+	})
+
+	for _, p := range points {
+		// send in an external and a matching internal
+		require.NoError(t, perpetual.SubmitDataPoint(ctx, p.price, p.t))
+		settle(ctx, dscommon.Data{
+			Data: map[string]string{
+				perp.DataSourceSpecBinding.SettlementDataProperty: p.price.String(),
+			},
+			MetaData: map[string]string{
+				"eth-block-time": fmt.Sprintf("%d", p.t),
+			},
+		})
+	}
+
+	// add some data-points in the future from when we will cue the end of the funding period
+	// they should not affect the funding payment of this period
+	require.NoError(t, perpetual.SubmitDataPoint(ctx, num.UintOne(), 2000))
+	settle(ctx, dscommon.Data{
+		Data: map[string]string{
+			perp.DataSourceSpecBinding.SettlementDataProperty: "1",
+		},
+		MetaData: map[string]string{
+			"eth-block-time": "2020",
+		},
+	})
+	// make sure the data-point outside of the period doesn't trigger the schedule callback
+	// that has to come from the oracle, too
+	assert.False(t, received)
+
+	// end period
+	period(ctx, dscommon.Data{
+		Data: map[string]string{
+			perp.DataSourceSpecBinding.SettlementScheduleProperty: "1040",
+		},
+		MetaData: map[string]string{
+			"eth-block-time": "1040", // this isn't used currently
+		},
+	})
+
+	assert.True(t, received)
+}
+
+func testRegisteredCallbacksWithDifferentData(t *testing.T) {
+	log := logging.NewTestLogger()
+	ctrl := gomock.NewController(t)
+	oe := mocks.NewMockOracleEngine(ctrl)
+	broker := mocks.NewMockBroker(ctrl)
+	exp := &num.Numeric{}
+	// should be 2
+	exp.SetUint(num.Sum(num.UintOne(), num.UintOne()))
+	ctx := context.Background()
+	received := false
+	points := getTestDataPoints(t)
+	marketSettle := func(_ context.Context, data *num.Numeric) {
+		received = true
+		require.Equal(t, exp.String(), data.String())
+	}
+	var settle, period spec.OnMatchedData
+	oe.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(2).DoAndReturn(func(_ context.Context, s spec.Spec, cb spec.OnMatchedData) (spec.SubscriptionID, spec.Unsubscriber, error) {
+		filters := s.OriginalSpec.GetDefinition().DataSourceType.GetFilters()
+		for _, f := range filters {
+			if f.Key.Type == datapb.PropertyKey_TYPE_INTEGER || f.Key.Type == datapb.PropertyKey_TYPE_DECIMAL {
+				settle = cb
+				return spec.SubscriptionID(1), func(_ context.Context, _ spec.SubscriptionID) {}, nil
+			}
+		}
+		period = cb
+		return spec.SubscriptionID(1), func(_ context.Context, _ spec.SubscriptionID) {}, nil
+	})
+	broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	perp := getTestPerpProd(t)
+	perpetual, err := products.NewPerpetual(context.Background(), log, perp, oe, broker, 1)
+	require.NoError(t, err)
+	require.NotNil(t, settle)
+	require.NotNil(t, period)
+	// register the callback
+	perpetual.NotifyOnSettlementData(marketSettle)
+
+	perpetual.OnLeaveOpeningAuction(ctx, 1000)
+
+	require.NoError(t, perpetual.SubmitDataPoint(ctx, num.UintOne(), 890))
+	// callback to receive settlement data
+	settle(ctx, dscommon.Data{
+		Data: map[string]string{
+			perp.DataSourceSpecBinding.SettlementDataProperty: "1",
+		},
+		MetaData: map[string]string{
+			"eth-block-time": "900",
+		},
+	})
+
+	// send all external points, but not all internal ones are matching
+	for i, p := range points {
+		if i%2 == 0 {
+			ip := num.UintZero().Sub(p.price, num.UintOne())
+			require.NoError(t, perpetual.SubmitDataPoint(ctx, ip, p.t))
+		}
+		settle(ctx, dscommon.Data{
+			Data: map[string]string{
+				perp.DataSourceSpecBinding.SettlementDataProperty: p.price.String(),
+			},
+			MetaData: map[string]string{
+				"eth-block-time": fmt.Sprintf("%d", p.t),
+			},
+		})
+	}
+
+	// add some data-points in the future from when we will cue the end of the funding period
+	// they should not affect the funding payment of this period
+	require.NoError(t, perpetual.SubmitDataPoint(ctx, num.UintOne(), 2000))
+	settle(ctx, dscommon.Data{
+		Data: map[string]string{
+			perp.DataSourceSpecBinding.SettlementDataProperty: "1",
+		},
+		MetaData: map[string]string{
+			"eth-block-time": "2020",
+		},
+	})
+
+	// end period
+	period(ctx, dscommon.Data{
+		Data: map[string]string{
+			perp.DataSourceSpecBinding.SettlementScheduleProperty: "1040",
+		},
+		MetaData: map[string]string{
+			"eth-block-time": "1040", // this isn't used currently
+		},
+	})
+
+	assert.True(t, received)
+}
+
 // submits the given data points as both external and interval but with the given different added to the internal price.
 func submitDataWithDifference(t *testing.T, perp *tstPerp, points []*testDataPoint, diff int) {
 	t.Helper()
@@ -275,6 +460,7 @@ type tstPerp struct {
 	broker    *mocks.MockBroker
 	perpetual *products.Perpetual
 	ctrl      *gomock.Controller
+	perp      *types.Perps
 }
 
 func testPerpetual(t *testing.T) *tstPerp {
@@ -284,13 +470,30 @@ func testPerpetual(t *testing.T) *tstPerp {
 	ctrl := gomock.NewController(t)
 	oe := mocks.NewMockOracleEngine(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
+	oe.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(spec.SubscriptionID(1), func(_ context.Context, _ spec.SubscriptionID) {}, nil)
+	perp := getTestPerpProd(t)
+
+	perpetual, err := products.NewPerpetual(context.Background(), log, perp, oe, broker, 1)
+	if err != nil {
+		t.Fatalf("couldn't create a perp for testing: %v", err)
+	}
+	return &tstPerp{
+		perpetual: perpetual,
+		oe:        oe,
+		broker:    broker,
+		ctrl:      ctrl,
+		perp:      perp,
+	}
+}
+
+func getTestPerpProd(t *testing.T) *types.Perps {
+	t.Helper()
 	dp := uint32(1)
 	pubKeys := []*dstypes.Signer{
 		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
 
 	factor, _ := num.DecimalFromString("0.5")
-	// if p.DataSourceSpecForSettlementData == nil || p.DataSourceSpecForSettlementSchedule == nil || p.DataSourceSpecBinding == nil {
 	settlementSrc := &datasource.Spec{
 		Data: datasource.NewDefinition(
 			datasource.ContentTypeOracle,
@@ -328,7 +531,7 @@ func testPerpetual(t *testing.T) *tstPerp {
 		}),
 	}
 
-	perp := &types.Perps{
+	return &types.Perps{
 		MarginFundingFactor:                 factor,
 		DataSourceSpecForSettlementData:     settlementSrc,
 		DataSourceSpecForSettlementSchedule: scheduleSrc,
@@ -336,17 +539,5 @@ func testPerpetual(t *testing.T) *tstPerp {
 			SettlementDataProperty:     "foo",
 			SettlementScheduleProperty: "bar",
 		},
-	}
-	oe.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(spec.SubscriptionID(1), func(_ context.Context, _ spec.SubscriptionID) {}, nil)
-
-	perpetual, err := products.NewPerpetual(context.Background(), log, perp, oe, broker, 1)
-	if err != nil {
-		t.Fatalf("couldn't create a perp for testing: %v", err)
-	}
-	return &tstPerp{
-		perpetual: perpetual,
-		oe:        oe,
-		broker:    broker,
-		ctrl:      ctrl,
 	}
 }
