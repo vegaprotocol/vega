@@ -466,7 +466,7 @@ type Perps struct {
 	DataSourceSpecBinding               *datasource.SpecBindingForPerps
 }
 
-func PerpsFromProto(p *vegapb.Perps) *Perps {
+func PerpsFromProto(p *vegapb.Perpetual) *Perps {
 	return &Perps{
 		SettlementAsset:                     p.SettlementAsset,
 		QuoteName:                           p.QuoteName,
@@ -480,8 +480,8 @@ func PerpsFromProto(p *vegapb.Perps) *Perps {
 	}
 }
 
-func (p Perps) IntoProto() *vegapb.Perps {
-	return &vegapb.Perps{
+func (p Perps) IntoProto() *vegapb.Perpetual {
+	return &vegapb.Perpetual{
 		SettlementAsset:                     p.SettlementAsset,
 		QuoteName:                           p.QuoteName,
 		MarginFundingFactor:                 p.MarginFundingFactor.String(),
@@ -515,9 +515,9 @@ func iInstrumentFromProto(pi interface{}) iProto {
 		return InstrumentFutureFromProto(&i)
 	case *vegapb.Instrument_Future:
 		return InstrumentFutureFromProto(i)
-	case vegapb.Instrument_Perps:
+	case vegapb.Instrument_Perpetual:
 		return InstrumentPerpsFromProto(&i)
-	case *vegapb.Instrument_Perps:
+	case *vegapb.Instrument_Perpetual:
 		return InstrumentPerpsFromProto(i)
 	case vegapb.Instrument_Spot:
 		return InstrumentSpotFromProto(&i)
@@ -569,15 +569,15 @@ func (i InstrumentFuture) getAssets() ([]string, error) {
 	return []string{i.Future.SettlementAsset}, nil
 }
 
-func InstrumentPerpsFromProto(p *vegapb.Instrument_Perps) *InstrumentPerps {
+func InstrumentPerpsFromProto(p *vegapb.Instrument_Perpetual) *InstrumentPerps {
 	return &InstrumentPerps{
-		Perps: PerpsFromProto(p.Perps),
+		Perps: PerpsFromProto(p.Perpetual),
 	}
 }
 
-func (i InstrumentPerps) IntoProto() *vegapb.Instrument_Perps {
-	return &vegapb.Instrument_Perps{
-		Perps: i.Perps.IntoProto(),
+func (i InstrumentPerps) IntoProto() *vegapb.Instrument_Perpetual {
+	return &vegapb.Instrument_Perpetual{
+		Perpetual: i.Perps.IntoProto(),
 	}
 }
 
@@ -708,7 +708,7 @@ func (i Instrument) IntoProto() *vegapb.Instrument {
 	switch pt := p.(type) {
 	case *vegapb.Instrument_Future:
 		r.Product = pt
-	case *vegapb.Instrument_Perps:
+	case *vegapb.Instrument_Perpetual:
 		r.Product = pt
 	case *vegapb.Instrument_Spot:
 		r.Product = pt
