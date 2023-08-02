@@ -2632,11 +2632,6 @@ func (m *Market) handleTrade(ctx context.Context, trade *types.Trade) []*types.L
 		if fees != nil {
 			fee = fees.TotalFeesAmountPerParty()[trade.Buyer]
 		}
-
-		if trade.Seller == "fac43f8b56111cac2e135b09122af24fc38dac9321bbc884c9e0f945c351357f" {
-			println()
-		}
-
 		// release buyer's trade + fees quote quantity from the holding account
 		transfer, err := m.orderHoldingTracker.ReleaseQuantityHoldingAccount(ctx, trade.BuyOrder, trade.Buyer, m.quoteAsset, scaleQuoteQuantityToAssetDP(trade.Size, trade.Price, m.positionFactor), fee)
 		if err != nil {
