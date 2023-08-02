@@ -6,82 +6,52 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func TestGetFilesInDirectory(t *testing.T) {
+func TestGetFilesInDirectoryRetrievesAllFiles(t *testing.T) {
 	tmpDir := t.TempDir()
-	txDirectory = tmpDir
 
+	var filePaths []string
 	testFiles := []string{"file1.json", "file2.json", "file3.json"}
 	for _, file := range testFiles {
 		filePath := filepath.Join(tmpDir, file)
 		if _, err := os.Create(filePath); err != nil {
 			t.Fatalf("failed to create test file %s: %v", filePath, err)
 		}
+		filePaths = append(filePaths, filePath)
 	}
 
-	files, err := getFilesInDirectory()
-	if err != nil {
-		t.Fatalf("getFilesInDirectory failed: %v", err)
-	}
+	retrievedFiles, err := getFilesInDirectory(tmpDir)
+	assert.NoError(t, err, "getFilesInDirectory failed")
+	assert.Len(t, retrievedFiles, len(testFiles), "getFilesInDirectory returned incorrect number of files")
 
-	// Check if all test files are present in the returned list
-	if len(files) != len(testFiles) {
-		t.Fatalf("getFilesInDirectory returned incorrect number of files: got %d, expected %d", len(files), len(testFiles))
-	}
-
-	for _, file := range testFiles {
-		filePath := filepath.Join(tmpDir, file)
-		found := false
-		for _, f := range files {
-			if f == filePath {
-				found = true
-				break
-			}
-		}
-		if !found {
-			t.Errorf("getFilesInDirectory did not return expected file: %s", filePath)
-		}
+	for _, filePath := range filePaths {
+		assert.Contains(t, retrievedFiles, filePath, "getFilesInDirectory did not return expected file")
 	}
 }
 
-func TestReadTransactionFile(t *testing.T) {
-	// Create a temporary test file
+func TestGetTransactionDataFromFileReturnsValidTransactionData(t *testing.T) {
 	tmpFile, err := ioutil.TempFile("", "test-transaction-*.json")
-	if err != nil {
-		t.Fatalf("failed to create temporary test file: %v", err)
-	}
+	assert.NoErrorf(t, err, "failed to create temporary test file: %v", err)
 	defer os.Remove(tmpFile.Name())
 
 	testData := `{"Transaction": {"field1": "value1"}, "InputData": {"field2": "value2"}, "EncodedData": "base64data"}`
-	if _, err := tmpFile.Write([]byte(testData)); err != nil {
-		t.Fatalf("failed to write test data to file: %v", err)
-	}
+	_, err = tmpFile.WriteString(testData)
+	assert.NoErrorf(t, err, "failed to write test data to file: %v", err)
 	tmpFile.Close()
 
-	transactionData, err := readTransactionFile(tmpFile.Name())
-	if err != nil {
-		t.Fatalf("readTransactionFile failed: %v", err)
-	}
+	transactionData, err := getTransactionDataFromFile(tmpFile.Name())
+	assert.NoError(t, err, "getTransactionDataFromFile failed")
 
-	// Check if the data was correctly unmarshalled
 	var expectedData TransactionData
 	err = json.Unmarshal([]byte(testData), &expectedData)
-	if err != nil {
-		t.Fatalf("failed to unmarshal expected data: %v", err)
-	}
+	assert.NoError(t, err, "failed to unmarshal expected data")
 
-	if string(transactionData.Transaction) != string(expectedData.Transaction) {
-		t.Errorf("readTransactionFile returned incorrect Transaction data: got %s, expected %s", transactionData.Transaction, expectedData.Transaction)
-	}
-
-	if string(transactionData.InputData) != string(expectedData.InputData) {
-		t.Errorf("readTransactionFile returned incorrect InputData: got %s, expected %s", transactionData.InputData, expectedData.InputData)
-	}
-
-	if transactionData.EncodedData != expectedData.EncodedData {
-		t.Errorf("readTransactionFile returned incorrect EncodedData: got %s, expected %s", transactionData.EncodedData, expectedData.EncodedData)
-	}
+	assert.Equal(t, string(expectedData.Transaction), string(transactionData.Transaction), "getTransactionDataFromFile returned incorrect Transaction data")
+	assert.Equal(t, string(expectedData.InputData), string(transactionData.InputData), "getTransactionDataFromFile returned incorrect InputData")
+	assert.Equal(t, expectedData.EncodedData, transactionData.EncodedData, "getTransactionDataFromFile returned incorrect EncodedData")
 }
 
 func TestTrimExtensionFromCurrentFileName(t *testing.T) {
@@ -89,7 +59,5 @@ func TestTrimExtensionFromCurrentFileName(t *testing.T) {
 	trimmedFileName := trimExtensionFromCurrentFileName()
 
 	expectedTrimmedFileName := "somefile"
-	if trimmedFileName != expectedTrimmedFileName {
-		t.Errorf("trimExtensionFromCurrentFileName returned incorrect trimmed file name: got %s, expected %s", trimmedFileName, expectedTrimmedFileName)
-	}
+	assert.Equal(t, expectedTrimmedFileName, trimmedFileName, "trimExtensionFromCurrentFileName returned incorrect trimmed file name")
 }

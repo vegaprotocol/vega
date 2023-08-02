@@ -3,6 +3,8 @@ package inspecttx_helpers
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"code.vegaprotocol.io/vega/libs/proto"
 
 	"github.com/nsf/jsondiff"
@@ -11,67 +13,63 @@ import (
 )
 
 func TestMarshalTransactionAndInputDataToString(t *testing.T) {
-	transaction := &commandspb.Transaction{
-		// Your test data here
-	}
-	inputData := &commandspb.InputData{
-		// Your test data here
-	}
+	transaction := &commandspb.Transaction{}
+	inputData := &commandspb.InputData{}
 
 	marshalledTransaction, marshalledInputData, err := marshalTransactionAndInputDataToString(transaction, inputData)
-	if err != nil {
-		t.Fatalf("Error marshalling transaction and input data: %v", err)
-	}
 
-	// Test if the returned marshalled strings are not empty or invalid JSON
-	if len(marshalledTransaction) == 0 {
-		t.Errorf("Marshalled transaction is empty")
-	}
-	if len(marshalledInputData) == 0 {
-		t.Errorf("Marshalled input data is empty")
-	}
-
-	// You can also further test the contents of the marshalled strings if needed
+	assert.NoErrorf(t, err, "Error marshalling transaction and input data: %v", err)
+	assert.NotZero(t, len(marshalledTransaction), "Marshalled transaction is empty")
+	assert.NotZero(t, len(marshalledInputData), "Marshalled input data is empty")
 }
 
-func TestUnmarshalTransaction(t *testing.T) {
-	transaction := &commandspb.Transaction{
-		// Your test data here
-	}
+func TestUnmarshalTransactionReturnsValidTransactionAndInputData(t *testing.T) {
+	transaction := &commandspb.Transaction{}
 
-	// Marshal the transaction to bytes for testing
 	encodedTransaction, err := proto.Marshal(transaction)
-	if err != nil {
-		t.Fatalf("Error marshalling transaction: %v", err)
-	}
+	assert.NoErrorf(t, err, "Error marshalling transaction: %v", err)
 
 	unmarshalledTransaction, inputData, err := unmarshalTransaction(encodedTransaction)
-	if err != nil {
-		t.Fatalf("Error unmarshalling transaction: %v", err)
-	}
+	assert.NoErrorf(t, err, "Error unmarshalling transaction: %v", err)
+	assert.NotNil(t, unmarshalledTransaction, "Unmarshalled transaction is nil")
+	assert.NotNil(t, inputData, "Unmarshalled input data is nil")
+}
 
-	// Test if the unmarshalled transaction and input data are not nil
-	if unmarshalledTransaction == nil {
-		t.Errorf("Unmarshalled transaction is nil")
-	}
-	if inputData == nil {
-		t.Errorf("Unmarshalled input data is nil")
-	}
-
-	// You can also further test the contents of the unmarshalled structs if needed
+type CompareJsonTestCase struct {
+	Name         string
+	FirstJson    []byte
+	SecondJson   []byte
+	ExpectedDiff jsondiff.Difference
 }
 
 func TestCompareJson(t *testing.T) {
-	firstJson := []byte(`{"name": "John", "age": 30}`)
-	secondJson := []byte(`{"name": "John", "age": 300}`)
-
-	result, diffHtml := compareJson(firstJson, secondJson)
-
-	if result != jsondiff.NoMatch {
-		t.Errorf("Expected JSONs to be different, but got: %v", result)
+	testCases := []CompareJsonTestCase{
+		{
+			Name:         "Same JSON",
+			FirstJson:    []byte(`{"name": "John", "age": 30}`),
+			SecondJson:   []byte(`{"name": "John", "age": 30}`),
+			ExpectedDiff: jsondiff.FullMatch,
+		},
+		{
+			Name:         "Different age",
+			FirstJson:    []byte(`{"name": "John", "age": 30}`),
+			SecondJson:   []byte(`{"name": "John", "age": 300}`),
+			ExpectedDiff: jsondiff.NoMatch,
+		},
+		{
+			Name:         "Different casing in name",
+			FirstJson:    []byte(`{"name": "John", "age": 30}`),
+			SecondJson:   []byte(`{"name": "john", "age": 300}`),
+			ExpectedDiff: jsondiff.NoMatch,
+		},
 	}
 
-	if len(diffHtml) == 0 {
-		t.Errorf("Diff HTML is empty")
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			result, diffHtml := compareJson(testCase.FirstJson, testCase.SecondJson)
+
+			assert.Equalf(t, testCase.ExpectedDiff, result, "Expected JSONs to have a difference of %v, but got: %v", testCase.ExpectedDiff, result)
+			assert.NotZero(t, len(diffHtml), "Diff HTML is empty")
+		})
 	}
 }

@@ -22,8 +22,8 @@ const (
 	Transaction DiffType = "Transaction"
 )
 
-func getFilesInDirectory() ([]string, error) {
-	files, err := os.Open(txDirectory)
+func getFilesInDirectory(directory string) ([]string, error) {
+	files, err := os.Open(directory)
 	if err != nil {
 		return nil, fmt.Errorf("error occurred when attempting to open the given directory. \nerr: %w", err)
 	}
@@ -39,16 +39,16 @@ func getFilesInDirectory() ([]string, error) {
 		return nil, fmt.Errorf("an error occurred when attempting to read files in the given directory. \nerr: %w", err)
 	}
 
-	var transactionFiles []string
+	transactionFiles := make([]string, 0, len(fileInfo))
 	for _, info := range fileInfo {
-		dir := filepath.Join(txDirectory, info.Name())
+		dir := filepath.Join(directory, info.Name())
 		transactionFiles = append(transactionFiles, dir)
 	}
 
 	return transactionFiles, nil
 }
 
-func readTransactionFile(filePath string) (TransactionData, error) {
+func getTransactionDataFromFile(filePath string) (TransactionData, error) {
 	fileContents, err := os.ReadFile(filePath)
 	if err != nil {
 		return TransactionData{}, fmt.Errorf("error reading file at %s. \nerr: %w", filePath, err)

@@ -13,11 +13,13 @@ import (
 )
 
 var (
-	currentFile         string
-	txDirectory         string
-	diffOutputDirectory string
-	transactionDiffs    = 0
-	jsonMarshaller      = jsonpb.Marshaler{
+	currentFile          string
+	txDirectory          string
+	diffOutputDirectory  string
+	transactionDiffs     int
+	transactionsAnalysed int
+	transactionsPassed   int
+	jsonMarshaller       = jsonpb.Marshaler{
 		Indent: "   ",
 	}
 	inspectTxDirCmd = &cobra.Command{
@@ -36,14 +38,18 @@ func init() {
 }
 
 func inspectTxsInDirectoryCmd(_ *cobra.Command, _ []string) error {
-	transactionFiles, err := getFilesInDirectory()
+	transactionsAnalysed = 0
+	transactionsPassed = 0
+	transactionDiffs = 0
+
+	transactionFiles, err := getFilesInDirectory(txDirectory)
 	if err != nil {
 		return fmt.Errorf("error when attempting to get files in the given directory. \nerr: %v", err)
 	}
 
 	for _, file := range transactionFiles {
 		currentFile = file
-		transactionData, err := readTransactionFile(file)
+		transactionData, err := getTransactionDataFromFile(file)
 		if err != nil {
 			return fmt.Errorf("error reading transaction file '%s'\nerr: %v", file, err)
 		}
@@ -55,6 +61,7 @@ func inspectTxsInDirectoryCmd(_ *cobra.Command, _ []string) error {
 		}
 	}
 
+	logrus.Infof("transactions analysed: %d, transactions passed: %d, transactions failed: %d", transactionsAnalysed, transactionsPassed, transactionDiffs)
 	if transactionDiffs != 0 {
 		return fmt.Errorf("there were diffs in the transactions sent from your application vs the marshalled equivalents from core, check your protos are up to date. Diffs can be found in '%s'\nnumber of transactions with diffs: %d", diffOutputDirectory, transactionDiffs)
 	}
@@ -94,7 +101,7 @@ func inspectTransaction(transactionData TransactionData) error {
 			logrus.Errorf("transaction data did not match, writing diff data to %s", diffOutputDirectory)
 			err = writeDiffToFile(comparableTransactionJson, transactionDiffHtml)
 			if err != nil {
-				return fmt.Errorf("error occured when attempting to write transaction diffs to file. \nerr: %v", err)
+				return fmt.Errorf("error occurred when attempting to write transaction diffs to file. \nerr: %v", err)
 			}
 		}
 
@@ -108,10 +115,14 @@ func inspectTransaction(transactionData TransactionData) error {
 			logrus.Errorf("input data did not match, writing diff data to %s", diffOutputDirectory)
 			err = writeDiffToFile(comparableInputDataJson, inputDataDiffHtml)
 			if err != nil {
-				return fmt.Errorf("error occured when attempting to write input data diffs to file. \nerr: %v", err)
+				return fmt.Errorf("error occurred when attempting to write input data diffs to file. \nerr: %v", err)
 			}
 		}
+	} else {
+		transactionsPassed += 1
 	}
+
+	transactionsAnalysed += 1
 
 	return nil
 }
