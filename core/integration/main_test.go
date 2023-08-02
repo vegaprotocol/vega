@@ -140,6 +140,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the settlement data decimals for the oracle named "([^"]*)" is given in "([^"]*)" decimal places$`, func(name, decimals string) error {
 		return steps.OracleSpecSettlementDataDecimals(marketConfig, name, decimals)
 	})
+	s.Step(`^the perpetual oracles from "([^"]+)":`, func(signers string, table *godog.Table) error {
+		return steps.ThePerpsOracleSpec(marketConfig, signers, table)
+	})
 	s.Step(`the price monitoring named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.ThePriceMonitoring(marketConfig, name, table)
 	})
