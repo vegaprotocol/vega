@@ -1042,7 +1042,7 @@ func (m Market) MarketType() MarketType {
 		return MarketTypePerp
 	}
 
-	return MarketTypeUnset
+	return MarketTypeUnspecified
 }
 
 func (m Market) DeepClone() *Market {
