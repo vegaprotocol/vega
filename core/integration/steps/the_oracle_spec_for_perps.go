@@ -4,6 +4,7 @@ import (
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
 	"code.vegaprotocol.io/vega/libs/num"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/cucumber/godog"
@@ -22,7 +23,7 @@ func ThePerpsOracleSpec(config *market.Config, keys string, table *godog.Table) 
 		row := perpOracleRow{row: r}
 		name := row.Name()
 		settleP, scheduleP := row.SettlementProperty(), row.ScheduleProperty()
-		binding := &protoTypes.DataSourceSpecToPerpsBinding{
+		binding := &protoTypes.DataSourceSpecToPerpetualBinding{
 			SettlementDataProperty:     settleP,
 			SettlementScheduleProperty: scheduleP,
 		}
@@ -43,7 +44,48 @@ func ThePerpsOracleSpec(config *market.Config, keys string, table *godog.Table) 
 				Conditions: []*datav1.Condition{},
 			},
 		}
+		if err := config.OracleConfigs.Add(
+			name,
+			"settlement data",
+			&protoTypes.DataSourceSpec{
+				Id: vgrand.RandomStr(10),
+				Data: protoTypes.NewDataSourceDefinition(
+					protoTypes.DataSourceContentTypeOracle,
+				).SetOracleConfig(
+					&protoTypes.DataSourceDefinitionExternal_Oracle{
+						Oracle: &protoTypes.DataSourceSpecConfiguration{
+							Signers: pubKeysSigners,
+							Filters: filters[:1],
+						},
+					},
+				),
+			},
+			binding,
+		); err != nil {
+			return err
+		}
+		if err := config.OracleConfigs.Add(
+			name,
+			"settlement schedule",
+			&protoTypes.DataSourceSpec{
+				Id: vgrand.RandomStr(10),
+				Data: protoTypes.NewDataSourceDefinition(
+					protoTypes.DataSourceContentTypeOracle,
+				).SetOracleConfig(
+					&protoTypes.DataSourceDefinitionExternal_Oracle{
+						Oracle: &protoTypes.DataSourceSpecConfiguration{
+							Signers: pubKeysSigners,
+							Filters: filters[1:],
+						},
+					},
+				),
+			},
+			binding,
+		); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func parseOraclePerpsTable(table *godog.Table) []RowWrapper {
@@ -81,7 +123,7 @@ func (p perpOracleRow) SettlementProperty() string {
 }
 
 func (p perpOracleRow) SettlementType() datav1.PropertyKey_Type {
-	return r.row.MustOracleSpecPropertyType("settlement type")
+	return p.row.MustOracleSpecPropertyType("settlement type")
 }
 
 func (p perpOracleRow) ScheduleProperty() string {
@@ -89,7 +131,7 @@ func (p perpOracleRow) ScheduleProperty() string {
 }
 
 func (p perpOracleRow) ScheduleType() datav1.PropertyKey_Type {
-	return r.row.MustOracleSpecPropertyType("schedule type")
+	return p.row.MustOracleSpecPropertyType("schedule type")
 }
 
 func (p perpOracleRow) QuoteName() string {

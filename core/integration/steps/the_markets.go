@@ -172,11 +172,11 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 	}
 	// product update
 	if oracle, ok := row.oracleConfig(); ok {
-		oracleSettlement, err := config.OracleConfigs.Get(oracle, "settlement data")
+		oracleSettlement, err := config.OracleConfigs.GetFuture(oracle, "settlement data")
 		if err != nil {
 			panic(err)
 		}
-		oracleTermination, err := config.OracleConfigs.Get(oracle, "trading termination")
+		oracleTermination, err := config.OracleConfigs.GetFuture(oracle, "trading termination")
 		if err != nil {
 			panic(err)
 		}
@@ -298,12 +298,12 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 		panic(err)
 	}
 
-	oracleConfigForSettlement, err := config.OracleConfigs.Get(row.oracleConfig(), "settlement data")
+	oracleConfigForSettlement, err := config.OracleConfigs.GetFuture(row.oracleConfig(), "settlement data")
 	if err != nil {
 		panic(err)
 	}
 
-	oracleConfigForTradingTermination, err := config.OracleConfigs.Get(row.oracleConfig(), "trading termination")
+	oracleConfigForTradingTermination, err := config.OracleConfigs.GetFuture(row.oracleConfig(), "trading termination")
 	if err != nil {
 		panic(err)
 	}

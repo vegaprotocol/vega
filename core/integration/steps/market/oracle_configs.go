@@ -20,7 +20,6 @@ import (
 	"github.com/jinzhu/copier"
 
 	"code.vegaprotocol.io/vega/core/integration/steps/market/defaults"
-	types "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -39,25 +38,52 @@ var (
 	}
 )
 
+type Binding interface {
+	Descriptor() ([]byte, []int)
+	GetSettlementDataProperty() string
+	ProtoMessage()
+}
+
+type BindType interface {
+	*vegapb.DataSourceSpecToFutureBinding | *vegapb.DataSourceSpecToPerpetualBinding
+}
+
 type oracleConfigs struct {
-	configForSettlementData    map[string]*OracleConfig
-	configFoTradingTermination map[string]*OracleConfig
-	configForSchedule          map[string]*OracleConfig
+	futures *oConfig[*vegapb.DataSourceSpecToFutureBinding]
+	perps   *oConfig[*vegapb.DataSourceSpecToPerpetualBinding]
+}
+
+type oConfig[T BindType] struct {
+	configForSettlementData    map[string]*OracleConfig[T]
+	configFoTradingTermination map[string]*OracleConfig[T]
+	configForSchedule          map[string]*OracleConfig[T]
 	settlementDataDecimals     map[string]uint32
 }
 
-type OracleConfig struct {
+type OracleConfig[T BindType] struct {
 	Spec    *vegapb.OracleSpec
-	Binding *types.DataSourceSpecToFutureBinding
+	Binding T
 }
 
 func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
-	specs := &oracleConfigs{
-		configForSettlementData:    map[string]*OracleConfig{},
-		configFoTradingTermination: map[string]*OracleConfig{},
-		configForSchedule:          map[string]*OracleConfig{},
+	configs := &oracleConfigs{
+		futures: futureOracleSpecs(unmarshaler),
+		perps:   perpetualOracleSpecs(unmarshaler),
+	}
+	return configs
+}
+
+func newOConfig[T BindType]() *oConfig[T] {
+	return &oConfig[T]{
+		configForSettlementData:    map[string]*OracleConfig[T]{},
+		configFoTradingTermination: map[string]*OracleConfig[T]{},
+		configForSchedule:          map[string]*OracleConfig[T]{},
 		settlementDataDecimals:     map[string]uint32{},
 	}
+}
+
+func futureOracleSpecs(unmarshaler *defaults.Unmarshaler) *oConfig[*vegapb.DataSourceSpecToFutureBinding] {
+	specs := newOConfig[*vegapb.DataSourceSpecToFutureBinding]()
 
 	contentReaders := defaults.ReadAll(defaultOracleConfigs, defaultOracleConfigFileNames)
 	for name, contentReader := range contentReaders {
@@ -72,9 +98,14 @@ func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 			panic(fmt.Errorf("failed to add default data source config %s: %v", name, err))
 		}
 	}
-	contentReaders = defaults.ReadAll(defaultOraclePerpsConfigs, defaultPerpsOracleConfigFileNames)
+	return specs
+}
+
+func perpetualOracleSpecs(unmarshaler *defaults.Unmarshaler) *oConfig[*vegapb.DataSourceSpecToPerpetualBinding] {
+	specs := newOConfig[*vegapb.DataSourceSpecToPerpetualBinding]()
+	contentReaders := defaults.ReadAll(defaultOraclePerpsConfigs, defaultPerpsOracleConfigFileNames)
 	for name, contentReader := range contentReaders {
-		perp, err := unmarshaller.UnmarshalPerpsDataSourceConfig(contentReader)
+		perp, err := unmarshaler.UnmarshalPerpsDataSourceConfig(contentReader)
 		if err != nil {
 			panic(fmt.Errorf("couldn't unmarshal default data source config %s: %v", name, err))
 		}
@@ -89,26 +120,52 @@ func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 	return specs
 }
 
-func (f *oracleConfigs) SetSettlementDataDP(name string, decimals uint32) {
+func (c *oracleConfigs) SetSettlementDataDP(name string, decimals uint32) {
+	// for now, wing it and set for both
+	c.futures.SetSettlementDataDP(name, decimals)
+	c.perps.SetSettlementDataDP(name, decimals)
+}
+
+func (f *oConfig[T]) SetSettlementDataDP(name string, decimals uint32) {
 	f.settlementDataDecimals[name] = decimals
 }
 
-func (f *oracleConfigs) GetSettlementDataDP(name string) uint32 {
-	dp, ok := f.settlementDataDecimals[name]
-	if ok {
-		return dp
+func (c *oracleConfigs) GetSettlementDataDP(name string) uint32 {
+	fd, ok := c.futures.GetSettlementDataDP(name)
+	if !ok {
+		fd, _ = c.perps.GetSettlementDataDP(name)
 	}
-	return 0
+	return fd
 }
 
-func (f *oracleConfigs) Add(
+func (f *oConfig[T]) GetSettlementDataDP(name string) (uint32, bool) {
+	dp, ok := f.settlementDataDecimals[name]
+	if ok {
+		return dp, ok
+	}
+	return 0, ok
+}
+
+func (c *oracleConfigs) Add(name, specType string, spec *vegapb.DataSourceSpec, binding Binding) error {
+	switch bt := binding.(type) {
+	case *vegapb.DataSourceSpecToPerpetualBinding:
+		return c.perps.Add(name, specType, spec, bt)
+	case *vegapb.DataSourceSpecToFutureBinding:
+		return c.futures.Add(name, specType, spec, bt)
+	default:
+		panic("unsupported binding type")
+	}
+	return nil
+}
+
+func (f *oConfig[T]) Add(
 	name string,
 	specType string,
 	spec *vegapb.DataSourceSpec,
-	binding *types.DataSourceSpecToFutureBinding,
+	binding T,
 ) error {
 	if specType == "settlement data" {
-		f.configForSettlementData[name] = &OracleConfig{
+		f.configForSettlementData[name] = &OracleConfig[T]{
 			Spec: &vegapb.OracleSpec{
 				ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
 					Spec: spec,
@@ -116,8 +173,14 @@ func (f *oracleConfigs) Add(
 			},
 			Binding: binding,
 		}
+		for _, filter := range spec.GetData().GetFilters() {
+			if filter.Key.NumberDecimalPlaces != nil {
+				f.settlementDataDecimals[name] = uint32(*filter.Key.NumberDecimalPlaces)
+				break
+			}
+		}
 	} else if specType == "trading termination" {
-		f.configFoTradingTermination[name] = &OracleConfig{
+		f.configFoTradingTermination[name] = &OracleConfig[T]{
 			Spec: &vegapb.OracleSpec{
 				ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
 					Spec: spec,
@@ -126,7 +189,7 @@ func (f *oracleConfigs) Add(
 			Binding: binding,
 		}
 	} else if specType == "settlement schedule" {
-		f.configForSchedule[name] = &OracleConfig{
+		f.configForSchedule[name] = &OracleConfig[T]{
 			Spec: &vegapb.OracleSpec{
 				ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
 					Spec: spec,
@@ -141,8 +204,17 @@ func (f *oracleConfigs) Add(
 	return nil
 }
 
-func (f *oracleConfigs) Get(name string, specType string) (*OracleConfig, error) {
-	var cfg map[string]*OracleConfig
+// *vegapb.DataSourceSpecToFutureBinding | *vegapb.DataSourceSpecToPerpetualBinding
+func (c *oracleConfigs) GetFuture(name, specType string) (*OracleConfig[*vegapb.DataSourceSpecToFutureBinding], error) {
+	return c.futures.Get(name, specType)
+}
+
+func (c *oracleConfigs) GetPerps(name, specType string) (*OracleConfig[*vegapb.DataSourceSpecToPerpetualBinding], error) {
+	return c.perps.Get(name, specType)
+}
+
+func (f *oConfig[T]) Get(name string, specType string) (*OracleConfig[T], error) {
+	var cfg map[string]*OracleConfig[T]
 
 	if specType == "settlement data" {
 		cfg = f.configForSettlementData
@@ -159,7 +231,7 @@ func (f *oracleConfigs) Get(name string, specType string) (*OracleConfig, error)
 		return config, fmt.Errorf("no oracle spec \"%s\" registered", name)
 	}
 	// Copy to avoid modification between tests.
-	copyConfig := &OracleConfig{}
+	copyConfig := &OracleConfig[T]{}
 	if err := copier.Copy(copyConfig, config); err != nil {
 		panic(fmt.Errorf("failed to deep copy oracle config: %v", err))
 	}
