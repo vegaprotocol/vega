@@ -2,7 +2,6 @@ package inspecttx_helpers
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -12,9 +11,9 @@ import (
 
 func TestGetFilesInDirectoryRetrievesAllFiles(t *testing.T) {
 	tmpDir := t.TempDir()
-
-	var filePaths []string
 	testFiles := []string{"file1.json", "file2.json", "file3.json"}
+	filePaths := make([]string, 0, len(testFiles))
+
 	for _, file := range testFiles {
 		filePath := filepath.Join(tmpDir, file)
 		if _, err := os.Create(filePath); err != nil {
@@ -33,7 +32,7 @@ func TestGetFilesInDirectoryRetrievesAllFiles(t *testing.T) {
 }
 
 func TestGetTransactionDataFromFileReturnsValidTransactionData(t *testing.T) {
-	tmpFile, err := ioutil.TempFile("", "test-transaction-*.json")
+	tmpFile, err := os.CreateTemp("", "test-transaction-*.json")
 	assert.NoErrorf(t, err, "failed to create temporary test file: %v", err)
 	defer os.Remove(tmpFile.Name())
 
