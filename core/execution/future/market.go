@@ -259,8 +259,8 @@ func NewMarket(
 	}
 
 	mkt.MarketTimestamps = ts
-	isPerp := mkt.MarketType() == types.MarketTypePerp
 
+	marketType := mkt.MarketType()
 	market := &Market{
 		log:                       log,
 		idgen:                     nil,
@@ -300,18 +300,23 @@ func NewMarket(
 		maxStopOrdersPerParties:   num.UintZero(),
 		stopOrders:                stoporders.New(log),
 		expiringStopOrders:        common.NewExpiringOrders(),
-		perp:                      isPerp,
+		perp:                      marketType == types.MarketTypePerp,
 	}
 
 	assets, _ := mkt.GetAssets()
 	market.settlementAsset = assets[0]
 
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
-	if !isPerp {
+
+	switch marketType {
+	case types.MarketTypeFuture:
 		market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
 		market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementData)
-	} else {
+	case types.MarketTypePerp:
 		market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementDataPerp)
+	case types.MarketTypeSpot:
+	default:
+		log.Panic("unexpected market type", logging.Int("type", int(marketType)))
 	}
 	market.assetDP = uint32(assetDecimals)
 	return market, nil
