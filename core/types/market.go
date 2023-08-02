@@ -879,7 +879,7 @@ func (m MarketData) String() string {
 type MarketType uint32
 
 const (
-	MarketTypeUnset MarketType = iota
+	MarketTypeUnspecified MarketType = iota
 	MarketTypeFuture
 	MarketTypeSpot
 	MarketTypePerp

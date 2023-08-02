@@ -99,7 +99,7 @@ func parseOraclePerpsTable(table *godog.Table) []RowWrapper {
 		"margin funding factor",
 		"interest rate",
 		"clamp lower bound",
-		"clam upper bound",
+		"clamp upper bound",
 		"quote name",
 	})
 }
