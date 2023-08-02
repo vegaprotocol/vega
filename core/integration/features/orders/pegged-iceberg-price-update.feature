@@ -75,6 +75,7 @@ Feature: Price of a pegged iceberg order gets update as the reference price chan
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
       | 1010       | TRADING_MODE_CONTINUOUS | 1313         | 5000           | 1300          | 990                   | 1045             | 1100                    |
+    # TODO: price of a pegged iceberg order should be 1100 now (best static offer price + 0 offset = 1100, but it's stuck at 1010 (old best static offer price))
     And the pegged orders should have the following states:
       | party  | market id | side | volume | reference | offset | price | status        |
       | party0 | ETH/DEC21 | buy  | 506    | BID       | 10     | 980   | STATUS_ACTIVE |
