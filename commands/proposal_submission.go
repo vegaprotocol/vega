@@ -880,8 +880,8 @@ func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent s
 	switch product := instrument.Product.(type) {
 	case *protoTypes.InstrumentConfiguration_Future:
 		errs.Merge(checkNewFuture(product.Future))
-	case *protoTypes.InstrumentConfiguration_Perps:
-		errs.Merge(checkNewPerps(product.Perps))
+	case *protoTypes.InstrumentConfiguration_Perpetual:
+		errs.Merge(checkNewPerps(product.Perpetual))
 	case *protoTypes.InstrumentConfiguration_Spot:
 		errs.Merge(checkNewSpot(product.Spot))
 	default:
@@ -909,8 +909,8 @@ func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration)
 	switch product := instrument.Product.(type) {
 	case *protoTypes.UpdateInstrumentConfiguration_Future:
 		errs.Merge(checkUpdateFuture(product.Future))
-	case *protoTypes.UpdateInstrumentConfiguration_Perps:
-		errs.Merge(checkUpdatePerps(product.Perps))
+	case *protoTypes.UpdateInstrumentConfiguration_Perpetual:
+		errs.Merge(checkUpdatePerps(product.Perpetual))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product", ErrIsNotValid)
 	}
@@ -939,7 +939,7 @@ func checkNewFuture(future *protoTypes.FutureProduct) Errors {
 	return errs
 }
 
-func checkNewPerps(perps *protoTypes.PerpsProduct) Errors {
+func checkNewPerps(perps *protoTypes.PerpetualProduct) Errors {
 	errs := NewErrors()
 
 	if perps == nil {
@@ -1058,7 +1058,7 @@ func checkUpdateFuture(future *protoTypes.UpdateFutureProduct) Errors {
 	return errs
 }
 
-func checkUpdatePerps(perps *protoTypes.UpdatePerpsProduct) Errors {
+func checkUpdatePerps(perps *protoTypes.UpdatePerpetualProduct) Errors {
 	errs := NewErrors()
 
 	if perps == nil {
@@ -1323,7 +1323,7 @@ func checkNewOracleBinding(future *protoTypes.FutureProduct) Errors {
 	return errs
 }
 
-func checkNewPerpsOracleBinding(perps *protoTypes.PerpsProduct) Errors {
+func checkNewPerpsOracleBinding(perps *protoTypes.PerpetualProduct) Errors {
 	errs := NewErrors()
 
 	if perps.DataSourceSpecBinding != nil {
@@ -1366,7 +1366,7 @@ func checkUpdateOracleBinding(future *protoTypes.UpdateFutureProduct) Errors {
 	return errs
 }
 
-func checkUpdatePerpsOracleBinding(perps *protoTypes.UpdatePerpsProduct) Errors {
+func checkUpdatePerpsOracleBinding(perps *protoTypes.UpdatePerpetualProduct) Errors {
 	errs := NewErrors()
 	if perps.DataSourceSpecBinding != nil {
 		if len(perps.DataSourceSpecBinding.SettlementDataProperty) == 0 {
