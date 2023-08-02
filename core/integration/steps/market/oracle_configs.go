@@ -39,11 +39,11 @@ var (
 		"defaults/oracle-config/default-dai-for-perps.json",
 	}
 
-	// swap out the oracle names for future with perp oracles
+	// swap out the oracle names for future with perp oracles.
 	perpsSwapMapping = map[string]string{
-		"oracle-config/default-eth-for-future": "oracle-config/default-eth-for-perps",
-		"oracle-config/default-usd-for-future": "oracle-config/default-usd-for-perps",
-		"oracle-config/default-dai-for-future": "oracle-config/default-dai-for-perps",
+		"default-eth-for-future": "default-eth-for-perps",
+		"default-usd-for-future": "default-usd-for-perps",
+		"default-dai-for-future": "default-dai-for-perps",
 	}
 )
 
