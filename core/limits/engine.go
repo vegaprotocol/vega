@@ -216,7 +216,7 @@ func (e *Engine) CanProposeSpotMarket() bool {
 }
 
 func (e *Engine) CanProposePerpsMarket() bool {
-	return e.proposeSpotMarketEnabled
+	return e.proposePerpsMarketEnabled
 }
 
 func (e *Engine) sendEvent(ctx context.Context) {

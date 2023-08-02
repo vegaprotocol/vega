@@ -582,6 +582,7 @@ func validatePerps(perps *types.PerpsProduct, decimals uint64, assets Assets, et
 		if tt.Triggers[0].Initial == nil {
 			tt.SetInitial(time.Unix(et.current, 0), currentTime)
 		}
+		tt.SetNextTrigger(currentTime)
 
 		// can't have the first trigger in the past
 		if tt.Triggers[0].Initial.Before(currentTime) {
@@ -1028,6 +1029,7 @@ func validateUpdatePerps(perps *types.UpdatePerpsProduct, et *enactmentTime, cur
 		if tt.Triggers[0].Initial == nil {
 			tt.SetInitial(time.Unix(et.current, 0), currentTime)
 		}
+		tt.SetNextTrigger(currentTime)
 
 		// can't have the first trigger in the past
 		if tt.Triggers[0].Initial.Before(currentTime) {

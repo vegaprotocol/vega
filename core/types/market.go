@@ -879,7 +879,8 @@ func (m MarketData) String() string {
 type MarketType uint32
 
 const (
-	MarketTypeFuture MarketType = iota
+	MarketTypeUnset MarketType = iota
+	MarketTypeFuture
 	MarketTypeSpot
 	MarketTypePerp
 )
@@ -903,7 +904,6 @@ type Market struct {
 	MarketTimestamps      *MarketTimestamps
 	ParentMarketID        string
 	InsurancePoolFraction num.Decimal
-	mType                 MarketType
 }
 
 func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
@@ -940,12 +940,6 @@ func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
 		QuadraticSlippageFactor:       quadraticSlippageFactor,
 		ParentMarketID:                parent,
 		InsurancePoolFraction:         insFraction,
-		mType:                         MarketTypeFuture,
-	}
-	if s := m.GetSpot(); s != nil {
-		m.mType = MarketTypeSpot
-	} else if p := m.GetPerps(); p != nil {
-		m.mType = MarketTypePerp
 	}
 
 	if mkt.LiquiditySlaParams != nil {
@@ -1038,7 +1032,17 @@ func (m Market) String() string {
 }
 
 func (m Market) MarketType() MarketType {
-	return m.mType
+	if f := m.GetFuture(); f != nil {
+		return MarketTypeFuture
+	}
+	if s := m.GetSpot(); s != nil {
+		return MarketTypeSpot
+	}
+	if p := m.GetPerps(); p != nil {
+		return MarketTypePerp
+	}
+
+	return MarketTypeUnset
 }
 
 func (m Market) DeepClone() *Market {
