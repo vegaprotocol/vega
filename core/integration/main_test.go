@@ -308,7 +308,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.MarketOpeningAuctionPeriodEnds(execsetup.executionEngine, execsetup.timeService, execsetup.markets, marketID)
 	})
 	s.Step(`^the oracles broadcast data signed with "([^"]*)":$`, func(pubKeys string, properties *godog.Table) error {
-		return steps.OraclesBroadcastDataSignedWithKeys(execsetup.oracleEngine, pubKeys, properties)
+		return steps.OraclesBroadcastDataSignedWithKeys(execsetup.oracleEngine, execsetup.timeService, pubKeys, properties)
+	})
+	s.Step(`^the oracles broadcast data with block time signed with "([^"]*)":$`, func(pubKeys string, properties *godog.Table) error {
+		return steps.OraclesBroadcastDataWithBlockTimeSignedWithKeys(execsetup.oracleEngine, execsetup.timeService, pubKeys, properties)
 	})
 	s.Step(`^the following LP events should be emitted:$`, func(table *godog.Table) error {
 		return steps.TheFollowingLPEventsShouldBeEmitted(execsetup.broker, table)
