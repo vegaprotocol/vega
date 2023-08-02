@@ -44,10 +44,14 @@ func ThePerpsOracleSpec(config *market.Config, keys string, table *godog.Table) 
 				Conditions: []*datav1.Condition{},
 			},
 		}
-		if err := config.OracleConfigs.Add(
-			name,
-			"settlement data",
-			&protoTypes.DataSourceSpec{
+		perp := &protoTypes.Perpetual{
+			SettlementAsset:     row.Asset(),
+			QuoteName:           row.QuoteName(),
+			MarginFundingFactor: row.MarginFundingFactor().String(),
+			InterestRate:        row.InterestRate().String(),
+			ClampLowerBound:     row.LowerClamp().String(),
+			ClampUpperBound:     row.UpperClamp().String(),
+			DataSourceSpecForSettlementData: &protoTypes.DataSourceSpec{
 				Id: vgrand.RandomStr(10),
 				Data: protoTypes.NewDataSourceDefinition(
 					protoTypes.DataSourceContentTypeOracle,
@@ -60,14 +64,7 @@ func ThePerpsOracleSpec(config *market.Config, keys string, table *godog.Table) 
 					},
 				),
 			},
-			binding,
-		); err != nil {
-			return err
-		}
-		if err := config.OracleConfigs.Add(
-			name,
-			"settlement schedule",
-			&protoTypes.DataSourceSpec{
+			DataSourceSpecForSettlementSchedule: &protoTypes.DataSourceSpec{
 				Id: vgrand.RandomStr(10),
 				Data: protoTypes.NewDataSourceDefinition(
 					protoTypes.DataSourceContentTypeOracle,
@@ -80,8 +77,9 @@ func ThePerpsOracleSpec(config *market.Config, keys string, table *godog.Table) 
 					},
 				),
 			},
-			binding,
-		); err != nil {
+			DataSourceSpecBinding: binding,
+		}
+		if err := config.OracleConfigs.AddPerp(name, perp); err != nil {
 			return err
 		}
 	}

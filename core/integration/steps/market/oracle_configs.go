@@ -49,8 +49,10 @@ type BindType interface {
 }
 
 type oracleConfigs struct {
-	futures *oConfig[*vegapb.DataSourceSpecToFutureBinding]
-	perps   *oConfig[*vegapb.DataSourceSpecToPerpetualBinding]
+	futures     *oConfig[*vegapb.DataSourceSpecToFutureBinding]
+	perps       *oConfig[*vegapb.DataSourceSpecToPerpetualBinding]
+	fullPerps   map[string]*vegapb.Perpetual
+	fullFutures map[string]*vegapb.Future
 }
 
 type oConfig[T BindType] struct {
@@ -67,9 +69,13 @@ type OracleConfig[T BindType] struct {
 
 func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 	configs := &oracleConfigs{
-		futures: futureOracleSpecs(unmarshaler),
-		perps:   perpetualOracleSpecs(unmarshaler),
+		futures:     newOConfig[*vegapb.DataSourceSpecToFutureBinding](),
+		perps:       newOConfig[*vegapb.DataSourceSpecToPerpetualBinding](),
+		fullPerps:   map[string]*vegapb.Perpetual{},
+		fullFutures: map[string]*vegapb.Future{},
 	}
+	configs.futureOracleSpecs(unmarshaler)
+	configs.perpetualOracleSpecs(unmarshaler)
 	return configs
 }
 
@@ -82,42 +88,30 @@ func newOConfig[T BindType]() *oConfig[T] {
 	}
 }
 
-func futureOracleSpecs(unmarshaler *defaults.Unmarshaler) *oConfig[*vegapb.DataSourceSpecToFutureBinding] {
-	specs := newOConfig[*vegapb.DataSourceSpecToFutureBinding]()
-
+func (c *oracleConfigs) futureOracleSpecs(unmarshaler *defaults.Unmarshaler) {
 	contentReaders := defaults.ReadAll(defaultOracleConfigs, defaultOracleConfigFileNames)
 	for name, contentReader := range contentReaders {
 		future, err := unmarshaler.UnmarshalDataSourceConfig(contentReader)
 		if err != nil {
 			panic(fmt.Errorf("couldn't unmarshal default data source config %s: %v", name, err))
 		}
-		if err := specs.Add(name, "settlement data", future.DataSourceSpecForSettlementData, future.DataSourceSpecBinding); err != nil {
-			panic(fmt.Errorf("failed to add default data source config %s: %v", name, err))
-		}
-		if err := specs.Add(name, "trading termination", future.DataSourceSpecForTradingTermination, future.DataSourceSpecBinding); err != nil {
+		if err := c.AddFuture(name, future); err != nil {
 			panic(fmt.Errorf("failed to add default data source config %s: %v", name, err))
 		}
 	}
-	return specs
 }
 
-func perpetualOracleSpecs(unmarshaler *defaults.Unmarshaler) *oConfig[*vegapb.DataSourceSpecToPerpetualBinding] {
-	specs := newOConfig[*vegapb.DataSourceSpecToPerpetualBinding]()
+func (c *oracleConfigs) perpetualOracleSpecs(unmarshaler *defaults.Unmarshaler) {
 	contentReaders := defaults.ReadAll(defaultOraclePerpsConfigs, defaultPerpsOracleConfigFileNames)
 	for name, contentReader := range contentReaders {
 		perp, err := unmarshaler.UnmarshalPerpsDataSourceConfig(contentReader)
 		if err != nil {
 			panic(fmt.Errorf("couldn't unmarshal default data source config %s: %v", name, err))
 		}
-		if err := specs.Add(name, "settlement data", perp.DataSourceSpecForSettlementData, perp.DataSourceSpecBinding); err != nil {
-			panic(fmt.Errorf("failed to add default data source config %s: %v", name, err))
-		}
-		if err := specs.Add(name, "settlement schedule", perp.DataSourceSpecForSettlementSchedule, perp.DataSourceSpecBinding); err != nil {
+		if err := c.AddPerp(name, perp); err != nil {
 			panic(fmt.Errorf("failed to add default data source config %s: %v", name, err))
 		}
 	}
-
-	return specs
 }
 
 func (c *oracleConfigs) SetSettlementDataDP(name string, decimals uint32) {
@@ -144,6 +138,28 @@ func (f *oConfig[T]) GetSettlementDataDP(name string) (uint32, bool) {
 		return dp, ok
 	}
 	return 0, ok
+}
+
+func (c *oracleConfigs) AddFuture(name string, future *vegapb.Future) error {
+	if err := c.futures.Add(name, "settlement data", future.DataSourceSpecForSettlementData, future.DataSourceSpecBinding); err != nil {
+		return err
+	}
+	if err := c.futures.Add(name, "trading termination", future.DataSourceSpecForTradingTermination, future.DataSourceSpecBinding); err != nil {
+		return err
+	}
+	c.fullFutures[name] = future
+	return nil
+}
+
+func (c *oracleConfigs) AddPerp(name string, perp *vegapb.Perpetual) error {
+	if err := c.perps.Add(name, "settlement data", perp.DataSourceSpecForSettlementData, perp.DataSourceSpecBinding); err != nil {
+		return err
+	}
+	if err := c.perps.Add(name, "settlement schedule", perp.DataSourceSpecForSettlementSchedule, perp.DataSourceSpecBinding); err != nil {
+		return err
+	}
+	c.fullPerps[name] = perp
+	return nil
 }
 
 func (c *oracleConfigs) Add(name, specType string, spec *vegapb.DataSourceSpec, binding Binding) error {
@@ -204,6 +220,23 @@ func (f *oConfig[T]) Add(
 	return nil
 }
 
+func (c *oracleConfigs) GetFullInstrument(name string) (*vegapb.Instrument, error) {
+	var instrument vegapb.Instrument
+	if fut, ok := c.fullFutures[name]; ok {
+		instrument.Product = &vegapb.Instrument_Future{
+			Future: fut,
+		}
+		return &instrument, nil
+	}
+	if perp, ok := c.fullPerps[name]; ok {
+		instrument.Product = &vegapb.Instrument_Perpetual{
+			Perpetual: perp,
+		}
+		return &instrument, nil
+	}
+	return nil, fmt.Errorf("no products with name %s found", name)
+}
+
 // *vegapb.DataSourceSpecToFutureBinding | *vegapb.DataSourceSpecToPerpetualBinding
 func (c *oracleConfigs) GetFuture(name, specType string) (*OracleConfig[*vegapb.DataSourceSpecToFutureBinding], error) {
 	return c.futures.Get(name, specType)
@@ -211,6 +244,30 @@ func (c *oracleConfigs) GetFuture(name, specType string) (*OracleConfig[*vegapb.
 
 func (c *oracleConfigs) GetPerps(name, specType string) (*OracleConfig[*vegapb.DataSourceSpecToPerpetualBinding], error) {
 	return c.perps.Get(name, specType)
+}
+
+func (c *oracleConfigs) GetFullPerp(name string) (*vegapb.Perpetual, error) {
+	perp, ok := c.fullPerps[name]
+	if !ok {
+		return nil, fmt.Errorf("perpetual product with name %s not found", name)
+	}
+	copyConfig := &vegapb.Perpetual{}
+	if err := copier.Copy(copyConfig, perp); err != nil {
+		panic(fmt.Errorf("failed to deep copy oracle config: %v", err))
+	}
+	return copyConfig, nil
+}
+
+func (c *oracleConfigs) GetFullFuture(name string) (*vegapb.Future, error) {
+	future, ok := c.fullFutures[name]
+	if !ok {
+		return nil, fmt.Errorf("future product with name %s not found", name)
+	}
+	copyConfig := &vegapb.Future{}
+	if err := copier.Copy(copyConfig, future); err != nil {
+		panic(fmt.Errorf("failed to deep copy oracle config: %v", err))
+	}
+	return copyConfig, nil
 }
 
 func (f *oConfig[T]) Get(name string, specType string) (*OracleConfig[T], error) {
