@@ -37,7 +37,8 @@ var (
 		Format: "progress",
 	}
 
-	features string
+	perpsSwap bool
+	features  string
 
 	expectingEventsOverStepText = `there were "([0-9]+)" events emitted over the last step`
 )
@@ -45,6 +46,7 @@ var (
 func init() {
 	godog.BindFlags("godog.", flag.CommandLine, &gdOpts)
 	flag.StringVar(&features, "features", "", "a coma separated list of paths to the feature files")
+	flag.BoolVar(&perpsSwap, "perps", false, "Runs all tests swapping out the default futures oracles for their corresponding perps oracle")
 }
 
 func TestMain(m *testing.M) {
@@ -71,6 +73,9 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {}
 func InitializeScenario(s *godog.ScenarioContext) {
 	s.BeforeScenario(func(*godog.Scenario) {
 		execsetup = newExecutionTestSetup()
+		if perpsSwap {
+			marketConfig.OracleConfigs.SwapToPerps()
+		}
 	})
 	s.StepContext().Before(func(ctx context.Context, st *godog.Step) (context.Context, error) {
 		// record accounts before step
