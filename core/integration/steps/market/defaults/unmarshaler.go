@@ -65,8 +65,8 @@ func (u *Unmarshaler) UnmarshalLiquidityMonitoring(r io.Reader) (*vegapb.Liquidi
 	return proto, nil
 }
 
-func (u *Unmarshaler) UnmarshalPerpsDataSourceConfig(r io.Reader) (*vegapb.Perps, error) {
-	proto := &vegapb.Perps{}
+func (u *Unmarshaler) UnmarshalPerpsDataSourceConfig(r io.Reader) (*vegapb.Perpetual, error) {
+	proto := &vegapb.Perpetual{}
 	err := u.unmarshaler.Unmarshal(r, proto)
 	if err != nil {
 		return nil, err
