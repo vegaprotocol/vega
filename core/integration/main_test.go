@@ -57,6 +57,9 @@ func TestMain(m *testing.M) {
 		log.Print("Skipping core integration tests, go test run with -short")
 		return
 	}
+	if perpsSwap {
+		marketConfig.OracleConfigs.SwapToPerps()
+	}
 
 	status := godog.TestSuite{
 		Name:                 "godogs",
@@ -73,9 +76,6 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {}
 func InitializeScenario(s *godog.ScenarioContext) {
 	s.BeforeScenario(func(*godog.Scenario) {
 		execsetup = newExecutionTestSetup()
-		if perpsSwap {
-			marketConfig.OracleConfigs.SwapToPerps()
-		}
 	})
 	s.StepContext().Before(func(ctx context.Context, st *godog.Step) (context.Context, error) {
 		// record accounts before step
