@@ -100,7 +100,7 @@ func TestInternalTimeTriggerFromProto(t *testing.T) {
 	}
 
 	pt := tt.IntoProto()
-	ntt := common.InternalTimeTriggerFromProto(pt, timeNow)
+	ntt := common.InternalTimeTriggerFromProto(pt)
 	assert.NotNil(t, pt)
 	assert.IsType(t, &common.InternalTimeTrigger{}, ntt)
 	assert.Equal(t, ptr.From(time.Unix(timeNow.Unix(), 0)), ntt.Initial)

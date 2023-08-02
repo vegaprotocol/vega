@@ -110,12 +110,10 @@ func (i *InternalTimeTrigger) SetInitial(initial, timeNow time.Time) {
 	}
 
 	i.Initial = ptr.From(initial)
-	i.SetNextTrigger(timeNow)
 }
 
 func InternalTimeTriggerFromProto(
 	protoTrigger *datapb.InternalTimeTrigger,
-	timeNow time.Time,
 ) *InternalTimeTrigger {
 	var initial *time.Time
 	if protoTrigger.Initial != nil {
@@ -126,11 +124,6 @@ func InternalTimeTriggerFromProto(
 		Initial: initial,
 		Every:   protoTrigger.Every,
 	}
-
-	if initial != nil {
-		tt.SetNextTrigger(timeNow)
-	}
-
 	return tt
 }
 
@@ -172,12 +165,12 @@ func (i InternalTimeTriggers) IntoProto() []*datapb.InternalTimeTrigger {
 	return protoTriggers[:]
 }
 
-func InternalTimeTriggersFromProto(protoTriggers []*datapb.InternalTimeTrigger, timeNow time.Time) InternalTimeTriggers {
+func InternalTimeTriggersFromProto(protoTriggers []*datapb.InternalTimeTrigger) InternalTimeTriggers {
 	ts := InternalTimeTriggers{}
 	for i, protoTrigger := range protoTriggers {
 		// Handle length of 1 for now
 		if i == 0 {
-			ts[0] = InternalTimeTriggerFromProto(protoTrigger, timeNow)
+			ts[0] = InternalTimeTriggerFromProto(protoTrigger)
 		}
 	}
 
