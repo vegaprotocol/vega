@@ -3747,6 +3747,13 @@ func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Num
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	// take all positions, get funding transfers
+	sdi := settlementData.Int()
+	if !settlementData.IsInt() && settlementData.Decimal() != nil {
+		sdi = num.NewInt(settlementData.Decimal().IntPart())
+	}
+	if sdi == nil {
+		return
+	}
 	transfers, round := m.settlement.SettleFundingPeriod(ctx, m.position.Positions(), settlementData.Int())
 	if len(transfers) == 0 {
 		m.log.Debug("Failed to get settle positions for funding period")
