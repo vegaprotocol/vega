@@ -96,6 +96,8 @@ type Engine struct {
 	successors      map[string][]string
 	isSuccessor     map[string]string
 	successorWindow time.Duration
+	// only used once, during CP restore, this doesn't need to be included in a snapshot or checkpoint.
+	skipRestoreSuccessors map[string]struct{}
 }
 
 type netParamsValues struct {
@@ -189,6 +191,7 @@ func NewEngine(
 		marketCPStates:        map[string]*types.CPMarketState{},
 		successors:            map[string][]string{},
 		isSuccessor:           map[string]string{},
+		skipRestoreSuccessors: map[string]struct{}{},
 	}
 
 	// set the eligibility for proposer bonus checker
@@ -351,6 +354,16 @@ func (e *Engine) succeedOrRestore(ctx context.Context, successor, parent string,
 		// nevertheless the proposal is still valid, and updated by the governance engine.
 		return ErrMarketDoesNotExist
 	}
+	if restore {
+		// first up: when restoring markets, check to see if this successor should be rejected
+		if _, ok := e.skipRestoreSuccessors[parent]; ok {
+			_ = e.RejectMarket(ctx, successor)
+			delete(e.successors, parent)
+			delete(e.isSuccessor, successor)
+			// no error: we just do not care about this market anymore
+			return nil
+		}
+	}
 	// if this is a market restore, first check to see if there is some state already
 	_, ok = e.GetMarket(parent, true)
 	if !ok && !restore {
@@ -373,13 +386,10 @@ func (e *Engine) succeedOrRestore(ctx context.Context, successor, parent string,
 		delete(e.isSuccessor, successor)
 		return nil
 	}
-	// if parent market is active, mark as succeeded
-	if pmo, ok := e.futureMarkets[parent]; ok {
-		// succeeding a parent market before it was enacted is not allowed
-		if !restore && pmo.Mkt().State == types.MarketStateProposed {
-			e.RejectMarket(ctx, successor)
-			return ErrParentMarketNotEnactedYet
-		}
+	// succeeding a parent market before it was enacted is not allowed
+	if pmo, ok := e.futureMarkets[parent]; ok && !restore && pmo.Mkt().State == types.MarketStateProposed {
+		e.RejectMarket(ctx, successor)
+		return ErrParentMarketNotEnactedYet
 	}
 	// successor market set up accordingly, clean up the state
 	// first reject all pending successors proposed for the same parent
@@ -430,12 +440,25 @@ func (e *Engine) RestoreMarket(ctx context.Context, marketConfig *types.Market) 
 		if len(marketConfig.ParentMarketID) == 0 {
 			return nil
 		}
+		// successor had state to restore, meaning it left opening auction, and no other successors with the same parent market
+		// can be restored after this point.
+		e.skipRestoreSuccessors[marketConfig.ParentMarketID] = struct{}{}
+		// any pending successors that didn't manage to leave opening auction should be rejected at this point:
+		pendingSuccessors := e.successors[marketConfig.ParentMarketID]
+		for _, sid := range pendingSuccessors {
+			_ = e.RejectMarket(ctx, sid)
+		}
 		// check to see if the parent market can be found, remove from the successor maps if the parent is gone
 		// the market itself should still hold the reference because state was restored
-		if _, ok := e.futureMarkets[marketConfig.ParentMarketID]; !ok {
-			delete(e.successors, marketConfig.ParentMarketID)
-			delete(e.isSuccessor, marketConfig.ID)
+		pmkt, ok := e.futureMarkets[marketConfig.ParentMarketID]
+		if ok {
+			// market parent as having been succeeded
+			pmkt.SetSucceeded()
 		}
+		// remove the parent from the successors map
+		delete(e.successors, marketConfig.ParentMarketID)
+		// remove from the isSuccessor map, do not reset the parent ID reference to preserve the reference in the events.
+		delete(e.isSuccessor, marketConfig.ID)
 		return nil
 	}
 	// this is a successor market, handle accordingly
