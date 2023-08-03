@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
+	ethcallcommon "code.vegaprotocol.io/vega/core/datasource/external/ethcall/common"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -1174,6 +1176,33 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.address", parentProperty, name), ErrIsNotValidEthereumAddress)
 				}
 
+				spec, err := ethcallcommon.SpecFromProto(ethOracle)
+				if err != nil {
+					switch {
+					case errors.Is(err, ethcallcommon.ErrCallSpecIsNil):
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle", parentProperty, name), ErrEmptyEthereumCallSpec)
+					case errors.Is(err, ethcallcommon.ErrInvalidCallTrigger):
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.trigger", parentProperty, name), ErrInvalidEthereumCallTrigger)
+					case errors.Is(err, ethcallcommon.ErrInvalidCallArgs):
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.args", parentProperty, name), ErrInvalidEthereumCallArgs)
+					default:
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle", parentProperty, name), ErrInvalidEthereumCallSpec)
+					}
+				}
+
+				if _, err := ethcall.NewCall(spec); err != nil {
+					switch {
+					case errors.Is(err, ethcallcommon.ErrInvalidEthereumAbi):
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.abi", parentProperty, name), ErrInvalidEthereumAbi)
+					case errors.Is(err, ethcallcommon.ErrInvalidCallArgs):
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.callargs", parentProperty, name), ErrInvalidEthereumCallArgs)
+					case errors.Is(err, ethcallcommon.ErrInvalidFilters):
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.filters", parentProperty, name), ErrInvalidEthereumFilters)
+					default:
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle", parentProperty, name), ErrInvalidEthereumCallSpec)
+					}
+				}
+
 				filters := ethOracle.Filters
 				errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.ethoracle", name), parentProperty))
 
@@ -1195,8 +1224,8 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 
 				if ethOracle.Trigger != nil &&
 					ethOracle.Trigger.GetTimeTrigger() != nil &&
-					ethOracle.Trigger.GetTimeTrigger().Initial == nil &&
-					ethOracle.Trigger.GetTimeTrigger().Every == nil {
+					(ethOracle.Trigger.GetTimeTrigger().Initial == nil || *ethOracle.Trigger.GetTimeTrigger().Initial == 0) &&
+					(ethOracle.Trigger.GetTimeTrigger().Every == nil || *ethOracle.Trigger.GetTimeTrigger().Every == 0) {
 					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.trigger.timetrigger.(initial|every)", parentProperty, name), ErrIsRequired)
 				}
 			} else {
