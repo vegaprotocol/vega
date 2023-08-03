@@ -131,6 +131,8 @@ message Payload {
     LiquidityV2Supplied liquidity_v2_supplied = 67;
     LiquidityV2Scores liquidity_v2_scores = 68;
     HoldingAccountTracker holding_account_tracker = 69;
+    Teams teams = 70;
+    TeamSwitches team_switches = 71;
   }
 }
 
@@ -1033,4 +1035,33 @@ message AcceptedProtocolUpgradeProposal {
   uint64 upgrade_block_height = 1;
   // Release tag for the vega binary
   string vega_release_tag = 2;
+}
+
+message Teams {
+  repeated Team teams = 1;
+}
+
+message Team {
+  string id = 1;
+  Membership referrer = 2;
+  repeated Membership referees = 3;
+  string name = 4;
+  string team_url = 5;
+  string avatar_url = 6;
+  int64 created_at = 7;
+}
+
+message Membership {
+  string party_id = 1;
+  int64 joined_at = 2;
+}
+
+message TeamSwitches {
+  repeated TeamSwitch team_switches = 1;
+}
+
+message TeamSwitch {
+  string from_team_id = 1;
+  string to_team_id = 2;
+  string party_id = 3;
 }

@@ -38,6 +38,7 @@ var providersInCallOrder = []types.SnapshotNamespace{
 	types.ERC20MultiSigTopologySnapshot,
 	types.PoWSnapshot,
 	types.ProtocolUpgradeSnapshot,
+	types.TeamsSnapshot,
 }
 
 func groupPayloadsPerNamespace(payloads []*types.Payload) map[types.SnapshotNamespace][]*types.Payload {
