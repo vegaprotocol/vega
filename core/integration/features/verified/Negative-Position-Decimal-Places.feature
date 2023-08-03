@@ -4,9 +4,10 @@ Feature: test negative PDP (position decimal places)
             | name                                          | value |
             | market.stake.target.timeWindow                | 24h   |
             | market.stake.target.scalingFactor             | 1     |
-            | market.liquidity.bondPenaltyParameter         | 0.2   |
+            | market.liquidityV2.bondPenaltyParameter       | 0.2   |
             | market.liquidity.targetstake.triggering.ratio | 0.1   |
             | network.markPriceUpdateMaximumFrequency       | 0s    |
+            | limits.markets.maxPeggedOrders                | 4     |
         And the following assets are registered:
             | id  | decimal places |
             | ETH | 5              |
@@ -24,10 +25,16 @@ Feature: test negative PDP (position decimal places)
         And the price monitoring named "price-monitoring-1":
             | horizon | probability | auction extension |
             | 360000  | 0.99        | 300               |
+        And the liquidity sla params named "SLA-1":
+             | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+             | 0.99        | 0.5                          | 0                                   | 1                             | 1.0                    |    
+        And the liquidity sla params named "SLA-2":
+             | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+             | 0.000001    | 0.5                          | 0                                   | 1                             | 1.0                    |    
         And the markets:
-            | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | lp price range |
-            | USD/DEC22 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 5              | -1                      | 1e6                    | 1e6                       | 0.99           |
-            | USD/DEC23 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2              | -2                      | 1e6                    | 1e6                       | 0.000001       |
+            | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+            | USD/DEC22 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 5              | -1                      | 1e6                    | 1e6                       | SLA-1      |
+            | USD/DEC23 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2              | -2                      | 1e6                    | 1e6                       | SLA-2      |
         And the parties deposit on asset's general account the following amount:
             | party  | asset | amount    |
             | party0 | ETH   | 5000000   |
@@ -40,11 +47,17 @@ Feature: test negative PDP (position decimal places)
     Scenario: 001, test negative PDP when trading mode is auction (0019-MCAL-010)
 
         Given  the parties submit the following liquidity provision:
-            | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-            | lp7 | party0 | USD/DEC22 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp7 | party0 | USD/DEC22 | 1000              | 0.001 | buy  | BID              | 100        | -20    | amendment  |
-            | lp6 | lpprov | USD/DEC22 | 4000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp6 | lpprov | USD/DEC22 | 4000              | 0.001 | buy  | BID              | 100        | -20    | amendment  |
+            | id  | party  | market id | commitment amount | fee   | lp type    |
+            | lp7 | party0 | USD/DEC22 | 1000              | 0.001 | submission |
+            | lp7 | party0 | USD/DEC22 | 1000              | 0.001 | amendment  |
+            | lp6 | lpprov | USD/DEC22 | 4000              | 0.001 | submission |
+            | lp6 | lpprov | USD/DEC22 | 4000              | 0.001 | amendment  |
+        And the parties place the following pegged iceberg orders:
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+            | party0 | USD/DEC22 | 2         | 1                    | sell | ASK              | 100        | 20     |
+            | party0 | USD/DEC22 | 2         | 1                    | buy  | BID              | 100        | -20    |
+            | lpprov | USD/DEC22 | 2         | 1                    | sell | ASK              | 100        | 20     |
+            | lpprov | USD/DEC22 | 2         | 1                    | buy  | BID              | 100        | -20    |
 
         And the parties place the following orders:
             | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -76,9 +89,13 @@ Feature: test negative PDP (position decimal places)
     @Now
     Scenario: 002, test negative PDP when trading mode is continuous (0003-MTMK-014, 0003-MTMK-015, 0019-MCAL-010, 0029-FEES-014)
         Given the parties submit the following liquidity provision:
-            | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-            | lp2 | party0 | USD/DEC22 | 35569             | 0.001 | sell | ASK              | 500        | 20     | submission |
-            | lp2 | party0 | USD/DEC22 | 35569             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
+            | id  | party  | market id | commitment amount | fee   | lp type    |
+            | lp2 | party0 | USD/DEC22 | 35569             | 0.001 | submission |
+            | lp2 | party0 | USD/DEC22 | 35569             | 0.001 | amendment  |
+        And the parties place the following pegged iceberg orders:            
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+            | party0 | USD/DEC22 | 2         | 1                    | sell | ASK              | 500        | 20     |
+            | party0 | USD/DEC22 | 2         | 1                    | buy  | BID              | 500        | 20     |
 
         # LP places limit orders which oversupply liquidity
         And the parties place the following orders:
@@ -213,9 +230,13 @@ Feature: test negative PDP (position decimal places)
             | party  | asset | amount     |
             | party0 | ETH   | 1000000000 |
         And the parties submit the following liquidity provision:
-            | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-            | lp1 | party0 | USD/DEC23 | 40000000          | 0.001 | sell | MID              | 500        | 1      | submission |
-            | lp1 | party0 | USD/DEC23 | 40000000          | 0.001 | buy  | MID              | 500        | 1      |            |
+            | id  | party  | market id | commitment amount | fee   | lp type    |
+            | lp1 | party0 | USD/DEC23 | 40000000          | 0.001 | submission |
+            | lp1 | party0 | USD/DEC23 | 40000000          | 0.001 |            |
+        And the parties place the following pegged iceberg orders:
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+            | party0 | USD/DEC23 | 2         | 1                    | sell | MID              | 500        | 1      |
+            | party0 | USD/DEC23 | 2         | 1                    | buy  | MID              | 500        | 1      |
         And the parties place the following orders:
             | party  | market id | side | volume | price | resulting trades | type       | tif     |
             | party1 | USD/DEC23 | buy  | 5      | 8     | 0                | TYPE_LIMIT | TIF_GTC |

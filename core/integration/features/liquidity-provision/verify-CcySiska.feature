@@ -1,4 +1,4 @@
-Feature: check the impact from change of market parameter: market.liquidity.stakeToCcyVolume
+Feature: check the impact from change of market parameter: market.liquidityV2.stakeToCcyVolume
   Background:
     Given time is updated to "2020-11-30T00:00:00Z"
 
@@ -22,12 +22,16 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | market.liquidityV2.bondPenaltyParameter       | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
+      | limits.markets.maxPeggedOrders                | 6     |
+     And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 0.014       | 0.5                          | 0                                   | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config | lp price range | linear slippage factor | quadratic slippage factor |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 0.014          | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e6                    | 1e6                       | SLA        |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party0 | USD   | 500000000 |
@@ -44,15 +48,19 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party2 | ETH/MAR22 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
       | party2 | ETH/MAR22 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
 
-  Scenario: 001, market.liquidity.stakeToCcyVolume=2, 0007-POSN-010, 0013-ACCT-020
+  Scenario: 001, market.liquidityV2.stakeToCcyVolume=2, 0007-POSN-010, 0013-ACCT-020
     Given the following network parameters are set:
-      | name                              | value |
-      | market.liquidity.stakeToCcyVolume | 2     |
+      | name                                | value |
+      | market.liquidityV2.stakeToCcyVolume | 2     |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | sell | ASK              | 500        | 20     | submission |
-      | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | buy  | BID              | 500        | 20     | amendment  |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | submission |
+      | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 20     |
+      | party0 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 20     |
+ 
     # party1 :=  buy order volume * vwap * rf_long  = (900  + 990  + 50 * 1000) * 0.8007282079844139 =  41549.786712311237271
     # party2 := sell order volume * vwap * rf_short = (1100 + 1010 + 50 * 1000) * 3.556903591579342  = 185350.246157199511620
     Then the parties should have the following margin levels:
@@ -107,14 +115,14 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party1 | 52     | 704            | 0            |
       | party2 | -51    | -704           | 0            |
 
-  Scenario: 002, market.liquidity.stakeToCcyVolume=0.5,
+  Scenario: 002, market.liquidityV2.stakeToCcyVolume=0.5,
     Given the following network parameters are set:
-      | name                              | value |
-      | market.liquidity.stakeToCcyVolume | 0.5   |
+      | name                                | value |
+      | market.liquidityV2.stakeToCcyVolume | 0.5   |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | sell | ASK              | 500        | 20     | submission |
-      | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | buy  | BID              | 500        | 20     | amendment  |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | submission |
+      | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | amendment  |
 
     When the opening auction period ends for market "ETH/MAR22"
     Then the auction ends with a traded volume of "50" at a price of "1000"
@@ -164,18 +172,22 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party1 | 52     | 704            | 0            |
       | party2 | -51    | -704           | 0            |
 
-  Scenario: 003, market.liquidity.stakeToCcyVolume=0
+  Scenario: 003, market.liquidityV2.stakeToCcyVolume=0
     Given the following network parameters are set:
-      | name                              | value |
-      | market.liquidity.stakeToCcyVolume | 0     |
+      | name                                | value |
+      | market.liquidityV2.stakeToCcyVolume | 0     |
     And the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 10000  | 900   | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/MAR22 | sell | 10000  | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | sell | ASK              | 500        | 20     | submission |
-      | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | buy  | BID              | 500        | 20     | amendment  |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | submission |
+      | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 20     |
+      | party0 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 20     |
 
     When the opening auction period ends for market "ETH/MAR22"
     Then the auction ends with a traded volume of "50" at a price of "1000"
@@ -198,27 +210,36 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | buy  | 900   | 10001  |
 
 
-  Scenario: 004, market.liquidity.stakeToCcyVolume=0, 3 LPs make commitment, 0044-LIME-012
+  Scenario: 004, market.liquidityV2.stakeToCcyVolume=0, 3 LPs make commitment, 0044-LIME-012
     Given the parties deposit on asset's general account the following amount:
       | party   | asset | amount    |
       | party00 | USD   | 500000000 |
       | party01 | USD   | 500000000 |
       | party02 | USD   | 500000000 |
     And the following network parameters are set:
-      | name                              | value |
-      | market.liquidity.stakeToCcyVolume | 0     |
+      | name                                | value |
+      | market.liquidityV2.stakeToCcyVolume | 0     |
      And the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 10000  | 900   | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/MAR22 | sell | 10000  | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee  | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party00 | ETH/MAR22 | 17784             | 0.01 | sell | ASK              | 500        | 20     | submission |
-      | lp1 | party00 | ETH/MAR22 | 17784             | 0.01 | buy  | BID              | 500        | 20     | amendment  |
-      | lp2 | party01 | ETH/MAR22 | 177845            | 0.02 | sell | ASK              | 500        | 20     | submission |
-      | lp2 | party01 | ETH/MAR22 | 177845            | 0.02 | buy  | BID              | 500        | 20     | amendment  |
-      | lp3 | party02 | ETH/MAR22 | 27784             | 0.03 | sell | ASK              | 500        | 20     | submission |
-      | lp3 | party02 | ETH/MAR22 | 27784             | 0.03 | buy  | BID              | 500        | 20     | amendment  |
+      | id  | party   | market id | commitment amount | fee  | lp type    |
+      | lp1 | party00 | ETH/MAR22 | 17784             | 0.01 | submission |
+      | lp1 | party00 | ETH/MAR22 | 17784             | 0.01 | amendment  |
+      | lp2 | party01 | ETH/MAR22 | 177845            | 0.02 | submission |
+      | lp2 | party01 | ETH/MAR22 | 177845            | 0.02 | amendment  |
+      | lp3 | party02 | ETH/MAR22 | 27784             | 0.03 | submission |
+      | lp3 | party02 | ETH/MAR22 | 27784             | 0.03 | amendment  |
+
+    And the parties place the following pegged iceberg orders:
+      | party   | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party00 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 20     |
+      | party00 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 20     |
+      | party01 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 20     |
+      | party01 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 20     |
+      | party02 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 20     |
+      | party02 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 20     |
 
     When the opening auction period ends for market "ETH/MAR22"
     Then the auction ends with a traded volume of "50" at a price of "1000"

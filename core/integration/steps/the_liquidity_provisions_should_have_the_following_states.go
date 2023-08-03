@@ -14,8 +14,6 @@ package steps
 
 import (
 	"errors"
-	"strconv"
-	"strings"
 
 	"github.com/cucumber/godog"
 
@@ -42,24 +40,12 @@ func TheLiquidityProvisionsShouldHaveTheFollowingStates(broker *stubs.BrokerStub
 		commitment := row.MustStr("commitment amount")
 		status := row.MustLiquidityStatus("status")
 
-		buyShape := row.Str("buy shape")
-		sellShape := row.Str("sell shape")
-
 		e := evtByID(id)
 		if e == nil {
 			return errLiquidityProvisionEventNotFound()
 		}
 
 		if e.PartyId != party || e.MarketId != market || e.CommitmentAmount != commitment || e.Status != status {
-			return errLiquidityProvisionEventNotFound()
-		}
-
-		bs, err := strconv.Atoi(buyShape)
-		if len(strings.TrimSpace(buyShape)) > 0 && (err != nil || bs != len(e.Buys)) {
-			return errLiquidityProvisionEventNotFound()
-		}
-		ss, err := strconv.Atoi(sellShape)
-		if len(strings.TrimSpace(sellShape)) > 0 && (err != nil || ss != len(e.Sells)) {
 			return errLiquidityProvisionEventNotFound()
 		}
 	}
@@ -73,10 +59,7 @@ func parseLiquidityProvisionStatesTable(table *godog.Table) []RowWrapper {
 		"market",
 		"commitment amount",
 		"status",
-	}, []string{
-		"buy shape",
-		"sell shape",
-	})
+	}, []string{})
 }
 
 func errLiquidityProvisionEventNotFound() error {

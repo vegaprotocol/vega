@@ -17,17 +17,17 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | id  | decimal places |
       | USD | 3              |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC20 | ETH        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 3              | 0                       | 1e6                    | 1e6                       |
-      | ETH/DEC21 | ETH        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 3              | 0                       | 1e0                    | 1e2                       |
-      | ETH/DEC22 | ETH        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 3              | 0                       | 1e1                    | 1e3                       |
-      | ETH/DEC23 | ETH        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 3              | 0                       | 1e2                    | 1e0                       |
+      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC20 | ETH        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 3              | 0                       | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC21 | ETH        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 3              | 0                       | 1e0                    | 1e2                       | default-futures |
+      | ETH/DEC22 | ETH        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 3              | 0                       | 1e1                    | 1e3                       | default-futures |
+      | ETH/DEC23 | ETH        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 3              | 0                       | 1e2                    | 1e0                       | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
-      | market.liquidity.stakeToCcyVolume       | 1     |
-
+      | market.liquidityV2.stakeToCcyVolume     | 1     |
+      | limits.markets.maxPeggedOrders          | 2     |
   Scenario: 001 Replicate a scenario from Lewis with Elias' implementation on Exit_price when there is insufficient orders, linear slippage factor = 1e6, quadratic slippage factor = 1e6, 0019-MCAL-001, 0019-MCAL-002
     # 1. trader B made LP commitment 150,000
     # 2. trader C and A cross at 0.5 with size of 111, and this opens continuous trading (trade B is short)
@@ -43,9 +43,13 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | traderC | USD   | 10000000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | traderB | ETH/DEC20 | 150000            | 0.001 | sell | ASK              | 100        | 20     | submission |
-      | lp1 | traderB | ETH/DEC20 | 150000            | 0.001 | buy  | BID              | 100        | 20     | amendmend  |
+      | id  | party   | market id | commitment amount | fee   | lp type    |
+      | lp1 | traderB | ETH/DEC20 | 150000            | 0.001 | submission |
+      | lp1 | traderB | ETH/DEC20 | 150000            | 0.001 | amendmend  |
+    And the parties place the following pegged iceberg orders:
+      | party   | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | traderB | ETH/DEC20 | 2         | 1                    | sell | ASK              | 100        | 20     |
+      | traderB | ETH/DEC20 | 2         | 1                    | buy  | BID              | 100        | 20     |
 
     Then the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -121,9 +125,13 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | traderC | USD   | 10000000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | traderB | ETH/DEC21 | 150000            | 0.001 | sell | ASK              | 100        | 20     | submission |
-      | lp1 | traderB | ETH/DEC21 | 150000            | 0.001 | buy  | BID              | 100        | 20     | amendmend  |
+      | id  | party   | market id | commitment amount | fee   | lp type    |
+      | lp1 | traderB | ETH/DEC21 | 150000            | 0.001 | submission |
+      | lp1 | traderB | ETH/DEC21 | 150000            | 0.001 | amendmend  |
+    And the parties place the following pegged iceberg orders:
+      | party   | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | traderB | ETH/DEC21 | 2         | 1                    | sell | ASK              | 100        | 20     |
+      | traderB | ETH/DEC21 | 2         | 1                    | buy  | BID              | 100        | 20     |
 
     Then the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -194,9 +202,13 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | traderC | USD   | 10000000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | traderB | ETH/DEC22 | 150000            | 0.001 | sell | ASK              | 100        | 20     | submission |
-      | lp1 | traderB | ETH/DEC22 | 150000            | 0.001 | buy  | BID              | 100        | 20     | amendmend  |
+      | id  | party   | market id | commitment amount | fee   | lp type    |
+      | lp1 | traderB | ETH/DEC22 | 150000            | 0.001 | submission |
+      | lp1 | traderB | ETH/DEC22 | 150000            | 0.001 | amendmend  |
+    And the parties place the following pegged iceberg orders:
+      | party   | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | traderB | ETH/DEC22 | 2         | 1                    | sell | ASK              | 100        | 20     |
+      | traderB | ETH/DEC22 | 2         | 1                    | buy  | BID              | 100        | 20     |
 
     Then the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -259,10 +271,14 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | traderD | USD   | 10000          |
       | traderE | USD   | 10000          |
     When the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | traderB | ETH/DEC23 | 150000            | 0.001 | sell | ASK              | 100        | 20     | submission |
-      | lp1 | traderB | ETH/DEC23 | 150000            | 0.001 | buy  | BID              | 100        | 20     | amendmend  |
-
+      | id  | party   | market id | commitment amount | fee   | lp type    |
+      | lp1 | traderB | ETH/DEC23 | 150000            | 0.001 | submission |
+      | lp1 | traderB | ETH/DEC23 | 150000            | 0.001 | amendmend  |
+    And the parties place the following pegged iceberg orders:
+      | party   | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | traderB | ETH/DEC23 | 2         | 1                    | sell | ASK              | 100        | 20     |
+      | traderB | ETH/DEC23 | 2         | 1                    | buy  | BID              | 100        | 20     |
+ 
     Then the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | traderA | ETH/DEC23 | buy  | 1      | 49    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-5    |

@@ -7,12 +7,12 @@ Feature: Verify the order size is correctly cumulated.
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.001         | 0.00000190128526884174 | 0  | 0.016 | 2.5   |
     And the markets:
-      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
     And the following network parameters are set:
       | name                                     | value |
-      | market.liquidityProvision.shapes.maxSize | 10    |
       | network.markPriceUpdateMaximumFrequency  | 0s    |
+      | limits.markets.maxPeggedOrders           | 16    |
 
   Scenario: 001: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size (0038-OLIQ-003, 0038-OLIQ-004, 0038-OLIQ-005)
 
@@ -32,23 +32,41 @@ Feature: Verify the order size is correctly cumulated.
       | party2 | ETH/DEC19 | sell | 1      | 12000010 | 0                | TYPE_LIMIT | TIF_GFA | party2-2  |
 
     And the parties submit the following liquidity provision:
-      | id  | party      | market id | commitment amount | fee | side | pegged reference | proportion | offset | reference | lp type    |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 10     | lp-1-ref  | submission |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 9      | lp-1-ref  | submission |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 8      | lp-1-ref  | submission |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 7      | lp-1-ref  | submission |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 6      | lp-1-ref  | submission |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 5      | lp-1-ref  | submission |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 4      | lp-1-ref  | submission |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 3      | lp-1-ref  | submission |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 2      | lp-1-ref  | submission |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 4      | lp-1-ref  | submission |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 5      | lp-1-ref  | submission |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 6      | lp-1-ref  | submission |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 7      | lp-1-ref  | submission |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 8      | lp-1-ref  | submission |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 9      | lp-1-ref  | submission |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 10     | lp-1-ref  | submission |
+      | id  | party      | market id | commitment amount | fee | reference | lp type    |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | lp-1-ref  | submission |
+    And the parties place the following pegged iceberg orders:
+      | party      | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | buy  | MID              | 1          | 10     |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | buy  | MID              | 1          | 9      |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | buy  | MID              | 1          | 8      |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | buy  | MID              | 1          | 7      |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | buy  | MID              | 1          | 6      |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | buy  | MID              | 1          | 5      |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | buy  | MID              | 1          | 4      |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | buy  | MID              | 1          | 3      |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | buy  | MID              | 1          | 2      |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | sell | MID              | 1          | 4      |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | sell | MID              | 1          | 5      |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | sell | MID              | 1          | 6      |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | sell | MID              | 1          | 7      |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | sell | MID              | 1          | 8      |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | sell | MID              | 1          | 9      |
+      | party-lp-1 | ETH/DEC19 | 2         | 1                    | sell | MID              | 1          | 10     |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "12000010" for the market "ETH/DEC19"
 

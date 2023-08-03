@@ -14,13 +14,14 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | 1.5           | 2              | 3              |
 
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/DEC20 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC20 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 4     |
 
   Scenario: 0010-MARG-015,0010-MARG-016,0010-MARG-017
     Given the parties deposit on asset's general account the following amount:
@@ -36,11 +37,17 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | lprov       | USD   | 1000000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lprov | ETH/DEC19 | 100000            | 0.001 | sell | ASK              | 100        | 55     | submission |
-      | lp1 | lprov | ETH/DEC19 | 100000            | 0.001 | buy  | BID              | 100        | 55     | amendmend  |
-      | lp0 | lprov | ETH/DEC20 | 100000            | 0.001 | sell | ASK              | 100        | 55     | submission |
-      | lp0 | lprov | ETH/DEC20 | 100000            | 0.001 | buy  | BID              | 100        | 55     | amendmend  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lprov | ETH/DEC19 | 100000            | 0.001 | submission |
+      | lp1 | lprov | ETH/DEC19 | 100000            | 0.001 | amendmend  |
+      | lp0 | lprov | ETH/DEC20 | 100000            | 0.001 | submission |
+      | lp0 | lprov | ETH/DEC20 | 100000            | 0.001 | amendmend  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lprov  | ETH/DEC19 | 2         | 1                    | sell | ASK              | 100        | 55     |
+      | lprov  | ETH/DEC19 | 2         | 1                    | buy  | BID              | 100        | 55     |
+      | lprov  | ETH/DEC20 | 2         | 1                    | sell | ASK              | 100        | 55     |
+      | lprov  | ETH/DEC20 | 2         | 1                    | buy  | BID              | 100        | 55     |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     # trading happens at the end of the open auction period
     Then the parties place the following orders:
@@ -208,9 +215,13 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | trader3    | USD   | 321           |
       | trader4    | USD   | 40            |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee  | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lprov | ETH/DEC19 | 100000            | 0.00 | sell | ASK              | 100        | 55     | submission |
-      | lp1 | lprov | ETH/DEC19 | 100000            | 0.00 | buy  | BID              | 100        | 55     | amendmend  |
+      | id  | party | market id | commitment amount | fee  | lp type    |
+      | lp1 | lprov | ETH/DEC19 | 100000            | 0.00 | submission |
+      | lp1 | lprov | ETH/DEC19 | 100000            | 0.00 | amendmend  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 100        | 55     |
+      | lprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 100        | 55     |
     And the parties place the following orders:
       | party      | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | auxiliary2 | ETH/DEC19 | buy  | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-5    |

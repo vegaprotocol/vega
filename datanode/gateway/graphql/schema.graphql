@@ -2010,9 +2010,6 @@ type Market {
   "Risk factors for the market"
   riskFactors: RiskFactor
 
-  "Liquidity Provision order price range"
-  lpPriceRange: String!
-
   "Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume"
   linearSlippageFactor: String!
 
@@ -3794,8 +3791,6 @@ type NewMarket {
   liquidityMonitoringParameters: LiquidityMonitoringParameters!
   "Decimal places for order sizes, sets what size the smallest order / position on the market can be"
   positionDecimalPlaces: Int!
-  "Liquidity Provision order price range"
-  lpPriceRange: String!
   "Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume"
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume"

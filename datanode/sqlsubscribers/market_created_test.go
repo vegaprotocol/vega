@@ -174,6 +174,8 @@ func getTestMarket(termInt bool) types.Market {
 			Open:     0,
 			Close:    0,
 		},
-		LPPriceRange: num.DecimalFromFloat(0.95),
+		LiquiditySLAParams: &types.LiquiditySLAParams{
+			PriceRange: num.DecimalFromFloat(0.95),
+		},
 	}
 }
