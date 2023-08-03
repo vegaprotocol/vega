@@ -413,7 +413,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 19     | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 0      | USD   |
 
-  @FeeRound
+  @FeeRound @NoPerp
   Scenario: 005: 2 LP distribution at settlement
 
     Given the parties deposit on asset's general account the following amount:

@@ -59,6 +59,7 @@ func TestMain(m *testing.M) {
 	}
 	if perpsSwap {
 		marketConfig.OracleConfigs.SwapToPerps()
+		gdOpts.Tags += " ~NoPerp"
 	}
 
 	status := godog.TestSuite{

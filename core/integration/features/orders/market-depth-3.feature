@@ -10,6 +10,7 @@ Feature: Test market depth events for pegged orders (with BID and ASK price)
       | limits.markets.maxPeggedOrders          | 1500  |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
+  @Depth
   Scenario: Ensure the expect order events for pegged orders are produced for all references
     # setup accounts
     Given the parties deposit on asset's general account the following amount:

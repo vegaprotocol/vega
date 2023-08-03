@@ -26,7 +26,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-  @Now
+  @Now @NoPerp
   Scenario: 001, LP gets distressed during continuous trading, no DPD setting (0044-LIME-002, 0035-LIQM-004)
 
 
@@ -163,7 +163,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | trading mode                    | auction trigger                          | target stake | supplied stake | open interest |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 462397       | 50000          | 130           |
 
-  @Now
+  @Now @NoPerp
   Scenario: 002, LP gets slashed twice during continuous trading, 0044-LIME-002, No DPD setting
 
     Given the liquidity monitoring parameters:

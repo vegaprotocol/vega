@@ -219,6 +219,15 @@ pipeline {
                         }
                     }
                 }
+                stage('core/integration tests') {
+                    options { retry(3) }
+                    steps {
+                        dir('vega/core/integration') {
+                            sh 'godog build -o core_integration.test && ./core_integration.test -perps --format=junit:core-integration-perps-report.xml'
+                            junit checksName: 'Core Integration Perps Tests', testResults: 'core-integration-perps-report.xml'
+                        }
+                    }
+                }
                 stage('datanode/integration tests') {
                     options { retry(3) }
                     steps {

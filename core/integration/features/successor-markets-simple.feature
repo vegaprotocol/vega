@@ -260,7 +260,7 @@ Feature: Simple example of successor markets
       | mark price | trading mode            | auction trigger             | target stake | supplied stake   | open interest |
       | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 1905000000000000 | 5             |
 
-  @SuccessorMarketSimple
+  @SuccessorMarketSimple @NoPerp
   Scenario: 004 Enact a successor market while the parent market is still in pending state, 0081-SUCM-009, 0081-SUCM-010, 0081-SUCM-011
     Given the markets:
       | id        | quote name | asset | risk model            | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction |
@@ -310,7 +310,7 @@ Feature: Simple example of successor markets
       | lpprov | ETH   | ETH/DEC20 | 2673529501825832 | 9999999991516470498174168 | 1905000000000000 |
       | lpprov | ETH   | ETH/DEC21 | 0                | 9999999991516470498174168 | 0                |
 
-  @SuccessorMarketPanic
+  @SuccessorMarketPanic @NoPerp
   Scenario: 005 Enacting a successor market rejects any other pending successors, same as scenario 2, but enact the older pending market
     ## parent market and 2 successors
     Given the markets:

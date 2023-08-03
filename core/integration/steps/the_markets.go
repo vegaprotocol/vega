@@ -316,6 +316,14 @@ func newPerpMarket(config *market.Config, netparams *netparams.Store, row market
 		panic(err)
 	}
 	pfp := types.PerpsFromProto(perp)
+	asset, quote := row.asset(), row.quoteName()
+	// long term, this should become redundant, but for the perps flag this is useful to have
+	if asset != pfp.SettlementAsset {
+		pfp.SettlementAsset = asset
+	}
+	if quote != pfp.QuoteName {
+		pfp.QuoteName = row.quoteName()
+	}
 
 	priceMonitoring, err := config.PriceMonitoring.Get(row.priceMonitoring())
 	if err != nil {
