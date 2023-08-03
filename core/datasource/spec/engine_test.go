@@ -15,12 +15,15 @@ package spec_test
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
 	bmok "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/datasource"
 	"code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/definition"
+	"code.vegaprotocol.io/vega/core/datasource/internal/timetrigger"
 	dsspec "code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/datasource/spec/mocks"
 	"code.vegaprotocol.io/vega/core/events"
@@ -42,6 +45,7 @@ func TestOracleEngine(t *testing.T) {
 	t.Run("Unsubscribing unknown ID from oracle engine panics", testOracleEngineUnsubscribingUnknownIDPanics)
 	t.Run("Updating current time succeeds", testOracleEngineUpdatingCurrentTimeSucceeds)
 	t.Run("Subscribing to oracle spec activation succeeds", testOracleEngineSubscribingToSpecActivationSucceeds)
+	t.Run("Builtin time trigger succeeds", testBuiltinTimeTriggerSucceeds)
 }
 
 func testOracleEngineListensToSignersSucceeds(t *testing.T) {
@@ -339,6 +343,36 @@ func testOracleEngineUpdatingCurrentTimeSucceeds(t *testing.T) {
 	assert.Equal(t, time60, engine2.ts.GetTimeNow())
 }
 
+func testBuiltinTimeTriggerSucceeds(t *testing.T) {
+	// given
+	trigger := triggerSpec(t, time.Now(), 5)
+
+	// setup
+	ctx := context.Background()
+	currentTime := time.Now()
+	engine := newEngine(ctx, t, currentTime)
+
+	engine.broker.EXPECT().Send(gomock.Any()).Times(1)
+	engine.Subscribe(ctx, trigger.spec, trigger.subscriber.Cb)
+
+	// broadcast a time that will not trigger
+	data := common.Data{
+		Data: map[string]string{
+			dsspec.BuiltinTimeTrigger: strconv.FormatInt(currentTime.Add(-time.Minute).Unix(), 10),
+		},
+	}
+	engine.BroadcastData(ctx, data)
+
+	// now broadcast one that will
+	engine.broker.EXPECT().Send(gomock.Any()).Times(1)
+	data = common.Data{
+		Data: map[string]string{
+			dsspec.BuiltinTimeTrigger: strconv.FormatInt(currentTime.Add(time.Minute).Unix(), 10),
+		},
+	}
+	engine.BroadcastData(ctx, data)
+}
+
 type testEngine struct {
 	*dsspec.Engine
 	ts     *testTimeService
@@ -408,6 +442,45 @@ func dataWithPrice(currency, price string) dataBundle {
 type specBundle struct {
 	spec       dsspec.Spec
 	subscriber dummySubscriber
+}
+
+func triggerSpec(t *testing.T, initial time.Time, every int64) specBundle {
+	t.Helper()
+
+	cfg := &timetrigger.SpecConfiguration{
+		Conditions: []*common.SpecCondition{
+			{
+				Operator: common.SpecConditionOperator(2),
+				Value:    "12",
+			},
+			{
+				Operator: common.SpecConditionOperator(2),
+				Value:    "17",
+			},
+		},
+		Triggers: common.InternalTimeTriggers{
+			{
+				Initial: &initial,
+				Every:   every,
+			},
+		},
+	}
+
+	testSpec := vegapb.NewDataSourceSpec(definition.NewWith(cfg).IntoProto())
+	typedOracleSpec := datasource.SpecFromProto(testSpec)
+
+	// Initialise trigger
+	balh := typedOracleSpec.Data.Content().(timetrigger.SpecConfiguration)
+	balh.SetNextTrigger(initial)
+
+	spec, err := dsspec.New(*typedOracleSpec)
+	if err != nil {
+		t.Fatalf("Couldn't create oracle spec: %v", err)
+	}
+	return specBundle{
+		spec:       *spec,
+		subscriber: dummySubscriber{},
+	}
 }
 
 func spec(t *testing.T, currency string, op datapb.Condition_Operator, price string, keys ...string) specBundle {
