@@ -22,7 +22,7 @@ import (
 )
 
 func (m *Market) OnMarketMinLpStakeQuantumMultipleUpdate(_ context.Context, d num.Decimal) {
-	m.minLPStakeQuantumMultiple = d
+	m.liquidity.OnMinLPStakeQuantumMultiple(d)
 }
 
 func (m *Market) OnMarketMinProbabilityOfTradingLPOrdersUpdate(_ context.Context, d num.Decimal) {
@@ -57,16 +57,8 @@ func (m *Market) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, d num.
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 }
 
-func (m *Market) OnSuppliedStakeToObligationFactorUpdate(d num.Decimal) {
-	m.liquidity.OnSuppliedStakeToObligationFactorUpdate(d)
-}
-
 func (m *Market) OnMarketValueWindowLengthUpdate(d time.Duration) {
 	m.marketValueWindowLength = d
-}
-
-func (m *Market) OnMarketLiquidityProvidersFeeDistribitionTimeStep(d time.Duration) {
-	m.lpFeeDistributionTimeStep = d
 }
 
 func (m *Market) OnMarketTargetStakeTimeWindowUpdate(d time.Duration) {
@@ -75,10 +67,6 @@ func (m *Market) OnMarketTargetStakeTimeWindowUpdate(d time.Duration) {
 
 func (m *Market) OnMarketTargetStakeScalingFactorUpdate(d num.Decimal) error {
 	return m.tsCalc.UpdateScalingFactor(d)
-}
-
-func (m *Market) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) error {
-	return m.liquidity.OnMarketLiquidityProvisionShapesMaxSizeUpdate(v)
 }
 
 func (m *Market) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(d num.Decimal) {
@@ -115,4 +103,28 @@ func (m *Market) OnMarkPriceUpdateMaximumFrequency(ctx context.Context, d time.D
 
 func (m *Market) OnMarketPartiesMaximumStopOrdersUpdate(ctx context.Context, u *num.Uint) {
 	m.maxStopOrdersPerParties = u.Clone()
+}
+
+func (m *Market) OnMarketLiquidityV2BondPenaltyFactorUpdate(liquidityV2BondPenaltyFactor num.Decimal) {
+	m.liquidity.OnBondPenaltyFactorUpdate(liquidityV2BondPenaltyFactor)
+}
+
+func (m *Market) OnMarketLiquidityV2EarlyExitPenaltyUpdate(d num.Decimal) {
+	m.liquidity.OnEarlyExitPenalty(d)
+}
+
+func (m *Market) OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate(d num.Decimal) {
+	m.liquidity.OnMaximumLiquidityFeeFactorLevelUpdate(d)
+}
+
+func (m *Market) OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(d num.Decimal) {
+	m.liquidity.OnNonPerformanceBondPenaltySlopeUpdate(d)
+}
+
+func (m *Market) OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(d num.Decimal) {
+	m.liquidity.OnNonPerformanceBondPenaltyMaxUpdate(d)
+}
+
+func (m *Market) OnMarketLiquidityV2StakeToCCYVolume(d num.Decimal) {
+	m.liquidity.OnStakeToCcyVolumeUpdate(d)
 }

@@ -269,13 +269,6 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		// update existing
 		existing.TradableInstrument = current
 	}
-	// lp price range
-	if lppr, ok := row.tryLpPriceRange(); ok {
-		lpprD := num.DecimalFromFloat(lppr)
-		update.Changes.LpPriceRange = lpprD
-		existing.LPPriceRange = lpprD
-	}
-
 	// linear slippage factor
 	if slippage, ok := row.tryLinearSlippageFactor(); ok {
 		slippageD := num.DecimalFromFloat(slippage)
@@ -289,6 +282,18 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		update.Changes.QuadraticSlippageFactor = slippageD
 		existing.QuadraticSlippageFactor = slippageD
 	}
+
+	if liquiditySla, ok := row.tryLiquiditySLA(); ok {
+		sla, err := config.LiquiditySLAParams.Get(liquiditySla)
+		if err != nil {
+			panic(err)
+		}
+		slaParams := types.LiquiditySLAParamsFromProto(sla)
+		// update existing
+		existing.LiquiditySLAParams = slaParams
+		update.Changes.LiquiditySLAParameters = slaParams
+	}
+
 	return update
 }
 
@@ -329,11 +334,15 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 		panic(err)
 	}
 
-	lpPriceRange := row.lpPriceRange()
 	linearSlippageFactor := row.linearSlippageFactor()
 	quadraticSlippageFactor := row.quadraticSlippageFactor()
 
 	setLiquidityMonitoringNetParams(liqMon, netparams)
+
+	slaParams, err := config.LiquiditySLAParams.Get(row.liquiditySLA())
+	if err != nil {
+		panic(err)
+	}
 
 	m := types.Market{
 		TradingMode:           types.MarketTradingModeContinuous,
@@ -368,9 +377,9 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 		OpeningAuction:                openingAuction(row),
 		PriceMonitoringSettings:       types.PriceMonitoringSettingsFromProto(priceMonitoring),
 		LiquidityMonitoringParameters: liqMon,
-		LPPriceRange:                  num.DecimalFromFloat(lpPriceRange),
 		LinearSlippageFactor:          num.DecimalFromFloat(linearSlippageFactor),
 		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
+		LiquiditySLAParams:            types.LiquiditySLAParamsFromProto(slaParams),
 	}
 
 	if row.isSuccessor() {
@@ -430,11 +439,11 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"auction duration",
 		"linear slippage factor",
 		"quadratic slippage factor",
+		"sla params",
 	}, []string{
 		"decimal places",
 		"position decimal places",
 		"liquidity monitoring",
-		"lp price range",
 		"parent market id",
 		"insurance pool fraction",
 		"successor auction",
@@ -452,7 +461,7 @@ func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
 		"price monitoring",     // price monitoring update
 		"risk model",           // risk model update
 		"liquidity monitoring", // liquidity monitoring update
-		"lp price range",
+		"sla params",
 	})
 }
 
@@ -557,12 +566,16 @@ func (r marketRow) liquidityMonitoring() string {
 	return r.row.MustStr("liquidity monitoring")
 }
 
-func (r marketRow) lpPriceRange() float64 {
-	if !r.row.HasColumn("lp price range") {
-		// set to 1 by default
-		return 1
+func (r marketRow) liquiditySLA() string {
+	return r.row.MustStr("sla params")
+}
+
+func (r marketUpdateRow) tryLiquiditySLA() (string, bool) {
+	if r.row.HasColumn("SLA") {
+		sla := r.row.MustStr("SLA")
+		return sla, true
 	}
-	return r.row.MustF64("lp price range")
+	return "", false
 }
 
 func (r marketRow) linearSlippageFactor() float64 {
@@ -604,13 +617,6 @@ func (r marketRow) successorAuction() int64 {
 		return 5 * r.auctionDuration() // five times auction duration
 	}
 	return r.row.MustI64("successor auction")
-}
-
-func (r marketUpdateRow) tryLpPriceRange() (float64, bool) {
-	if r.row.HasColumn("lp price range") {
-		return r.row.MustF64("lp price range"), true
-	}
-	return -1, false
 }
 
 func (r marketUpdateRow) tryLinearSlippageFactor() (float64, bool) {

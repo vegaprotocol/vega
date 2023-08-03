@@ -8,8 +8,8 @@ Feature: Test LP orders with different decimals for market and asset
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.001         | 0.00011407711613050422 | 0  | 0.016 | 1.5   |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees         | price monitoring | data source config     | position decimal places | decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 5                       | 5              | 5e-2                   | 0                         |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees         | price monitoring | data source config     | position decimal places | decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | ETH        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 5                       | 5              | 5e-2                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -34,9 +34,9 @@ Feature: Test LP orders with different decimals for market and asset
       | aux2      | ETH/DEC19 | buy  | 100    | 100000000 | 0                | TYPE_LIMIT | TIF_GTC | oa-b-2    |
       | auxiliary | ETH/DEC19 | sell | 100    | 100000000 | 0                | TYPE_LIMIT | TIF_GTC | oa-s-2    |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount  | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 552900000000000000 | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 552900000000000000 | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount  | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 552900000000000000 | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 552900000000000000 | 0.1 | submission |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
@@ -52,9 +52,9 @@ Feature: Test LP orders with different decimals for market and asset
       | party3 | ETH/DEC19 | buy  | 100000 | 100100000   | 1                | TYPE_LIMIT | TIF_GTC | s4        |
 
     Then the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount         | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | party1 | ETH/DEC19 | 3905000000000000000000000 | 0.3 | buy  | BID              | 2          | 100000 | submission |
-      | lp2 | party1 | ETH/DEC19 | 3905000000000000000000000 | 0.3 | sell | ASK              | 13         | 100000 | amendment  |
+      | id  | party  | market id | commitment amount         | fee | lp type    |
+      | lp2 | party1 | ETH/DEC19 | 3905000000000000000000000 | 0.3 | submission |
+      | lp2 | party1 | ETH/DEC19 | 3905000000000000000000000 | 0.3 | amendment  |
 
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount         | status        |

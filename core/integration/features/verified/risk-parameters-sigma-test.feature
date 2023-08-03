@@ -26,10 +26,10 @@ Feature: test risk model parameter sigma
       | horizon | probability | auction extension |
       | 43200   | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model               | margin calculator   | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/MAR53 | ETH        | USD   | log-normal-risk-model-53 | margin-calculator-1 | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/MAR54 | ETH        | USD   | log-normal-risk-model-54 | margin-calculator-1 | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/MAR0  | ETH        | USD   | log-normal-risk-model-0  | margin-calculator-1 | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model               | margin calculator   | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/MAR53 | ETH        | USD   | log-normal-risk-model-53 | margin-calculator-1 | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR54 | ETH        | USD   | log-normal-risk-model-54 | margin-calculator-1 | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR0  | ETH        | USD   | log-normal-risk-model-0  | margin-calculator-1 | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount                      |
       | party0 | USD   | 500000000000000000000000000 |
@@ -39,6 +39,7 @@ Feature: test risk model parameter sigma
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
 
   @Now
   Scenario: 001, test market ETH/MAR53(sigma=50),
@@ -51,14 +52,18 @@ Feature: test risk model parameter sigma
       | ETH/MAR53 | updated-lqm-params   | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                  | value |
-      | market.liquidity.bondPenaltyParameter | 0.2   |
+      | market.liquidityV2.bondPenaltyParameter | 0.2   |
 
     And the average block duration is "1"
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/MAR53 | 100000000         | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp1 | party0 | ETH/MAR53 | 100000000         | 0.001 | buy  | BID              | 500        | 20     | amendment  |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/MAR53 | 100000000         | 0.001 | submission |
+      | lp1 | party0 | ETH/MAR53 | 100000000         | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/MAR53 | 2         | 1                    | sell | ASK              | 500        | 20     |
+      | party0 | ETH/MAR53 | 2         | 1                    | buy  | BID              | 500        | 20     |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -106,16 +111,20 @@ Feature: test risk model parameter sigma
       | id       | liquidity monitoring | linear slippage factor | quadratic slippage factor |
       | ETH/MAR0 | updated-lqm-params   | 1e6                    | 1e6                       |
     And the following network parameters are set:
-      | name                                  | value |
-      | market.liquidity.bondPenaltyParameter | 0.2   |
+      | name                                    | value |
+      | market.liquidityV2.bondPenaltyParameter | 0.2   |
 
     And the average block duration is "1"
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/MAR0  | 10000000          | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp1 | party0 | ETH/MAR0  | 10000000          | 0.001 | buy  | BID              | 500        | 20     | amendment  |
-
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/MAR0  | 10000000          | 0.001 | submission |
+      | lp1 | party0 | ETH/MAR0  | 10000000          | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/MAR0  | 2         | 1                    | sell | ASK              | 500        | 20     |
+      | party0 | ETH/MAR0  | 2         | 1                    | buy  | BID              | 500        | 20     |
+ 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR0  | buy  | 10     | 90    | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-11  |
@@ -156,13 +165,13 @@ Feature: test risk model parameter sigma
 #     | name                                          | value |
 #     | market.stake.target.timeWindow                | 24h   |
 #     | market.stake.target.scalingFactor             | 1     |
-#     | market.liquidity.bondPenaltyParameter         | 0.2   |
+#     | market.liquidityV2.bondPenaltyParameter       | 0.2   |
 #     | market.liquidity.targetstake.triggering.ratio | 0.1   |
 
 #   And the average block duration is "1"
 
 #   And the parties submit the following liquidity provision:
-#     | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+#     | id  | party  | market id | commitment amount | fee   | side | pegged reference | volume     | offset | lp type    |
 #     | lp1 | party0 | ETH/MAR54 | 10000000          | 0.001 | sell | ASK              | 500        | 20     | submission |
 #     | lp1 | party0 | ETH/MAR54 | 10000000          | 0.001 | buy  | BID              | 500        | 20     | amendment  |
 

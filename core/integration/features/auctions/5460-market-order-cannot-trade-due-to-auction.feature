@@ -8,6 +8,7 @@ Feature: Test for issue 5460
       | market.liquidity.targetstake.triggering.ratio | 1     |
       | network.floatingPointUpdates.delay            | 10s   |
       | market.auction.minimumDuration                | 1     |
+      | limits.markets.maxPeggedOrders                | 2     |
     And the following assets are registered:
       | id  | decimal places |
       | ETH | 5              |
@@ -22,8 +23,8 @@ Feature: Test for issue 5460
       | horizon | probability | auction extension |
       | 43200   | 0.9999999   | 60                |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 10               | fees-config-1 | price-monitoring-1 | default-eth-for-future | 5              | 5                       | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC21 | ETH        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 10               | fees-config-1 | price-monitoring-1 | default-eth-for-future | 5              | 5                       | 1e6                    | 1e6                       | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party    | asset | amount            |
       | party0   | ETH   | 100000000000000   |
@@ -38,10 +39,13 @@ Feature: Test for issue 5460
   Scenario: 002 replicate bug
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 200000000         | 0.001 | buy  | MID              | 2          | 205    | submission |
-      | lp1 | party0 | ETH/DEC21 | 200000000         | 0.001 | sell | MID              | 2          | 205    | submission |
-
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 200000000         | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 200000000         | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 205    |
+      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 205    |
     And the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | party_a1 | ETH/DEC21 | buy  | 100000 | 30000 | 0                | TYPE_LIMIT | TIF_GTC |

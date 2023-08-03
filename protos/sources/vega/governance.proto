@@ -99,6 +99,8 @@ message NewSpotMarketConfiguration {
 
 // Configuration for a new futures market on Vega
 message NewMarketConfiguration {
+  reserved 8; // Deprecated "lp_price_range"
+
   // New futures market instrument configuration.
   InstrumentConfiguration instrument = 1;
   // Decimal places used for the new futures market, sets the smallest price increment on the book.
@@ -118,15 +120,14 @@ message NewMarketConfiguration {
   }
   // Decimal places for order sizes, sets what size the smallest order / position on the futures market can be.
   int64 position_decimal_places = 6;
-  // Percentage move up and down from the mid price which specifies the range of
-  // price levels over which automated liquidity provision orders will be deployed.
-  string lp_price_range = 8;
   // Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume.
   string linear_slippage_factor = 9;
   // Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume.
   string quadratic_slippage_factor = 10;
   // Successor configuration. If this proposal is meant to succeed a given market, then this should be set.
   optional SuccessorConfiguration successor = 11;
+  // Liquidity SLA parameters
+  LiquiditySLAParameters liquidity_sla_parameters = 12;
 }
 
 // New spot market on Vega
@@ -189,6 +190,8 @@ message UpdateMarketConfiguration {
   string linear_slippage_factor = 6;
   // Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume.
   string quadratic_slippage_factor = 7;
+  // Liquidity SLA parameters
+  LiquiditySLAParameters liquidity_sla_parameters = 8;
 }
 
 // Configuration to update a spot market on Vega

@@ -638,15 +638,6 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.position_decimal_places", ErrMustBeWithinRange7)
 	}
 
-	lppr, err := num.DecimalFromString(changes.LpPriceRange)
-	if err != nil {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.lp_price_range", ErrIsNotValidNumber)
-	} else if lppr.IsNegative() || lppr.IsZero() {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.lp_price_range", ErrMustBePositive)
-	} else if lppr.GreaterThan(num.DecimalFromInt64(100)) {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.lp_price_range", ErrMustBeAtMost100)
-	}
-
 	if len(changes.LinearSlippageFactor) > 0 {
 		linearSlippage, err := num.DecimalFromString(changes.LinearSlippageFactor)
 		if err != nil {
@@ -684,6 +675,7 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
 	errs.Merge(checkNewInstrument(changes.Instrument, "proposal_submission.terms.change.new_market.changes.instrument"))
 	errs.Merge(checkNewRiskParameters(changes))
+	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "proposal_submission.terms.change.new_market.changes.sla_params"))
 
 	return errs
 }
@@ -706,14 +698,6 @@ func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Err
 	}
 
 	changes := change.UpdateMarket.Changes
-	lppr, err := num.DecimalFromString(changes.LpPriceRange)
-	if err != nil {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.lp_price_range", ErrIsNotValidNumber)
-	} else if lppr.IsNegative() || lppr.IsZero() {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.lp_price_range", ErrMustBePositive)
-	} else if lppr.GreaterThan(num.DecimalFromInt64(100)) {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.lp_price_range", ErrMustBeAtMost100)
-	}
 
 	if len(changes.LinearSlippageFactor) > 0 {
 		linearSlippage, err := num.DecimalFromString(changes.LinearSlippageFactor)
@@ -1435,8 +1419,8 @@ func checkSLAParams(config *protoTypes.LiquiditySLAParameters, parent string) Er
 		errs.AddForProperty(fmt.Sprintf("%s.sla_competition_factor", parent), ErrMustBeWithinRange01)
 	}
 
-	if config.PerformanceHysteresisEpochs < 1 {
-		errs.AddForProperty(fmt.Sprintf("%s.performance_hysteresis_epochs", parent), ErrMustBePositive)
+	if config.PerformanceHysteresisEpochs < 1 || config.PerformanceHysteresisEpochs > 366 {
+		errs.AddForProperty(fmt.Sprintf("%s.performance_hysteresis_epochs", parent), ErrMustBeWithinRange1366)
 	}
 
 	return errs
