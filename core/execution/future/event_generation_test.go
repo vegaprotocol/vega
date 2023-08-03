@@ -917,63 +917,6 @@ func TestEvents_CloseOutPartyWithNotEnoughLiquidity(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 }
 
-func TestEvents_LPOrderRecalculationDueToFill(t *testing.T) {
-	now := time.Unix(10, 0)
-	ctx := context.Background()
-	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
-	tm := startMarketInAuction(t, ctx, &now)
-	leaveAuction(tm, ctx, &now)
-
-	o2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order02", types.SideBuy, "party-B", 1, 98)
-	o2conf, err := tm.market.SubmitOrder(ctx, o2)
-	require.NotNil(t, o2conf)
-	require.NoError(t, err)
-
-	o3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order03", types.SideBuy, "party-B", 1, 100)
-	o3conf, err := tm.market.SubmitOrder(ctx, o3)
-	require.NotNil(t, o3conf)
-	require.NoError(t, err)
-
-	o5 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order05", types.SideSell, "party-B", 1, 110)
-	o5conf, err := tm.market.SubmitOrder(ctx, o5)
-	require.NotNil(t, o5conf)
-	require.NoError(t, err)
-
-	buys := []*types.LiquidityOrder{
-		newLiquidityOrder(types.PeggedReferenceBestBid, 1, 50),
-	}
-	sells := []*types.LiquidityOrder{
-		newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 50),
-	}
-
-	lps := &types.LiquidityProvisionSubmission{
-		Fee:              num.DecimalFromFloat(0.05),
-		MarketID:         tm.market.GetID(),
-		CommitmentAmount: num.NewUint(10),
-		Buys:             buys,
-		Sells:            sells,
-	}
-
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
-	require.NoError(t, err)
-	assert.Equal(t, 1, tm.market.GetLPSCount())
-
-	o6 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order06", types.SideSell, "party-C", 2, 99)
-	o6conf, err := tm.market.SubmitOrder(ctx, o6)
-	require.NotNil(t, o6conf)
-	require.NoError(t, err)
-
-	// Check we have the right amount of events
-	assert.Equal(t, uint64(6), tm.orderEventCount)
-	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
-
-	processEvents(t, tm, mdb)
-	assert.Equal(t, int64(4), mdb.GetOrderCount(tm.market.GetID()))
-	// assert.Equal(t, 2, tm.market.GetPeggedOrderCount())
-	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
-	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
-}
-
 func TestEvents_PeggedOrders(t *testing.T) {
 	t.Skip("Multi-coloured skittles and an astronaut")
 	now := time.Unix(10, 0)

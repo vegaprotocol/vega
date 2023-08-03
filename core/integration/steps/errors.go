@@ -52,7 +52,7 @@ func DebugLPSTxErrors(broker *stubs.BrokerStub, log *logging.Logger) {
 // unexpectedErrDetail is an optional parameter that can be used to return a more detailed error when an unexpected error is encoutered.
 func checkExpectedError(row ErroneousRow, returnedErr, unexpectedErrDetail error) error {
 	if row.ExpectError() && returnedErr == nil {
-		return fmt.Errorf("action on \"%s\" should have fail", row.Reference())
+		return fmt.Errorf("action on %q should have fail", row.Reference())
 	}
 
 	if returnedErr != nil {
@@ -60,11 +60,11 @@ func checkExpectedError(row ErroneousRow, returnedErr, unexpectedErrDetail error
 			if unexpectedErrDetail != nil {
 				return unexpectedErrDetail
 			}
-			return fmt.Errorf("action on \"%s\" has failed: %s", row.Reference(), returnedErr.Error())
+			return fmt.Errorf("action on %q has failed: %s", row.Reference(), returnedErr.Error())
 		}
 
 		if row.Error() != returnedErr.Error() {
-			return formatDiff(fmt.Sprintf("action on \"%s\" is failing as expected but not with the expected error message", row.Reference()),
+			return formatDiff(fmt.Sprintf("action on %q is failing as expected but not with the expected error message", row.Reference()),
 				map[string]string{
 					"error": row.Error(),
 				},

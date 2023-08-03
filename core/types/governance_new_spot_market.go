@@ -220,6 +220,11 @@ func NewSpotMarketConfigurationFromProto(p *vegapb.NewSpotMarketConfiguration) (
 	}
 	targetStakeParams := TargetStakeParametersFromProto(p.TargetStakeParameters)
 
+	var slaParams *LiquiditySLAParams
+	if p.SlaParams != nil {
+		slaParams = LiquiditySLAParamsFromProto(p.SlaParams)
+	}
+
 	r := &NewSpotMarketConfiguration{
 		Instrument:                instrument,
 		DecimalPlaces:             p.DecimalPlaces,
@@ -227,7 +232,7 @@ func NewSpotMarketConfigurationFromProto(p *vegapb.NewSpotMarketConfiguration) (
 		Metadata:                  md,
 		PriceMonitoringParameters: priceMonitoring,
 		TargetStakeParameters:     targetStakeParams,
-		SLAParams:                 LiquiditySLAParamsFromProto(p.SlaParams),
+		SLAParams:                 slaParams,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

@@ -25,11 +25,14 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 1     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
+      | limits.markets.maxPeggedOrders                      | 8     |
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/MAR22 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       | SLA        |
 
     Given the average block duration is "2"
 
@@ -44,14 +47,22 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
       | party2 | USD   | 100000000000   |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | buy  | BID              | 1          | 20     | submission |
-      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | sell | ASK              | 1          | 20     | amendment  |
-      | lp2 | lp2   | ETH/MAR22 | 1000000           | 0.002 | buy  | BID              | 1          | 20     | submission |
-      | lp2 | lp2   | ETH/MAR22 | 1000000           | 0.002 | sell | ASK              | 1          | 20     | amendment  |
-      | lp3 | lp3   | ETH/MAR22 | 1000000000        | 0.003 | buy  | BID              | 1          | 20     | submission |
-      | lp3 | lp3   | ETH/MAR22 | 1000000000        | 0.003 | sell | ASK              | 1          | 20     | amendment  |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | submission |
+      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | amendment  |
+      | lp2 | lp2   | ETH/MAR22 | 1000000           | 0.002 | submission |
+      | lp2 | lp2   | ETH/MAR22 | 1000000           | 0.002 | amendment  |
+      | lp3 | lp3   | ETH/MAR22 | 1000000000        | 0.003 | submission |
+      | lp3 | lp3   | ETH/MAR22 | 1000000000        | 0.003 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 20     |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 20     |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 20     |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 20     |
+      | lp3   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 20     |
+      | lp3   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 20     |
+ 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 10     | 900   | 0                | TYPE_LIMIT | TIF_GTC |

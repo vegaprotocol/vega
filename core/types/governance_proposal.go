@@ -94,10 +94,6 @@ const (
 	ProposalErrorTooManyPriceMonitoringTriggers ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS
 	// ProposalErrorERC20AddressAlreadyInUse the proposal uses a erc20 address already used by another asset.
 	ProposalErrorERC20AddressAlreadyInUse ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE
-	// ProposalErrorLpPriceRangeNonpositive LP price range is zero or less.
-	ProposalErrorLpPriceRangeNonpositive ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_LP_PRICE_RANGE_NONPOSITIVE
-	// ProposalErrorLpPriceRangeTooLarge LP price range above 100.
-	ProposalErrorLpPriceRangeTooLarge ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_LP_PRICE_RANGE_TOO_LARGE
 	// ProposalErrorLinearSlippageOutOfRange linear slippage factor is negative or too large.
 	ProposalErrorLinearSlippageOutOfRange ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_LINEAR_SLIPPAGE_FACTOR_OUT_OF_RANGE
 	// ProposalErrorSquaredSlippageOutOfRange squared slippage factor is negative or too large.

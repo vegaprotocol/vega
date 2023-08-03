@@ -9,6 +9,7 @@ Feature: Target stake
       | market.stake.target.timeWindow          | 168h  |
       | market.stake.target.scalingFactor       | 1.5   |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
     And the following assets are registered:
       | id  | decimal places |
       | BTC | 5              |
@@ -25,8 +26,8 @@ Feature: Target stake
       | search factor | initial factor | release factor |
       | 1.1           | 1.2            | 1.4            |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future | 2              | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future | 2              | 1e6                    | 1e6                       | default-futures |
 
     # Above, it says mark price but really I don't mind if we start
     # with an opening auction as long as at start of the scenario
@@ -65,10 +66,13 @@ Feature: Target stake
       | tt_3  | ETH/DEC21 | buy  | 30     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
 
     Then the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | tt_0  | ETH/DEC21 | 990000            | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | tt_0  | ETH/DEC21 | 990000            | 0.001 | sell | ASK              | 1          | 10     | amendment  |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | tt_0  | ETH/DEC21 | 990000            | 0.001 | submission |
+      | lp1 | tt_0  | ETH/DEC21 | 990000            | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | tt_0  | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 10     |
+      | tt_0  | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 10     |
 
     Then the opening auction period ends for market "ETH/DEC21"
 

@@ -270,7 +270,7 @@ func buildMarketFromProposal(
 			Parameters: definition.Changes.PriceMonitoringParameters,
 		},
 		LiquidityMonitoringParameters: definition.Changes.LiquidityMonitoringParameters,
-		LPPriceRange:                  definition.Changes.LpPriceRange,
+		LiquiditySLAParams:            definition.Changes.LiquiditySLAParameters,
 		LinearSlippageFactor:          definition.Changes.LinearSlippageFactor,
 		QuadraticSlippageFactor:       definition.Changes.QuadraticSlippageFactor,
 	}
@@ -702,13 +702,6 @@ func validateSlippageFactor(slippageFactor num.Decimal, isLinear bool) (types.Pr
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateLpPriceRange(lpPriceRange num.Decimal) (types.ProposalError, error) {
-	if lpPriceRange.IsZero() || lpPriceRange.IsNegative() || lpPriceRange.GreaterThan(num.DecimalFromInt64(100)) {
-		return types.ProposalErrorLpPriceRangeNonpositive, fmt.Errorf("proposal LP price range has incorrect value, expected value in (0,100], got %s", lpPriceRange.String())
-	}
-	return types.ProposalErrorUnspecified, nil
-}
-
 func validateNewSpotMarketChange(
 	terms *types.NewSpotMarket,
 	assets Assets,
@@ -767,7 +760,7 @@ func validateNewMarketChange(
 		return types.ProposalErrorTooManyPriceMonitoringTriggers,
 			fmt.Errorf("%v price monitoring triggers set, maximum allowed is 5", len(terms.Changes.PriceMonitoringParameters.Triggers) > 5)
 	}
-	if perr, err := validateLpPriceRange(terms.Changes.LpPriceRange); err != nil {
+	if perr, err := validateLPSLAParams(terms.Changes.LiquiditySLAParameters); err != nil {
 		return perr, err
 	}
 	if perr, err := validateSlippageFactor(terms.Changes.LinearSlippageFactor, true); err != nil {
@@ -837,7 +830,7 @@ func validateUpdateMarketChange(terms *types.UpdateMarket, etu *enactmentTime, c
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
 		return perr, err
 	}
-	if perr, err := validateLpPriceRange(terms.Changes.LpPriceRange); err != nil {
+	if perr, err := validateLPSLAParams(terms.Changes.LiquiditySLAParameters); err != nil {
 		return perr, err
 	}
 	if perr, err := validateSlippageFactor(terms.Changes.LinearSlippageFactor, true); err != nil {

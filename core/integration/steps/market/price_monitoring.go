@@ -42,11 +42,11 @@ func newPriceMonitoring(unmarshaler *defaults.Unmarshaler) *priceMonitoring {
 
 	contentReaders := defaults.ReadAll(defaultPriceMonitoring, defaultPriceMonitoringFileNames)
 	for name, contentReader := range contentReaders {
-		riskModel, err := unmarshaler.UnmarshalPriceMonitoring(contentReader)
+		pm, err := unmarshaler.UnmarshalPriceMonitoring(contentReader)
 		if err != nil {
-			panic(fmt.Errorf("couldn't unmarshal default risk model %s: %v", name, err))
+			panic(fmt.Errorf("couldn't unmarshal default price monitoring %s: %v", name, err))
 		}
-		if err := priceMonitoring.Add(name, riskModel); err != nil {
+		if err := priceMonitoring.Add(name, pm); err != nil {
 			panic(fmt.Errorf("failed to add default price monitoring %s: %v", name, err))
 		}
 	}
