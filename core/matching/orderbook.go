@@ -1161,6 +1161,7 @@ func (b *OrderBook) icebergRefresh(o *types.Order) {
 
 	// put it to the back of the line
 	b.getSide(o.Side).addOrder(o)
+	b.add(o)
 }
 
 // remove removes the given order from all the lookup map.

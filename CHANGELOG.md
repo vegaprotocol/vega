@@ -18,6 +18,12 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
+## 0.72.7
+
+### 🐛 Fixes
+
+- [8962](https://github.com/vegaprotocol/vega/issues/8962) - Refreshed pegged iceberg orders remain tracked as pegged orders.
+
 ## 0.72.6
 
 ### 🐛 Fixes
