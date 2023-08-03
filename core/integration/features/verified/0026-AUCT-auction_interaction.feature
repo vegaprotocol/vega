@@ -150,7 +150,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 10000          | 10            |
 
-  @NoPerp
+  @TempPerp
   Scenario: When trying to exit opening auction liquidity monitoring is triggered due to insufficient supplied stake  (0026-AUCT-004, 0026-AUCT-005)
 
     Given the liquidity monitoring parameters:
