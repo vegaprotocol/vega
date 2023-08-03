@@ -58,7 +58,7 @@ func (p FundingPeriod) StreamMessage() *eventspb.BusEvent {
 
 func FundingPeriodEventFromStream(ctx context.Context, be *eventspb.BusEvent) *FundingPeriod {
 	return &FundingPeriod{
-		Base: newBaseFromBusEvent(ctx, EpochUpdate, be),
+		Base: newBaseFromBusEvent(ctx, FundingPeriodEvent, be),
 		p:    be.GetFundingPeriod(),
 	}
 }

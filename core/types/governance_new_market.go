@@ -545,9 +545,9 @@ func (InstrumentConfigurationPerps) Type() ProductType {
 	return ProductTypePerps
 }
 
-func (i InstrumentConfigurationPerps) IntoProto() *vegapb.InstrumentConfiguration_Perps {
-	return &vegapb.InstrumentConfiguration_Perps{
-		Perps: i.Perps.IntoProto(),
+func (i InstrumentConfigurationPerps) IntoProto() *vegapb.InstrumentConfiguration_Perpetual {
+	return &vegapb.InstrumentConfiguration_Perpetual{
+		Perpetual: i.Perps.IntoProto(),
 	}
 }
 
@@ -586,7 +586,7 @@ func (i InstrumentConfiguration) IntoProto() *vegapb.InstrumentConfiguration {
 	switch pr := p.(type) {
 	case *vegapb.InstrumentConfiguration_Future:
 		r.Product = pr
-	case *vegapb.InstrumentConfiguration_Perps:
+	case *vegapb.InstrumentConfiguration_Perpetual:
 		r.Product = pr
 	case *vegapb.InstrumentConfiguration_Spot:
 		r.Product = pr
@@ -631,42 +631,42 @@ func InstrumentConfigurationFromProto(
 				DataSourceSpecBinding:               datasource.SpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
 			},
 		}
-	case *vegapb.InstrumentConfiguration_Perps:
-		settlement, err := datasource.DefinitionFromProto(pr.Perps.DataSourceSpecForSettlementData)
+	case *vegapb.InstrumentConfiguration_Perpetual:
+		settlement, err := datasource.DefinitionFromProto(pr.Perpetual.DataSourceSpecForSettlementData)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse settlement data source spec: %w", err)
 		}
 
-		settlementSchedule, err := datasource.DefinitionFromProto(pr.Perps.DataSourceSpecForSettlementSchedule)
+		settlementSchedule, err := datasource.DefinitionFromProto(pr.Perpetual.DataSourceSpecForSettlementSchedule)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse settlement schedule data source spec: %w", err)
 		}
 
 		var marginFundingFactor, interestRate, clampLowerBound, clampUpperBound num.Decimal
-		if marginFundingFactor, err = num.DecimalFromString(pr.Perps.MarginFundingFactor); err != nil {
+		if marginFundingFactor, err = num.DecimalFromString(pr.Perpetual.MarginFundingFactor); err != nil {
 			return nil, fmt.Errorf("failed to parse margin funding factor: %w", err)
 		}
-		if interestRate, err = num.DecimalFromString(pr.Perps.InterestRate); err != nil {
+		if interestRate, err = num.DecimalFromString(pr.Perpetual.InterestRate); err != nil {
 			return nil, fmt.Errorf("failed to parse interest rate: %w", err)
 		}
-		if clampLowerBound, err = num.DecimalFromString(pr.Perps.ClampLowerBound); err != nil {
+		if clampLowerBound, err = num.DecimalFromString(pr.Perpetual.ClampLowerBound); err != nil {
 			return nil, fmt.Errorf("failed to parse clamp lower bound: %w", err)
 		}
-		if clampUpperBound, err = num.DecimalFromString(pr.Perps.ClampUpperBound); err != nil {
+		if clampUpperBound, err = num.DecimalFromString(pr.Perpetual.ClampUpperBound); err != nil {
 			return nil, fmt.Errorf("failed to parse clamp upper bound: %w", err)
 		}
 
 		r.Product = &InstrumentConfigurationPerps{
 			Perps: &PerpsProduct{
-				SettlementAsset:                     pr.Perps.SettlementAsset,
-				QuoteName:                           pr.Perps.QuoteName,
+				SettlementAsset:                     pr.Perpetual.SettlementAsset,
+				QuoteName:                           pr.Perpetual.QuoteName,
 				MarginFundingFactor:                 marginFundingFactor,
 				InterestRate:                        interestRate,
 				ClampLowerBound:                     clampLowerBound,
 				ClampUpperBound:                     clampUpperBound,
 				DataSourceSpecForSettlementData:     *datasource.NewDefinitionWith(settlement),
 				DataSourceSpecForSettlementSchedule: *datasource.NewDefinitionWith(settlementSchedule),
-				DataSourceSpecBinding:               datasource.SpecBindingForPerpsFromProto(pr.Perps.DataSourceSpecBinding),
+				DataSourceSpecBinding:               datasource.SpecBindingForPerpsFromProto(pr.Perpetual.DataSourceSpecBinding),
 			},
 		}
 	case *vegapb.InstrumentConfiguration_Spot:
@@ -738,8 +738,8 @@ type PerpsProduct struct {
 	DataSourceSpecBinding               *datasource.SpecBindingForPerps
 }
 
-func (p PerpsProduct) IntoProto() *vegapb.PerpsProduct {
-	return &vegapb.PerpsProduct{
+func (p PerpsProduct) IntoProto() *vegapb.PerpetualProduct {
+	return &vegapb.PerpetualProduct{
 		SettlementAsset:                     p.SettlementAsset,
 		QuoteName:                           p.QuoteName,
 		MarginFundingFactor:                 p.MarginFundingFactor.String(),

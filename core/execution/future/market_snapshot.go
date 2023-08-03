@@ -154,6 +154,7 @@ func NewMarketFromSnapshot(
 	}
 
 	now := timeService.GetTimeNow()
+	marketType := mkt.MarketType()
 	market := &Market{
 		log:                     log,
 		mkt:                     mkt,
@@ -195,6 +196,7 @@ func NewMarketFromSnapshot(
 		settlementAsset:         asset,
 		stopOrders:              stopOrders,
 		expiringStopOrders:      expiringStopOrders,
+    perp:                       marketType == types.MarketTypePerp,
 	}
 
 	for _, p := range em.Parties {
@@ -202,8 +204,17 @@ func NewMarketFromSnapshot(
 	}
 
 	market.assetDP = uint32(assetDecimals)
-	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
-	market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementData)
+	switch marketType {
+	case types.MarketTypeFuture:
+		market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
+		market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementData)
+	case types.MarketTypePerp:
+		market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementDataPerp)
+	case types.MarketTypeSpot:
+	default:
+		log.Panic("unexpected market type", logging.Int("type", int(marketType)))
+	}
+
 	if em.SettlementData != nil {
 		// ensure oracle has the settlement data
 		market.tradableInstrument.Instrument.Product.RestoreSettlementData(em.SettlementData.Clone())

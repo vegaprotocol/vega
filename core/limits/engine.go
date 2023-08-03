@@ -216,18 +216,18 @@ func (e *Engine) CanProposeSpotMarket() bool {
 }
 
 func (e *Engine) CanProposePerpsMarket() bool {
-	return e.proposeSpotMarketEnabled
+	return e.proposePerpsMarketEnabled
 }
 
 func (e *Engine) sendEvent(ctx context.Context) {
 	limits := vega.NetworkLimits{
-		CanProposeMarket:      e.canProposeMarket,
-		CanProposeAsset:       e.canProposeAsset,
-		ProposeMarketEnabled:  e.proposeMarketEnabled,
-		ProposeAssetEnabled:   e.proposeAssetEnabled,
-		GenesisLoaded:         e.genesisLoaded,
-		CanProposeSpotMarket:  e.proposeSpotMarketEnabled,
-		CanProposePerpsMarket: e.proposePerpsMarketEnabled,
+		CanProposeMarket:          e.canProposeMarket,
+		CanProposeAsset:           e.canProposeAsset,
+		ProposeMarketEnabled:      e.proposeMarketEnabled,
+		ProposeAssetEnabled:       e.proposeAssetEnabled,
+		GenesisLoaded:             e.genesisLoaded,
+		CanProposeSpotMarket:      e.proposeSpotMarketEnabled,
+		CanProposePerpetualMarket: e.proposePerpsMarketEnabled,
 	}
 
 	if !e.proposeMarketEnabledFrom.IsZero() {

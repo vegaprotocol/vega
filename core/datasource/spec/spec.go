@@ -13,7 +13,9 @@
 package spec
 
 import (
+	"strconv"
 	"strings"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/datasource"
 	"code.vegaprotocol.io/vega/core/datasource/common"
@@ -29,6 +31,9 @@ type Spec struct {
 	// signers list all the authorized public keys from where a Data can
 	// come from.
 	signers map[string]struct{}
+
+	// any time triggers on the spec
+	triggers common.InternalTimeTriggers
 
 	// filters holds all the expected property keys with the conditions they
 	// should match.
@@ -49,6 +54,7 @@ type Spec struct {
 func New(originalSpec datasource.Spec) (*Spec, error) {
 	filtersFromSpec := []*common.SpecFilter{}
 	signersFromSpec := []*common.Signer{}
+	var triggersFromSpec common.InternalTimeTriggers
 
 	isExtType := false
 	var err error
@@ -103,10 +109,15 @@ func New(originalSpec datasource.Spec) (*Spec, error) {
 		}
 	}
 
+	if builtInTrigger {
+		triggersFromSpec = originalSpec.Data.GetTimeTriggers()
+	}
+
 	os := &Spec{
 		id:           SpecID(originalSpec.ID),
 		signers:      signers,
 		filters:      typedFilters,
+		triggers:     triggersFromSpec,
 		OriginalSpec: &originalSpec,
 	}
 
@@ -127,6 +138,18 @@ func isInternalData(data common.Data) bool {
 	return true
 }
 
+func isInternalTimeTrigger(data common.Data) (bool, time.Time) {
+	for k, v := range data.Data {
+		if k == BuiltinTimeTrigger {
+			// convert string to time
+			if t, err := strconv.ParseInt(v, 10, 0); err == nil {
+				return true, time.Unix(t, 0)
+			}
+		}
+	}
+	return false, time.Time{}
+}
+
 // MatchSigners tries to match the public keys from the provided Data object with the ones
 // present in the Spec.
 func (s *Spec) MatchSigners(data common.Data) bool {
@@ -140,6 +163,13 @@ func (s *Spec) MatchData(data common.Data) (bool, error) {
 
 	if !isInternalData(data) && !containsRequiredSigners(data.Signers, s.signers) {
 		return false, nil
+	}
+
+	// if it is internal time data and we have a time-trigger check that we're past it
+	if ok, tt := isInternalTimeTrigger(data); ok && s.triggers[0] != nil {
+		if !s.triggers.IsTriggered(tt) {
+			return false, nil
+		}
 	}
 
 	return s.filters.Match(data.Data)
