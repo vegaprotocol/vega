@@ -41,6 +41,7 @@
 - [8968](https://github.com/vegaprotocol/vega/issues/8968) - Improve wiring of internal time triggers for perpetual markets.
 - [8756](https://github.com/vegaprotocol/vega/issues/8756) - Settlement and margin implementation for `PERPS`.
 - [8887](https://github.com/vegaprotocol/vega/pull/8887) - Remove differences for snapshot loading when the `nullchain` is used instead of `tendermint`
+- [8973](https://github.com/vegaprotocol/vega/issues/8973) - Do some more validation on Ethereum call specifications, add explicit error types to improve reporting
 - [8957](https://github.com/vegaprotocol/vega/issues/8957) - Oracle bindings for `PERPS`.
 
 ### 🐛 Fixes
