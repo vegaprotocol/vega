@@ -263,9 +263,9 @@ func testRegisteredCallbacks(t *testing.T) {
 	// register the callback
 	perpetual.NotifyOnSettlementData(marketSettle)
 
-	perpetual.OnLeaveOpeningAuction(ctx, 1000)
+	perpetual.OnLeaveOpeningAuction(ctx, scaleToNano(t, 1000))
 
-	require.NoError(t, perpetual.SubmitDataPoint(ctx, num.UintOne(), 890))
+	require.NoError(t, perpetual.SubmitDataPoint(ctx, num.UintOne(), scaleToNano(t, 890)))
 	// callback to receive settlement data
 	settle(ctx, dscommon.Data{
 		Data: map[string]string{
@@ -278,7 +278,7 @@ func testRegisteredCallbacks(t *testing.T) {
 
 	for _, p := range points {
 		// send in an external and a matching internal
-		require.NoError(t, perpetual.SubmitDataPoint(ctx, p.price, p.t))
+		require.NoError(t, perpetual.SubmitDataPoint(ctx, p.price, scaleToNano(t, p.t)))
 		settle(ctx, dscommon.Data{
 			Data: map[string]string{
 				perp.DataSourceSpecBinding.SettlementDataProperty: p.price.String(),
@@ -291,7 +291,7 @@ func testRegisteredCallbacks(t *testing.T) {
 
 	// add some data-points in the future from when we will cue the end of the funding period
 	// they should not affect the funding payment of this period
-	require.NoError(t, perpetual.SubmitDataPoint(ctx, num.UintOne(), 2000))
+	require.NoError(t, perpetual.SubmitDataPoint(ctx, num.UintOne(), scaleToNano(t, 2000)))
 	settle(ctx, dscommon.Data{
 		Data: map[string]string{
 			perp.DataSourceSpecBinding.SettlementDataProperty: "1",
@@ -354,9 +354,9 @@ func testRegisteredCallbacksWithDifferentData(t *testing.T) {
 	// register the callback
 	perpetual.NotifyOnSettlementData(marketSettle)
 
-	perpetual.OnLeaveOpeningAuction(ctx, 1000)
+	perpetual.OnLeaveOpeningAuction(ctx, scaleToNano(t, 1000))
 
-	require.NoError(t, perpetual.SubmitDataPoint(ctx, num.UintOne(), 890))
+	require.NoError(t, perpetual.SubmitDataPoint(ctx, num.UintOne(), scaleToNano(t, 890)))
 	// callback to receive settlement data
 	settle(ctx, dscommon.Data{
 		Data: map[string]string{
@@ -371,7 +371,7 @@ func testRegisteredCallbacksWithDifferentData(t *testing.T) {
 	for i, p := range points {
 		if i%2 == 0 {
 			ip := num.UintZero().Sub(p.price, num.UintOne())
-			require.NoError(t, perpetual.SubmitDataPoint(ctx, ip, p.t))
+			require.NoError(t, perpetual.SubmitDataPoint(ctx, ip, scaleToNano(t, p.t)))
 		}
 		settle(ctx, dscommon.Data{
 			Data: map[string]string{
@@ -385,7 +385,7 @@ func testRegisteredCallbacksWithDifferentData(t *testing.T) {
 
 	// add some data-points in the future from when we will cue the end of the funding period
 	// they should not affect the funding payment of this period
-	require.NoError(t, perpetual.SubmitDataPoint(ctx, num.UintOne(), 2000))
+	require.NoError(t, perpetual.SubmitDataPoint(ctx, num.UintOne(), scaleToNano(t, 2000)))
 	settle(ctx, dscommon.Data{
 		Data: map[string]string{
 			perp.DataSourceSpecBinding.SettlementDataProperty: "1",
@@ -453,6 +453,11 @@ func getTestDataPoints(t *testing.T) []*testDataPoint {
 			t:     1030,
 		},
 	}
+}
+
+func scaleToNano(t *testing.T, secs int64) int64 {
+	t.Helper()
+	return secs * 1000000000
 }
 
 type tstPerp struct {
