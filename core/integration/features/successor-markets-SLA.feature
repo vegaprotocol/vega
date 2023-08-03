@@ -143,6 +143,8 @@ Feature: Simple example of successor markets
       | lpprov1 | 0.8999012589484078 | 9000                    |
       | lpprov2 | 0.1000987410515922 | 10000                   |
 
+    And then the network moves ahead "2" blocks
+
     And the insurance pool balance should be "6975" for the market "ETH/DEC19"
     And the global insurance pool balance should be "0" for the asset "USD"
 
@@ -151,6 +153,7 @@ Feature: Simple example of successor markets
       | trading.terminated | true  |
 
     And time is updated to "2023-07-21T00:00:00Z"
+    And the global insurance pool balance should be "0" for the asset "USD"
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general     |
@@ -162,17 +165,15 @@ Feature: Simple example of successor markets
       | trader4 | USD   | ETH/DEC19 | 41369  | 1961706     |
       | trader5 | USD   | ETH/DEC19 | 0      | 0           |
 
-    And the insurance pool balance should be "6975" for the market "ETH/DEC19"
-    And the global insurance pool balance should be "0" for the asset "USD"
-
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
-
+    And the insurance pool balance should be "6975" for the market "ETH/DEC19"
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name             | value    |
       | prices.ETH.value | 14000000 |
 
-    And then the network moves ahead "10" blocks
+    And the insurance pool balance should be "14819" for the market "ETH/DEC19"
 
+    And then the network moves ahead "10" blocks
     And the insurance pool balance should be "14819" for the market "ETH/DEC19"
     And the global insurance pool balance should be "0" for the asset "USD"
 
@@ -195,4 +196,3 @@ Feature: Simple example of successor markets
       | trader5 | USD   | ETH/DEC19 | 0      | 0           |
 
 
-# Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
