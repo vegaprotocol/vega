@@ -15,6 +15,7 @@ package products
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/datasource"
 	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
@@ -223,7 +224,7 @@ func (p *Perpetual) receiveDataPoint(ctx context.Context, data dscommon.Data) er
 		return err
 	}
 	// add price point with "eth-block-time" as time
-	pTime, err := strconv.ParseUint(data.MetaData["eth-block-time"], 10, 64)
+	pTime, err := strconv.ParseInt(data.MetaData["eth-block-time"], 10, 64)
 	if err != nil {
 		p.log.Error("Could not parse the eth block time",
 			logging.String("eth-block-time", data.MetaData["eth-block-time"]),
@@ -231,8 +232,12 @@ func (p *Perpetual) receiveDataPoint(ctx context.Context, data dscommon.Data) er
 		)
 		return err
 	}
+
+	// eth block time is seconds, make it nanoseconds
+	pTime = time.Unix(pTime, 0).UnixNano()
+
 	// now add the price
-	p.addExternalDataPoint(ctx, assetPrice, int64(pTime))
+	p.addExternalDataPoint(ctx, assetPrice, pTime)
 	if p.log.GetLevel() == logging.DebugLevel {
 		p.log.Debug(
 			"perp settlement data updated",
@@ -268,6 +273,10 @@ func (p *Perpetual) receiveSettlementCue(ctx context.Context, data dscommon.Data
 		p.log.Error("schedule data not valid", data.Debug()...)
 		return err
 	}
+
+	// the internal cue gives us the time in seconds, so convert to nanoseconds
+	t = time.Unix(t, 0).UnixNano()
+
 	p.handleSettlementCue(ctx, t)
 	if p.log.GetLevel() == logging.DebugLevel {
 		p.log.Debug("perp schedule trigger processed")

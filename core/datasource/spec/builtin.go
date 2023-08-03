@@ -45,7 +45,8 @@ func (b *Builtin) OnTick(ctx context.Context, _ time.Time) {
 	data := common.Data{
 		Signers: nil,
 		Data: map[string]string{
-			BuiltinTimestamp: fmt.Sprintf("%d", b.engine.timeService.GetTimeNow().Unix()),
+			BuiltinTimestamp:   fmt.Sprintf("%d", b.engine.timeService.GetTimeNow().Unix()),
+			BuiltinTimeTrigger: fmt.Sprintf("%d", b.engine.timeService.GetTimeNow().Unix()),
 		},
 	}
 

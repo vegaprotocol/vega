@@ -145,3 +145,32 @@ func TestSpecConfigurationString(t *testing.T) {
 }
 
 func TestToDataSourceDefinitionProto(t *testing.T) {}
+
+func TestSpecConfigurationGetTimeTriggers(t *testing.T) {
+	ds := datasource.NewDefinitionWith(
+		signedoracle.SpecConfiguration{
+			Signers: []*common.Signer{
+				{},
+			},
+			Filters: []*common.SpecFilter{
+				{
+					Key: &common.SpecPropertyKey{
+						Name: "test-name",
+						Type: common.SpecPropertyKeyType(0),
+					},
+					Conditions: []*common.SpecCondition{
+						{
+							Operator: 8,
+							Value:    "12",
+						},
+					},
+				},
+			},
+		})
+
+	triggers := ds.GetTimeTriggers()
+	assert.NotNil(t, triggers)
+	assert.Equal(t, 1, len(triggers))
+	assert.IsType(t, &common.InternalTimeTrigger{}, triggers[0])
+	assert.Nil(t, triggers[0])
+}
