@@ -575,6 +575,7 @@ func validateNewMarketChange(
 	openingAuctionDuration time.Duration,
 	etu *enactmentTime,
 	parent *types.Market,
+	restore bool,
 ) (types.ProposalError, error) {
 	// in all cases, the instrument must be specified and validated, successor markets included.
 	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck); err != nil {
@@ -585,7 +586,7 @@ func validateNewMarketChange(
 		return perr, err
 	}
 	// if this is a successor market, check if that's set up fine:
-	if perr, err := validateSuccessorMarket(terms, parent); err != nil {
+	if perr, err := validateSuccessorMarket(terms, parent, restore); err != nil {
 		return perr, err
 	}
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
@@ -607,9 +608,9 @@ func validateNewMarketChange(
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateSuccessorMarket(terms *types.NewMarket, parent *types.Market) (types.ProposalError, error) {
+func validateSuccessorMarket(terms *types.NewMarket, parent *types.Market, restore bool) (types.ProposalError, error) {
 	suc := terms.Successor()
-	if parent == nil && suc == nil {
+	if (parent == nil && suc == nil) || (parent == nil && restore) {
 		return types.ProposalErrorUnspecified, nil
 	}
 	// if parent is not nil, then terms.Successor() was not nil and vice-versa. Either both are set or neither is.
