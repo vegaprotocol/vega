@@ -320,7 +320,7 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
-			Watcher: e.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate,
+			Watcher: e.executionEngine.OnMarketLiquidityV2StakeToCCYVolumeUpdate,
 		},
 		// End of liquidity version 2.
 		netparams.WatchParam{
