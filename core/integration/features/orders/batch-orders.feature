@@ -53,7 +53,7 @@ Feature: Iceberg orders
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
       | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
       | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
- 
+
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -95,7 +95,7 @@ Feature: Iceberg orders
 #Iceberg order trading during continous mode
     Then the following trades should be executed:
       | buyer  | seller | price | size |
-      | party3 | party1 | 100 | 4 |
+      | party3 | party1 | 100   | 4    |
       | party3 | party2 | 100   | 3    |
       | party3 | party1 | 100   | 2    |
 
@@ -105,7 +105,8 @@ Feature: Iceberg orders
       | party  | asset | market id | margin | general   |
       | party1 | USD   | ETH/DEC19 | 7752   | 2242      |
       | party2 | USD   | ETH/DEC19 | 5050   | 4947      |
-      | party3 | USD   | ETH/DEC19 | 576    | 999999433 |
+      | party3 | USD   | ETH/DEC19 | 576    | 999999321 |
+
 
     #cancel an order which had been traded
     When the parties cancel the following orders:
