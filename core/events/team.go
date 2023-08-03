@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/ptr"
@@ -27,10 +28,11 @@ func NewTeamCreatedEvent(ctx context.Context, t *types.Team) *TeamCreated {
 		Base: newBase(ctx, TeamCreatedEvent),
 		e: eventspb.TeamCreated{
 			TeamId:    string(t.ID),
-			Referrer:  string(t.Referrer),
+			Referrer:  string(t.Referrer.PartyID),
 			Name:      ptr.From(t.Name),
 			TeamUrl:   ptr.From(t.TeamURL),
 			AvatarUrl: ptr.From(t.AvatarURL),
+			CreatedAt: t.CreatedAt.UnixNano(),
 		},
 	}
 }
@@ -64,6 +66,7 @@ func NewTeamUpdatedEvent(ctx context.Context, t *types.Team) *TeamUpdated {
 			Name:      ptr.From(t.Name),
 			TeamUrl:   ptr.From(t.TeamURL),
 			AvatarUrl: ptr.From(t.AvatarURL),
+			CreatedAt: t.CreatedAt.UnixNano(),
 		},
 	}
 }
@@ -89,13 +92,14 @@ func (t RefereeSwitchedTeam) StreamMessage() *eventspb.BusEvent {
 	return busEvent
 }
 
-func NewRefereeSwitchedTeamEvent(ctx context.Context, from, to types.TeamID, referee types.PartyID) *RefereeSwitchedTeam {
+func NewRefereeSwitchedTeamEvent(ctx context.Context, from, to types.TeamID, referee types.PartyID, switchedAt time.Time) *RefereeSwitchedTeam {
 	return &RefereeSwitchedTeam{
 		Base: newBase(ctx, RefereeSwitchedTeamEvent),
 		e: eventspb.RefereeSwitchedTeam{
 			FromTeamId: string(from),
 			ToTeamId:   string(to),
 			Referee:    string(referee),
+			SwitchedAt: switchedAt.UnixNano(),
 		},
 	}
 }
@@ -121,12 +125,13 @@ func (t RefereeJoinedTeam) StreamMessage() *eventspb.BusEvent {
 	return busEvent
 }
 
-func NewRefereeJoinedTeamEvent(ctx context.Context, teamID types.TeamID, referee types.PartyID) *RefereeJoinedTeam {
+func NewRefereeJoinedTeamEvent(ctx context.Context, teamID types.TeamID, referee types.PartyID, joinedAt time.Time) *RefereeJoinedTeam {
 	return &RefereeJoinedTeam{
 		Base: newBase(ctx, RefereeJoinedTeamEvent),
 		e: eventspb.RefereeJoinedTeam{
-			TeamId:  string(teamID),
-			Referee: string(referee),
+			TeamId:   string(teamID),
+			Referee:  string(referee),
+			JoinedAt: joinedAt.UnixNano(),
 		},
 	}
 }

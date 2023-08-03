@@ -903,6 +903,10 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadLiquidityScoresFromProto(dt)
 	case *snapshot.Payload_HoldingAccountTracker:
 		ret.Data = PayloadHoldingAccountTrackerFromProto(dt)
+	case *snapshot.Payload_Teams:
+		ret.Data = PayloadTeamsFromProto(dt)
+	case *snapshot.Payload_TeamSwitches:
+		ret.Data = PayloadTeamSwitchesFromProto(dt)
 	}
 
 	return ret
@@ -1061,6 +1065,10 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_EthContractCallResults:
 		ret.Data = dt
 	case *snapshot.Payload_EthOracleVerifierLastBlock:
+		ret.Data = dt
+	case *snapshot.Payload_Teams:
+		ret.Data = dt
+	case *snapshot.Payload_TeamSwitches:
 		ret.Data = dt
 	}
 	return &ret
