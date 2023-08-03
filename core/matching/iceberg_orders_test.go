@@ -23,6 +23,35 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func submitPeggedIcebergOrder(t *testing.T, book *tstOB, size, peak, minPeak uint64) (*types.Order, *types.OrderConfirmation) {
+	t.Helper()
+	o := &types.Order{
+		ID:            vgcrypto.RandomHash(),
+		Status:        types.OrderStatusActive,
+		MarketID:      book.marketID,
+		Party:         "A",
+		Side:          types.SideBuy,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          size,
+		Remaining:     size,
+		TimeInForce:   types.OrderTimeInForceGTT,
+		Type:          types.OrderTypeLimit,
+		ExpiresAt:     10,
+		PeggedOrder: &types.PeggedOrder{
+			Reference: types.PeggedReferenceMid,
+			Offset:    num.UintOne(),
+		},
+		IcebergOrder: &types.IcebergOrder{
+			PeakSize:           peak,
+			MinimumVisibleSize: minPeak,
+		},
+	}
+	confirm, err := book.SubmitOrder(o)
+	require.NoError(t, err)
+	return o, confirm
+}
+
 func submitIcebergOrder(t *testing.T, book *tstOB, size, peak, minPeak uint64, addToBook bool) (*types.Order, *types.OrderConfirmation) {
 	t.Helper()
 	o := &types.Order{
@@ -568,4 +597,25 @@ func TestIcebergWashTradeAggressiveIcebergPartialFill(t *testing.T) {
 	assert.Equal(t, types.OrderStatusPartiallyFilled, iceberg.Status)
 	assert.Equal(t, 1, len(confirm.Trades))
 	assert.Equal(t, uint64(10), book.getTotalSellVolume())
+}
+
+func TestRefreshedPeggedIcebergStillPegged(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	// create a pegged iceberg order
+	iceberg, _ := submitPeggedIcebergOrder(t, book, 100, 4, 2)
+
+	// check it is returned as pegged
+	pegged := book.GetActivePeggedOrderIDs()
+	assert.Equal(t, iceberg.ID, pegged[0])
+
+	// submit an order that will trade a cause a refresh
+	_, confirm := submitCrossedOrder(t, book, 3)
+	assert.Equal(t, 1, len(confirm.Trades))
+
+	// check it is still returned as pegged
+	pegged = book.GetActivePeggedOrderIDs()
+	assert.Equal(t, iceberg.ID, pegged[0])
 }
