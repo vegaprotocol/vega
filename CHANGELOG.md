@@ -83,6 +83,7 @@
 - [8908](https://github.com/vegaprotocol/vega/issues/8908) - A rejected parent market should result in all successors getting rejected, too.
 - [8953](https://github.com/vegaprotocol/vega/issues/8953) - Fix reward distribution when validator delegate to other validators
 - [8898](https://github.com/vegaprotocol/vega/issues/8898) - Fix auction uncrossing handling for spots
+- [8971](https://github.com/vegaprotocol/vega/issues/8971) - Record the epoch start time even in opening auction 
 
 ## 0.72.1
 
