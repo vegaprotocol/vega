@@ -309,13 +309,13 @@ func NewMarket(
 		maxStopOrdersPerParties: num.UintZero(),
 		stopOrders:              stoporders.New(log),
 		expiringStopOrders:      common.NewExpiringOrders(),
-		perp:                    marketType == types.MarketTypePerp,,
+		perp:                    marketType == types.MarketTypePerp,
 	}
 
 	assets, _ := mkt.GetAssets()
 	market.settlementAsset = assets[0]
 
-	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
+	liquidityEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 
 	switch marketType {
 	case types.MarketTypeFuture:
