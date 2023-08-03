@@ -22,8 +22,8 @@ import (
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
 	"code.vegaprotocol.io/vega/core/fee"
-	"code.vegaprotocol.io/vega/core/liquidity"
 	"code.vegaprotocol.io/vega/core/liquidity/target"
+	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/core/markets"
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/monitor"
@@ -125,7 +125,18 @@ func NewMarketFromSnapshot(
 	priceFactor := num.UintZero().Exp(num.NewUint(10), num.NewUint(exp))
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
-	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, book, asset, mkt.ID, stateVarEngine, priceFactor.Clone(), positionFactor)
+	liquidityEngine := liquidity.NewSnapshotEngine(
+		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel,
+		pMonitor, book, as, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams,
+	)
+
+	equityShares := common.NewEquityShares(num.DecimalZero())
+
+	marketLiquidity := common.NewMarketLiquidity(
+		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
+		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange,
+		mkt.LiquiditySLAParams.ProvidersFeeCalculationTimeStep,
+	)
 
 	// backward compatibility check for nil
 	stopOrders := stoporders.New(log)
@@ -146,48 +157,47 @@ func NewMarketFromSnapshot(
 	now := timeService.GetTimeNow()
 	marketType := mkt.MarketType()
 	market := &Market{
-		log:                        log,
-		mkt:                        mkt,
-		closingAt:                  time.Unix(0, mkt.MarketTimestamps.Close),
-		timeService:                timeService,
-		matching:                   book,
-		tradableInstrument:         tradableInstrument,
-		risk:                       riskEngine,
-		position:                   positionEngine,
-		settlement:                 settleEngine,
-		collateral:                 collateralEngine,
-		broker:                     broker,
-		fee:                        feeEngine,
-		liquidity:                  liqEngine,
-		parties:                    map[string]struct{}{},
-		lMonitor:                   lMonitor,
-		tsCalc:                     tsCalc,
-		feeSplitter:                common.NewFeeSplitterFromSnapshot(em.FeeSplitter, now),
-		as:                         as,
-		pMonitor:                   pMonitor,
-		peggedOrders:               common.NewPeggedOrdersFromSnapshot(log, timeService, em.PeggedOrders),
-		expiringOrders:             common.NewExpiringOrdersFromState(em.ExpiringOrders),
-		equityShares:               common.NewEquitySharesFromSnapshot(em.EquityShare),
-		lastBestBidPrice:           em.LastBestBid.Clone(),
-		lastBestAskPrice:           em.LastBestAsk.Clone(),
-		lastMidBuyPrice:            em.LastMidBid.Clone(),
-		lastMidSellPrice:           em.LastMidAsk.Clone(),
-		markPrice:                  em.CurrentMarkPrice,
-		lastTradedPrice:            em.LastTradedPrice,
-		priceFactor:                priceFactor,
-		lastMarketValueProxy:       em.LastMarketValueProxy,
-		lastEquityShareDistributed: time.Unix(0, em.LastEquityShareDistributed),
-		marketActivityTracker:      marketActivityTracker,
-		positionFactor:             positionFactor,
-		stateVarEngine:             stateVarEngine,
-		settlementDataInMarket:     em.SettlementData,
-		lpPriceRange:               mkt.LPPriceRange,
-		linearSlippageFactor:       mkt.LinearSlippageFactor,
-		quadraticSlippageFactor:    mkt.QuadraticSlippageFactor,
-		settlementAsset:            asset,
-		stopOrders:                 stopOrders,
-		expiringStopOrders:         expiringStopOrders,
-		perp:                       marketType == types.MarketTypePerp,
+		log:                     log,
+		mkt:                     mkt,
+		closingAt:               time.Unix(0, mkt.MarketTimestamps.Close),
+		timeService:             timeService,
+		matching:                book,
+		tradableInstrument:      tradableInstrument,
+		risk:                    riskEngine,
+		position:                positionEngine,
+		settlement:              settleEngine,
+		collateral:              collateralEngine,
+		broker:                  broker,
+		fee:                     feeEngine,
+		liquidityEngine:         liquidityEngine,
+		liquidity:               marketLiquidity,
+		parties:                 map[string]struct{}{},
+		lMonitor:                lMonitor,
+		tsCalc:                  tsCalc,
+		feeSplitter:             common.NewFeeSplitterFromSnapshot(em.FeeSplitter, now),
+		as:                      as,
+		pMonitor:                pMonitor,
+		peggedOrders:            common.NewPeggedOrdersFromSnapshot(log, timeService, em.PeggedOrders),
+		expiringOrders:          common.NewExpiringOrdersFromState(em.ExpiringOrders),
+		equityShares:            common.NewEquitySharesFromSnapshot(em.EquityShare),
+		lastBestBidPrice:        em.LastBestBid.Clone(),
+		lastBestAskPrice:        em.LastBestAsk.Clone(),
+		lastMidBuyPrice:         em.LastMidBid.Clone(),
+		lastMidSellPrice:        em.LastMidAsk.Clone(),
+		markPrice:               em.CurrentMarkPrice,
+		lastTradedPrice:         em.LastTradedPrice,
+		priceFactor:             priceFactor,
+		lastMarketValueProxy:    em.LastMarketValueProxy,
+		marketActivityTracker:   marketActivityTracker,
+		positionFactor:          positionFactor,
+		stateVarEngine:          stateVarEngine,
+		settlementDataInMarket:  em.SettlementData,
+		linearSlippageFactor:    mkt.LinearSlippageFactor,
+		quadraticSlippageFactor: mkt.QuadraticSlippageFactor,
+		settlementAsset:         asset,
+		stopOrders:              stopOrders,
+		expiringStopOrders:      expiringStopOrders,
+		perp:                    marketType == types.MarketTypePerp,
 	}
 
 	for _, p := range em.Parties {
@@ -210,7 +220,8 @@ func NewMarketFromSnapshot(
 		// ensure oracle has the settlement data
 		market.tradableInstrument.Instrument.Product.RestoreSettlementData(em.SettlementData.Clone())
 	}
-	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
+
+	liquidityEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 
 	if mkt.State == types.MarketStateTradingTerminated {
 		market.tradableInstrument.Instrument.UnsubscribeTradingTerminated(ctx)
@@ -227,7 +238,7 @@ func NewMarketFromSnapshot(
 }
 
 func (m *Market) GetNewStateProviders() []types.StateProvider {
-	return []types.StateProvider{m.position, m.matching, m.tsCalc, m.liquidity, m.settlement}
+	return []types.StateProvider{m.position, m.matching, m.tsCalc, m.liquidityEngine, m.settlement}
 }
 
 func (m *Market) GetState() *types.ExecMarket {
@@ -253,7 +264,6 @@ func (m *Market) GetState() *types.ExecMarket {
 		LastMarketValueProxy:       m.lastMarketValueProxy,
 		CurrentMarkPrice:           m.markPrice,
 		LastTradedPrice:            m.lastTradedPrice,
-		LastEquityShareDistributed: m.lastEquityShareDistributed.UnixNano(),
 		EquityShare:                m.equityShares.GetState(),
 		RiskFactorConsensusReached: m.risk.IsRiskFactorInitialised(),
 		ShortRiskFactor:            rf.Short,

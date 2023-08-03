@@ -5,10 +5,11 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | name                                          | value |
             | market.stake.target.timeWindow                | 24h   |
             | market.stake.target.scalingFactor             | 1     |
-            | market.liquidity.bondPenaltyParameter         | 0.2   |
+            | market.liquidityV2.bondPenaltyParameter       | 0.2   |
             | market.liquidity.targetstake.triggering.ratio | 0.1   |
             | limits.markets.maxPeggedOrders                | 1500  |
             | network.markPriceUpdateMaximumFrequency       | 0s    |
+            | limits.markets.maxPeggedOrders                | 12    |
         And the following assets are registered:
             | id  | decimal places |
             | ETH | 5              |
@@ -24,11 +25,11 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | horizon | probability | auction extension |
             | 1       | 0.99        | 300               |
         And the markets:
-            | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor |
-            | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0              | 0                       | 1e6                    | 1e6                       |
-            | USD/DEC19 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 3              | 3                       | 1e6                    | 1e6                       |
-            | USD/DEC20 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 5                       | 1e6                    | 1e6                       |
-            | USD/DEC21 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 3                       | 1e6                    | 1e6                       |
+            | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+            | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0              | 0                       | 1e6                    | 1e6                       | default-futures |
+            | USD/DEC19 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 3              | 3                       | 1e6                    | 1e6                       | default-futures |
+            | USD/DEC20 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 5                       | 1e6                    | 1e6                       | default-futures |
+            | USD/DEC21 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 3                       | 1e6                    | 1e6                       | default-futures |
         And the parties deposit on asset's general account the following amount:
             | party  | asset | amount    |
             | party0 | USD   | 5000000   |
@@ -44,19 +45,33 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
     Scenario: 001: Markets with different precisions trade at the same price
 
         Given  the parties submit the following liquidity provision:
-            | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-            | lp0 | party0 | USD/DEC20 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp0 | party0 | USD/DEC20 | 1000              | 0.001 | buy  | BID              | 100        | 20     | submission |
-            | lp1 | party0 | USD/DEC21 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp1 | party0 | USD/DEC21 | 1000              | 0.001 | buy  | BID              | 100        | 20     | submission |
-            | lp2 | party0 | USD/DEC19 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp2 | party0 | USD/DEC19 | 1000              | 0.001 | buy  | BID              | 100        | 20     | submission |
-            | lp3 | lpprov | USD/DEC20 | 4000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp3 | lpprov | USD/DEC20 | 4000              | 0.001 | buy  | BID              | 100        | 20     | submission |
-            | lp4 | lpprov | USD/DEC21 | 4000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp4 | lpprov | USD/DEC21 | 4000              | 0.001 | buy  | BID              | 100        | 20     | submission |
-            | lp5 | lpprov | USD/DEC19 | 4000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp5 | lpprov | USD/DEC19 | 4000              | 0.001 | buy  | BID              | 100        | 20     | submission |
+            | id  | party  | market id | commitment amount | fee   | lp type    |
+            | lp0 | party0 | USD/DEC20 | 1000              | 0.001 | submission |
+            | lp0 | party0 | USD/DEC20 | 1000              | 0.001 | submission |
+            | lp1 | party0 | USD/DEC21 | 1000              | 0.001 | submission |
+            | lp1 | party0 | USD/DEC21 | 1000              | 0.001 | submission |
+            | lp2 | party0 | USD/DEC19 | 1000              | 0.001 | submission |
+            | lp2 | party0 | USD/DEC19 | 1000              | 0.001 | submission |
+            | lp3 | lpprov | USD/DEC20 | 4000              | 0.001 | submission |
+            | lp3 | lpprov | USD/DEC20 | 4000              | 0.001 | submission |
+            | lp4 | lpprov | USD/DEC21 | 4000              | 0.001 | submission |
+            | lp4 | lpprov | USD/DEC21 | 4000              | 0.001 | submission |
+            | lp5 | lpprov | USD/DEC19 | 4000              | 0.001 | submission |
+            | lp5 | lpprov | USD/DEC19 | 4000              | 0.001 | submission |
+        And the parties place the following pegged iceberg orders:
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+            | party0 | USD/DEC20 | 2         | 1                    | sell | ASK              | 100        | 20     |
+            | party0 | USD/DEC20 | 2         | 1                    | buy  | BID              | 100        | 20     |
+            | party0 | USD/DEC21 | 2         | 1                    | sell | ASK              | 100        | 20     |
+            | party0 | USD/DEC21 | 2         | 1                    | buy  | BID              | 100        | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | sell | ASK              | 100        | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | buy  | BID              | 100        | 20     |
+            | lpprov | USD/DEC20 | 2         | 1                    | sell | ASK              | 100        | 20     |
+            | lpprov | USD/DEC20 | 2         | 1                    | buy  | BID              | 100        | 20     |
+            | lpprov | USD/DEC21 | 2         | 1                    | sell | ASK              | 100        | 20     |
+            | lpprov | USD/DEC21 | 2         | 1                    | buy  | BID              | 100        | 20     |
+            | lpprov | USD/DEC19 | 2         | 1                    | sell | ASK              | 100        | 20     |
+            | lpprov | USD/DEC19 | 2         | 1                    | buy  | BID              | 100        | 20     |
 
         And the parties place the following orders:
             | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference   |
@@ -105,10 +120,13 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
 
     Scenario: 002: Users engage in a USD market auction, (0070-MKTD-003, 0070-MKTD-008)
         Given the parties submit the following liquidity provision:
-            | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-            | lp1 | party0 | ETH/MAR22 | 35569             | 0.001 | sell | ASK              | 500        | 20     | submission |
-            | lp1 | party0 | ETH/MAR22 | 35569             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
-
+            | id  | party  | market id | commitment amount | fee   | lp type    |
+            | lp1 | party0 | ETH/MAR22 | 35569             | 0.001 | submission |
+            | lp1 | party0 | ETH/MAR22 | 35569             | 0.001 | amendment  |
+        And the parties place the following pegged iceberg orders:
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+            | party0 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 20     |
+            | party0 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 20     |
         And the parties place the following orders:
             | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
             | party1 | ETH/MAR22 | buy  | 1      | 9     | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
@@ -132,10 +150,13 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
 
     Scenario: 003: Users engage in an ETH market auction, (0070-MKTD-003, 0070-MKTD-008)
         Given the parties submit the following liquidity provision:
-            | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-            | lp1 | party0 | USD/DEC19 | 50000             | 0.001 | sell | ASK              | 500        | 20     | submission |
-            | lp1 | party0 | USD/DEC19 | 50000             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
-
+            | id  | party  | market id | commitment amount | fee   | lp type    |
+            | lp1 | party0 | USD/DEC19 | 50000             | 0.001 | submission |
+            | lp1 | party0 | USD/DEC19 | 50000             | 0.001 | amendment  |
+        And the parties place the following pegged iceberg orders:
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+            | party0 | USD/DEC19 | 2         | 1                    | sell | ASK              | 500        | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | buy  | BID              | 500        | 20     |
         And the parties place the following orders:
             | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
             | party1 | USD/DEC19 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
@@ -159,10 +180,13 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
     Scenario: 004: Users engage in an ETH market auction with full decimal places, (0070-MKTD-003, 0070-MKTD-008)
 
         Given  the parties submit the following liquidity provision:
-            | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-            | lp1 | party0 | USD/DEC20 | 500               | 0.001 | sell | ASK              | 500        | 20     | submission |
-            | lp1 | party0 | USD/DEC20 | 500               | 0.001 | buy  | BID              | 500        | 20     | amendment  |
-
+            | id  | party  | market id | commitment amount | fee   | lp type    |
+            | lp1 | party0 | USD/DEC20 | 500               | 0.001 | submission |
+            | lp1 | party0 | USD/DEC20 | 500               | 0.001 | amendment  |
+        And the parties place the following pegged iceberg orders:
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+            | party0 | USD/DEC20 | 2         | 1                    | sell | ASK              | 500        | 20     |
+            | party0 | USD/DEC20 | 2         | 1                    | buy  | BID              | 500        | 20     |
         And the parties place the following orders:
             | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference  |
             | party1 | USD/DEC20 | buy  | 1      | 90000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
@@ -186,11 +210,17 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
     Scenario: 005: User tops up markets with differing precisions with the same asset + amount, should result in identical margin changes, (0070-MKTD-004)
 
         Given  the parties submit the following liquidity provision:
-            | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-            | lp1 | party0 | USD/DEC20 | 100000            | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp1 | party0 | USD/DEC20 | 100000            | 0.001 | buy  | BID              | 100        | 20     | amendment  |
-            | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | buy  | BID              | 100        | 20     | amendment  |
+            | id  | party  | market id | commitment amount | fee   | lp type    |
+            | lp1 | party0 | USD/DEC20 | 100000            | 0.001 | submission |
+            | lp1 | party0 | USD/DEC20 | 100000            | 0.001 | amendment  |
+            | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | submission |
+            | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | amendment  |
+        And the parties place the following pegged iceberg orders:
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+            | party0 | USD/DEC20 | 2         | 1                    | sell | ASK              | 100        | 20     |
+            | party0 | USD/DEC20 | 2         | 1                    | buy  | BID              | 100        | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | sell | ASK              | 100        | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | buy  | BID              | 100        | 20     |
 
         And the parties place the following orders:
             | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference   |
@@ -242,12 +272,18 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
     Scenario: 006: User checks prices after opening auction, (0070-MKTD-005)
 
         Given  the parties submit the following liquidity provision:
-            | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-            | lp1 | party0 | USD/DEC20 | 100000            | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp1 | party0 | USD/DEC20 | 100000            | 0.001 | buy  | BID              | 100        | 20     | amendment  |
-            | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | buy  | BID              | 100        | 20     | amendment  |
-
+            | id  | party  | market id | commitment amount | fee   | lp type    |
+            | lp1 | party0 | USD/DEC20 | 100000            | 0.001 | submission |
+            | lp1 | party0 | USD/DEC20 | 100000            | 0.001 | amendment  |
+            | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | submission |
+            | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | amendment  |
+        And the parties place the following pegged iceberg orders:
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+            | party0 | USD/DEC20 | 2         | 1                    | sell | ASK              | 100        | 20     |
+            | party0 | USD/DEC20 | 2         | 1                    | buy  | BID              | 100        | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | sell | ASK              | 100        | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | buy  | BID              | 100        | 20     |
+ 
         And the parties place the following orders:
             | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference   |
             | party1 | USD/DEC20 | buy  | 1      | 90000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1   |
@@ -271,11 +307,17 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
     Scenario: 007: Offsets are calculated in market units, (0070-MKTD-007)
 
         Given  the parties submit the following liquidity provision:
-            | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-            | lp1 | party0 | USD/DEC20 | 5000              | 0.001 | sell | MID              | 100        | 20     | submission |
-            | lp1 | party0 | USD/DEC20 | 5000              | 0.001 | buy  | MID              | 100        | 20     | amendment  |
-            | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | sell | MID              | 100        | 20     | submission |
-            | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | buy  | MID              | 100        | 20     | amendment  |
+            | id  | party  | market id | commitment amount | fee   | lp type    |
+            | lp1 | party0 | USD/DEC20 | 5000              | 0.001 | submission |
+            | lp1 | party0 | USD/DEC20 | 5000              | 0.001 | amendment  |
+            | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | submission |
+            | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | amendment  |
+        And the parties place the following pegged iceberg orders:
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+            | party0 | USD/DEC20 | 2         | 1                    | sell | MID              | 100        | 20     |
+            | party0 | USD/DEC20 | 2         | 1                    | buy  | MID              | 100        | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | sell | MID              | 100        | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | buy  | MID              | 100        | 20     |
 
         And the parties place the following orders:
             | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference   |
@@ -307,14 +349,22 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
     Scenario: 008: Price monitoring bounds are calculated at asset precision but displayed rounded, (0070-MKTD-006)
 
         Given  the parties submit the following liquidity provision:
-            | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-            | lp1 | party0 | USD/DEC20 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp1 | party0 | USD/DEC20 | 1000              | 0.001 | buy  | BID              | 100        | 20     | amendment  |
-            | lp1 | party0 | USD/DEC21 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp1 | party0 | USD/DEC21 | 1000              | 0.001 | buy  | BID              | 100        | 20     | amendment  |
-            | lp2 | party0 | USD/DEC19 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp2 | party0 | USD/DEC19 | 1000              | 0.001 | buy  | BID              | 100        | 20     | amendment  |
-
+            | id  | party  | market id | commitment amount | fee   | lp type    |
+            | lp1 | party0 | USD/DEC20 | 1000              | 0.001 | submission |
+            | lp1 | party0 | USD/DEC20 | 1000              | 0.001 | amendment  |
+            | lp1 | party0 | USD/DEC21 | 1000              | 0.001 | submission |
+            | lp1 | party0 | USD/DEC21 | 1000              | 0.001 | amendment  |
+            | lp2 | party0 | USD/DEC19 | 1000              | 0.001 | submission |
+            | lp2 | party0 | USD/DEC19 | 1000              | 0.001 | amendment  |
+        And the parties place the following pegged iceberg orders:
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+            | party0 | USD/DEC20 | 2         | 1                    | sell | ASK              | 100        | 20     |
+            | party0 | USD/DEC20 | 2         | 1                    | buy  | BID              | 100        | 20     |
+            | party0 | USD/DEC21 | 2         | 1                    | sell | ASK              | 100        | 20     |
+            | party0 | USD/DEC21 | 2         | 1                    | buy  | BID              | 100        | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | sell | ASK              | 100        | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | buy  | BID              | 100        | 20     |
+ 
         And the parties place the following orders:
             | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference   |
             | party1 | USD/DEC21 | buy  | 10     | 100000 | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2   |

@@ -5,9 +5,8 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | name                                                | value |
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
-      | market.liquidity.bondPenaltyParameter               | 1     |
+      | market.liquidityV2.bondPenaltyParameter             | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0.1   |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
     And the average block duration is "1"
     And the simple risk model named "simple-risk-model-1":
@@ -22,11 +21,13 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 5                 |
-
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 0.01        | 0.5                          | 10                                  | 1                             | 1.0                    |
   Scenario: LP gets distressed during continuous trading (0042-LIQF-014)
     Given the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.01           | 2                       | 0.5                    | 0                         |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 0.5                    | 0                         | SLA        |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | party0 | ETH   | 5721       |
@@ -37,9 +38,9 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party5 | ETH   | 1000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 500        | 10     | submission |
-      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 500        | 10     | amendment  |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | amendment  |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -130,9 +131,12 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     Given the simple risk model named "simple-risk-model-2":
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 30          | 30            | 0.2                    |
+    And the liquidity sla params named "SLA-2":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 0.5         | 0.5                          | 10                                  | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-2 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5            | 2                       | 0.5                    | 0                         |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-2 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 0.5                    | 0                         | SLA-2      |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | party0 | ETH   | 5721       |
@@ -143,11 +147,11 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party5 | ETH   | 1000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | buy  | MID              | 500        | 20     | submission |
-      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | sell | MID              | 500        | 20     | amendment  |
-      | lp2 | party5 | ETH/DEC21 | 995000            | 0.001 | buy  | BID              | 500        | 20     | submission |
-      | lp2 | party5 | ETH/DEC21 | 995000            | 0.001 | sell | ASK              | 500        | 20     | amendment  |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | submission |
+      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | amendment  |
+      | lp2 | party5 | ETH/DEC21 | 995000            | 0.001 | submission |
+      | lp2 | party5 | ETH/DEC21 | 995000            | 0.001 | amendment  |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |

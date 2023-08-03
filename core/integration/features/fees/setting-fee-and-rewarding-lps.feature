@@ -30,13 +30,18 @@ Feature: Test liquidity provider reward distribution
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 1s    |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
+      | limits.markets.maxPeggedOrders                      | 6     |
+
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
+
     And the markets:
-      | id        | quote name | asset | risk model             | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1    | default-margin-calculator | 2                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e0                    | 1e0                       |
-      | ETH/DEC22 | ETH        | ETH   | lognormal-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-2 | ethDec21Oracle     | 1e0                    | 1e0                       |
+      | id        | quote name | asset | risk model             | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1    | default-margin-calculator | 2                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e0                    | 1e0                       | SLA        |
+      | ETH/DEC22 | ETH        | ETH   | lognormal-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-2 | ethDec21Oracle     | 1e0                    | 1e0                       | SLA        |
     And the average block duration is "1"
 
   Scenario: 001, 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades
@@ -48,12 +53,17 @@ Feature: Test liquidity provider reward distribution
       | party2 | ETH   | 100000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | amendment  |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | submission |
+      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | amendment  |
+      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | amendment  |
+      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1   | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp1   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp1   | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -142,18 +152,29 @@ Feature: Test liquidity provider reward distribution
       | party2 | ETH   | 100000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | sell | MID              | 2          | 1      | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | submission |
+      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | amendment  |
+      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | amendment  |
+      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1   | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp1   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp1   | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | buy  | MID              | 2          | 1      | amendment  |
-      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | sell | ASK              | 1          | 2      | amendment  |
-      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | sell | MID              | 2          | 1      | amendment  |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | submission |
+      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | amendment  |
+      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | amendment  |
+      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp2   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp2   | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp2   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp2   | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -236,8 +257,13 @@ Feature: Test liquidity provider reward distribution
   Scenario: 003, 2 LPs joining at start, equal commitments, unequal offsets
     Given the following network parameters are set:
       | name                                                | value |
-      | market.liquidity.providers.fee.distributionTimeStep | 5s    |
       | limits.markets.maxPeggedOrders                      | 10    |
+    And the liquidity sla params named "updated-SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 5                                   | 1                             | 1.0                    |
+    And the markets are updated:
+      | id        | sla params  | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC22 | updated-SLA | 1e0                    | 1e0                       |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | lp1    | ETH   | 1000000000 |
@@ -245,12 +271,17 @@ Feature: Test liquidity provider reward distribution
       | party1 | ETH   | 100000000  |
       | party2 | ETH   | 100000000  |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/DEC22 | 40000             | 0.001 | buy  | BID              | 1          | 32     | submission |
-      | lp1 | lp1   | ETH/DEC22 | 40000             | 0.001 | sell | ASK              | 1          | 32     |            |
-      | lp2 | lp2   | ETH/DEC22 | 40000             | 0.002 | buy  | BID              | 1          | 102    | submission |
-      | lp2 | lp2   | ETH/DEC22 | 40000             | 0.002 | sell | ASK              | 1          | 102    |            |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/DEC22 | 40000             | 0.001 | submission |
+      | lp1 | lp1   | ETH/DEC22 | 40000             | 0.001 |            |
+      | lp2 | lp2   | ETH/DEC22 | 40000             | 0.002 | submission |
+      | lp2 | lp2   | ETH/DEC22 | 40000             | 0.002 |            |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/DEC22 | 2         | 1                    | buy  | BID              | 1          | 32     |
+      | lp1   | ETH/DEC22 | 2         | 1                    | sell | ASK              | 1          | 32     |
+      | lp2   | ETH/DEC22 | 2         | 1                    | buy  | BID              | 1          | 102    |
+      | lp2   | ETH/DEC22 | 2         | 1                    | sell | ASK              | 1          | 102    |
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC22 | buy  | 1      | 995   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -294,9 +325,13 @@ Feature: Test liquidity provider reward distribution
     # modify lp2 orders so that they fall outside the price monitoring bounds
     When clear all events
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp2 | lp2   | ETH/DEC22 | 40000             | 0.002 | buy  | BID              | 1          | 116    | amendment |
-      | lp2 | lp2   | ETH/DEC22 | 40000             | 0.002 | sell | ASK              | 1          | 116    |           |
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp2 | lp2   | ETH/DEC22 | 40000             | 0.002 | amendment |
+      | lp2 | lp2   | ETH/DEC22 | 40000             | 0.002 |           |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp2   | ETH/DEC22 | 2         | 1                    | buy  | BID              | 1          | 116    |
+      | lp2   | ETH/DEC22 | 2         | 1                    | sell | ASK              | 1          | 116    |
     Then the orders should have the following states:
       | party | market id | side | volume | price | status        | reference |
       | lp2   | ETH/DEC22 | buy  | 46     | 879   | STATUS_ACTIVE | lp2       |
@@ -385,18 +420,29 @@ Feature: Test liquidity provider reward distribution
       | party2 | ETH   | 100000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | MID              | 2          | 1      | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | submission |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | submission |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | submission |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1   | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp1   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp1   | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |    
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | MID              | 2          | 1      | submission |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | ASK              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | MID              | 2          | 1      | submission |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | submission |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | submission |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | submission |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp2   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp2   | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp2   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp2   | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -494,17 +540,29 @@ Feature: Test liquidity provider reward distribution
       | party2 | ETH   | 100000000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | MID              | 2          | 1      | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | submission |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | amendment  |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | amendment  |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1   | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp1   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp1   | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | MID              | 2          | 1      | amendment  |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | ASK              | 1          | 2      | amendment  |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | MID              | 2          | 1      | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | submission |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | amendment  |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | amendment  |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp2   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp2   | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp2   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp2   | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -565,11 +623,17 @@ Feature: Test liquidity provider reward distribution
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | submission |
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | submission |
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | submission |
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp3   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp3   | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp3   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp3   | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
       | party | equity like share | average entry valuation |
@@ -620,16 +684,24 @@ Feature: Test liquidity provider reward distribution
     And the supplied stake should be "20000" for the market "ETH/DEC21"
      #AC 0042-LIQF-024:lp4 joining a market that is above the target stake with a commitment large enough to push one of two higher bids above the target stake, and a higher fee bid than the current fee: the fee doesn't change
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp4 | lp4   | ETH/DEC21 | 20000             | 0.004 | buy  | BID              | 1          | 4      | submission |
-      | lp4 | lp4   | ETH/DEC21 | 20000             | 0.004 | sell | ASK              | 1          | 4      | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp4 | lp4   | ETH/DEC21 | 20000             | 0.004 | submission |
+      | lp4 | lp4   | ETH/DEC21 | 20000             | 0.004 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp4   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 4      |
+      | lp4   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 4      |
     When time is updated to "2019-11-30T00:41:08Z"
     And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
     #AC 0042-LIQF-029: lp5 joining a market that is above the target stake with a sufficiently large commitment to push ALL higher bids above the target stake and a lower fee bid than the current fee: their fee is used
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp5 | lp5   | ETH/DEC21 | 30000             | 0.0005 | buy  | BID              | 1          | 4      | submission |
-      | lp5 | lp5   | ETH/DEC21 | 30000             | 0.0005 | sell | ASK              | 1          | 4      | submission |
+      | id  | party | market id | commitment amount | fee    | lp type    |
+      | lp5 | lp5   | ETH/DEC21 | 30000             | 0.0005 | submission |
+      | lp5 | lp5   | ETH/DEC21 | 30000             | 0.0005 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp5   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 4      |
+      | lp5   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 4      |
     When time is updated to "2019-11-30T00:42:08Z"
     And the liquidity fee factor should be "0.0005" for the market "ETH/DEC21"
     And the target stake should be "7608" for the market "ETH/DEC21"
@@ -637,9 +709,13 @@ Feature: Test liquidity provider reward distribution
 
     #AC 0042-LIQF-030: lp6 joining a market that is above the target stake with a commitment not large enough to push any higher bids above the target stake, and a lower fee bid than the current fee: the fee doesn't change
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp6 | lp6   | ETH/DEC21 | 2000              | 0.0001 | buy  | BID              | 1          | 4      | submission |
-      | lp6 | lp6   | ETH/DEC21 | 2000              | 0.0001 | sell | ASK              | 1          | 4      | submission |
+      | id  | party | market id | commitment amount | fee    | lp type    |
+      | lp6 | lp6   | ETH/DEC21 | 2000              | 0.0001 | submission |
+      | lp6 | lp6   | ETH/DEC21 | 2000              | 0.0001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp6   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 4      |
+      | lp6   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 4      |
     When time is updated to "2019-11-30T00:43:08Z"
     And the liquidity fee factor should be "0.0005" for the market "ETH/DEC21"
 
@@ -654,17 +730,29 @@ Feature: Test liquidity provider reward distribution
       | party2 | ETH   | 100000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | MID              | 2          | 1      | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | submission |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | submission |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | submission |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1   | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp1   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp1   | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | MID              | 2          | 1      | submission |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | ASK              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | MID              | 2          | 1      | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | submission |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | submission |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | submission |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp2   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp2   | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp2   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp2   | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -741,18 +829,29 @@ Feature: Test liquidity provider reward distribution
       | party2 | ETH   | 100000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | MID              | 2          | 1      | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | submission |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | submission |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | submission |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1    | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1    | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp1    | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp1    | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | MID              | 2          | 1      | submission |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | ASK              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | MID              | 2          | 1      | submission |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | submission |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | submission |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | submission |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp2   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp2   | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
+      | lp2   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
+      | lp2   | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -825,8 +924,8 @@ Feature: Test liquidity provider reward distribution
     And the accumulated liquidity fees should be "8" for the market "ETH/DEC21"
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type      |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | BID              | 1          | 2      | cancellation |
+      | id  | party | market id | commitment amount | fee   | lp type      |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | cancellation |
     Then the liquidity provisions should have the following states:
       | id  | party | market    | commitment amount | status           |
       | lp2 | lp2   | ETH/DEC21 | 2000              | STATUS_CANCELLED |
@@ -853,15 +952,21 @@ Feature: Test liquidity provider reward distribution
       | party2 | ETH   | 100000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.002 | sell | MID              | 2          | 1      | submission |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.002 | submission |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.002 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp1   | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.001 | sell | MID              | 2          | 1      | submission |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.001 | submission |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp2    | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
+      | lp2    | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -878,10 +983,13 @@ Feature: Test liquidity provider reward distribution
     And the network moves ahead "1" blocks
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee    | side | pegged reference | proportion | offset | lp type    |
-      | lp3 | lp3   | ETH/DEC21 | 9000              | 0.0015 | buy  | BID              | 1          | 4      | submission |
-      | lp3 | lp3   | ETH/DEC21 | 9000              | 0.0015 | sell | ASK              | 1          | 4      | submission |
-
+      | id  | party | market id | commitment amount | fee    | lp type    |
+      | lp3 | lp3   | ETH/DEC21 | 9000              | 0.0015 | submission |
+      | lp3 | lp3   | ETH/DEC21 | 9000              | 0.0015 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp3    | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 4      |
+      | lp3    | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 4      |
     And the liquidity fee factor should be "0.0015" for the market "ETH/DEC21"
     And the network moves ahead "10" blocks
 
@@ -890,10 +998,13 @@ Feature: Test liquidity provider reward distribution
 
     #AC 0042-LIQF-025: lp3 leaves a market that is above target stake when their fee bid is currently being used: fee changes to fee bid by the LP who takes their place in the bidding order
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee    | side | pegged reference | proportion | offset | lp type      |
-      | lp3 | lp3   | ETH/DEC21 | 9000              | 0.0015 | buy  | BID              | 1          | 4      | cancellation |
-      | lp3 | lp3   | ETH/DEC21 | 9000              | 0.0015 | sell | ASK              | 1          | 4      | cancellation |
-
+      | id  | party | market id | commitment amount | fee    | lp type      |
+      | lp3 | lp3   | ETH/DEC21 | 9000              | 0.0015 | cancellation |
+      | lp3 | lp3   | ETH/DEC21 | 9000              | 0.0015 | cancellation |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp3    | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 4      |
+      | lp3    | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 4      |
     Then the liquidity provisions should have the following states:
       | id  | party | market    | commitment amount | status           |
       | lp3 | lp3   | ETH/DEC21 | 9000              | STATUS_CANCELLED |
@@ -914,9 +1025,13 @@ Feature: Test liquidity provider reward distribution
     And the supplied stake should be "10000" for the market "ETH/DEC21"
     #AC 0042-LIQF-020: lp3 joining a market that is below the target stake with a lower fee bid than the current fee: fee doesn't change
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee    | side | pegged reference | proportion | offset | lp type    |
-      | lp3 | lp3   | ETH/DEC21 | 1000              | 0.0001 | buy  | BID              | 1          | 4      | submission |
-      | lp3 | lp3   | ETH/DEC21 | 1000              | 0.0001 | sell | ASK              | 1          | 4      | submission |
+      | id  | party | market id | commitment amount | fee    | lp type    |
+      | lp3 | lp3   | ETH/DEC21 | 1000              | 0.0001 | submission |
+      | lp3 | lp3   | ETH/DEC21 | 1000              | 0.0001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp3    | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 4      |
+      | lp3    | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 4      |
     And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
     And the network moves ahead "1" blocks
     And the target stake should be "12000" for the market "ETH/DEC21"
@@ -924,9 +1039,13 @@ Feature: Test liquidity provider reward distribution
 
     #AC 0042-LIQF-019: lp3 joining a market that is below the target stake with a higher fee bid than the current fee: their fee is used
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp3 | lp3   | ETH/DEC21 | 2000              | 0.003 | buy  | BID              | 1          | 4      | amendment |
-      | lp3 | lp3   | ETH/DEC21 | 2000              | 0.003 | sell | ASK              | 1          | 4      | amendment |
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp3 | lp3   | ETH/DEC21 | 2000              | 0.003 | amendment |
+      | lp3 | lp3   | ETH/DEC21 | 2000              | 0.003 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp3    | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 4      |
+      | lp3    | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 4      |
     And the liquidity fee factor should be "0.003" for the market "ETH/DEC21"
     And the network moves ahead "1" blocks
     And the target stake should be "12000" for the market "ETH/DEC21"
@@ -934,9 +1053,13 @@ Feature: Test liquidity provider reward distribution
 
     #lp4 join when market is below target stake with a large commitment
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp4 | lp4   | ETH/DEC21 | 10000             | 0.004 | buy  | BID              | 1          | 4      | submission |
-      | lp4 | lp4   | ETH/DEC21 | 10000             | 0.004 | sell | ASK              | 1          | 4      | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp4 | lp4   | ETH/DEC21 | 10000             | 0.004 | submission |
+      | lp4 | lp4   | ETH/DEC21 | 10000             | 0.004 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp4    | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 4      |
+      | lp4    | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 4      |
     And the liquidity fee factor should be "0.003" for the market "ETH/DEC21"
     And the network moves ahead "1" blocks
 
@@ -945,18 +1068,22 @@ Feature: Test liquidity provider reward distribution
 
     # AC 0042-LIQF-028: lp4 leaves a market that is above target stake when their fee bid is higher than the one currently being used: fee doesn't change
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount  | fee   | side | pegged reference | proportion | offset | lp type      |
-      | lp4 | lp4   | ETH/DEC21 | 10000              | 0.004 | buy  | BID              | 1          | 4      | cancellation |
-      | lp4 | lp4   | ETH/DEC21 | 10000              | 0.004 | sell | ASK              | 1          | 4      | cancellation |
+      | id  | party | market id | commitment amount  | fee   | lp type      |
+      | lp4 | lp4   | ETH/DEC21 | 10000              | 0.004 | cancellation |
+      | lp4 | lp4   | ETH/DEC21 | 10000              | 0.004 | cancellation |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp4    | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 4      |
+      | lp4    | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 4      |
     And the liquidity fee factor should be "0.003" for the market "ETH/DEC21"
     And the network moves ahead "1" blocks
     And the target stake should be "12000" for the market "ETH/DEC21"
     And the supplied stake should be "12000" for the market "ETH/DEC21"
     # lp4 join when market is above target stake with a large commitment
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp4 | lp4   | ETH/DEC21 | 4000              | 0.004 | buy  | BID              | 1          | 4      | submission |
-      | lp4 | lp4   | ETH/DEC21 | 4000              | 0.004 | sell | ASK              | 1          | 4      | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp4 | lp4   | ETH/DEC21 | 4000              | 0.004 | submission |
+      | lp4 | lp4   | ETH/DEC21 | 4000              | 0.004 | submission |
     And the liquidity fee factor should be "0.003" for the market "ETH/DEC21"
     And the target stake should be "12000" for the market "ETH/DEC21"
     And the supplied stake should be "16000" for the market "ETH/DEC21"
@@ -964,9 +1091,13 @@ Feature: Test liquidity provider reward distribution
 
     # AC 0042-LIQF-023: An LP joining a market that is above the target stake with a commitment large enough to push one of two higher bids above the target stake, and a lower fee bid than the current fee: the fee changes to the other lower bid
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee    | side | pegged reference | proportion | offset | lp type    |
-      | lp5 | lp5   | ETH/DEC21 | 6000              | 0.0015 | buy  | BID              | 1          | 4      | submission |
-      | lp5 | lp5   | ETH/DEC21 | 6000              | 0.0015 | sell | ASK              | 1          | 4      | submission |
+      | id  | party | market id | commitment amount | fee    | lp type    |
+      | lp5 | lp5   | ETH/DEC21 | 6000              | 0.0015 | submission |
+      | lp5 | lp5   | ETH/DEC21 | 6000              | 0.0015 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp5   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 4      |
+      | lp5   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 4      |
     And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
     And the target stake should be "12000" for the market "ETH/DEC21"
     And the supplied stake should be "22000" for the market "ETH/DEC21"
@@ -974,18 +1105,26 @@ Feature: Test liquidity provider reward distribution
 
     #AC 0042-LIQF-026: An LP leaves a market that is above target stake when their fee bid is lower than the one currently being used and their commitment size changes the LP that meets the target stake: fee changes to fee bid by the LP that is now at the place in the bid order to provide the target stake
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee    | side | pegged reference | proportion | offset | lp type      |
-      | lp5 | lp5   | ETH/DEC21 | 6000              | 0.0015 | buy  | BID              | 1          | 4      | cancellation |
-      | lp5 | lp5   | ETH/DEC21 | 6000              | 0.0015 | sell | ASK              | 1          | 4      | cancellation |
+      | id  | party | market id | commitment amount | fee    | lp type      |
+      | lp5 | lp5   | ETH/DEC21 | 6000              | 0.0015 | cancellation |
+      | lp5 | lp5   | ETH/DEC21 | 6000              | 0.0015 | cancellation |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp5    | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 4      |
+      | lp5    | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 4      |
     And the liquidity fee factor should be "0.003" for the market "ETH/DEC21"
     And the target stake should be "12000" for the market "ETH/DEC21"
     And the supplied stake should be "16000" for the market "ETH/DEC21"
     And the network moves ahead "1" blocks
 
    And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee    | side | pegged reference | proportion | offset | lp type   |
-      | lp5 | lp5   | ETH/DEC21 | 1000              | 0.0015 | buy  | BID              | 1          | 4     | submission |
-      | lp5 | lp5   | ETH/DEC21 | 1000              | 0.0015 | sell | ASK              | 1          | 4     | submission |
+      | id  | party | market id | commitment amount | fee    | lp type    |
+      | lp5 | lp5   | ETH/DEC21 | 1000              | 0.0015 | submission |
+      | lp5 | lp5   | ETH/DEC21 | 1000              | 0.0015 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp5    | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 4      | 
+      | lp5    | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 4      | 
     And the liquidity fee factor should be "0.003" for the market "ETH/DEC21"
     And the target stake should be "12000" for the market "ETH/DEC21"
     And the supplied stake should be "17000" for the market "ETH/DEC21"
@@ -993,7 +1132,7 @@ Feature: Test liquidity provider reward distribution
 
     #AC 0042-LIQF-027: An LP leaves a market that is above target stake when their fee bid is lower than the one currently being used and their commitment size doesn't change the LP that meets the target stake: fee doesn't change
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee    | side | pegged reference | proportion | offset| lp type    |
+      | id  | party | market id | commitment amount | fee    | side | pegged reference | volume     | offset| lp type    |
       | lp5 | lp5   | ETH/DEC21 | 1000              | 0.0015 | buy  | BID              | 1          | 4     | cancellation |
       | lp5 | lp5   | ETH/DEC21 | 1000              | 0.0015 | sell | ASK              | 1          | 4     | cancellation |
     And the liquidity fee factor should be "0.003" for the market "ETH/DEC21"

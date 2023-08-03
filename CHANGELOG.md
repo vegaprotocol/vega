@@ -44,6 +44,7 @@
 - [8817](https://github.com/vegaprotocol/vega/issues/8817) - Add interest term to perpetual funding payment calculation.
 - [8755](https://github.com/vegaprotocol/vega/issues/8755) - Improve testing for perpetual settlement and collateral transfers.
 - [8756](https://github.com/vegaprotocol/vega/issues/8756) - Settlement and margin implementation for `PERPS`.
+- [8932](https://github.com/vegaprotocol/vega/issues/8932) - Fix range validation of `performanceHysteresisEpochs`
 - [8887](https://github.com/vegaprotocol/vega/pull/8887) - Remove differences for snapshot loading when the `nullchain` is used instead of `tendermint`
 - [8973](https://github.com/vegaprotocol/vega/issues/8973) - Do some more validation on Ethereum call specifications, add explicit error types to improve reporting
 - [8957](https://github.com/vegaprotocol/vega/issues/8957) - Oracle bindings for `PERPS`.
@@ -112,6 +113,7 @@
 - [8945](https://github.com/vegaprotocol/vega/issues/8945) - Expose missing order from the stop order `GraphQL` endpoint.
 - [9034](https://github.com/vegaprotocol/vega/issues/9034) - Add missing transfer types to `GraphQL` schema definition.
 - [9075](https://github.com/vegaprotocol/vega/issues/9075) - `Oracle Specs API` can fail when oracle data is null.
+- [8971](https://github.com/vegaprotocol/vega/issues/8971) - Record the epoch start time even in opening auction
 
 ## 0.72.1
 

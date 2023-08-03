@@ -8,8 +8,8 @@ Feature: Test margin for lp near price monitoring boundaries
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
+      | limits.markets.maxPeggedOrders                      | 2     |
 
     And the average block duration is "1"
 
@@ -24,9 +24,12 @@ Feature: Test margin for lp near price monitoring boundaries
     And the price monitoring named "price-monitoring-2":
       | horizon | probability | auction extension |
       | 43200   | 0.982       | 300               |
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
     And the markets:
-      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future | 1e6                    | 1e6                       |
+      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future | 1e6                    | 1e6                       | SLA        |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name              | value  |
       | prices.ETH2.value | 100000 |
@@ -37,10 +40,14 @@ Feature: Test margin for lp near price monitoring boundaries
       | party2 | ETH2  | 1000000000  |
 
     Given the parties submit the following liquidity provision:
-      | id          | party | market id  | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | commitment1 | lp1   | ETH2/MAR22 | 3000000           | 0.001 | buy  | BID              | 500        | 100    | submission |
-      | commitment1 | lp1   | ETH2/MAR22 | 3000000           | 0.001 | sell | ASK              | 500        | 100    | amendment  |
-
+      | id          | party | market id  | commitment amount | fee   | lp type    |
+      | commitment1 | lp1   | ETH2/MAR22 | 3000000           | 0.001 | submission |
+      | commitment1 | lp1   | ETH2/MAR22 | 3000000           | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id  | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lp1    | ETH2/MAR22 | 2         | 1                    | buy  | BID              | 500        | 100    |
+      | lp1    | ETH2/MAR22 | 2         | 1                    | sell | ASK              | 500        | 100    |
+ 
     And the parties place the following orders:
       | party  | market id  | side | volume | price  | resulting trades | type       | tif     | reference  |
       | party1 | ETH2/MAR22 | buy  | 1      | 89942  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |

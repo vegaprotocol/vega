@@ -20,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
@@ -668,6 +669,13 @@ func getTestFutureMarket(termInt bool) *vega.Market {
 		LpPriceRange:            "0.95",
 		LinearSlippageFactor:    "1.23",
 		QuadraticSlippageFactor: "5.67",
+		LiquiditySlaParams: &vega.LiquiditySLAParameters{
+			PriceRange:                      "0.75",
+			CommitmentMinTimeFraction:       "0.5",
+			ProvidersFeeCalculationTimeStep: 0,
+			PerformanceHysteresisEpochs:     0,
+			SlaCompetitionFactor:            "1.0",
+		},
 	}
 }
 
@@ -1491,6 +1499,13 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 		TradableInstrument: entities.TradableInstrument{
 			TradableInstrument: &vega.TradableInstrument{},
 		},
+		LiquiditySLAParameters: entities.LiquiditySLAParameters{
+			PriceRange:                      num.NewDecimalFromFloat(0),
+			CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0),
+			ProvidersFeeCalculationTimeStep: 0,
+			PerformanceHysteresisEpochs:     0,
+			SlaCompetitionFactor:            num.NewDecimalFromFloat(0),
+		},
 	}
 
 	successorMarketA := entities.Market{
@@ -1500,6 +1515,13 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 			TradableInstrument: &vega.TradableInstrument{},
 		},
 		ParentMarketID: parentMarket.ID,
+		LiquiditySLAParameters: entities.LiquiditySLAParameters{
+			PriceRange:                      num.NewDecimalFromFloat(0),
+			CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0),
+			ProvidersFeeCalculationTimeStep: 0,
+			PerformanceHysteresisEpochs:     0,
+			SlaCompetitionFactor:            num.NewDecimalFromFloat(0),
+		},
 	}
 
 	parentMarket.SuccessorMarketID = successorMarketA.ID
@@ -1511,6 +1533,13 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 			TradableInstrument: &vega.TradableInstrument{},
 		},
 		ParentMarketID: successorMarketA.ID,
+		LiquiditySLAParameters: entities.LiquiditySLAParameters{
+			PriceRange:                      num.NewDecimalFromFloat(0),
+			CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0),
+			ProvidersFeeCalculationTimeStep: 0,
+			PerformanceHysteresisEpochs:     0,
+			SlaCompetitionFactor:            num.NewDecimalFromFloat(0),
+		},
 	}
 
 	parentMarket2 := entities.Market{
@@ -1518,6 +1547,13 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 		InstrumentID: "deadbeef04",
 		TradableInstrument: entities.TradableInstrument{
 			TradableInstrument: &vega.TradableInstrument{},
+		},
+		LiquiditySLAParameters: entities.LiquiditySLAParameters{
+			PriceRange:                      num.NewDecimalFromFloat(0),
+			CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0),
+			ProvidersFeeCalculationTimeStep: 0,
+			PerformanceHysteresisEpochs:     0,
+			SlaCompetitionFactor:            num.NewDecimalFromFloat(0),
 		},
 	}
 

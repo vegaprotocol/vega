@@ -8,7 +8,6 @@ Feature: Test how offsets are applied with decimals
             | market.stake.target.timeWindow                      | 24h   |
             | market.stake.target.scalingFactor                   | 1     |
             | market.liquidity.targetstake.triggering.ratio       | 0     |
-            | market.liquidity.providers.fee.distributionTimeStep | 10m   |
             | network.markPriceUpdateMaximumFrequency             | 0s    |
             | limits.markets.maxPeggedOrders                      | 4     |
         And the following assets are registered:
@@ -27,9 +26,13 @@ Feature: Test how offsets are applied with decimals
             | horizon | probability | auction extension |
             | 100000  | 0.99        | 3                 |
 
+        And the liquidity sla params named "SLA":
+            | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+            | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
+
         And the markets:
-            | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees         | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor |
-            | USD/DEC19 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none | price-monitoring-1 | default-usd-for-future | 3              | 3                       | 1e6                    | 1e6                       |
+            | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees         | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+            | USD/DEC19 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none | price-monitoring-1 | default-usd-for-future | 3              | 3                       | 1e6                    | 1e6                       | SLA        |
 
         Given the parties deposit on asset's general account the following amount:
             | party  | asset | amount          |
@@ -39,12 +42,18 @@ Feature: Test how offsets are applied with decimals
             | party3 | ETH   | 10000000000000  |
 
         And the parties submit the following liquidity provision:
-            | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-            | lp1 | lp1   | USD/DEC19 | 10000000000       | 0.001 | buy  | BID              | 1          | 0      | submission |
-            | lp1 | lp1   | USD/DEC19 | 10000000000       | 0.001 | buy  | MID              | 2          | 1      | submission |
-            | lp1 | lp1   | USD/DEC19 | 10000000000       | 0.001 | sell | ASK              | 1          | 0      | submission |
-            | lp1 | lp1   | USD/DEC19 | 10000000000       | 0.001 | sell | MID              | 2          | 1      | submission |
-
+            | id  | party | market id | commitment amount | fee   | lp type    |
+            | lp1 | lp1   | USD/DEC19 | 10000000000       | 0.001 | submission |
+            | lp1 | lp1   | USD/DEC19 | 10000000000       | 0.001 | submission |
+            | lp1 | lp1   | USD/DEC19 | 10000000000       | 0.001 | submission |
+            | lp1 | lp1   | USD/DEC19 | 10000000000       | 0.001 | submission |
+        And the parties place the following pegged iceberg orders:
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+            | lp1    | USD/DEC19 | 2         | 1                    | buy  | BID              | 1          | 0      |
+            | lp1    | USD/DEC19 | 2         | 1                    | buy  | MID              | 2          | 1      |
+            | lp1    | USD/DEC19 | 2         | 1                    | sell | ASK              | 1          | 0      |
+            | lp1    | USD/DEC19 | 2         | 1                    | sell | MID              | 2          | 1      |
+    
         Then the parties place the following orders:
             | party  | market id | side | volume | price   | resulting trades | type       | tif     |
             | party1 | USD/DEC19 | buy  | 10000  | 999999  | 0                | TYPE_LIMIT | TIF_GTC |

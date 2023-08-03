@@ -894,7 +894,6 @@ type Market struct {
 	OpeningAuction                *AuctionDuration
 	PriceMonitoringSettings       *PriceMonitoringSettings
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
-	LPPriceRange                  num.Decimal
 	LinearSlippageFactor          num.Decimal
 	QuadraticSlippageFactor       num.Decimal
 	LiquiditySLAParams            *LiquiditySLAParams
@@ -907,13 +906,13 @@ type Market struct {
 }
 
 func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
-	lppr, _ := num.DecimalFromString(mkt.LpPriceRange)
 	linearSlippageFactor, _ := num.DecimalFromString(mkt.LinearSlippageFactor)
 	quadraticSlippageFactor, _ := num.DecimalFromString(mkt.QuadraticSlippageFactor)
 	liquidityParameters, err := LiquidityMonitoringParametersFromProto(mkt.LiquidityMonitoringParameters)
 	if err != nil {
 		return nil, err
 	}
+
 	insFraction := num.DecimalZero()
 	if mkt.InsurancePoolFraction != nil && len(*mkt.InsurancePoolFraction) > 0 {
 		insFraction = num.MustDecimalFromString(*mkt.InsurancePoolFraction)
@@ -931,11 +930,11 @@ func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
 		Fees:                          FeesFromProto(mkt.Fees),
 		OpeningAuction:                AuctionDurationFromProto(mkt.OpeningAuction),
 		PriceMonitoringSettings:       PriceMonitoringSettingsFromProto(mkt.PriceMonitoringSettings),
+		LiquiditySLAParams:            LiquiditySLAParamsFromProto(mkt.LiquiditySlaParams),
 		LiquidityMonitoringParameters: liquidityParameters,
 		TradingMode:                   mkt.TradingMode,
 		State:                         mkt.State,
 		MarketTimestamps:              MarketTimestampsFromProto(mkt.MarketTimestamps),
-		LPPriceRange:                  lppr,
 		LinearSlippageFactor:          linearSlippageFactor,
 		QuadraticSlippageFactor:       quadraticSlippageFactor,
 		ParentMarketID:                parent,
@@ -1000,7 +999,6 @@ func (m Market) IntoProto() *vegapb.Market {
 		TradingMode:                   m.TradingMode,
 		State:                         m.State,
 		MarketTimestamps:              mktTS,
-		LpPriceRange:                  m.LPPriceRange.String(),
 		LiquiditySlaParams:            lpSLA,
 		LinearSlippageFactor:          m.LinearSlippageFactor.String(),
 		QuadraticSlippageFactor:       m.QuadraticSlippageFactor.String(),
@@ -1052,7 +1050,6 @@ func (m Market) DeepClone() *Market {
 		PositionDecimalPlaces:   m.PositionDecimalPlaces,
 		TradingMode:             m.TradingMode,
 		State:                   m.State,
-		LPPriceRange:            m.LPPriceRange,
 		LinearSlippageFactor:    m.LinearSlippageFactor,
 		QuadraticSlippageFactor: m.QuadraticSlippageFactor,
 		ParentMarketID:          m.ParentMarketID,
@@ -1083,6 +1080,10 @@ func (m Market) DeepClone() *Market {
 		cpy.LiquidityMonitoringParameters = m.LiquidityMonitoringParameters.DeepClone()
 	}
 
+	if m.LiquiditySLAParams != nil {
+		cpy.LiquiditySLAParams = m.LiquiditySLAParams.DeepClone()
+	}
+
 	if m.MarketTimestamps != nil {
 		cpy.MarketTimestamps = m.MarketTimestamps.DeepClone()
 	}
@@ -1100,7 +1101,6 @@ func toPtr[T any](t T) *T { return &t }
 type MarketCounters struct {
 	StopOrderCounter    uint64
 	PeggedOrderCounter  uint64
-	LPShapeCount        uint64
 	PositionCount       uint64
 	OrderbookLevelCount uint64
 }

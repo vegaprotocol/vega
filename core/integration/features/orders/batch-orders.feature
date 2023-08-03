@@ -22,8 +22,8 @@ Feature: Iceberg orders
       | property           | type         | binding             |
       | trading.terminated | TYPE_BOOLEAN | trading termination |
     Given the markets:
-      | id        | quote name | asset | risk model             | margin calculator   | auction duration | fees         | price monitoring   | data source config | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | ethDec19Oracle     | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model             | margin calculator   | auction duration | fees         | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | ethDec19Oracle     | 1e6                    | 1e6                       | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -46,10 +46,14 @@ Feature: Iceberg orders
       | lpprov | USD   | 90000000   |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
+ 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |

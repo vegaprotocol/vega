@@ -35,11 +35,10 @@ Feature: Simple example of successor markets
       | market.fee.factors.infrastructureFee          | 0.001 |
       | market.fee.factors.makerFee                   | 0.004 |
       | market.value.windowLength                     | 60s   |
-      | market.liquidity.bondPenaltyParameter         | 0.1   |
-      | market.liquidityProvision.shapes.maxSize      | 10    |
+      | market.liquidityV2.bondPenaltyParameter       | 0.1   |
       | validators.epoch.length                       | 5s    |
-      | market.liquidity.stakeToCcyVolume             | 0.2   |
-      | market.liquidity.successorLaunchWindowLength | 10s |
+      | market.liquidityV2.stakeToCcyVolume           | 0.2   |
+      | market.liquidity.successorLaunchWindowLength  | 10s   |
     And the average block duration is "1"
 
 
@@ -58,13 +57,13 @@ Feature: Simple example of successor markets
   @SuccessorMarketExpires
   Scenario: 0081-SUCM-007 Enact a successor market once the parent market is settled, and the succession window has expired
     Given the markets:
-      | id        | quote name | asset | risk model            | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction |
-      | ETH/DEC19 | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | ethDec19Oracle         | 0.1                    | 0                         | 5              | 5                       |                  |                         |                   |
-      | ETH/DEC20 | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 5              | 5                       | ETH/DEC19        | 1                       | 10                |
+      | id        | quote name | asset | risk model            | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params      |
+      | ETH/DEC19 | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | ethDec19Oracle         | 0.1                    | 0                         | 5              | 5                       |                  |                         |                   | default-futures |
+      | ETH/DEC20 | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 5              | 5                       | ETH/DEC19        | 1                       | 10                | default-futures |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | buy  | BID              | 2          | 1      | submission |
-      | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | sell | ASK              | 13         | 1      | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | submission |
     And the parties place the following orders:
       | party   | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 5      | 1001   | 0                | TYPE_LIMIT | TIF_GTC | t1-b-1    |
@@ -92,9 +91,9 @@ Feature: Simple example of successor markets
       | trading.terminated | true  |
       | prices.ETH.value   | 975   |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC20 | 1905000000000000  | 0.1 | buy  | BID              | 2          | 1      | submission |
-      | lp1 | lpprov | ETH/DEC20 | 1905000000000000  | 0.1 | sell | ASK              | 13         | 1      | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 1905000000000000  | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC20 | 1905000000000000  | 0.1 | submission |
     Then the market state should be "STATE_SETTLED" for the market "ETH/DEC19"
 
     # enactment timestamp

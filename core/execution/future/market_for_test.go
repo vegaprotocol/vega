@@ -87,7 +87,7 @@ func (m *Market) GetLPSCount() int {
 
 // Return the state of the LP submission for the given partyID.
 func (m *Market) GetLPSState(partyID string) types.LiquidityProvisionStatus {
-	lps := m.liquidity.LiquidityProvisionByPartyID(partyID)
+	lps := m.liquidityEngine.LiquidityProvisionByPartyID(partyID)
 
 	if lps != nil {
 		return lps.Status

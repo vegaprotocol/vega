@@ -39,14 +39,15 @@ Feature: test risk model parameter change in margin calculation
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | market.liquidityV2.bondPenaltyParameter       | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
+      | limits.markets.maxPeggedOrders                | 8     |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/MAR21 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-2 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/MAR23 | ETH        | USD   | log-normal-risk-model-3 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/MAR24 | ETH        | USD   | log-normal-risk-model-4 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/MAR21 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-2 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR23 | ETH        | USD   | log-normal-risk-model-3 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR24 | ETH        | USD   | log-normal-risk-model-4 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
 
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
@@ -60,16 +61,26 @@ Feature: test risk model parameter change in margin calculation
     Given the average block duration is "1"
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/MAR21 | 50000             | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp1 | party0 | ETH/MAR21 | 50000             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
-      | lp2 | party0 | ETH/MAR22 | 50000             | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp2 | party0 | ETH/MAR22 | 50000             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
-      | lp3 | party0 | ETH/MAR23 | 50000             | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp3 | party0 | ETH/MAR23 | 50000             | 0.001 | buy  | BID              | 500        | 20     | submission |
-      | lp4 | party0 | ETH/MAR24 | 50000             | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp4 | party0 | ETH/MAR24 | 50000             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
-
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/MAR21 | 50000             | 0.001 | submission |
+      | lp1 | party0 | ETH/MAR21 | 50000             | 0.001 | amendment  |
+      | lp2 | party0 | ETH/MAR22 | 50000             | 0.001 | submission |
+      | lp2 | party0 | ETH/MAR22 | 50000             | 0.001 | amendment  |
+      | lp3 | party0 | ETH/MAR23 | 50000             | 0.001 | submission |
+      | lp3 | party0 | ETH/MAR23 | 50000             | 0.001 | submission |
+      | lp4 | party0 | ETH/MAR24 | 50000             | 0.001 | submission |
+      | lp4 | party0 | ETH/MAR24 | 50000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/MAR21 | 2         | 1                    | sell | ASK              | 500        | 20     |
+      | party0 | ETH/MAR21 | 2         | 1                    | buy  | BID              | 500        | 20     |
+      | party0 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 20     |
+      | party0 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 20     |
+      | party0 | ETH/MAR23 | 2         | 1                    | sell | ASK              | 500        | 20     |
+      | party0 | ETH/MAR23 | 2         | 1                    | buy  | BID              | 500        | 20     |
+      | party0 | ETH/MAR24 | 2         | 1                    | sell | ASK              | 500        | 20     |
+      | party0 | ETH/MAR24 | 2         | 1                    | buy  | BID              | 500        | 20     |
+ 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-11  |

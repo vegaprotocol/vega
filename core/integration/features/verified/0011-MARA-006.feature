@@ -14,13 +14,14 @@ Feature: check margin account with partially filled order
       | 3600    | 0.99        | 300               |
 
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring  | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC20 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | default-none      | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/DEC21 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | price-monitoring-1| default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring  | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC20 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | default-none      | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC21 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | price-monitoring-1| default-eth-for-future | 1e6                    | 1e6                       | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
   And the average block duration is "1"
 
   Scenario: 001 If an order is partially filled and if this leads to a reduced position and reduced riskiest long / short then the margin requirements are seen to be reduced and if margin balance is above release level then the excess amount is transferred to the general account.0011-MARA-006. 0011-MARA-008
@@ -34,9 +35,13 @@ Feature: check margin account with partially filled order
       | lprov       | USD   | 1000000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp0 | lprov | ETH/DEC20 | 100000            | 0.001 | sell | ASK              | 100        | 55     | submission |
-      | lp0 | lprov | ETH/DEC20 | 100000            | 0.001 | buy  | BID              | 100        | 55     | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp0 | lprov | ETH/DEC20 | 100000            | 0.001 | submission |
+      | lp0 | lprov | ETH/DEC20 | 100000            | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lprov | ETH/DEC20 | 2         | 1                    | sell | ASK              | 100        | 55     |
+      | lprov | ETH/DEC20 | 2         | 1                    | buy  | BID              | 100        | 55     |
 
     Then the parties place the following orders:
       | party      | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -112,9 +117,13 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | lprov       | USD   | 1000000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp0 | lprov | ETH/DEC20 | 100000            | 0.001 | sell | ASK              | 100        | 55     | submission |
-      | lp0 | lprov | ETH/DEC20 | 100000            | 0.001 | buy  | BID              | 100        | 55     | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp0 | lprov | ETH/DEC20 | 100000            | 0.001 | submission |
+      | lp0 | lprov | ETH/DEC20 | 100000            | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lprov | ETH/DEC20 | 2         | 1                    | sell | ASK              | 100        | 55     |
+      | lprov | ETH/DEC20 | 2         | 1                    | buy  | BID              | 100        | 55     |
 
     Then the parties place the following orders:
       | party      | market id | side | volume | price | resulting trades | type       | tif     | expires in |
@@ -266,10 +275,14 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | lprov       | USD   | 1000000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp0 | lprov | ETH/DEC21 | 100000            | 0.001 | sell | ASK              | 100        | 55     | submission |
-      | lp0 | lprov | ETH/DEC21 | 100000            | 0.001 | buy  | BID              | 100        | 55     | amendment  |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp0 | lprov | ETH/DEC21 | 100000            | 0.001 | submission |
+      | lp0 | lprov | ETH/DEC21 | 100000            | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lprov | ETH/DEC21 | 2         | 1                    | sell | ASK              | 100        | 55     |
+      | lprov | ETH/DEC21 | 2         | 1                    | buy  | BID              | 100        | 55     |
+ 
     Then the parties place the following orders:
       | party      | market id | side | volume | price | resulting trades | type       | tif     | 
       | auxiliary2 | ETH/DEC21 | buy  | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC | 
