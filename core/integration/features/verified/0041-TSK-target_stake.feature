@@ -41,6 +41,7 @@ Feature: Target stake
       | tt_3  | BTC   | 100000000 |
       | tt_4  | BTC   | 100000000 |
 
+  @NoPerp
   Scenario: Max open interest changes over time (0041-TSTK-002, 0041-TSTK-003, 0042-LIQF-007)
 
     Given the liquidity monitoring parameters:
@@ -191,6 +192,7 @@ Feature: Target stake
       | 110        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 0            | 2000           | 0             |
     And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
 
+  @NoPerp
   Scenario: Max open interest changes over time, testing change of timewindow (0041-TSTK-001; 0041-TSTK-004; 0041-TSTK-005)
 
     Given the liquidity monitoring parameters:
@@ -283,6 +285,7 @@ Feature: Target stake
     # target_stake = 110 x (140+30) x 170 x 1 x 0.1=1870
     And the target stake should be "1870" for the market "ETH/DEC21"
 
+  @NoPerp
   Scenario: Target stake is calculate correctly during auction in presence of wash trades
 
     Given the liquidity monitoring parameters:
@@ -331,6 +334,7 @@ Feature: Target stake
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 110        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 550          | 2000           | 50            |
 
+  @NoPerp
   Scenario: Target stake can drop during auction
 
     Given the liquidity monitoring parameters:

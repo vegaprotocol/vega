@@ -879,7 +879,7 @@ func (m MarketData) String() string {
 type MarketType uint32
 
 const (
-	MarketTypeUnset MarketType = iota
+	MarketTypeUnspecified MarketType = iota
 	MarketTypeFuture
 	MarketTypeSpot
 	MarketTypePerp
@@ -1042,7 +1042,7 @@ func (m Market) MarketType() MarketType {
 		return MarketTypePerp
 	}
 
-	return MarketTypeUnset
+	return MarketTypeUnspecified
 }
 
 func (m Market) DeepClone() *Market {

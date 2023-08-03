@@ -37,7 +37,8 @@ var (
 		Format: "progress",
 	}
 
-	features string
+	perpsSwap bool
+	features  string
 
 	expectingEventsOverStepText = `there were "([0-9]+)" events emitted over the last step`
 )
@@ -45,6 +46,7 @@ var (
 func init() {
 	godog.BindFlags("godog.", flag.CommandLine, &gdOpts)
 	flag.StringVar(&features, "features", "", "a coma separated list of paths to the feature files")
+	flag.BoolVar(&perpsSwap, "perps", false, "Runs all tests swapping out the default futures oracles for their corresponding perps oracle")
 }
 
 func TestMain(m *testing.M) {
@@ -54,6 +56,10 @@ func TestMain(m *testing.M) {
 	if testing.Short() {
 		log.Print("Skipping core integration tests, go test run with -short")
 		return
+	}
+	if perpsSwap {
+		marketConfig.OracleConfigs.SwapToPerps()
+		gdOpts.Tags += " ~NoPerp"
 	}
 
 	status := godog.TestSuite{
@@ -139,6 +145,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^the settlement data decimals for the oracle named "([^"]*)" is given in "([^"]*)" decimal places$`, func(name, decimals string) error {
 		return steps.OracleSpecSettlementDataDecimals(marketConfig, name, decimals)
+	})
+	s.Step(`^the perpetual oracles from "([^"]+)":`, func(signers string, table *godog.Table) error {
+		return steps.ThePerpsOracleSpec(marketConfig, signers, table)
 	})
 	s.Step(`the price monitoring named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.ThePriceMonitoring(marketConfig, name, table)
@@ -305,7 +314,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.MarketOpeningAuctionPeriodEnds(execsetup.executionEngine, execsetup.timeService, execsetup.markets, marketID)
 	})
 	s.Step(`^the oracles broadcast data signed with "([^"]*)":$`, func(pubKeys string, properties *godog.Table) error {
-		return steps.OraclesBroadcastDataSignedWithKeys(execsetup.oracleEngine, pubKeys, properties)
+		return steps.OraclesBroadcastDataSignedWithKeys(execsetup.oracleEngine, execsetup.timeService, pubKeys, properties)
+	})
+	s.Step(`^the oracles broadcast data with block time signed with "([^"]*)":$`, func(pubKeys string, properties *godog.Table) error {
+		return steps.OraclesBroadcastDataWithBlockTimeSignedWithKeys(execsetup.oracleEngine, execsetup.timeService, pubKeys, properties)
 	})
 	s.Step(`^the following LP events should be emitted:$`, func(table *godog.Table) error {
 		return steps.TheFollowingLPEventsShouldBeEmitted(execsetup.broker, table)

@@ -1,0 +1,81 @@
+{
+  "settlementAsset": "ETH",
+  "quoteName": "ETH",
+  "marginFundingFactor": "0",
+  "interestRate": "0",
+  "clampLowerBound": "0",
+  "clampUpperBound": "0",
+  "dataSourceSpecForSettlementData": {
+    "id": "1",
+    "createdAt": "0",
+    "updatedAt": "0",
+    "data": {
+      "external": {
+        "oracle": {
+          "signers": [
+            {
+              "pubKey": {
+                "key": "0xDEADBEEF"
+              }
+            },
+            {
+              "pubKey": {
+                "key": "0xCAFEDOOD"
+              }
+            }
+          ],
+          "filters": [
+            {
+              "key": {
+                "name": "prices.ETH.value",
+                "type": "TYPE_INTEGER",
+                "numberDecimalPlaces": "2"
+              },
+              "conditions": [
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "status": "STATUS_UNSPECIFIED"
+  },
+  "dataSourceSpecForSettlementSchedule": {
+    "id": "2",
+    "createdAt": "0",
+    "updatedAt": "0",
+    "data": {
+      "external": {
+        "oracle": {
+          "signers": [
+            {
+              "pubKey": {
+                "key": "0xDEADBEEF"
+              }
+            },
+            {
+              "pubKey": {
+                "key": "0xCAFEDOOD"
+              }
+            }
+          ],
+          "filters": [
+            {
+              "key": {
+                "name": "funding.ETH.period",
+                "type": "TYPE_TIMESTAMP"
+              },
+              "conditions": [
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "status": "STATUS_UNSPECIFIED"
+  },
+  "dataSourceSpecBinding": {
+    "settlementDataProperty": "prices.ETH.value",
+    "settlementScheduleProperty": "funding.ETH.period"
+  }
+}
