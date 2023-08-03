@@ -219,7 +219,7 @@ pipeline {
                         }
                     }
                 }
-                stage('core/integration tests') {
+                stage('core/integration perps tests') {
                     options { retry(3) }
                     steps {
                         dir('vega/core/integration') {
