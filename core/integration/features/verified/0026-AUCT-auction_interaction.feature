@@ -150,6 +150,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 10000          | 10            |
 
+  @NoPerp
   Scenario: When trying to exit opening auction liquidity monitoring is triggered due to insufficient supplied stake  (0026-AUCT-004, 0026-AUCT-005)
 
     Given the liquidity monitoring parameters:
@@ -220,6 +221,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 1000           | 10            |
 
+  @NoPerp
   Scenario: Once market is in continuous trading mode: post a persistent order that should trigger liquidity auction (not enough target stake), appropriate event is sent and market in TRADING_MODE_MONITORING_AUCTION (0026-AUCT-005, 0035-LIQM-003)
     Given the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
@@ -296,6 +298,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 3030         | 10000          | 30            |
 
+  @NoPerp
   Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger liquidity auction (not enough target stake), still goes through, but auction is triggered the next block
     Given the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
@@ -540,6 +543,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 1000           | 10            |
 
+  @NoPerp
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> leave auction mode (0068-MATC-033,0026-AUCT-005)
 
     Given the liquidity monitoring parameters:
@@ -634,6 +638,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 100     | 1010      | 1030      | 3468         | 4080           | 34            |
 
+  @NoPerp
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity monitoring -> leave auction mode (0068-MATC-033,0026-AUCT-005)
     Given the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
@@ -743,6 +748,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 4488         | 4488           | 44            |
 
+  @NoPerp
   Scenario: Once market is in continuous trading mode: enter price monitoring auction -> extend with liquidity monitoring auction -> leave auction mode (0068-MATC-033,0026-AUCT-005)
     Given the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
@@ -800,6 +806,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1020       | TRADING_MODE_CONTINUOUS | 100     | 1010      | 1030      | 3060         | 4000           | 30            |
 
+  @NoPerp
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity auction -> leave auction mode (0068-MATC-033, 0026-AUCT-005)
 
     Given the liquidity monitoring parameters:

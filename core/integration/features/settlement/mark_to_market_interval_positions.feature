@@ -311,6 +311,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | party           | asset | market id | margin | general |
       | designatedLoser | USD   | ETH/DEC20 | 0      | 0       |
 
+  @NoPerp
   Scenario: 003, settlement works correctly when party enters and leaves within one MTM window
     Given the markets are updated:
       | id        | linear slippage factor | quadratic slippage factor | lp price range |

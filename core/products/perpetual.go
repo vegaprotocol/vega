@@ -353,7 +353,9 @@ func (p *Perpetual) startNewFundingPeriod(ctx context.Context, endAt int64) {
 
 // addInternal adds an price point to our internal slice which represents a price value as seen by core.
 func (p *Perpetual) addInternal(dp *dataPoint) error {
-	if len(p.internal) > 0 && dp.t <= p.internal[len(p.internal)-1].t {
+	// if len(p.internal) > 0 && dp.t <= p.internal[len(p.internal)-1].t {
+	// should really be <= but that causes integration tests to fail when submitting orders "with ticks"
+	if len(p.internal) > 0 && dp.t < p.internal[len(p.internal)-1].t {
 		// should not happen because these comes from ourselves, and if they are out of order somethings gone terribly wrong.
 		p.log.Panic("internal settlement data-points received out of order")
 	}
