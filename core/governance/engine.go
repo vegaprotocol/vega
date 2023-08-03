@@ -595,7 +595,7 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 		closeTime := time.Unix(p.Terms.ClosingTimestamp, 0)
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 		auctionDuration := enactTime.Sub(closeTime)
-		if perr, err := validateNewMarketChange(newMarket, e.assets, true, e.netp, auctionDuration, enct, parent, now); err != nil {
+		if perr, err := validateNewMarketChange(newMarket, e.assets, true, e.netp, auctionDuration, enct, parent, now, restore); err != nil {
 			e.rejectProposal(ctx, p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
 		}
@@ -985,7 +985,7 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 			}
 			parent = &pm
 		}
-		return validateNewMarketChange(newMarket, e.assets, true, e.netp, enactTime.Sub(closeTime), enct, parent, e.timeService.GetTimeNow())
+		return validateNewMarketChange(newMarket, e.assets, true, e.netp, enactTime.Sub(closeTime), enct, parent, e.timeService.GetTimeNow(), false)
 	case types.ProposalTermsTypeUpdateMarket:
 		enct.shouldNotVerify = true
 		return validateUpdateMarketChange(terms.GetUpdateMarket(), enct, e.timeService.GetTimeNow())
