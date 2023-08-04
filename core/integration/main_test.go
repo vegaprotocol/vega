@@ -327,6 +327,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.PartiesPlaceTheFollowingPeggedIcebergOrders(execsetup.executionEngine, execsetup.timeService, table)
 	})
 
+	s.Step(`^the parties amend the following pegged iceberg orders:$`, func(table *godog.Table) error {
+		return steps.PartiesAmendTheFollowingPeggedIcebergOrders(execsetup.broker, execsetup.executionEngine, execsetup.timeService, table)
+	})
+
 	s.Step(`^the iceberg orders should have the following states:$`, func(table *godog.Table) error {
 		return steps.TheIcebergOrdersShouldHaveTheFollowingStates(execsetup.broker, table)
 	})
@@ -519,7 +523,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		steps.DebugLastNEvents(eventCounter, execsetup.broker, execsetup.log)
 		return nil
 	})
-
+	s.Step(`^debug network parameter "([^"]*)"$`, func(name string) error {
+		return steps.DebugNetworkParameter(execsetup.log, execsetup.netParams, name)
+	})
 	// Event steps
 	s.Step(`^clear all events$`, func() error {
 		steps.ClearAllEvents(execsetup.broker)
