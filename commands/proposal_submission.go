@@ -1516,8 +1516,8 @@ func checkSLAParams(config *protoTypes.LiquiditySLAParameters, parent string) Er
 		errs.AddForProperty(fmt.Sprintf("%s.commitment_min_time_fraction", parent), ErrMustBeWithinRange01)
 	}
 
-	if config.ProvidersFeeCalculationTimeStep == 0 {
-		errs.AddForProperty(fmt.Sprintf("%s.providers.fee.calculation_time_step", parent), ErrMustBePositive)
+	if config.ProvidersFeeCalculationTimeStep < 0 {
+		errs.AddForProperty(fmt.Sprintf("%s.providers.fee.calculation_time_step", parent), ErrMustBePositiveOrZero)
 	}
 
 	slaCompetitionFactor, err := num.DecimalFromString(config.SlaCompetitionFactor)
