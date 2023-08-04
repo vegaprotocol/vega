@@ -286,6 +286,13 @@ func (p *Perpetual) receiveSettlementCue(ctx context.Context, data dscommon.Data
 
 // handleSettlementCue will be hooked up as a subscriber to the oracle data for the notification that the settlement period has ended.
 func (p *Perpetual) handleSettlementCue(ctx context.Context, t int64) {
+	if !p.readyForData() {
+		if p.log.GetLevel() == logging.DebugLevel {
+			p.log.Debug("first funding period not started -- ignoring settlement-cue")
+		}
+		return
+	}
+
 	if !p.haveData(t) {
 		// we have no points so we just start a new interval
 		p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t), nil, nil, nil, nil))
