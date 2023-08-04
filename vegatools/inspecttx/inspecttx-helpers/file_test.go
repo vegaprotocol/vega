@@ -22,12 +22,12 @@ func TestGetFilesInDirectoryRetrievesAllFiles(t *testing.T) {
 		filePaths = append(filePaths, filePath)
 	}
 
-	retrievedFiles, err := getFilesInDirectory(tmpDir)
-	assert.NoError(t, err, "getFilesInDirectory failed")
-	assert.Len(t, retrievedFiles, len(testFiles), "getFilesInDirectory returned incorrect number of files")
+	retrievedFiles, err := GetFilesInDirectory(tmpDir)
+	assert.NoError(t, err, "GetFilesInDirectory failed")
+	assert.Len(t, retrievedFiles, len(testFiles), "GetFilesInDirectory returned incorrect number of files")
 
 	for _, filePath := range filePaths {
-		assert.Contains(t, retrievedFiles, filePath, "getFilesInDirectory did not return expected file")
+		assert.Contains(t, retrievedFiles, filePath, "GetFilesInDirectory did not return expected file")
 	}
 }
 
@@ -39,23 +39,24 @@ func TestGetTransactionDataFromFileReturnsValidTransactionData(t *testing.T) {
 	testData := `{"Transaction": {"field1": "value1"}, "InputData": {"field2": "value2"}, "EncodedData": "base64data"}`
 	_, err = tmpFile.WriteString(testData)
 	assert.NoErrorf(t, err, "failed to write test data to file: %v", err)
-	tmpFile.Close()
+	err = tmpFile.Close()
+	assert.NoErrorf(t, err, "error occurred when closing file: %v", err)
 
-	transactionData, err := getTransactionDataFromFile(tmpFile.Name())
-	assert.NoError(t, err, "getTransactionDataFromFile failed")
+	transactionData, err := GetTransactionDataFromFile(tmpFile.Name())
+	assert.NoError(t, err, "GetTransactionDataFromFile failed")
 
 	var expectedData TransactionData
 	err = json.Unmarshal([]byte(testData), &expectedData)
 	assert.NoError(t, err, "failed to unmarshal expected data")
 
-	assert.Equal(t, string(expectedData.Transaction), string(transactionData.Transaction), "getTransactionDataFromFile returned incorrect Transaction data")
-	assert.Equal(t, string(expectedData.InputData), string(transactionData.InputData), "getTransactionDataFromFile returned incorrect InputData")
-	assert.Equal(t, expectedData.EncodedData, transactionData.EncodedData, "getTransactionDataFromFile returned incorrect EncodedData")
+	assert.Equal(t, string(expectedData.Transaction), string(transactionData.Transaction), "GetTransactionDataFromFile returned incorrect Transaction data")
+	assert.Equal(t, string(expectedData.InputData), string(transactionData.InputData), "GetTransactionDataFromFile returned incorrect InputData")
+	assert.Equal(t, expectedData.EncodedData, transactionData.EncodedData, "GetTransactionDataFromFile returned incorrect EncodedData")
 }
 
 func TestTrimExtensionFromCurrentFileName(t *testing.T) {
-	currentFile = "/path/to/somefile.json"
-	trimmedFileName := trimExtensionFromCurrentFileName()
+	file := "/path/to/somefile.json"
+	trimmedFileName := trimExtensionFromFileName(file)
 
 	expectedTrimmedFileName := "somefile"
 	assert.Equal(t, expectedTrimmedFileName, trimmedFileName, "trimExtensionFromCurrentFileName returned incorrect trimmed file name")

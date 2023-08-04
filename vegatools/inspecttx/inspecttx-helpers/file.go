@@ -22,7 +22,7 @@ const (
 	Transaction DiffType = "Transaction"
 )
 
-func getFilesInDirectory(directory string) ([]string, error) {
+func GetFilesInDirectory(directory string) ([]string, error) {
 	files, err := os.Open(directory)
 	if err != nil {
 		return nil, fmt.Errorf("error occurred when attempting to open the given directory. \nerr: %w", err)
@@ -48,7 +48,7 @@ func getFilesInDirectory(directory string) ([]string, error) {
 	return transactionFiles, nil
 }
 
-func getTransactionDataFromFile(filePath string) (TransactionData, error) {
+func GetTransactionDataFromFile(filePath string) (TransactionData, error) {
 	fileContents, err := os.ReadFile(filePath)
 	if err != nil {
 		return TransactionData{}, fmt.Errorf("error reading file at %s. \nerr: %w", filePath, err)
@@ -63,12 +63,12 @@ func getTransactionDataFromFile(filePath string) (TransactionData, error) {
 	return transactionData, nil
 }
 
-func trimExtensionFromCurrentFileName() string {
-	dotIndex := strings.Index(currentFile, ".")
-	lastSlashIndex := strings.LastIndex(currentFile, "/")
-	trimmedFileName := currentFile
+func trimExtensionFromFileName(file string) string {
+	dotIndex := strings.Index(file, ".")
+	lastSlashIndex := strings.LastIndex(file, "/")
+	trimmedFileName := file
 	if dotIndex != -1 {
-		trimmedFileName = currentFile[lastSlashIndex+1 : dotIndex]
+		trimmedFileName = file[lastSlashIndex+1 : dotIndex]
 	}
 
 	return trimmedFileName
@@ -82,26 +82,42 @@ func writeToFile(filePath string, data []byte, fileMode os.FileMode) error {
 	return nil
 }
 
-func writeDiffToFile(diffData ComparableJson, html string) error {
-	marshalledDiffData, err := json.MarshalIndent(diffData, " ", "	")
+func WriteDiffsToFile(currentTransactionFile string, diffOutputDir string, result Result) error {
+	if result.Match == true {
+		return fmt.Errorf("result data shows results match. should not need to write diffs to file")
+	}
+
+	if result.TransactionJson.CoreJson != nil {
+		return writeDiffToFile(currentTransactionFile, diffOutputDir, result.TransactionJson, result.TransactionHtmlDiff)
+	}
+
+	if result.InputDataJson.CoreJson != nil {
+		return writeDiffToFile(currentTransactionFile, diffOutputDir, result.InputDataJson, result.InputDataHtmlDiff)
+	}
+
+	return fmt.Errorf("did not write any diffs to file, check the result struct is being set correctly")
+}
+
+func writeDiffToFile(currentTransactionFile string, diffOutputDir string, coreVsOriginalJson ComparableJson, htmlDiff string) error {
+	marshalledDiffData, err := json.MarshalIndent(coreVsOriginalJson, " ", "	")
 	if err != nil {
 		return fmt.Errorf("error marshalling diffs to json when preparing to write diffs to file. \nerr: %v", err)
 	}
 
-	folderName := trimExtensionFromCurrentFileName()
-	filePath := path.Join(diffOutputDirectory, folderName)
+	folderName := trimExtensionFromFileName(currentTransactionFile)
+	filePath := path.Join(diffOutputDir, folderName)
 
 	if err := os.MkdirAll(filePath, 0o755); err != nil {
 		return fmt.Errorf("error creating directory for diff files. \nerr: %v", err)
 	}
 
-	jsonFileName := fmt.Sprintf("%s-tocompare.json", string(diffData.DiffType))
+	jsonFileName := fmt.Sprintf("%s-tocompare.json", string(coreVsOriginalJson.DiffType))
 	if err := writeToFile(path.Join(filePath, jsonFileName), marshalledDiffData, 0o644); err != nil {
 		return fmt.Errorf("error when attempting to write diffs to JSON file.\nerr: %v", err)
 	}
 
-	htmlFileName := fmt.Sprintf("%s-diff.html", string(diffData.DiffType))
-	if err := writeToFile(path.Join(filePath, htmlFileName), []byte(html), 0o644); err != nil {
+	htmlFileName := fmt.Sprintf("%s-diff.html", string(coreVsOriginalJson.DiffType))
+	if err := writeToFile(path.Join(filePath, htmlFileName), []byte(htmlDiff), 0o644); err != nil {
 		return fmt.Errorf("error when attempting to write diffs to HTML file.\nerr: %v", err)
 	}
 

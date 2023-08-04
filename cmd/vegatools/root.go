@@ -16,6 +16,7 @@ type RootCmd struct {
 	Snapshot   snapshotCmd   `command:"snapshot"   description:"Display information about saved snapshots"`
 	Checkpoint checkpointCmd `command:"checkpoint" description:"Make checkpoint human-readable, or generate checkpoint from human readable format"`
 	Stream     streamCmd     `command:"stream"     description:"Stream events from vega node"`
+	CheckTx    checkTxCmd    `command:"checktx"     description:"Decode transactions from created from a dependent app, check vegas decoded transaction matches your apps transaction"`
 }
 
 var rootCmd RootCmd
@@ -25,6 +26,7 @@ func VegaTools(ctx context.Context, parser *flags.Parser) error {
 		Snapshot:   snapshotCmd{},
 		Checkpoint: checkpointCmd{},
 		Stream:     streamCmd{},
+		CheckTx:    checkTxCmd{},
 	}
 
 	var (
