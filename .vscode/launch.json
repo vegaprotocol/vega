@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug .feature test",
+            "name": "Debug scenario",
             "type": "go",
             "request": "launch",
             "mode": "test",
@@ -11,23 +11,8 @@
             "args": [
                 "--godog.format",
                 "pretty",
-                "-test.run",
-                "${workspaceFolder}/core/integration/features/settlement/settlement_at_expiry.feature"
+                "${workspaceFolder}/core/integration/features/liquidity-provision/margin-release-cancel.feature:23"
             ]
         },
-        {
-            "name": "Debug single Scenario in .feature test",
-            "type": "go",
-            "request": "launch",
-            "mode": "test",
-            "program": "${workspaceFolder}/core/integration/main_test.go",
-            "_comment": "  * * *  change to your .feature file and specify line at which Scenario starts  * * *  ",
-            "args": [
-                "--godog.format",
-                "pretty",
-                "-test.run",
-                "${workspaceFolder}/core/integration/features/settlement/settlement_at_expiry.feature:23"
-            ]
-        }
     ]
 }
