@@ -150,19 +150,21 @@ Feature: Simple example of successor markets
       | trading.terminated | true  |
     And the parties should have the following account balances:
       | party  | asset | market id | margin         | general                   | bond             |
-      | lpprov | ETH   | ETH/DEC19 | 53551477859983 | 9999999992231448522140017 | 3905000000000000 |
-      | lpprov | ETH   | ETH/DEC20 | 0              | 9999999992231448522140017 | 1905000000000000 |
-      | lpprov | ETH   | ETH/DEC21 | 0              | 9999999992231448522140017 | 1905000000000000 |
+      | lpprov | ETH | ETH/DEC19 | 0 | 9999999992285000000000000 | 3905000000000000 |
+      | lpprov | ETH | ETH/DEC20 | 0 | 9999999992285000000000000 | 1905000000000000 |
+      | lpprov | ETH | ETH/DEC21 | 0 | 9999999992285000000000000 | 1905000000000000 |
 
+    When the successor market "ETH/DEC20" is enacted
     When the successor market "ETH/DEC21" is enacted
     Then the network moves ahead "1" blocks
-    # The bond for market ETH/DEC20 should be released back to the general balance
+
     And the parties should have the following account balances:
       | party  | asset | market id | margin         | general                   | bond             |
-      | lpprov | ETH   | ETH/DEC19 | 53551477859983 | 9999999992231448522140017 | 3905000000000000 |
-      | lpprov | ETH   | ETH/DEC20 | 0              | 9999999992231448522140017 | 1905000000000000 |
-      | lpprov | ETH   | ETH/DEC21 | 0              | 9999999992231448522140017 | 1905000000000000 |
+      | lpprov | ETH | ETH/DEC19 | 0 | 9999999992285000000000000 | 3905000000000000 |
+      | lpprov | ETH | ETH/DEC20 | 0 | 9999999992285000000000000 | 1905000000000000 |
+      | lpprov | ETH | ETH/DEC21 | 0 | 9999999992285000000000000 | 1905000000000000 |
     Then the market state should be "STATE_PENDING" for the market "ETH/DEC20"
+    Then the market state should be "STATE_PENDING" for the market "ETH/DEC21"
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name             | value |
@@ -183,19 +185,14 @@ Feature: Simple example of successor markets
       | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 1905000000000000 | 5             |
 
     When the network moves ahead "1" blocks
-    # The bond for market ETH/DEC20 should be released back to the general balance
+#The bond for market ETH/DEC20 should be released back to the general balance
     Then the parties should have the following account balances:
       | party  | asset | market id | margin         | general                   | bond             |
-      | lpprov | ETH   | ETH/DEC19 | 0              | 9999999998068871464704366 | 0                |
-      | lpprov | ETH   | ETH/DEC20 | 0              | 9999999998068871464704366 | 0                |
-      | lpprov | ETH   | ETH/DEC21 | 26128535295634 | 9999999998068871464704366 | 1905000000000000 |
+      | lpprov | ETH | ETH/DEC19 | 0 | 9999999998095000000000000 | 0                |
+      | lpprov | ETH | ETH/DEC20 | 0 | 9999999998095000000000000 | 0                |
+      | lpprov | ETH | ETH/DEC21 | 0 | 9999999998095000000000000 | 1905000000000000 |
 
     And the last market state should be "STATE_REJECTED" for the market "ETH/DEC20"
-    And the parties should have the following account balances:
-      | party  | asset | market id | margin         | general                   | bond             |
-      | lpprov | ETH   | ETH/DEC19 | 0              | 9999999998068871464704366 | 0                |
-      | lpprov | ETH   | ETH/DEC20 | 0              | 9999999998068871464704366 | 0                |
-      | lpprov | ETH   | ETH/DEC21 | 26128535295634 | 9999999998068871464704366 | 1905000000000000 |
 
   @SuccessorMarketSimple
   Scenario: 003 Enact a successor market while the parent market is still in active state,
@@ -241,7 +238,7 @@ Feature: Simple example of successor markets
       | trader2 | ETH/DEC20 | sell | 5      | 1200   | 0                | TYPE_LIMIT | TIF_GTC | t2-s-1    |
       | trader2 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | t2-s-2    |
       | trader2 | ETH/DEC20 | sell | 5      | 951    | 0                | TYPE_LIMIT | TIF_GTC | t2-s-3    |
-    # time progresses some more, and leave auctio
+# time progresses some more, and leave auction
     When the opening auction period ends for market "ETH/DEC20"
     # successor market is enacted without issue
     Then the market data for the market "ETH/DEC20" should be:
@@ -251,8 +248,8 @@ Feature: Simple example of successor markets
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |
       | trading.terminated | true  |
-      | prices.ETH.value   | 975   |
-    # ensure the parent market is settled, but the successor market is still going
+      | prices.ETH.value | 975 |
+# #   # ensure the parent market is settled, but the successor market is still going
     Then the last market state should be "STATE_SETTLED" for the market "ETH/DEC19"
     And the last market state should be "STATE_ACTIVE" for the market "ETH/DEC20"
     And the market data for the market "ETH/DEC20" should be:
@@ -306,8 +303,8 @@ Feature: Simple example of successor markets
     #When a successor market is enacted (i.e. leaves the opening auction), all other related successor market proposals, in the state "pending" or "proposed", are automatically rejected. Any LP submissions associated with these proposals are cancelled, and the funds are released
     And the parties should have the following account balances:
       | party  | asset | market id | margin           | general                   | bond             |
-      | lpprov | ETH   | ETH/DEC20 | 2673529501825832 | 9999999991516470498174168 | 1905000000000000 |
-      | lpprov | ETH   | ETH/DEC21 | 0                | 9999999991516470498174168 | 0                |
+      | lpprov | ETH | ETH/DEC20 | 0 | 9999999994190000000000000 | 1905000000000000 |
+      | lpprov | ETH | ETH/DEC21 | 0 | 9999999994190000000000000 | 0                |
 
   @SuccessorMarketPanic
   Scenario: 005 Enacting a successor market rejects any other pending successors, same as scenario 2, but enact the older pending market
@@ -330,7 +327,8 @@ Feature: Simple example of successor markets
       | trader2 | ETH/DEC19 | sell | 5      | 1200   | 0                | TYPE_LIMIT | TIF_GTC | t2-s-1    |
       | trader2 | ETH/DEC19 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | t2-s-2    |
       | trader2 | ETH/DEC19 | sell | 5      | 951    | 0                | TYPE_LIMIT | TIF_GTC | t2-s-3    |
-    # Both successor markets should be pending
+# Both successor markets should be pending
+    Then the market state should be "STATE_PENDING" for the market "ETH/DEC19"
     Then the market state should be "STATE_PENDING" for the market "ETH/DEC20"
     And the market state should be "STATE_PENDING" for the market "ETH/DEC21"
     When the opening auction period ends for market "ETH/DEC19"
@@ -355,18 +353,18 @@ Feature: Simple example of successor markets
       | trading.terminated | true  |
     And the parties should have the following account balances:
       | party  | asset | market id | margin         | general                   | bond             |
-      | lpprov | ETH   | ETH/DEC19 | 53551477859983 | 9999999992231448522140017 | 3905000000000000 |
-      | lpprov | ETH   | ETH/DEC20 | 0              | 9999999992231448522140017 | 1905000000000000 |
-      | lpprov | ETH   | ETH/DEC21 | 0              | 9999999992231448522140017 | 1905000000000000 |
+      | lpprov | ETH | ETH/DEC19 | 0 | 9999999992285000000000000 | 3905000000000000 |
+      | lpprov | ETH | ETH/DEC20 | 0 | 9999999992285000000000000 | 1905000000000000 |
+      | lpprov | ETH | ETH/DEC21 | 0 | 9999999992285000000000000 | 1905000000000000 |
 
     When the successor market "ETH/DEC20" is enacted
     Then the network moves ahead "1" blocks
     # The bond for market ETH/DEC20 should be released back to the general balance
     And the parties should have the following account balances:
       | party  | asset | market id | margin         | general                   | bond             |
-      | lpprov | ETH   | ETH/DEC19 | 53551477859983 | 9999999992231448522140017 | 3905000000000000 |
-      | lpprov | ETH   | ETH/DEC20 | 0              | 9999999992231448522140017 | 1905000000000000 |
-      | lpprov | ETH   | ETH/DEC21 | 0              | 9999999992231448522140017 | 1905000000000000 |
+      | lpprov | ETH | ETH/DEC19 | 0 | 9999999992285000000000000 | 3905000000000000 |
+      | lpprov | ETH | ETH/DEC20 | 0 | 9999999992285000000000000 | 1905000000000000 |
+      | lpprov | ETH | ETH/DEC21 | 0 | 9999999992285000000000000 | 1905000000000000 |
     Then the market state should be "STATE_PENDING" for the market "ETH/DEC20"
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
     When the oracles broadcast data signed with "0xCAFECAFE1":
@@ -391,15 +389,15 @@ Feature: Simple example of successor markets
     # The bond for market ETH/DEC20 should be released back to the general balance
     Then the parties should have the following account balances:
       | party  | asset | market id | margin         | general                   | bond             |
-      | lpprov | ETH   | ETH/DEC19 | 0              | 9999999998068871464704366 | 0                |
-      | lpprov | ETH   | ETH/DEC20 | 26128535295634 | 9999999998068871464704366 | 1905000000000000 |
-      | lpprov | ETH   | ETH/DEC21 | 0              | 9999999998068871464704366 | 0                |
+      | lpprov | ETH | ETH/DEC19 | 0 | 9999999998095000000000000 | 0                |
+      | lpprov | ETH | ETH/DEC20 | 0 | 9999999998095000000000000 | 1905000000000000 |
+      | lpprov | ETH | ETH/DEC21 | 0 | 9999999998095000000000000 | 0                |
 
     And the last market state should be "STATE_REJECTED" for the market "ETH/DEC21"
     And the parties should have the following account balances:
       | party  | asset | market id | margin         | general                   | bond             |
-      | lpprov | ETH   | ETH/DEC19 | 0              | 9999999998068871464704366 | 0                |
-      | lpprov | ETH   | ETH/DEC20 | 26128535295634 | 9999999998068871464704366 | 1905000000000000 |
-      | lpprov | ETH   | ETH/DEC21 | 0              | 9999999998068871464704366 | 0                |
+      | lpprov | ETH | ETH/DEC19 | 0 | 9999999998095000000000000 | 0                |
+      | lpprov | ETH | ETH/DEC20 | 0 | 9999999998095000000000000 | 1905000000000000 |
+      | lpprov | ETH | ETH/DEC21 | 0 | 9999999998095000000000000 | 0                |
 
 
