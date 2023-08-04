@@ -84,6 +84,7 @@
 - [8953](https://github.com/vegaprotocol/vega/issues/8953) - Fix reward distribution when validator delegate to other validators
 - [8898](https://github.com/vegaprotocol/vega/issues/8898) - Fix auction uncrossing handling for spots
 - [8971](https://github.com/vegaprotocol/vega/issues/8971) - Record the epoch start time even in opening auction 
+- [8992](https://github.com/vegaprotocol/vega/issues/8992) - allow for 0 time step for sla fee calculation
 
 ## 0.72.1
 
