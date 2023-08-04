@@ -15,7 +15,9 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | market.auction.minimumDuration          | 1     |
       | market.stake.target.scalingFactor       | 10    |
       | network.markPriceUpdateMaximumFrequency | 0s    |
-      | limits.markets.maxPeggedOrders          | 2     |
+      | limits.markets.maxPeggedOrders          | 4     |
+      | validators.epoch.length                 | 1s    |
+    And the average block duration is "1"
 
   @LPRelease
   Scenario: Mid price works as expected
@@ -32,8 +34,8 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | lp1 | party1 | DAI/DEC22 | 20000000000       | 0.01 | lp-1      | submission |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party1 | DAI/DEC22 | 2         | 1                    | buy  | MID              | 1          | 10     |
-      | party1 | DAI/DEC22 | 2         | 1                    | sell | MID              | 1          | 10     |
+      | party1 | DAI/DEC22 | 5         | 5                    | buy  | MID              | 15         | 10     |
+      | party1 | DAI/DEC22 | 5         | 5                    | sell | MID              | 15         | 10     |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price      | resulting trades | type       | tif     | reference |
@@ -46,7 +48,6 @@ Feature: Replicate unexpected margin issues - no mid price pegs
     Then the following trades should be executed:
       | buyer  | price      | size | seller |
       | party2 | 3500000000 | 1    | party3 |
-    And the mark price should be "3500000000" for the market "DAI/DEC22"
     And the order book should have the following volumes for market "DAI/DEC22":
       | side | price      | volume |
       | sell | 8200000000 | 1      |
@@ -58,11 +59,16 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | id  | party  | market id | commitment amount | fee  | reference | lp type    |
       | lp2 | party4 | DAI/DEC22 | 10000000000       | 0.01 | lp-2      | submission |
       | lp2 | party4 | DAI/DEC22 | 10000000000       | 0.01 | lp-2      | submission |
+    
+    Then the liquidity provisions should have the following states:
+      | id  | party  | market    | commitment amount | status         |
+      | lp2 | party4 | DAI/DEC22 | 10000000000       | STATUS_PENDING |
+    
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party4 | DAI/DEC22 | 2         | 1                    | buy  | BID              | 1          | 12     |
-      | party4 | DAI/DEC22 | 2         | 1                    | sell | ASK              | 1          | 12     |
-    Then the parties should have the following account balances:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party4 | DAI/DEC22 | 13        | 1                    | buy  | BID              | 13     | 12     |
+      | party4 | DAI/DEC22 | 2         | 1                    | sell | ASK              | 2      | 12     |
+    And the parties should have the following account balances:
       | party  | asset | market id | margin     | general     | bond        |
       | party4 | DAI   | DAI/DEC22 | 1060913900 | 98939086100 | 10000000000 |
     And the order book should have the following volumes for market "DAI/DEC22":
@@ -74,17 +80,32 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | buy  | 800000000  | 1      |
       | buy  | 799999988  | 13     |
 
-    # LP cancel -> orders are gone from the book + margin balance is released
+    # Try to amend first
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee  | reference | lp type   |
+      | lp2 | party4 | DAI/DEC22 | 1000000000        | 0.01 | lp-2      | amendment |
+      | lp2 | party4 | DAI/DEC22 | 1000000000        | 0.01 | lp-2      | amendment |
+    Then the liquidity provisions should have the following states:
+      | id  | party  | market    | commitment amount | status         |
+      | lp2 | party4 | DAI/DEC22 | 1000000000        | STATUS_PENDING |
+    
+    # LP cancel 
     When party "party4" cancels their liquidity provision for market "DAI/DEC22"
-    Then the order book should have the following volumes for market "DAI/DEC22":
+    Then the liquidity provisions should have the following states:
+      | id  | party  | market    | commitment amount | status           |
+      | lp2 | party4 | DAI/DEC22 | 10000000000       | STATUS_CANCELLED |
+
+    And the order book should have the following volumes for market "DAI/DEC22":
       | side | price      | volume |
       | sell | 8200000000 | 1      |
       | sell | 4500000010 | 5      |
       | buy  | 4499999990 | 5      |
       | buy  | 800000000  | 1      |
-    And the parties should have the following account balances:
-      | party  | asset | market id | margin | general      | bond |
-      | party4 | DAI   | DAI/DEC22 | 0      | 110000000000 | 0    |
+
+    When the network moves ahead "3" blocks
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin     | general      | bond  |
+      | party4 | DAI   | DAI/DEC22 | 1060913900 | 108939086100 | 0     |
 
   @LPAmendVersion
   Scenario: Amend an LP before cancel, check the version events
@@ -169,5 +190,5 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | buy  | 4499999990 | 5      |
       | buy  | 800000000  | 1      |
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general      | bond |
-      | party4 | DAI   | DAI/DEC22 | 0      | 110000000000 | 0    |
+      | party  | asset | market id | margin | general      | bond        |
+      | party4 | DAI   | DAI/DEC22 | 0      | 110000000000 | 10000000000 |
