@@ -26,42 +26,37 @@ func testCreatingTeamSucceeds(t *testing.T) {
 		}, {
 			name: "with just enabled rewards",
 			cmd: &commandspb.CreateTeam{
-				EnableRewards: true,
-				Name:          nil,
-				TeamUrl:       nil,
-				AvatarUrl:     nil,
+				Name:      nil,
+				TeamUrl:   nil,
+				AvatarUrl: nil,
 			},
 		}, {
 			name: "with just name",
 			cmd: &commandspb.CreateTeam{
-				EnableRewards: false,
-				Name:          ptr.From(vgrand.RandomStr(5)),
-				TeamUrl:       nil,
-				AvatarUrl:     nil,
+				Name:      ptr.From(vgrand.RandomStr(5)),
+				TeamUrl:   nil,
+				AvatarUrl: nil,
 			},
 		}, {
 			name: "with just team URL",
 			cmd: &commandspb.CreateTeam{
-				EnableRewards: false,
-				Name:          nil,
-				TeamUrl:       ptr.From(vgrand.RandomStr(5)),
-				AvatarUrl:     nil,
+				Name:      nil,
+				TeamUrl:   ptr.From(vgrand.RandomStr(5)),
+				AvatarUrl: nil,
 			},
 		}, {
 			name: "with just avatar URL",
 			cmd: &commandspb.CreateTeam{
-				EnableRewards: false,
-				Name:          nil,
-				TeamUrl:       nil,
-				AvatarUrl:     ptr.From(vgrand.RandomStr(5)),
+				Name:      nil,
+				TeamUrl:   nil,
+				AvatarUrl: ptr.From(vgrand.RandomStr(5)),
 			},
 		}, {
 			name: "with all at once",
 			cmd: &commandspb.CreateTeam{
-				EnableRewards: false,
-				Name:          ptr.From(vgrand.RandomStr(5)),
-				TeamUrl:       ptr.From(vgrand.RandomStr(5)),
-				AvatarUrl:     ptr.From(vgrand.RandomStr(5)),
+				Name:      ptr.From(vgrand.RandomStr(5)),
+				TeamUrl:   ptr.From(vgrand.RandomStr(5)),
+				AvatarUrl: ptr.From(vgrand.RandomStr(5)),
 			},
 		},
 	}
