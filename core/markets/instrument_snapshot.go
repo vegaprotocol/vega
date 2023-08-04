@@ -15,6 +15,7 @@ package markets
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/risk"
@@ -33,8 +34,9 @@ func NewInstrumentFromSnapshot(
 	broker products.Broker,
 	productState *snapshotpb.Product,
 	assetDP uint32,
+	tm time.Time,
 ) (*Instrument, error) {
-	product, err := products.NewFromSnapshot(ctx, log, pi.Product, oe, broker, productState, assetDP)
+	product, err := products.NewFromSnapshot(ctx, log, pi.Product, oe, broker, productState, assetDP, tm)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate product from instrument configuration: %w", err)
 	}
@@ -57,8 +59,9 @@ func NewTradableInstrumentFromSnapshot(
 	broker products.Broker,
 	productState *snapshotpb.Product,
 	assetDP uint32,
+	tm time.Time,
 ) (*TradableInstrument, error) {
-	instrument, err := NewInstrumentFromSnapshot(ctx, log, pti.Instrument, oe, broker, productState, assetDP)
+	instrument, err := NewInstrumentFromSnapshot(ctx, log, pti.Instrument, oe, broker, productState, assetDP, tm)
 	if err != nil {
 		return nil, err
 	}

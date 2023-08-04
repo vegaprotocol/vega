@@ -15,6 +15,7 @@ package products_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/datasource"
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
@@ -26,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
@@ -64,7 +66,8 @@ func TestPerpetualSnapshot(t *testing.T) {
 	err = proto.Unmarshal(serialized1, state2)
 	assert.NoError(t, err)
 
-	perps2 := testPerpetualSnapshot(t, perps.ctrl, state2)
+	restoreTime := time.Unix(1000000, 0)
+	perps2, _, scheduleSrc := testPerpetualSnapshot(t, perps.ctrl, state2, restoreTime)
 
 	// now we serialize again, and check the payload are same
 
@@ -73,9 +76,17 @@ func TestPerpetualSnapshot(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, serialized1, serialized2)
+
+	// check the the time-trigger has been set properly
+	cfg := scheduleSrc.Data.GetInternalTimeTriggerSpecConfiguration()
+
+	// trigger time in the past should fail, it should be set to restoreTime so should trigger
+	// on a future time only
+	assert.False(t, cfg.IsTriggered(restoreTime))
+	assert.True(t, cfg.IsTriggered(restoreTime.Add(time.Second)))
 }
 
-func testPerpetualSnapshot(t *testing.T, ctrl *gomock.Controller, state *snapshotpb.Product) *tstPerp {
+func testPerpetualSnapshot(t *testing.T, ctrl *gomock.Controller, state *snapshotpb.Product, tm time.Time) (*tstPerp, *datasource.Spec, *datasource.Spec) {
 	t.Helper()
 
 	log := logging.NewTestLogger()
@@ -107,22 +118,24 @@ func testPerpetualSnapshot(t *testing.T, ctrl *gomock.Controller, state *snapsho
 		),
 	}
 
-	scheduleSrc := &datasource.Spec{
-		Data: datasource.NewDefinition(
-			datasource.ContentTypeOracle,
-		).SetOracleConfig(&signedoracle.SpecConfiguration{
-			Signers: pubKeys,
-			Filters: []*dstypes.SpecFilter{
-				{
-					Key: &dstypes.SpecPropertyKey{
-						Name: "bar",
-						Type: datapb.PropertyKey_TYPE_TIMESTAMP,
-					},
-					Conditions: nil,
-				},
+	definition := datasource.NewDefinition(
+		datasource.ContentTypeInternalTimeTriggerTermination,
+	).SetTimeTriggerTriggersConfig(
+		dstypes.InternalTimeTriggers{
+			&dstypes.InternalTimeTrigger{
+				Initial: &tm,
+				Every:   5,
 			},
-		}),
-	}
+		},
+	).SetTimeTriggerConditionConfig(
+		[]*dstypes.SpecCondition{
+			{
+				Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+				Value:    "0",
+			},
+		},
+	)
+	scheduleSrc := datasource.SpecFromProto(vegapb.NewDataSourceSpec(definition.IntoProto()))
 
 	perp := &types.Perps{
 		MarginFundingFactor:                 factor,
@@ -130,19 +143,20 @@ func testPerpetualSnapshot(t *testing.T, ctrl *gomock.Controller, state *snapsho
 		DataSourceSpecForSettlementSchedule: scheduleSrc,
 		DataSourceSpecBinding: &datasource.SpecBindingForPerps{
 			SettlementDataProperty:     "foo",
-			SettlementScheduleProperty: "bar",
+			SettlementScheduleProperty: "vegaprotocol.builtin.timetrigger",
 		},
 	}
 	oe.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(spec.SubscriptionID(1), func(_ context.Context, _ spec.SubscriptionID) {}, nil)
 
-	perpetual, err := products.NewPerpetualFromSnapshot(context.Background(), log, perp, oe, broker, state.GetPerps(), dp)
+	perpetual, err := products.NewPerpetualFromSnapshot(context.Background(), log, perp, oe, broker, state.GetPerps(), dp, tm)
 	if err != nil {
 		t.Fatalf("couldn't create a perp for testing: %v", err)
 	}
+
 	return &tstPerp{
 		perpetual: perpetual,
 		oe:        oe,
 		broker:    broker,
 		ctrl:      ctrl,
-	}
+	}, settlementSrc, scheduleSrc
 }
