@@ -118,6 +118,8 @@
 - [9034](https://github.com/vegaprotocol/vega/issues/9034) - Add missing transfer types to `GraphQL` schema definition.
 - [9075](https://github.com/vegaprotocol/vega/issues/9075) - `Oracle Specs API` can fail when oracle data is null.
 - [8971](https://github.com/vegaprotocol/vega/issues/8971) - Record the epoch start time even in opening auction
+- [8971](https://github.com/vegaprotocol/vega/issues/8971) - Record the epoch start time even in opening auction
+- [8992](https://github.com/vegaprotocol/vega/issues/8992) - allow for 0 time step for sla fee calculation
 
 ## 0.72.1
 
