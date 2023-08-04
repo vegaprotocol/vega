@@ -36,7 +36,7 @@ import (
 )
 
 func TestPeriodicSettlement(t *testing.T) {
-	t.Run("cannot submit data-point before leaving opening auction", testCannotSubmitDataPointBeforeOpeningAuction)
+	t.Run("incoming data ignored before leaving opening auction", testIncomingDataIgnoredBeforeLeavingOpeningAuction)
 	t.Run("period end with no data point", testPeriodEndWithNoDataPoints)
 	t.Run("equal internal and external prices", testEqualInternalAndExternalPrices)
 	t.Run("constant difference long pays short", testConstantDifferenceLongPaysShort)
@@ -46,7 +46,7 @@ func TestPeriodicSettlement(t *testing.T) {
 	t.Run("non-matching data points outside of period through callbacks", testRegisteredCallbacksWithDifferentData)
 }
 
-func testCannotSubmitDataPointBeforeOpeningAuction(t *testing.T) {
+func testIncomingDataIgnoredBeforeLeavingOpeningAuction(t *testing.T) {
 	perp := testPerpetual(t)
 	defer perp.ctrl.Finish()
 
@@ -57,6 +57,9 @@ func testCannotSubmitDataPointBeforeOpeningAuction(t *testing.T) {
 
 	err := perp.perpetual.SubmitDataPoint(ctx, num.UintOne(), 2000)
 	assert.ErrorIs(t, err, products.ErrInitialPeriodNotStarted)
+
+	// check that settlement cues are ignored, we expect no events when it is
+	perp.perpetual.PromptSettlementCue(ctx, 4000)
 }
 
 func testPeriodEndWithNoDataPoints(t *testing.T) {

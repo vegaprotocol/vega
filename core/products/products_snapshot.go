@@ -15,6 +15,7 @@ package products
 import (
 	"context"
 	"errors"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
@@ -32,6 +33,7 @@ func NewFromSnapshot(
 	broker Broker,
 	state *snapshotpb.Product,
 	assetDP uint32,
+	tm time.Time,
 ) (Product, error) {
 	if pp == nil {
 		return nil, ErrNilProduct
@@ -45,7 +47,7 @@ func NewFromSnapshot(
 		if perpsState == nil {
 			return nil, ErrNoStateProvidedForPerpsWithSnapshot
 		}
-		return NewPerpetualFromSnapshot(ctx, log, p.Perps, oe, broker, perpsState, assetDP)
+		return NewPerpetualFromSnapshot(ctx, log, p.Perps, oe, broker, perpsState, assetDP, tm)
 	default:
 		return nil, ErrUnimplementedProduct
 	}
