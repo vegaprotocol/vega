@@ -41,104 +41,126 @@ Feature: Closeout scenarios
       | lp1 | lprov | ETH/DEC19 | 100000            | 0.001 | amendment  |
     And the parties place the following pegged iceberg orders:
       | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 100        | 55     |
-      | lprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 100        | 55     |
+      | lprov | ETH/DEC19 | 100 | 10 | sell | ASK | 100 | 55 |
+      | lprov | ETH/DEC19 | 100 | 10 | buy  | BID | 100 | 55 |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     # trading happens at the end of the open auction period
     Then the parties place the following orders:
       | party      | market id | side | volume | price | resulting trades | type       | tif     | reference  |
-      | auxiliary2 | ETH/DEC19 | buy  | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-5    |
-      | auxiliary1 | ETH/DEC19 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1000 |
-      | auxiliary2 | ETH/DEC19 | buy  | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1    |
-      | auxiliary1 | ETH/DEC19 | sell | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1    |
+      | auxiliary2 | ETH/DEC19 | buy  | 5    | 5  | 0 | TYPE_LIMIT | TIF_GTC | aux-b-5    |
+      | auxiliary1 | ETH/DEC19 | sell | 1000 | 10 | 0 | TYPE_LIMIT | TIF_GTC | aux-s-1000 |
+      | auxiliary2 | ETH/DEC19 | buy  | 10   | 10 | 0 | TYPE_LIMIT | TIF_GTC | aux-b-1    |
+      | auxiliary1 | ETH/DEC19 | sell | 10   | 10 | 0 | TYPE_LIMIT | TIF_GTC | aux-s-1    |
     When the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-    Then the auction ends with a traded volume of "10" at a price of "10"
     And the mark price should be "10" for the market "ETH/DEC19"
 
-    Then the order book should have the following volumes for market "ETH/DEC19":
-      | side | price | volume |
-      | buy  | 1     | 0      |
-      | buy  | 50    | 0      |
-      | sell | 1000  | 10     |
-      | sell | 1050  | 0      |
+    And the parties should have the following account balances:
+      | party      | asset | market id | margin     | general      |
+      | auxiliary1 | USD   | ETH/DEC19 | 71850      | 999999928150 |
+      | auxiliary2 | USD   | ETH/DEC19 | 2200000242 | 997799999758 |
 
     # trader2 posts and order that would take over position of trader3 if they have enough to support it at the new mark price
-    When the parties place the following orders with ticks:
+    When the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | trader2 | ETH/DEC19 | buy  | 40     | 50    | 0                | TYPE_LIMIT | TIF_GTC | buy-order-3 |
+      | trader2 | ETH/DEC19 | buy | 40 | 50 | 1 | TYPE_LIMIT | TIF_GTC | buy-order-3 |
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | buy | 1 | 0 |
-      | buy  | 50    | 40     |
-      | sell | 1000  | 10     |
-      | sell | 1050 | 0 |
+      | buy  | 5    | 5 |
+      | buy  | 50   | 0 |
+      | sell | 1000 | 0 |
+      | sell | 1055 | 0 |
+
+    And the orders should have the following status:
+      | party   | reference   | status        |
+      | trader2 | buy-order-3 | STATUS_FILLED |
+
+    And the parties should have the following account balances:
+      | party      | asset | market id | margin     | general      |
+      | auxiliary1 | USD   | ETH/DEC19 | 71850      | 999999928150 |
+      | auxiliary2 | USD   | ETH/DEC19 | 2200000242 | 997799999758 |
+      | trader2    | USD   | ETH/DEC19 | 642        | 1357         |
+
+# Then the following trades should be executed:
+#   | buyer   | price | size | seller     |
+#   | trader2 | 50    | 40   | auxiliary1 |
 
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search  | initial | release |
       | trader2 | ETH/DEC19 | 321         | 481     | 642     | 963     |
-      | lprov   | ETH/DEC19 | 800729      | 1201093 | 1601458 | 2402187 |
-# margin level_trader2= OrderSize*MarkPrice*RF = 40*10*0.801225765=321
-# margin level_Lprov= OrderSize*MarkPrice*RF = max(96*10*3.55690359157934000,100000*10*0.801225765)=801225.765
+      | lprov | ETH/DEC19 | 3557 | 5335 | 7114 | 10671 |
 
-# Then the parties should have the following account balances:
-#   | party   | asset | market id | margin | general |
-#   | trader2 | USD   | ETH/DEC19 | 642    | 1358    |
+    Then the parties should have the following profit and loss:
+      | party      | volume | unrealised pnl | realised pnl | status |
+      # | trader2    | 0      | 0              | 0            | POSITION_STATUS_ORDERS_CLOSED |
+      | auxiliary1 | -10    | 0              | 0            |        |
 
-# # trader3 posts a limit order
-# When the parties place the following orders with ticks:
-#   | party   | market id | side | volume | price | resulting trades | type       | tif     | reference       |
-#   | trader3 | ETH/DEC19 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | buy-position-31 |
+# # margin level_trader2= OrderSize*MarkPrice*RF = 40*10*0.801225765=321
+# # margin level_Lprov= OrderSize*MarkPrice*RF = 100*10*3.55690359157934000=3557
 
-# Then the order book should have the following volumes for market "ETH/DEC19":
-#   | side | price | volume |
-#   | buy  | 5     | 5      |
-#   | buy  | 45    | 2223   |
-#   | buy  | 50    | 40     |
-#   | buy  | 100   | 10     |
-#   | sell | 1000  | 10     |
-#   | sell | 1055  | 95     |
+#     # trader3 posts a limit order
+#     When the parties place the following orders with ticks:
+#       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+#       | trader3 | ETH/DEC19 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | buy-position-31 |
 
-# And the parties should have the following margin levels:
-#   | party   | market id | maintenance | search | initial | release |
-#   | trader3 | ETH/DEC19 | 81          | 121    | 162     | 243     |
+#     Then the order book should have the following volumes for market "ETH/DEC19":
+#       | side | price | volume |
+#       | buy  | 5     | 5      |
+#       | buy  | 45    | 100    |
+#       | buy  | 50    | 40     |
+#       | buy  | 100   | 10     |
+#       | sell | 1000  | 10     |
+#       | sell | 1055  | 100    |
 
-# Then the parties should have the following account balances:
-#   | party   | asset | market id | margin | general |
-#   | trader2 | USD   | ETH/DEC19 | 642    | 1358    |
-#   | trader3 | USD   | ETH/DEC19 | 162    | 0       |
+#     And the parties should have the following margin levels:
+#       | party   | market id | maintenance | search | initial | release |
+#       | trader3 | ETH/DEC19 | 81          | 121    | 162     | 243     |
+# # margin level_trader3= OrderSize*MarkPrice*RF = 100*10*0.801225765=81
 
-# And the insurance pool balance should be "0" for the market "ETH/DEC19"
+#     Then the parties should have the following account balances:
+#       | party   | asset | market id | margin | general |
+#       | trader2 | USD   | ETH/DEC19 | 642    | 1358    |
+#       | trader3 | USD   | ETH/DEC19 | 162    | 0       |
 
-# Then the parties should have the following profit and loss:
-#   | party      | volume | unrealised pnl | realised pnl |
-#   | auxiliary1 | -10    | 0              | 0            |
-#   | auxiliary2 | 10     | 0              | 0            |
-# #setup trader3 position and close it out
-# When the parties place the following orders with ticks:
-#   | party      | market id | side | volume | price | resulting trades | type       | tif     | reference       |
-#   | auxiliary2 | ETH/DEC19 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
-# Then the following trades should be executed:
-#   | buyer      | price | size | seller     |
-#   | trader3    | 100   | 10   | auxiliary2 |
-#   | auxiliary2 | 5     | 5    | network    |
-#   | lprov      | 1     | 5    | network    |
-#   | network    | 3     | 10   | trader3    |
-# And the order book should have the following volumes for market "ETH/DEC19":
-#   | side | price | volume |
-#   | buy  | 5     | 0      |
-#   | buy  | 1     | 0      |
-#   | sell | 1000  | 10     |
-#   | sell | 1005  | 0      |
-#   #trader3 is closed out, trader2 has no more open orders as they got cancelled after becoming distressed
-#   And the parties should have the following margin levels:
-#     | party   | market id | maintenance | search | initial | release |
-#     | trader2 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-#     | trader3 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-#   And the parties should have the following account balances:
-#     | party   | asset | market id | margin | general |
-#     | trader2 | USD   | ETH/DEC19 | 0      | 2000    |
-#     | trader3 | USD   | ETH/DEC19 | 0      | 0       |
+#     #setup for close out
+#     When the parties place the following orders with ticks:
+#       | party      | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+#       | auxiliary2 | ETH/DEC19 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
+
+#     And the mark price should be "100" for the market "ETH/DEC19"
+#     Then the network moves ahead "4" blocks
+
+#     Then the following trades should be executed:
+#       | buyer   | price | size | seller     |
+#       | trader3 | 100   | 10   | auxiliary2 |
+
+#     And the order book should have the following volumes for market "ETH/DEC19":
+#       | side | price | volume |
+#       | buy  | 5     | 5      |
+#       | buy  | 45    | 0      |
+#       | buy  | 50    | 0      |
+#       | buy  | 100   | 0      |
+#       | sell | 1000  | 10     |
+#       | sell | 1055  | 100    |
+
+# #   #trader3 is closed out, trader2 has no more open orders as they got cancelled after becoming distressed
+#     And the parties should have the following margin levels:
+#       | party   | market id | maintenance | search      | initial     | release     |
+#       | trader2 | ETH/DEC19 | 0           | 0           | 0           | 0           |
+#       | trader3 | ETH/DEC19 | 11000000801 | 16500001201 | 22000001602 | 33000002403 |
+
+#     And the parties should have the following account balances:
+#       | party   | asset | market id | margin | general |
+#       | trader2 | USD   | ETH/DEC19 | 0      | 2000    |
+#       | trader3 | USD   | ETH/DEC19 | 162    | 0       |
+#     Then the parties should have the following profit and loss:
+#       | party      | volume | unrealised pnl | realised pnl | status                        |
+#       | trader2    | 0      | 0              | 0            | POSITION_STATUS_ORDERS_CLOSED |
+#       | trader3    | 10     | 0              | 0            |                               |
+#       | auxiliary1 | -10    | -900           | 0            |                               |
+#       | auxiliary2 | 0      | 0              | 900          |                               |
+#     And the insurance pool balance should be "0" for the market "ETH/DEC19"
+
 
 #   # 0007-POSN-015
 #   And the parties should have the following profit and loss:
@@ -303,5 +325,6 @@ Feature: Closeout scenarios
 #     # Then the market data for the market "ETH/DEC20" should be:
 #     #   | mark price | trading mode            | open interest |
 #     #   | 10         | TRADING_MODE_CONTINUOUS | 13            |
+
 
 
