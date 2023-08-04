@@ -36,6 +36,7 @@ type (
 	MultiSig           struct {
 		*sqlstore.ERC20MultiSigSignerEvent
 	}
+	FundingPeriods struct{ *sqlstore.FundingPeriods }
 )
 
 type (
@@ -117,4 +118,8 @@ func NewKeyRotations(store *sqlstore.KeyRotations) *KeyRotations {
 
 func NewNode(store *sqlstore.Node) *Node {
 	return &Node{Node: store}
+}
+
+func NewFundingPeriods(store *sqlstore.FundingPeriods) *FundingPeriods {
+	return &FundingPeriods{FundingPeriods: store}
 }

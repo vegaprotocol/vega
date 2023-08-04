@@ -155,6 +155,10 @@ http:
       get: "/api/v2/networkhistory/bootstrap"
     - selector: datanode.api.v2.TradingDataService.ExportNetworkHistory
       get: "/api/v2/networkhistory/export"
+    - selector: datanode.api.v2.TradingDataService.ListFundingPeriods
+      get: "/api/v2/funding-periods/{market_id}"
+    - selector: datanode.api.v2.TradingDataService.ListFundingPeriodDataPoints
+      get: "/api/v2/funding-periods/data-points/{market_id}"
 
     # websockets
 

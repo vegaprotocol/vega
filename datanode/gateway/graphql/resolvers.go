@@ -35,6 +35,7 @@ import (
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	data "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 var (
@@ -446,6 +447,14 @@ func (r *VegaResolverRoot) LiquidityProvider() LiquidityProviderResolver {
 	return (*liquidityProviderResolver)(r)
 }
 
+func (r *VegaResolverRoot) FundingPeriod() FundingPeriodResolver {
+	return (*fundingPeriodResolver)(r)
+}
+
+func (r *VegaResolverRoot) FundingPeriodDataPoint() FundingPeriodDataPointResolver {
+	return (*fundingPeriodDataPointResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -552,6 +561,36 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *vegapb.Dep
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
+
+func (r *myQueryResolver) FundingPeriods(ctx context.Context, marketID string, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.FundingPeriodConnection, error) {
+	req := v2.ListFundingPeriodsRequest{
+		MarketId:   marketID,
+		DateRange:  dateRange,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.ListFundingPeriods(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return res.FundingPeriods, nil
+}
+
+func (r *myQueryResolver) FundingPeriodDataPoints(ctx context.Context, marketID string, dateRange *v2.DateRange, source *v1.FundingPeriodDataPoint_Source, pagination *v2.Pagination) (*v2.FundingPeriodDataPointConnection, error) {
+	req := &v2.ListFundingPeriodDataPointsRequest{
+		MarketId:   marketID,
+		DateRange:  dateRange,
+		Source:     source,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.ListFundingPeriodDataPoints(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.FundingPeriodDataPoints, nil
+}
 
 func (r *myQueryResolver) Trades(ctx context.Context, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) (*v2.TradeConnection, error) {
 	if filter == nil {

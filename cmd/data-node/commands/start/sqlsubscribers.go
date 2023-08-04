@@ -51,6 +51,7 @@ type SQLSubscribers struct {
 	pupStore                  *sqlstore.ProtocolUpgradeProposals
 	snapStore                 *sqlstore.CoreSnapshotData
 	stopOrderStore            *sqlstore.StopOrders
+	fundingPeriodStore        *sqlstore.FundingPeriods
 
 	// Services
 	candleService               *candlesv2.Svc
@@ -90,6 +91,7 @@ type SQLSubscribers struct {
 	protocolUpgradeService      *service.ProtocolUpgrade
 	coreSnapshotService         *service.SnapshotData
 	stopOrderService            *service.StopOrders
+	fundingPeriodService        *service.FundingPeriods
 
 	// Subscribers
 	accountSub              *sqlsubscribers.Account
@@ -213,6 +215,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.pupStore = sqlstore.NewProtocolUpgradeProposals(transactionalConnectionSource)
 	s.snapStore = sqlstore.NewCoreSnapshotData(transactionalConnectionSource)
 	s.stopOrderStore = sqlstore.NewStopOrders(transactionalConnectionSource)
+	s.fundingPeriodStore = sqlstore.NewFundingPeriods(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
@@ -253,6 +256,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.protocolUpgradeService = service.NewProtocolUpgrade(s.pupStore, log)
 	s.coreSnapshotService = service.NewSnapshotData(s.snapStore)
 	s.stopOrderService = service.NewStopOrders(s.stopOrderStore)
+	s.fundingPeriodService = service.NewFundingPeriods(s.fundingPeriodStore)
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		s.marketDepthService,
