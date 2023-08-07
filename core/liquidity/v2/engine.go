@@ -316,9 +316,11 @@ func (e *Engine) stopLiquidityProvision(
 ) error {
 	lp, ok := e.provisions.Get(party)
 	if !ok {
-		return errors.New("party is not a liquidity provider")
+		lp, ok = e.pendingProvisions.Get(party)
+		if !ok {
+			return errors.New("party is not a liquidity provider")
+		}
 	}
-
 	now := e.timeService.GetTimeNow().UnixNano()
 
 	lp.Status = status
@@ -354,7 +356,8 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *ty
 // IsLiquidityProvider returns true if the party hold any liquidity commitment.
 func (e *Engine) IsLiquidityProvider(party string) bool {
 	_, ok := e.provisions.Get(party)
-	return ok
+	_, pendingOk := e.pendingProvisions.Get(party)
+	return ok || pendingOk
 }
 
 // ProvisionsPerParty returns the registered a map of party-id -> LiquidityProvision.
