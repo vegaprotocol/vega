@@ -18,7 +18,7 @@ var (
 
 type checkTxCmd struct {
 	config.OutputFlag
-	Diffs        string `description:"The output directory for detailed reporting on diffs"             long:"diffs"    short:"d"`
+	Diffs        string `description:"The output directory for detailed reporting on diffs"             long:"diffs"           short:"d"`
 	Transactions string `description:"Path to the transaction json files"                               long:"transactions"    short:"t" required:"true"`
 }
 

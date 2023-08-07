@@ -16,7 +16,7 @@ type RootCmd struct {
 	Snapshot   snapshotCmd   `command:"snapshot"   description:"Display information about saved snapshots"`
 	Checkpoint checkpointCmd `command:"checkpoint" description:"Make checkpoint human-readable, or generate checkpoint from human readable format"`
 	Stream     streamCmd     `command:"stream"     description:"Stream events from vega node"`
-	CheckTx    checkTxCmd    `command:"check-tx"    description:"Decode transactions created from a dependent app, check vega's decoded transaction matches your apps transaction"`
+	CheckTx    checkTxCmd    `command:"check-tx"   description:"Decode transactions created from a dependent app, check vega's decoded transaction matches your apps transaction"`
 }
 
 var rootCmd RootCmd

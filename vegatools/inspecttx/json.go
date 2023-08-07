@@ -24,7 +24,7 @@ var JsonMarshaller = jsonpb.Marshaler{
 	EnumsAsInts: false,
 }
 
-// ComparableJson used to contain json data for comparison
+// ComparableJson used to contain json data for comparison.
 type ComparableJson struct {
 	OriginalJson json.RawMessage
 	CoreJson     json.RawMessage

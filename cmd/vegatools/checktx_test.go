@@ -34,6 +34,7 @@ var testInputData = v1.InputData{Nonce: 123, BlockHeight: 456, Command: &v1.Inpu
 }}}
 
 func setUpTestData(t *testing.T) inspecttx.TransactionData {
+	t.Helper()
 	marshalledInputData, err := commands.MarshalInputData(&testInputData)
 	assert.NoErrorf(t, err, "error occurred when attempting to marshal test input data\nerr: %v", err)
 	testTransaction := commands.NewTransaction("mykey", marshalledInputData, commands.NewSignature([]byte("testSig"), "testAlgo", 3))
@@ -50,11 +51,13 @@ func setUpTestData(t *testing.T) inspecttx.TransactionData {
 	return testData
 }
 
-func writeTestDataToFile(t *testing.T, testData inspecttx.TransactionData, testFilePath string, testfileName string) {
+func writeTestDataToFile(t *testing.T, testData inspecttx.TransactionData, testFileName string) {
+	t.Helper()
 	transactionData, err := json.Marshal(testData)
-	err = os.MkdirAll(testFilePath, 0o755)
+	assert.NoErrorf(t, err, "error occurred when attempting to marshal the test data")
+	err = os.MkdirAll(testFiles, 0o755)
 	assert.NoErrorf(t, err, "error occurred when attempting to make a directory for the valid test data")
-	filePath := path.Join(testFilePath, testfileName)
+	filePath := path.Join(testFiles, testFileName)
 
 	err = os.WriteFile(filePath, transactionData, 0o644)
 	assert.NoErrorf(t, err, "error when creating transaction.json file.\nerr: %v", err)
@@ -64,14 +67,15 @@ func writeTestDataToFile(t *testing.T, testData inspecttx.TransactionData, testF
 }
 
 func clearTestData(t *testing.T) {
+	t.Helper()
 	err := os.RemoveAll(testFiles)
 	assert.NoErrorf(t, err, "error occurred when attempting to clean valid test data dir")
 }
 
 func TestInspectTxsInDirectoryCmd_ReturnsNoErrorWhenAllTransactionsMatch(t *testing.T) {
 	clearTestData(t)
-	writeTestDataToFile(t, setUpTestData(t), testFiles, "transaction1.json")
-	writeTestDataToFile(t, setUpTestData(t), testFiles, "transaction2.json")
+	writeTestDataToFile(t, setUpTestData(t), "transaction1.json")
+	writeTestDataToFile(t, setUpTestData(t), "transaction2.json")
 	cmd := checkTxCmd{
 		Transactions: testFiles,
 		Diffs:        diffFiles,
@@ -89,13 +93,15 @@ func TestInspectTxsInDirectoryCmd_ErrReturnedAfterInspectingAllFilesIfNoMatch(t 
 	data := setUpTestData(t)
 	var jsonMap map[string]interface{}
 	err := json.Unmarshal(data.Transaction, &jsonMap)
+	assert.NoErrorf(t, err, "error occurred when attempting to unmarshal transaction to map when prepping sad path test data")
 
 	jsonMap["version"] = "this will cause a diff"
 	jsonForCausingDiff, err := json.Marshal(jsonMap)
+	assert.NoErrorf(t, err, "error occurred when attempting to marshal sad path data to json")
 	data.Transaction = jsonForCausingDiff
 
-	writeTestDataToFile(t, data, testFiles, "transaction.json")
-	writeTestDataToFile(t, setUpTestData(t), testFiles, "transaction1.json")
+	writeTestDataToFile(t, data, "transaction.json")
+	writeTestDataToFile(t, setUpTestData(t), "transaction1.json")
 	cmd := checkTxCmd{
 		Transactions: testFiles,
 		Diffs:        diffFiles,

@@ -34,7 +34,7 @@ integration.test
 .testCoverage.txt
 *.tmp
 tmp/
-cmd/vegatools/testfiles/*
+cmd/vegatools/testdata/*
 
 # Exclude files related to proto
 proto/*-re
@@ -53,3 +53,4 @@ data/
 *.log
 *.patch
 .metals
+/cmd/vegatools/testdata/
