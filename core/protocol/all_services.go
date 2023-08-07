@@ -143,7 +143,7 @@ type allServices struct {
 	commander  *nodewallets.Commander
 	gastimator *processor.Gastimator
 
-	vesting *vesting.Engine
+	vesting *vesting.SnapshotEngine
 }
 
 func newServices(
@@ -294,7 +294,7 @@ func newServices(
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, svcs.stakingAccounts, svcs.epochService, svcs.timeService)
 	}
 
-	svcs.vesting = vesting.New(svcs.log, svcs.collateral, DummyASVM{}, svcs.broker, svcs.assets)
+	svcs.vesting = vesting.NewSnapshotEngine(svcs.log, svcs.collateral, DummyASVM{}, svcs.broker, svcs.assets)
 	svcs.epochService.NotifyOnEpoch(svcs.topology.OnEpochEvent, svcs.vesting.OnEpochEvent)
 	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology)
 
@@ -339,7 +339,7 @@ func newServices(
 
 	svcs.snapshotEngine.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
 		svcs.notary, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar,
-		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier)
+		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier, svcs.vesting)
 
 	svcs.snapshotEngine.AddProviders(svcs.spam)
 
