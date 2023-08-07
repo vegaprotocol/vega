@@ -10,7 +10,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-type SnapshotEngine struct {
+type SnapshottedEngine struct {
 	*Engine
 
 	pl types.Payload
@@ -23,20 +23,20 @@ type SnapshotEngine struct {
 	teamSwitchesKey string
 }
 
-func (e *SnapshotEngine) Namespace() types.SnapshotNamespace {
+func (e *SnapshottedEngine) Namespace() types.SnapshotNamespace {
 	return types.TeamsSnapshot
 }
 
-func (e *SnapshotEngine) Keys() []string {
+func (e *SnapshottedEngine) Keys() []string {
 	return e.hashKeys
 }
 
-func (e *SnapshotEngine) GetState(k string) ([]byte, []types.StateProvider, error) {
+func (e *SnapshottedEngine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	state, err := e.serialise(k)
 	return state, nil, err
 }
 
-func (e *SnapshotEngine) LoadState(_ context.Context, p *types.Payload) ([]types.StateProvider, error) {
+func (e *SnapshottedEngine) LoadState(_ context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != p.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
@@ -53,15 +53,15 @@ func (e *SnapshotEngine) LoadState(_ context.Context, p *types.Payload) ([]types
 	}
 }
 
-func (e *SnapshotEngine) Stopped() bool {
+func (e *SnapshottedEngine) Stopped() bool {
 	return e.stopped
 }
 
-func (e *SnapshotEngine) StopSnapshots() {
+func (e *SnapshottedEngine) StopSnapshots() {
 	e.stopped = true
 }
 
-func (e *SnapshotEngine) serialise(k string) ([]byte, error) {
+func (e *SnapshottedEngine) serialise(k string) ([]byte, error) {
 	if e.stopped {
 		return nil, nil
 	}
@@ -76,7 +76,7 @@ func (e *SnapshotEngine) serialise(k string) ([]byte, error) {
 	}
 }
 
-func (e *SnapshotEngine) serialiseTeams() ([]byte, error) {
+func (e *SnapshottedEngine) serialiseTeams() ([]byte, error) {
 	teams := e.Engine.teams
 	teamsSnapshot := make([]*snapshotpb.Team, 0, len(teams))
 	for _, team := range teams {
@@ -123,7 +123,7 @@ func (e *SnapshotEngine) serialiseTeams() ([]byte, error) {
 	return serialisedTeams, nil
 }
 
-func (e *SnapshotEngine) serialiseTeamSwitches() ([]byte, error) {
+func (e *SnapshottedEngine) serialiseTeamSwitches() ([]byte, error) {
 	teamSwitches := e.Engine.teamSwitches
 	teamSwitchesSnapshot := make([]*snapshotpb.TeamSwitch, 0, len(teamSwitches))
 
@@ -156,15 +156,15 @@ func (e *SnapshotEngine) serialiseTeamSwitches() ([]byte, error) {
 	return serialisedTeamSwitches, nil
 }
 
-func (e *SnapshotEngine) buildHashKeys() {
+func (e *SnapshottedEngine) buildHashKeys() {
 	e.teamsKey = (&types.PayloadTeams{}).Key()
 	e.teamSwitchesKey = (&types.PayloadTeamSwitches{}).Key()
 
 	e.hashKeys = append([]string{}, e.teamsKey, e.teamSwitchesKey)
 }
 
-func NewSnapshotEngine(epochEngine EpochEngine, broker Broker, timeSvc TimeService) *SnapshotEngine {
-	se := &SnapshotEngine{
+func NewSnapshottedEngine(epochEngine EpochEngine, broker Broker, timeSvc TimeService) *SnapshottedEngine {
+	se := &SnapshottedEngine{
 		Engine:  NewEngine(epochEngine, broker, timeSvc),
 		pl:      types.Payload{},
 		stopped: false,

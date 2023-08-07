@@ -122,6 +122,7 @@ func New(
 			svcs.stakingAccounts,
 			svcs.snapshotEngine,
 			svcs.statevar,
+			svcs.teamsEngine,
 			svcs.blockchainClient,
 			svcs.erc20MultiSigTopology,
 			stats.GetVersion(),

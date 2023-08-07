@@ -25,6 +25,7 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 
 	require.NoError(t, snapshotEngine1.Start(ctx))
 
+	teamID1 := newTeamID(t)
 	referrer1 := newPartyID(t)
 	name1 := vgrand.RandomStr(5)
 	teamURL1 := "https://" + name1 + ".io"
@@ -33,11 +34,10 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 	expectTeamCreatedEvent(t, te1)
 	team1CreationDate := time.Now()
 	te1.timeService.EXPECT().GetTimeNow().Return(team1CreationDate).Times(1)
-	teamID1, err := te1.engine.CreateTeam(ctx, referrer1, name1, teamURL1, avatarURL1)
-	require.NoError(t, err)
-	assert.NotEmpty(t, teamID1)
-	assert.Len(t, teamID1, 64)
 
+	require.NoError(t, te1.engine.CreateTeam(ctx, referrer1, teamID1, createTeamCmd(t, name1, teamURL1, avatarURL1)))
+
+	teamID2 := newTeamID(t)
 	referrer2 := newPartyID(t)
 	name2 := vgrand.RandomStr(5)
 	teamURL2 := "https://" + name2 + ".io"
@@ -46,27 +46,24 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 	expectTeamCreatedEvent(t, te1)
 	team2CreationDate := time.Now()
 	te1.timeService.EXPECT().GetTimeNow().Return(team2CreationDate).Times(1)
-	teamID2, err := te1.engine.CreateTeam(ctx, referrer2, name2, teamURL2, avatarURL2)
-	require.NoError(t, err)
-	assert.NotEmpty(t, teamID2)
-	assert.Len(t, teamID2, 64)
+	require.NoError(t, te1.engine.CreateTeam(ctx, referrer2, teamID2, createTeamCmd(t, name2, teamURL2, avatarURL2)))
 
 	referee1 := newPartyID(t)
 	expectRefereeJoinedTeamEvent(t, te1)
 	referee1JoiningDate := time.Now()
 	te1.timeService.EXPECT().GetTimeNow().Return(referee1JoiningDate).Times(1)
-	require.NoError(t, te1.engine.JoinTeam(ctx, teamID1, referee1))
+	require.NoError(t, te1.engine.JoinTeam(ctx, referee1, joinTeamCmd(t, teamID1)))
 
 	referee2 := newPartyID(t)
 
 	expectRefereeJoinedTeamEvent(t, te1)
 	referee2JoiningDate := time.Now()
 	te1.timeService.EXPECT().GetTimeNow().Return(referee2JoiningDate).Times(1)
-	require.NoError(t, te1.engine.JoinTeam(ctx, teamID1, referee2))
+	require.NoError(t, te1.engine.JoinTeam(ctx, referee2, joinTeamCmd(t, teamID1)))
 
 	// This will occur on next epoch, after the snapshot. This help to ensure
 	// team switches are properly snapshot.
-	require.NoError(t, te1.engine.JoinTeam(ctx, teamID2, referee2))
+	require.NoError(t, te1.engine.JoinTeam(ctx, referee2, joinTeamCmd(t, teamID2)))
 	require.True(t, te1.engine.IsTeamMember(referee2))
 
 	// Take a snapshot.

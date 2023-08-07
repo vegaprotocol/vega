@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/core/datasource"
 	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
 	"code.vegaprotocol.io/vega/core/datasource/external/ethverifier"
+	"code.vegaprotocol.io/vega/core/teams"
 
 	"code.vegaprotocol.io/vega/libs/subscribers"
 
@@ -127,6 +128,8 @@ type allServices struct {
 	genesisHandler        *genesis.Handler
 	protocolUpgradeEngine *protocolupgrade.Engine
 
+	teamsEngine *teams.SnapshottedEngine
+
 	// staking
 	ethClient             *ethclient.Client
 	ethConfirmations      *ethclient.EthereumConfirmations
@@ -176,6 +179,8 @@ func newServices(
 
 	svcs.timeService = vegatime.New(svcs.conf.Time, svcs.broker)
 	svcs.epochService = epochtime.NewService(svcs.log, svcs.conf.Epoch, svcs.broker)
+
+	svcs.teamsEngine = teams.NewSnapshottedEngine(svcs.epochService, svcs.broker, svcs.timeService)
 
 	// if we are not a validator, no need to instantiate the commander
 	if svcs.conf.IsValidator() {

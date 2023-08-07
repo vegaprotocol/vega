@@ -2,17 +2,16 @@ package teams
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	proto "code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"golang.org/x/exp/slices"
 )
-
-var ErrReferrerCannotJoinAnotherTeam = errors.New("a referrer cannot join another team")
 
 type Engine struct {
 	broker      Broker
@@ -30,68 +29,78 @@ type Engine struct {
 	teamSwitches map[types.PartyID]teamSwitch
 }
 
-func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, name string, teamURL string, avatarURL string) (types.TeamID, error) {
-	newTeamID := e.newUniqueTeamID()
+func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, deterministicTeamID types.TeamID, params *commandspb.CreateTeam) error {
+	if err := e.ensureUniqueTeamID(deterministicTeamID); err != nil {
+		return err
+	}
 
 	if _, alreadyMember := e.allTeamMembers[referrer]; alreadyMember {
-		return "", ErrPartyAlreadyBelongsToTeam(referrer)
+		return ErrPartyAlreadyBelongsToTeam(referrer)
 	}
 
 	now := e.timeService.GetTimeNow()
 
 	teamToAdd := &types.Team{
-		ID: newTeamID,
+		ID: deterministicTeamID,
 		Referrer: &types.Membership{
 			PartyID:  referrer,
 			JoinedAt: now,
 		},
-		Name:      name,
-		TeamURL:   teamURL,
-		AvatarURL: avatarURL,
+		Name:      ptr.UnBox(params.Name),
+		TeamURL:   ptr.UnBox(params.TeamUrl),
+		AvatarURL: ptr.UnBox(params.AvatarUrl),
 		CreatedAt: now,
 	}
 
-	e.teams[newTeamID] = teamToAdd
+	e.teams[deterministicTeamID] = teamToAdd
 
-	e.allTeamMembers[referrer] = newTeamID
+	e.allTeamMembers[referrer] = deterministicTeamID
 
 	e.notifyTeamCreated(ctx, teamToAdd)
 
-	return newTeamID, nil
+	return nil
 }
 
-func (e *Engine) UpdateTeam(ctx context.Context, id types.TeamID, name string, teamURL string, avatarURL string) error {
-	teamsToUpdate, exists := e.teams[id]
+func (e *Engine) UpdateTeam(ctx context.Context, referrer types.PartyID, params *commandspb.UpdateTeam) error {
+	teamID := types.TeamID(params.TeamId)
+
+	teamsToUpdate, exists := e.teams[teamID]
 	if !exists {
-		return ErrNoTeamMatchesID(id)
+		return ErrNoTeamMatchesID(teamID)
 	}
 
-	teamsToUpdate.Name = name
-	teamsToUpdate.TeamURL = teamURL
-	teamsToUpdate.AvatarURL = avatarURL
+	if teamsToUpdate.Referrer.PartyID != referrer {
+		return ErrOnlyReferrerCanUpdateTeam
+	}
+
+	teamsToUpdate.Name = ptr.UnBox(params.Name)
+	teamsToUpdate.TeamURL = ptr.UnBox(params.TeamUrl)
+	teamsToUpdate.AvatarURL = ptr.UnBox(params.AvatarUrl)
 
 	e.notifyTeamUpdated(ctx, teamsToUpdate)
 
 	return nil
 }
 
-func (e *Engine) JoinTeam(ctx context.Context, teamID types.TeamID, partyID types.PartyID) error {
+func (e *Engine) JoinTeam(ctx context.Context, referee types.PartyID, params *commandspb.JoinTeam) error {
 	for _, team := range e.teams {
-		if team.Referrer.PartyID == partyID {
+		if team.Referrer.PartyID == referee {
 			return ErrReferrerCannotJoinAnotherTeam
 		}
 	}
+
+	teamID := types.TeamID(params.TeamId)
 
 	teamToJoin, exists := e.teams[teamID]
 	if !exists {
 		return ErrNoTeamMatchesID(teamID)
 	}
 
-	teamJoined, alreadyMember := e.allTeamMembers[partyID]
+	teamJoined, alreadyMember := e.allTeamMembers[referee]
 	if alreadyMember {
 		// This party is already member of a team, it will be moved at the end
 		// of epoch.
-		e.teamSwitches[partyID] = teamSwitch{
+		e.teamSwitches[referee] = teamSwitch{
 			fromTeam: teamJoined,
 			toTeam:   teamToJoin.ID,
 		}
@@ -99,11 +108,11 @@ func (e *Engine) JoinTeam(ctx context.Context, teamID types.TeamID, partyID type
 	}
 
 	// The party does not belong to a team, so he joins right away.
-	teamToJoin.AddReferee(partyID, e.timeService.GetTimeNow())
+	teamToJoin.AddReferee(referee, e.timeService.GetTimeNow())
 
-	e.allTeamMembers[partyID] = teamToJoin.ID
+	e.allTeamMembers[referee] = teamToJoin.ID
 
-	e.notifyRefereeJoinedTeam(ctx, teamToJoin, partyID, time.Now())
+	e.notifyRefereeJoinedTeam(ctx, teamToJoin, referee, time.Now())
 
 	return nil
 }
@@ -161,13 +170,11 @@ func (e *Engine) notifyRefereeJoinedTeam(ctx context.Context, teamID *types.Team
 	e.broker.Send(events.NewRefereeJoinedTeamEvent(ctx, teamID.ID, party, joinedAt))
 }
 
-func (e *Engine) newUniqueTeamID() types.TeamID {
-	for {
-		id := types.NewTeamID()
-		if _, exists := e.teams[id]; !exists {
-			return id
-		}
+func (e *Engine) ensureUniqueTeamID(deterministicTeamID types.TeamID) error {
+	if _, exists := e.teams[deterministicTeamID]; exists {
+		return ErrComputedTeamIDIsAlreadyInUse
 	}
+	return nil
 }
 
 func (e *Engine) loadTeamsFromSnapshot(teamsSnapshot []*snapshotpb.Team) {

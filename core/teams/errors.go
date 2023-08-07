@@ -1,9 +1,16 @@
 package teams
 
 import (
+	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/types"
+)
+
+var (
+	ErrOnlyReferrerCanUpdateTeam     = errors.New("only the referrer can update the team properties")
+	ErrReferrerCannotJoinAnotherTeam = errors.New("a referrer cannot join another team")
+	ErrComputedTeamIDIsAlreadyInUse  = errors.New("the computed team ID is already in use")
 )
 
 func ErrNoTeamMatchesID(id types.TeamID) error {
