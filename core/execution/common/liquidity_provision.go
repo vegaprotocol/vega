@@ -487,12 +487,13 @@ func (m *MarketLiquidity) AmendLiquidityProvision(
 		}
 	}
 
-	if !m.liquidityEngine.IsLiquidityProvider(party) {
+	existingAmendment := m.liquidityEngine.PendingProvisionByPartyID(party)
+	if !m.liquidityEngine.IsLiquidityProvider(party) && existingAmendment == nil {
 		return ErrPartyNotLiquidityProvider
 	}
 
 	lp := m.liquidityEngine.LiquidityProvisionByPartyID(party)
-	if lp == nil {
+	if lp == nil && existingAmendment == nil {
 		return fmt.Errorf("cannot edit liquidity provision from a non liquidity provider party (%v)", party)
 	}
 
@@ -512,7 +513,9 @@ func (m *MarketLiquidity) AmendLiquidityProvision(
 	}
 
 	// if pending commitment is being decreased then release the bond collateral
-	existingAmendment := m.liquidityEngine.PendingProvisionByPartyID(party)
+
+	proposedCommitmentVariation := num.DecimalZero()
+
 	if existingAmendment != nil && !lpa.CommitmentAmount.IsZero() && lpa.CommitmentAmount.LT(existingAmendment.CommitmentAmount) {
 		amountToRelease := num.UintZero().Sub(existingAmendment.CommitmentAmount, lpa.CommitmentAmount)
 		_, err := m.releasePendingBondCollateral(ctx, amountToRelease, party)
@@ -524,9 +527,15 @@ func (m *MarketLiquidity) AmendLiquidityProvision(
 
 			return err
 		}
-	}
+		proposedCommitmentVariation = existingAmendment.CommitmentAmount.ToDecimal().Sub(lpa.CommitmentAmount.ToDecimal())
+	} else {
+		if lp != nil {
+			proposedCommitmentVariation = lp.CommitmentAmount.ToDecimal().Sub(lpa.CommitmentAmount.ToDecimal())
+		} else {
+			proposedCommitmentVariation = existingAmendment.CommitmentAmount.ToDecimal().Sub(lpa.CommitmentAmount.ToDecimal())
+		}
 
-	proposedCommitmentVariation := lp.CommitmentAmount.ToDecimal().Sub(lpa.CommitmentAmount.ToDecimal())
+	}
 
 	// if increase commitment transfer funds to bond account
 	if proposedCommitmentVariation.IsNegative() {
@@ -553,7 +562,27 @@ func (m *MarketLiquidity) AmendLiquidityProvision(
 // TODO karel - cancelling should not be just applied right away.
 // It should use similar mechanism as amendment to 0.
 func (m *MarketLiquidity) CancelLiquidityProvision(ctx context.Context, party string) error {
+
+	lp := m.liquidityEngine.LiquidityProvisionByPartyID(party)
+	lpa := m.liquidityEngine.PendingProvisionByPartyID(party)
+	amountToRelease := num.UintZero()
+	if lpa != nil {
+		amountToRelease = lpa.CommitmentAmount.Clone()
+	} else {
+		amountToRelease = lp.CommitmentAmount.Clone()
+	}
+
 	if err := m.liquidityEngine.CancelLiquidityProvision(ctx, party); err != nil {
+		return err
+	}
+
+	_, err := m.releasePendingBondCollateral(ctx, amountToRelease, party)
+	if err != nil {
+		m.log.Debug("could not submit update bond for lp amendment",
+			logging.PartyID(party),
+			logging.MarketID(m.marketID),
+			logging.Error(err))
+
 		return err
 	}
 
