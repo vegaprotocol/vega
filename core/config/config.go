@@ -54,6 +54,7 @@ import (
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/erc20multisig"
 	"code.vegaprotocol.io/vega/core/vegatime"
+	"code.vegaprotocol.io/vega/core/vesting"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/logging"
@@ -98,6 +99,7 @@ type Config struct {
 	ERC20MultiSig     erc20multisig.Config   `group:"ERC20MultiSig"     namespace:"erc20multisig"`
 	ProtocolUpgrade   protocolupgrade.Config `group:"ProtocolUpgrade"   namespace:"protocolupgrade"`
 	Pprof             pprof.Config           `group:"Pprof"             namespace:"pprof"`
+	Vesting           vesting.Config         `group:"Vesting" namespace:"vesting"`
 
 	NodeMode         cfgencoding.NodeMode `description:"The mode of the vega node [validator, full]"                            long:"mode"`
 	MaxMemoryPercent uint8                `description:"The maximum amount of memory reserved for the vega node (default: 33%)" long:"max-memory-percent"`
@@ -142,6 +144,7 @@ func NewDefaultConfig() Config {
 		ERC20MultiSig:     erc20multisig.NewDefaultConfig(),
 		PoW:               pow.NewDefaultConfig(),
 		ProtocolUpgrade:   protocolupgrade.NewDefaultConfig(),
+		Vesting:           vesting.NewDefaultConfig(),
 	}
 }
 

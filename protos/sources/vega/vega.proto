@@ -792,6 +792,12 @@ enum AccountType {
   // Network controlled treasury
   ACCOUNT_TYPE_NETWORK_TREASURY = 21;
 
+  // An account holding users reward for the vesting period
+  ACCOUNT_TYPE_VESTING_REWARDS = 22;
+
+  // An account holding users reward after the vesting period
+  ACCOUNT_TYPE_VESTED_REWARDS = 23;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
@@ -899,6 +905,8 @@ enum TransferType {
   TRANSFER_TYPE_PERP_FUNDING_LOSS = 36;
   // Funds added to margin account after a perpetuals funding gain.
   TRANSFER_TYPE_PERP_FUNDING_WIN = 37;
+  // Funds moved from the vesting account to the vested account once the vesting period is reached.
+  TRANSFER_TYPE_REWARDS_VESTED = 38;
 }
 
 // Represents a financial transfer within Vega

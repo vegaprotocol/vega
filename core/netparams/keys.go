@@ -198,6 +198,9 @@ const (
 
 	// how much to scale the number of proposed blocks used for performance calculation.
 	ValidatorPerformanceScalingFactor = "validator.performance.scaling.factor"
+
+	RewardsVestingBaseRate       = "rewards.vesting.baseRate"
+	RewardVestingMinimumTransfer = "rewards.vesting.minimumTransfer"
 )
 
 var Deprecated = map[string]struct{}{
@@ -207,6 +210,8 @@ var Deprecated = map[string]struct{}{
 }
 
 var AllKeys = map[string]struct{}{
+	RewardVestingMinimumTransfer:                             {},
+	RewardsVestingBaseRate:                                   {},
 	SpotMarketTradingEnabled:                                 {},
 	PerpsMarketTradingEnabled:                                {},
 	EthereumOraclesEnabled:                                   {},

@@ -16,13 +16,6 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/core/datasource"
-	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
-	"code.vegaprotocol.io/vega/core/datasource/external/ethverifier"
-	"code.vegaprotocol.io/vega/core/teams"
-
-	"code.vegaprotocol.io/vega/libs/subscribers"
-
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/banking"
 	"code.vegaprotocol.io/vega/core/blockchain"
@@ -34,6 +27,9 @@ import (
 	ethclient "code.vegaprotocol.io/vega/core/client/eth"
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/core/datasource"
+	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
+	"code.vegaprotocol.io/vega/core/datasource/external/ethverifier"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/datasource/spec/adaptors"
 	oracleAdaptors "code.vegaprotocol.io/vega/core/datasource/spec/adaptors"
@@ -59,10 +55,14 @@ import (
 	"code.vegaprotocol.io/vega/core/staking"
 	"code.vegaprotocol.io/vega/core/statevar"
 	"code.vegaprotocol.io/vega/core/stats"
+	"code.vegaprotocol.io/vega/core/teams"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/erc20multisig"
 	"code.vegaprotocol.io/vega/core/vegatime"
+	"code.vegaprotocol.io/vega/core/vesting"
+	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/version"
@@ -142,6 +142,8 @@ type allServices struct {
 
 	commander  *nodewallets.Commander
 	gastimator *processor.Gastimator
+
+	vesting *vesting.Engine
 }
 
 func newServices(
@@ -292,6 +294,8 @@ func newServices(
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, svcs.stakingAccounts, svcs.epochService, svcs.timeService)
 	}
 
+	svcs.vesting = vesting.New(svcs.log, svcs.collateral, DummyASVM{}, svcs.broker, svcs.assets)
+	svcs.epochService.NotifyOnEpoch(svcs.topology.OnEpochEvent, svcs.vesting.OnEpochEvent)
 	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology)
 
 	svcs.registerTimeServiceCallbacks()
@@ -774,6 +778,14 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Param:   netparams.SpamProtectionMaxStopOrdersPerMarket,
 			Watcher: svcs.executionEngine.OnMarketPartiesMaximumStopOrdersUpdate,
 		},
+		{
+			Param:   netparams.RewardVestingMinimumTransfer,
+			Watcher: svcs.vesting.OnRewardVestingMinimumTransferUpdate,
+		},
+		{
+			Param:   netparams.RewardsVestingBaseRate,
+			Watcher: svcs.vesting.OnRewardVestingBaseRateUpdate,
+		},
 	}
 
 	watchers = append(watchers, powWatchers...)
@@ -781,4 +793,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 
 	// now add some watcher for our netparams
 	return svcs.netParams.Watch(watchers...)
+}
+
+type DummyASVM struct{}
+
+func (DummyASVM) Get(_ string) num.Decimal {
+	return num.MustDecimalFromString("0.01")
 }

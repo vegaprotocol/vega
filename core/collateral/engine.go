@@ -685,6 +685,50 @@ func (e *Engine) TransferRewards(ctx context.Context, rewardAccountID string, tr
 	return responses, nil
 }
 
+func (e *Engine) TransferVestedRewards(
+	ctx context.Context, transfers []*types.Transfer,
+) ([]*types.LedgerMovement, error) {
+	if len(transfers) == 0 {
+		return nil, nil
+	}
+
+	transferReqs := make([]*types.TransferRequest, 0, len(transfers))
+	for _, t := range transfers {
+		transferReqs = append(transferReqs, &types.TransferRequest{
+			FromAccount: []*types.Account{
+				e.GetOrCreatePartyVestingRewardAccount(ctx, t.Owner, t.Amount.Asset),
+			},
+			ToAccount: []*types.Account{
+				e.GetOrCreatePartyVestedRewardAccount(ctx, t.Owner, t.Amount.Asset),
+			},
+			Amount:    t.Amount.Amount.Clone(),
+			MinAmount: t.MinAmount.Clone(),
+			Asset:     t.Amount.Asset,
+			Type:      t.Type,
+		})
+	}
+
+	responses := make([]*types.LedgerMovement, 0, len(transfers))
+	for _, req := range transferReqs {
+		res, err := e.getLedgerEntries(ctx, req)
+		if err != nil {
+			e.log.Error("Failed to transfer funds", logging.Error(err))
+			return nil, err
+		}
+		for _, bal := range res.Balances {
+			if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+				e.log.Error("Could not update the target account in transfer",
+					logging.String("account-id", bal.Account.ID),
+					logging.Error(err))
+				return nil, err
+			}
+		}
+		responses = append(responses, res)
+	}
+
+	return responses, nil
+}
+
 func (e *Engine) TransferFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error) {
 	if len(ft.Transfers()) <= 0 {
 		return nil, nil
@@ -3111,6 +3155,62 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 	}
 
 	return generalID, nil
+}
+
+// GetOrCreatePartyVestingAccount create the general account for a party.
+func (e *Engine) GetOrCreatePartyVestingRewardAccount(ctx context.Context, partyID, asset string) *types.Account {
+	if !e.AssetExists(asset) {
+		e.log.Panic("trying to use an unexisting asset for reward accounts, something went very wrong somewhere",
+			logging.String("asset-id", asset))
+	}
+
+	id := e.accountID(noMarket, partyID, asset, types.AccountTypeVestingRewards)
+	acc, ok := e.accs[id]
+	if !ok {
+		acc := types.Account{
+			ID:       id,
+			Asset:    asset,
+			MarketID: noMarket,
+			Balance:  num.UintZero(),
+			Owner:    partyID,
+			Type:     types.AccountTypeVestingRewards,
+		}
+		e.accs[id] = &acc
+		e.addPartyAccount(partyID, id, &acc)
+		e.addAccountToHashableSlice(&acc)
+		e.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: partyID}))
+		e.broker.Send(events.NewAccountEvent(ctx, acc))
+	}
+
+	return acc
+}
+
+// GetOrCreatePartyVestedAccount create the general account for a party.
+func (e *Engine) GetOrCreatePartyVestedRewardAccount(ctx context.Context, partyID, asset string) *types.Account {
+	if !e.AssetExists(asset) {
+		e.log.Panic("trying to use an unexisting asset for reward accounts, something went very wrong somewhere",
+			logging.String("asset-id", asset))
+	}
+
+	id := e.accountID(noMarket, partyID, asset, types.AccountTypeVestedRewards)
+	acc, ok := e.accs[id]
+	if !ok {
+		acc := types.Account{
+			ID:       id,
+			Asset:    asset,
+			MarketID: noMarket,
+			Balance:  num.UintZero(),
+			Owner:    partyID,
+			Type:     types.AccountTypeVestedRewards,
+		}
+		e.accs[id] = &acc
+		e.addPartyAccount(partyID, id, &acc)
+		e.addAccountToHashableSlice(&acc)
+		e.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: partyID}))
+		e.broker.Send(events.NewAccountEvent(ctx, acc))
+	}
+
+	return acc
 }
 
 // RemoveDistressed will remove all distressed party in the event positions
