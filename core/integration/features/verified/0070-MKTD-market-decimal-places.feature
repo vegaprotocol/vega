@@ -60,18 +60,18 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | lp5 | lpprov | USD/DEC19 | 4000              | 0.001 | submission |
         And the parties place the following pegged iceberg orders:
             | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-            | party0 | USD/DEC20 | 2         | 1                    | sell | ASK              | 100        | 20     |
-            | party0 | USD/DEC20 | 2         | 1                    | buy  | BID              | 100        | 20     |
-            | party0 | USD/DEC21 | 2         | 1                    | sell | ASK              | 100        | 20     |
-            | party0 | USD/DEC21 | 2         | 1                    | buy  | BID              | 100        | 20     |
-            | party0 | USD/DEC19 | 2         | 1                    | sell | ASK              | 100        | 20     |
-            | party0 | USD/DEC19 | 2         | 1                    | buy  | BID              | 100        | 20     |
-            | lpprov | USD/DEC20 | 2         | 1                    | sell | ASK              | 100        | 20     |
-            | lpprov | USD/DEC20 | 2         | 1                    | buy  | BID              | 100        | 20     |
-            | lpprov | USD/DEC21 | 2         | 1                    | sell | ASK              | 100        | 20     |
-            | lpprov | USD/DEC21 | 2         | 1                    | buy  | BID              | 100        | 20     |
-            | lpprov | USD/DEC19 | 2         | 1                    | sell | ASK              | 100        | 20     |
-            | lpprov | USD/DEC19 | 2         | 1                    | buy  | BID              | 100        | 20     |
+            | party0 | USD/DEC20 | 20 | 1 | sell | ASK | 100 | 20 |
+            | party0 | USD/DEC20 | 20 | 1 | buy  | BID | 100 | 20 |
+            | party0 | USD/DEC21 | 20 | 1 | sell | ASK | 100 | 20 |
+            | party0 | USD/DEC21 | 20 | 1 | buy  | BID | 100 | 20 |
+            | party0 | USD/DEC19 | 20 | 1 | sell | ASK | 100 | 20 |
+            | party0 | USD/DEC19 | 20 | 1 | buy  | BID | 100 | 20 |
+            | lpprov | USD/DEC20 | 20 | 1 | sell | ASK | 100 | 20 |
+            | lpprov | USD/DEC20 | 20 | 1 | buy  | BID | 100 | 20 |
+            | lpprov | USD/DEC21 | 20 | 1 | sell | ASK | 100 | 20 |
+            | lpprov | USD/DEC21 | 20 | 1 | buy  | BID | 100 | 20 |
+            | lpprov | USD/DEC19 | 20 | 1 | sell | ASK | 100 | 20 |
+            | lpprov | USD/DEC19 | 20 | 1 | buy  | BID | 100 | 20 |
 
         And the parties place the following orders:
             | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference   |
@@ -108,15 +108,15 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
 
         Then the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond |
-            | party0 | ETH   | USD/DEC21 | 4268   | 4985006  | 1000 |
-            | party1 | ETH   | USD/DEC21 | 1081   | 99996736 |      |
-            | party2 | ETH   | USD/DEC21 | 4268   | 99987196 |      |
-            | party0 | ETH   | USD/DEC20 | 3884   | 4985006  | 1000 |
-            | party1 | ETH   | USD/DEC20 | 1081   | 99996736 |      |
-            | party2 | ETH   | USD/DEC20 | 4268   | 99987196 |      |
-            | party0 | ETH   | USD/DEC19 | 3842   | 4985006  | 1000 |
-            | party1 | ETH   | USD/DEC19 | 1102   | 99996736 |      |
-            | party2 | ETH   | USD/DEC19 | 4268   | 99987196 |      |
+            | party0 | ETH | USD/DEC21 | 43110 | 4910348 | 1000 |
+            | party1 | ETH | USD/DEC21 | 961   | 0       |      |
+            | party2 | ETH | USD/DEC21 | 4268  | 0       |      |
+            | party0 | ETH | USD/DEC20 | 432   | 4910348 | 1000 |
+            | party1 | ETH | USD/DEC20 | 0     | 0       |      |
+            | party2 | ETH | USD/DEC20 | 0     | 0       |      |
+            | party0 | ETH | USD/DEC19 | 43110 | 4910348 | 1000 |
+            | party1 | ETH | USD/DEC19 | 1102  | 0       |      |
+            | party2 | ETH | USD/DEC19 | 4268  | 0       |      |
 
     Scenario: 002: Users engage in a USD market auction, (0070-MKTD-003, 0070-MKTD-008)
         Given the parties submit the following liquidity provision:
@@ -124,9 +124,9 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | lp1 | party0 | ETH/MAR22 | 35569             | 0.001 | submission |
             | lp1 | party0 | ETH/MAR22 | 35569             | 0.001 | amendment  |
         And the parties place the following pegged iceberg orders:
-            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-            | party0 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 20     |
-            | party0 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 20     |
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+            | party0 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500    | 20     |
+            | party0 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500    | 20     |
         And the parties place the following orders:
             | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
             | party1 | ETH/MAR22 | buy  | 1      | 9     | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
@@ -139,11 +139,12 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
         When the opening auction period ends for market "ETH/MAR22"
         Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
         And the auction ends with a traded volume of "10" at a price of "10"
+#there is not enough vol on the order book to closeout praty1, party1's distressed and waiting to be closeout
         And the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond  |
-            | party0 | USD   | ETH/MAR22 | 342072 | 4622359  | 35569 |
-            | party1 | USD   | ETH/MAR22 | 20410  | 99979590 |       |
-            | party2 | USD   | ETH/MAR22 | 59979  | 99940021 |       |
+            | party0 | USD | ETH/MAR22 | 2134142   | 2830289  | 35569 |
+            | party1 | USD | ETH/MAR22 | 100000000 | 0        |       |
+            | party2 | USD | ETH/MAR22 | 70539     | 99929461 |       |
         And the following trades should be executed:
             | buyer  | price | size | seller |
             | party1 | 10    | 10   | party2 |
@@ -154,9 +155,9 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | lp1 | party0 | USD/DEC19 | 50000             | 0.001 | submission |
             | lp1 | party0 | USD/DEC19 | 50000             | 0.001 | amendment  |
         And the parties place the following pegged iceberg orders:
-            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-            | party0 | USD/DEC19 | 2         | 1                    | sell | ASK              | 500        | 20     |
-            | party0 | USD/DEC19 | 2         | 1                    | buy  | BID              | 500        | 20     |
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+            | party0 | USD/DEC19 | 2         | 1                    | sell | ASK              | 500    | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | buy  | BID              | 500    | 20     |
         And the parties place the following orders:
             | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
             | party1 | USD/DEC19 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
@@ -170,7 +171,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
         Then the auction ends with a traded volume of "10" at a price of "1000"
         And the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond  |
-            | party0 | ETH   | USD/DEC19 | 207439 | 4742561  | 50000 |
+            | party0 | ETH | USD/DEC19 | 213415 | 4736585 | 50000 |
             | party1 | ETH   | USD/DEC19 | 1292   | 99998708 |       |
             | party2 | ETH   | USD/DEC19 | 5169   | 99994831 |       |
         And the following trades should be executed:
@@ -184,9 +185,9 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | lp1 | party0 | USD/DEC20 | 500               | 0.001 | submission |
             | lp1 | party0 | USD/DEC20 | 500               | 0.001 | amendment  |
         And the parties place the following pegged iceberg orders:
-            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-            | party0 | USD/DEC20 | 2         | 1                    | sell | ASK              | 500        | 20     |
-            | party0 | USD/DEC20 | 2         | 1                    | buy  | BID              | 500        | 20     |
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+            | party0 | USD/DEC20 | 2         | 1                    | sell | ASK              | 500    | 20     |
+            | party0 | USD/DEC20 | 2         | 1                    | buy  | BID              | 500    | 20     |
         And the parties place the following orders:
             | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference  |
             | party1 | USD/DEC20 | buy  | 1      | 90000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
@@ -200,9 +201,9 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
         Then the auction ends with a traded volume of "10" at a price of "100000"
         And the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond |
-            | party0 | ETH   | USD/DEC20 | 2113   | 4997387  | 500  |
-            | party1 | ETH   | USD/DEC20 | 12     | 99999988 |      |
-            | party2 | ETH   | USD/DEC20 | 52     | 99999948 |      |
+            | party0 | ETH | USD/DEC20 | 2134 | 4997366  | 500 |
+            | party1 | ETH | USD/DEC20 | 12   | 99999988 |     |
+            | party2 | ETH | USD/DEC20 | 52   | 99999948 |     |
         And the following trades should be executed:
             | buyer  | price  | size | seller |
             | party1 | 100000 | 10   | party2 |
@@ -216,11 +217,11 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | submission |
             | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | amendment  |
         And the parties place the following pegged iceberg orders:
-            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-            | party0 | USD/DEC20 | 2         | 1                    | sell | ASK              | 100        | 20     |
-            | party0 | USD/DEC20 | 2         | 1                    | buy  | BID              | 100        | 20     |
-            | party0 | USD/DEC19 | 2         | 1                    | sell | ASK              | 100        | 20     |
-            | party0 | USD/DEC19 | 2         | 1                    | buy  | BID              | 100        | 20     |
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+            | party0 | USD/DEC20 | 2         | 1                    | sell | ASK              | 100    | 20     |
+            | party0 | USD/DEC20 | 2         | 1                    | buy  | BID              | 100    | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | sell | ASK              | 100    | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | buy  | BID              | 100    | 20     |
 
         And the parties place the following orders:
             | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference   |
@@ -244,14 +245,14 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
         When the opening auction period ends for market "USD/DEC20"
         And the opening auction period ends for market "USD/DEC19"
 
-        # party1 has position +10 and mark price 100000
+# party1 has position +10 and mark price 100000
 
         Then the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond   |
-            | party0 | ETH   | USD/DEC20 | 422522 | 4451564  | 100000 |
+            | party0 | ETH | USD/DEC20 | 427 | 4851889 | 100000 |
             | party1 | ETH   | USD/DEC20 | 12     | 99998696 |        |
             | party2 | ETH   | USD/DEC20 | 52     | 99994779 |        |
-            | party0 | ETH   | USD/DEC19 | 20914  | 4451564  | 5000   |
+            | party0 | ETH | USD/DEC19 | 42684 | 4851889 | 5000 |
             | party1 | ETH   | USD/DEC19 | 1292   | 99998696 |        |
             | party2 | ETH   | USD/DEC19 | 5169   | 99994779 |        |
 
@@ -262,10 +263,10 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party2 | ETH   | 1000   |
         Then the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond   |
-            | party0 | ETH   | USD/DEC20 | 422522 | 4452564  | 100000 |
+            | party0 | ETH | USD/DEC20 | 427 | 4852889 | 100000 |
             | party1 | ETH   | USD/DEC20 | 12     | 99999696 |        |
             | party2 | ETH   | USD/DEC20 | 52     | 99995779 |        |
-            | party0 | ETH   | USD/DEC19 | 20914  | 4452564  | 5000   |
+            | party0 | ETH | USD/DEC19 | 42684 | 4852889 | 5000 |
             | party1 | ETH   | USD/DEC19 | 1292   | 99999696 |        |
             | party2 | ETH   | USD/DEC19 | 5169   | 99995779 |        |
 
@@ -278,11 +279,11 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | submission |
             | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | amendment  |
         And the parties place the following pegged iceberg orders:
-            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-            | party0 | USD/DEC20 | 2         | 1                    | sell | ASK              | 100        | 20     |
-            | party0 | USD/DEC20 | 2         | 1                    | buy  | BID              | 100        | 20     |
-            | party0 | USD/DEC19 | 2         | 1                    | sell | ASK              | 100        | 20     |
-            | party0 | USD/DEC19 | 2         | 1                    | buy  | BID              | 100        | 20     |
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+            | party0 | USD/DEC20 | 2         | 1                    | sell | ASK              | 100    | 20     |
+            | party0 | USD/DEC20 | 2         | 1                    | buy  | BID              | 100    | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | sell | ASK              | 100    | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | buy  | BID              | 100    | 20     |
  
         And the parties place the following orders:
             | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference   |
@@ -313,11 +314,11 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | submission |
             | lp2 | party0 | USD/DEC19 | 5000              | 0.001 | amendment  |
         And the parties place the following pegged iceberg orders:
-            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-            | party0 | USD/DEC20 | 2         | 1                    | sell | MID              | 100        | 20     |
-            | party0 | USD/DEC20 | 2         | 1                    | buy  | MID              | 100        | 20     |
-            | party0 | USD/DEC19 | 2         | 1                    | sell | MID              | 100        | 20     |
-            | party0 | USD/DEC19 | 2         | 1                    | buy  | MID              | 100        | 20     |
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+            | party0 | USD/DEC20 | 2         | 1                    | sell | MID              | 100    | 20     |
+            | party0 | USD/DEC20 | 2         | 1                    | buy  | MID              | 100    | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | sell | MID              | 100    | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | buy  | MID              | 100    | 20     |
 
         And the parties place the following orders:
             | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference   |
@@ -357,13 +358,13 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | lp2 | party0 | USD/DEC19 | 1000              | 0.001 | submission |
             | lp2 | party0 | USD/DEC19 | 1000              | 0.001 | amendment  |
         And the parties place the following pegged iceberg orders:
-            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-            | party0 | USD/DEC20 | 2         | 1                    | sell | ASK              | 100        | 20     |
-            | party0 | USD/DEC20 | 2         | 1                    | buy  | BID              | 100        | 20     |
-            | party0 | USD/DEC21 | 2         | 1                    | sell | ASK              | 100        | 20     |
-            | party0 | USD/DEC21 | 2         | 1                    | buy  | BID              | 100        | 20     |
-            | party0 | USD/DEC19 | 2         | 1                    | sell | ASK              | 100        | 20     |
-            | party0 | USD/DEC19 | 2         | 1                    | buy  | BID              | 100        | 20     |
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+            | party0 | USD/DEC20 | 2         | 1                    | sell | ASK              | 100    | 20     |
+            | party0 | USD/DEC20 | 2         | 1                    | buy  | BID              | 100    | 20     |
+            | party0 | USD/DEC21 | 2         | 1                    | sell | ASK              | 100    | 20     |
+            | party0 | USD/DEC21 | 2         | 1                    | buy  | BID              | 100    | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | sell | ASK              | 100    | 20     |
+            | party0 | USD/DEC19 | 2         | 1                    | buy  | BID              | 100    | 20     |
  
         And the parties place the following orders:
             | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference   |
