@@ -162,6 +162,14 @@ func (e *Engine) doesLPMeetsCommitment(
 func (e *Engine) calculateCurrentFeePenalty(timeBookFraction num.Decimal) num.Decimal {
 	one := num.DecimalOne()
 
+	if timeBookFraction.LessThan(e.slaParams.CommitmentMinTimeFraction) {
+		return one
+	}
+
+	if timeBookFraction.Equal(e.slaParams.CommitmentMinTimeFraction) && timeBookFraction.Equal(one) {
+		return num.DecimalZero()
+	}
+
 	// p = (1-[timeBookFraction-commitmentMinTimeFraction/1-commitmentMinTimeFraction]) * slaCompetitionFactor
 	return one.Sub(
 		timeBookFraction.Sub(e.slaParams.CommitmentMinTimeFraction).Div(one.Sub(e.slaParams.CommitmentMinTimeFraction)),
