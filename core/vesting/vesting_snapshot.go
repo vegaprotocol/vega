@@ -24,9 +24,7 @@ import (
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
-var (
-	VestingKey = (&types.PayloadVesting{}).Key()
-)
+var VestingKey = (&types.PayloadVesting{}).Key()
 
 type SnapshotEngine struct {
 	*Engine

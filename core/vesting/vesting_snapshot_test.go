@@ -128,7 +128,6 @@ func epochsForward(t *testing.T, v *testSnapshotEngine) {
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
-
 }
 
 func setDefaults(t *testing.T, v *testSnapshotEngine) {

@@ -91,13 +91,15 @@ func New(
 }
 
 func (e *Engine) OnRewardVestingBaseRateUpdate(
-	_ context.Context, baseRate num.Decimal) error {
+	_ context.Context, baseRate num.Decimal,
+) error {
 	e.baseRate = baseRate
 	return nil
 }
 
 func (e *Engine) OnRewardVestingMinimumTransferUpdate(
-	_ context.Context, minimumTransfer num.Decimal) error {
+	_ context.Context, minimumTransfer num.Decimal,
+) error {
 	e.minTransfer = minimumTransfer
 	return nil
 }
@@ -176,7 +178,7 @@ func (e *Engine) increaseVestingBalance(
 
 // checkLocked will move around locked funds.
 // if the lock for epoch reach 0, the full amount
-// is added to the vesting amount for the asset
+// is added to the vesting amount for the asset.
 func (e *Engine) moveLocked() {
 	for party, partyReward := range e.state {
 		for asset, assetLocks := range partyReward.Locked {
@@ -272,7 +274,7 @@ func (e *Engine) makeTransfer(
 	return transfer
 }
 
-// just remove party entries once they are not needed anymore
+// just remove party entries once they are not needed anymore.
 func (e *Engine) clearup() {
 	for party, v := range e.state {
 		if len(v.Locked) <= 0 && len(v.Vesting) <= 0 {
