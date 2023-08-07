@@ -243,4 +243,18 @@ Feature: check the insurance pool getting shared equally between all markets wit
     And the network moves ahead "3" blocks
     # When a market ETH/DEC20 is closed, the insurance pool account has its outstanding funds transferred to the [network treasury]
     And the global insurance pool balance should be "2736" for the asset "USD"
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
+    And the insurance pool balance should be "0" for the market "ETH/DEC20"
+    And the insurance pool balance should be "2734" for the market "ETH/DEC21"
+
+    Then the parties should have the following profit and loss:
+      | party            | volume | unrealised pnl | realised pnl |
+      | sellSideProvider | -291   | 8720           | 0            |
+      | buySideProvider  | 291    | -20            | 0            |
+      | designatedLooser | 0      | 0              | -17650       |
+
+    Then the parties should have the following account balances:
+      | party            | asset | market id | margin | general       |
+      | buySideProvider  | USD   | ETH/DEC19 | 0      | 999999988326  |
+      | sellSideProvider | USD   | ETH/DEC19 | 0      | 1000000020360 |
 
