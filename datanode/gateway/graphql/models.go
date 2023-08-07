@@ -161,7 +161,7 @@ type DataSourceSpec struct {
 }
 
 // Bindings to describe which property of the data source data is to be used as settlement data
-// and which to use as the trading termination trigger.
+// and which is to be used as the trading termination trigger.
 type DataSourceSpecPerpetualBinding struct {
 	// Name of the property in the source data that should be used as settlement data.
 	// For example, if it is set to "prices.BTC.value", then the perpetual market will use the value of this property

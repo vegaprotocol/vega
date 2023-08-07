@@ -1509,23 +1509,23 @@ type Future {
   dataSourceSpecBinding: DataSourceSpecToFutureBinding!
 }
 
-"A spot FX product"
+"Spot FX product"
 type Spot {
-  "The underlying base asset for the spot product"
+  "Underlying base asset for the spot product"
   baseAsset: Asset!
-  "The underlying quote asset for the spot product"
+  "Underlying quote asset for the spot product"
   quoteAsset: Asset!
   "Name of the instrument"
   name: String!
 }
 
-"A perpetual future product"
+"Perpetual future product"
 type Perpetual {
   "Underlying asset for the perpetual instrument"
   settlementAsset: Asset!
   "Quote name of the instrument"
   quoteName: String!
-  "Controls how much the upcoming funding paymnent liability contributes to party's margin, in the range [0, 1]"
+  "Controls how much the upcoming funding payment liability contributes to party's margin, in the range [0, 1]"
   marginFundingFactor: String!
   "Continuously compounded interest rate used in funding rate calculation, in the range [-1, 1]"
   interestRate: String!
@@ -1543,7 +1543,7 @@ type Perpetual {
 
 """
 Bindings to describe which property of the data source data is to be used as settlement data
-and which to use as the trading termination trigger.
+and which is to be used as the trading termination trigger.
 """
 type DataSourceSpecPerpetualBinding {
   """
@@ -3670,9 +3670,9 @@ type FutureProduct {
 }
 
 type SpotProduct {
-  "The underlying base asset for the spot product"
+  "Underlying base asset for the spot product"
   baseAsset: Asset!
-  "The underlying quote asset for the spot product"
+  "Underlying quote asset for the spot product"
   quoteAsset: Asset!
   "Name of the instrument"
   name: String!
@@ -3683,7 +3683,7 @@ type PerpetualProduct {
   settlementAsset: Asset!
   "Quote name of the instrument"
   quoteName: String!
-  "Controls how much the upcoming funding paymnent liability contributes to party's margin, in the range [0, 1]"
+  "Controls how much the upcoming funding payment liability contributes to party's margin, in the range [0, 1]"
   marginFundingFactor: String!
   "Continuously compounded interest rate used in funding rate calculation, in the range [-1, 1]"
   interestRate: String!
@@ -3962,11 +3962,11 @@ type NewSpotMarket {
   metadata: [String!]!
   "Price monitoring parameters"
   priceMonitoringParameters: PriceMonitoringParameters!
-  "Specifies parameters related to target stake calculation"
+  "Specifies parameters related to liquidity target stake calculation"
   targetStakeParameters: TargetStakeParameters!
   "New spot market risk model parameters"
   riskParameters: RiskModel
-  "Decimal placesfor order sizes, sets what size the smallest order / position on the spot market can be"
+  "Decimal places for order sizes, sets what size the smallest order / position on the spot market can be"
   positionDecimalPlaces: Int!
   "Specifies the liquidity provision SLA parameters"
   liquiditySLAParams: LiquiditySLAParameters!
@@ -3999,7 +3999,7 @@ type LiquiditySLAParameters {
   commitmentMinTimeFraction: String!
   "Specifies how often the quality of liquidity supplied by the LPS is evaluated and fees arising from that period are earmarked for specific parties"
   providersFeeCalculationTimeStep: Int!
-  "Specified the number of liquidity epochs over which past performance will continue to affect rewards"
+  "Specifies the number of liquidity epochs over which past performance will continue to affect rewards"
   performanceHysteresisEpochs: Int!
   """
   Specifies the maximum fraction of their accrued fees an LP that meets the SLA implied by market.liquidity.commitmentMinTimeFraction will
