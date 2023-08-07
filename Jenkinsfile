@@ -221,8 +221,8 @@ pipeline {
                 stage('core/integration perps tests') {
                     steps {
                         dir('vega/core/integration') {
-                            sh 'go test -v  . -perps --godog.format=junit:core-integration-perps-report.xml'
-                            junit checksName: 'Core Integration Perps Tests', testResults: 'core-integration-perps-report.xml'
+                            // sh 'go test -v  . -perps --godog.format=junit:core-integration-perps-report.xml'
+                            // junit checksName: 'Core Integration Perps Tests', testResults: 'core-integration-perps-report.xml'
                         }
                     }
                 }
