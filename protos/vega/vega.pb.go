@@ -689,9 +689,9 @@ const (
 	AccountType_ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION AccountType = 20
 	// Network controlled treasury
 	AccountType_ACCOUNT_TYPE_NETWORK_TREASURY AccountType = 21
-	// An account holding users reward for the vesting period
+	// Account holding user's rewards for the vesting period
 	AccountType_ACCOUNT_TYPE_VESTING_REWARDS AccountType = 22
-	// An account holding users reward after the vesting period
+	// Account holding user's rewards after the vesting period
 	AccountType_ACCOUNT_TYPE_VESTED_REWARDS AccountType = 23
 )
 

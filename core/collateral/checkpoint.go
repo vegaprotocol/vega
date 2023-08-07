@@ -25,8 +25,10 @@ import (
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 )
 
-const separator = "___"
-const vestingAccountPrefix = "vesting"
+const (
+	separator            = "___"
+	vestingAccountPrefix = "vesting"
+)
 
 func (e *Engine) Name() types.CheckpointName {
 	return types.CollateralCheckpoint
@@ -77,7 +79,7 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 
 	for _, balance := range msg.Balances {
 		ub, _ := num.UintFromString(balance.Balance, 10)
-		isVesting := strings.HasPrefix(vestingAccountPrefix, balance.Party)
+		isVesting := strings.HasPrefix(balance.Party, vestingAccountPrefix)
 		if isVesting {
 			balance.Party = strings.TrimPrefix(balance.Party, vestingAccountPrefix)
 		}
@@ -126,7 +128,6 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 			if err != nil {
 				return err
 			}
-
 		} else {
 			accID := e.accountID(market, balance.Party, balance.Asset, types.AccountTypeGeneral)
 			if _, err := e.GetAccountByID(accID); err != nil {

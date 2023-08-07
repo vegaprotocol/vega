@@ -295,7 +295,7 @@ func newServices(
 	}
 
 	svcs.vesting = vesting.NewSnapshotEngine(svcs.log, svcs.collateral, DummyASVM{}, svcs.broker, svcs.assets)
-	svcs.epochService.NotifyOnEpoch(svcs.topology.OnEpochEvent, svcs.vesting.OnEpochEvent)
+	svcs.epochService.NotifyOnEpoch(svcs.vesting.OnEpochEvent, svcs.vesting.OnEpochRestore)
 	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology)
 
 	svcs.registerTimeServiceCallbacks()

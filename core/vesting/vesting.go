@@ -79,14 +79,12 @@ func New(
 	log = log.Named(namedLogger)
 
 	return &Engine{
-		log:         log,
-		c:           c,
-		asvm:        asvm,
-		broker:      broker,
-		assets:      assets,
-		baseRate:    num.MustDecimalFromString("0.01"),
-		minTransfer: num.MustDecimalFromString("0.01"),
-		state:       map[string]*PartyRewards{},
+		log:    log,
+		c:      c,
+		asvm:   asvm,
+		broker: broker,
+		assets: assets,
+		state:  map[string]*PartyRewards{},
 	}
 }
 
@@ -111,6 +109,8 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 		e.clearup()
 	}
 }
+
+func (e *Engine) OnEpochRestore(ctx context.Context, epoch types.Epoch) {}
 
 func (e *Engine) AddReward(
 	party, asset string,

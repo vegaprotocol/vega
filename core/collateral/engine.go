@@ -3167,7 +3167,7 @@ func (e *Engine) GetOrCreatePartyVestingRewardAccount(ctx context.Context, party
 	id := e.accountID(noMarket, partyID, asset, types.AccountTypeVestingRewards)
 	acc, ok := e.accs[id]
 	if !ok {
-		acc := types.Account{
+		acc = &types.Account{
 			ID:       id,
 			Asset:    asset,
 			MarketID: noMarket,
@@ -3175,11 +3175,11 @@ func (e *Engine) GetOrCreatePartyVestingRewardAccount(ctx context.Context, party
 			Owner:    partyID,
 			Type:     types.AccountTypeVestingRewards,
 		}
-		e.accs[id] = &acc
-		e.addPartyAccount(partyID, id, &acc)
-		e.addAccountToHashableSlice(&acc)
+		e.accs[id] = acc
+		e.addPartyAccount(partyID, id, acc)
+		e.addAccountToHashableSlice(acc)
 		e.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: partyID}))
-		e.broker.Send(events.NewAccountEvent(ctx, acc))
+		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 
 	return acc
@@ -3195,7 +3195,7 @@ func (e *Engine) GetOrCreatePartyVestedRewardAccount(ctx context.Context, partyI
 	id := e.accountID(noMarket, partyID, asset, types.AccountTypeVestedRewards)
 	acc, ok := e.accs[id]
 	if !ok {
-		acc := types.Account{
+		acc = &types.Account{
 			ID:       id,
 			Asset:    asset,
 			MarketID: noMarket,
@@ -3203,11 +3203,11 @@ func (e *Engine) GetOrCreatePartyVestedRewardAccount(ctx context.Context, partyI
 			Owner:    partyID,
 			Type:     types.AccountTypeVestedRewards,
 		}
-		e.accs[id] = &acc
-		e.addPartyAccount(partyID, id, &acc)
-		e.addAccountToHashableSlice(&acc)
+		e.accs[id] = acc
+		e.addPartyAccount(partyID, id, acc)
+		e.addAccountToHashableSlice(acc)
 		e.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: partyID}))
-		e.broker.Send(events.NewAccountEvent(ctx, acc))
+		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 
 	return acc
