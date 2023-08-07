@@ -182,11 +182,11 @@ func (e *Engine) moveLocked() {
 		for asset, assetLocks := range partyReward.Locked {
 			newLocked := map[uint64]*num.Uint{}
 			for epochLeft, amount := range assetLocks {
-				epochLeft--
 				if epochLeft == 0 {
 					e.increaseVestingBalance(party, asset, amount)
 					continue
 				}
+				epochLeft--
 				// just add the new map
 				newLocked[epochLeft] = amount
 			}
@@ -218,10 +218,17 @@ func (e *Engine) distributeVested(ctx context.Context) {
 			// we can delete it.
 			if transfer.MinAmount.EQ(balance) {
 				delete(rewards.Vesting, asset)
+			} else {
+				rewards.Vesting[asset] = balance.Sub(balance, transfer.MinAmount)
 			}
 
 			transfers = append(transfers, transfer)
 		}
+	}
+
+	// nothing to be done
+	if len(transfers) <= 0 {
+		return
 	}
 
 	responses, err := e.c.TransferVestedRewards(ctx, transfers)
@@ -248,17 +255,19 @@ func (e *Engine) makeTransfer(
 		Type: types.TransferTypeRewardsVested,
 	}
 
-	// have we reach the minimum point where the remaining balance is <= to the
-	// minimument transfer amount?
-	if balance.LTE(minTransferAmount) {
-		transfer.Amount.Amount = balance.Clone()
-		transfer.MinAmount = balance.Clone()
-	} else {
-		transfer.Amount.Amount, _ = num.UintFromDecimal(
-			balance.ToDecimal().Mul(e.baseRate).Mul(e.asvm.Get(party)),
-		)
-		transfer.MinAmount = transfer.Amount.Amount.Clone()
-	}
+	expectTransfer, _ := num.UintFromDecimal(
+		balance.ToDecimal().Mul(e.baseRate).Mul(e.asvm.Get(party)),
+	)
+
+	// now we see which is the largest between the minimumTransfer
+	// and the expected transfer
+	expectTransfer = num.Max(expectTransfer, minTransferAmount)
+
+	// and now we prevent any transfer to exceed the current balance
+	expectTransfer = num.Min(expectTransfer, balance)
+
+	transfer.Amount.Amount = expectTransfer.Clone()
+	transfer.MinAmount = expectTransfer
 
 	return transfer
 }
