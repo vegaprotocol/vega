@@ -1123,7 +1123,10 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 			if p.Terms.GetNewMarket().Changes.ProductType() == types.ProductTypePerps && !app.limits.CanProposePerpsMarket() {
 				return ErrPerpsMarketProposalDisabled
 			}
-			return validateUseOfEthOracles(p.Terms.GetNewMarket(), app.netp)
+			return validateUseOfEthOracles(p.Terms, app.netp)
+		case types.ProposalTermsTypeUpdateMarket:
+			return validateUseOfEthOracles(p.Terms, app.netp)
+
 		case types.ProposalTermsTypeNewAsset:
 			if !app.limits.CanProposeAsset() {
 				return ErrAssetProposalDisabled
@@ -1137,32 +1140,73 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 	return nil
 }
 
-func validateUseOfEthOracles(terms *types.NewMarket, netp NetworkParameters) error {
-	if terms.Changes == nil {
-		return nil
-	}
-
-	if terms.Changes.Instrument == nil {
-		return nil
-	}
-
-	if terms.Changes.Instrument.Product == nil {
-		return nil
-	}
-
+func validateUseOfEthOracles(terms *types.ProposalTerms, netp NetworkParameters) error {
 	ethOracleEnabled, _ := netp.GetInt(netparams.EthereumOraclesEnabled)
 
-	switch product := terms.Changes.Instrument.Product.(type) {
-	case *types.InstrumentConfigurationFuture:
-		if product.Future == nil {
+	switch terms.Change.GetTermType() {
+	case types.ProposalTermsTypeNewMarket:
+		m := terms.GetNewMarket()
+		if m == nil {
 			return nil
 		}
-		terminatedWithEthOracle := !product.Future.DataSourceSpecForTradingTermination.GetEthCallSpec().IsZero()
-		settledWithEthOracle := !product.Future.DataSourceSpecForSettlementData.GetEthCallSpec().IsZero()
-		if (terminatedWithEthOracle || settledWithEthOracle) && ethOracleEnabled != 1 {
-			return ErrEthOraclesDisabled
+
+		if m.Changes == nil {
+			return nil
+		}
+
+		// Here the instrument is *types.InstrumentConfiguration
+		if m.Changes.Instrument == nil {
+			return nil
+		}
+
+		if m.Changes.Instrument.Product == nil {
+			return nil
+		}
+
+		switch product := m.Changes.Instrument.Product.(type) {
+		case *types.InstrumentConfigurationFuture:
+			if product.Future == nil {
+				return nil
+			}
+			terminatedWithEthOracle := !product.Future.DataSourceSpecForTradingTermination.GetEthCallSpec().IsZero()
+			settledWithEthOracle := !product.Future.DataSourceSpecForSettlementData.GetEthCallSpec().IsZero()
+			if (terminatedWithEthOracle || settledWithEthOracle) && ethOracleEnabled != 1 {
+				return ErrEthOraclesDisabled
+			}
+		}
+
+	case types.ProposalTermsTypeUpdateMarket:
+		m := terms.GetUpdateMarket()
+		if m == nil {
+			return nil
+		}
+
+		if m.Changes == nil {
+			return nil
+		}
+
+		// Here the instrument is *types.UpdateInstrumentConfiguration
+		if m.Changes.Instrument == nil {
+			return nil
+		}
+
+		if m.Changes.Instrument.Product == nil {
+			return nil
+		}
+
+		switch product := m.Changes.Instrument.Product.(type) {
+		case *types.UpdateInstrumentConfigurationFuture:
+			if product.Future == nil {
+				return nil
+			}
+			terminatedWithEthOracle := !product.Future.DataSourceSpecForTradingTermination.GetEthCallSpec().IsZero()
+			settledWithEthOracle := !product.Future.DataSourceSpecForSettlementData.GetEthCallSpec().IsZero()
+			if (terminatedWithEthOracle || settledWithEthOracle) && ethOracleEnabled != 1 {
+				return ErrEthOraclesDisabled
+			}
 		}
 	}
+
 	return nil
 }
 
