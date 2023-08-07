@@ -792,10 +792,10 @@ enum AccountType {
   // Network controlled treasury
   ACCOUNT_TYPE_NETWORK_TREASURY = 21;
 
-  // An account holding users reward for the vesting period
+  // Account holding user's rewards for the vesting period
   ACCOUNT_TYPE_VESTING_REWARDS = 22;
 
-  // An account holding users reward after the vesting period
+  // Account holding user's rewards after the vesting period
   ACCOUNT_TYPE_VESTED_REWARDS = 23;
 
   // Note: If adding an enum value, add a matching entry in:

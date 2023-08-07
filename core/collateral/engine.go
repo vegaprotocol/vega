@@ -3160,7 +3160,7 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 // GetOrCreatePartyVestingAccount create the general account for a party.
 func (e *Engine) GetOrCreatePartyVestingRewardAccount(ctx context.Context, partyID, asset string) *types.Account {
 	if !e.AssetExists(asset) {
-		e.log.Panic("trying to use an unexisting asset for reward accounts, something went very wrong somewhere",
+		e.log.Panic("trying to use a nonexisting asset for reward accounts, something went very wrong somewhere",
 			logging.String("asset-id", asset))
 	}
 
@@ -3188,7 +3188,7 @@ func (e *Engine) GetOrCreatePartyVestingRewardAccount(ctx context.Context, party
 // GetOrCreatePartyVestedAccount create the general account for a party.
 func (e *Engine) GetOrCreatePartyVestedRewardAccount(ctx context.Context, partyID, asset string) *types.Account {
 	if !e.AssetExists(asset) {
-		e.log.Panic("trying to use an unexisting asset for reward accounts, something went very wrong somewhere",
+		e.log.Panic("trying to use a nonexisting asset for reward accounts, something went very wrong somewhere",
 			logging.String("asset-id", asset))
 	}
 
