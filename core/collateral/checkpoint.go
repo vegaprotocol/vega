@@ -26,6 +26,7 @@ import (
 )
 
 const separator = "___"
+const vestingAccountPrefix = "vesting"
 
 func (e *Engine) Name() types.CheckpointName {
 	return types.CollateralCheckpoint
@@ -76,6 +77,10 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 
 	for _, balance := range msg.Balances {
 		ub, _ := num.UintFromString(balance.Balance, 10)
+		isVesting := strings.HasPrefix(vestingAccountPrefix, balance.Party)
+		if isVesting {
+			balance.Party = strings.TrimPrefix(balance.Party, vestingAccountPrefix)
+		}
 		partyComponents := strings.Split(balance.Party, separator)
 		owner := partyComponents[0]
 		market := noMarket
@@ -106,14 +111,32 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 			ledgerMovements = append(ledgerMovements, lm)
 			continue
 		}
-		accID := e.accountID(market, balance.Party, balance.Asset, types.AccountTypeGeneral)
-		if _, err := e.GetAccountByID(accID); err != nil {
-			_, _ = e.CreatePartyGeneralAccount(ctx, balance.Party, balance.Asset)
-		}
-		lm, err := e.RestoreCheckpointBalance(
-			ctx, noMarket, balance.Party, balance.Asset, types.AccountTypeGeneral, ub.Clone())
-		if err != nil {
-			return err
+		var (
+			lm  *types.LedgerMovement
+			err error
+		)
+
+		if isVesting {
+			accID := e.accountID(market, balance.Party, balance.Asset, types.AccountTypeVestingRewards)
+			if _, err := e.GetAccountByID(accID); err != nil {
+				_ = e.GetOrCreatePartyVestingRewardAccount(ctx, balance.Party, balance.Asset)
+			}
+			lm, err = e.RestoreCheckpointBalance(
+				ctx, noMarket, balance.Party, balance.Asset, types.AccountTypeVestingRewards, ub.Clone())
+			if err != nil {
+				return err
+			}
+
+		} else {
+			accID := e.accountID(market, balance.Party, balance.Asset, types.AccountTypeGeneral)
+			if _, err := e.GetAccountByID(accID); err != nil {
+				_, _ = e.CreatePartyGeneralAccount(ctx, balance.Party, balance.Asset)
+			}
+			lm, err = e.RestoreCheckpointBalance(
+				ctx, noMarket, balance.Party, balance.Asset, types.AccountTypeGeneral, ub.Clone())
+			if err != nil {
+				return err
+			}
 		}
 		ledgerMovements = append(ledgerMovements, lm)
 	}
@@ -135,11 +158,28 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 			continue
 		}
 		switch acc.Type {
+		// vesting rewards needs to be stored separately
+		// so that vesting can be started again
+		case types.AccountTypeVestingRewards:
+			owner := vestingAccountPrefix + acc.Owner
+
+			assets, ok := balances[owner]
+			if !ok {
+				assets = map[string]*num.Uint{}
+				balances[owner] = assets
+			}
+			balance, ok := assets[acc.Asset]
+			if !ok {
+				balance = num.UintZero()
+				assets[acc.Asset] = balance
+			}
+			balance.AddSum(acc.Balance)
+
 		case types.AccountTypeMargin, types.AccountTypeGeneral, types.AccountTypeHolding, types.AccountTypeBond, types.AccountTypeFeesLiquidity,
 			types.AccountTypeInsurance, types.AccountTypeGlobalReward, types.AccountTypeLiquidityFeesBonusDistribution, types.AccountTypeLPLiquidityFees,
 			types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward,
 			types.AccountTypeMarketProposerReward, types.AccountTypeFeesInfrastructure, types.AccountTypePendingTransfers,
-			types.AccountTypeNetworkTreasury, types.AccountTypeGlobalInsurance:
+			types.AccountTypeNetworkTreasury, types.AccountTypeGlobalInsurance, types.AccountTypeVestedRewards:
 			owner := acc.Owner
 			// NB: market insurance accounts funds will flow implicitly using this logic into the network treasury for the asset
 			// similarly LP Fee bonus distribution bonus account would fall over into the network treasury of the asset.
