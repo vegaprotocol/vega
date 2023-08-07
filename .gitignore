@@ -53,4 +53,3 @@ data/
 *.log
 *.patch
 .metals
-/cmd/vegatools/testdata/
