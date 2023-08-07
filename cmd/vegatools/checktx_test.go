@@ -110,6 +110,6 @@ func TestInspectTxsInDirectoryCmd_ErrReturnedAfterInspectingAllFilesIfNoMatch(t 
 	err = cmd.Execute(nil)
 	assert.Error(t, err, "inspectTxsInDirectoryCmd was expected to fail, however the command did not throw any error")
 	assert.Equalf(t, 1, transactionDiffs, "expected there to be 1 failure, instead there was %d", transactionDiffs)
-	assert.Equalf(t, 1, transactionsPassed, "expected there to be no passing transactions, instead there was %d", transactionsPassed)
-	assert.Equalf(t, 2, transactionsAnalysed, "expected there to be 1 analysed transaction, instead there was %d", transactionsAnalysed)
+	assert.Equalf(t, 1, transactionsPassed, "expected there to be 1 passing transaction, instead there was %d", transactionsPassed)
+	assert.Equalf(t, 2, transactionsAnalysed, "expected there to be 2 analysed transactions, instead there was %d", transactionsAnalysed)
 }
