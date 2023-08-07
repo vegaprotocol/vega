@@ -74,7 +74,20 @@ func TheMarkets(
 	markets := make([]types.Market, 0, len(rows))
 
 	for _, row := range rows {
-		mkt := newMarket(config, netparams, marketRow{row: row})
+		mRow := marketRow{row: row}
+		isPerp := mRow.isPerp()
+		if !isPerp {
+			// check if we have a perp counterpart for this oracle, if so, swap to that
+			if oName := mRow.oracleConfig(); oName != config.OracleConfigs.CheckName(oName) {
+				isPerp = true
+			}
+		}
+		var mkt types.Market
+		if isPerp {
+			mkt = newPerpMarket(config, netparams, mRow)
+		} else {
+			mkt = newMarket(config, netparams, mRow)
+		}
 		markets = append(markets, mkt)
 	}
 
@@ -172,11 +185,11 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 	}
 	// product update
 	if oracle, ok := row.oracleConfig(); ok {
-		oracleSettlement, err := config.OracleConfigs.Get(oracle, "settlement data")
+		oracleSettlement, err := config.OracleConfigs.GetFuture(oracle, "settlement data")
 		if err != nil {
 			panic(err)
 		}
-		oracleTermination, err := config.OracleConfigs.Get(oracle, "trading termination")
+		oracleTermination, err := config.OracleConfigs.GetFuture(oracle, "trading termination")
 		if err != nil {
 			panic(err)
 		}
@@ -292,18 +305,108 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 	return update
 }
 
+func newPerpMarket(config *market.Config, netparams *netparams.Store, row marketRow) types.Market {
+	fees, err := config.FeesConfig.Get(row.fees())
+	if err != nil {
+		panic(err)
+	}
+
+	perp, err := config.OracleConfigs.GetFullPerp(row.oracleConfig())
+	if err != nil {
+		panic(err)
+	}
+	pfp := types.PerpsFromProto(perp)
+	asset, quote := row.asset(), row.quoteName()
+	// long term, this should become redundant, but for the perps flag this is useful to have
+	if asset != pfp.SettlementAsset {
+		pfp.SettlementAsset = asset
+	}
+	if quote != pfp.QuoteName {
+		pfp.QuoteName = row.quoteName()
+	}
+
+	priceMonitoring, err := config.PriceMonitoring.Get(row.priceMonitoring())
+	if err != nil {
+		panic(err)
+	}
+
+	marginCalculator, err := config.MarginCalculators.Get(row.marginCalculator())
+	if err != nil {
+		panic(err)
+	}
+
+	liqMon, err := config.LiquidityMonitoring.GetType(row.liquidityMonitoring())
+	if err != nil {
+		panic(err)
+	}
+
+	lpPriceRange := row.lpPriceRange()
+	linearSlippageFactor := row.linearSlippageFactor()
+	quadraticSlippageFactor := row.quadraticSlippageFactor()
+
+	setLiquidityMonitoringNetParams(liqMon, netparams)
+
+	m := types.Market{
+		TradingMode:           types.MarketTradingModeContinuous,
+		State:                 types.MarketStateActive,
+		ID:                    row.id(),
+		DecimalPlaces:         row.decimalPlaces(),
+		PositionDecimalPlaces: row.positionDecimalPlaces(),
+		Fees:                  types.FeesFromProto(fees),
+		TradableInstrument: &types.TradableInstrument{
+			Instrument: &types.Instrument{
+				ID:   fmt.Sprintf("Crypto/%s/Perpetual", row.id()),
+				Code: fmt.Sprintf("CRYPTO/%v", row.id()),
+				Name: fmt.Sprintf("%s perpetual", row.id()),
+				Metadata: &types.InstrumentMetadata{
+					Tags: []string{
+						"asset_class:fx/crypto",
+						"product:perpetual",
+					},
+				},
+				Product: &types.InstrumentPerps{
+					Perps: pfp,
+				},
+			},
+			MarginCalculator: types.MarginCalculatorFromProto(marginCalculator),
+		},
+		OpeningAuction:                openingAuction(row),
+		PriceMonitoringSettings:       types.PriceMonitoringSettingsFromProto(priceMonitoring),
+		LiquidityMonitoringParameters: liqMon,
+		LPPriceRange:                  num.DecimalFromFloat(lpPriceRange),
+		LinearSlippageFactor:          num.DecimalFromFloat(linearSlippageFactor),
+		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
+	}
+
+	if row.isSuccessor() {
+		m.ParentMarketID = row.parentID()
+		m.InsurancePoolFraction = row.insuranceFraction()
+		// increase opening auction duration by a given amount
+		m.OpeningAuction.Duration += row.successorAuction()
+	}
+
+	tip := m.TradableInstrument.IntoProto()
+	err = config.RiskModels.LoadModel(row.riskModel(), tip)
+	m.TradableInstrument = types.TradableInstrumentFromProto(tip)
+	if err != nil {
+		panic(err)
+	}
+
+	return m
+}
+
 func newMarket(config *market.Config, netparams *netparams.Store, row marketRow) types.Market {
 	fees, err := config.FeesConfig.Get(row.fees())
 	if err != nil {
 		panic(err)
 	}
 
-	oracleConfigForSettlement, err := config.OracleConfigs.Get(row.oracleConfig(), "settlement data")
+	oracleConfigForSettlement, err := config.OracleConfigs.GetFuture(row.oracleConfig(), "settlement data")
 	if err != nil {
 		panic(err)
 	}
 
-	oracleConfigForTradingTermination, err := config.OracleConfigs.Get(row.oracleConfig(), "trading termination")
+	oracleConfigForTradingTermination, err := config.OracleConfigs.GetFuture(row.oracleConfig(), "trading termination")
 	if err != nil {
 		panic(err)
 	}
@@ -439,6 +542,7 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"insurance pool fraction",
 		"successor auction",
 		"is passed",
+		"market type",
 	})
 }
 
@@ -583,6 +687,13 @@ func (r marketRow) quadraticSlippageFactor() float64 {
 
 func (r marketRow) isSuccessor() bool {
 	if pid, ok := r.row.StrB("parent market id"); !ok || len(pid) == 0 {
+		return false
+	}
+	return true
+}
+
+func (r marketRow) isPerp() bool {
+	if mt, ok := r.row.StrB("market type"); !ok || mt != "perp" {
 		return false
 	}
 	return true

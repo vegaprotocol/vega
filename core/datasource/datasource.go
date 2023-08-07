@@ -155,8 +155,8 @@ func (b SpecBindingForPerps) String() string {
 	)
 }
 
-func (b SpecBindingForPerps) IntoProto() *vegapb.DataSourceSpecToPerpsBinding {
-	return &vegapb.DataSourceSpecToPerpsBinding{
+func (b SpecBindingForPerps) IntoProto() *vegapb.DataSourceSpecToPerpetualBinding {
+	return &vegapb.DataSourceSpecToPerpetualBinding{
 		SettlementDataProperty:     b.SettlementDataProperty,
 		SettlementScheduleProperty: b.SettlementScheduleProperty,
 	}
@@ -169,7 +169,7 @@ func (b SpecBindingForPerps) DeepClone() *SpecBindingForPerps {
 	}
 }
 
-func SpecBindingForPerpsFromProto(o *vegapb.DataSourceSpecToPerpsBinding) *SpecBindingForPerps {
+func SpecBindingForPerpsFromProto(o *vegapb.DataSourceSpecToPerpetualBinding) *SpecBindingForPerps {
 	return &SpecBindingForPerps{
 		SettlementDataProperty:     o.SettlementDataProperty,
 		SettlementScheduleProperty: o.SettlementScheduleProperty,

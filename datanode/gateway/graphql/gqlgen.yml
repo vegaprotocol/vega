@@ -229,6 +229,8 @@ models:
         resolver: true
       liquidityProvisions:
         resolver: true
+      fundingPeriods:
+        resolver: true
   Party:
     model: code.vegaprotocol.io/vega/protos/vega.Party
     fields:
@@ -579,3 +581,17 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.NodeBasic
   Entities:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ListEntitiesResponse
+  FundingPeriod:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.FundingPeriod
+  FundingPeriodDataPoint:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.FundingPeriodDataPoint
+  FundingPeriodDataPointSource:
+    model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.FundingPeriodDataPointSource
+  FundingPeriodDataPointEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPeriodDataPointEdge
+  FundingPeriodDataPointConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPeriodDataPointConnection
+  FundingPeriodEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPeriodEdge
+  FundingPeriodConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPeriodConnection

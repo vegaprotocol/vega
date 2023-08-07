@@ -65,6 +65,15 @@ func (u *Unmarshaler) UnmarshalLiquidityMonitoring(r io.Reader) (*vegapb.Liquidi
 	return proto, nil
 }
 
+func (u *Unmarshaler) UnmarshalPerpsDataSourceConfig(r io.Reader) (*vegapb.Perpetual, error) {
+	proto := &vegapb.Perpetual{}
+	err := u.unmarshaler.Unmarshal(r, proto)
+	if err != nil {
+		return nil, err
+	}
+	return proto, nil
+}
+
 // UnmarshalDataSourceConfig unmarshal a future as this is a common parent.
 func (u *Unmarshaler) UnmarshalDataSourceConfig(r io.Reader) (*vegapb.Future, error) {
 	proto := &vegapb.Future{}

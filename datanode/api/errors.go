@@ -290,6 +290,10 @@ var (
 	// TxHashes...
 	ErrMissingEmptyTxHash = newInvalidArgumentError("missing or empty transaction hash")
 	ErrInvalidTxHash      = newInvalidArgumentError("not a valid transaction hash")
+
+	// Funding Periods.
+	ErrListFundingPeriod           = errors.New("failed to get funding periods")
+	ErrListFundingPeriodDataPoints = errors.New("failed to get funding period data points")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

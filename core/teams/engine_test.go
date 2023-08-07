@@ -2,10 +2,12 @@ package teams_test
 
 import (
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/teams"
 	"code.vegaprotocol.io/vega/core/types"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,33 +18,48 @@ func TestEngine(t *testing.T) {
 }
 
 func testAdministrateTeamSucceeds(t *testing.T) {
-	engine := newEngine(t)
+	ctx := vgtest.VegaContext(vgrand.RandomStr(5), vgtest.RandomI64())
+
+	te := newEngine(t)
 
 	referrer1 := newPartyID(t)
 	name := vgrand.RandomStr(5)
 	teamURL := "https://" + name + ".io"
 	avatarURL := "https://avatar." + name + ".io"
 
-	teamID1, err := engine.CreateTeam(referrer1, name, teamURL, avatarURL, true)
+	expectTeamCreatedEvent(t, te)
+
+	team1CreationDate := time.Now()
+	te.timeService.EXPECT().GetTimeNow().Return(team1CreationDate).Times(1)
+
+	teamID1, err := te.engine.CreateTeam(ctx, referrer1, name, teamURL, avatarURL)
 	require.NoError(t, err)
 	assert.NotEmpty(t, teamID1)
 	assert.Len(t, teamID1, 64)
 
 	assert.Equal(t, []types.Team{
 		{
-			ID:            teamID1,
-			Referrer:      referrer1,
-			Name:          name,
-			TeamURL:       teamURL,
-			AvatarURL:     avatarURL,
-			EnableRewards: true,
+			ID: teamID1,
+			Referrer: &types.Membership{
+				PartyID:  referrer1,
+				JoinedAt: team1CreationDate,
+			},
+			Name:      name,
+			TeamURL:   teamURL,
+			AvatarURL: avatarURL,
+			CreatedAt: team1CreationDate,
 		},
-	}, engine.ListTeams())
+	}, te.engine.ListTeams())
 
 	referrer2 := newPartyID(t)
 
+	expectTeamCreatedEvent(t, te)
+
+	team2CreationDate := time.Now()
+	te.timeService.EXPECT().GetTimeNow().Return(team2CreationDate).Times(1)
+
 	// Using same name, team URL and avatar URL as the first team is permitted.
-	teamID2, err := engine.CreateTeam(referrer2, name, teamURL, avatarURL, true)
+	teamID2, err := te.engine.CreateTeam(ctx, referrer2, name, teamURL, avatarURL)
 	require.NoError(t, err)
 	assert.NotEmpty(t, teamID2)
 	assert.Len(t, teamID2, 64)
@@ -51,49 +68,66 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 
 	assertEqualTeams(t, []types.Team{
 		{
-			ID:            teamID1,
-			Referrer:      referrer1,
-			Name:          name,
-			TeamURL:       teamURL,
-			AvatarURL:     avatarURL,
-			EnableRewards: true,
+			ID: teamID1,
+			Referrer: &types.Membership{
+				PartyID:  referrer1,
+				JoinedAt: team1CreationDate,
+			},
+			Name:      name,
+			TeamURL:   teamURL,
+			AvatarURL: avatarURL,
+			CreatedAt: team1CreationDate,
 		}, {
-			ID:            teamID2,
-			Referrer:      referrer2,
-			Name:          name,
-			TeamURL:       teamURL,
-			AvatarURL:     avatarURL,
-			EnableRewards: true,
+			ID: teamID2,
+			Referrer: &types.Membership{
+				PartyID:  referrer2,
+				JoinedAt: team2CreationDate,
+			},
+			Name:      name,
+			TeamURL:   teamURL,
+			AvatarURL: avatarURL,
+			CreatedAt: team2CreationDate,
 		},
-	}, engine.ListTeams())
+	}, te.engine.ListTeams())
 
 	// A party can only create one team.
-	teamID3, err := engine.CreateTeam(referrer2, name, teamURL, avatarURL, true)
+	teamID3, err := te.engine.CreateTeam(ctx, referrer2, name, teamURL, avatarURL)
 	require.EqualError(t, err, teams.ErrPartyAlreadyBelongsToTeam(referrer2).Error())
 	assert.Empty(t, teamID3)
 
 	assertEqualTeams(t, []types.Team{
 		{
-			ID:            teamID1,
-			Referrer:      referrer1,
-			Name:          name,
-			TeamURL:       teamURL,
-			AvatarURL:     avatarURL,
-			EnableRewards: true,
+			ID: teamID1,
+			Referrer: &types.Membership{
+				PartyID:  referrer1,
+				JoinedAt: team1CreationDate,
+			},
+			Name:      name,
+			TeamURL:   teamURL,
+			AvatarURL: avatarURL,
+			CreatedAt: team1CreationDate,
 		}, {
-			ID:            teamID2,
-			Referrer:      referrer2,
-			Name:          name,
-			TeamURL:       teamURL,
-			AvatarURL:     avatarURL,
-			EnableRewards: true,
+			ID: teamID2,
+			Referrer: &types.Membership{
+				PartyID:  referrer2,
+				JoinedAt: team2CreationDate,
+			},
+			Name:      name,
+			TeamURL:   teamURL,
+			AvatarURL: avatarURL,
+			CreatedAt: team2CreationDate,
 		},
-	}, engine.ListTeams())
+	}, te.engine.ListTeams())
 
 	referrer3 := newPartyID(t)
 
+	expectTeamCreatedEvent(t, te)
+
+	team4CreationDate := time.Now()
+	te.timeService.EXPECT().GetTimeNow().Return(team4CreationDate).Times(1)
+
 	// Name, team URL and avatar URL are optional.
-	teamID4, err := engine.CreateTeam(referrer3, "", "", "", true)
+	teamID4, err := te.engine.CreateTeam(ctx, referrer3, "", "", "")
 	require.NoError(t, err)
 	assert.NotEmpty(t, teamID4)
 	assert.Len(t, teamID4, 64)
@@ -103,129 +137,235 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 
 	assertEqualTeams(t, []types.Team{
 		{
-			ID:            teamID1,
-			Referrer:      referrer1,
-			Name:          name,
-			TeamURL:       teamURL,
-			AvatarURL:     avatarURL,
-			EnableRewards: true,
+			ID: teamID1,
+			Referrer: &types.Membership{
+				PartyID:  referrer1,
+				JoinedAt: team1CreationDate,
+			},
+			Name:      name,
+			TeamURL:   teamURL,
+			AvatarURL: avatarURL,
+			CreatedAt: team1CreationDate,
 		}, {
-			ID:            teamID2,
-			Referrer:      referrer2,
-			Name:          name,
-			TeamURL:       teamURL,
-			AvatarURL:     avatarURL,
-			EnableRewards: true,
+			ID: teamID2,
+			Referrer: &types.Membership{
+				PartyID:  referrer2,
+				JoinedAt: team2CreationDate,
+			},
+			Name:      name,
+			TeamURL:   teamURL,
+			AvatarURL: avatarURL,
+			CreatedAt: team2CreationDate,
 		}, {
-			ID:            teamID4,
-			Referrer:      referrer3,
-			Name:          "",
-			TeamURL:       "",
-			AvatarURL:     "",
-			EnableRewards: true,
+			ID: teamID4,
+			Referrer: &types.Membership{
+				PartyID:  referrer3,
+				JoinedAt: team4CreationDate,
+			},
+			Referees:  nil,
+			Name:      "",
+			TeamURL:   "",
+			AvatarURL: "",
+			CreatedAt: team4CreationDate,
 		},
-	}, engine.ListTeams())
+	}, te.engine.ListTeams())
 
 	// Updating first team
 	updatedName := vgrand.RandomStr(5)
 	updatedTeamURL := "https://" + name + ".io"
 	updatedAvatarURL := "https://avatar." + name + ".io"
 
-	require.NoError(t, engine.UpdateTeam(teamID1, updatedName, updatedTeamURL, updatedAvatarURL, false))
+	expectTeamUpdatedEvent(t, te)
+
+	require.NoError(t, te.engine.UpdateTeam(ctx, teamID1, updatedName, updatedTeamURL, updatedAvatarURL))
 
 	assertEqualTeams(t, []types.Team{
 		{
-			ID:            teamID1,
-			Referrer:      referrer1,
-			Name:          updatedName,
-			TeamURL:       updatedTeamURL,
-			AvatarURL:     updatedAvatarURL,
-			EnableRewards: false,
+			ID: teamID1,
+			Referrer: &types.Membership{
+				PartyID:  referrer1,
+				JoinedAt: team1CreationDate,
+			},
+			Name:      updatedName,
+			TeamURL:   updatedTeamURL,
+			AvatarURL: updatedAvatarURL,
+			CreatedAt: team1CreationDate,
 		}, {
-			ID:            teamID2,
-			Referrer:      referrer2,
-			Name:          name,
-			TeamURL:       teamURL,
-			AvatarURL:     avatarURL,
-			EnableRewards: true,
+			ID: teamID2,
+			Referrer: &types.Membership{
+				PartyID:  referrer2,
+				JoinedAt: team2CreationDate,
+			},
+			Name:      name,
+			TeamURL:   teamURL,
+			AvatarURL: avatarURL,
+			CreatedAt: team2CreationDate,
 		}, {
-			ID:            teamID4,
-			Referrer:      referrer3,
-			Name:          "",
-			TeamURL:       "",
-			AvatarURL:     "",
-			EnableRewards: true,
+			ID: teamID4,
+			Referrer: &types.Membership{
+				PartyID:  referrer3,
+				JoinedAt: team4CreationDate,
+			},
+			Name:      "",
+			TeamURL:   "",
+			AvatarURL: "",
+			CreatedAt: team4CreationDate,
 		},
-	}, engine.ListTeams())
+	}, te.engine.ListTeams())
 
 	unknownTeamID := types.NewTeamID()
 	require.EqualError(t,
-		engine.UpdateTeam(unknownTeamID, updatedName, updatedTeamURL, updatedAvatarURL, false),
+		te.engine.UpdateTeam(ctx, unknownTeamID, updatedName, updatedTeamURL, updatedAvatarURL),
 		teams.ErrNoTeamMatchesID(unknownTeamID).Error(),
 	)
 }
 
 func testJoiningTeamSucceeds(t *testing.T) {
-	engine := newEngine(t)
+	ctx := vgtest.VegaContext(vgrand.RandomStr(5), vgtest.RandomI64())
 
-	teamID1, referrer1 := newTeam(t, engine)
-	teamID2, referrer2 := newTeam(t, engine)
+	te := newEngine(t)
 
-	require.ErrorIs(t, engine.JoinTeam(teamID1, referrer1), teams.ErrReferrerCannotJoinAnotherTeam)
-	require.ErrorIs(t, engine.JoinTeam(teamID1, referrer2), teams.ErrReferrerCannotJoinAnotherTeam)
+	team1CreationDate := time.Now()
+	te.timeService.EXPECT().GetTimeNow().Return(team1CreationDate).Times(1)
+	teamID1, referrer1 := newTeam(t, ctx, te)
+
+	team2CreationDate := time.Now()
+	te.timeService.EXPECT().GetTimeNow().Return(team2CreationDate).Times(1)
+	teamID2, referrer2 := newTeam(t, ctx, te)
+
+	require.ErrorIs(t, te.engine.JoinTeam(ctx, teamID1, referrer1), teams.ErrReferrerCannotJoinAnotherTeam)
+	require.ErrorIs(t, te.engine.JoinTeam(ctx, teamID1, referrer2), teams.ErrReferrerCannotJoinAnotherTeam)
 
 	referee1 := newPartyID(t)
-	require.NoError(t, engine.JoinTeam(teamID1, referee1))
-	require.True(t, engine.IsTeamMember(referee1))
+	referee1JoiningDate := time.Now()
+	te.timeService.EXPECT().GetTimeNow().Return(referee1JoiningDate).Times(1)
+	expectRefereeJoinedTeamEvent(t, te)
+	require.NoError(t, te.engine.JoinTeam(ctx, teamID1, referee1))
+	require.True(t, te.engine.IsTeamMember(referee1))
 
 	referee2 := newPartyID(t)
 
 	// referee2 tries to join a non-existing team.
 	unknownTeamID := types.NewTeamID()
 	require.EqualError(t,
-		engine.JoinTeam(unknownTeamID, referee2),
+		te.engine.JoinTeam(ctx, unknownTeamID, referee2),
 		teams.ErrNoTeamMatchesID(unknownTeamID).Error(),
 	)
-	require.False(t, engine.IsTeamMember(referee2))
+	require.False(t, te.engine.IsTeamMember(referee2))
 
 	// referee2 joins an existing team.
-	require.NoError(t, engine.JoinTeam(teamID1, referee2))
-	require.True(t, engine.IsTeamMember(referee2))
+	expectRefereeJoinedTeamEvent(t, te)
+	referee2JoiningDate := time.Now()
+	te.timeService.EXPECT().GetTimeNow().Return(referee2JoiningDate).Times(1)
+	require.NoError(t, te.engine.JoinTeam(ctx, teamID1, referee2))
+	require.True(t, te.engine.IsTeamMember(referee2))
 
 	// referee2 just joined another team and want to move on next epoch.
-	require.NoError(t, engine.JoinTeam(teamID2, referee2))
-	require.True(t, engine.IsTeamMember(referee2))
+	require.NoError(t, te.engine.JoinTeam(ctx, teamID2, referee2))
+	require.True(t, te.engine.IsTeamMember(referee2))
 
 	// This shows the referee2 joined the first team he applied to, despite
 	// his second application to team 2.
 	assertEqualTeams(t, []types.Team{
 		{
-			ID:            teamID1,
-			Referrer:      referrer1,
-			Referees:      []types.PartyID{referee1, referee2},
-			EnableRewards: true,
+			ID: teamID1,
+			Referrer: &types.Membership{
+				PartyID:  referrer1,
+				JoinedAt: team1CreationDate,
+			},
+			Referees: []*types.Membership{
+				{
+					PartyID:  referee1,
+					JoinedAt: referee1JoiningDate,
+				}, {
+					PartyID:  referee2,
+					JoinedAt: referee2JoiningDate,
+				},
+			},
+			CreatedAt: team1CreationDate,
 		}, {
-			ID:            teamID2,
-			Referrer:      referrer2,
-			EnableRewards: true,
+			ID: teamID2,
+			Referrer: &types.Membership{
+				PartyID:  referrer2,
+				JoinedAt: team2CreationDate,
+			},
+			CreatedAt: team2CreationDate,
 		},
-	}, engine.ListTeams())
+	}, te.engine.ListTeams())
 
 	// Simulating end of epoch.
-	endEpoch(t, engine)
+	expectRefereeSwitchedTeamEvent(t, te)
+	referee2JoiningDate2 := time.Now()
+	te.timeService.EXPECT().GetTimeNow().Return(referee2JoiningDate2).Times(1)
+	endEpoch(t, ctx, te)
 
 	// This shows the referee2 moved from team 1 to team 2.
 	assertEqualTeams(t, []types.Team{
 		{
-			ID:            teamID1,
-			Referrer:      referrer1,
-			Referees:      []types.PartyID{referee1},
-			EnableRewards: true,
+			ID: teamID1,
+			Referrer: &types.Membership{
+				PartyID:  referrer1,
+				JoinedAt: team1CreationDate,
+			},
+			Referees: []*types.Membership{
+				{
+					PartyID:  referee1,
+					JoinedAt: referee1JoiningDate,
+				},
+			},
+			CreatedAt: team1CreationDate,
 		}, {
-			ID:            teamID2,
-			Referrer:      referrer2,
-			Referees:      []types.PartyID{referee2},
-			EnableRewards: true,
+			ID: teamID2,
+			Referrer: &types.Membership{
+				PartyID:  referrer2,
+				JoinedAt: team2CreationDate,
+			},
+			Referees: []*types.Membership{
+				{
+					PartyID:  referee2,
+					JoinedAt: referee2JoiningDate2,
+				},
+			},
+			CreatedAt: team2CreationDate,
 		},
-	}, engine.ListTeams())
+	}, te.engine.ListTeams())
+
+	// referee2 just re-joins team 1.
+	referee2JoiningDate3 := time.Now()
+	te.timeService.EXPECT().GetTimeNow().Return(referee2JoiningDate3).Times(1)
+	require.NoError(t, te.engine.JoinTeam(ctx, teamID1, referee2))
+	require.True(t, te.engine.IsTeamMember(referee2))
+
+	// Simulating end of epoch.
+	expectRefereeSwitchedTeamEvent(t, te)
+	endEpoch(t, ctx, te)
+
+	// This shows the referee2 moved from team 1 to team 2.
+	assertEqualTeams(t, []types.Team{
+		{
+			ID: teamID1,
+			Referrer: &types.Membership{
+				PartyID:  referrer1,
+				JoinedAt: team1CreationDate,
+			},
+			Referees: []*types.Membership{
+				{
+					PartyID:  referee1,
+					JoinedAt: referee1JoiningDate,
+				}, {
+					PartyID:  referee2,
+					JoinedAt: referee2JoiningDate3,
+				},
+			},
+			CreatedAt: team1CreationDate,
+		}, {
+			ID: teamID2,
+			Referrer: &types.Membership{
+				PartyID:  referrer2,
+				JoinedAt: team2CreationDate,
+			},
+			Referees:  []*types.Membership{},
+			CreatedAt: team2CreationDate,
+		},
+	}, te.engine.ListTeams())
 }

@@ -10,6 +10,7 @@ Feature: Test market depth events for pegged orders
       | limits.markets.maxPeggedOrders          | 1500  |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
+  @Depth
   Scenario: Check order events with larger pegged orders, and lower balance
     # setup accounts
     Given the parties deposit on asset's general account the following amount:

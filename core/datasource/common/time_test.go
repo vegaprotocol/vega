@@ -100,7 +100,7 @@ func TestInternalTimeTriggerFromProto(t *testing.T) {
 	}
 
 	pt := tt.IntoProto()
-	ntt := common.InternalTimeTriggerFromProto(pt, timeNow)
+	ntt := common.InternalTimeTriggerFromProto(pt)
 	assert.NotNil(t, pt)
 	assert.IsType(t, &common.InternalTimeTrigger{}, ntt)
 	assert.Equal(t, ptr.From(time.Unix(timeNow.Unix(), 0)), ntt.Initial)
@@ -168,4 +168,8 @@ func TestInternalTimeTriggersIsTriggered(t *testing.T) {
 	// Given time is after the next trigger
 	triggered = ttl.IsTriggered(nt.Add(time.Second * 15))
 	assert.Equal(t, true, triggered)
+
+	// check trigger time is progressed
+	triggered = ttl.IsTriggered(nt.Add(time.Second * 15))
+	assert.Equal(t, false, triggered)
 }

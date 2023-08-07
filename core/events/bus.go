@@ -24,10 +24,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	ErrUnsupportedEvent = errors.New("unknown payload for event")
-	ErrInvalidEventType = errors.New("invalid proto event type")
-)
+var ErrInvalidEventType = errors.New("invalid proto event type")
 
 type Type int
 
@@ -143,6 +140,10 @@ const (
 	StopOrderEvent
 	FundingPeriodEvent
 	FundingPeriodDataPointEvent
+	TeamCreatedEvent
+	TeamUpdatedEvent
+	RefereeSwitchedTeamEvent
+	RefereeJoinedTeamEvent
 )
 
 var (
@@ -217,6 +218,10 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_STOP_ORDER:                       StopOrderEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PERIOD:                   FundingPeriodEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PERIOD_DATA_POINT:        FundingPeriodDataPointEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TEAM_CREATED:                     TeamCreatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TEAM_UPDATED:                     TeamUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_SWITCHED_TEAM:            RefereeSwitchedTeamEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_TEAM:              RefereeJoinedTeamEvent,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -282,6 +287,10 @@ var (
 		StopOrderEvent:                    eventspb.BusEventType_BUS_EVENT_TYPE_STOP_ORDER,
 		FundingPeriodEvent:                eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PERIOD,
 		FundingPeriodDataPointEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PERIOD_DATA_POINT,
+		TeamCreatedEvent:                  eventspb.BusEventType_BUS_EVENT_TYPE_TEAM_CREATED,
+		TeamUpdatedEvent:                  eventspb.BusEventType_BUS_EVENT_TYPE_TEAM_UPDATED,
+		RefereeSwitchedTeamEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_SWITCHED_TEAM,
+		RefereeJoinedTeamEvent:            eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_TEAM,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -348,6 +357,10 @@ var (
 		StopOrderEvent:                    "StopOrderEvent",
 		FundingPeriodEvent:                "FundingPeriodEvent",
 		FundingPeriodDataPointEvent:       "FundingPeriodDataPointEvent",
+		TeamCreatedEvent:                  "TeamCreatedEvent",
+		TeamUpdatedEvent:                  "TeamUpdatedEvent",
+		RefereeSwitchedTeamEvent:          "RefereeSwitchedTeamEvent",
+		RefereeJoinedTeamEvent:            "RefereeJoinedTeamEvent",
 	}
 )
 

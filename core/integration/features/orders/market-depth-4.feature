@@ -10,6 +10,7 @@ Feature: Test market depth events for pegged orders (cancelling pegged orders)
       | limits.markets.maxPeggedOrders          | 1500  |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
+  @Depth
   Scenario: Check order events with larger pegged orders, and lower balance; check cancelling all orders for a party per market 0033-OCAN-010
     # setup accounts
     Given the parties deposit on asset's general account the following amount:

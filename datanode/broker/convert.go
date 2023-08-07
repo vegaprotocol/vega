@@ -139,6 +139,14 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.FundingPeriodEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PERIOD_DATA_POINT:
 		return events.FundingPeriodDataPointEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TEAM_CREATED:
+		return events.TeamCreatedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TEAM_UPDATED:
+		return events.TeamUpdatedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_SWITCHED_TEAM:
+		return events.RefereeSwitchedTeamEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_TEAM:
+		return events.RefereeJoinedTeamEventFromStream(ctx, be)
 	}
 
 	return nil

@@ -12,10 +12,17 @@
    definition of the new event will live:
 
 ```golang
+package events
+
+import (
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+)
+
 type MyEvent struct {
 	*Base
-	o proto.MyEvent
+	o eventspb.MyEvent
 }
+
 ```
 
 6. Implement the `StreamEvent` interface on it.

@@ -536,6 +536,40 @@ type Query {
   "Query for historic ethereum key rotations"
   ethereumKeyRotations(nodeId: ID): EthereumKeyRotationsConnection!
 
+  "Funding periods for perpetual markets"
+  fundingPeriods(
+    "ID of the perpetual market to get funding periods for"
+    marketId: ID!
+    """
+    Optional: Date range to retrieve funding periods from/to.
+    The funding period start time will be used to determine whether to include the funding period in the results.
+    Start and end time should be expressed as an integer value of Unix nanoseconds.
+    """
+    dateRange: DateRange
+    "Pagination control"
+    pagination: Pagination
+  ): FundingPeriodConnection!
+
+  """
+  Funding period data points for a perpetual market. The data points within a funding period are used to calculate the
+  time-weighted average price (TWAP), funding rate and funding payments for each funding period.
+  """
+  fundingPeriodDataPoints(
+    "ID of the perpetual market to get funding periods for"
+    marketId: ID!
+    """
+    Optional date range to filter funding period data points from/to.
+    The funding period's start date will be used to determine if the funding period's data points should be included in the results.
+    Start and end time should be expressed as an integer value of Unix nanoseconds.
+    """
+    dateRange: DateRange,
+    "Optional filter to only return data points from a specific data source. If omitted, no filtering is applied."
+    source: FundingPeriodDataPointSource
+    "Pagination control"
+    pagination: Pagination
+
+  ): FundingPeriodDataPointConnection!
+
   "Get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided."
   getMarketDataHistoryConnectionByID(
     id: ID!
@@ -1875,7 +1909,7 @@ type Market {
   ): AccountsConnection
 
   tradesConnection(
-    "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
+    "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value of Unix nanoseconds"
     dateRange: DateRange
     "Pagination information"
     pagination: Pagination
@@ -2095,7 +2129,7 @@ type Party {
   tradesConnection(
     "ID of the market you want to get trades for"
     marketId: ID
-    "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
+    "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value of Unix nanoseconds"
     dataRange: DateRange
     "Pagination information"
     pagination: Pagination
@@ -2146,7 +2180,7 @@ type Party {
 
   "The list of all withdrawals initiated by the party"
   withdrawalsConnection(
-    "Date range to retrieve withdrawals from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
+    "Date range to retrieve withdrawals from/to. Start and end time should be expressed as an integer value of Unix nanoseconds"
     dateRange: DateRange
     "Optional Pagination information"
     pagination: Pagination
@@ -2154,7 +2188,7 @@ type Party {
 
   "The list of all deposits for a party by the party"
   depositsConnection(
-    "Date range to retrieve deposits from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
+    "Date range to retrieve deposits from/to. Start and end time should be expressed as an integer value Unix nanoseconds"
     dateRange: DateRange
     "Optional Pagination information"
     pagination: Pagination
@@ -2411,7 +2445,7 @@ type Order {
 
   "Trades relating to this order"
   tradesConnection(
-    "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
+    "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value Unix nanoseconds"
     dateRange: DateRange
     pagination: Pagination
   ): TradeConnection
@@ -4536,7 +4570,7 @@ input OrderFilter {
   status: [OrderStatus!]
   types: [OrderType!]
   timeInForce: [OrderTimeInForce!]
-  "Date range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
+  "Date range to retrieve orders from/to. Start and end time should be expressed as an integer value Unix nanoseconds"
   dateRange: DateRange
   excludeLiquidity: Boolean
   """
@@ -4556,7 +4590,7 @@ input StopOrderFilter {
   status: [StopOrderStatus!]
   "Zero or more expiry strategies to filter by"
   expiryStrategy: [StopOrderExpiryStrategy!]
-  "Date range to retrieve order from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
+  "Date range to retrieve order from/to. Start and end time should be expressed as an integer value of Unix nanoseconds"
   dateRange: DateRange
 }
 
@@ -5187,4 +5221,80 @@ type Entities {
   ethereumKeyRotations: [EthereumKeyRotation]
   "List of protocol upgrade proposals created by the transaction hash"
   protocolUpgradeProposals: [ProtocolUpgradeProposal]
+}
+
+"Data point for a funding period."
+type FundingPeriodDataPoint {
+  "Market the data point applies to."
+  marketId: ID!
+  "Sequence number of the funding period the data point belongs to."
+  seq: Int!
+  "Source of the data point."
+  dataPointSource: FundingPeriodDataPointSource
+  "Price of the asset as seen by this data point."
+  price: String!
+  "Time-weighted average price calculated from data points for this period from the data source."
+  twap: String
+  "Timestamp when the data point was received."
+  timestamp: Timestamp!
+}
+
+"Edge type for funding period data point"
+type FundingPeriodDataPointEdge {
+  "The funding period data point"
+  node: FundingPeriodDataPoint!
+  "Cursor identifying the funding period data point"
+  cursor: String!
+}
+
+"Connection type for funding period data points"
+type FundingPeriodDataPointConnection {
+  "List of funding period data points"
+  edges: [FundingPeriodDataPointEdge!]!
+  "Pagination information"
+  pageInfo: PageInfo!
+}
+
+"Details of a funding interval for a perpetual market."
+type FundingPeriod {
+  "Market the funding period relates to."
+  marketId: ID!
+  "Sequence number of the funding period."
+  seq: Int!
+  "RFC3339Nano time when the funding period started."
+  startTime: Timestamp!
+  "RFC3339Nano time when the funding period ended."
+  endTime: Timestamp
+  "Funding payment for this period as the difference between the time-weighted average price of the external and internal data point."
+  fundingPayment: String
+  "Percentage difference between the time-weighted average price of the external and internal data point."
+  fundingRate: String
+  "Time-weighted average price calculated from data points for this period from the external data source."
+  externalTwap: String
+  "Time-weighted average price calculated from data points for this period from the internal data source."
+  internalTwap: String
+}
+
+"Sources of funding period data points."
+enum FundingPeriodDataPointSource {
+  "Funding period data point was sourced from an external data source."
+  SOURCE_EXTERNAL
+  "Funding period data point was generated internally by the network."
+  SOURCE_INTERNAL
+}
+
+"Edge type containing a funding period cursor and its associated funding period data"
+type FundingPeriodEdge {
+    "The funding period data"
+    node: FundingPeriod!
+    "Cursor identifying the funding period data"
+    cursor: String!
+}
+
+"Connection type for retrieving cursor-based paginated funding period data for perpetual markets"
+type FundingPeriodConnection {
+  "The funding periods in this connection"
+  edges: [FundingPeriodEdge!]!
+  "The pagination information"
+  pageInfo: PageInfo!
 }

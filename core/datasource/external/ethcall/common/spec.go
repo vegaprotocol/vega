@@ -13,12 +13,22 @@
 package common
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/datasource/common"
+	verrors "code.vegaprotocol.io/vega/libs/errors"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	"google.golang.org/protobuf/types/known/structpb"
+)
+
+var (
+	ErrCallSpecIsNil      = errors.New("ethereum call spec proto is nil")
+	ErrInvalidEthereumAbi = errors.New("is not a valid ethereum address")
+	ErrInvalidCallTrigger = errors.New("ethereum call trigger not valid")
+	ErrInvalidCallArgs    = errors.New("ethereum call args not valid")
+	ErrInvalidFilters     = errors.New("ethereum call filters not valid")
 )
 
 type Spec struct {
@@ -34,12 +44,12 @@ type Spec struct {
 
 func SpecFromProto(proto *vegapb.EthCallSpec) (Spec, error) {
 	if proto == nil {
-		return Spec{}, fmt.Errorf("ethereum call spec proto is nil")
+		return Spec{}, ErrCallSpecIsNil
 	}
 
 	trigger, err := TriggerFromProto(proto.Trigger)
 	if err != nil {
-		return Spec{}, fmt.Errorf("error unmarshalling trigger: %w", err)
+		return Spec{}, verrors.Join(ErrInvalidCallTrigger, err)
 	}
 
 	filters := common.SpecFiltersFromProto(proto.Filters)
@@ -50,7 +60,7 @@ func SpecFromProto(proto *vegapb.EthCallSpec) (Spec, error) {
 	for _, protoArg := range proto.Args {
 		jsonArg, err := protoArg.MarshalJSON()
 		if err != nil {
-			return Spec{}, fmt.Errorf("error marshalling arg: %w", err)
+			return Spec{}, verrors.Join(ErrInvalidCallArgs, err)
 		}
 		jsonArgs = append(jsonArgs, string(jsonArg))
 	}

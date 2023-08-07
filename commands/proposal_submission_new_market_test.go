@@ -4305,7 +4305,7 @@ func testNewPerpsMarketChangeSubmissionWithoutPerpsFails(t *testing.T) {
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{},
+							Product: &vegapb.InstrumentConfiguration_Perpetual{},
 						},
 					},
 				},
@@ -4323,8 +4323,8 @@ func testNewPerpsMarketChangeSubmissionWithPerpsSucceeds(t *testing.T) {
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{},
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{},
 							},
 						},
 					},
@@ -4343,8 +4343,8 @@ func testNewPerpsMarketChangeSubmissionWithoutSettlementAssetFails(t *testing.T)
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
 									SettlementAsset: "",
 								},
 							},
@@ -4365,8 +4365,8 @@ func testNewPerpsMarketChangeSubmissionWithSettlementAssetSucceeds(t *testing.T)
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
 									SettlementAsset: "BTC",
 								},
 							},
@@ -4387,8 +4387,8 @@ func testNewPerpsMarketChangeSubmissionWithoutQuoteNameFails(t *testing.T) {
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
 									QuoteName: "",
 								},
 							},
@@ -4409,8 +4409,8 @@ func testNewPerpsMarketChangeSubmissionWithQuoteNameSucceeds(t *testing.T) {
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
 									QuoteName: "BTC",
 								},
 							},
@@ -4431,8 +4431,8 @@ func testNewPerpsMarketChangeSubmissionWithoutOracleSpecFails(t *testing.T) {
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{},
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{},
 							},
 						},
 					},
@@ -4451,8 +4451,8 @@ func testNewPerpsMarketChangeSubmissionWithOracleSpecSucceeds(t *testing.T) {
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
 									DataSourceSpecForSettlementData: &vegapb.DataSourceDefinition{},
 								},
 							},
@@ -4473,8 +4473,8 @@ func testNewPerpsMarketChangeSubmissionWithoutFiltersFails(t *testing.T) {
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeEthOracle,
 									),
@@ -4497,8 +4497,8 @@ func testNewPerpsMarketChangeSubmissionWithFiltersSucceeds(t *testing.T) {
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeEthOracle,
 									).SetOracleConfig(
@@ -4529,8 +4529,8 @@ func testNewPerpsMarketChangeSubmissionWithFilterWithoutKeyFails(t *testing.T) {
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeEthOracle,
 									).SetOracleConfig(
@@ -4562,8 +4562,8 @@ func testNewPerpsMarketChangeSubmissionWithFilterWithKeySucceeds(t *testing.T) {
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeEthOracle,
 									).SetOracleConfig(
@@ -4599,8 +4599,8 @@ func testNewPerpsMarketChangeSubmissionWithFilterWithoutKeyNameFails(t *testing.
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeEthOracle,
 									).SetOracleConfig(
@@ -4640,8 +4640,8 @@ func testNewPerpsMarketChangeSubmissionWithFilterWithKeyNameSucceeds(t *testing.
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeEthOracle,
 									).SetOracleConfig(
@@ -4681,8 +4681,8 @@ func testNewPerpsMarketChangeSubmissionWithFilterWithoutKeyTypeFails(t *testing.
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeEthOracle,
 									).SetOracleConfig(
@@ -4746,8 +4746,8 @@ func testNewPerpsMarketChangeSubmissionWithFilterWithKeyTypeSucceeds(t *testing.
 						NewMarket: &vegapb.NewMarket{
 							Changes: &vegapb.NewMarketConfiguration{
 								Instrument: &vegapb.InstrumentConfiguration{
-									Product: &vegapb.InstrumentConfiguration_Perps{
-										Perps: &vegapb.PerpsProduct{
+									Product: &vegapb.InstrumentConfiguration_Perpetual{
+										Perpetual: &vegapb.PerpetualProduct{
 											DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 												vegapb.DataSourceContentTypeEthOracle,
 											).SetOracleConfig(
@@ -4789,8 +4789,8 @@ func testNewPerpsMarketChangeSubmissionWithFilterWithoutConditionsSucceeds(t *te
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeEthOracle,
 									).SetOracleConfig(
@@ -4823,8 +4823,8 @@ func testNewPerpsMarketChangeSubmissionWithFilterWithoutConditionOperatorFails(t
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeEthOracle,
 									).SetOracleConfig(
@@ -4886,8 +4886,8 @@ func testNewPerpsMarketChangeSubmissionWithFilterWithConditionOperatorSucceeds(t
 						NewMarket: &vegapb.NewMarket{
 							Changes: &vegapb.NewMarketConfiguration{
 								Instrument: &vegapb.InstrumentConfiguration{
-									Product: &vegapb.InstrumentConfiguration_Perps{
-										Perps: &vegapb.PerpsProduct{
+									Product: &vegapb.InstrumentConfiguration_Perpetual{
+										Perpetual: &vegapb.PerpetualProduct{
 											DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 												vegapb.DataSourceContentTypeEthOracle,
 											).SetOracleConfig(
@@ -4930,8 +4930,8 @@ func testNewPerpsMarketChangeSubmissionWithFilterWithoutConditionValueFails(t *t
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeEthOracle,
 									).SetOracleConfig(
@@ -4972,8 +4972,8 @@ func testNewPerpsMarketChangeSubmissionWithFilterWithConditionValueSucceeds(t *t
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeEthOracle,
 									).SetOracleConfig(
@@ -5014,8 +5014,8 @@ func testNewPerpsMarketChangeSubmissionWithoutDataSourceSpecBindingFails(t *test
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{},
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{},
 							},
 						},
 					},
@@ -5034,9 +5034,9 @@ func testNewPerpsMarketChangeSubmissionWithDataSourceSpecBindingSucceeds(t *test
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
-									DataSourceSpecBinding: &vegapb.DataSourceSpecToPerpsBinding{},
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
+									DataSourceSpecBinding: &vegapb.DataSourceSpecToPerpetualBinding{},
 								},
 							},
 						},
@@ -5050,10 +5050,10 @@ func testNewPerpsMarketChangeSubmissionWithDataSourceSpecBindingSucceeds(t *test
 }
 
 func testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingSucceeds(t *testing.T) {
-	testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t, &vegapb.DataSourceSpecToPerpsBinding{SettlementDataProperty: "key1"}, "settlement_data_property", "key1")
+	testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t, &vegapb.DataSourceSpecToPerpetualBinding{SettlementDataProperty: "key1"}, "settlement_data_property", "key1")
 }
 
-func testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t *testing.T, binding *vegapb.DataSourceSpecToPerpsBinding, bindingName string, bindingKey string) {
+func testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t *testing.T, binding *vegapb.DataSourceSpecToPerpetualBinding, bindingName string, bindingKey string) {
 	t.Helper()
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &vegapb.ProposalTerms{
@@ -5061,8 +5061,8 @@ func testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForS
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
 									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceContentTypeEthOracle,
 									).SetOracleConfig(
@@ -5093,7 +5093,7 @@ func testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForS
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding."+bindingName), commands.ErrIsMismatching)
 }
 
-func testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t *testing.T, binding *vegapb.DataSourceSpecToPerpsBinding, bindingName string) {
+func testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t *testing.T, binding *vegapb.DataSourceSpecToPerpetualBinding, bindingName string) {
 	t.Helper()
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &vegapb.ProposalTerms{
@@ -5101,8 +5101,8 @@ func testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpe
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
 									DataSourceSpecBinding: binding,
 								},
 							},
@@ -5117,7 +5117,7 @@ func testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpe
 }
 
 func testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingFails(t *testing.T) {
-	testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t, &vegapb.DataSourceSpecToPerpsBinding{SettlementDataProperty: "My property"}, "settlement_data_property")
+	testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t, &vegapb.DataSourceSpecToPerpetualBinding{SettlementDataProperty: "My property"}, "settlement_data_property")
 }
 
 func testNewPerpsMarketChangeSubmissionWithSettlementDataPropertySucceeds(t *testing.T) {
@@ -5127,9 +5127,9 @@ func testNewPerpsMarketChangeSubmissionWithSettlementDataPropertySucceeds(t *tes
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						Instrument: &vegapb.InstrumentConfiguration{
-							Product: &vegapb.InstrumentConfiguration_Perps{
-								Perps: &vegapb.PerpsProduct{
-									DataSourceSpecBinding: &vegapb.DataSourceSpecToPerpsBinding{
+							Product: &vegapb.InstrumentConfiguration_Perpetual{
+								Perpetual: &vegapb.PerpetualProduct{
+									DataSourceSpecBinding: &vegapb.DataSourceSpecToPerpetualBinding{
 										SettlementDataProperty: "My property",
 									},
 								},
@@ -5146,14 +5146,14 @@ func testNewPerpsMarketChangeSubmissionWithSettlementDataPropertySucceeds(t *tes
 
 func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 	cases := []struct {
-		product vegapb.PerpsProduct
+		product vegapb.PerpetualProduct
 		err     error
 		path    string
 		desc    string
 	}{
 		// margin_funding_factor
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				MarginFundingFactor: "",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor",
@@ -5161,7 +5161,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			desc: "margin_funding_factor is empty",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				MarginFundingFactor: "nope",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor",
@@ -5169,7 +5169,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			desc: "margin_funding_factor is not a valid number",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				MarginFundingFactor: "-10",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor",
@@ -5177,7 +5177,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			desc: "margin_funding_factor is not within range (< 0)",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				MarginFundingFactor: "10",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor",
@@ -5185,7 +5185,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			desc: "margin_funding_factor is not within range (> 1)",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				MarginFundingFactor: "0.5",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor",
@@ -5193,7 +5193,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 		},
 		// interest_rate
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				InterestRate: "",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
@@ -5201,7 +5201,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			desc: "interest_rate is empty",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				InterestRate: "nope",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
@@ -5209,7 +5209,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			desc: "interest_rate is not a valid number",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				InterestRate: "-10",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
@@ -5217,7 +5217,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			desc: "interest_rate is not within range (< -1)",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				InterestRate: "10",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
@@ -5225,14 +5225,14 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			desc: "interest_rate is not within range (> 1)",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				InterestRate: "0.5",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
 			desc: "interest_rate is valid",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				InterestRate: "-0.5",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
@@ -5240,7 +5240,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 		},
 		// clamp_lower_bound
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				ClampLowerBound: "",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
@@ -5248,7 +5248,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			desc: "clamp_lower_bound is empty",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				ClampLowerBound: "nope",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
@@ -5256,7 +5256,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			desc: "clamp_lower_bound is not a valid number",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				ClampLowerBound: "-10",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
@@ -5264,7 +5264,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			desc: "clamp_lower_bound is not within range (< -1)",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				ClampLowerBound: "10",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
@@ -5272,14 +5272,14 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			desc: "clamp_lower_bound is not within range (> 1)",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				ClampLowerBound: "0.5",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
 			desc: "clamp_lower_bound is valid",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				ClampLowerBound: "-0.5",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
@@ -5287,7 +5287,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 		},
 		// clamp_upper_bound
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				ClampUpperBound: "",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
@@ -5295,7 +5295,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			desc: "clamp_upper_bound is empty",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				ClampUpperBound: "nope",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
@@ -5303,7 +5303,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			desc: "clamp_upper_bound is not a valid number",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				ClampUpperBound: "-10",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
@@ -5311,7 +5311,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			desc: "clamp_upper_bound is not within range (< -1)",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				ClampUpperBound: "10",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
@@ -5319,14 +5319,14 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			desc: "clamp_upper_bound is not within range (> 1)",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				ClampUpperBound: "0.5",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
 			desc: "clamp_upper_bound is valid",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				ClampUpperBound: "-0.5",
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
@@ -5334,7 +5334,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 		},
 		// clamp lower and upper
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				ClampLowerBound: "0.5",
 				ClampUpperBound: "0.5",
 			},
@@ -5342,7 +5342,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			desc: "clamp_upper_bound == clamp_lower_bound is valid",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				ClampLowerBound: "0.4",
 				ClampUpperBound: "0.5",
 			},
@@ -5350,7 +5350,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			desc: "clamp_upper_bound > clamp_lower_bound is valid",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				ClampLowerBound: "0.5",
 				ClampUpperBound: "0.4",
 			},
@@ -5368,8 +5368,8 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 						NewMarket: &vegapb.NewMarket{
 							Changes: &vegapb.NewMarketConfiguration{
 								Instrument: &vegapb.InstrumentConfiguration{
-									Product: &vegapb.InstrumentConfiguration_Perps{
-										Perps: &v.product,
+									Product: &vegapb.InstrumentConfiguration_Perpetual{
+										Perpetual: &v.product,
 									},
 								},
 							},
@@ -5393,13 +5393,13 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 
 func TestNewPerpsMarketChangeSubmissionSettlementSchedule(t *testing.T) {
 	cases := []struct {
-		product vegapb.PerpsProduct
+		product vegapb.PerpetualProduct
 		err     error
 		path    string
 		desc    string
 	}{
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				DataSourceSpecForSettlementSchedule: &vegapb.DataSourceDefinition{
 					SourceType: &vegapb.DataSourceDefinition_Internal{
 						Internal: &vega.DataSourceDefinitionInternal{
@@ -5422,7 +5422,7 @@ func TestNewPerpsMarketChangeSubmissionSettlementSchedule(t *testing.T) {
 			desc: "not a valid every",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				DataSourceSpecForSettlementSchedule: &vegapb.DataSourceDefinition{
 					SourceType: &vegapb.DataSourceDefinition_Internal{
 						Internal: &vega.DataSourceDefinitionInternal{
@@ -5445,7 +5445,7 @@ func TestNewPerpsMarketChangeSubmissionSettlementSchedule(t *testing.T) {
 			desc: "not a valid every",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				DataSourceSpecForSettlementSchedule: &vegapb.DataSourceDefinition{
 					SourceType: &vegapb.DataSourceDefinition_Internal{
 						Internal: &vega.DataSourceDefinitionInternal{
@@ -5468,7 +5468,7 @@ func TestNewPerpsMarketChangeSubmissionSettlementSchedule(t *testing.T) {
 			desc: "not a valid every",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				DataSourceSpecForSettlementSchedule: &vegapb.DataSourceDefinition{
 					SourceType: &vegapb.DataSourceDefinition_Internal{
 						Internal: &vega.DataSourceDefinitionInternal{
@@ -5490,7 +5490,7 @@ func TestNewPerpsMarketChangeSubmissionSettlementSchedule(t *testing.T) {
 			desc: "valid with initial nil",
 		},
 		{
-			product: vegapb.PerpsProduct{
+			product: vegapb.PerpetualProduct{
 				DataSourceSpecForSettlementSchedule: &vegapb.DataSourceDefinition{
 					SourceType: &vegapb.DataSourceDefinition_Internal{
 						Internal: &vega.DataSourceDefinitionInternal{
@@ -5521,8 +5521,8 @@ func TestNewPerpsMarketChangeSubmissionSettlementSchedule(t *testing.T) {
 						NewMarket: &vegapb.NewMarket{
 							Changes: &vegapb.NewMarketConfiguration{
 								Instrument: &vegapb.InstrumentConfiguration{
-									Product: &vegapb.InstrumentConfiguration_Perps{
-										Perps: &v.product,
+									Product: &vegapb.InstrumentConfiguration_Perpetual{
+										Perpetual: &v.product,
 									},
 								},
 							},

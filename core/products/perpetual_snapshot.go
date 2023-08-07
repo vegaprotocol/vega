@@ -14,6 +14,7 @@ package products
 
 import (
 	"context"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -29,7 +30,12 @@ func NewPerpetualFromSnapshot(
 	broker Broker,
 	state *snapshotpb.Perps,
 	assetDP uint32,
+	tm time.Time,
 ) (*Perpetual, error) {
+	// set next trigger from the settlement cue, it'll roll forward from `initial` to the next trigger time after `now`
+	tt := p.DataSourceSpecForSettlementSchedule.Data.GetInternalTimeTriggerSpecConfiguration()
+	tt.SetNextTrigger(tm)
+
 	perps, err := NewPerpetual(ctx, log, p, oe, broker, assetDP)
 	if err != nil {
 		return nil, err
@@ -81,7 +87,6 @@ func (p *Perpetual) Serialize() *snapshotpb.Product {
 			Timestamp: v.t,
 		})
 	}
-
 	return &snapshotpb.Product{
 		Type: &snapshotpb.Product_Perps{
 			Perps: perps,

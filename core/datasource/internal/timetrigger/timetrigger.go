@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/datasource/common"
-	"code.vegaprotocol.io/vega/core/datasource/errors"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
@@ -37,6 +36,15 @@ func (s *SpecConfiguration) SetInitial(initial, timeNow time.Time) error {
 	}
 
 	s.Triggers[0].SetInitial(initial, timeNow)
+	return nil
+}
+
+func (s *SpecConfiguration) SetNextTrigger(timeNow time.Time) error {
+	if err := s.Triggers.Empty(); err != nil {
+		return err
+	}
+
+	s.Triggers[0].SetNextTrigger(timeNow)
 	return nil
 }
 
@@ -69,6 +77,7 @@ func (s SpecConfiguration) GetFilters() []*common.SpecFilter {
 	if s.Conditions != nil {
 		conditions = s.Conditions
 	}
+
 	// For the case the internal data source is time based
 	// (https://github.com/vegaprotocol/specs/blob/master/protocol/0048-DSRI-data_source_internal.md#12-time-triggered)
 	// We add the filter key values manually to match a time based data source
@@ -96,15 +105,12 @@ func (s SpecConfiguration) IsTriggered(tm time.Time) bool {
 }
 
 func SpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConfigurationTimeTrigger, tm *time.Time) (SpecConfiguration, error) {
-	if tm == nil {
-		return SpecConfiguration{}, errors.ErrMissingTimeForSettingTriggerRepetition
-	}
 	if protoConfig == nil {
 		return SpecConfiguration{}, nil
 	}
 
 	return SpecConfiguration{
-		Triggers:   common.InternalTimeTriggersFromProto(protoConfig.Triggers, *tm),
+		Triggers:   common.InternalTimeTriggersFromProto(protoConfig.Triggers),
 		Conditions: common.SpecConditionsFromProto(protoConfig.Conditions),
 	}, nil
 }

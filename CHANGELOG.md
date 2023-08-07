@@ -37,8 +37,17 @@
 - [8913](https://github.com/vegaprotocol/vega/issues/8913) - Add business logic for team management.
 - [8765](https://github.com/vegaprotocol/vega/issues/8765) - Implement snapshots state for `PERPS`.
 - [8918](https://github.com/vegaprotocol/vega/issues/8918) - Implement commands for team management.
+- [8960](https://github.com/vegaprotocol/vega/issues/8960) - Improve wiring perpetual markets through governance.
+- [8969](https://github.com/vegaprotocol/vega/issues/8969) - Improve wiring of internal time triggers for perpetual markets.
+- [8985](https://github.com/vegaprotocol/vega/issues/8985) - Improve snapshot restore of internal time triggers for perpetual markets.
 - [8756](https://github.com/vegaprotocol/vega/issues/8756) - Settlement and margin implementation for `PERPS`.
 - [8887](https://github.com/vegaprotocol/vega/pull/8887) - Remove differences for snapshot loading when the `nullchain` is used instead of `tendermint`
+- [8973](https://github.com/vegaprotocol/vega/issues/8973) - Do some more validation on Ethereum call specifications, add explicit error types to improve reporting
+- [8957](https://github.com/vegaprotocol/vega/issues/8957) - Oracle bindings for `PERPS`.
+- [8770](https://github.com/vegaprotocol/vega/issues/8770) - Add `PERPS` to integration tests.
+- [8763](https://github.com/vegaprotocol/vega/issues/8763) - Periodic settlement data endpoint.
+- [8920](https://github.com/vegaprotocol/vega/issues/8920) - Emit events when something happens to teams.
+- [8917](https://github.com/vegaprotocol/vega/issues/8917) - Support teams engine snapshots
 
 ### 🐛 Fixes
 
@@ -64,6 +73,7 @@
 - [8862](https://github.com/vegaprotocol/vega/issues/8862) - Fix settlement via governance
 - [8854](https://github.com/vegaprotocol/vega/issues/8854) - Add liquidity `v2` snapshots to the list of providers
 - [8772](https://github.com/vegaprotocol/vega/issues/8772) - Checkpoint panic on successor markets.
+- [8962](https://github.com/vegaprotocol/vega/issues/8962) - Refreshed pegged iceberg orders remain tracked as pegged orders.
 - [8837](https://github.com/vegaprotocol/vega/issues/8837) - Remove successor entries from snapshot if they will be removed next tick.
 - [8868](https://github.com/vegaprotocol/vega/issues/8868) - Fix `oracle_specs` table null value error.
 - [8878](https://github.com/vegaprotocol/vega/issues/8878) - Fix amend to consider market decimals when checking for sufficient funds.
@@ -77,6 +87,8 @@
 - [8909](https://github.com/vegaprotocol/vega/issues/8909) - initialise id generator for all branches of market state update
 - [8908](https://github.com/vegaprotocol/vega/issues/8908) - A rejected parent market should result in all successors getting rejected, too.
 - [8953](https://github.com/vegaprotocol/vega/issues/8953) - Fix reward distribution when validator delegate to other validators
+- [8898](https://github.com/vegaprotocol/vega/issues/8898) - Fix auction uncrossing handling for spots
+- [8968](https://github.com/vegaprotocol/vega/issues/8968) - Fix missing parent reference on checkpoint restore.
 
 ## 0.72.1
 

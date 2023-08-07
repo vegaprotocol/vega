@@ -63,7 +63,7 @@ Feature: Simple example of successor markets
       | trader4 | USD   | 2000000     |
       | trader5 | USD   | 22000       |
 
-  @SuccessorMarketActive
+  @SuccessorMarketActive @NoPerp
   Scenario: 001 Enact a successor market when the parent market is still active; Two proposals that name the same parent can be submitted; 0081-SUCM-005, 0081-SUCM-006, 0081-SUCM-020, 0081-SUCM-021, 0081-SUCM-022
     Given the markets:
       | id        | quote name | asset | risk model                | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | lp price range |
@@ -335,7 +335,7 @@ Feature: Simple example of successor markets
       | lpprov2 | 0.7272727272727273 | 10000                   |
 
 
-  @SuccessorMarketActive
+  @SuccessorMarketActive @NoPerp
   Scenario: 003 Enact a successor market while the parent is still active. Pending successors get rejected
     Given the markets:
       | id        | quote name | asset | risk model                | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | lp price range |

@@ -106,6 +106,7 @@ type TradingDataServiceV2 struct {
 	NetworkHistoryService      NetworkHistoryService
 	coreSnapshotService        *service.SnapshotData
 	stopOrderService           *service.StopOrders
+	fundingPeriodService       *service.FundingPeriods
 }
 
 // ListAccounts lists accounts matching the request.
@@ -3902,4 +3903,66 @@ func stopOrderExpiryStrategyFromProto(strategies []vega.StopOrder_ExpiryStrategy
 		es[i] = entities.StopOrderExpiryStrategy(strategies[i])
 	}
 	return es
+}
+
+func (t *TradingDataServiceV2) ListFundingPeriods(ctx context.Context, req *v2.ListFundingPeriodsRequest) (*v2.ListFundingPeriodsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListFundingPeriods")()
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+	dateRange := entities.DateRangeFromProto(req.DateRange)
+	periods, pageInfo, err := t.fundingPeriodService.ListFundingPeriods(ctx, entities.MarketID(req.MarketId), dateRange, pagination)
+	if err != nil {
+		return nil, formatE(ErrListFundingPeriod, err)
+	}
+
+	edges, err := makeEdges[*v2.FundingPeriodEdge](periods)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	connection := &v2.FundingPeriodConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListFundingPeriodsResponse{
+		FundingPeriods: connection,
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListFundingPeriodDataPoints(ctx context.Context, req *v2.ListFundingPeriodDataPointsRequest) (
+	*v2.ListFundingPeriodDataPointsResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListFundingPeriodDataPoints")()
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	dateRange := entities.DateRangeFromProto(req.DateRange)
+	dataPoints, pageInfo, err := t.fundingPeriodService.ListFundingPeriodDataPoints(ctx,
+		entities.MarketID(req.MarketId),
+		dateRange,
+		(*entities.FundingPeriodDataPointSource)(req.Source),
+		pagination,
+	)
+	if err != nil {
+		return nil, formatE(ErrListFundingPeriodDataPoints, err)
+	}
+
+	edges, err := makeEdges[*v2.FundingPeriodDataPointEdge](dataPoints)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	connection := &v2.FundingPeriodDataPointConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListFundingPeriodDataPointsResponse{
+		FundingPeriodDataPoints: connection,
+	}, nil
 }
