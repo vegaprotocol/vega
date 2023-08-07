@@ -109,6 +109,7 @@
 - [8971](https://github.com/vegaprotocol/vega/issues/8971) - Record the epoch start time even in opening auction
 - [8971](https://github.com/vegaprotocol/vega/issues/8971) - Record the epoch start time even in opening auction
 - [8992](https://github.com/vegaprotocol/vega/issues/8992) - allow for 0 time step for sla fee calculation
+- [8988](https://github.com/vegaprotocol/vega/issues/8988) - allow amend/cancel of pending liquidity provision
 
 ## 0.72.1
 
