@@ -19,7 +19,7 @@ var (
 type checkTxCmd struct {
 	config.OutputFlag
 	Diffs        string `description:"The output directory for detailed reporting on diffs" long:"diffs"        short:"d"`
-	Transactions string `description:"Path to the transaction json files"                   long:"transactions" short:"t" required:"true"`
+	Transactions string `description:"Path to the transaction json files"                   long:"transactions" required:"true" short:"t"`
 }
 
 func (opts *checkTxCmd) Execute(_ []string) error {
