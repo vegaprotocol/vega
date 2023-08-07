@@ -44,9 +44,9 @@ Feature: Test closeout type 1: margin >= cost of closeout
     And the parties place the following pegged iceberg orders:
       | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
       | aux1  | ETH/DEC19 | 2         | 1                    | buy  | BID              | 1          | 10     |
-      | aux1  | ETH/DEC19 | 2         | 1                    | sell | ASK              | 1          | 10     |
+      | aux1 | ETH/DEC19 | 91 | 1 | sell | ASK | 91 | 10 |
       | aux1  | ETH/DEC19 | 2         | 1                    | buy  | MID              | 1          | 10     |
-      | aux1  | ETH/DEC19 | 2         | 1                    | sell | MID              | 1          | 26     |
+      | aux1 | ETH/DEC19 | 81 | 1 | sell | MID | 81 | 26 |
     When the network moves ahead "1" blocks
     # setup order book
     When the parties place the following orders:
@@ -100,24 +100,24 @@ Feature: Test closeout type 1: margin >= cost of closeout
       #original vol
       | sell | 150   | 1000   |
       #LP pegged vol
-      | sell | 126   | 79     |
-      #LP pegged vol
-      | sell | 115   | 87     |
-      #original vol
-      | sell | 105   | 1      |
+      | sell | 126 | 81 |
+      #   #LP pegged vol
+      | sell | 115 | 91 |
+      #   #original vol
+      | sell | 105 | 1  |
 
     When the network moves ahead "1" blocks
     Then the mark price should be "100" for the market "ETH/DEC19"
 
     # TODO: these calculations, due to MTM changes are not entirely accurate
-    # slippage is calculated from the order book before the trade happens, which is (105+115*99)/100-100=14
-    # party1 maintenance margin should be: position_vol* slippage + vol * riskfactor * markprice= 100*14 + 100*0.48787313795861700*100=6278.73 rounded up to 6279
+# slippage is calculated from the order book before the trade happens, which is (105+115*91+126*8)/100-100=15.78
+# party1 maintenance margin should be: position_vol* slippage + vol * riskfactor * markprice= 100*15.78 + 100*0.48787313795861700*100=6457
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/DEC19 | 6479        | 12958  | 16197   | 19437   |
+      | party1 | ETH/DEC19 | 6379 | 12758 | 15947 | 19137 |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC19 | 16197  | 13803   |
+      | party1 | USD | ETH/DEC19 | 15947 | 14053 |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
