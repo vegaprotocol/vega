@@ -29,6 +29,9 @@ func (e *Engine) AmendLiquidityProvision(ctx context.Context, lpa *types.Liquidi
 
 	// LP exists, checked in the previous func.
 	lp, _ := e.provisions.Get(party)
+	if lp == nil {
+		lp, _ = e.pendingProvisions.Get(party)
+	}
 	updatedLp := e.createAmendedProvision(lp, lpa)
 
 	// add to pending provision since the change in CommitmentAmount should be reflected at the beginning of next epoch.
