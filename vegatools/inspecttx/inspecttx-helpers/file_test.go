@@ -22,7 +22,7 @@ func TestGetFilesInDirectoryRetrievesAllFiles(t *testing.T) {
 		filePaths = append(filePaths, filePath)
 	}
 
-	retrievedFiles, err := GetFilesInDirectory(tmpDir)
+	retrievedFiles, err := GetJsonFilesInDirectory(tmpDir)
 	assert.NoError(t, err, "GetFilesInDirectory failed")
 	assert.Len(t, retrievedFiles, len(testFiles), "GetFilesInDirectory returned incorrect number of files")
 

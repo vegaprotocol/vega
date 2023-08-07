@@ -30,8 +30,7 @@ func TransactionMatch(transactionData TransactionData) (Result, error) {
 		return comparisonData, fmt.Errorf("an error occurred when attempting to unmarshal the decoded transaction byte array. \nerr: %v", err)
 	}
 
-	transactionWrapper := &TransactionAlias{Transaction: unmarshalledTransaction}
-	marshalledTransaction, marshalledInputData, err := marshalTransactionAndInputDataToString(transactionWrapper, unmarshalledInputData)
+	marshalledTransaction, marshalledInputData, err := marshalTransactionAndInputDataToString(unmarshalledTransaction, unmarshalledInputData)
 	if err != nil {
 		return comparisonData, fmt.Errorf("an error occurred when attempting to marshal the structs back to a json string. \nerr: %v", err)
 	}

@@ -28,7 +28,7 @@ func (opts *checkTxCmd) Execute(_ []string) error {
 	transactionsPassed = 0
 	transactionDiffs = 0
 
-	transactionFiles, err := inspecttx.GetFilesInDirectory(opts.txDirectory)
+	transactionFiles, err := inspecttx.GetJsonFilesInDirectory(opts.txDirectory)
 	if err != nil {
 		return fmt.Errorf("error when attempting to get files in the given directory. \nerr: %v", err)
 	}

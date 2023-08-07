@@ -3,12 +3,13 @@ package tools
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path"
 	"testing"
 
 	"code.vegaprotocol.io/vega/libs/proto"
+
+	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"code.vegaprotocol.io/vega/commands"
 
@@ -19,50 +20,79 @@ import (
 const (
 	testFilesValid   = "./testfiles/valid"
 	testFilesInvalid = "./testfiles/invalid"
+	diffFiles        = "./testfiles/diffs"
 )
 
-func TestInspectTxsInDirectoryCmd_ReturnsNoErrorWhenAllTransactionsMatch(t *testing.T) {
-	testTransaction := commands.NewTransaction("mykey", nil, commands.NewSignature([]byte("bob"), "dave", 3))
-	testTransactionAlias := &inspecttx_helpers.TransactionAlias{Transaction: testTransaction}
-	transactionJson, err := testTransactionAlias.MarshalJSON()
-	data := inspecttx_helpers.TransactionData{Transaction: json.RawMessage(transactionJson)}
+var testInputData = v1.InputData{Nonce: 123, BlockHeight: 456, Command: &v1.InputData_Transfer{Transfer: &v1.Transfer{
+	FromAccountType: 1,
+	To:              "dave",
+	ToAccountType:   2,
+	Asset:           "test asset",
+	Amount:          "123",
+	Reference:       "test ref",
+	Kind:            nil,
+}}}
 
-	fmt.Print(string(transactionJson))
-	marshalledProto, err := proto.Marshal(testTransaction)
-	encodedData := base64.StdEncoding.EncodeToString(marshalledProto)
-	data.EncodedData = encodedData
+func setUpTestData(t *testing.T) inspecttx_helpers.TransactionData {
+	marshalledInputData, err := commands.MarshalInputData(&testInputData)
+	testTransaction := commands.NewTransaction("mykey", marshalledInputData, commands.NewSignature([]byte("testSig"), "testAlgo", 3))
 
-	os.MkdirAll(testFilesValid, 0o755)
-	filePath := path.Join(testFilesValid, "transaction.json")
-	jsonData, err := json.Marshal(data)
-	err = os.WriteFile(filePath, jsonData, 0o644)
+	transactionJson, err := inspecttx_helpers.MarshalToJSONWithOneOf(testTransaction)
+	inputDataJson, err := inspecttx_helpers.MarshalToJSONWithOneOf(&testInputData)
+	protoToEncode, err := proto.Marshal(testTransaction)
+	encodedData := base64.StdEncoding.EncodeToString(protoToEncode)
 
-	cmd := checkTxCmd{
-		txDirectory:   testFilesValid,
-		diffOutputDir: testFilesValid + "/diffs",
-	}
+	testData := inspecttx_helpers.TransactionData{Transaction: json.RawMessage(transactionJson), InputData: json.RawMessage(inputDataJson), EncodedData: encodedData}
+	assert.NoErrorf(t, err, "error occurred when marshalling a vega-generated transaction test data to a json string")
 
-	err = cmd.Execute(nil)
-	assert.NoErrorf(t, err, "expected inspectTxsInDirectoryCmd to run without error, however one was thrown: \nERR: %v", err)
-
-	files, err := inspecttx_helpers.GetFilesInDirectory(cmd.diffOutputDir)
-	assert.NoErrorf(t, err, "error occurred when checking diff dir for files\nerr: %v", err)
-	assert.Len(t, files, 0, "expected to find no diff files for passing transactions, but files were located")
-
-	err = os.RemoveAll(cmd.diffOutputDir)
-	assert.Error(t, err, "error cleaning up diff dir")
-	err = os.RemoveAll(testFilesValid)
-	assert.Error(t, err, "error cleaning up diff dir")
+	return testData
 }
 
-func TestInspectTxsInDirectoryCmd_ErrReturnedAfterInspectingAllFilesIfNoMatch(t *testing.T) {
+func writeTestDataToFile(t *testing.T, testData inspecttx_helpers.TransactionData, testFilePath string) {
+	transactionData, err := json.Marshal(testData)
+	err = os.MkdirAll(testFilePath, 0o755)
+	assert.NoErrorf(t, err, "error occurred when attempting to make a directory for the valid test data")
+	filePath := path.Join(testFilePath, "transaction.json")
+
+	err = os.WriteFile(filePath, transactionData, 0o644)
+	assert.NoErrorf(t, err, "error when creating transaction.json file.\nerr: %v", err)
+
+	err = os.MkdirAll(diffFiles, 0o755)
+	assert.NoErrorf(t, err, "error occurred when attempting to make a directory for test diffs")
+}
+
+func TestInspectTxsInDirectoryCmd_ReturnsNoErrorWhenAllTransactionsMatch(t *testing.T) {
+	writeTestDataToFile(t, setUpTestData(t), testFilesValid)
 	cmd := checkTxCmd{
-		txDirectory:   testFilesInvalid,
-		diffOutputDir: testFilesInvalid + "/diffs",
+		txDirectory:   testFilesValid,
+		diffOutputDir: diffFiles,
 	}
 
 	err := cmd.Execute(nil)
+	assert.NoErrorf(t, err, "expected inspectTxsInDirectoryCmd to run without error, however one was thrown: \nERR: %v", err)
+	assert.Equalf(t, 0, transactionDiffs, "expected there to be no comparison failures, instead there was %d", transactionDiffs)
+	assert.Equalf(t, 1, transactionsPassed, "expected there to be 1 passing transaction, instead there was %d", transactionsPassed)
+	assert.Equalf(t, 1, transactionsAnalysed, "expected there to be 1 analysed transaction, instead there was %d", transactionsAnalysed)
+}
+
+func TestInspectTxsInDirectoryCmd_ErrReturnedAfterInspectingAllFilesIfNoMatch(t *testing.T) {
+	data := setUpTestData(t)
+	var jsonMap map[string]interface{}
+	err := json.Unmarshal(data.Transaction, &jsonMap)
+
+	jsonMap["version"] = "this will cause a diff"
+	jsonForCausingDiff, err := json.Marshal(jsonMap)
+	data.Transaction = jsonForCausingDiff
+
+	writeTestDataToFile(t, data, testFilesInvalid)
+	cmd := checkTxCmd{
+		txDirectory:   testFilesInvalid,
+		diffOutputDir: diffFiles,
+	}
+
+	err = cmd.Execute(nil)
 	assert.Error(t, err, "inspectTxsInDirectoryCmd was expected to fail, however the command did not throw any error")
-	err = os.RemoveAll(cmd.diffOutputDir)
-	assert.NoError(t, err, "error cleaning up diff dir")
+	assert.Equalf(t, 1, transactionDiffs, "expected there to be 1 failure, instead there was %d", transactionDiffs)
+	assert.Equalf(t, 0, transactionsPassed, "expected there to be no passing transactions, instead there was %d", transactionsPassed)
+	assert.Equalf(t, 1, transactionsAnalysed, "expected there to be 1 analysed transaction, instead there was %d", transactionsAnalysed)
 }

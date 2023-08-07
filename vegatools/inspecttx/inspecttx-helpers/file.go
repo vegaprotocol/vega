@@ -22,7 +22,7 @@ const (
 	Transaction DiffType = "Transaction"
 )
 
-func GetFilesInDirectory(directory string) ([]string, error) {
+func GetJsonFilesInDirectory(directory string) ([]string, error) {
 	files, err := os.Open(directory)
 	if err != nil {
 		return nil, fmt.Errorf("error occurred when attempting to open the given directory. \nerr: %w", err)

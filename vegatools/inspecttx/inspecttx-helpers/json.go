@@ -3,6 +3,11 @@ package inspecttx_helpers
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+
+	"github.com/iancoleman/strcase"
+
+	proto2 "github.com/golang/protobuf/proto"
 
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
@@ -25,49 +30,86 @@ type ComparableJson struct {
 	DiffType     DiffType
 }
 
-func marshalTransactionAndInputDataToString(transaction *TransactionAlias, inputData *commandspb.InputData) (string, string, error) {
-	marshalledTransaction, err := transaction.MarshalJSON()
+func marshalTransactionAndInputDataToString(transaction *commandspb.Transaction, inputData *commandspb.InputData) (string, string, error) {
+	marshalledTransaction, err := MarshalToJSONWithOneOf(transaction)
 	if err != nil {
 		return "", "", fmt.Errorf("couldn't marshal transaction: %w", err)
 	}
 
-	marshalledInputData, err := JsonMarshaller.MarshalToString(inputData)
+	marshalledInputData, err := MarshalToJSONWithOneOf(inputData)
 	if err != nil {
 		return "", "", fmt.Errorf("couldn't marshal input data: %w", err)
 	}
 
-	return string(marshalledTransaction), marshalledInputData, nil
+	return marshalledTransaction, marshalledInputData, nil
 }
 
-type TransactionAlias struct {
-	*commandspb.Transaction
-	*commandspb.InputData
-}
-
-// MarshalJSON used to accommodate for 'oneof' types that would otherwise be left out of marshalling to json, therefore causing unnecessary diffs
-// this method checks the oneof types and ensures they are added to json
-func (mt *TransactionAlias) MarshalJSON() ([]byte, error) {
-	// Convert the embedded struct to JSON.
-	data, err := JsonMarshaller.MarshalToString(mt.Transaction)
+// MarshalToJSONWithOneOf this method exists to accommodate to marshalling proto fields with a 'oneof' tag. These are ignored in marshalling unless explicitly handled
+func MarshalToJSONWithOneOf(pb proto2.Message) (string, error) {
+	marshalledTransaction, err := JsonMarshaller.MarshalToString(pb)
 	if err != nil {
-		return nil, err
+		return "", fmt.Errorf("error marshalling the proto message to a string\nerr: %d", err)
 	}
 
-	var jsonData map[string]interface{}
-	if err := json.Unmarshal([]byte(data), &jsonData); err != nil {
-		return nil, err
+	transactionValsWithoutOneOfFields := map[string]interface{}{}
+	oneOfValues := map[string]interface{}{}
+	json.Unmarshal([]byte(marshalledTransaction), &transactionValsWithoutOneOfFields)
+
+	pbType := reflect.TypeOf(pb).Elem()
+	pbValue := reflect.ValueOf(pb).Elem()
+
+	for i := 0; i < pbType.NumField(); i++ {
+		field := pbType.Field(i)
+
+		if field.Tag.Get("protobuf_oneof") != "" {
+			oneOfFieldName := field.Tag.Get("protobuf_oneof")
+			oneOfField := pbValue.FieldByName(field.Name)
+
+			if oneOfField.IsValid() && !oneOfField.IsNil() {
+				oneOfValue := getInterfaceValue(oneOfField)
+				if oneOfValue != nil {
+					oneOfSelectedType := reflect.TypeOf(oneOfValue)
+					oneOfSelectedValue := reflect.ValueOf(oneOfValue).Elem().Field(0).Interface()
+
+					jsonKey := strcase.ToLowerCamel(oneOfSelectedType.Elem().Field(0).Name)
+					oneOfData := map[string]interface{}{jsonKey: oneOfSelectedValue}
+					oneOfValues[oneOfFieldName] = oneOfData
+					delete(transactionValsWithoutOneOfFields, jsonKey)
+				}
+			}
+		}
 	}
 
-	switch v := mt.From.(type) {
-	case *commandspb.Transaction_Address:
-		jsonData["from"] = map[string]string{"address": v.Address}
-		delete(jsonData, "address")
-	case *commandspb.Transaction_PubKey:
-		jsonData["from"] = map[string]string{"pubKey": v.PubKey}
-		delete(jsonData, "pubKey")
+	combinedWithOneOfVals := make(map[string]interface{})
+	for key, value := range transactionValsWithoutOneOfFields {
+		combinedWithOneOfVals[key] = value
 	}
 
-	return json.Marshal(jsonData)
+	for key, value := range oneOfValues {
+		combinedWithOneOfVals[key] = value
+	}
+
+	mergedJson, err := json.Marshal(combinedWithOneOfVals)
+	if err != nil {
+		return "", fmt.Errorf("Error merging original json vals with 'oneof' fields to JSON:\nerr: %v", err)
+	}
+
+	return string(mergedJson), nil
+}
+
+func getInterfaceValue(v reflect.Value) interface{} {
+	if v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			return nil
+		}
+		return getInterfaceValue(v.Elem())
+	}
+
+	if v.Kind() == reflect.Interface {
+		return v.Interface()
+	}
+
+	return nil
 }
 
 func unmarshalTransaction(decodedTransactionBytes []byte) (*commandspb.Transaction, *commandspb.InputData, error) {
