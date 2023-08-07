@@ -1,4 +1,4 @@
-package inspecttx_helpers
+package inspecttx
 
 import (
 	"encoding/base64"

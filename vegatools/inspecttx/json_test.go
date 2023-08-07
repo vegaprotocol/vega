@@ -1,7 +1,9 @@
-package inspecttx_helpers
+package inspecttx
 
 import (
 	"testing"
+
+	proto2 "github.com/golang/protobuf/proto"
 
 	"github.com/stretchr/testify/assert"
 
@@ -70,6 +72,53 @@ func TestCompareJson(t *testing.T) {
 
 			assert.Equalf(t, testCase.ExpectedDiff, result, "Expected JSONs to have a difference of %v, but got: %v", testCase.ExpectedDiff, result)
 			assert.NotZero(t, len(diffHtml), "Diff HTML is empty")
+		})
+	}
+}
+
+func TestJsonMarshalsCorrectlyWithOneOfHandling(t *testing.T) {
+	testCases := []struct {
+		name           string
+		input          proto2.Message
+		expectedOutput string
+	}{
+		{
+			name: "OneOfTagInTransaction",
+			input: &commandspb.Transaction{
+				From:    &commandspb.Transaction_PubKey{PubKey: "pubkey"},
+				Version: 1,
+			},
+			expectedOutput: "{\"from\":{\"pubKey\":\"pubkey\"},\"version\":1}",
+		},
+		{
+			name: "NoOneOfTag",
+			input: &commandspb.Transaction{
+				Version: 1,
+				Signature: &commandspb.Signature{
+					Value:   "sig",
+					Algo:    "alg",
+					Version: 1,
+				},
+			},
+			expectedOutput: "{\"signature\":{\"algo\":\"alg\",\"value\":\"sig\",\"version\":1},\"version\":1}",
+		},
+		{
+			name: "OneOfTagInInputData",
+			input: &commandspb.InputData{
+				BlockHeight: 1,
+				Command: &commandspb.InputData_ProposalSubmission{ProposalSubmission: &commandspb.ProposalSubmission{
+					Reference: "myref",
+				}},
+			},
+			expectedOutput: "{\"blockHeight\":\"1\",\"command\":{\"proposalSubmission\":{\"reference\":\"myref\"}}}",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			jsonString, err := MarshalToJSONWithOneOf(tc.input)
+			assert.NoErrorf(t, err, "error occurred, marshalling was expected to be successful.\nerr: %v", err)
+			assert.Equal(t, tc.expectedOutput, jsonString)
 		})
 	}
 }

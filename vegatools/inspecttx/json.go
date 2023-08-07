@@ -1,4 +1,4 @@
-package inspecttx_helpers
+package inspecttx
 
 import (
 	"encoding/json"
@@ -24,6 +24,7 @@ var JsonMarshaller = jsonpb.Marshaler{
 	EnumsAsInts: false,
 }
 
+// ComparableJson used to contain json data for comparison
 type ComparableJson struct {
 	OriginalJson json.RawMessage
 	CoreJson     json.RawMessage
@@ -44,7 +45,7 @@ func marshalTransactionAndInputDataToString(transaction *commandspb.Transaction,
 	return marshalledTransaction, marshalledInputData, nil
 }
 
-// MarshalToJSONWithOneOf this method exists to accommodate to marshalling proto fields with a 'oneof' tag. These are ignored in marshalling unless explicitly handled
+// MarshalToJSONWithOneOf this method exists to accommodate to marshalling proto fields with a 'oneof' tag. These are ignored in marshalling unless explicitly handled.
 func MarshalToJSONWithOneOf(pb proto2.Message) (string, error) {
 	marshalledTransaction, err := JsonMarshaller.MarshalToString(pb)
 	if err != nil {
@@ -53,7 +54,10 @@ func MarshalToJSONWithOneOf(pb proto2.Message) (string, error) {
 
 	transactionValsWithoutOneOfFields := map[string]interface{}{}
 	oneOfValues := map[string]interface{}{}
-	json.Unmarshal([]byte(marshalledTransaction), &transactionValsWithoutOneOfFields)
+	err = json.Unmarshal([]byte(marshalledTransaction), &transactionValsWithoutOneOfFields)
+	if err != nil {
+		return "", fmt.Errorf("error unmarshalling transaction struct to a map.\nerr: %v", err)
+	}
 
 	pbType := reflect.TypeOf(pb).Elem()
 	pbValue := reflect.ValueOf(pb).Elem()

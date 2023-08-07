@@ -1,4 +1,4 @@
-package inspecttx_helpers
+package inspecttx
 
 import (
 	"encoding/json"
@@ -22,7 +22,7 @@ func TestGetFilesInDirectoryRetrievesAllFiles(t *testing.T) {
 		filePaths = append(filePaths, filePath)
 	}
 
-	retrievedFiles, err := GetJsonFilesInDirectory(tmpDir)
+	retrievedFiles, err := GetFilesInDirectory(tmpDir)
 	assert.NoError(t, err, "GetFilesInDirectory failed")
 	assert.Len(t, retrievedFiles, len(testFiles), "GetFilesInDirectory returned incorrect number of files")
 

@@ -1,4 +1,4 @@
-package inspecttx_helpers
+package inspecttx
 
 import (
 	"encoding/json"
@@ -22,10 +22,10 @@ const (
 	Transaction DiffType = "Transaction"
 )
 
-func GetJsonFilesInDirectory(directory string) ([]string, error) {
+func GetFilesInDirectory(directory string) ([]string, error) {
 	files, err := os.Open(directory)
 	if err != nil {
-		return nil, fmt.Errorf("error occurred when attempting to open the given directory. \nerr: %w", err)
+		return nil, fmt.Errorf("error occurred when attempting to open the given directory '%s'. \nerr: %w", directory, err)
 	}
 	defer func(files *os.File) {
 		err := files.Close()
@@ -83,7 +83,7 @@ func writeToFile(filePath string, data []byte, fileMode os.FileMode) error {
 }
 
 func WriteDiffsToFile(currentTransactionFile string, diffOutputDir string, result Result) error {
-	if result.Match == true {
+	if result.Match {
 		return fmt.Errorf("result data shows results match. should not need to write diffs to file")
 	}
 
