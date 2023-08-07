@@ -116,7 +116,7 @@ func TestFutureSettlement(t *testing.T) {
 
 	prodSpec := proto.Product
 	require.NotNil(t, prodSpec)
-	prod, err := products.New(ctx, logging.NewTestLogger(), prodSpec, oe, broker, 1)
+	prod, err := products.New(ctx, logging.NewTestLogger(), prodSpec, "", oe, broker, 1)
 
 	// Cast back into a future so we can call future specific functions
 	f, ok := prod.(*products.Future)

@@ -1,4 +1,7 @@
 -- +goose Up
+
+ALTER TYPE proposal_error ADD VALUE IF NOT EXISTS 'PROPOSAL_ERROR_INVALID_PERPETUAL_PRODUCT';
+
 CREATE TABLE IF NOT EXISTS funding_period (
     market_id BYTEA NOT NULL,
     funding_period_seq BIGINT NOT NULL,

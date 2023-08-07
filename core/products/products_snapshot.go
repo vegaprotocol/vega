@@ -29,6 +29,7 @@ func NewFromSnapshot(
 	ctx context.Context,
 	log *logging.Logger,
 	pp interface{},
+	marketID string,
 	oe OracleEngine,
 	broker Broker,
 	state *snapshotpb.Product,
@@ -47,7 +48,7 @@ func NewFromSnapshot(
 		if perpsState == nil {
 			return nil, ErrNoStateProvidedForPerpsWithSnapshot
 		}
-		return NewPerpetualFromSnapshot(ctx, log, p.Perps, oe, broker, perpsState, assetDP, tm)
+		return NewPerpetualFromSnapshot(ctx, log, p.Perps, marketID, oe, broker, perpsState, assetDP, tm)
 	default:
 		return nil, ErrUnimplementedProduct
 	}

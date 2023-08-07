@@ -32,8 +32,8 @@ type TradableInstrument struct {
 
 // NewTradableInstrument will instantiate a new tradable instrument
 // using a market framework configuration for a tradable instrument.
-func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.TradableInstrument, oe products.OracleEngine, broker products.Broker, assetDP uint32) (*TradableInstrument, error) {
-	instrument, err := NewInstrument(ctx, log, pti.Instrument, oe, broker, assetDP)
+func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.TradableInstrument, marketID string, oe products.OracleEngine, broker products.Broker, assetDP uint32) (*TradableInstrument, error) {
+	instrument, err := NewInstrument(ctx, log, pti.Instrument, marketID, oe, broker, assetDP)
 	if err != nil {
 		return nil, err
 	}
@@ -50,8 +50,8 @@ func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.
 	}, nil
 }
 
-func (i *TradableInstrument) UpdateInstrument(ctx context.Context, log *logging.Logger, ti *types.TradableInstrument, oe products.OracleEngine, broker products.Broker) error {
-	instrument, err := NewInstrument(ctx, log, ti.Instrument, oe, broker, i.assetDP)
+func (i *TradableInstrument) UpdateInstrument(ctx context.Context, log *logging.Logger, ti *types.TradableInstrument, marketID string, oe products.OracleEngine, broker products.Broker) error {
+	instrument, err := NewInstrument(ctx, log, ti.Instrument, marketID, oe, broker, i.assetDP)
 	if err != nil {
 		return err
 	}
@@ -82,8 +82,8 @@ type Instrument struct {
 
 // NewInstrument will instantiate a new instrument
 // using a market framework configuration for a instrument.
-func NewInstrument(ctx context.Context, log *logging.Logger, pi *types.Instrument, oe products.OracleEngine, broker products.Broker, assetDP uint32) (*Instrument, error) {
-	product, err := products.New(ctx, log, pi.Product, oe, broker, assetDP)
+func NewInstrument(ctx context.Context, log *logging.Logger, pi *types.Instrument, marketID string, oe products.OracleEngine, broker products.Broker, assetDP uint32) (*Instrument, error) {
+	product, err := products.New(ctx, log, pi.Product, marketID, oe, broker, assetDP)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate product from instrument configuration: %w", err)
 	}

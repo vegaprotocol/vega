@@ -3215,6 +3215,8 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_MISSING_SLA_PARAMS
   "Mandatory liquidity provision SLA parameters are missing from the proposal"
   PROPOSAL_ERROR_INVALID_SLA_PARAMS
+  "Perpetual market proposal contained invalid product definition"
+  PROPOSAL_ERROR_INVALID_PERPETUAL_PRODUCT
 }
 
 "Why the order was rejected by the core node"

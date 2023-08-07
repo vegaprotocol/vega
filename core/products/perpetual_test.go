@@ -259,7 +259,7 @@ func testRegisteredCallbacks(t *testing.T) {
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	perp := getTestPerpProd(t)
-	perpetual, err := products.NewPerpetual(context.Background(), log, perp, oe, broker, 1)
+	perpetual, err := products.NewPerpetual(context.Background(), log, perp, "", oe, broker, 1)
 	require.NoError(t, err)
 	require.NotNil(t, settle)
 	require.NotNil(t, period)
@@ -350,7 +350,7 @@ func testRegisteredCallbacksWithDifferentData(t *testing.T) {
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	perp := getTestPerpProd(t)
-	perpetual, err := products.NewPerpetual(context.Background(), log, perp, oe, broker, 1)
+	perpetual, err := products.NewPerpetual(context.Background(), log, perp, "", oe, broker, 1)
 	require.NoError(t, err)
 	require.NotNil(t, settle)
 	require.NotNil(t, period)
@@ -481,7 +481,7 @@ func testPerpetual(t *testing.T) *tstPerp {
 	oe.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(spec.SubscriptionID(1), func(_ context.Context, _ spec.SubscriptionID) {}, nil)
 	perp := getTestPerpProd(t)
 
-	perpetual, err := products.NewPerpetual(context.Background(), log, perp, oe, broker, 1)
+	perpetual, err := products.NewPerpetual(context.Background(), log, perp, "", oe, broker, 1)
 	if err != nil {
 		t.Fatalf("couldn't create a perp for testing: %v", err)
 	}
