@@ -180,7 +180,7 @@ func NewMarket(
 	assetDecimals := assetDetails.DecimalPlaces()
 	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(mkt.PositionDecimalPlaces))
 
-	tradableInstrument, err := markets.NewTradableInstrument(ctx, log, mkt.TradableInstrument, oracleEngine, broker, uint32(assetDecimals))
+	tradableInstrument, err := markets.NewTradableInstrument(ctx, log, mkt.TradableInstrument, mkt.ID, oracleEngine, broker, uint32(assetDecimals))
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}
@@ -385,7 +385,7 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	} else {
 		m.tradableInstrument.Instrument.Unsubscribe(ctx)
 	}
-	if err := m.tradableInstrument.UpdateInstrument(ctx, m.log, m.mkt.TradableInstrument, oracleEngine, m.broker); err != nil {
+	if err := m.tradableInstrument.UpdateInstrument(ctx, m.log, m.mkt.TradableInstrument, m.GetID(), oracleEngine, m.broker); err != nil {
 		return err
 	}
 	m.risk.UpdateModel(m.stateVarEngine, m.tradableInstrument.MarginCalculator, m.tradableInstrument.RiskModel)

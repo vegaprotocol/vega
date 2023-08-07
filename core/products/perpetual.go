@@ -74,7 +74,7 @@ type Perpetual struct {
 	assetDP uint32
 }
 
-func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, oe OracleEngine, broker Broker, assetDP uint32) (*Perpetual, error) {
+func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, marketID string, oe OracleEngine, broker Broker, assetDP uint32) (*Perpetual, error) {
 	// make sure we have all we need
 	if p.DataSourceSpecForSettlementData == nil || p.DataSourceSpecForSettlementSchedule == nil || p.DataSourceSpecBinding == nil {
 		return nil, ErrDataSourceSpecAndBindingAreRequired
@@ -87,6 +87,7 @@ func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, oe O
 	// check decimal places for settlement data
 	perp := &Perpetual{
 		p:       p,
+		id:      marketID,
 		log:     log,
 		broker:  broker,
 		assetDP: assetDP,

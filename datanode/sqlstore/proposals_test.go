@@ -60,7 +60,7 @@ func addTestProposal(
 		RequiredLPParticipation: nil,
 		TxHash:                  generateTxHash(),
 	}
-	ps.Add(ctx, p)
+	assert.NoError(t, ps.Add(ctx, p))
 	return p
 }
 
@@ -160,6 +160,14 @@ func TestProposals(t *testing.T) {
 		actual, _, err := propStore.Get(ctx, nil, nil, propType, entities.CursorPagination{})
 		require.NoError(t, err)
 		assertProposalsMatch(t, expected, actual)
+	})
+
+	t.Run("Add with proposal error", func(t *testing.T) {
+		propError := entities.ProposalInvalidPerpetualProduct
+		expected := addTestProposal(t, ctx, propStore, helpers.GenerateID(), party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, propError)
+		actual, err := propStore.GetByID(ctx, string(expected.ID))
+		require.NoError(t, err)
+		assert.Equal(t, expected.Reason, actual.Reason)
 	})
 }
 

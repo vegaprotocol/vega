@@ -28,55 +28,51 @@ type FundingPeriod struct {
 }
 
 func NewFundingPeriodFromProto(fp *events.FundingPeriod, txHash TxHash, vegaTime time.Time) (*FundingPeriod, error) {
-	var (
-		endTime        *time.Time
-		fundingPayment *num.Decimal
-		fundingRate    *num.Decimal
-		externalTwap   *num.Decimal
-		internalTwap   *num.Decimal
-		err            error
-	)
-
-	if fp.End != nil {
-		endTime = ptr.From(NanosToPostgresTimestamp(*fp.End))
-	}
-
-	if fp.FundingPayment != nil {
-		if *fundingPayment, err = num.DecimalFromString(*fp.FundingPayment); err != nil {
-			return nil, err
-		}
-	}
-
-	if fp.FundingRate != nil {
-		if *fundingRate, err = num.DecimalFromString(*fp.FundingRate); err != nil {
-			return nil, err
-		}
-	}
-
-	if fp.ExternalTwap != nil {
-		if *externalTwap, err = num.DecimalFromString(*fp.ExternalTwap); err != nil {
-			return nil, err
-		}
-	}
-
-	if fp.InternalTwap != nil {
-		if *internalTwap, err = num.DecimalFromString(*fp.InternalTwap); err != nil {
-			return nil, err
-		}
-	}
-
-	return &FundingPeriod{
+	fundingPeriod := &FundingPeriod{
 		MarketID:         MarketID(fp.MarketId),
 		FundingPeriodSeq: fp.Seq,
 		StartTime:        NanosToPostgresTimestamp(fp.Start),
-		EndTime:          endTime,
-		FundingPayment:   fundingPayment,
-		FundingRate:      fundingRate,
-		ExternalTwap:     externalTwap,
-		InternalTwap:     internalTwap,
 		VegaTime:         vegaTime,
 		TxHash:           txHash,
-	}, err
+	}
+
+	if fp.End != nil {
+		fundingPeriod.EndTime = ptr.From(NanosToPostgresTimestamp(*fp.End))
+	}
+
+	if fp.FundingPayment != nil {
+		fundingPayment, err := num.DecimalFromString(*fp.FundingPayment)
+		if err != nil {
+			return nil, err
+		}
+		fundingPeriod.FundingPayment = &fundingPayment
+	}
+
+	if fp.FundingRate != nil {
+		fundingRate, err := num.DecimalFromString(*fp.FundingRate)
+		if err != nil {
+			return nil, err
+		}
+		fundingPeriod.FundingRate = &fundingRate
+	}
+
+	if fp.ExternalTwap != nil {
+		externalTwap, err := num.DecimalFromString(*fp.ExternalTwap)
+		if err != nil {
+			return nil, err
+		}
+		fundingPeriod.ExternalTwap = &externalTwap
+	}
+
+	if fp.InternalTwap != nil {
+		internalTwap, err := num.DecimalFromString(*fp.InternalTwap)
+		if err != nil {
+			return nil, err
+		}
+		fundingPeriod.InternalTwap = &internalTwap
+	}
+
+	return fundingPeriod, nil
 }
 
 func (fp FundingPeriod) ToProto() *events.FundingPeriod {
