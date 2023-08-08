@@ -88,9 +88,21 @@ func (es *EquityShares) RollbackParentELS() {
 	es.lps = make(map[string]*lp, len(current))
 	es.totalPStake, es.totalVStake = num.DecimalZero(), num.DecimalZero()
 	// now add the commitments one by one as if they were just made
-	for pid, els := range current {
+
+	// make the iteration over parties deterministic
+	pids := make([]string, 0, len(current))
+	for k := range current {
+		pids = append(pids, k)
+	}
+	sort.Strings(pids)
+
+	for _, pid := range pids {
+		els := current[pid]
 		update, _ := num.UintFromDecimal(els.stake)
 		es.SetPartyStake(pid, update)
+	}
+	if len(pids) > 0 {
+		es.ResetAvgToLP(pids[len(pids)-1])
 	}
 }
 
@@ -177,6 +189,13 @@ func (es *EquityShares) AvgTradeValue(avg num.Decimal) *EquityShares {
 	es.UpdateVStake()
 	es.mvp = avg
 	return es
+}
+
+func (es *EquityShares) ResetAvgToLP(id string) {
+	avg := es.lps[id].avg
+	for _, lp := range es.lps {
+		lp.avg = avg
+	}
 }
 
 // SetPartyStake sets LP values for a given party.
