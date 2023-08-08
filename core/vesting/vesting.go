@@ -155,7 +155,7 @@ func (e *Engine) increaseLockedForAsset(
 	}
 	amountLockedForEpochs, ok := locked[lockedForEpochs]
 	if !ok {
-		amountLockedForEpochs = num.NewUint(0)
+		amountLockedForEpochs = num.UintZero()
 	}
 	amountLockedForEpochs.Add(amountLockedForEpochs, amount)
 	locked[lockedForEpochs] = amountLockedForEpochs
@@ -170,7 +170,7 @@ func (e *Engine) increaseVestingBalance(
 
 	vesting, ok := partyRewards.Vesting[asset]
 	if !ok {
-		vesting = num.NewUint(0)
+		vesting = num.UintZero()
 	}
 	vesting.Add(vesting, amount)
 	partyRewards.Vesting[asset] = vesting
