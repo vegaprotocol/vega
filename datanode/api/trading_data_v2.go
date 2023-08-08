@@ -3907,10 +3907,20 @@ func stopOrderExpiryStrategyFromProto(strategies []vega.StopOrder_ExpiryStrategy
 
 func (t *TradingDataServiceV2) ListFundingPeriods(ctx context.Context, req *v2.ListFundingPeriodsRequest) (*v2.ListFundingPeriodsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListFundingPeriods")()
+
+	if len(req.MarketId) == 0 {
+		return nil, formatE(ErrEmptyMissingMarketID)
+	}
+
+	if !crypto.IsValidVegaID(req.MarketId) {
+		return nil, formatE(ErrInvalidMarketID)
+	}
+
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
 		return nil, formatE(ErrInvalidPagination, err)
 	}
+
 	dateRange := entities.DateRangeFromProto(req.DateRange)
 	periods, pageInfo, err := t.fundingPeriodService.ListFundingPeriods(ctx, entities.MarketID(req.MarketId), dateRange, pagination)
 	if err != nil {
@@ -3936,6 +3946,15 @@ func (t *TradingDataServiceV2) ListFundingPeriodDataPoints(ctx context.Context, 
 	*v2.ListFundingPeriodDataPointsResponse, error,
 ) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListFundingPeriodDataPoints")()
+
+	if len(req.MarketId) == 0 {
+		return nil, formatE(ErrEmptyMissingMarketID)
+	}
+
+	if !crypto.IsValidVegaID(req.MarketId) {
+		return nil, formatE(ErrInvalidMarketID)
+	}
+
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
 		return nil, formatE(ErrInvalidPagination, err)

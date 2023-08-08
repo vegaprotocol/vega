@@ -129,6 +129,7 @@ type SQLSubscribers struct {
 	pupSub                  *sqlsubscribers.ProtocolUpgrade
 	snapSub                 *sqlsubscribers.SnapshotData
 	stopOrdersSub           *sqlsubscribers.StopOrder
+	fundingPeriodSub        *sqlsubscribers.FundingPeriod
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -170,6 +171,7 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.pupSub,
 		s.snapSub,
 		s.stopOrdersSub,
+		s.fundingPeriodSub,
 	}
 }
 
@@ -309,4 +311,5 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.pupSub = sqlsubscribers.NewProtocolUpgrade(s.protocolUpgradeService)
 	s.snapSub = sqlsubscribers.NewSnapshotData(s.coreSnapshotService)
 	s.stopOrdersSub = sqlsubscribers.NewStopOrder(s.stopOrderService)
+	s.fundingPeriodSub = sqlsubscribers.NewFundingPeriod(s.fundingPeriodService)
 }

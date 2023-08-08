@@ -66,7 +66,7 @@ func TestPerpetualSnapshot(t *testing.T) {
 	err = proto.Unmarshal(serialized1, state2)
 	assert.NoError(t, err)
 
-	restoreTime := time.Unix(1000000, 0)
+	restoreTime := time.Unix(1000000, 100)
 	perps2, _, scheduleSrc := testPerpetualSnapshot(t, perps.ctrl, state2, restoreTime)
 
 	// now we serialize again, and check the payload are same
@@ -81,8 +81,8 @@ func TestPerpetualSnapshot(t *testing.T) {
 	cfg := scheduleSrc.Data.GetInternalTimeTriggerSpecConfiguration()
 
 	// trigger time in the past should fail, it should be set to restoreTime so should trigger
-	// on a future time only
-	assert.False(t, cfg.IsTriggered(restoreTime))
+	// on a future time only. The trigger times are precision seconds so we pass it in truncated.
+	assert.False(t, cfg.IsTriggered(restoreTime.Truncate(time.Second)))
 	assert.True(t, cfg.IsTriggered(restoreTime.Add(time.Second)))
 }
 
@@ -148,7 +148,7 @@ func testPerpetualSnapshot(t *testing.T, ctrl *gomock.Controller, state *snapsho
 	}
 	oe.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(spec.SubscriptionID(1), func(_ context.Context, _ spec.SubscriptionID) {}, nil)
 
-	perpetual, err := products.NewPerpetualFromSnapshot(context.Background(), log, perp, oe, broker, state.GetPerps(), dp, tm)
+	perpetual, err := products.NewPerpetualFromSnapshot(context.Background(), log, perp, "", oe, broker, state.GetPerps(), dp, tm)
 	if err != nil {
 		t.Fatalf("couldn't create a perp for testing: %v", err)
 	}
