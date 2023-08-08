@@ -86,6 +86,7 @@
 - [8874](https://github.com/vegaprotocol/vega/issues/8874) - Database migration can fail when rolling back and migrating up again.
 - [8855](https://github.com/vegaprotocol/vega/issues/8855) - Preserve reference to parent market when restoring checkpoint data
 - [8909](https://github.com/vegaprotocol/vega/issues/8909) - initialise id generator for all branches of market state update
+- [9004](https://github.com/vegaprotocol/vega/issues/9004) - Clear insurance pools in a deterministic order in successor markets.
 - [8908](https://github.com/vegaprotocol/vega/issues/8908) - A rejected parent market should result in all successors getting rejected, too.
 - [8953](https://github.com/vegaprotocol/vega/issues/8953) - Fix reward distribution when validator delegate to other validators
 - [8898](https://github.com/vegaprotocol/vega/issues/8898) - Fix auction uncrossing handling for spots
