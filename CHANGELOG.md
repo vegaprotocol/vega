@@ -90,6 +90,7 @@
 - [8953](https://github.com/vegaprotocol/vega/issues/8953) - Fix reward distribution when validator delegate to other validators
 - [8898](https://github.com/vegaprotocol/vega/issues/8898) - Fix auction uncrossing handling for spots
 - [8968](https://github.com/vegaprotocol/vega/issues/8968) - Fix missing parent reference on checkpoint restore.
+- [9009](https://github.com/vegaprotocol/vega/issues/9009) - Fix non determinism in `RollbackParentELS`
 
 ## 0.72.1
 
