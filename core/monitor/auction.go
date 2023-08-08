@@ -75,10 +75,6 @@ func (a *AuctionState) GetAuctionEnd() *time.Time {
 	return &cpy
 }
 
-func (a *AuctionState) StartLiquidityAuctionNoOrders(t time.Time, d *types.AuctionDuration) {
-	a.startLiquidityAuction(t, d, types.AuctionTriggerUnableToDeployLPOrders)
-}
-
 func (a *AuctionState) StartLiquidityAuctionUnmetTarget(t time.Time, d *types.AuctionDuration) {
 	a.startLiquidityAuction(t, d, types.AuctionTriggerLiquidityTargetNotMet)
 }
@@ -146,10 +142,6 @@ func (a *AuctionState) ExtendAuctionSuspension(delta types.AuctionDuration) {
 	t := types.AuctionTriggerGovernanceSuspension
 	a.extension = &t
 	a.ExtendAuction(delta)
-}
-
-func (a *AuctionState) ExtendAuctionLiquidityNoOrders(delta types.AuctionDuration) {
-	a.extendAuctionLiquidity(delta, types.AuctionTriggerUnableToDeployLPOrders)
 }
 
 func (a *AuctionState) ExtendAuctionLiquidityUnmetTarget(delta types.AuctionDuration) {
@@ -240,7 +232,7 @@ func (a AuctionState) IsOpeningAuction() bool {
 }
 
 func (a AuctionState) IsLiquidityAuction() bool {
-	return a.trigger == types.AuctionTriggerLiquidityTargetNotMet || a.trigger == types.AuctionTriggerUnableToDeployLPOrders
+	return a.trigger == types.AuctionTriggerLiquidityTargetNotMet
 }
 
 func (a AuctionState) IsPriceAuction() bool {
@@ -248,7 +240,7 @@ func (a AuctionState) IsPriceAuction() bool {
 }
 
 func (a AuctionState) IsLiquidityExtension() bool {
-	return a.extension != nil && (*a.extension == types.AuctionTriggerLiquidityTargetNotMet || *a.extension == types.AuctionTriggerUnableToDeployLPOrders)
+	return a.extension != nil && *a.extension == types.AuctionTriggerLiquidityTargetNotMet
 }
 
 func (a AuctionState) IsPriceExtension() bool {
@@ -261,7 +253,7 @@ func (a AuctionState) IsFBA() bool {
 
 // IsMonitorAuction - quick way to determine whether or not we're in an auction triggered by a monitoring engine.
 func (a AuctionState) IsMonitorAuction() bool {
-	return a.trigger == types.AuctionTriggerPrice || a.trigger == types.AuctionTriggerLiquidityTargetNotMet || a.trigger == types.AuctionTriggerUnableToDeployLPOrders
+	return a.trigger == types.AuctionTriggerPrice || a.trigger == types.AuctionTriggerLiquidityTargetNotMet
 }
 
 // CanLeave bool indicating whether auction should be closed or not, if true, we can still extend the auction
@@ -339,7 +331,7 @@ func (a *AuctionState) UpdateMinDuration(ctx context.Context, d time.Duration) *
 		// no need to check for nil, we already have
 		if newMin.After(*oldExp) {
 			a.end.Duration = int64(d / time.Second)
-			// this would increase the duration by delta new - old, effectively setting duration == new min. Instead, we can just assign new min duraiton.
+			// this would increase the duration by delta new - old, effectively setting duration == new min. Instead, we can just assign new min duration.
 			// a.end.Duration += int64(newMin.Sub(*oldExp) / time.Second) // we have to divide by seconds as we're using seconds in AuctionDuration type
 			return events.NewAuctionEvent(ctx, a.m.ID, false, a.begin.UnixNano(), newMin.UnixNano(), a.trigger)
 		}
