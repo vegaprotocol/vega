@@ -63,7 +63,7 @@ const (
 	StopOrderRejectionMustBeReduceOnly             StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_MUST_BE_REDUCE_ONLY
 	StopOrderRejectionMaxStopOrdersPerPartyReached StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_MAX_STOP_ORDERS_PER_PARTY_REACHED
 	StopOrderRejectionNotAllowedWithoutAPosition   StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION
-	StopOrderRejectionNotClosingThePosition        StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION
+	StopOrderRejectionNotClosingThePosition        StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_DOES_NOT_CLOSE_POSITION
 )
 
 type StopOrderExpiry struct {

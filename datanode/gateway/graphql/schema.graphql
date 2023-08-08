@@ -2556,8 +2556,8 @@ enum StopOrderRejectionReason {
   REJECTION_REASON_MAX_STOP_ORDERS_PER_PARTY_REACHED
   "Stop orders are not allowed without a position"
   REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION
-  "This stop order is not closing the position"
-  REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION
+  "This stop order does not close the position"
+  REJECTION_REASON_STOP_ORDER_DOES_NOT_CLOSE_POSITION
 }
 
 "A stop order in Vega"

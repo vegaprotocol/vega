@@ -40,7 +40,7 @@ type (
 		SeqNum               uint64
 		TxHash               TxHash
 		Submission           *commandspb.OrderSubmission
-		RejectionReason      *StopOrderRejectionReason
+		RejectionReason      StopOrderRejectionReason
 	}
 )
 
@@ -102,9 +102,12 @@ func (o StopOrder) ToProto() *pbevents.StopOrderEvent {
 		}
 	}
 
+	// We cannot copy a nil value to a enum field in the database when using copy, so we only set the
+	// rejection reason on the proto if the stop order is rejected. Otherwise, we will leave the proto field
+	// as nil
 	var rejectionReason *vega.StopOrder_RejectionReason
-	if o.RejectionReason != nil {
-		rejectionReason = ptr.From(vega.StopOrder_RejectionReason(*o.RejectionReason))
+	if o.Status == StopOrderStatusRejected {
+		rejectionReason = ptr.From(vega.StopOrder_RejectionReason(o.RejectionReason))
 	}
 
 	stopOrder := &vega.StopOrder{
@@ -217,10 +220,12 @@ func StopOrderFromProto(so *pbevents.StopOrderEvent, vegaTime time.Time, seqNum 
 		triggerPercentOffset = ptr.From(offset)
 	}
 
-	var rejectionReason *StopOrderRejectionReason
+	// We will default to unspecified as we need to have a value in the enum field for the pgx copy command to work
+	// as it calls EncodeText on the enum fields and this will fail if the value is nil
+	// We will only use the rejection reason when we convert back to proto if the status of the order is rejected.
+	rejectionReason := StopOrderRejectionReasonUnspecified
 	if so.StopOrder.RejectionReason != nil {
-		rejectionReason = ptr.From(
-			StopOrderRejectionReason(*so.StopOrder.RejectionReason))
+		rejectionReason = StopOrderRejectionReason(*so.StopOrder.RejectionReason)
 	}
 
 	stopOrder := StopOrder{

@@ -918,7 +918,7 @@ const (
 	StopOrderRejectionReasonMustBeReduceOnly             = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_MUST_BE_REDUCE_ONLY)
 	StopOrderRejectionReasonMaxStopOrdersPerPartyReached = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_MAX_STOP_ORDERS_PER_PARTY_REACHED)
 	StopOrderRejectionReasonNotAllowedWithoutAPosition   = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION)
-	StopOrderRejectionReasonNotClosingThePosition        = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION)
+	StopOrderRejectionReasonNotClosingThePosition        = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_DOES_NOT_CLOSE_POSITION)
 )
 
 func (s StopOrderRejectionReason) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {

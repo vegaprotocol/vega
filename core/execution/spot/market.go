@@ -997,6 +997,7 @@ func rejectStopOrders(rejectionReason types.StopOrderRejectionReason, orders ...
 	for _, o := range orders {
 		if o != nil {
 			o.Status = types.StopOrderStatusRejected
+			o.RejectionReason = ptr.From(rejectionReason)
 		}
 	}
 }
