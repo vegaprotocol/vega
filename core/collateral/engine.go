@@ -104,6 +104,11 @@ type Engine struct {
 	enabledAssets map[string]types.Asset
 	// snapshot stuff
 	state *accState
+
+	// vesting account recovery
+	// unique usage at startup from a checkpoint
+	// a map of party -> (string -> balance)
+	vesting map[string]map[string]*num.Uint
 }
 
 // New instantiates a new collateral engine.
@@ -122,7 +127,27 @@ func New(log *logging.Logger, conf Config, ts TimeService, broker Broker) *Engin
 		idbuf:         make([]byte, 256),
 		enabledAssets: map[string]types.Asset{},
 		state:         newAccState(),
+		vesting:       map[string]map[string]*num.Uint{},
 	}
+}
+
+func (e *Engine) GetVestingRecovery() map[string]map[string]*num.Uint {
+	out := e.vesting
+	e.vesting = map[string]map[string]*num.Uint{}
+	return out
+}
+
+func (e *Engine) addToVesting(
+	party, asset string,
+	balance *num.Uint,
+) {
+	assets, ok := e.vesting[party]
+	if !ok {
+		assets = map[string]*num.Uint{}
+	}
+
+	assets[asset] = balance
+	e.vesting[party] = assets
 }
 
 func (e *Engine) addPartyAccount(party, accid string, acc *types.Account) {

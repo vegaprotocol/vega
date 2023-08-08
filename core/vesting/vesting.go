@@ -30,6 +30,7 @@ type Collateral interface {
 	TransferVestedRewards(
 		ctx context.Context, transfers []*types.Transfer,
 	) ([]*types.LedgerMovement, error)
+	GetVestingRecovery() map[string]map[string]*num.Uint
 }
 
 type ActivityStreakVestingMultiplier interface {
@@ -85,6 +86,15 @@ func New(
 		broker: broker,
 		assets: assets,
 		state:  map[string]*PartyRewards{},
+	}
+}
+
+func (e *Engine) OnCheckpointLoaded() {
+	vestingBalances := e.c.GetVestingRecovery()
+	for party, assetBalances := range vestingBalances {
+		for asset, balance := range assetBalances {
+			e.increaseVestingBalance(party, asset, balance.Clone())
+		}
 	}
 }
 

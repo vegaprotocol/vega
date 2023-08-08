@@ -128,6 +128,8 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 			if err != nil {
 				return err
 			}
+
+			e.addToVesting(balance.Party, balance.Asset, ub.Clone())
 		} else {
 			accID := e.accountID(market, balance.Party, balance.Asset, types.AccountTypeGeneral)
 			if _, err := e.GetAccountByID(accID); err != nil {
