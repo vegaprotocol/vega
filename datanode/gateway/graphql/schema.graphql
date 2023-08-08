@@ -2516,9 +2516,11 @@ type StopOrder {
   "Market the stop order is for."
   marketId: ID!
   "Price movement that will trigger the stop order"
-  trigger: StopOrderTrigger
+  trigger: StopOrderTrigger!
   "Order to submit when the stop order is triggered."
   submission: OrderSubmission!
+  "The order which was created when triggered."
+  order: Order
 }
 
 "Details of the order that will be submitted when the stop order is triggered."
