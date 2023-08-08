@@ -40,6 +40,7 @@ type (
 		SeqNum               uint64
 		TxHash               TxHash
 		Submission           *commandspb.OrderSubmission
+		RejectionReason      *StopOrderRejectionReason
 	}
 )
 
@@ -67,6 +68,7 @@ var StopOrderColumns = []string{
 	"seq_num",
 	"tx_hash",
 	"submission",
+	"rejection_reason",
 }
 
 func (o StopOrder) ToProto() *pbevents.StopOrderEvent {
@@ -100,6 +102,11 @@ func (o StopOrder) ToProto() *pbevents.StopOrderEvent {
 		}
 	}
 
+	var rejectionReason *vega.StopOrder_RejectionReason
+	if o.RejectionReason != nil {
+		rejectionReason = ptr.From(vega.StopOrder_RejectionReason(*o.RejectionReason))
+	}
+
 	stopOrder := &vega.StopOrder{
 		Id:               o.ID.String(),
 		OcoLinkId:        ocoLinkID,
@@ -112,6 +119,7 @@ func (o StopOrder) ToProto() *pbevents.StopOrderEvent {
 		OrderId:          o.OrderID.String(),
 		PartyId:          o.PartyID.String(),
 		MarketId:         o.MarketID.String(),
+		RejectionReason:  rejectionReason,
 	}
 
 	if triggerPrice != nil {
@@ -209,6 +217,12 @@ func StopOrderFromProto(so *pbevents.StopOrderEvent, vegaTime time.Time, seqNum 
 		triggerPercentOffset = ptr.From(offset)
 	}
 
+	var rejectionReason *StopOrderRejectionReason
+	if so.StopOrder.RejectionReason != nil {
+		rejectionReason = ptr.From(
+			StopOrderRejectionReason(*so.StopOrder.RejectionReason))
+	}
+
 	stopOrder := StopOrder{
 		ID:                   StopOrderID(so.StopOrder.Id),
 		OCOLinkID:            ocoLinkID,
@@ -227,6 +241,7 @@ func StopOrderFromProto(so *pbevents.StopOrderEvent, vegaTime time.Time, seqNum 
 		SeqNum:               seqNum,
 		TxHash:               txHash,
 		Submission:           so.Submission,
+		RejectionReason:      rejectionReason,
 	}
 
 	return stopOrder, nil
@@ -251,6 +266,7 @@ func (so StopOrder) ToRow() []interface{} {
 		so.SeqNum,
 		so.TxHash,
 		so.Submission,
+		so.RejectionReason,
 	}
 }
 

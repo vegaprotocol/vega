@@ -2544,6 +2544,22 @@ type StopOrderTrailingPercentOffset {
   trailingPercentOffset: String!
 }
 
+"Why the order was rejected by the core node"
+enum StopOrderRejectionReason {
+  "Trading is not allowed yet"
+  REJECTION_REASON_TRADING_NOT_ALLOWED
+  "Expiry of the stop order is in the past"
+  REJECTION_REASON_EXPIRY_IN_THE_PAST
+  "Stop orders submission must be reduce only"
+  REJECTION_REASON_MUST_BE_REDUCE_ONLY
+  "Party has reached the maximum stop orders allowed for this market"
+  REJECTION_REASON_MAX_STOP_ORDERS_PER_PARTY_REACHED
+  "Stop orders are not allowed without a position"
+  REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION
+  "This stop order is not closing the position"
+  REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION
+}
+
 "A stop order in Vega"
 type StopOrder {
   "Hash of the stop order data"
@@ -2572,6 +2588,8 @@ type StopOrder {
   submission: OrderSubmission!
   "The order that was created when triggered."
   order: Order
+  "Optional rejection reason for an order"
+  rejectionReason: StopOrderRejectionReason
 }
 
 "Details of the order that will be submitted when the stop order is triggered."

@@ -993,7 +993,7 @@ func (m *Market) validateAccounts(ctx context.Context, order *types.Order) error
 	return nil
 }
 
-func rejectStopOrders(orders ...*types.StopOrder) {
+func rejectStopOrders(rejectionReason types.StopOrderRejectionReason, orders ...*types.StopOrder) {
 	for _, o := range orders {
 		if o != nil {
 			o.Status = types.StopOrderStatusRejected
@@ -1029,7 +1029,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	}()
 
 	if !m.canTrade() {
-		rejectStopOrders(fallsBelow, risesAbove)
+		rejectStopOrders(types.StopOrderRejectionTradingNotAllowed, fallsBelow, risesAbove)
 		return nil, common.ErrTradingNotAllowed
 	}
 
@@ -1037,22 +1037,22 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 
 	if fallsBelow != nil {
 		if fallsBelow.OrderSubmission.Side == types.SideBuy && !m.collateral.HasGeneralAccount(party, m.quoteAsset) {
-			rejectStopOrders(fallsBelow, risesAbove)
+			rejectStopOrders(types.StopOrderRejectionNotClosingThePosition, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderSideNotClosingThePosition
 		}
 		if !m.collateral.HasGeneralAccount(party, m.baseAsset) {
-			rejectStopOrders(fallsBelow, risesAbove)
+			rejectStopOrders(types.StopOrderRejectionNotClosingThePosition, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderSideNotClosingThePosition
 		}
 		orderCnt++
 	}
 	if risesAbove != nil {
 		if risesAbove.OrderSubmission.Side == types.SideBuy && !m.collateral.HasGeneralAccount(party, m.quoteAsset) {
-			rejectStopOrders(fallsBelow, risesAbove)
+			rejectStopOrders(types.StopOrderRejectionNotClosingThePosition, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderSideNotClosingThePosition
 		}
 		if !m.collateral.HasGeneralAccount(party, m.baseAsset) {
-			rejectStopOrders(fallsBelow, risesAbove)
+			rejectStopOrders(types.StopOrderRejectionNotClosingThePosition, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderSideNotClosingThePosition
 		}
 		orderCnt++
@@ -1060,7 +1060,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 
 	// now check if that party hasn't exceeded the max amount per market
 	if m.stopOrders.CountForParty(party)+uint64(orderCnt) > m.maxStopOrdersPerParties.Uint64() {
-		rejectStopOrders(fallsBelow, risesAbove)
+		rejectStopOrders(types.StopOrderRejectionMaxStopOrdersPerPartyReached, fallsBelow, risesAbove)
 		return nil, common.ErrMaxStopOrdersPerPartyReached
 	}
 

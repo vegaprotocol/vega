@@ -909,6 +909,35 @@ func (s *StopOrderStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 	return nil
 }
 
+type StopOrderRejectionReason vega.StopOrder_RejectionReason
+
+const (
+	StopOrderRejectionReasonUnspecified                  = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_UNSPECIFIED)
+	StopOrderRejectionReasonTradingNotAllowed            = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_TRADING_NOT_ALLOWED)
+	StopOrderRejectionReasonExpiryInThePast              = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_EXPIRY_IN_THE_PAST)
+	StopOrderRejectionReasonMustBeReduceOnly             = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_MUST_BE_REDUCE_ONLY)
+	StopOrderRejectionReasonMaxStopOrdersPerPartyReached = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_MAX_STOP_ORDERS_PER_PARTY_REACHED)
+	StopOrderRejectionReasonNotAllowedWithoutAPosition   = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION)
+	StopOrderRejectionReasonNotClosingThePosition        = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION)
+)
+
+func (s StopOrderRejectionReason) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	str, ok := vega.StopOrder_RejectionReason_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown stop order status: %v", s)
+	}
+	return append(buf, []byte(str)...), nil
+}
+
+func (s *StopOrderRejectionReason) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.StopOrder_RejectionReason_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown stop order status: %s", src)
+	}
+	*s = StopOrderRejectionReason(val)
+	return nil
+}
+
 type FundingPeriodDataPointSource eventspb.FundingPeriodDataPoint_Source
 
 const (

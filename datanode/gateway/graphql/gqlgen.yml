@@ -50,6 +50,9 @@ models:
   OrderRejectionReason:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.OrderRejectionReason
+  StopOrderRejectionReason:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.StopOrderRejectionReason
   PeggedReference:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.PeggedReference
