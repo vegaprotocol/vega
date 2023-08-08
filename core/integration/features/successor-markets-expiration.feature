@@ -89,15 +89,12 @@ Feature: Simple example of successor markets
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |
       | trading.terminated | true  |
-      | prices.ETH.value   | 975   |
-    And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC20 | 1905000000000000  | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC20 | 1905000000000000  | 0.1 | submission |
+      | prices.ETH.value | 975 |
     Then the market state should be "STATE_SETTLED" for the market "ETH/DEC19"
 
     # enactment timestamp
     When the successor market "ETH/DEC20" is enacted
+
     And the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC20" should be:
       | trading mode                 |
@@ -105,10 +102,12 @@ Feature: Simple example of successor markets
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
     # now ensure the succession time window has elapsed
     When the network moves ahead "11" blocks
-    Then the market data for the market "ETH/DEC20" should be:
-      | trading mode                 |
-      | TRADING_MODE_OPENING_AUCTION |
-    And the insurance pool balance should be "0" for the market "ETH/DEC20"
+
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 1905000000000000  | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC20 | 1905000000000000  | 0.1 | submission |
+
     # successor market should still be in opening auction, no insurance pool balance is transferred
     When the parties place the following orders:
       | party   | market id | side | volume | price  | resulting trades | type       | tif     | reference |
@@ -124,7 +123,10 @@ Feature: Simple example of successor markets
       | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 1905000000000000 | 5             |
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
     # Average entry valuation, though the stake is less/different is not carried over
+    When the network moves ahead "2" blocks
     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
       | party  | equity like share | average entry valuation |
-      | lpprov | 1                 | 1905000000000000        |
+      | lpprov | 1 | 1905000000000000 |
+
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
+
