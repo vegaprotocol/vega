@@ -3444,230 +3444,6 @@ func TestSubmitLiquidityProvisionInOpeningAuction(t *testing.T) {
 	require.Equal(t, types.MarketTradingModeContinuous, mktData.MarketTradingMode)
 }
 
-func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
-	t.Skip("@witold to check")
-	mainParty := "mainParty"
-	auxParty := "auxParty"
-	auxParty2 := "auxParty2"
-	now := time.Unix(10, 0)
-	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
-		Duration: 1,
-	})
-	var matchingPrice uint64 = 111
-	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
-
-	addAccount(t, tm, mainParty)
-	addAccount(t, tm, auxParty)
-	addAccount(t, tm, auxParty2)
-	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-
-	// Assure liquidity auction won't be triggered
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
-	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
-	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
-	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
-	require.NotNil(t, conf)
-	require.NoError(t, err)
-	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
-
-	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 100000)
-	conf, err = tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
-	require.NotNil(t, conf)
-	require.NoError(t, err)
-	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
-	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, matchingPrice),
-		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, matchingPrice),
-	}
-	for _, o := range auxOrders {
-		conf, err := tm.market.SubmitOrder(ctx, o)
-		require.NoError(t, err)
-		require.NotNil(t, conf)
-	}
-	// move ahead time to leave auction
-	now = now.Add(2 * time.Second)
-	tm.now = now
-	tm.market.OnTick(ctx, now)
-
-	orderSell1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-sell-order-1", types.SideSell, mainParty, 6, matchingPrice+2)
-
-	confirmationSell, err := tm.market.SubmitOrder(ctx, orderSell1)
-	require.NotNil(t, confirmationSell)
-	require.NoError(t, err)
-
-	orderBuy1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-buy-order-1", types.SideBuy, mainParty, 3, matchingPrice-2)
-
-	confirmationBuy, err := tm.market.SubmitOrder(ctx, orderBuy1)
-	assert.NotNil(t, confirmationBuy)
-	assert.NoError(t, err)
-
-	require.Equal(t, 0, len(confirmationBuy.Trades))
-
-	mktData := tm.market.GetMarketData()
-	require.Equal(t, mktData.BestBidPrice, mktData.BestStaticBidPrice)
-	require.Equal(t, mktData.BestBidVolume, mktData.BestStaticBidVolume)
-	require.Equal(t, mktData.BestOfferPrice, mktData.BestStaticOfferPrice)
-	require.Equal(t, mktData.BestOfferVolume, mktData.BestStaticOfferVolume)
-
-	lp1 := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
-		CommitmentAmount: num.NewUint(2000),
-		Fee:              num.DecimalFromFloat(0.05),
-	}
-
-	err = tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, vgcrypto.RandomHash())
-	require.NoError(t, err)
-
-	mktDataPrev := mktData
-	mktData = tm.market.GetMarketData()
-
-	require.Greater(t, mktData.BestBidVolume, mktDataPrev.BestStaticBidVolume)
-	require.Greater(t, mktData.BestOfferVolume, mktDataPrev.BestStaticOfferVolume)
-
-	mktDataPrev = mktData
-	lpOrderVolumeBidPrev := mktData.BestBidVolume - mktData.BestStaticBidVolume
-	lpOrderVolumeOfferPrev := mktData.BestOfferVolume - mktData.BestStaticOfferVolume
-	// Amend limit order
-	amendment := &types.OrderAmendment{
-		OrderID: confirmationBuy.Order.ID,
-		// SizeDelta: 9,
-		SizeDelta: 2,
-	}
-	_, err = tm.market.AmendOrder(ctx, amendment, confirmationBuy.Order.Party, vgcrypto.RandomHash())
-	require.NoError(t, err)
-
-	mktData = tm.market.GetMarketData()
-	lpOrderVolumeBid := mktData.BestBidVolume - mktData.BestStaticBidVolume
-	lpOrderVolumeOffer := mktData.BestOfferVolume - mktData.BestStaticOfferVolume
-
-	require.Equal(t, mktData.BestStaticOfferVolume, mktDataPrev.BestStaticOfferVolume)
-	require.Equal(t, lpOrderVolumeOffer, lpOrderVolumeOfferPrev)
-	require.Greater(t, mktData.BestStaticBidVolume, mktDataPrev.BestStaticBidVolume)
-	require.Less(t, lpOrderVolumeBid, lpOrderVolumeBidPrev)
-	require.Equal(t, uint64(amendment.SizeDelta), lpOrderVolumeBidPrev-lpOrderVolumeBid)
-
-	lpOrderVolumeBidPrev = lpOrderVolumeBid
-	lpOrderVolumeOfferPrev = lpOrderVolumeOffer
-	mktDataPrev = mktData
-	// Submit another non-lp order
-	orderSell2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-sell-order-2", types.SideSell, mainParty, 3, matchingPrice+3)
-	confirmationSell2, err := tm.market.SubmitOrder(ctx, orderSell2)
-	require.NotNil(t, confirmationSell2)
-	require.NoError(t, err)
-
-	mktData = tm.market.GetMarketData()
-	lpOrderVolumeBid = mktData.BestBidVolume - mktData.BestStaticBidVolume
-	lpOrderVolumeOffer = mktData.BestOfferVolume - mktData.BestStaticOfferVolume
-
-	require.Equal(t, mktData.BestStaticBidVolume, mktDataPrev.BestStaticBidVolume)
-	require.Equal(t, lpOrderVolumeBid, lpOrderVolumeBidPrev)
-	require.Equal(t, mktData.BestStaticBidVolume, mktDataPrev.BestStaticBidVolume)
-	require.Less(t, lpOrderVolumeOffer, lpOrderVolumeOfferPrev)
-
-	lpOrderVolumeBidPrev = lpOrderVolumeBid
-	lpOrderVolumeOfferPrev = lpOrderVolumeOffer
-	mktDataPrev = mktData
-	// Partial fill of the limit order
-	auxOrder1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux-order-1", types.SideBuy, auxParty, orderSell1.Size-1, orderSell1.Price.Uint64())
-	confirmationAux, err := tm.market.SubmitOrder(ctx, auxOrder1)
-	assert.NoError(t, err)
-	require.Equal(t, 1, len(confirmationAux.Trades))
-
-	mktData = tm.market.GetMarketData()
-	lpOrderVolumeBid = mktData.BestBidVolume - mktData.BestStaticBidVolume
-	lpOrderVolumeOffer = mktData.BestOfferVolume - mktData.BestStaticOfferVolume
-
-	require.Equal(t, mktData.BestStaticBidVolume, mktDataPrev.BestStaticBidVolume)
-	require.Equal(t, lpOrderVolumeBid, lpOrderVolumeBidPrev)
-	require.Equal(t, mktData.BestStaticOfferVolume, mktDataPrev.BestStaticOfferVolume-confirmationAux.Trades[0].Size)
-	require.Equal(t, lpOrderVolumeOffer, lpOrderVolumeOfferPrev+confirmationAux.Trades[0].Size)
-
-	lpOrderVolumeBidPrev = lpOrderVolumeBid
-	lpOrderVolumeOfferPrev = lpOrderVolumeOffer
-	mktDataPrev = mktData
-	// Cancel limit order
-	cancelConf, err := tm.market.CancelOrder(ctx, orderSell1.Party, orderSell1.ID, vgcrypto.RandomHash())
-	require.NoError(t, err)
-	require.NotNil(t, cancelConf)
-
-	mktData = tm.market.GetMarketData()
-	lpOrderVolumeBid = mktData.BestBidVolume - mktData.BestStaticBidVolume
-	lpOrderVolumeOffer = mktData.BestOfferVolume - mktData.BestStaticOfferVolume
-
-	require.Equal(t, mktData.BestStaticBidVolume, mktDataPrev.BestStaticBidVolume)
-	require.Equal(t, lpOrderVolumeBid, lpOrderVolumeBidPrev)
-	require.Equal(t, mktData.BestStaticOfferVolume, orderSell2.Size)
-	require.Greater(t, lpOrderVolumeOffer, lpOrderVolumeOfferPrev)
-
-	lpOrderVolumeBidPrev = lpOrderVolumeBid
-	err = tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, vgcrypto.RandomHash())
-	require.NoError(t, err)
-
-	auxOrder2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux-order-2", types.SideSell, auxParty, 7, matchingPrice+1)
-	confirmationAux, err = tm.market.SubmitOrder(ctx, auxOrder2)
-	assert.NoError(t, err)
-	require.Equal(t, 0, len(confirmationAux.Trades))
-
-	var sizeDiff uint64 = 3
-	orderBuy2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-buy-order-2", types.SideBuy, mainParty, auxOrder2.Size+sizeDiff, auxOrder2.Price.Uint64())
-	confirmationBuy2, err := tm.market.SubmitOrder(ctx, orderBuy2)
-	require.NoError(t, err)
-	require.Equal(t, 1, len(confirmationBuy2.Trades))
-	require.Equal(t, auxOrder2.Size, confirmationBuy2.Trades[0].Size)
-	require.Equal(t, sizeDiff, orderBuy2.Remaining)
-
-	mktData = tm.market.GetMarketData()
-	lpOrderVolumeBid = mktData.BestBidVolume - mktData.BestStaticBidVolume
-
-	require.Equal(t, lpOrderVolumeBid, lpOrderVolumeBidPrev-sizeDiff)
-
-	// Liquidity  order fills entirely
-	// First add another limit not to loose the peg reference later on
-	orderBuy3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-buy-order-3", types.SideBuy, mainParty, 1, matchingPrice)
-	confirmationBuy3, err := tm.market.SubmitOrder(ctx, orderBuy3)
-	require.NoError(t, err)
-	require.Equal(t, 0, len(confirmationBuy3.Trades))
-
-	mktData = tm.market.GetMarketData()
-	lpOrderVolumeBidPrev = mktData.BestBidVolume - mktData.BestStaticBidVolume
-
-	now = now.Add(time.Second)
-	tm.now = now
-	tm.market.OnTick(ctx, now)
-
-	orderBuy2SizeBeforeTrade := orderBuy2.Remaining
-	auxOrder3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux-order-3", types.SideSell, auxParty, 5, matchingPrice+1)
-	confirmationAux, err = tm.market.SubmitOrder(ctx, auxOrder3)
-	assert.NoError(t, err)
-	require.Equal(t, 2, len(confirmationAux.Trades))
-
-	mktData = tm.market.GetMarketData()
-	lpOrderVolumeBid = mktData.BestBidVolume - mktData.BestStaticBidVolume
-
-	require.Equal(t, lpOrderVolumeBidPrev+orderBuy2SizeBeforeTrade, lpOrderVolumeBid)
-
-	// Liquidity  order fills partially
-	// First add another limit not to loose the peg reference later on
-	orderBuy4 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-buy-order-4", types.SideBuy, mainParty, 1, matchingPrice-1)
-	confirmationBuy4, err := tm.market.SubmitOrder(ctx, orderBuy4)
-	require.NoError(t, err)
-	require.Equal(t, 0, len(confirmationBuy4.Trades))
-
-	mktData = tm.market.GetMarketData()
-	lpOrderVolumeBidPrev = mktData.BestBidVolume - mktData.BestStaticBidVolume
-
-	orderBuy3SizeBeforeTrade := orderBuy3.Remaining
-	auxOrder4 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux-order-4", types.SideSell, auxParty, orderBuy3.Size+1, orderBuy3.Price.Uint64())
-	confirmationAux, err = tm.market.SubmitOrder(ctx, auxOrder4)
-	assert.NoError(t, err)
-	require.Equal(t, 2, len(confirmationAux.Trades))
-
-	mktData = tm.market.GetMarketData()
-	lpOrderVolumeBid = mktData.BestBidVolume - mktData.BestStaticBidVolume
-
-	require.Equal(t, lpOrderVolumeBidPrev+orderBuy3SizeBeforeTrade, lpOrderVolumeBid)
-}
-
 func getMarketOrder(tm *testMarket,
 	now time.Time,
 	orderType types.OrderType,
@@ -6461,7 +6237,7 @@ func TestLiquidityMonitoring_BestBidAskExistAfterAuction(t *testing.T) {
 
 	md = tm.market.GetMarketData()
 	require.Equal(t, types.MarketTradingModeMonitoringAuction, md.MarketTradingMode)
-	require.Equal(t, types.AuctionTriggerUnableToDeployLPOrders, md.Trigger)
+	require.Equal(t, types.AuctionTriggerLiquidityTargetNotMet, md.Trigger)
 
 	buyOrder3 := getMarketOrder(tm, tm.now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "buyOrder3", types.SideBuy, party1, 1, sellOrder1.Price.Uint64())
 	buyConf3, err := tm.market.SubmitOrder(ctx, buyOrder3)
@@ -6470,7 +6246,7 @@ func TestLiquidityMonitoring_BestBidAskExistAfterAuction(t *testing.T) {
 
 	md = tm.market.GetMarketData()
 	require.Equal(t, types.MarketTradingModeMonitoringAuction, md.MarketTradingMode)
-	require.Equal(t, types.AuctionTriggerUnableToDeployLPOrders, md.Trigger)
+	require.Equal(t, types.AuctionTriggerLiquidityTargetNotMet, md.Trigger)
 
 	sellOrder4 := getMarketOrder(tm, tm.now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "sellOrder4", types.SideSell, party2, 11, sellOrder1.Price.Uint64()+1)
 	sellConf4, err := tm.market.SubmitOrder(ctx, sellOrder4)
@@ -6481,7 +6257,7 @@ func TestLiquidityMonitoring_BestBidAskExistAfterAuction(t *testing.T) {
 
 	md = tm.market.GetMarketData()
 	require.Equal(t, types.MarketTradingModeMonitoringAuction, md.MarketTradingMode)
-	require.Equal(t, types.AuctionTriggerUnableToDeployLPOrders, md.Trigger)
+	require.Equal(t, types.AuctionTriggerLiquidityTargetNotMet, md.Trigger)
 
 	buyOrder4 := getMarketOrder(tm, tm.now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "buyOrder4", types.SideBuy, party1, 1, buyOrder1.Price.Uint64()-1)
 	buyConf4, err := tm.market.SubmitOrder(ctx, buyOrder4)
