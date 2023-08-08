@@ -2519,7 +2519,7 @@ type StopOrder {
   trigger: StopOrderTrigger!
   "Order to submit when the stop order is triggered."
   submission: OrderSubmission!
-  "The order which was created when triggered."
+  "The order that was created when triggered."
   order: Order
 }
 
