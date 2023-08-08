@@ -11,6 +11,7 @@ import (
 	assets "code.vegaprotocol.io/vega/core/assets"
 	events "code.vegaprotocol.io/vega/core/events"
 	types "code.vegaprotocol.io/vega/core/types"
+	num "code.vegaprotocol.io/vega/libs/num"
 	gomock "github.com/golang/mock/gomock"
 	decimal "github.com/shopspring/decimal"
 )
@@ -36,6 +37,20 @@ func NewMockCollateral(ctrl *gomock.Controller) *MockCollateral {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockCollateral) EXPECT() *MockCollateralMockRecorder {
 	return m.recorder
+}
+
+// GetVestingRecovery mocks base method.
+func (m *MockCollateral) GetVestingRecovery() map[string]map[string]*num.Uint {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVestingRecovery")
+	ret0, _ := ret[0].(map[string]map[string]*num.Uint)
+	return ret0
+}
+
+// GetVestingRecovery indicates an expected call of GetVestingRecovery.
+func (mr *MockCollateralMockRecorder) GetVestingRecovery() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVestingRecovery", reflect.TypeOf((*MockCollateral)(nil).GetVestingRecovery))
 }
 
 // TransferVestedRewards mocks base method.

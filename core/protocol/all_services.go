@@ -312,6 +312,7 @@ func newServices(
 		// checkpoint have been loaded
 		// which means that genesis has been loaded as well
 		// we should be fully ready to start the event sourcing from ethereum
+		svcs.vesting.OnCheckpointLoaded()
 	})
 
 	svcs.genesisHandler.OnGenesisAppStateLoaded(
