@@ -38,7 +38,7 @@ Feature: Simple example of successor markets
       | market.liquidityV2.bondPenaltyParameter       | 0.1   |
       | validators.epoch.length                       | 5s    |
       | market.liquidityV2.stakeToCcyVolume           | 0.2   |
-      | market.liquidity.successorLaunchWindowLength  | 10s   |
+      | market.liquidity.successorLaunchWindowLength | 8s |
     And the average block duration is "1"
 
 
@@ -60,6 +60,7 @@ Feature: Simple example of successor markets
       | id        | quote name | asset | risk model            | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params      |
       | ETH/DEC19 | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | ethDec19Oracle         | 0.1                    | 0                         | 5              | 5                       |                  |                         |                   | default-futures |
       | ETH/DEC20 | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 5              | 5                       | ETH/DEC19        | 1                       | 10                | default-futures |
+    Given the initial insurance pool balance is "1000" for all the markets
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | submission |
@@ -94,14 +95,29 @@ Feature: Simple example of successor markets
 
     # enactment timestamp
     When the successor market "ETH/DEC20" is enacted
-
-    And the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC20" should be:
       | trading mode                 |
       | TRADING_MODE_OPENING_AUCTION |
-    And the insurance pool balance should be "0" for the market "ETH/DEC20"
-    # now ensure the succession time window has elapsed
-    When the network moves ahead "11" blocks
+    And the last market state should be "STATE_SETTLED" for the market "ETH/DEC19"
+    And the last market state should be "STATE_PENDING" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "0" for the asset "ETH"
+
+    #now ensure the succession time window has elapsed
+    When the network moves ahead "8" blocks
+    And the last market state should be "STATE_SETTLED" for the market "ETH/DEC19"
+    And the last market state should be "STATE_PENDING" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "0" for the asset "ETH"
+
+    When the network moves ahead "5" blocks
+    And the last market state should be "STATE_SETTLED" for the market "ETH/DEC19"
+    And the last market state should be "STATE_PENDING" for the market "ETH/DEC20"
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1500" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "500" for the asset "ETH"
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
@@ -120,13 +136,16 @@ Feature: Simple example of successor markets
     When the opening auction period ends for market "ETH/DEC20"
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake   | open interest |
-      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 1905000000000000 | 5             |
-    And the insurance pool balance should be "0" for the market "ETH/DEC20"
+      | 976 | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 1905000000000000 | 5 |
     # Average entry valuation, though the stake is less/different is not carried over
     When the network moves ahead "2" blocks
     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
       | party  | equity like share | average entry valuation |
       | lpprov | 1 | 1905000000000000 |
 
-    And the insurance pool balance should be "0" for the market "ETH/DEC20"
+    And the last market state should be "STATE_SETTLED" for the market "ETH/DEC19"
+    And the last market state should be "STATE_ACTIVE" for the market "ETH/DEC20"
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1500" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "500" for the asset "ETH"
 
