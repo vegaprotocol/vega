@@ -13,7 +13,7 @@ import (
 
 type checkTxCmd struct {
 	config.OutputFlag
-	EncodedTransaction string `description:"The encoded transaction string to compare with vega's own encoding" long:"tx" short:"t" required:"true"`
+	EncodedTransaction string `description:"The encoded transaction string to compare with vega's own encoding" long:"tx" required:"true" short:"t"`
 }
 
 func (opts *checkTxCmd) Execute(_ []string) error {
@@ -25,6 +25,9 @@ func (opts *checkTxCmd) Execute(_ []string) error {
 
 	logrus.Infof("reencoding the tranaction...")
 	reEncodedTransaction, err := marshalAndEncodeTransaction(unmarshalledTransaction)
+	if err != nil {
+		return fmt.Errorf("error occurred when attempting to marshal and re-encode the transaction")
+	}
 
 	if reEncodedTransaction != opts.EncodedTransaction {
 		logrus.Errorf("transactions not equal!")
