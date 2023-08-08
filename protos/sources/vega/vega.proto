@@ -1592,14 +1592,19 @@ message MatrixValue {
 }
 
 message ReferralProgram {
+  // Incremental version of the program. It is incremented after each program
+  // update.
+  uint64 version = 1;
+  // Unique ID generated from the proposal that created this program.
+  string id = 2;
   // Defined tiers in increasing order. First element will give Tier 1, second
   // element will give Tier 2, and so on.
-  repeated BenefitTier benefit_tiers = 1;
-  //  Timestamp as Unix time in seconds after which when the current epoch ends, the
+  repeated BenefitTier benefit_tiers = 3;
+  // Timestamp as Unix time in seconds after which when the current epoch ends, the
   // programs status will become STATE_CLOSED and benefits will be disabled.
-  int64 end_of_program_timestamp = 2;
+  int64 end_of_program_timestamp = 4;
   // Number of epochs over which to evaluate a referral set's running volume.
-  uint64 window_length = 3;
+  uint64 window_length = 5;
 }
 
 message BenefitTier {

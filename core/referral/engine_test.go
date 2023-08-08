@@ -1,3 +1,15 @@
+// Copyright (c) 2023 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package referral_test
 
 import (
@@ -7,14 +19,11 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
 
-func TestEngine(t *testing.T) {
-	t.Run("Updating the referral program succeeds", testUpdatingReferralProgramSucceeds)
-}
-
-func testUpdatingReferralProgramSucceeds(t *testing.T) {
+func TestUpdatingReferralProgramSucceeds(t *testing.T) {
 	ctx := vgtest.VegaContext(vgrand.RandomStr(5), vgtest.RandomI64())
 
 	te := newEngine(t)
@@ -34,6 +43,7 @@ func testUpdatingReferralProgramSucceeds(t *testing.T) {
 
 	// Simulating end of epoch.
 	// The program should be applied.
+	expectReferralProgramStartedEvent(t, te)
 	lastEpochEndTime := program1.EndOfProgramTimestamp.Add(-2 * time.Hour)
 	endEpoch(t, ctx, te, lastEpochEndTime)
 
@@ -41,6 +51,7 @@ func testUpdatingReferralProgramSucceeds(t *testing.T) {
 
 	// Simulating end of epoch.
 	// The program should have reached its end.
+	expectReferralProgramEndedEvent(t, te)
 	lastEpochEndTime = program1.EndOfProgramTimestamp.Add(1 * time.Second)
 	endEpoch(t, ctx, te, lastEpochEndTime)
 
@@ -70,15 +81,11 @@ func testUpdatingReferralProgramSucceeds(t *testing.T) {
 
 	// Simulating end of epoch.
 	// The third program should have started.
+	expectReferralProgramStartedEvent(t, te)
 	lastEpochEndTime = program3.EndOfProgramTimestamp.Add(-1 * time.Second)
 	endEpoch(t, ctx, te, lastEpochEndTime)
 
 	require.False(t, te.engine.HasProgramEnded(), "The program should have started.")
-
-	// Simulating end of epoch.
-	// The third program should have ended.
-	lastEpochEndTime = program3.EndOfProgramTimestamp.Add(1 * time.Second)
-	endEpoch(t, ctx, te, lastEpochEndTime)
 
 	program4 := &types.ReferralProgram{
 		EndOfProgramTimestamp: lastEpochEndTime.Add(10 * time.Hour),
@@ -86,14 +93,33 @@ func testUpdatingReferralProgramSucceeds(t *testing.T) {
 		BenefitTiers:          []*types.BenefitTier{},
 	}
 
-	// Update with new program.
+	// Update to replace the third program by the fourth one.
 	te.engine.Update(program4)
 
-	require.True(t, te.engine.HasProgramEnded(), "The program should start only on the next epoch")
+	// Simulating end of epoch.
+	// The current program should have been updated by the fourth one.
+	expectReferralProgramUpdatedEvent(t, te)
+	lastEpochEndTime = program4.EndOfProgramTimestamp.Add(-1 * time.Second)
+	endEpoch(t, ctx, te, lastEpochEndTime)
+
+	program5 := &types.ReferralProgram{
+		EndOfProgramTimestamp: lastEpochEndTime.Add(10 * time.Hour),
+		WindowLength:          10,
+		BenefitTiers:          []*types.BenefitTier{},
+	}
+
+	// Update with new program.
+	te.engine.Update(program5)
+
+	require.False(t, te.engine.HasProgramEnded(), "The fourth program should still be up")
 
 	// Simulating end of epoch.
-	// The fourth program should have ended before it even started.
-	lastEpochEndTime = program4.EndOfProgramTimestamp.Add(1 * time.Second)
+	// The fifth program should have ended before it even started.
+	gomock.InOrder(
+		expectReferralProgramUpdatedEvent(t, te),
+		expectReferralProgramEndedEvent(t, te),
+	)
+	lastEpochEndTime = program5.EndOfProgramTimestamp.Add(1 * time.Second)
 	endEpoch(t, ctx, te, lastEpochEndTime)
 
 	require.True(t, te.engine.HasProgramEnded(), "The program should have ended before it even started")
