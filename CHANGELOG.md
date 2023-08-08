@@ -26,6 +26,8 @@
 - [8968](https://github.com/vegaprotocol/vega/issues/8968) - Fix missing parent reference on checkpoint restore.
 - [9009](https://github.com/vegaprotocol/vega/issues/9009) - Fix non determinism in `RollbackParentELS`
 - [8945](https://github.com/vegaprotocol/vega/issues/8945) - Expose missing order from the stop order `GraphQL` endpoint.
+- [9004](https://github.com/vegaprotocol/vega/issues/9004) - Clear insurance pools in a deterministic order in successor markets.
+
 
 ## 0.72.6
 
