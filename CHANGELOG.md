@@ -49,6 +49,7 @@
 - [8763](https://github.com/vegaprotocol/vega/issues/8763) - Periodic settlement data endpoint.
 - [8920](https://github.com/vegaprotocol/vega/issues/8920) - Emit events when something happens to teams.
 - [8917](https://github.com/vegaprotocol/vega/issues/8917) - Support teams engine snapshots
+- [9007](https://github.com/vegaprotocol/vega/issues/9007) - Add reward vesting mechanisms.
 
 ### 🐛 Fixes
 

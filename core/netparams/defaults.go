@@ -254,6 +254,9 @@ func defaultNetParams() map[string]value {
 		ValidatorPerformanceScalingFactor:    NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
 		MarketSuccessorLaunchWindow:          NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate("168h"), // 168h == 7 days
 		SpamProtectionMaxStopOrdersPerMarket: NewUint(UintGTE(num.UintZero()), UintLTE(num.NewUint(100))).Mutable(true).MustUpdate("4"),
+
+		RewardsVestingBaseRate:       NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("0.01"),
+		RewardVestingMinimumTransfer: NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("0.01"),
 	}
 
 	// add additional cross net param rules
