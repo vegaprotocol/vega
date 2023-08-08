@@ -121,6 +121,16 @@ const (
 	GovernanceTransferMaxAmount                     = "governance.proposal.transfer.maxAmount"
 	GovernanceTransferMaxFraction                   = "governance.proposal.transfer.maxFraction"
 
+	// Network parameters for referral program update.
+	GovernanceProposalReferralProgramMinClose              = "governance.proposal.referralProgram.minClose"
+	GovernanceProposalReferralProgramMaxClose              = "governance.proposal.referralProgram.maxClose"
+	GovernanceProposalReferralProgramMinEnact              = "governance.proposal.referralProgram.minEnact"
+	GovernanceProposalReferralProgramMaxEnact              = "governance.proposal.referralProgram.maxEnact"
+	GovernanceProposalReferralProgramRequiredParticipation = "governance.proposal.referralProgram.requiredParticipation"
+	GovernanceProposalReferralProgramRequiredMajority      = "governance.proposal.referralProgram.requiredMajority"
+	GovernanceProposalReferralProgramMinProposerBalance    = "governance.proposal.referralProgram.minProposerBalance"
+	GovernanceProposalReferralProgramMinVoterBalance       = "governance.proposal.referralProgram.minVoterBalance"
+
 	// staking and delegation reward network params.
 	StakingAndDelegationRewardPayoutFraction          = "reward.staking.delegation.payoutFraction"
 	StakingAndDelegationRewardMaxPayoutPerParticipant = "reward.staking.delegation.maxPayoutPerParticipant"
@@ -299,6 +309,14 @@ var AllKeys = map[string]struct{}{
 	GovernanceProposalTransferMinVoterBalance:                {},
 	GovernanceTransferMaxAmount:                              {},
 	GovernanceTransferMaxFraction:                            {},
+	GovernanceProposalReferralProgramMinClose:                {},
+	GovernanceProposalReferralProgramMaxClose:                {},
+	GovernanceProposalReferralProgramMinEnact:                {},
+	GovernanceProposalReferralProgramMaxEnact:                {},
+	GovernanceProposalReferralProgramRequiredParticipation:   {},
+	GovernanceProposalReferralProgramRequiredMajority:        {},
+	GovernanceProposalReferralProgramMinProposerBalance:      {},
+	GovernanceProposalReferralProgramMinVoterBalance:         {},
 	BlockchainsEthereumConfig:                                {},
 	MarketLiquidityProvisionShapesMaxSize:                    {},
 	MarketProbabilityOfTradingTauScaling:                     {},

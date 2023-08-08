@@ -123,6 +123,7 @@ func New(
 			svcs.snapshotEngine,
 			svcs.statevar,
 			svcs.teamsEngine,
+			svcs.referralProgram,
 			svcs.blockchainClient,
 			svcs.erc20MultiSigTopology,
 			stats.GetVersion(),

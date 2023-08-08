@@ -125,6 +125,10 @@ type TeamsEngine interface {
 	JoinTeam(context.Context, types.PartyID, *commandspb.JoinTeam) error
 }
 
+type ReferralProgram interface {
+	Update(program *types.ReferralProgram)
+}
+
 type BlockchainClient interface {
 	Validators(height *int64) ([]*tmtypesint.Validator, error)
 }
@@ -187,6 +191,7 @@ type App struct {
 	snapshotEngine         SnapshotEngine
 	stateVar               StateVarEngine
 	teamsEngine            TeamsEngine
+	referralProgram        ReferralProgram
 	protocolUpgradeService ProtocolUpgradeService
 	erc20MultiSigTopology  ERC20MultiSigTopology
 	gastimator             *Gastimator
@@ -228,6 +233,7 @@ func NewApp(
 	snapshot SnapshotEngine,
 	stateVarEngine StateVarEngine,
 	teamsEngine TeamsEngine,
+	referralProgram ReferralProgram,
 	blockchainClient BlockchainClient,
 	erc20MultiSigTopology ERC20MultiSigTopology,
 	version string, // we need the version for snapshot reload
@@ -275,6 +281,7 @@ func NewApp(
 		snapshotEngine:         snapshot,
 		stateVar:               stateVarEngine,
 		teamsEngine:            teamsEngine,
+		referralProgram:        referralProgram,
 		version:                version,
 		blockchainClient:       blockchainClient,
 		erc20MultiSigTopology:  erc20MultiSigTopology,
@@ -1897,6 +1904,8 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			app.enactCancelTransfer(ctx, prop)
 		case toEnact.IsMarketStateUpdate():
 			app.enactMarketStateUpdate(ctx, prop)
+		case toEnact.IsReferralProgramUpdate():
+			app.referralProgram.Update(toEnact.ReferralProgramUpdate())
 		default:
 			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
 			prop.FailUnexpectedly(fmt.Errorf("unknown proposal \"%s\" cannot be enacted", prop.ID))

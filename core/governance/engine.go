@@ -29,7 +29,6 @@ import (
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
-
 	"github.com/pkg/errors"
 )
 
@@ -284,6 +283,8 @@ func (e *Engine) preEnactProposal(ctx context.Context, p *proposal) (te *ToEnact
 		te.c = &ToEnactCancelTransfer{}
 	case types.ProposalTermsTypeUpdateMarketState:
 		te.msu = &ToEnactMarketStateUpdate{}
+	case types.ProposalTermsTypeUpdateReferralProgram:
+		te.referralProgram = updatedReferralProgramFromProposal(p)
 	}
 	return //nolint:nakedret
 }
@@ -306,7 +307,7 @@ func (e *Engine) preVoteClosedProposal(p *proposal) *VoteClosed {
 	return vc
 }
 
-func (e *Engine) removeProposal(ctx context.Context, id string) {
+func (e *Engine) removeActiveProposalByID(ctx context.Context, id string) {
 	for i, p := range e.activeProposals {
 		if p.ID == id {
 			copy(e.activeProposals[i:], e.activeProposals[i+1:])
@@ -346,6 +347,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 				continue
 			}
 		}
+
 		// do not check parent market, the market was either rejected when the parent was succeeded
 		// or, if the parent market state is gone (ie succession window has expired), the proposal simply
 		// loses its parent market reference
@@ -426,7 +428,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 
 	// now we iterate over all proposal ids to remove them from the list
 	for _, id := range toBeRemoved {
-		e.removeProposal(ctx, id)
+		e.removeActiveProposalByID(ctx, id)
 	}
 
 	// flush here for now
@@ -535,7 +537,7 @@ func (e *Engine) FinaliseEnactment(ctx context.Context, prop *types.Proposal) {
 }
 
 func (e *Engine) rejectProposal(ctx context.Context, p *types.Proposal, r types.ProposalError, errorDetails error) {
-	e.removeProposal(ctx, p.ID)
+	e.removeActiveProposalByID(ctx, p.ID)
 	p.RejectWithErr(r, errorDetails)
 }
 
@@ -669,12 +671,13 @@ func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParamet
 	case types.ProposalTermsTypeUpdateMarketState:
 		// reusing market update net params
 		return e.getUpdateMarketStateProposalParameters(), nil
+	case types.ProposalTermsTypeUpdateReferralProgram:
+		return e.getReferralProgramNetworkParameters(), nil
 	default:
 		return nil, ErrUnsupportedProposalType
 	}
 }
 
-// validateOpenProposal reads from the chain.
 func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalError, error) {
 	params, err := e.getProposalParams(proposal.Terms)
 	if err != nil {
@@ -949,7 +952,6 @@ func (e *Engine) validateSpotMarketUpdate(proposal *types.Proposal, params *Prop
 	return types.ProposalErrorUnspecified, nil
 }
 
-// validates proposed change.
 func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError, error) {
 	enactTime := time.Unix(terms.EnactmentTimestamp, 0)
 	enct := &enactmentTime{current: terms.EnactmentTimestamp}
@@ -988,6 +990,8 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 	case types.ProposalTermsTypeUpdateSpotMarket:
 		enct.shouldNotVerify = true
 		return validateUpdateSpotMarketChange(terms.GetUpdateSpotMarket())
+	case types.ProposalTermsTypeUpdateReferralProgram:
+		return validateUpdateReferralProgram(e.netp, terms.GetUpdateReferralProgram())
 	default:
 		return types.ProposalErrorUnspecified, nil
 	}

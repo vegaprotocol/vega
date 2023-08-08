@@ -49,6 +49,7 @@ import (
 	"code.vegaprotocol.io/vega/core/pow"
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/protocolupgrade"
+	"code.vegaprotocol.io/vega/core/referral"
 	"code.vegaprotocol.io/vega/core/rewards"
 	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/spam"
@@ -128,7 +129,8 @@ type allServices struct {
 	genesisHandler        *genesis.Handler
 	protocolUpgradeEngine *protocolupgrade.Engine
 
-	teamsEngine *teams.SnapshottedEngine
+	teamsEngine     *teams.SnapshottedEngine
+	referralProgram *referral.Engine
 
 	// staking
 	ethClient             *ethclient.Client
@@ -181,8 +183,6 @@ func newServices(
 
 	svcs.timeService = vegatime.New(svcs.conf.Time, svcs.broker)
 	svcs.epochService = epochtime.NewService(svcs.log, svcs.conf.Epoch, svcs.broker)
-
-	svcs.teamsEngine = teams.NewSnapshottedEngine(svcs.epochService, svcs.broker, svcs.timeService)
 
 	// if we are not a validator, no need to instantiate the commander
 	if svcs.conf.IsValidator() {
@@ -349,7 +349,6 @@ func newServices(
 	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
 		pow.DisableVerification()
 	}
-
 	svcs.pow = pow
 	svcs.snapshotEngine.AddProviders(pow)
 	powWatchers := []netparams.WatchParam{
@@ -378,6 +377,19 @@ func newServices(
 			Watcher: pow.OnEpochDurationChanged,
 		},
 	}
+
+	// The referral program is used to compute rewards, and can end when reaching
+	// the end of epoch. Since the engine will reject computations when the program
+	// is marked as ended, it needs to be one of the last service to register on
+	// epoch update, so the computation can happen for this epoch.
+	svcs.referralProgram = referral.NewEngine(svcs.epochService, svcs.broker)
+
+	// The team engine is used to know the team a party belongs to. The computation
+	// of the referral program rewards requires this information. Since the team
+	// switches happen when the end of epoch is reached, it needs to be one of the
+	// last services to register on epoch update, so the computation is made based
+	// on the team the parties belonged to during the epoch and not the new one.
+	svcs.teamsEngine = teams.NewSnapshottedEngine(svcs.epochService, svcs.broker, svcs.timeService)
 
 	// setup config reloads for all engines / services /etc
 	svcs.registerConfigWatchers()
