@@ -100,6 +100,15 @@ func (s stopOrderResolver) Trigger(_ context.Context, obj *eventspb.StopOrderEve
 	}
 }
 
+func (s stopOrderResolver) Order(ctx context.Context, obj *eventspb.StopOrderEvent) (*vega.Order, error) {
+	// no order triggeerd yet
+	if len(obj.StopOrder.OrderId) <= 0 {
+		return nil, nil
+	}
+
+	return s.r.getOrderByID(ctx, obj.StopOrder.OrderId, nil)
+}
+
 type stopOrderFilterResolver VegaResolverRoot
 
 func (s stopOrderFilterResolver) Parties(ctx context.Context, obj *v2.StopOrderFilter, data []string) error {

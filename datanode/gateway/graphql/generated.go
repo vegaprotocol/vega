@@ -1818,6 +1818,7 @@ type ComplexityRoot struct {
 		ID               func(childComplexity int) int
 		MarketID         func(childComplexity int) int
 		OcoLinkID        func(childComplexity int) int
+		Order            func(childComplexity int) int
 		PartyID          func(childComplexity int) int
 		Status           func(childComplexity int) int
 		Submission       func(childComplexity int) int
@@ -2646,6 +2647,8 @@ type StopOrderResolver interface {
 	PartyID(ctx context.Context, obj *v1.StopOrderEvent) (string, error)
 	MarketID(ctx context.Context, obj *v1.StopOrderEvent) (string, error)
 	Trigger(ctx context.Context, obj *v1.StopOrderEvent) (StopOrderTrigger, error)
+
+	Order(ctx context.Context, obj *v1.StopOrderEvent) (*vega.Order, error)
 }
 type SubscriptionResolver interface {
 	Accounts(ctx context.Context, marketID *string, partyID *string, assetID *string, typeArg *vega.AccountType) (<-chan []*v2.AccountBalance, error)
@@ -10229,6 +10232,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.StopOrder.OcoLinkID(childComplexity), true
+
+	case "StopOrder.order":
+		if e.complexity.StopOrder.Order == nil {
+			break
+		}
+
+		return e.complexity.StopOrder.Order(childComplexity), true
 
 	case "StopOrder.partyId":
 		if e.complexity.StopOrder.PartyID == nil {
@@ -58112,6 +58122,8 @@ func (ec *executionContext) fieldContext_Query_stopOrder(ctx context.Context, fi
 				return ec.fieldContext_StopOrder_trigger(ctx, field)
 			case "submission":
 				return ec.fieldContext_StopOrder_submission(ctx, field)
+			case "order":
+				return ec.fieldContext_StopOrder_order(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type StopOrder", field.Name)
 		},
@@ -63649,11 +63661,14 @@ func (ec *executionContext) _StopOrder_trigger(ctx context.Context, field graphq
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(StopOrderTrigger)
 	fc.Result = res
-	return ec.marshalOStopOrderTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐStopOrderTrigger(ctx, field.Selections, res)
+	return ec.marshalNStopOrderTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐStopOrderTrigger(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_StopOrder_trigger(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -63734,6 +63749,93 @@ func (ec *executionContext) fieldContext_StopOrder_submission(ctx context.Contex
 				return ec.fieldContext_OrderSubmission_icebergOrder(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type OrderSubmission", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StopOrder_order(ctx context.Context, field graphql.CollectedField, obj *v1.StopOrderEvent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StopOrder_order(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.StopOrder().Order(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Order)
+	fc.Result = res
+	return ec.marshalOOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StopOrder_order(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StopOrder",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Order_id(ctx, field)
+			case "price":
+				return ec.fieldContext_Order_price(ctx, field)
+			case "timeInForce":
+				return ec.fieldContext_Order_timeInForce(ctx, field)
+			case "side":
+				return ec.fieldContext_Order_side(ctx, field)
+			case "market":
+				return ec.fieldContext_Order_market(ctx, field)
+			case "size":
+				return ec.fieldContext_Order_size(ctx, field)
+			case "remaining":
+				return ec.fieldContext_Order_remaining(ctx, field)
+			case "party":
+				return ec.fieldContext_Order_party(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Order_createdAt(ctx, field)
+			case "expiresAt":
+				return ec.fieldContext_Order_expiresAt(ctx, field)
+			case "status":
+				return ec.fieldContext_Order_status(ctx, field)
+			case "reference":
+				return ec.fieldContext_Order_reference(ctx, field)
+			case "tradesConnection":
+				return ec.fieldContext_Order_tradesConnection(ctx, field)
+			case "type":
+				return ec.fieldContext_Order_type(ctx, field)
+			case "rejectionReason":
+				return ec.fieldContext_Order_rejectionReason(ctx, field)
+			case "version":
+				return ec.fieldContext_Order_version(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Order_updatedAt(ctx, field)
+			case "peggedOrder":
+				return ec.fieldContext_Order_peggedOrder(ctx, field)
+			case "liquidityProvision":
+				return ec.fieldContext_Order_liquidityProvision(ctx, field)
+			case "postOnly":
+				return ec.fieldContext_Order_postOnly(ctx, field)
+			case "reduceOnly":
+				return ec.fieldContext_Order_reduceOnly(ctx, field)
+			case "icebergOrder":
+				return ec.fieldContext_Order_icebergOrder(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
 	}
 	return fc, nil
@@ -63897,6 +63999,8 @@ func (ec *executionContext) fieldContext_StopOrderEdge_node(ctx context.Context,
 				return ec.fieldContext_StopOrder_trigger(ctx, field)
 			case "submission":
 				return ec.fieldContext_StopOrder_submission(ctx, field)
+			case "order":
+				return ec.fieldContext_StopOrder_order(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type StopOrder", field.Name)
 		},
@@ -89939,6 +90043,9 @@ func (ec *executionContext) _StopOrder(ctx context.Context, sel ast.SelectionSet
 					}
 				}()
 				res = ec._StopOrder_trigger(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -89953,6 +90060,23 @@ func (ec *executionContext) _StopOrder(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "order":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._StopOrder_order(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -95393,6 +95517,16 @@ func (ec *executionContext) marshalNStopOrderStatus2codeᚗvegaprotocolᚗioᚋv
 	return res
 }
 
+func (ec *executionContext) marshalNStopOrderTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐStopOrderTrigger(ctx context.Context, sel ast.SelectionSet, v StopOrderTrigger) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._StopOrderTrigger(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNStopOrderTriggerDirection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐStopOrder_TriggerDirection(ctx context.Context, v interface{}) (vega.StopOrder_TriggerDirection, error) {
 	res, err := marshallers.UnmarshalStopOrderTriggerDirection(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -100558,13 +100692,6 @@ func (ec *executionContext) marshalOStopOrderStatus2ᚕcodeᚗvegaprotocolᚗio�
 	}
 
 	return ret
-}
-
-func (ec *executionContext) marshalOStopOrderTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐStopOrderTrigger(ctx context.Context, sel ast.SelectionSet, v StopOrderTrigger) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._StopOrderTrigger(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
