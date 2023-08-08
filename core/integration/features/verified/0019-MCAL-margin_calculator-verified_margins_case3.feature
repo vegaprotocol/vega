@@ -1,5 +1,4 @@
 Feature: CASE-3: Trader submits long order that will trade - new formula & zero side of order book (0019-MCAL-001, 0019-MCAL-002)
-  # https://drive.google.com/drive/folders/1BCOKaEb7LZYAKoiPfXfaqwM4BNicPpF-
 
   Background:
 
@@ -26,8 +25,8 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | lp1 | lpprov | ETH/DEC19 | 900000000         | 0.1 | submission |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10     |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 10     |
+      | lpprov | ETH/DEC19 | 600 | 1 | buy  | BID | 600 | 10 |
+      | lpprov | ETH/DEC19 | 600 | 1 | sell | ASK | 600 | 10 |
  
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -66,7 +65,7 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    And "party1" should have general account balance of "132000000" for asset "ETH"
+    And "party1" should have general account balance of "114360000" for asset "ETH"
     And the following trades should be executed:
       | buyer  | price    | size | seller     |
       | party1 | 11200000 | 2    | sellSideMM |
@@ -78,7 +77,7 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
-      | party1 | ETH   | ETH/DEC19 | 873600000 | 132000000 |
+      | party1 | ETH | ETH/DEC19 | 873600000 | 114360000 |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search    | initial   | release    |
       | party1 | ETH/DEC19 | 218400000   | 698880000 | 873600000 | 1092000000 |
@@ -99,7 +98,7 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
-      | party1 | ETH   | ETH/DEC19 | 899600000 | 132000000 |
+      | party1 | ETH | ETH/DEC19 | 899600000 | 114360000 |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search    | initial   | release    |
       | party1 | ETH/DEC19 | 249600000   | 798720000 | 998400000 | 1248000000 |
@@ -113,10 +112,11 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | party1 | ETH/DEC19 | sell | 13     | 8000000 | 0                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
-      | party1 | ETH   | ETH/DEC19 | 899600000 | 132000000 |
+      | party1 | ETH | ETH/DEC19 | 899600000 | 114360000 |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search    | initial   | release    |
       | party1 | ETH/DEC19 | 249600000   | 798720000 | 998400000 | 1248000000 |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
       | party1 | 13     | 31600000       | 0            |
+
