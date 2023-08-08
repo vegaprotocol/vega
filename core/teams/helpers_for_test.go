@@ -13,14 +13,23 @@ import (
 	"code.vegaprotocol.io/vega/core/teams"
 	"code.vegaprotocol.io/vega/core/teams/mocks"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	typespb "code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type testEngine struct {
+	engine      *teams.SnapshottedEngine
+	broker      *mocks.MockBroker
+	timeService *mocks.MockTimeService
+}
 
 func assertEqualTeams(t *testing.T, expected, actual []types.Team) {
 	t.Helper()
@@ -98,7 +107,7 @@ func endEpoch(t *testing.T, ctx context.Context, te *testEngine) {
 	})
 }
 
-func newSnapshotEngine(t *testing.T, vegaPath paths.Paths, now time.Time, engine *teams.SnapshotEngine) *snapshot.Engine {
+func newSnapshotEngine(t *testing.T, vegaPath paths.Paths, now time.Time, engine *teams.SnapshottedEngine) *snapshot.Engine {
 	t.Helper()
 
 	log := logging.NewTestLogger()
@@ -126,13 +135,19 @@ func newEngine(t *testing.T) *testEngine {
 	broker := mocks.NewMockBroker(ctrl)
 	timeService := mocks.NewMockTimeService(ctrl)
 
-	engine := teams.NewSnapshotEngine(epochEngine, broker, timeService)
+	engine := teams.NewSnapshottedEngine(epochEngine, broker, timeService)
 
 	return &testEngine{
 		engine:      engine,
 		broker:      broker,
 		timeService: timeService,
 	}
+}
+
+func newTeamID(t *testing.T) types.TeamID {
+	t.Helper()
+
+	return types.TeamID(vgcrypto.RandomHash())
 }
 
 func newPartyID(t *testing.T) types.PartyID {
@@ -144,10 +159,12 @@ func newPartyID(t *testing.T) types.PartyID {
 func newTeam(t *testing.T, ctx context.Context, te *testEngine) (types.TeamID, types.PartyID) {
 	t.Helper()
 
+	teamID := newTeamID(t)
+	referrer := newPartyID(t)
+
 	expectTeamCreatedEvent(t, te)
 
-	referrer := types.PartyID(vgrand.RandomStr(5))
-	teamID, err := te.engine.CreateTeam(ctx, referrer, "", "", "")
+	err := te.engine.CreateTeam(ctx, referrer, teamID, createTeamCmd(t, "", "", ""))
 	require.NoError(t, err)
 	require.NotEmpty(t, teamID)
 	require.True(t, te.engine.IsTeamMember(referrer))
@@ -155,8 +172,31 @@ func newTeam(t *testing.T, ctx context.Context, te *testEngine) (types.TeamID, t
 	return teamID, referrer
 }
 
-type testEngine struct {
-	engine      *teams.SnapshotEngine
-	broker      *mocks.MockBroker
-	timeService *mocks.MockTimeService
+func createTeamCmd(t *testing.T, name, teamURL, avatarURL string) *commandspb.CreateTeam {
+	t.Helper()
+
+	return &commandspb.CreateTeam{
+		Name:      ptr.From(name),
+		TeamUrl:   ptr.From(teamURL),
+		AvatarUrl: ptr.From(avatarURL),
+	}
+}
+
+func updateTeamCmd(t *testing.T, teamID types.TeamID, name, teamURL, avatarURL string) *commandspb.UpdateTeam {
+	t.Helper()
+
+	return &commandspb.UpdateTeam{
+		TeamId:    string(teamID),
+		Name:      ptr.From(name),
+		TeamUrl:   ptr.From(teamURL),
+		AvatarUrl: ptr.From(avatarURL),
+	}
+}
+
+func joinTeamCmd(t *testing.T, teamID types.TeamID) *commandspb.JoinTeam {
+	t.Helper()
+
+	return &commandspb.JoinTeam{
+		TeamId: string(teamID),
+	}
 }

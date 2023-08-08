@@ -119,6 +119,12 @@ type StateVarEngine interface {
 	OnBlockEnd(ctx context.Context)
 }
 
+type TeamsEngine interface {
+	CreateTeam(context.Context, types.PartyID, types.TeamID, *commandspb.CreateTeam) error
+	UpdateTeam(context.Context, types.PartyID, *commandspb.UpdateTeam) error
+	JoinTeam(context.Context, types.PartyID, *commandspb.JoinTeam) error
+}
+
 type BlockchainClient interface {
 	Validators(height *int64) ([]*tmtypesint.Validator, error)
 }
@@ -180,6 +186,7 @@ type App struct {
 	epoch                  EpochService
 	snapshotEngine         SnapshotEngine
 	stateVar               StateVarEngine
+	teamsEngine            TeamsEngine
 	protocolUpgradeService ProtocolUpgradeService
 	erc20MultiSigTopology  ERC20MultiSigTopology
 	gastimator             *Gastimator
@@ -220,6 +227,7 @@ func NewApp(
 	stakingAccounts StakingAccounts,
 	snapshot SnapshotEngine,
 	stateVarEngine StateVarEngine,
+	teamsEngine TeamsEngine,
 	blockchainClient BlockchainClient,
 	erc20MultiSigTopology ERC20MultiSigTopology,
 	version string, // we need the version for snapshot reload
@@ -266,6 +274,7 @@ func NewApp(
 		epoch:                  epoch,
 		snapshotEngine:         snapshot,
 		stateVar:               stateVarEngine,
+		teamsEngine:            teamsEngine,
 		version:                version,
 		blockchainClient:       blockchainClient,
 		erc20MultiSigTopology:  erc20MultiSigTopology,
@@ -408,6 +417,15 @@ func NewApp(
 					addDeterministicID(app.DeliverBatchMarketInstructions),
 				),
 			),
+		).
+		HandleDeliverTx(txn.CreateTeamCommand,
+			app.SendTransactionResult(addDeterministicID(app.CreateTeam)),
+		).
+		HandleDeliverTx(txn.UpdateTeamCommand,
+			app.SendTransactionResult(app.UpdateTeam),
+		).
+		HandleDeliverTx(txn.JoinTeamCommand,
+			app.SendTransactionResult(app.JoinTeam),
 		)
 
 	app.time.NotifyOnTick(app.onTick)
@@ -2153,4 +2171,31 @@ func (app *App) DeliverEthereumKeyRotateSubmission(ctx context.Context, tx abci.
 		kr,
 		signatures.VerifyEthereumSignature,
 	)
+}
+
+func (app *App) CreateTeam(ctx context.Context, tx abci.Tx, deterministicID string) error {
+	params := &commandspb.CreateTeam{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize CreateTeam command: %w", err)
+	}
+
+	return app.teamsEngine.CreateTeam(ctx, types.PartyID(tx.Party()), types.TeamID(deterministicID), params)
+}
+
+func (app *App) UpdateTeam(ctx context.Context, tx abci.Tx) error {
+	params := &commandspb.UpdateTeam{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize UpdateTeam command: %w", err)
+	}
+
+	return app.teamsEngine.UpdateTeam(ctx, types.PartyID(tx.Party()), params)
+}
+
+func (app *App) JoinTeam(ctx context.Context, tx abci.Tx) error {
+	params := &commandspb.JoinTeam{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize JoinTeam command: %w", err)
+	}
+
+	return app.teamsEngine.JoinTeam(ctx, types.PartyID(tx.Party()), params)
 }
