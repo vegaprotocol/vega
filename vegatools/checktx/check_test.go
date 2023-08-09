@@ -82,7 +82,7 @@ func TestCheckTransactionsInDirectoryAccuratelyReportsFailures(t *testing.T) {
 	}
 
 	failScenarioJson, err := marshaller.MarshalToString(transactionForFailScenario)
-	assert.NoErrorf(t, err, "error occured when attempting to marshal transaction json to string. Err: %v", err)
+	assert.NoErrorf(t, err, "error occurred when attempting to marshal transaction json to string. Err: %v", err)
 	failScenarioNonProtoEncode := base64.StdEncoding.EncodeToString([]byte(failScenarioJson))
 
 	createTestDataFile(t, "transaction1.txt", encodedTransaction)
