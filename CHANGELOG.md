@@ -29,7 +29,7 @@
 - [8895](https://github.com/vegaprotocol/vega/issues/8895) - Allow to set runtime parameters in the SQL Store connection structure
 - [8779](https://github.com/vegaprotocol/vega/issues/8779) - Query all details of liquidity providers via an API.
 - [8924](https://github.com/vegaprotocol/vega/issues/8924) - Refactor slightly to remove need to deep clone `proto` types
-- [8782](https://github.com/vegaprotocol/vega/issues/8782) - List all active liquidity providers fora  market via API.
+- [8782](https://github.com/vegaprotocol/vega/issues/8782) - List all active liquidity providers for a market via API.
 - [8753](https://github.com/vegaprotocol/vega/issues/8753) - Governance for new market proposal.
 - [8752](https://github.com/vegaprotocol/vega/issues/8752) - Add `PERPS` network parameter.
 - [8759](https://github.com/vegaprotocol/vega/issues/8759) - Add update market support for `PERPS`.
@@ -50,6 +50,7 @@
 - [8920](https://github.com/vegaprotocol/vega/issues/8920) - Emit events when something happens to teams.
 - [8917](https://github.com/vegaprotocol/vega/issues/8917) - Support teams engine snapshots
 - [9007](https://github.com/vegaprotocol/vega/issues/9007) - Add reward vesting mechanisms.
+- [8914](https://github.com/vegaprotocol/vega/issues/8914) - Add referral network parameters.
 
 ### 🐛 Fixes
 
@@ -106,7 +107,6 @@
 - [8737](https://github.com/vegaprotocol/vega/issues/8737) - Fix `GetStopOrder` errors when order has a state change.
 - [8727](https://github.com/vegaprotocol/vega/issues/8727) - Clear parent market on checkpoint restore if the parent market was already succeeded.
 - [8835](https://github.com/vegaprotocol/vega/issues/8835) - Spot snapshot fixes
-
 
 ## 0.72.0
 

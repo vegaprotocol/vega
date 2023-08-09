@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -17,6 +18,22 @@ type Engine struct {
 	broker      Broker
 	timeService TimeService
 
+	// maxBenefitTiers limits the maximum number of benefit tiers which can be
+	// specified as part of a referral program.
+	maxBenefitTiers *num.Uint
+	// maxReferralRewardFactor limits the maximum reward factor which can be
+	// specified as part of a referral program.
+	maxReferralRewardFactor num.Decimal
+	// maxReferralDiscountFactor limits the maximum discount factor which can be
+	// specified as part of a referral program governance proposal.
+	maxReferralDiscountFactor num.Decimal
+	// maxPartyNotionalVolumeByQuantumPerEpoch limits the volume in quantum units
+	// which is eligible each epoch for referral program mechanisms.
+	maxPartyNotionalVolumeByQuantumPerEpoch *num.Uint
+	// minStakedVegaTokens limits referral code generation to parties staking at
+	// least this number of tokens.
+	minStakedVegaTokens num.Decimal
+
 	// teams tracks all teams by team ID.
 	teams map[types.TeamID]*types.Team
 
@@ -27,6 +44,31 @@ type Engine struct {
 	// teamSwitches tracks all the parties that switch teams. The switch only
 	// happens by the end of the epoch.
 	teamSwitches map[types.PartyID]teamSwitch
+}
+
+func (e *Engine) OnReferralProgramMaxBenefitTiersUpdate(_ context.Context, value *num.Uint) error {
+	e.maxBenefitTiers = value
+	return nil
+}
+
+func (e *Engine) OnReferralProgramMaxReferralRewardFactorUpdate(_ context.Context, value num.Decimal) error {
+	e.maxReferralRewardFactor = value
+	return nil
+}
+
+func (e *Engine) OnReferralProgramMaxReferralDiscountFactorUpdate(_ context.Context, value num.Decimal) error {
+	e.maxReferralDiscountFactor = value
+	return nil
+}
+
+func (e *Engine) OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate(_ context.Context, value *num.Uint) error {
+	e.maxPartyNotionalVolumeByQuantumPerEpoch = value
+	return nil
+}
+
+func (e *Engine) OnReferralProgramMinStakedVegaTokensUpdate(_ context.Context, value num.Decimal) error {
+	e.minStakedVegaTokens = value
+	return nil
 }
 
 func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, deterministicTeamID types.TeamID, params *commandspb.CreateTeam) error {

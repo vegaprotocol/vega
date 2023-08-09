@@ -201,8 +201,20 @@ func WrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.S
 		data.Command = &commandspb.InputData_StopOrdersCancellation{
 			StopOrdersCancellation: req.GetStopOrdersCancellation(),
 		}
+	case *walletpb.SubmitTransactionRequest_CreateTeam:
+		data.Command = &commandspb.InputData_CreateTeam{
+			CreateTeam: req.GetCreateTeam(),
+		}
+	case *walletpb.SubmitTransactionRequest_UpdateTeam:
+		data.Command = &commandspb.InputData_UpdateTeam{
+			UpdateTeam: req.GetUpdateTeam(),
+		}
+	case *walletpb.SubmitTransactionRequest_JoinTeam:
+		data.Command = &commandspb.InputData_JoinTeam{
+			JoinTeam: req.GetJoinTeam(),
+		}
 	default:
-		panic(fmt.Sprintf("command %v is not supported", cmd))
+		panic(fmt.Sprintf("command %T is not supported", cmd))
 	}
 }
 
