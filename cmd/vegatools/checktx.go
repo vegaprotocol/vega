@@ -12,8 +12,8 @@ import (
 
 type checkTxCmd struct {
 	config.OutputFlag
-	EncodedTransaction string `description:"The encoded transaction string to compare with vega's own encoding" long:"tx" short:"t"`
-	TransactionDir     string `description:"directory containing files with encoded transaction data. One encoded transaction per file" long:"tx-dir" short:"d"`
+	EncodedTransaction string `description:"The encoded transaction string to compare with vega's own encoding"                         long:"tx"    short:"t"`
+	TransactionDir     string `description:"directory containing files with encoded transaction data. One encoded transaction per file" long:"txdir" short:"d"`
 }
 
 func (opts *checkTxCmd) Execute(_ []string) error {
@@ -30,6 +30,8 @@ func (opts *checkTxCmd) Execute(_ []string) error {
 		logrus.Infof("transactions analysed %d, transactions passed: %d, transactions failed: %d", result.TransactionsAnalysed, result.TransactionsPassed, result.TransactionsFailed)
 		if result.TransactionsFailed > 0 {
 			return fmt.Errorf("one or more transactions failed comparison")
+		} else {
+			return nil
 		}
 	}
 

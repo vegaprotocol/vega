@@ -19,6 +19,7 @@ const (
 )
 
 func createTestDataFile(t *testing.T, fileName string, encodedTransaction string) {
+	t.Helper()
 	err := os.MkdirAll(testFileDir, 0o755)
 	assert.NoErrorf(t, err, "error occurred when attempting to make a directory for the valid test data")
 
@@ -43,7 +44,7 @@ func TestCheckTransactionsInDirectoryThrowsNoErrAndReturnsAccurateMetrics(t *tes
 	createTestDataFile(t, "transaction2.txt", encodedTransaction)
 
 	resultData, err := CheckTransactionsInDirectory(testFileDir)
-
+	assert.NoErrorf(t, err, "expected no error to occur when analysing valid transactions. Err: %v", err)
 	assert.Equalf(t, 2, resultData.TransactionsAnalysed, "expected 2 transactions to have been analysed, instead there was %d", resultData.TransactionsAnalysed)
 	assert.Equalf(t, 2, resultData.TransactionsPassed, "expected 2 transactions to have passed, instead there was %d", resultData.TransactionsPassed)
 	assert.Equalf(t, 0, resultData.TransactionsFailed, "expected 0 transactions to have failed, instead there was %d", resultData.TransactionsFailed)
@@ -81,13 +82,14 @@ func TestCheckTransactionsInDirectoryAccuratelyReportsFailures(t *testing.T) {
 	}
 
 	failScenarioJson, err := marshaller.MarshalToString(transactionForFailScenario)
+	assert.NoErrorf(t, err, "error occured when attempting to marshal transaction json to string. Err: %v", err)
 	failScenarioNonProtoEncode := base64.StdEncoding.EncodeToString([]byte(failScenarioJson))
 
 	createTestDataFile(t, "transaction1.txt", encodedTransaction)
 	createTestDataFile(t, "transaction2.txt", failScenarioNonProtoEncode)
 
 	resultData, err := CheckTransactionsInDirectory(testFileDir)
-
+	assert.NoErrorf(t, err, "expected no error from CheckTransactionsInDirectory when analysing valid base64 encoded data. Err: %v", err)
 	assert.Equalf(t, 2, resultData.TransactionsAnalysed, "expected 2 transactions to have been analysed, instead there was %d", resultData.TransactionsAnalysed)
 	assert.Equalf(t, 1, resultData.TransactionsPassed, "expected 1 transactions to have passed, instead there was %d", resultData.TransactionsPassed)
 	assert.Equalf(t, 1, resultData.TransactionsFailed, "expected 1 transactions to have failed, instead there was %d", resultData.TransactionsFailed)
