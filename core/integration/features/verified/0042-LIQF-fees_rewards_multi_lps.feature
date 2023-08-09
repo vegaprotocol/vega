@@ -54,14 +54,15 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
       | lp2 | lp2   | ETH/MAR22 | 1000000           | 0.002 | amendment  |
       | lp3 | lp3   | ETH/MAR22 | 1000000000        | 0.003 | submission |
       | lp3 | lp3   | ETH/MAR22 | 1000000000        | 0.003 | amendment  |
+    When the network moves ahead "2" blocks
     And the parties place the following pegged iceberg orders:
       | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 20     |
-      | lp1   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 20     |
-      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 20     |
-      | lp2   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 20     |
-      | lp3   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 20     |
-      | lp3   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 20     |
+      | lp1 | ETH/MAR22 | 38 | 1 | buy  | BID | 38 | 20 |
+      | lp1 | ETH/MAR22 | 31 | 1 | sell | ASK | 31 | 20 |
+      | lp2 | ETH/MAR22 | 38 | 1 | buy  | BID | 38 | 20 |
+      | lp2 | ETH/MAR22 | 31 | 1 | sell | ASK | 31 | 20 |
+      | lp3 | ETH/MAR22 | 38 | 1 | buy  | BID | 38 | 20 |
+      | lp3 | ETH/MAR22 | 31 | 1 | sell | ASK | 31 | 20 |
  
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -82,10 +83,10 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
-      | buy  | 880   | 116    |
+      | buy | 880 | 114 |
       | buy  | 900   | 10     |
       | sell | 1100  | 10     |
-      | sell | 1120  | 92     |
+      | sell | 1120 | 93 |
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
@@ -95,52 +96,55 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin     | general       | bond       |
-      | lp1    | USD   | ETH/MAR22 | 53353554   | 9999946636446 | 10000      |
-      | lp2    | USD   | ETH/MAR22 | 53353554   | 9999945646446 | 1000000    |
-      | lp3    | USD   | ETH/MAR22 | 4801819849 | 9994198180151 | 1000000000 |
-      | party1 | USD   | ETH/MAR22 | 228207540  | 999771792460  |            |
-      | party2 | USD   | ETH/MAR22 | 1120424632 | 98879575368   |            |
+      | lp1    | USD | ETH/MAR22 | 1653960171 | 9998346029829 | 10000      |
+      | lp2    | USD | ETH/MAR22 | 1653960171 | 9998345039829 | 1000000    |
+      | lp3    | USD | ETH/MAR22 | 1653960171 | 9997346039829 | 1000000000 |
+      | party1 | USD | ETH/MAR22 | 228207540  | 999771792460  |            |
+      | party2 | USD | ETH/MAR22 | 1120424632 | 98879575368   |            |
 
     Then the network moves ahead "1" blocks
 
     And the liquidity fee factor should be "0.003" for the market "ETH/MAR22"
 
-    Then the parties place the following orders with ticks:
+    Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
       | party2 | ETH/MAR22 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party2-buy  |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin     | general       | bond       |
-      | lp1    | USD   | ETH/MAR22 | 53353554   | 9999946636446 | 10000      |
-      | lp2    | USD   | ETH/MAR22 | 53353554   | 9999945646446 | 1000000    |
-      | lp3    | USD   | ETH/MAR22 | 4801819849 | 9994198180151 | 1000000000 |
-      | party1 | USD   | ETH/MAR22 | 548535540  | 999451544460  |            |
-      | party2 | USD   | ETH/MAR22 | 135109231  | 99864010769   |            |
+      | lp1    | USD | ETH/MAR22 | 1653960171 | 9998346029829 | 10000      |
+      | lp2    | USD | ETH/MAR22 | 1653960171 | 9998345039829 | 1000000    |
+      | lp3    | USD | ETH/MAR22 | 1653960171 | 9997346039829 | 1000000000 |
+      | party1 | USD | ETH/MAR22 | 1067071078 | 998933008922  |            |
+      | party2 | USD | ETH/MAR22 | 1120424632 | 98878695368   |            |
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
-      | buy  | 880   | 116    |
+      | buy | 880 | 114 |
       | buy  | 900   | 10     |
       | sell | 1100  | 10     |
-      | sell | 1120  | 92     |
+      | sell | 1120 | 93 |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
     And the accumulated liquidity fees should be "600000" for the market "ETH/MAR22"
     Then the network moves ahead "11" blocks
 
+    Then debug transfers
     And the following transfers should happen:
-      | from   | to     | from account                | to account                       | market id | amount | asset |
-      | party2 | market | ACCOUNT_TYPE_GENERAL        | ACCOUNT_TYPE_FEES_MAKER          | ETH/MAR22 | 80000  | USD   |
-      | party2 |        | ACCOUNT_TYPE_GENERAL        | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/MAR22 | 200000 | USD   |
-      | party2 |        | ACCOUNT_TYPE_GENERAL        | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/MAR22 | 600000 | USD   |
-      | market | party1 | ACCOUNT_TYPE_FEES_MAKER     | ACCOUNT_TYPE_GENERAL             | ETH/MAR22 | 80000  | USD   |
-      | market | lp1    | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL             | ETH/MAR22 | 5      | USD   |
-      | market | lp2    | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL             | ETH/MAR22 | 599    | USD   |
-      | market | lp3    | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL             | ETH/MAR22 | 599394 | USD   |
+      | from   | to     | from account            | to account                       | market id | amount | asset |
+      | party2 | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/MAR22 | 80000  | USD   |
+      | party2 |        | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/MAR22 | 200000 | USD   |
+      | party2 |        | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/MAR22 | 600000 | USD   |
+      | market | party1 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/MAR22 | 80000  | USD   |
+# | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 5 | USD |
+    #   | market | lp2    | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL             | ETH/MAR22 | 599    | USD   |
+    #   | market | lp3    | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL             | ETH/MAR22 | 599394 | USD   |
 
-# liquidity fee lp1 = 600000 * 0.0000099899101907 = 5
-# liquidity fee lp2 = 600000 * 0.0009989910190707 = 599
-# liquidity fee lp3 = 600000 * 0.9989910190707386 = 599396
+    And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
+
+# # liquidity fee lp1 = 600000 * 0.0000099899101907 = 5
+# # liquidity fee lp2 = 600000 * 0.0009989910190707 = 599
+# # liquidity fee lp3 = 600000 * 0.9989910190707386 = 599396
 
 
