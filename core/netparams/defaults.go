@@ -278,6 +278,10 @@ func defaultNetParams() map[string]value {
 		ReferralProgramMaxReferralDiscountFactor:               NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
 		ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch: NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("0"),
 		ReferralProgramMinStakedVegaTokens:                     NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("1000000000000000000"),
+
+		RewardsActivityStreakBenefitTiers:          NewJSON(&proto.ActivityStreakBenefitTiers{}, types.CheckUntypedActivityStreakBenefitTier).Mutable(true).MustUpdate(`{"tiers": [{"minimum_activity_streak": 1, "reward_multiplier": "1.05", "vesting_multiplier": "1.05"}, {"minimum_activity_streak": 7, "reward_multiplier": "1.10", "vesting_multiplier": "1.10"}, {"minimum_activity_streak": 31, "reward_multiplier": "1.10", "vesting_multiplier": "1.15"}, {"minimum_activity_streak": 365, "reward_multiplier": "1.20", "vesting_multiplier": "1.20"}]}`),
+		RewardsActivityStreakMinQuantumOpenVolume:  NewUint().Mutable(true).MustUpdate("100000000000000000000"),
+		RewardsActivityStreakMinQuantumTradeVolume: NewUint().Mutable(true).MustUpdate("100000000000000000000"),
 	}
 
 	// add additional cross net param rules

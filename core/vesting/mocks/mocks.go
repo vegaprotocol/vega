@@ -105,18 +105,18 @@ func (m *MockActivityStreakVestingMultiplier) EXPECT() *MockActivityStreakVestin
 	return m.recorder
 }
 
-// Get mocks base method.
-func (m *MockActivityStreakVestingMultiplier) Get(arg0 string) decimal.Decimal {
+// GetRewardsVestingMultiplier mocks base method.
+func (m *MockActivityStreakVestingMultiplier) GetRewardsVestingMultiplier(arg0 string) decimal.Decimal {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", arg0)
+	ret := m.ctrl.Call(m, "GetRewardsVestingMultiplier", arg0)
 	ret0, _ := ret[0].(decimal.Decimal)
 	return ret0
 }
 
-// Get indicates an expected call of Get.
-func (mr *MockActivityStreakVestingMultiplierMockRecorder) Get(arg0 interface{}) *gomock.Call {
+// GetRewardsVestingMultiplier indicates an expected call of GetRewardsVestingMultiplier.
+func (mr *MockActivityStreakVestingMultiplierMockRecorder) GetRewardsVestingMultiplier(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockActivityStreakVestingMultiplier)(nil).Get), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRewardsVestingMultiplier", reflect.TypeOf((*MockActivityStreakVestingMultiplier)(nil).GetRewardsVestingMultiplier), arg0)
 }
 
 // MockBroker is a mock of Broker interface.

@@ -79,6 +79,7 @@
 - [9199](https://github.com/vegaprotocol/vega/issues/9199) - Consider running notional volume to determine referrers and referees tier
 - [9214](https://github.com/vegaprotocol/vega/issues/9214) - Add staking tier on referral program
 - [9205](https://github.com/vegaprotocol/vega/issues/9205) - Ensure staking requirement when creating / joining referral sets
+- [9032](https://github.com/vegaprotocol/vega/issues/9032) - Implement activity streaks.
 
 
 ### 🐛 Fixes

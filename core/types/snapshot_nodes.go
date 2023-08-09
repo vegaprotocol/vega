@@ -916,6 +916,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadNewReferralProgramFromProto(dt)
 	case *snapshot.Payload_ReferralSets:
 		ret.Data = PayloadReferralSetsFromProto(dt)
+	case *snapshot.Payload_ActivityStreak:
+		ret.Data = PayloadActivityStreakFromProto(dt)
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}
@@ -1089,6 +1091,7 @@ func (p Payload) IntoProto() *snapshot.Payload {
 		ret.Data = dt
 	case *snapshot.Payload_ReferralSets:
 		ret.Data = dt
+	case *snapshot.Payload_ActivityStreak:
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}

@@ -134,7 +134,7 @@ func setDefaults(t *testing.T, v *testSnapshotEngine) {
 	t.Helper()
 	v.OnRewardVestingBaseRateUpdate(context.Background(), num.MustDecimalFromString("0.9"))
 	v.OnRewardVestingMinimumTransferUpdate(context.Background(), num.MustDecimalFromString("1"))
-	v.asvm.EXPECT().Get(gomock.Any()).AnyTimes().Return(num.MustDecimalFromString("1"))
+	v.asvm.EXPECT().GetRewardsVestingMultiplier(gomock.Any()).AnyTimes().Return(num.MustDecimalFromString("1"))
 	v.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(
 		assets.NewAsset(dummyAsset{quantum: 10}), nil,
 	)

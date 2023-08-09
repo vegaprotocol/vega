@@ -1715,3 +1715,13 @@ message StakingTier {
   // rewards due to the referrer.
   string referral_reward_multiplier = 2;
 }
+
+message ActivityStreakBenefitTiers {
+  repeated ActivityStreakBenefitTier tiers = 1;
+}
+
+message ActivityStreakBenefitTier {
+  uint64 minimum_activity_streak = 1;
+  string reward_multiplier = 2;
+  string vesting_multiplier = 3;
+}
