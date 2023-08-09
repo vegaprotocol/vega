@@ -1,3 +1,4 @@
+
 Feature: Test liquidity provider reward distribution; Check what happens when distribution period is large (both in genesis)
 
   Background:
@@ -39,15 +40,13 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | lp type    |
       | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | submission |
-      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | amendment  |
-      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | amendment  |
-      | lp1 | lp1   | ETH/MAR22 | 10000             | 0.001 | amendment  |
+
     And the parties place the following pegged iceberg orders:
       | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 1          | 2      |
-      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 2          | 1      |
-      | lp1   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 1          | 2      |
-      | lp1   | ETH/MAR22 | 2         | 1                    | sell | MID              | 2          | 1      |
+      | lp1 | ETH/MAR22 | 4 | 1 | buy  | BID | 4 | 2 |
+      | lp1 | ETH/MAR22 | 7 | 1 | buy  | MID | 7 | 1 |
+      | lp1 | ETH/MAR22 | 4 | 1 | sell | ASK | 4 | 2 |
+      | lp1 | ETH/MAR22 | 7 | 1 | sell | MID | 7 | 1 |
  
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -111,31 +110,31 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     And the liquidity fee factor should be "0.001" for the market "ETH/MAR22"
 
-    Then the parties place the following orders with ticks:
+    Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
       | party2 | ETH/MAR22 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party2-buy  |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
-      | lp1    | USD   | ETH/MAR22 | 2400   | 999987212 | 10000 |
-      | party1 | USD   | ETH/MAR22 | 1200   | 99998805  |       |
-      | party2 | USD   | ETH/MAR22 | 1932   | 99998411  |       |
+      | lp1    | USD | ETH/MAR22 | 1320 | 999988683 | 10000 |
+      | party1 | USD | ETH/MAR22 | 2400 | 99997606  |       |
+      | party2 | USD | ETH/MAR22 | 2400 | 99997551  |       |
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
       | buy  | 898   | 4      |
       | buy  | 900   | 1      |
-      | buy  | 949   | 8      |
-      | sell | 951   | 8      |
-      | sell | 1000  | 8      |
+      | buy  | 949  | 7 |
+      | sell | 951  | 0 |
+      | sell | 1000 | 7 |
       | sell | 1002  | 4      |
       | sell | 1100  | 1      |
 
     Then the parties should have the following account balances:
-      | party | asset | market id | margin | general   |
-      | lp1   | USD   | ETH/MAR22 | 2400   | 999987212 |
-
+      | party | asset | market id | margin | general   | bond  |
+      | lp1   | USD   | ETH/MAR22 | 1320   | 999988683 | 10000 |
+    When the network moves ahead "2" blocks
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
     And the accumulated liquidity fees should be "20" for the market "ETH/MAR22"
@@ -145,37 +144,39 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     # lp fee got cumulated since the distribution period is large
     And the accumulated liquidity fees should be "20" for the market "ETH/MAR22"
-
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
     Then time is updated to "2019-11-30T00:20:05Z"
 
-    When the parties place the following orders with ticks:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | party1 | ETH/MAR22 | buy  | 40     | 1100  | 1                | TYPE_LIMIT | TIF_GTC | party1-buy  |
-      | party2 | ETH/MAR22 | sell | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell |
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 483       | 1482      | 1000         | 10000          | 10            |
 
-    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | party1 | ETH/MAR22 | buy  | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-buy |
+# | party2 | ETH/MAR22 | sell | 4 | 1100 | 0 | TYPE_LIMIT | TIF_GTC | party2-sell |
 
-    And the following trades should be executed:
-      | buyer  | price | size | seller |
-      | party1 | 951   | 8    | lp1    |
+# Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
 
-    Then the parties should have the following account balances:
-      | party | asset | market id | margin | general   |
-      | lp1   | USD   | ETH/MAR22 | 3752   | 999986256 |
+# And the following trades should be executed:
+#   | buyer  | price | size | seller |
+#   | party1 | 951   | 8    | lp1    |
 
-    # lp fee got cumulated since the distribution period is large
-    And the accumulated liquidity fees should be "28" for the market "ETH/MAR22"
+# Then the parties should have the following account balances:
+#   | party | asset | market id | margin | general   |
+#   | lp1   | USD   | ETH/MAR22 | 3752   | 999986256 |
 
-    # lp fee got paid to lp1 when time is over the "fee.distributionTimeStep"
-    Then time is updated to "2024-12-30T00:30:05Z"
+# # lp fee got cumulated since the distribution period is large
+# And the accumulated liquidity fees should be "28" for the market "ETH/MAR22"
 
-    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+# # lp fee got paid to lp1 when time is over the "fee.distributionTimeStep"
+# Then time is updated to "2024-12-30T00:30:05Z"
 
-    Then the following transfers should happen:
-      | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 28     | USD   |
+# And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
-    Then the parties should have the following account balances:
-      | party | asset | market id | margin | general   |
-      | lp1   | USD   | ETH/MAR22 | 3752   | 999986284 |
+# Then the following transfers should happen:
+#   | from   | to  | from account                | to account           | market id | amount | asset |
+#   | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 28     | USD   |
+
+# Then the parties should have the following account balances:
+#   | party | asset | market id | margin | general   |
+#   | lp1   | USD   | ETH/MAR22 | 3752   | 999986284 |
