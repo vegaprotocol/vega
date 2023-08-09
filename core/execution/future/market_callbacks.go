@@ -29,10 +29,6 @@ func (m *Market) OnMarketMinProbabilityOfTradingLPOrdersUpdate(_ context.Context
 	m.liquidity.OnMinProbabilityOfTradingLPOrdersUpdate(d)
 }
 
-func (m *Market) BondPenaltyFactorUpdate(_ context.Context, d num.Decimal) {
-	m.bondPenaltyFactor = d
-}
-
 func (m *Market) OnMarginScalingFactorsUpdate(ctx context.Context, sf *types.ScalingFactors) error {
 	if err := m.risk.OnMarginScalingFactorsUpdate(sf); err != nil {
 		return err
@@ -106,6 +102,8 @@ func (m *Market) OnMarketPartiesMaximumStopOrdersUpdate(ctx context.Context, u *
 }
 
 func (m *Market) OnMarketLiquidityV2BondPenaltyFactorUpdate(liquidityV2BondPenaltyFactor num.Decimal) {
+	m.bondPenaltyFactor = liquidityV2BondPenaltyFactor
+
 	m.liquidity.OnBondPenaltyFactorUpdate(liquidityV2BondPenaltyFactor)
 }
 
