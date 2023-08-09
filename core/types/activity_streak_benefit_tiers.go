@@ -103,7 +103,7 @@ func CheckActivityStreakBenefitTiers(ptiers *proto.ActivityStreakBenefitTiers) e
 func toActivityStreakBenefitTier(v interface{}) (*proto.ActivityStreakBenefitTiers, error) {
 	cfg, ok := v.(*proto.ActivityStreakBenefitTiers)
 	if !ok {
-		return nil, fmt.Errorf("type \"%s\" is not a ActivityStreakBenefitTierArray proto", vgreflect.TypeName(v))
+		return nil, fmt.Errorf("type \"%s\" is not a *ActivityStreakBenefitTiers proto", vgreflect.TypeName(v))
 	}
 
 	return cfg, nil
