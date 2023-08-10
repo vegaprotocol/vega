@@ -45,7 +45,7 @@ func TestValidatorSet(t *testing.T) {
 func TestDecreaseNumberOfTendermintValidators(t *testing.T) {
 	tm := int64(1654747635)
 	rng := rand.New(rand.NewSource(tm))
-	byStatusChangeBlock := func(val1, val2 *valState) bool { return val1.statusChangeBlock < val2.statusChangeBlock }
+	byStatusChangeBlock := func(val1, val2 *valState) int64 { return val1.statusChangeBlock - val2.statusChangeBlock }
 	rankingScore := map[string]num.Decimal{
 		"70b29f15c7d3cc430283dfee07e17775f041427749f7f1f8b9979bdde15ae908": num.NewDecimalFromFloat(0.6),
 		"db14f8d4e4beebd085b22c7332d8a12d3e3841319ba78542a418c02d7740d117": num.NewDecimalFromFloat(0.3),
@@ -169,7 +169,7 @@ func TestDecreaseNumberOfTendermintValidators(t *testing.T) {
 func TestDecreaseNumberOfTendermintValidatorsNotUpdatingContract(t *testing.T) {
 	tm := int64(1654747635)
 	rng := rand.New(rand.NewSource(tm))
-	byStatusChangeBlock := func(val1, val2 *valState) bool { return val1.statusChangeBlock < val2.statusChangeBlock }
+	byStatusChangeBlock := func(val1, val2 *valState) int64 { return val1.statusChangeBlock - val2.statusChangeBlock }
 	rankingScore := map[string]num.Decimal{
 		"70b29f15c7d3cc430283dfee07e17775f041427749f7f1f8b9979bdde15ae908": num.NewDecimalFromFloat(0.6),
 		"db14f8d4e4beebd085b22c7332d8a12d3e3841319ba78542a418c02d7740d117": num.NewDecimalFromFloat(0.3),
@@ -270,7 +270,7 @@ func TestApplyPromotionAllThingsEqual(t *testing.T) {
 	tm := int64(1654747635)
 	for i := 0; i < 100; i++ {
 		rng := rand.New(rand.NewSource(tm))
-		byStatusChangeBlock := func(val1, val2 *valState) bool { return val1.statusChangeBlock < val2.statusChangeBlock }
+		byStatusChangeBlock := func(val1, val2 *valState) int64 { return val1.statusChangeBlock - val2.statusChangeBlock }
 		rankingScore := map[string]num.Decimal{
 			"70b29f15c7d3cc430283dfee07e17775f041427749f7f1f8b9979bdde15ae908": num.DecimalZero(),
 			"db14f8d4e4beebd085b22c7332d8a12d3e3841319ba78542a418c02d7740d117": num.DecimalZero(),
@@ -373,7 +373,7 @@ func TestSortValidatorDescRankingScoreAscBlockStatusChanged(t *testing.T) {
 	tm := int64(1654747635)
 	for i := 0; i < 100; i++ {
 		rng := rand.New(rand.NewSource(tm))
-		byStatusChangeBlock := func(val1, val2 *valState) bool { return val1.statusChangeBlock < val2.statusChangeBlock }
+		byStatusChangeBlock := func(val1, val2 *valState) int64 { return val1.statusChangeBlock - val2.statusChangeBlock }
 		valStates1 := []*valState{
 			{
 				data: ValidatorData{

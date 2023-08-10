@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"math/rand"
 	"sort"
 
@@ -240,7 +241,7 @@ func statusToProtoStatus(status string) proto.ValidatorNodeStatus {
 	return proto.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_PENDING
 }
 
-func sortValidatorDescRankingScoreAscBlockcompare(validators []*valState, rankingScore map[string]num.Decimal, blockComparator func(*valState, *valState) bool, rng *rand.Rand) {
+func sortValidatorDescRankingScoreAscBlockcompare(validators []*valState, rankingScore map[string]num.Decimal, blockComparator func(*valState, *valState) int64, rng *rand.Rand) {
 	// because we may need the bit of randomness in the sorting below - we need to start from all of the validators in a consistent order
 	sort.SliceStable(validators, func(i, j int) bool { return validators[i].data.ID < validators[j].data.ID })
 
@@ -248,10 +249,14 @@ func sortValidatorDescRankingScoreAscBlockcompare(validators []*valState, rankin
 	sort.SliceStable(validators, func(i, j int) bool {
 		// tiebreaker: the one which was promoted to tm validator first gets higher
 		if rankingScore[validators[i].data.ID].Equal(rankingScore[validators[j].data.ID]) {
-			if validators[i].statusChangeBlock == validators[j].statusChangeBlock {
+
+			sign := blockComparator(validators[i], validators[j])
+			if sign == 0 {
+				fmt.Println("HAVING TO RANDOM", validators[i].data.ID, validators[j].data.ID)
 				return rng.Int31n(2) > 0
 			}
-			return blockComparator(validators[i], validators[j])
+			return blockComparator(validators[i], validators[j]) < 0
+
 		}
 		return rankingScore[validators[i].data.ID].GreaterThan(rankingScore[validators[j].data.ID])
 	})
@@ -272,8 +277,8 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 	}
 
 	// sort the tendermint validators in descending order of their ranking score with the earlier block added as a tier breaker
-	byStatusChangeBlock := func(val1, val2 *valState) bool { return val1.statusChangeBlock < val2.statusChangeBlock }
-	byBlockAdded := func(val1, val2 *valState) bool { return val1.blockAdded < val2.blockAdded }
+	byStatusChangeBlock := func(val1, val2 *valState) int64 { return val1.statusChangeBlock - val2.statusChangeBlock }
+	byBlockAdded := func(val1, val2 *valState) int64 { return val1.blockAdded - val2.blockAdded }
 	sortValidatorDescRankingScoreAscBlockcompare(tendermintValidators, rankingScore, byStatusChangeBlock, t.rng)
 	sortValidatorDescRankingScoreAscBlockcompare(remainingValidators, rankingScore, byBlockAdded, t.rng)
 
@@ -281,7 +286,15 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 	for _, sig := range t.multiSigTopology.GetSigners() {
 		signers[sig] = struct{}{}
 	}
-
+	fmt.Println("START")
+	fmt.Println("tms")
+	for _, vd := range tendermintValidators {
+		fmt.Println(vd.data.ID, rankingScore[vd.data.ID], vd.status)
+	}
+	fmt.Println("the rest")
+	for _, vd := range remainingValidators {
+		fmt.Println(vd.data.ID, rankingScore[vd.data.ID], vd.status)
+	}
 	// if there are not enough slots, demote from tm to remaining
 	tendermintValidators, remainingValidators, removedFromTM := handleSlotChanges(tendermintValidators, remainingValidators, ValidatorStatusTendermint, ValidatorStatusErsatz, t.numberOfTendermintValidators, int64(t.currentBlockHeight+1), rankingScore, signers, t.multiSigTopology.GetThreshold())
 	t.log.Info("removedFromTM", logging.Strings("IDs", removedFromTM))
@@ -294,6 +307,7 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 	// apply promotions and demotions from tendermint to ersatz and vice versa
 	remainingValidators, demotedFromTM := promote(tendermintValidators, remainingValidators, ValidatorStatusTendermint, ValidatorStatusErsatz, t.numberOfTendermintValidators, rankingScore, int64(t.currentBlockHeight+1))
 	removedFromTM = append(removedFromTM, demotedFromTM...)
+	t.log.Info("demotedFromTM", logging.Strings("IDs", demotedFromTM))
 
 	// by this point we're done with promotions to tendermint. check if any validator from the waiting list can join the ersatz list
 	ersatzValidators := []*valState{}
@@ -306,18 +320,45 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 		}
 	}
 
+	// we want the demoted tendermint validator in the ersatz list for slot changes, but not for demotion from ersatz->pending
 	// demoted tendermint validators are also ersatz so we need to add them
+
+	// want to add to the front of the slice so they are last to be demoted from a slot change since we want to avoid
+	// a double demotion in one epoch
 	for _, id := range demotedFromTM {
-		ersatzValidators = append(ersatzValidators, t.validators[id])
+		ersatzValidators = append([]*valState{t.validators[id]}, ersatzValidators...)
 	}
 
 	// demote from ersatz to pending due to more ersatz than slots allowed
 	ersatzValidators, waitingListValidators, _ = handleSlotChanges(ersatzValidators, waitingListValidators, ValidatorStatusErsatz, ValidatorStatusPending, t.numberOfErsatzValidators, int64(t.currentBlockHeight+1), rankingScore, map[string]struct{}{}, 0)
-	sortValidatorDescRankingScoreAscBlockcompare(ersatzValidators, rankingScore, byBlockAdded, t.rng)
-	sortValidatorDescRankingScoreAscBlockcompare(waitingListValidators, rankingScore, byBlockAdded, t.rng)
-	// apply promotions and demotions from ersatz to pending and vice versa
-	promote(ersatzValidators, waitingListValidators, ValidatorStatusErsatz, ValidatorStatusPending, t.numberOfErsatzValidators, rankingScore, int64(t.currentBlockHeight+1))
 
+	// want to remove any demoted TM as we don't want them double demoted
+	switch {
+	case len(demotedFromTM) == 0:
+	case len(ersatzValidators) <= len(demotedFromTM):
+		ersatzValidators = []*valState{}
+	default:
+		ersatzValidators = ersatzValidators[len(demotedFromTM):]
+	}
+
+	fmt.Println("sort ersatzby block added")
+	sortValidatorDescRankingScoreAscBlockcompare(ersatzValidators, rankingScore, byBlockAdded, t.rng)
+	fmt.Println("sort pending by block added")
+	sortValidatorDescRankingScoreAscBlockcompare(waitingListValidators, rankingScore, byBlockAdded, t.rng)
+
+	for _, id := range demotedFromTM {
+		ersatzValidators = append([]*valState{t.validators[id]}, ersatzValidators...)
+	}
+	// apply promotions and demotions from ersatz to pending and vice versa
+	fmt.Println("NOW ERSATZ DEMOTE")
+	for _, v := range ersatzValidators {
+		fmt.Println("ezset", v.data.ID, v.blockAdded, rankingScore[v.data.ID], v.statusChangeBlock)
+	}
+	for _, v := range waitingListValidators {
+		fmt.Println("waiting", v.data.ID, v.blockAdded, rankingScore[v.data.ID], v.statusChangeBlock)
+	}
+	_, removefFromErsatz := promote(ersatzValidators, waitingListValidators, ValidatorStatusErsatz, ValidatorStatusPending, t.numberOfErsatzValidators, rankingScore, int64(t.currentBlockHeight+1))
+	t.log.Info("removefFromErsatz", logging.Strings("IDs", removefFromErsatz))
 	nextValidators := make([]string, 0, t.numberOfTendermintValidators+len(removedFromTM))
 	for _, vd := range t.validators {
 		if vd.status == ValidatorStatusTendermint {
@@ -483,12 +524,13 @@ func promote(seriesA []*valState, seriesB []*valState, statusA ValidatorStatus, 
 
 	if maxForSeriesA > 0 && maxForSeriesA == len(seriesA) && len(seriesB) > 0 {
 		// the best of the remaining is better than the worst tendermint validator
+		fmt.Println("replacing?", rankingScore[seriesA[len(seriesA)-1].data.ID].String(), rankingScore[seriesB[0].data.ID].String())
 		if rankingScore[seriesA[len(seriesA)-1].data.ID].LessThan(rankingScore[seriesB[0].data.ID]) {
 			vd := seriesA[len(seriesA)-1]
 			vd.status = statusB
 			vd.statusChangeBlock = nextBlockHeight
 			removedFromSeriesA = append(removedFromSeriesA, vd.data.ID)
-
+			fmt.Println("replace", vd.data.ID, "with", seriesB[0].data.ID)
 			vd = seriesB[0]
 			vd.status = statusA
 			vd.statusChangeBlock = nextBlockHeight
