@@ -295,7 +295,8 @@ const (
 	// Market account for holding in-flight spot passive orders funds.
 	AccountTypeHolding AccountType = proto.AccountType_ACCOUNT_TYPE_HOLDING
 	// Market account per LP to receive liquidity fees.
-	AccountTypeLPLiquidityFees AccountType = proto.AccountType_ACCOUNT_TYPE_LP_LIQUIDITY_FEES
-
+	AccountTypeLPLiquidityFees                AccountType = proto.AccountType_ACCOUNT_TYPE_LP_LIQUIDITY_FEES
 	AccountTypeLiquidityFeesBonusDistribution AccountType = proto.AccountType_ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION
+	AccountTypeVestingRewards                 AccountType = proto.AccountType_ACCOUNT_TYPE_VESTING_REWARDS
+	AccountTypeVestedRewards                  AccountType = proto.AccountType_ACCOUNT_TYPE_VESTED_REWARDS
 )

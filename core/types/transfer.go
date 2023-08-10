@@ -205,4 +205,5 @@ const (
 	// perps funding.
 	TransferTypePerpFundingLoss TransferType = proto.TransferType_TRANSFER_TYPE_PERP_FUNDING_LOSS
 	TransferTypePerpFundingWin  TransferType = proto.TransferType_TRANSFER_TYPE_PERP_FUNDING_WIN
+	TransferTypeRewardsVested   TransferType = proto.TransferType_TRANSFER_TYPE_REWARDS_VESTED
 )

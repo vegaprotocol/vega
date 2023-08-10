@@ -198,6 +198,16 @@ const (
 
 	// how much to scale the number of proposed blocks used for performance calculation.
 	ValidatorPerformanceScalingFactor = "validator.performance.scaling.factor"
+
+	RewardsVestingBaseRate       = "rewards.vesting.baseRate"
+	RewardVestingMinimumTransfer = "rewards.vesting.minimumTransfer"
+
+	// Referral program.
+	ReferralProgramMaxBenefitTiers                         = "referralProgram.maxBenefitTiers"
+	ReferralProgramMaxReferralRewardFactor                 = "referralProgram.maxReferralRewardFactor"
+	ReferralProgramMaxReferralDiscountFactor               = "referralProgram.maxReferralDiscountFactor"
+	ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch = "referralProgram.maxPartyNotionalVolumeByQuantumPerEpoch"
+	ReferralProgramMinStakedVegaTokens                     = "referralProgram.minStakedVegaTokens"
 )
 
 var Deprecated = map[string]struct{}{
@@ -207,6 +217,8 @@ var Deprecated = map[string]struct{}{
 }
 
 var AllKeys = map[string]struct{}{
+	RewardVestingMinimumTransfer:                             {},
+	RewardsVestingBaseRate:                                   {},
 	SpotMarketTradingEnabled:                                 {},
 	PerpsMarketTradingEnabled:                                {},
 	EthereumOraclesEnabled:                                   {},
@@ -344,4 +356,9 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionMinMultisigUpdates:                         {},
 	MarketSuccessorLaunchWindow:                              {},
 	SpamProtectionMaxStopOrdersPerMarket:                     {},
+	ReferralProgramMaxBenefitTiers:                           {},
+	ReferralProgramMaxReferralRewardFactor:                   {},
+	ReferralProgramMaxReferralDiscountFactor:                 {},
+	ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch:   {},
+	ReferralProgramMinStakedVegaTokens:                       {},
 }

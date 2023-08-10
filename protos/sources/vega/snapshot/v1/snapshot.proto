@@ -133,6 +133,7 @@ message Payload {
     HoldingAccountTracker holding_account_tracker = 69;
     Teams teams = 70;
     TeamSwitches team_switches = 71;
+    Vesting vesting = 72;
   }
 }
 
@@ -1064,4 +1065,29 @@ message TeamSwitch {
   string from_team_id = 1;
   string to_team_id = 2;
   string party_id = 3;
+}
+
+message Vesting {
+  repeated PartyReward parties_reward = 1;
+}
+
+message PartyReward {
+  string party = 1;
+  repeated AssetLocked asset_locked = 2;
+  repeated InVesting in_vesting = 3;
+}
+
+message AssetLocked {
+  string asset = 1;
+  repeated EpochBalance epoch_balances = 2;
+}
+
+message EpochBalance {
+  uint64 epoch = 1;
+  string balance = 2;
+}
+
+message InVesting {
+  string asset = 1;
+  string balance = 2;
 }

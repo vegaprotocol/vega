@@ -907,6 +907,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadTeamsFromProto(dt)
 	case *snapshot.Payload_TeamSwitches:
 		ret.Data = PayloadTeamSwitchesFromProto(dt)
+	case *snapshot.Payload_Vesting:
+		ret.Data = PayloadVestingFromProto(dt)
 	}
 
 	return ret
@@ -1069,6 +1071,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_Teams:
 		ret.Data = dt
 	case *snapshot.Payload_TeamSwitches:
+		ret.Data = dt
+	case *snapshot.Payload_Vesting:
 		ret.Data = dt
 	}
 	return &ret
