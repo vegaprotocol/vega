@@ -64,9 +64,7 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 1000         | 10000          | 10            |
-    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 0.1
-    # max_oi: max open interest
+      | 1000 | TRADING_MODE_CONTINUOUS | 1 | 500 | 1500 | 1000 | 10000 | 10 |
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -156,23 +154,27 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
       | party2 | ETH/MAR22 | buy  | 7 | 1002 | 1 | TYPE_LIMIT | TIF_GTC | party1-buy  |
       | party2 | ETH/MAR22 | sell | 4 | 1100 | 0 | TYPE_LIMIT | TIF_GTC | party2-sell |
 
-    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
+    Then the following transfers should happen:
+      | from   | to     | from account         | to account                  | market id | amount | asset |
+      | party2 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 7      | USD   |
 
-    Then the parties should have the following account balances:
-      | party | asset | market id | margin     | general |
-      | lp1   | USD   | ETH/MAR22 | 1999999660 | 0       |
-
-    # lp fee got cumulated since the distribution period is large
+# this transfer goes from party2’s general account to market liquidity fee account
     And the accumulated liquidity fees should be "27" for the market "ETH/MAR22"
+    And the party "lp1" lp liquidity fee account balance should be "0" for the market "ETH/MAR22"
 
-    # lp fee got paid to lp1 when time is over the "fee.distributionTimeStep"
+#lp fee got paid from market liquidity fee account to lp1 liquidity fee account when time is over the "market.liquidity.providers.fee.calculationTimeStep"
     Then time is updated to "2024-12-30T00:30:05Z"
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    And the party "lp1" lp liquidity fee account balance should be "27" for the market "ETH/MAR22"
 
-# Then the following transfers should happen:
-#   | from   | to  | from account                | to account           | market id | amount | asset |
-#   | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 27     | USD   |
+    Then the following transfers should happen:
+      | from   | to  | from account                | to account                     | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 27     | USD   |
+
+    Then the parties should have the following profit and loss:
+      | party | volume | unrealised pnl | realised pnl |
+      | lp1   | -7     | -343           | 0            |
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin     | general |
