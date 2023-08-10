@@ -41,6 +41,7 @@
 - [8969](https://github.com/vegaprotocol/vega/issues/8969) - Improve wiring of internal time triggers for perpetual markets.
 - [9001](https://github.com/vegaprotocol/vega/issues/9001) - Improve wiring of perpetual markets into the data node.
 - [8985](https://github.com/vegaprotocol/vega/issues/8985) - Improve snapshot restore of internal time triggers for perpetual markets.
+- [8817](https://github.com/vegaprotocol/vega/issues/8817) - Add interest term to perpetual funding payment calculation.
 - [8756](https://github.com/vegaprotocol/vega/issues/8756) - Settlement and margin implementation for `PERPS`.
 - [8887](https://github.com/vegaprotocol/vega/pull/8887) - Remove differences for snapshot loading when the `nullchain` is used instead of `tendermint`
 - [8973](https://github.com/vegaprotocol/vega/issues/8973) - Do some more validation on Ethereum call specifications, add explicit error types to improve reporting

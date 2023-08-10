@@ -74,6 +74,15 @@ func IntFromBig(b *big.Int) (*Int, bool) {
 	}, false
 }
 
+// IntFromDecimal returns the Int part of a decimal.
+func IntFromDecimal(d Decimal) (*Int, bool) {
+	u, ok := d.Uint()
+	return &Int{
+		U: &Uint{*u},
+		s: d.IsPositive(),
+	}, ok
+}
+
 // IsNegative tests if the stored value is negative
 // true if < 0
 // false if >= 0.
