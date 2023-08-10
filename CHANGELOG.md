@@ -52,6 +52,7 @@
 - [8917](https://github.com/vegaprotocol/vega/issues/8917) - Support teams engine snapshots
 - [9007](https://github.com/vegaprotocol/vega/issues/9007) - Add reward vesting mechanisms.
 - [8914](https://github.com/vegaprotocol/vega/issues/8914) - Add referral network parameters.
+- [9023](https://github.com/vegaprotocol/vega/issues/9023) - Add tx decode/encode vegatool
 
 ### 🐛 Fixes
 
