@@ -111,6 +111,12 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
       | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
       | party2 | ETH/MAR22 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party2-buy  |
 
+    Then the following transfers should happen:
+      | from   | to     | from account         | to account                  | market id | amount | asset |
+      | party2 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 600000 | USD   |
+
+    And the accumulated liquidity fees should be "600000" for the market "ETH/MAR22"
+
     And the parties should have the following account balances:
       | party  | asset | market id | margin     | general       | bond       |
       | lp1    | USD | ETH/MAR22 | 1653960171 | 9998346029829 | 10000      |
@@ -133,13 +139,9 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
     Then debug transfers
     And the following transfers should happen:
       | from   | to     | from account            | to account                       | market id | amount | asset |
-      | party2 | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/MAR22 | 80000  | USD   |
-      | party2 |        | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/MAR22 | 200000 | USD   |
-      | party2 |        | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/MAR22 | 600000 | USD   |
-      | market | party1 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/MAR22 | 80000  | USD   |
-# | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 5 | USD |
-    #   | market | lp2    | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL             | ETH/MAR22 | 599    | USD   |
-    #   | market | lp3    | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL             | ETH/MAR22 | 599394 | USD   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 5      | USD |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 599    | USD |
+      | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 599394 | USD |
 
     And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
