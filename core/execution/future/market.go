@@ -1029,6 +1029,10 @@ func (m *Market) uncrossOrderAtAuctionEnd(ctx context.Context) {
 }
 
 func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error {
+	// a perpetual market cannot be terminated with a given settlement price as such
+	if m.perp {
+		changes.SettlementPrice = num.UintZero()
+	}
 	_, blockHash := vegacontext.TraceIDFromContext(ctx)
 	// make deterministic ID for this market, concatenate
 	// the block hash and the market ID
@@ -3704,9 +3708,9 @@ func (m *Market) tradingTerminatedWithFinalState(ctx context.Context, finalState
 		m.mkt.TradingMode = types.MarketTradingModeNoTrading
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		var err error
-		if settlementDataInAsset != nil {
+		if !m.perp && settlementDataInAsset != nil {
 			m.settlementDataWithLock(ctx, finalState, settlementDataInAsset)
-		} else if m.settlementDataInMarket != nil {
+		} else if !m.perp && m.settlementDataInMarket != nil {
 			// because we need to be able to perform the MTM settlement, only update market state now
 			settlementDataInAsset, err = m.tradableInstrument.Instrument.Product.ScaleSettlementDataToDecimalPlaces(m.settlementDataInMarket, m.assetDP)
 			if err != nil {
