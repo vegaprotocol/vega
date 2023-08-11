@@ -53,6 +53,7 @@
 - [8917](https://github.com/vegaprotocol/vega/issues/8917) - Support teams engine snapshots
 - [9007](https://github.com/vegaprotocol/vega/issues/9007) - Add reward vesting mechanisms.
 - [8914](https://github.com/vegaprotocol/vega/issues/8914) - Add referral network parameters.
+- [8761](https://github.com/vegaprotocol/vega/issues/8761) - Add terminating `PERPS` via governance.
 
 ### 🐛 Fixes
 

@@ -73,7 +73,8 @@ type Perpetual struct {
 	// the time that this period interval started
 	startedAt int64
 	// asset decimal places
-	assetDP uint32
+	assetDP    uint32
+	terminated bool
 }
 
 func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, marketID string, oe OracleEngine, broker Broker, assetDP uint32) (*Perpetual, error) {
@@ -142,7 +143,7 @@ func (p *Perpetual) Value(markPrice *num.Uint) (*num.Uint, error) {
 
 // IsTradingTerminated - returns true when the oracle has signalled terminated market.
 func (p *Perpetual) IsTradingTerminated() bool {
-	return false
+	return p.terminated
 }
 
 // GetAsset return the asset used by the future.
@@ -152,8 +153,10 @@ func (p *Perpetual) GetAsset() string {
 
 func (p *Perpetual) UnsubscribeTradingTerminated(ctx context.Context) {
 	// we could just use this call to indicate the underlying perp was terminted
-	// p.oracle.unsubAll(ctx)
-	p.log.Panic("not expecting trading terminated with perpetual")
+	p.log.Info("unsubscribed trading data and cue oracle on perpetual termination", logging.String("quote-name", p.p.QuoteName))
+	p.terminated = true
+	p.oracle.unsubAll(ctx)
+	p.sendFinalSettlementCue(ctx)
 }
 
 func (p *Perpetual) UnsubscribeSettlementData(ctx context.Context) {
@@ -285,6 +288,22 @@ func (p *Perpetual) receiveSettlementCue(ctx context.Context, data dscommon.Data
 		p.log.Debug("perp schedule trigger processed")
 	}
 	return nil
+}
+
+func (p *Perpetual) sendFinalSettlementCue(ctx context.Context) {
+	// get the max time to include all data-points in the final settlement
+	max := int64(0)
+	for _, i := range p.internal {
+		if i.t > max {
+			max = i.t
+		}
+	}
+	for _, e := range p.external {
+		if e.t > max {
+			max = e.t
+		}
+	}
+	p.handleSettlementCue(ctx, max)
 }
 
 // handleSettlementCue will be hooked up as a subscriber to the oracle data for the notification that the settlement period has ended.

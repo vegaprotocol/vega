@@ -326,6 +326,10 @@ func (m *Market) IsSucceeded() bool {
 	return m.succeeded
 }
 
+func (m *Market) IsPerp() bool {
+	return m.perp
+}
+
 func (m *Market) StopSnapshots() {
 	m.matching.StopSnapshots()
 	m.position.StopSnapshots()
