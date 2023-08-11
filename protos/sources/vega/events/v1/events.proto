@@ -14,12 +14,13 @@ import "vega/vega.proto";
 option go_package = "code.vegaprotocol.io/vega/protos/vega/events/v1";
 
 message PartyActivityStreak {
-  uint64 active_for = 1;
-  uint64 inactive_for = 2;
-  bool is_active = 3;
-  string reward_distribution_activity_multiplier = 4;
-  string reward_vesting_activity_multiplier = 5;
-  uint64 epoch = 6;
+  string party = 1;
+  uint64 active_for = 2;
+  uint64 inactive_for = 3;
+  bool is_active = 4;
+  string reward_distribution_activity_multiplier = 5;
+  string reward_vesting_activity_multiplier = 6;
+  uint64 epoch = 7;
 }
 
 // Event notifying on the details of a funding interval for a perpetuals market.

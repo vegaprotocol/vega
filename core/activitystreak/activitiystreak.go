@@ -20,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"golang.org/x/exp/maps"
 
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -184,16 +185,45 @@ func (e *Engine) update(ctx context.Context, epochSeq uint64) {
 		}
 	}
 
-	evts := []events.Event{}
-	for party, v := range parties {
-		pas := e.updateStreak(party, v.OpenVolume, v.TradeVolume, epochSeq)
-		evts = append(evts, events.NewPartyActivityStreakEvent(ctx, pas))
+	partiesKey := maps.Keys(parties)
+	sort.Strings(partiesKey)
+
+	for _, party := range partiesKey {
+		v := parties[party]
+		e.updateStreak(party, v.OpenVolume, v.TradeVolume)
 	}
 
+	// now iterate over all existing parties,
+	// and update the ones for which nothing happen during the epoch
+	// and send the events
+	partiesKey = maps.Keys(e.partiesActivity)
+	sort.Strings(partiesKey)
+	evts := []events.Event{}
+	for _, party := range partiesKey {
+		if _, ok := parties[party]; !ok {
+			e.updateStreak(party, num.UintZero(), num.UintZero())
+		}
+
+		evt := e.makeEvent(party, epochSeq)
+		evts = append(evts, events.NewPartyActivityStreakEvent(ctx, evt))
+	}
 	e.broker.SendBatch(evts)
 }
 
-func (e *Engine) updateStreak(party string, openVolume, tradeVolume *num.Uint, epochSeq uint64) *eventspb.PartyActivityStreak {
+func (e *Engine) makeEvent(party string, epochSeq uint64) *eventspb.PartyActivityStreak {
+	partyActivity := e.partiesActivity[party]
+	return &eventspb.PartyActivityStreak{
+		Party:                                party,
+		ActiveFor:                            partyActivity.Active,
+		InactiveFor:                          partyActivity.Inactive,
+		IsActive:                             partyActivity.IsActive(),
+		RewardDistributionActivityMultiplier: partyActivity.RewardDistributionActivityMultiplier.String(),
+		RewardVestingActivityMultiplier:      partyActivity.RewardVestingActivityMultiplier.String(),
+		Epoch:                                epochSeq,
+	}
+}
+
+func (e *Engine) updateStreak(party string, openVolume, tradeVolume *num.Uint) {
 	partyActivity, ok := e.partiesActivity[party]
 	if !ok {
 		partyActivity = &PartyActivity{
@@ -216,13 +246,4 @@ func (e *Engine) updateStreak(party string, openVolume, tradeVolume *num.Uint, e
 	}
 
 	partyActivity.UpdateMultipliers(e.benefitTiers)
-
-	return &eventspb.PartyActivityStreak{
-		ActiveFor:                            partyActivity.Active,
-		InactiveFor:                          partyActivity.Inactive,
-		IsActive:                             partyActivity.IsActive(),
-		RewardDistributionActivityMultiplier: partyActivity.RewardDistributionActivityMultiplier.String(),
-		RewardVestingActivityMultiplier:      partyActivity.RewardVestingActivityMultiplier.String(),
-		Epoch:                                epochSeq,
-	}
 }

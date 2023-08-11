@@ -380,5 +380,4 @@ func TestStreak(t *testing.T) {
 		assert.Equal(t, num.MustDecimalFromString("1"), tradeX)
 		assert.Equal(t, num.MustDecimalFromString("1"), volumeX)
 	})
-
 }
