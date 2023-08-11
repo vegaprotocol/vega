@@ -120,4 +120,4 @@ Feature: Simple test creating a perpetual market.
     When the market states are updated through governance:
       | market id | state                              |
       | ETH/DEC19 | MARKET_STATE_UPDATE_TYPE_TERMINATE |
-    Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
+    Then the market state should be "STATE_CLOSED" for the market "ETH/DEC19"

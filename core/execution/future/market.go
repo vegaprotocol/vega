@@ -1029,9 +1029,12 @@ func (m *Market) uncrossOrderAtAuctionEnd(ctx context.Context) {
 }
 
 func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error {
+	settleData := m.getLastTradedPrice()
 	// a perpetual market cannot be terminated with a given settlement price as such
 	if m.perp {
 		changes.SettlementPrice = num.UintZero()
+	} else {
+		settleData = num.UintZero().Mul(changes.SettlementPrice, m.priceFactor)
 	}
 	_, blockHash := vegacontext.TraceIDFromContext(ctx)
 	// make deterministic ID for this market, concatenate
@@ -1043,8 +1046,8 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 	defer func() { m.idgen = nil }()
 	if changes.UpdateType == types.MarketStateUpdateTypeTerminate {
 		m.uncrossOrderAtAuctionEnd(ctx)
-		// terminate and settle
-		m.tradingTerminatedWithFinalState(ctx, types.MarketStateClosed, num.UintZero().Mul(changes.SettlementPrice, m.priceFactor))
+		// terminate and settle data (either last traded price for perp, or settlement data provided via governance
+		m.tradingTerminatedWithFinalState(ctx, types.MarketStateClosed, settleData)
 	} else if changes.UpdateType == types.MarketStateUpdateTypeSuspend {
 		m.mkt.State = types.MarketStateSuspendedViaGovernance
 		m.mkt.TradingMode = types.MarketTradingModeSuspendedViaGovernance
@@ -3708,9 +3711,9 @@ func (m *Market) tradingTerminatedWithFinalState(ctx context.Context, finalState
 		m.mkt.TradingMode = types.MarketTradingModeNoTrading
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		var err error
-		if !m.perp && settlementDataInAsset != nil {
+		if settlementDataInAsset != nil {
 			m.settlementDataWithLock(ctx, finalState, settlementDataInAsset)
-		} else if !m.perp && m.settlementDataInMarket != nil {
+		} else if m.settlementDataInMarket != nil {
 			// because we need to be able to perform the MTM settlement, only update market state now
 			settlementDataInAsset, err = m.tradableInstrument.Instrument.Product.ScaleSettlementDataToDecimalPlaces(m.settlementDataInMarket, m.assetDP)
 			if err != nil {

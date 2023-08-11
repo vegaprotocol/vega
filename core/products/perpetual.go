@@ -132,8 +132,30 @@ func (p *Perpetual) ScaleSettlementDataToDecimalPlaces(price *num.Numeric, dp ui
 
 // Settle a position against the perpetual.
 func (p *Perpetual) Settle(entryPriceInAsset, settlementData *num.Uint, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, rounding num.Decimal, err error) {
-	p.log.Panic("not implemented")
-	return nil, false, num.DecimalZero(), nil
+	amount, neg := settlementData.Delta(settlementData, entryPriceInAsset)
+	// Make sure net position is positive
+	if netFractionalPosition.IsNegative() {
+		netFractionalPosition = netFractionalPosition.Neg()
+		neg = !neg
+	}
+
+	if p.log.IsDebug() {
+		p.log.Debug("settlement",
+			logging.String("entry-price-in-asset", entryPriceInAsset.String()),
+			logging.String("settlement-data-in-asset", settlementData.String()),
+			logging.String("net-fractional-position", netFractionalPosition.String()),
+			logging.String("amount-in-decimal", netFractionalPosition.Mul(amount.ToDecimal()).String()),
+			logging.String("amount-in-uint", amount.String()),
+		)
+	}
+	a, rem := num.UintFromDecimalWithFraction(netFractionalPosition.Mul(amount.ToDecimal()))
+
+	return &types.FinancialAmount{
+		Asset:  p.p.SettlementAsset,
+		Amount: a,
+	}, neg, rem, nil
+	// p.log.Panic("not implemented")
+	// return nil, false, num.DecimalZero(), nil
 }
 
 // Value - returns the nominal value of a unit given a current mark price.
