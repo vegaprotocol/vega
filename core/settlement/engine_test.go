@@ -70,8 +70,8 @@ func TestMarkToMarket(t *testing.T) {
 	// add this test case because we had a runtime panic on the trades map earlier
 	t.Run("Trade adds new party, immediately closing out with themselves", testAddNewPartySelfTrade)
 	t.Run("Test MTM settle when the network is closed out", testMTMNetworkZero)
-
 	t.Run("Test settling a funding period", testSettlingAFundingPeriod)
+	t.Run("Test settling a funding period with rounding error", testSettlingAFundingPeriodRoundingError)
 }
 
 func TestMTMWinDistribution(t *testing.T) {
@@ -120,20 +120,60 @@ func testSettlingAFundingPeriod(t *testing.T) {
 	assert.Equal(t, "100", transfers[1].Transfer().Amount.Amount.String())
 	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[1].Transfer().Type)
 
-	// negative funding payement, long pays short
+	// negative funding payement, long pays short, also expect loss to come before win
 	fundingPayment, _ = num.IntFromString("-10", 10)
 	transfers, round = engine.SettleFundingPeriod(ctx, positions, fundingPayment)
 	require.True(t, round.IsZero())
 	require.Len(t, transfers, 2)
 	assert.Equal(t, "100", transfers[0].Transfer().Amount.Amount.String())
-	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[0].Transfer().Type)
+	assert.Equal(t, types.TransferTypePerpFundingLoss, transfers[0].Transfer().Type)
 	assert.Equal(t, "100", transfers[1].Transfer().Amount.Amount.String())
-	assert.Equal(t, types.TransferTypePerpFundingLoss, transfers[1].Transfer().Type)
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[1].Transfer().Type)
 
 	// no positions produces no transfers
 	transfers, round = engine.SettleFundingPeriod(ctx, []events.MarketPosition{}, fundingPayment)
 	require.Nil(t, round)
 	assert.Len(t, transfers, 0)
+}
+
+func testSettlingAFundingPeriodRoundingError(t *testing.T) {
+	engine := getTestEngineWithFactor(t, 100)
+	defer engine.Finish()
+	ctx := context.Background()
+
+	testPositions := []testPos{
+		{
+			party: "party1",
+			size:  1000010,
+		},
+		{
+			party: "party3",
+			size:  -1000005,
+		},
+		{
+			party: "party4",
+			size:  -1000005,
+		},
+	}
+
+	positions := make([]events.MarketPosition, 0, len(testPositions))
+	for _, p := range testPositions {
+		positions = append(positions, p)
+	}
+
+	fundingPayment, _ := num.IntFromString("10", 10)
+	transfers, round := engine.SettleFundingPeriod(ctx, positions, fundingPayment)
+	require.Len(t, transfers, 3)
+	assert.Equal(t, "100001", transfers[0].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingLoss, transfers[0].Transfer().Type)
+	assert.Equal(t, "100000", transfers[1].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[1].Transfer().Type)
+	assert.Equal(t, "100000", transfers[2].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[2].Transfer().Type)
+
+	// here 100001 will be sent to the settlement account, but only 200000 we be paid out due to rounding,
+	// so we expect a remainder of 1
+	require.Equal(t, "1", round.String())
 }
 
 func testMTMWinNoZero(t *testing.T) {
