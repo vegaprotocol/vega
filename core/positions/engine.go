@@ -59,6 +59,36 @@ type Engine struct {
 	// keep track of open, but distressed positions, this speeds things up when creating the event data
 	// and when generating snapshots
 	distressedPos map[string]struct{}
+
+	// keeps track of the lowest openInterest
+	// per party over a whole epoch
+	// should be reseted by the market on new epochs
+	partiesOpenInterest map[string]*openInterestRecord
+}
+
+type openInterestRecord struct {
+	Latest uint64
+	Lowest uint64
+}
+
+// RecordLatest will save the new openInterest for a party
+// but also register it as the lowest if it goes below
+// the existing lowest openInterest.
+func (o *openInterestRecord) RecordLatest(new uint64) {
+	o.Latest = new
+	if o.Lowest > new {
+		o.Lowest = new
+	}
+}
+
+// Reset will be used at the end of the epoch,
+// in order to set the lowest for the epoch to
+// be the latest of the previous epoch.
+func (o *openInterestRecord) Reset() uint64 {
+	lowest := o.Lowest
+	o.Lowest = o.Latest
+
+	return lowest
 }
 
 // New instantiates a new positions engine.
@@ -68,14 +98,15 @@ func New(log *logging.Logger, config Config, marketID string, broker Broker) *En
 	log.SetLevel(config.Level.Get())
 
 	e := &Engine{
-		marketID:         marketID,
-		Config:           config,
-		log:              log,
-		positions:        map[string]*MarketPosition{},
-		positionsCpy:     []events.MarketPosition{},
-		broker:           broker,
-		updatedPositions: map[string]struct{}{},
-		distressedPos:    map[string]struct{}{},
+		marketID:            marketID,
+		Config:              config,
+		log:                 log,
+		positions:           map[string]*MarketPosition{},
+		positionsCpy:        []events.MarketPosition{},
+		broker:              broker,
+		updatedPositions:    map[string]struct{}{},
+		distressedPos:       map[string]struct{}{},
+		partiesOpenInterest: map[string]*openInterestRecord{},
 	}
 	e.positionUpdated = e.bufferPosition
 	if config.StreamPositionVerbose {
@@ -175,6 +206,8 @@ func (e *Engine) RegisterOrder(ctx context.Context, order *types.Order) *MarketP
 		e.positions[order.Party] = pos
 		// append the pointer to the slice as well
 		e.positionsCpy = append(e.positionsCpy, pos)
+		// create the entry in the open interest map
+		e.partiesOpenInterest[order.Party] = &openInterestRecord{}
 	}
 
 	pos.RegisterOrder(e.log, order)
@@ -253,6 +286,11 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade, passiveO
 	}
 
 	pos.UpdateOnOrderChange(e.log, passiveOrder.Side, passiveOrder.Price, trade.Size, false)
+	var posSize uint64
+	if pos.size > 0 {
+		posSize = uint64(pos.size)
+	}
+	e.partiesOpenInterest[pos.partyID].RecordLatest(posSize)
 
 	e.positionUpdated(ctx, pos)
 
@@ -314,6 +352,16 @@ func (e *Engine) Update(ctx context.Context, trade *types.Trade, passiveOrder, a
 	e.positionUpdated(ctx, buyer)
 	e.positionUpdated(ctx, seller)
 
+	var buyerSize, sellerSize uint64
+	if buyer.size > 0 {
+		buyerSize = uint64(buyer.size)
+	}
+	if seller.size > 0 {
+		sellerSize = uint64(seller.size)
+	}
+	e.partiesOpenInterest[buyer.partyID].RecordLatest(buyerSize)
+	e.partiesOpenInterest[seller.partyID].RecordLatest(sellerSize)
+
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Positions Updated for trade",
 			logging.Trade(*trade),
@@ -337,6 +385,7 @@ func (e *Engine) RemoveDistressed(parties []events.MarketPosition) []events.Mark
 		// remove from the map
 		delete(e.positions, party)
 		delete(e.distressedPos, party)
+		delete(e.partiesOpenInterest, party)
 		// remove from the slice
 		for i := range e.positionsCpy {
 			if e.positionsCpy[i].Party() == party {
@@ -518,9 +567,24 @@ func (e *Engine) GetOpenPositionCount() uint64 {
 	return total
 }
 
+// GetPartiesLowestOpenInterestForEpoch will return a map of parties
+// and minimal open interest for the epoch, it is meant to be called
+// at the end of the epoch, and will reset the lowest open interest
+// of the party to the latest open interest recored for the epoch.
+func (e *Engine) GetPartiesLowestOpenInterestForEpoch() map[string]uint64 {
+	out := map[string]uint64{}
+
+	for party, oi := range e.partiesOpenInterest {
+		out[party] = oi.Reset()
+	}
+
+	return out
+}
+
 func (e *Engine) remove(p *MarketPosition) {
 	// delete from the map first
 	delete(e.positions, p.partyID)
+	delete(e.partiesOpenInterest, p.partyID)
 	delete(e.distressedPos, p.partyID) // in case party was previously flagged as distressed
 
 	// remove from the slice
