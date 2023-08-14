@@ -5317,7 +5317,24 @@ type DataSourceSpecConfigurationTime {
   conditions: [Condition]!
 }
 
-union InternalDataSourceKind = DataSourceSpecConfigurationTime
+"Trigger for an internal time data source"
+type InternalTimeTrigger {
+  "Trigger when the vega time is greater or equal to this time, in Unix seconds"
+  initial: Int
+  """
+  Repeat the trigger every n seconds after the initial. If no time for initial was specified,
+  begin repeating immediately
+  """
+  every: Int
+}
+
+"DataSourceSpecConfigurationTimeTrigger is the internal data source used for emitting timestamps automatically using predefined intervals and conditions"
+type DataSourceSpecConfigurationTimeTrigger {
+  conditions: [Condition]!
+  triggers: [InternalTimeTrigger]!
+}
+
+union InternalDataSourceKind = DataSourceSpecConfigurationTime | DataSourceSpecConfigurationTimeTrigger
 
 """
 DataSourceDefinitionInternal is the top level object used for all internal data sources.

@@ -377,6 +377,11 @@ type ComplexityRoot struct {
 		Conditions func(childComplexity int) int
 	}
 
+	DataSourceSpecConfigurationTimeTrigger struct {
+		Conditions func(childComplexity int) int
+		Triggers   func(childComplexity int) int
+	}
+
 	DataSourceSpecPerpetualBinding struct {
 		SettlementDataProperty     func(childComplexity int) int
 		SettlementScheduleProperty func(childComplexity int) int
@@ -745,6 +750,11 @@ type ComplexityRoot struct {
 
 	InstrumentMetadata struct {
 		Tags func(childComplexity int) int
+	}
+
+	InternalTimeTrigger struct {
+		Every   func(childComplexity int) int
+		Initial func(childComplexity int) int
 	}
 
 	KeyRotation struct {
@@ -3761,6 +3771,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DataSourceSpecConfigurationTime.Conditions(childComplexity), true
 
+	case "DataSourceSpecConfigurationTimeTrigger.conditions":
+		if e.complexity.DataSourceSpecConfigurationTimeTrigger.Conditions == nil {
+			break
+		}
+
+		return e.complexity.DataSourceSpecConfigurationTimeTrigger.Conditions(childComplexity), true
+
+	case "DataSourceSpecConfigurationTimeTrigger.triggers":
+		if e.complexity.DataSourceSpecConfigurationTimeTrigger.Triggers == nil {
+			break
+		}
+
+		return e.complexity.DataSourceSpecConfigurationTimeTrigger.Triggers(childComplexity), true
+
 	case "DataSourceSpecPerpetualBinding.settlementDataProperty":
 		if e.complexity.DataSourceSpecPerpetualBinding.SettlementDataProperty == nil {
 			break
@@ -5184,6 +5208,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentMetadata.Tags(childComplexity), true
+
+	case "InternalTimeTrigger.every":
+		if e.complexity.InternalTimeTrigger.Every == nil {
+			break
+		}
+
+		return e.complexity.InternalTimeTrigger.Every(childComplexity), true
+
+	case "InternalTimeTrigger.initial":
+		if e.complexity.InternalTimeTrigger.Initial == nil {
+			break
+		}
+
+		return e.complexity.InternalTimeTrigger.Initial(childComplexity), true
 
 	case "KeyRotation.blockHeight":
 		if e.complexity.KeyRotation.BlockHeight == nil {
@@ -20221,6 +20259,106 @@ func (ec *executionContext) fieldContext_DataSourceSpecConfigurationTime_conditi
 	return fc, nil
 }
 
+func (ec *executionContext) _DataSourceSpecConfigurationTimeTrigger_conditions(ctx context.Context, field graphql.CollectedField, obj *vega.DataSourceSpecConfigurationTimeTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataSourceSpecConfigurationTimeTrigger_conditions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Conditions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*v12.Condition)
+	fc.Result = res
+	return ec.marshalNCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐCondition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataSourceSpecConfigurationTimeTrigger_conditions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataSourceSpecConfigurationTimeTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "operator":
+				return ec.fieldContext_Condition_operator(ctx, field)
+			case "value":
+				return ec.fieldContext_Condition_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataSourceSpecConfigurationTimeTrigger_triggers(ctx context.Context, field graphql.CollectedField, obj *vega.DataSourceSpecConfigurationTimeTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataSourceSpecConfigurationTimeTrigger_triggers(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Triggers, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*v12.InternalTimeTrigger)
+	fc.Result = res
+	return ec.marshalNInternalTimeTrigger2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐInternalTimeTrigger(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataSourceSpecConfigurationTimeTrigger_triggers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataSourceSpecConfigurationTimeTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "initial":
+				return ec.fieldContext_InternalTimeTrigger_initial(ctx, field)
+			case "every":
+				return ec.fieldContext_InternalTimeTrigger_every(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InternalTimeTrigger", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DataSourceSpecPerpetualBinding_settlementDataProperty(ctx context.Context, field graphql.CollectedField, obj *DataSourceSpecPerpetualBinding) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DataSourceSpecPerpetualBinding_settlementDataProperty(ctx, field)
 	if err != nil {
@@ -30053,6 +30191,88 @@ func (ec *executionContext) fieldContext_InstrumentMetadata_tags(ctx context.Con
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InternalTimeTrigger_initial(ctx context.Context, field graphql.CollectedField, obj *v12.InternalTimeTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InternalTimeTrigger_initial(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Initial, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int64)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InternalTimeTrigger_initial(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InternalTimeTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InternalTimeTrigger_every(ctx context.Context, field graphql.CollectedField, obj *v12.InternalTimeTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InternalTimeTrigger_every(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Every, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalOInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InternalTimeTrigger_every(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InternalTimeTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -77553,6 +77773,13 @@ func (ec *executionContext) _InternalDataSourceKind(ctx context.Context, sel ast
 			return graphql.Null
 		}
 		return ec._DataSourceSpecConfigurationTime(ctx, sel, obj)
+	case vega.DataSourceSpecConfigurationTimeTrigger:
+		return ec._DataSourceSpecConfigurationTimeTrigger(ctx, sel, &obj)
+	case *vega.DataSourceSpecConfigurationTimeTrigger:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._DataSourceSpecConfigurationTimeTrigger(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -79830,6 +80057,41 @@ func (ec *executionContext) _DataSourceSpecConfigurationTime(ctx context.Context
 		case "conditions":
 
 			out.Values[i] = ec._DataSourceSpecConfigurationTime_conditions(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var dataSourceSpecConfigurationTimeTriggerImplementors = []string{"DataSourceSpecConfigurationTimeTrigger", "InternalDataSourceKind"}
+
+func (ec *executionContext) _DataSourceSpecConfigurationTimeTrigger(ctx context.Context, sel ast.SelectionSet, obj *vega.DataSourceSpecConfigurationTimeTrigger) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, dataSourceSpecConfigurationTimeTriggerImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DataSourceSpecConfigurationTimeTrigger")
+		case "conditions":
+
+			out.Values[i] = ec._DataSourceSpecConfigurationTimeTrigger_conditions(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "triggers":
+
+			out.Values[i] = ec._DataSourceSpecConfigurationTimeTrigger_triggers(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -82691,6 +82953,35 @@ func (ec *executionContext) _InstrumentMetadata(ctx context.Context, sel ast.Sel
 		case "tags":
 
 			out.Values[i] = ec._InstrumentMetadata_tags(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var internalTimeTriggerImplementors = []string{"InternalTimeTrigger"}
+
+func (ec *executionContext) _InternalTimeTrigger(ctx context.Context, sel ast.SelectionSet, obj *v12.InternalTimeTrigger) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, internalTimeTriggerImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InternalTimeTrigger")
+		case "initial":
+
+			out.Values[i] = ec._InternalTimeTrigger_initial(ctx, field, obj)
+
+		case "every":
+
+			out.Values[i] = ec._InternalTimeTrigger_every(ctx, field, obj)
 
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -98202,6 +98493,44 @@ func (ec *executionContext) marshalNInternalDataSourceKind2codeᚗvegaprotocol�
 	return ec._InternalDataSourceKind(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNInternalTimeTrigger2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐInternalTimeTrigger(ctx context.Context, sel ast.SelectionSet, v []*v12.InternalTimeTrigger) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOInternalTimeTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐInternalTimeTrigger(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐInterval(ctx context.Context, v interface{}) (vega.Interval, error) {
 	res, err := marshallers.UnmarshalInterval(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -101886,6 +102215,16 @@ func (ec *executionContext) marshalOIcebergOrder2ᚖcodeᚗvegaprotocolᚗioᚋv
 	return ec._IcebergOrder(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOInt2int64(ctx context.Context, v interface{}) (int64, error) {
+	res, err := graphql.UnmarshalInt64(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+	res := graphql.MarshalInt64(v)
+	return res
+}
+
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
 	if v == nil {
 		return nil, nil
@@ -101916,6 +102255,29 @@ func (ec *executionContext) marshalOInt2ᚖint32(ctx context.Context, sel ast.Se
 	}
 	res := graphql.MarshalInt32(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint64(ctx context.Context, v interface{}) (*int64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt64(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint64(ctx context.Context, sel ast.SelectionSet, v *int64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalInt64(*v)
+	return res
+}
+
+func (ec *executionContext) marshalOInternalTimeTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐInternalTimeTrigger(ctx context.Context, sel ast.SelectionSet, v *v12.InternalTimeTrigger) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._InternalTimeTrigger(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOKeyRotation2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐKeyRotation(ctx context.Context, sel ast.SelectionSet, v []*v1.KeyRotation) graphql.Marshaler {

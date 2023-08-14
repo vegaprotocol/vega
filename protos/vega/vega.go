@@ -50,3 +50,4 @@ func (UpdateSpotMarketConfiguration_LogNormal) IsRiskModel()              {}
 func (UpdateSpotMarketConfiguration_Simple) IsRiskModel()                 {}
 func (NewSpotMarketConfiguration_Simple) IsRiskModel()                    {}
 func (NewSpotMarketConfiguration_LogNormal) IsRiskModel()                 {}
+func (DataSourceSpecConfigurationTimeTrigger) IsInternalDataSourceKind()  {}
