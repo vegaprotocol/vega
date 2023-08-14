@@ -582,6 +582,11 @@ func (m *MarketLiquidity) AmendLiquidityProvision(
 func (m *MarketLiquidity) CancelLiquidityProvision(ctx context.Context, party string) error {
 	lp := m.liquidityEngine.LiquidityProvisionByPartyID(party)
 	lpa := m.liquidityEngine.PendingProvisionByPartyID(party)
+
+	if lp == nil && lpa == nil {
+		return ErrPartyHasNoExistingLiquidityProvision
+	}
+
 	var amountToRelease *num.Uint
 	if lpa != nil {
 		amountToRelease = lpa.CommitmentAmount.Clone()
