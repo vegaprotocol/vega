@@ -26,5 +26,5 @@ func TestTxReturnsErrorWhenCheckingIncompatibleTransaction(t *testing.T) {
 	}
 
 	err := cmd.Execute(nil)
-	assert.Error(t, err, "")
+	assert.Error(t, err)
 }

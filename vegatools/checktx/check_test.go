@@ -73,14 +73,7 @@ func TestCheckTransactionsInDirectoryAccuratelyReportsFailures(t *testing.T) {
 	transactionForFailScenario, err := CreateTransaction()
 	assert.NoErrorf(t, err, "error occurred when attempting to create encoded test data")
 
-	marshaller := jsonpb.Marshaler{
-		OrigName:     false,
-		EnumsAsInts:  false,
-		EmitDefaults: false,
-		Indent:       "",
-		AnyResolver:  nil,
-	}
-
+	marshaller := jsonpb.Marshaler{}
 	failScenarioJson, err := marshaller.MarshalToString(transactionForFailScenario)
 	assert.NoErrorf(t, err, "error occurred when attempting to marshal transaction json to string. Err: %v", err)
 	failScenarioNonProtoEncode := base64.StdEncoding.EncodeToString([]byte(failScenarioJson))

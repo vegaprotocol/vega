@@ -11,7 +11,7 @@ import (
 
 const (
 	TxVersion      = 3
-	TestAlgoName   = "testalgo"
+	TestAlgoName   = "testAlgo"
 	TestPubKeyName = "testPubKey"
 )
 
@@ -22,7 +22,6 @@ var TestInputData = v1.InputData{Nonce: 123, BlockHeight: 456, Command: &v1.Inpu
 	Asset:           "test asset",
 	Amount:          "123",
 	Reference:       "test ref",
-	Kind:            nil,
 }}}
 
 func CreateTransaction() (*v1.Transaction, error) {
