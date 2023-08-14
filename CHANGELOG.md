@@ -81,6 +81,7 @@
 - [8962](https://github.com/vegaprotocol/vega/issues/8962) - Refreshed pegged iceberg orders remain tracked as pegged orders.
 - [8837](https://github.com/vegaprotocol/vega/issues/8837) - Remove successor entries from snapshot if they will be removed next tick.
 - [8868](https://github.com/vegaprotocol/vega/issues/8868) - Fix `oracle_specs` table null value error.
+- [9038](https://github.com/vegaprotocol/vega/issues/9038) - New market proposals are no longer in both the active and enacted slices to prevent pointer sharing.
 - [8878](https://github.com/vegaprotocol/vega/issues/8878) - Fix amend to consider market decimals when checking for sufficient funds.
 - [8698](https://github.com/vegaprotocol/vega/issues/8698) - Final settlement rounding can be off by a 1 factor instead of just one.
 - [8861](https://github.com/vegaprotocol/vega/issues/8861) - Fix successor proposals never leaving proposed state.
