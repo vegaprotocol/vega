@@ -111,6 +111,8 @@
 - [8992](https://github.com/vegaprotocol/vega/issues/8992) - allow for 0 time step for sla fee calculation
 - [8988](https://github.com/vegaprotocol/vega/issues/8988) - allow amend/cancel of pending liquidity provision
 - [8993](https://github.com/vegaprotocol/vega/issues/8993) - handle the case where commitment min time fraction is 1
+- [9066](https://github.com/vegaprotocol/vega/issues/9066) - Ensure a party have a liquidity provision before trying to cancel
+
 
 ## 0.72.1
 
