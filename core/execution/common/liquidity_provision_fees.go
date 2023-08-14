@@ -286,6 +286,12 @@ func (m *MarketLiquidity) distributeFeesBonusesAndApplyPenalties(
 	ctx context.Context,
 	slaPenalties liquidity.SlaPenalties,
 ) {
+	// No LP penalties available so no need to continue.
+	// This could happen during opening auction.
+	if len(slaPenalties.PenaltiesPerParty) < 1 {
+		return
+	}
+
 	partyIDs := sortedKeys(slaPenalties.PenaltiesPerParty)
 
 	// first process bond penalties.
