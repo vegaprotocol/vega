@@ -357,6 +357,11 @@ func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
 }
 
 func (m *Market) onEpochEndPartiesStats() {
+	if m.markPrice == nil {
+		// no mark price yet, so no reason to calculate any of those
+		return
+	}
+
 	if m.stats == nil {
 		m.stats = &types.MarketStats{}
 	}
@@ -376,7 +381,7 @@ func (m *Market) onEpochEndPartiesStats() {
 	partiesOpenInterest := m.position.GetPartiesLowestOpenInterestForEpoch()
 	for p, oi := range partiesOpenInterest {
 		// volume
-		openInterestVolume := num.UintZero().Mul(num.NewUint(oi), m.lastTradedPrice)
+		openInterestVolume := num.UintZero().Mul(num.NewUint(oi), m.markPrice)
 		// scale to position decimal
 		scaledOpenInterest := openInterestVolume.ToDecimal().Div(m.positionFactor)
 		// apply quantum
@@ -389,7 +394,7 @@ func (m *Market) onEpochEndPartiesStats() {
 	partiesTradedVolume := m.position.GetPartiesTradedVolumeForEpoch()
 	for p, oi := range partiesTradedVolume {
 		// volume
-		tradedVolume := num.UintZero().Mul(num.NewUint(oi), m.lastTradedPrice)
+		tradedVolume := num.UintZero().Mul(num.NewUint(oi), m.markPrice)
 		// scale to position decimal
 		scaledOpenInterest := tradedVolume.ToDecimal().Div(m.positionFactor)
 		// apply quantum
@@ -397,11 +402,12 @@ func (m *Market) onEpochEndPartiesStats() {
 			scaledOpenInterest.Div(assetQuantum),
 		)
 	}
-
 }
 
-func (m *Market) GetPartiesStats() *types.MarketStats {
-	return m.stats
+func (m *Market) GetPartiesStats() (stats *types.MarketStats) {
+	stats, m.stats = m.stats, &types.MarketStats{}
+
+	return stats
 }
 
 func (m *Market) IsSucceeded() bool {

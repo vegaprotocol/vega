@@ -1757,6 +1757,7 @@ func (e *Engine) GetMarketCounters() map[string]*types.MarketCounters {
 	}
 	return counters
 }
+
 func (e *Engine) GetMarketStats() map[string]*types.MarketStats {
 	stats := map[string]*types.MarketStats{}
 	for id, cm := range e.allMarkets {
