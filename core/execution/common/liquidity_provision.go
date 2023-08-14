@@ -233,7 +233,10 @@ func (m *MarketLiquidity) applyPendingProvisions(
 	return m.liquidityEngine.ApplyPendingProvisions(ctx, now)
 }
 
-func (m *MarketLiquidity) syncPartyCommitmentWithBondAccount(appliedLiquidityProvisions map[string]*types.LiquidityProvision) {
+func (m *MarketLiquidity) syncPartyCommitmentWithBondAccount(
+	ctx context.Context,
+	appliedLiquidityProvisions map[string]*types.LiquidityProvision,
+) {
 	if len(appliedLiquidityProvisions) == 0 {
 		appliedLiquidityProvisions = map[string]*types.LiquidityProvision{}
 	}
@@ -242,11 +245,28 @@ func (m *MarketLiquidity) syncPartyCommitmentWithBondAccount(appliedLiquidityPro
 		acc, err := m.collateral.GetPartyBondAccount(m.marketID, partyID, m.asset)
 		if err != nil {
 			// the bond account should be definitely there at this point
-			m.log.Panic("can not get LP party bond account", logging.Error(err))
+			m.log.Panic("can not get LP party bond account",
+				logging.Error(err),
+				logging.PartyID(partyID),
+			)
 		}
 
 		// lp provision and bond account are in sync, no need to change
 		if provision.CommitmentAmount.EQ(acc.Balance) {
+			continue
+		}
+
+		if acc.Balance.IsZero() {
+			if err := m.liquidityEngine.CancelLiquidityProvision(ctx, partyID); err != nil {
+				// the commitment should exists
+				m.log.Panic("can not cancel liquidity provision commitment",
+					logging.Error(err),
+					logging.PartyID(partyID),
+				)
+			}
+
+			provision.CommitmentAmount = acc.Balance.Clone()
+			appliedLiquidityProvisions[partyID] = provision
 			continue
 		}
 
@@ -273,7 +293,7 @@ func (m *MarketLiquidity) OnEpochStart(
 	m.liquidityEngine.ResetSLAEpoch(now, markPrice, midPrice, positionFactor)
 
 	appliedProvisions := m.applyPendingProvisions(ctx, now, targetStake)
-	m.syncPartyCommitmentWithBondAccount(appliedProvisions)
+	m.syncPartyCommitmentWithBondAccount(ctx, appliedProvisions)
 }
 
 func (m *MarketLiquidity) OnEpochEnd(ctx context.Context, t time.Time) {
