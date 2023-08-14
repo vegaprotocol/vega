@@ -41,6 +41,26 @@ type governanceSnapshotState struct {
 	serialisedNodeValidation []byte
 }
 
+func (e *Engine) OnStateLoaded(ctx context.Context) error {
+	// previously new market proposals that passed but where not enacted existed in both
+	// the active and enacted slices, but now this has changed and it is only ever in one
+	// or the other.
+
+	// so for upgrade purposes any active proposals in the enacted slice needs to be removed
+	// from the enacted slice
+	for _, p := range e.activeProposals {
+		for i := range e.enactedProposals {
+			if p.ID == e.enactedProposals[i].ID {
+				e.log.Warn("removing proposal from enacted since it is also in active", logging.String("id", p.ID))
+				e.enactedProposals = append(e.enactedProposals[:i], e.enactedProposals[i+1:]...)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // serialiseActiveProposals returns the engine's active proposals as marshalled bytes.
 func (e *Engine) serialiseActiveProposals() ([]byte, error) {
 	pending := make([]*types.ProposalData, 0, len(e.activeProposals))
