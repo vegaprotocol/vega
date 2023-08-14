@@ -9,6 +9,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | market.liquidity.targetstake.triggering.ratio       | 0.1   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | limits.markets.maxPeggedOrders                      | 2     |
+      | validators.epoch.length                             | 5s    |
     And the average block duration is "1"
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
@@ -93,6 +94,9 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     And the parties should have the following margin levels:
       | party  | market id | maintenance |
       | party0 | ETH/DEC21 | 0           |
+    
+    And the network moves ahead "7" blocks
+
     Then debug liquidity provision events
     And the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status           |
