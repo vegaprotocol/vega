@@ -16,7 +16,7 @@ def commitHash = 'UNKNOWN'
 
 pipeline {
     agent {
-        label params.NODE_LABEL
+        label "core-build"
     }
     options {
         skipDefaultCheckout true
@@ -45,6 +45,9 @@ pipeline {
         CGO_ENABLED = 0
         GO111MODULE = 'on'
         BUILD_UID="${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
+        GOPATH = "/jenkins/GOPATH"
+        GOBIN = "${env.GOPATH}/bin"
+        PATH = "${env.GOBIN}:${env.PATH}"
     }
 
     stages {
@@ -167,6 +170,14 @@ pipeline {
         //
         // End LINTERS
         //
+
+        stage('Cache go packages') {
+            steps {
+                script {
+                    sh "whoami"
+                }
+            }
+        }
 
         //
         // Begin TESTS
@@ -315,11 +326,11 @@ pipeline {
                     }
                 }
                 stage('protos') {
-                    environment {
-                        GOPATH = "${env.WORKSPACE}/GOPATH"
-                        GOBIN = "${env.GOPATH}/bin"
-                        PATH = "${env.GOBIN}:${env.PATH}"
-                    }
+                    // environment {
+                    //     GOPATH = "${env.WORKSPACE}/GOPATH"
+                    //     GOBIN = "${env.GOPATH}/bin"
+                    //     PATH = "${env.GOBIN}:${env.PATH}"
+                    // }
                     stages {
                         stage('Install dependencies') {
                             // We are using specific tools versions
