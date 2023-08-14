@@ -837,10 +837,6 @@ func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mk
 		mkt.OnMarketValueWindowLengthUpdate(e.npv.marketValueWindowLength)
 	}
 
-	if !e.npv.bondPenaltyFactor.Equal(num.DecimalFromInt64(-1)) {
-		mkt.BondPenaltyFactorUpdate(ctx, e.npv.bondPenaltyFactor)
-	}
-
 	if !e.npv.maxLiquidityFee.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(e.npv.maxLiquidityFee)
 	}
