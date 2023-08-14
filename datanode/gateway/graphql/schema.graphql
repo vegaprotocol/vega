@@ -3589,9 +3589,9 @@ enum TransferType {
   "Distributes performance bonus from market bonus to liquidity provider's general account."
   TRANSFER_TYPE_SLA_PERFORMANCE_BONUS_DISTRIBUTE
   "Funds deducted from margin account after a perpetuals funding loss."
-  TRANSFER_TYPE_PERP_FUNDING_LOSS
+  TRANSFER_TYPE_PERPPETUALS_FUNDING_LOSS
   "Funds added to margin account after a perpetuals funding gain."
-  TRANSFER_TYPE_PERP_FUNDING_WIN
+  TRANSFER_TYPE_PERPETUALS_FUNDING_WIN
   "Funds moved from the vesting account to the vested account once the vesting period is reached."
   TRANSFER_TYPE_REWARDS_VESTED
 }
