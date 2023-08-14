@@ -157,11 +157,11 @@ func UintFromString(str string, base int) (*Uint, bool) {
 	return UintFromBig(b)
 }
 
-// MustUintFromString creat a new Uint from a string
-// interpreted using the give base.
+// MustUintFromString creates a new Uint from a string
+// interpreted using the given base.
 // A big.Int is used to read the string, so
-// all error related to big.Int parsing applied here.
-// will panic if an error/overflow happened.
+// all errors related to big.Int parsing are applied here.
+// The core will panic if an error/overflow happens.
 func MustUintFromString(str string, base int) *Uint {
 	b, ok := big.NewInt(0).SetString(str, base)
 	if !ok {

@@ -84,7 +84,7 @@ func TestSnapshot(t *testing.T) {
 
 	t.Run("setting up engine 1", func(t *testing.T) {
 		e1.marketsStats.EXPECT().GetMarketStats().Times(2).Return(
-			map[string]types.MarketStats{
+			map[string]*types.MarketStats{
 				"market1": {
 					PartiesOpenNotionalVolume: map[string]*num.Uint{
 						"party1": num.NewUint(100),
@@ -201,7 +201,7 @@ func epochForward(t *testing.T, e *testSnapshotEngine, name string) {
 	t.Helper()
 	t.Run(fmt.Sprintf("moving time for %v", name), func(t *testing.T) {
 		e.marketsStats.EXPECT().GetMarketStats().Times(1).Return(
-			map[string]types.MarketStats{},
+			map[string]*types.MarketStats{},
 		)
 
 		e.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(

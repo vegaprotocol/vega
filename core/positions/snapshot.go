@@ -106,7 +106,7 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 			}
 
 			if v.TradedVolume != nil {
-				e.partiesTradedVolume[v.Party] = *v.TradedVolume
+				e.partiesTradedSize[v.Party] = *v.TradedVolume
 			}
 		}
 
@@ -151,7 +151,7 @@ func (e *SnapshotEngine) serialise() ([]byte, error) {
 			LatestOpenInterest: poi.Latest,
 		}
 
-		if tv, ok := e.partiesTradedVolume[party]; ok {
+		if tv, ok := e.partiesTradedSize[party]; ok {
 			partyRecord.TradedVolume = ptr.From(tv)
 		}
 

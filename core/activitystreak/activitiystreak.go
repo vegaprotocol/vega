@@ -62,7 +62,7 @@ func (p *PartyActivity) UpdateMultipliers(benefitTiers []*types.ActivityStreakBe
 }
 
 type MarketsStatsAggregator interface {
-	GetMarketStats() map[string]types.MarketStats
+	GetMarketStats() map[string]*types.MarketStats
 }
 
 type Broker interface {

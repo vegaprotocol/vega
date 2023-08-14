@@ -1093,6 +1093,7 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_ReferralSets:
 		ret.Data = dt
 	case *snapshot.Payload_ActivityStreak:
+		ret.Data = dt
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}

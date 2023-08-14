@@ -64,7 +64,7 @@ func (t tstReporter) Fatalf(format string, args ...interface{}) {
 
 type DummyASVM struct{}
 
-func (DummyASVM) Get(_ string) num.Decimal {
+func (DummyASVM) GetRewardsVestingMultiplier(_ string) num.Decimal {
 	return num.MustDecimalFromString("0.01")
 }
 

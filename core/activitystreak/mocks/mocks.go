@@ -71,10 +71,10 @@ func (m *MockMarketsStatsAggregator) EXPECT() *MockMarketsStatsAggregatorMockRec
 }
 
 // GetMarketStats mocks base method.
-func (m *MockMarketsStatsAggregator) GetMarketStats() map[string]types.MarketStats {
+func (m *MockMarketsStatsAggregator) GetMarketStats() map[string]*types.MarketStats {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMarketStats")
-	ret0, _ := ret[0].(map[string]types.MarketStats)
+	ret0, _ := ret[0].(map[string]*types.MarketStats)
 	return ret0
 }
 

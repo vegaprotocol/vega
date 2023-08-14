@@ -67,7 +67,7 @@ type Engine struct {
 
 	// keep track of the traded volume during the epoch
 	// will be reset
-	partiesTradedVolume map[string]uint64
+	partiesTradedSize map[string]uint64
 }
 
 type openInterestRecord struct {
@@ -111,7 +111,7 @@ func New(log *logging.Logger, config Config, marketID string, broker Broker) *En
 		updatedPositions:    map[string]struct{}{},
 		distressedPos:       map[string]struct{}{},
 		partiesOpenInterest: map[string]*openInterestRecord{},
-		partiesTradedVolume: map[string]uint64{},
+		partiesTradedSize:   map[string]uint64{},
 	}
 	e.positionUpdated = e.bufferPosition
 	if config.StreamPositionVerbose {
@@ -296,7 +296,7 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade, passiveO
 		posSize = uint64(pos.size)
 	}
 	e.partiesOpenInterest[pos.partyID].RecordLatest(posSize)
-	e.partiesTradedVolume[pos.partyID] += uint64(size)
+	e.partiesTradedSize[pos.partyID] += uint64(size)
 
 	e.positionUpdated(ctx, pos)
 
@@ -366,9 +366,9 @@ func (e *Engine) Update(ctx context.Context, trade *types.Trade, passiveOrder, a
 		sellerSize = uint64(seller.size)
 	}
 	e.partiesOpenInterest[buyer.partyID].RecordLatest(buyerSize)
-	e.partiesTradedVolume[buyer.partyID] += trade.Size
+	e.partiesTradedSize[buyer.partyID] += trade.Size
 	e.partiesOpenInterest[seller.partyID].RecordLatest(sellerSize)
-	e.partiesTradedVolume[seller.partyID] += trade.Size
+	e.partiesTradedSize[seller.partyID] += trade.Size
 
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Positions Updated for trade",
@@ -592,7 +592,7 @@ func (e *Engine) GetPartiesLowestOpenInterestForEpoch() map[string]uint64 {
 // GetPartiesTradedVolumeForEpoch will return a map of parties
 // and their traded volume recorded during this epoch.
 func (e *Engine) GetPartiesTradedVolumeForEpoch() (out map[string]uint64) {
-	out, e.partiesTradedVolume = e.partiesTradedVolume, map[string]uint64{}
+	out, e.partiesTradedSize = e.partiesTradedSize, map[string]uint64{}
 
 	return out
 }

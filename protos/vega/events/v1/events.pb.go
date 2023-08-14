@@ -228,7 +228,7 @@ const (
 	BusEventType_BUS_EVENT_TYPE_REFERRAL_SET_CREATED BusEventType = 70
 	// Event indicating a referee joined a set.
 	BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_REFERRAL_SET BusEventType = 71
-	// Event indicating the update activity streak for a party
+	// Event indicating the updated activity streak for a party
 	BusEventType_BUS_EVENT_TYPE_PARTY_ACTIVITY_STREAK BusEventType = 72
 	// Event indicating a market related event, for example when a market opens
 	BusEventType_BUS_EVENT_TYPE_MARKET BusEventType = 101
@@ -695,18 +695,26 @@ func (ERC20MultiSigSignerEvent_Type) EnumDescriptor() ([]byte, []int) {
 	return file_vega_events_v1_events_proto_rawDescGZIP(), []int{13, 0}
 }
 
+// The updated activity streak of a party at end of epoch
 type PartyActivityStreak struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Party                                string `protobuf:"bytes,1,opt,name=party,proto3" json:"party,omitempty"`
-	ActiveFor                            uint64 `protobuf:"varint,2,opt,name=active_for,json=activeFor,proto3" json:"active_for,omitempty"`
-	InactiveFor                          uint64 `protobuf:"varint,3,opt,name=inactive_for,json=inactiveFor,proto3" json:"inactive_for,omitempty"`
-	IsActive                             bool   `protobuf:"varint,4,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
+	// The party.
+	Party string `protobuf:"bytes,1,opt,name=party,proto3" json:"party,omitempty"`
+	// How many epoch this party has been active for.
+	ActiveFor uint64 `protobuf:"varint,2,opt,name=active_for,json=activeFor,proto3" json:"active_for,omitempty"`
+	// how many epoch this party has been inactive for.
+	InactiveFor uint64 `protobuf:"varint,3,opt,name=inactive_for,json=inactiveFor,proto3" json:"inactive_for,omitempty"`
+	// Is this party considered active or not.
+	IsActive bool `protobuf:"varint,4,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
+	// The current rewards distribution multiplier for this party.
 	RewardDistributionActivityMultiplier string `protobuf:"bytes,5,opt,name=reward_distribution_activity_multiplier,json=rewardDistributionActivityMultiplier,proto3" json:"reward_distribution_activity_multiplier,omitempty"`
-	RewardVestingActivityMultiplier      string `protobuf:"bytes,6,opt,name=reward_vesting_activity_multiplier,json=rewardVestingActivityMultiplier,proto3" json:"reward_vesting_activity_multiplier,omitempty"`
-	Epoch                                uint64 `protobuf:"varint,7,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	// The vesting multiplier for this party.
+	RewardVestingActivityMultiplier string `protobuf:"bytes,6,opt,name=reward_vesting_activity_multiplier,json=rewardVestingActivityMultiplier,proto3" json:"reward_vesting_activity_multiplier,omitempty"`
+	// The epoch when these informations were accurate.
+	Epoch uint64 `protobuf:"varint,7,opt,name=epoch,proto3" json:"epoch,omitempty"`
 }
 
 func (x *PartyActivityStreak) Reset() {
@@ -6895,7 +6903,7 @@ type BusEvent_RefereeJoinedReferralSet struct {
 }
 
 type BusEvent_PartyActivityStreak struct {
-	// Event notifying of an update for a party activity streak
+	// Event notifying of an update to a party's activity streak
 	PartyActivityStreak *PartyActivityStreak `protobuf:"bytes,170,opt,name=party_activity_streak,json=partyActivityStreak,proto3,oneof"`
 }
 

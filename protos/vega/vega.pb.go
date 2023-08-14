@@ -8395,11 +8395,13 @@ func (x *StakingTier) GetReferralRewardMultiplier() string {
 	return ""
 }
 
+// A list of activity streak benefit tiers
 type ActivityStreakBenefitTiers struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The tiers.
 	Tiers []*ActivityStreakBenefitTier `protobuf:"bytes,1,rep,name=tiers,proto3" json:"tiers,omitempty"`
 }
 
@@ -8442,14 +8444,18 @@ func (x *ActivityStreakBenefitTiers) GetTiers() []*ActivityStreakBenefitTier {
 	return nil
 }
 
+// An activity streak benefit tier
 type ActivityStreakBenefitTier struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The minimum number of epochs necessary for this tier.
 	MinimumActivityStreak uint64 `protobuf:"varint,1,opt,name=minimum_activity_streak,json=minimumActivityStreak,proto3" json:"minimum_activity_streak,omitempty"`
-	RewardMultiplier      string `protobuf:"bytes,2,opt,name=reward_multiplier,json=rewardMultiplier,proto3" json:"reward_multiplier,omitempty"`
-	VestingMultiplier     string `protobuf:"bytes,3,opt,name=vesting_multiplier,json=vestingMultiplier,proto3" json:"vesting_multiplier,omitempty"`
+	// The reward multiplier applicable for this tier.
+	RewardMultiplier string `protobuf:"bytes,2,opt,name=reward_multiplier,json=rewardMultiplier,proto3" json:"reward_multiplier,omitempty"`
+	// The vesting bonus applicable for this tier.
+	VestingMultiplier string `protobuf:"bytes,3,opt,name=vesting_multiplier,json=vestingMultiplier,proto3" json:"vesting_multiplier,omitempty"`
 }
 
 func (x *ActivityStreakBenefitTier) Reset() {

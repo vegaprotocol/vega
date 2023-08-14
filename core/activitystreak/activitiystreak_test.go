@@ -86,7 +86,7 @@ func TestStreak(t *testing.T) {
 
 	t.Run("add volume < min == 1x", func(t *testing.T) {
 		engine.marketsStats.EXPECT().GetMarketStats().Times(1).Return(
-			map[string]types.MarketStats{
+			map[string]*types.MarketStats{
 				"market1": {
 					PartiesOpenNotionalVolume: map[string]*num.Uint{
 						"party1": num.NewUint(20),
@@ -133,7 +133,7 @@ func TestStreak(t *testing.T) {
 
 	t.Run("add volume > min == increase multipliers", func(t *testing.T) {
 		engine.marketsStats.EXPECT().GetMarketStats().Times(1).Return(
-			map[string]types.MarketStats{
+			map[string]*types.MarketStats{
 				"market1": {
 					PartiesOpenNotionalVolume: map[string]*num.Uint{
 						"party1": num.NewUint(100),
@@ -180,7 +180,7 @@ func TestStreak(t *testing.T) {
 
 	t.Run("add volume > min many time == move to next tier", func(t *testing.T) {
 		engine.marketsStats.EXPECT().GetMarketStats().Times(6).Return(
-			map[string]types.MarketStats{
+			map[string]*types.MarketStats{
 				"market1": {
 					PartiesOpenNotionalVolume: map[string]*num.Uint{
 						"party1": num.NewUint(100),
@@ -232,7 +232,7 @@ func TestStreak(t *testing.T) {
 
 	t.Run("add volume < min less times than current streak == inactive but still have benefits", func(t *testing.T) {
 		engine.marketsStats.EXPECT().GetMarketStats().Times(4).Return(
-			map[string]types.MarketStats{
+			map[string]*types.MarketStats{
 				"market1": {
 					PartiesOpenNotionalVolume: map[string]*num.Uint{
 						"party1": num.NewUint(20),
@@ -284,7 +284,7 @@ func TestStreak(t *testing.T) {
 
 	t.Run("add volume > min again == becomes active again", func(t *testing.T) {
 		engine.marketsStats.EXPECT().GetMarketStats().Times(1).Return(
-			map[string]types.MarketStats{
+			map[string]*types.MarketStats{
 				"market1": {
 					PartiesOpenNotionalVolume: map[string]*num.Uint{
 						"party1": num.NewUint(100),
@@ -331,7 +331,7 @@ func TestStreak(t *testing.T) {
 
 	t.Run("add volume < min more times than current streak looses benefits", func(t *testing.T) {
 		engine.marketsStats.EXPECT().GetMarketStats().Times(11).Return(
-			map[string]types.MarketStats{
+			map[string]*types.MarketStats{
 				"market1": {
 					PartiesOpenNotionalVolume: map[string]*num.Uint{
 						"party1": num.NewUint(20),

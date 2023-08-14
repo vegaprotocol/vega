@@ -295,14 +295,14 @@ func newServices(
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, svcs.stakingAccounts, svcs.epochService, svcs.timeService)
 	}
 
-	svcs.activityStreak = activitystreak.NewSnapshotEngine(svcs.log, DummyMarketStatsAggregator{}, svcs.broker)
+	svcs.activityStreak = activitystreak.NewSnapshotEngine(svcs.log, svcs.executionEngine, svcs.broker)
 	svcs.epochService.NotifyOnEpoch(
 		svcs.activityStreak.OnEpochEvent,
 		svcs.activityStreak.OnEpochRestore,
 	)
 
 	svcs.vesting = vesting.NewSnapshotEngine(svcs.log, svcs.collateral, svcs.activityStreak, svcs.broker, svcs.assets)
-	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology, svcs.vesting, svcs.banking, nil)
+	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology, svcs.vesting, svcs.banking, svcs.activityStreak)
 
 	// register this after the rewards engine is created to make sure the on epoch is called in the right order.
 	svcs.epochService.NotifyOnEpoch(svcs.vesting.OnEpochEvent, svcs.vesting.OnEpochRestore)
@@ -837,10 +837,4 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 
 	// now add some watcher for our netparams
 	return svcs.netParams.Watch(watchers...)
-}
-
-type DummyMarketStatsAggregator struct{}
-
-func (DummyMarketStatsAggregator) GetMarketStats() map[string]types.MarketStats {
-	return nil
 }

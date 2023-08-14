@@ -352,9 +352,7 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	m.updateLiquidityFee(ctx)
 }
 
-func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
-	// TODO karel - implement
-}
+func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {}
 
 func (m *Market) onEpochEndPartiesStats() {
 	if m.markPrice == nil {
@@ -404,6 +402,14 @@ func (m *Market) onEpochEndPartiesStats() {
 	}
 }
 
+// GetPartiesStats is called at the end of the epoch, only once to
+// be sent to the activity streak engine. This is using the calculated
+// at the end of the epoch based on the countrer in the position engine.
+// This is never sent into a snapshot as it relies on the order the
+// epoch callback are executed. We expect the market OnEpoch to be called
+// first, and compute the data, then the activity tracker callback to be
+// called next, and retrieve the data through this method.
+// The stats are reseted before being returned.
 func (m *Market) GetPartiesStats() (stats *types.MarketStats) {
 	stats, m.stats = m.stats, &types.MarketStats{}
 
