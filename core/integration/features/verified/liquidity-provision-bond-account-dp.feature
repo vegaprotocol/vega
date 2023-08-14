@@ -112,7 +112,7 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1000      | 1000      | 142276       | 500000         | 40
+      | 1000 | TRADING_MODE_CONTINUOUS | 1 | 1000 | 1000 | 142276 | 500000 | 40 |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general  | bond   |
