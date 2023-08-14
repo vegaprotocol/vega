@@ -42,12 +42,7 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | lp1 | lprov | ETH/DEC19 | 100000            | 0.001 | amendmend  |
       | lp0 | lprov | ETH/DEC20 | 100000            | 0.001 | submission |
       | lp0 | lprov | ETH/DEC20 | 100000            | 0.001 | amendmend  |
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lprov  | ETH/DEC19 | 2         | 1                    | sell | ASK              | 100        | 55     |
-      | lprov  | ETH/DEC19 | 2         | 1                    | buy  | BID              | 100        | 55     |
-      | lprov  | ETH/DEC20 | 2         | 1                    | sell | ASK              | 100        | 55     |
-      | lprov  | ETH/DEC20 | 2         | 1                    | buy  | BID              | 100        | 55     |
+
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     # trading happens at the end of the open auction period
     Then the parties place the following orders:
@@ -60,6 +55,8 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | auxiliary1 | ETH/DEC20 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-10000 |
       | auxiliary2 | ETH/DEC20 | buy  | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-10    |
       | auxiliary1 | ETH/DEC20 | sell | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-s-10    |
+      | lprov      | ETH/DEC19 | sell | 100    | 1005  | 0                | TYPE_LIMIT | TIF_GTC | lp-s-100    |
+      | lprov      | ETH/DEC19 | buy  | 100000 | 1     | 0                | TYPE_LIMIT | TIF_GTC | lp-s-100    |
 
     When the opening auction period ends for market "ETH/DEC19"
     When the opening auction period ends for market "ETH/DEC20"
@@ -100,6 +97,8 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | sell | 1000  | 10     |
       | buy  | 5     | 5      |
       | buy  | 1     | 100000 |
+
+    And debug market data for "ETH/DEC20"
 
     # check margin initial level
     # trader2 and trader20 have open position of 40 now
