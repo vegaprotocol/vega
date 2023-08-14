@@ -83,10 +83,12 @@
 - [8908](https://github.com/vegaprotocol/vega/issues/8908) - A rejected parent market should result in all successors getting rejected, too.
 - [8953](https://github.com/vegaprotocol/vega/issues/8953) - Fix reward distribution when validator delegate to other validators
 - [8898](https://github.com/vegaprotocol/vega/issues/8898) - Fix auction uncrossing handling for spots
-- [8971](https://github.com/vegaprotocol/vega/issues/8971) - Record the epoch start time even in opening auction 
+- [8971](https://github.com/vegaprotocol/vega/issues/8971) - Record the epoch start time even in opening auction
 - [8992](https://github.com/vegaprotocol/vega/issues/8992) - allow for 0 time step for sla fee calculation
 - [8988](https://github.com/vegaprotocol/vega/issues/8988) - allow amend/cancel of pending liquidity provision
 - [8993](https://github.com/vegaprotocol/vega/issues/8993) - handle the case where commitment min time fraction is 1
+- [9066](https://github.com/vegaprotocol/vega/issues/9066) - Ensure a party have a liquidity provision before trying to cancel
+
 
 ## 0.72.1
 
