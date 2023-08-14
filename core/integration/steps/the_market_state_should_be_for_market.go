@@ -13,10 +13,15 @@
 package steps
 
 import (
+	"context"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+	vtypes "code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/num"
 	types "code.vegaprotocol.io/vega/protos/vega"
+	"github.com/cucumber/godog"
 )
 
 func TheMarketStateShouldBeForMarket(
@@ -55,6 +60,37 @@ func TheLastStateUpdateShouldBeForMarket(
 	return nil
 }
 
+func TheMarketStateIsUpdatedTo(exec Execution, data *godog.Table) error {
+	rows := parseStateUpdate(data)
+	ctx := vgcontext.WithTraceID(context.Background(), "deadbeef")
+	for _, r := range rows {
+		mu := marketUpdateGov{
+			row: r,
+		}
+		changes := &vtypes.MarketStateUpdateConfiguration{
+			MarketID:        mu.MarketID(),
+			SettlementPrice: mu.SettlementPrice(),
+			UpdateType:      mu.MarketStateUpdate(),
+		}
+		if err := exec.UpdateMarketState(ctx, changes); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+type marketUpdateGov struct {
+	row RowWrapper
+}
+
+func parseStateUpdate(data *godog.Table) []RowWrapper {
+	return StrictParseTable(data, []string{
+		"market id",
+		"state",
+		"settlement price",
+	}, nil)
+}
+
 func errMismatchedMarketState(market string, expectedMarketState, marketState types.Market_State) error {
 	return formatDiff(
 		fmt.Sprintf("unexpected market state for market \"%s\"", market),
@@ -65,4 +101,16 @@ func errMismatchedMarketState(market string, expectedMarketState, marketState ty
 			"market state": marketState.String(),
 		},
 	)
+}
+
+func (m marketUpdateGov) MarketID() string {
+	return m.row.MustStr("market id")
+}
+
+func (m marketUpdateGov) MarketStateUpdate() vtypes.MarketStateUpdateType {
+	return m.row.MustMarketUpdateState("state")
+}
+
+func (m marketUpdateGov) SettlementPrice() *num.Uint {
+	return m.row.MustUint("settlement price")
 }

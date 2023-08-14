@@ -48,4 +48,5 @@ type Execution interface {
 	AddSubmitOrderToBatch(submission *types.OrderSubmission, party string) error
 	ProcessBatch(ctx context.Context, party string) error
 	OnEpochEvent(ctx context.Context, epoch types.Epoch)
+	UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error
 }

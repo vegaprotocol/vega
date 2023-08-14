@@ -545,9 +545,9 @@ func (e *Engine) UpdateSpotMarket(ctx context.Context, marketConfig *types.Marke
 }
 
 func (e *Engine) VerifyUpdateMarketState(changes *types.MarketStateUpdateConfiguration) error {
-	// futures market
+	// futures or perps market
 	if market, ok := e.futureMarkets[changes.MarketID]; ok {
-		if changes.SettlementPrice == nil && changes.UpdateType == types.MarketStateUpdateTypeTerminate {
+		if changes.SettlementPrice == nil && changes.UpdateType == types.MarketStateUpdateTypeTerminate && !market.IsPerp() {
 			return fmt.Errorf("missing settlement price for governance initiated futures market termination")
 		}
 		state := market.GetMarketState()
