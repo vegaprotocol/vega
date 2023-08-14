@@ -560,7 +560,9 @@ func (e *Engine) SettleFundingPeriod(ctx context.Context, positions []events.Mar
 		return nil, nil
 	}
 
+	// colletral engine expects all the losses before the wins
 	transfers := make([]events.Transfer, 0, len(positions))
+	wins := make([]events.Transfer, 0, len(positions))
 	var delta num.Decimal
 	for _, p := range positions {
 		// per-party cash flow is -openVolume * fundingPayment
@@ -568,16 +570,20 @@ func (e *Engine) SettleFundingPeriod(ctx context.Context, positions []events.Mar
 
 		if !flow.IsZero() {
 			tf := e.getMtmTransfer(flow, neg, p, p.Party())
-			if tf.transfer != nil {
-				if tf.transfer.Type == types.TransferTypeMTMWin {
-					tf.transfer.Type = types.TransferTypePerpFundingWin
-					delta = delta.Add(rem)
-				} else {
-					tf.transfer.Type = types.TransferTypePerpFundingLoss
-					delta = delta.Sub(rem)
-				}
+
+			if tf.transfer == nil {
+				continue
 			}
-			transfers = append(transfers, tf)
+
+			if tf.transfer.Type == types.TransferTypeMTMWin {
+				tf.transfer.Type = types.TransferTypePerpFundingWin
+				wins = append(wins, tf)
+				delta = delta.Add(rem)
+			} else {
+				tf.transfer.Type = types.TransferTypePerpFundingLoss
+				transfers = append(transfers, tf)
+				delta = delta.Sub(rem)
+			}
 		}
 		if e.log.IsDebug() {
 			e.log.Debug("cash flow", logging.String("mid", e.market), logging.String("pid", p.Party()), logging.String("flow", flow.String()))
@@ -585,10 +591,14 @@ func (e *Engine) SettleFundingPeriod(ctx context.Context, positions []events.Mar
 	}
 	// we only care about the int part
 	round := num.UintZero()
-	// if delta > 0, the settlement account will have a non-zero balance at the end
+	// if delta > 0, the settlement account will have a non-zero balance at the end since due to rounding loss-amount > win-amount
 	if !delta.IsNegative() {
 		round, _ = num.UintFromDecimal(delta)
+		if e.log.IsDebug() {
+			e.log.Debug("expected leftover in settlement account given rounding issues", logging.String("round", round.String()))
+		}
 	}
+	transfers = append(transfers, wins...)
 	return transfers, round
 }
 
