@@ -277,6 +277,7 @@ type CommonMarket interface {
 	OnEpochRestore(ctx context.Context, epoch types.Epoch)
 	GetAssetForProposerBonus() string
 	GetMarketCounters() *types.MarketCounters
+	GetPartiesStats() *types.MarketStats
 	GetMarketState() types.MarketState
 	BlockEnd(context.Context)
 	UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error

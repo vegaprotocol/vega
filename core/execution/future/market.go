@@ -149,6 +149,8 @@ type Market struct {
 
 	minDuration time.Duration
 	perp        bool
+
+	stats *types.MarketStats
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -340,6 +342,8 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	case vegapb.EpochAction_EPOCH_ACTION_START:
 		m.liquidity.OnEpochStart(ctx, m.timeService.GetTimeNow(), m.markPrice, m.midPrice(), m.getTargetStake(), m.positionFactor)
 	case vegapb.EpochAction_EPOCH_ACTION_END:
+		// compute parties stats for the previous epoch
+		m.onEpochEndPartiesStats()
 		if !m.finalFeesDistributed {
 			m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow())
 		}
@@ -350,6 +354,54 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 
 func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
 	// TODO karel - implement
+}
+
+func (m *Market) onEpochEndPartiesStats() {
+	if m.stats == nil {
+		m.stats = &types.MarketStats{}
+	}
+
+	m.stats.PartiesOpenNotionalVolume = map[string]*num.Uint{}
+	m.stats.PartiesTotalTradeVolume = map[string]*num.Uint{}
+
+	assetQuantum, err := m.collateral.GetAssetQuantum(m.settlementAsset)
+	if err != nil {
+		m.log.Panic("couldn't get quantum for asset",
+			logging.MarketID(m.mkt.ID),
+			logging.AssetID(m.settlementAsset),
+		)
+	}
+
+	// first get the open interest per party
+	partiesOpenInterest := m.position.GetPartiesLowestOpenInterestForEpoch()
+	for p, oi := range partiesOpenInterest {
+		// volume
+		openInterestVolume := num.UintZero().Mul(num.NewUint(oi), m.lastTradedPrice)
+		// scale to position decimal
+		scaledOpenInterest := openInterestVolume.ToDecimal().Div(m.positionFactor)
+		// apply quantum
+		m.stats.PartiesOpenNotionalVolume[p], _ = num.UintFromDecimal(
+			scaledOpenInterest.Div(assetQuantum),
+		)
+	}
+
+	// first get the open interest per party
+	partiesTradedVolume := m.position.GetPartiesTradedVolumeForEpoch()
+	for p, oi := range partiesTradedVolume {
+		// volume
+		tradedVolume := num.UintZero().Mul(num.NewUint(oi), m.lastTradedPrice)
+		// scale to position decimal
+		scaledOpenInterest := tradedVolume.ToDecimal().Div(m.positionFactor)
+		// apply quantum
+		m.stats.PartiesTotalTradeVolume[p], _ = num.UintFromDecimal(
+			scaledOpenInterest.Div(assetQuantum),
+		)
+	}
+
+}
+
+func (m *Market) GetPartiesStats() *types.MarketStats {
+	return m.stats
 }
 
 func (m *Market) IsSucceeded() bool {

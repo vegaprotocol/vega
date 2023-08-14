@@ -1757,6 +1757,14 @@ func (e *Engine) GetMarketCounters() map[string]*types.MarketCounters {
 	}
 	return counters
 }
+func (e *Engine) GetMarketStats() map[string]*types.MarketStats {
+	stats := map[string]*types.MarketStats{}
+	for id, cm := range e.allMarkets {
+		stats[id] = cm.GetPartiesStats()
+	}
+
+	return stats
+}
 
 func (e *Engine) OnSuccessorMarketTimeWindowUpdate(ctx context.Context, window time.Duration) error {
 	// change in succession window length
