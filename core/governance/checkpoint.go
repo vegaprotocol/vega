@@ -38,7 +38,7 @@ func (e *Engine) Name() types.CheckpointName {
 }
 
 func (e *Engine) Checkpoint() ([]byte, error) {
-	if len(e.enactedProposals) == 0 {
+	if len(e.enactedProposals) == 0 && len(e.activeProposals) == 0 {
 		return nil, nil
 	}
 	cp := &checkpointpb.Proposals{
@@ -149,35 +149,51 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	return nil
 }
 
+func (e *Engine) isActiveMarket(marketID string) bool {
+	mktState, err := e.markets.GetMarketState(marketID)
+	// if the market is missing from the execution engine it means it's been already cancelled or settled or rejected
+	if err == types.ErrInvalidMarketID {
+		e.log.Info("not saving market proposal to checkpoint - market has already been removed", logging.String("market-id", marketID))
+		return false
+	}
+	if mktState == types.MarketStateTradingTerminated {
+		e.log.Info("not saving market proposal to checkpoint ", logging.String("market-id", marketID), logging.String("market-state", mktState.String()))
+		return false
+	}
+	return true
+}
+
 func (e *Engine) getCheckpointProposals() []*vega.Proposal {
 	ret := make([]*vega.Proposal, 0, len(e.enactedProposals))
+
 	for _, p := range e.enactedProposals {
 		switch p.Terms.Change.GetTermType() {
 		case types.ProposalTermsTypeNewMarket:
-			mktState, err := e.markets.GetMarketState(p.ID)
-			// if the market is missing from the execution engine it means it's been already cancelled or settled or rejected
-			if err == types.ErrInvalidMarketID {
-				e.log.Info("not saving market proposal to checkpoint - market has already been removed", logging.String("market-id", p.ID))
-				continue
-			}
-			if mktState == types.MarketStateTradingTerminated {
-				e.log.Info("not saving market proposal to checkpoint ", logging.String("market-id", p.ID), logging.String("market-state", mktState.String()))
+			if !e.isActiveMarket(p.ID) {
 				continue
 			}
 		case types.ProposalTermsTypeUpdateMarket:
-			mktState, err := e.markets.GetMarketState(p.MarketUpdate().MarketID)
-			// if the market is missing from the execution engine it means it's been already cancelled or settled or rejected
-			if err == types.ErrInvalidMarketID {
-				e.log.Info("not saving market update proposal to checkpoint - market has already been removed", logging.String("market-id", p.ID))
-				continue
-			}
-			if mktState == types.MarketStateTradingTerminated {
-				e.log.Info("not saving market update proposal to checkpoint ", logging.String("market-id", p.ID), logging.String("market-state", mktState.String()))
+			if !e.isActiveMarket(p.MarketUpdate().MarketID) {
 				continue
 			}
 		}
-
 		ret = append(ret, p.IntoProto())
 	}
+
+	// we also need to include new market proposals that have passed, but have no yet been enacted
+	// this is because they will exist in the execution engine in an opening auction and should
+	// be recreated on checkpoint restore.
+	for _, p := range e.activeProposals {
+		if !p.IsPassed() {
+			continue
+		}
+		switch p.Terms.Change.GetTermType() {
+		case types.ProposalTermsTypeNewMarket:
+			if e.isActiveMarket(p.ID) {
+				ret = append(ret, p.IntoProto())
+			}
+		}
+	}
+
 	return ret
 }

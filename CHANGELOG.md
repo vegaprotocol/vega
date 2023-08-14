@@ -18,6 +18,13 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
+## 0.72.8
+
+### 🐛 Fixes
+
+- [9038](https://github.com/vegaprotocol/vega/issues/9038) - New market proposals are no longer in both the active and enacted slices to prevent pointer sharing.
+
+
 ## 0.72.7
 
 ### 🐛 Fixes
