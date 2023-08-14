@@ -1029,13 +1029,6 @@ func (m *Market) uncrossOrderAtAuctionEnd(ctx context.Context) {
 }
 
 func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error {
-	settleData := m.getLastTradedPrice()
-	// a perpetual market cannot be terminated with a given settlement price as such
-	if m.perp {
-		changes.SettlementPrice = num.UintZero()
-	} else {
-		settleData = num.UintZero().Mul(changes.SettlementPrice, m.priceFactor)
-	}
 	_, blockHash := vegacontext.TraceIDFromContext(ctx)
 	// make deterministic ID for this market, concatenate
 	// the block hash and the market ID
@@ -1047,7 +1040,7 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 	if changes.UpdateType == types.MarketStateUpdateTypeTerminate {
 		m.uncrossOrderAtAuctionEnd(ctx)
 		// terminate and settle data (either last traded price for perp, or settlement data provided via governance
-		m.tradingTerminatedWithFinalState(ctx, types.MarketStateClosed, settleData)
+		m.tradingTerminatedWithFinalState(ctx, types.MarketStateClosed, num.UintZero().Mul(changes.SettlementPrice, m.priceFactor))
 	} else if changes.UpdateType == types.MarketStateUpdateTypeSuspend {
 		m.mkt.State = types.MarketStateSuspendedViaGovernance
 		m.mkt.TradingMode = types.MarketTradingModeSuspendedViaGovernance

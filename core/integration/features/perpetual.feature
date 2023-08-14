@@ -118,6 +118,6 @@ Feature: Simple test creating a perpetual market.
       | perp.ETH.value   | 977        | -1s         |
 
     When the market states are updated through governance:
-      | market id | state                              |
-      | ETH/DEC19 | MARKET_STATE_UPDATE_TYPE_TERMINATE |
+      | market id | state                              | settlement price |
+      | ETH/DEC19 | MARKET_STATE_UPDATE_TYPE_TERMINATE | 976              |
     Then the market state should be "STATE_CLOSED" for the market "ETH/DEC19"

@@ -87,9 +87,8 @@ func parseStateUpdate(data *godog.Table) []RowWrapper {
 	return StrictParseTable(data, []string{
 		"market id",
 		"state",
-	}, []string{
 		"settlement price",
-	})
+	}, nil)
 }
 
 func errMismatchedMarketState(market string, expectedMarketState, marketState types.Market_State) error {
@@ -113,8 +112,5 @@ func (m marketUpdateGov) MarketStateUpdate() vtypes.MarketStateUpdateType {
 }
 
 func (m marketUpdateGov) SettlementPrice() *num.Uint {
-	if !m.row.HasColumn("settlement price") {
-		return nil
-	}
 	return m.row.MustUint("settlement price")
 }
