@@ -53,12 +53,21 @@ func (e *Engine) EndBlock(markPrice *num.Uint, midPrice *num.Uint, positionFacto
 
 // CalculateSLAPenalties should be called at the and of epoch to calculate SLA penalties based on LP performance in the epoch.
 func (e *Engine) CalculateSLAPenalties(now time.Time) SlaPenalties {
+	penaltiesPerParty := map[string]*SlaPenalty{}
+
+	// Do not apply any penalties during opening auction
+	if e.auctionState.IsOpeningAuction() {
+		return SlaPenalties{
+			AllPartiesHaveFullFeePenalty: false,
+			PenaltiesPerParty:            penaltiesPerParty,
+		}
+	}
+
 	observedEpochLength := now.Sub(e.slaEpochStart)
 
 	one := num.DecimalOne()
 	partiesWithFullFeePenaltyCount := 0
 
-	penaltiesPerParty := map[string]*SlaPenalty{}
 	for party, commitment := range e.slaPerformance {
 		if !commitment.start.IsZero() {
 			commitment.s += now.Sub(commitment.start)
@@ -76,10 +85,8 @@ func (e *Engine) CalculateSLAPenalties(now time.Time) SlaPenalties {
 		// if LP meets commitment
 		// else LP does not meet commitment
 		if timeBookFraction.LessThan(e.slaParams.CommitmentMinTimeFraction) {
-			println(timeBookFraction.String())
 			feePenalty = one
 			bondPenalty = e.calculateBondPenalty(timeBookFraction)
-			println("bond penalty", e.marketID, bondPenalty.String(), "timeBookFraction", timeBookFraction.String(), "lNano", lNano, "commitment.s.Nanoseconds()", commitment.s.Nanoseconds())
 		} else {
 			feePenalty = e.calculateCurrentFeePenalty(timeBookFraction)
 			bondPenalty = num.DecimalZero()
