@@ -41,10 +41,6 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
       | id  | party | market id | commitment amount | fee | lp type    |
       | lp1 | lp    | ETH/MAR22 | 390500000000      | 0.3 | submission |
       | lp1 | lp    | ETH/MAR22 | 390500000000      | 0.3 | amendment  |
-    # And the parties place the following pegged iceberg orders:
-    #   | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-    #   | lp    | ETH/MAR22 | 434371524 | 1                    | sell | ASK              | 434371524  | 100000 |
-    #   | lp    | ETH/MAR22 | 2         | 1                    | buy  | BID              | 2          | 100000 |
 
     And the parties place the following orders:
       | party  | market id | side | volume    | price       | resulting trades | type       | tif     | reference  |
@@ -211,11 +207,7 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
       | id  | party | market id | commitment amount | fee | lp type    |
       | lp1 | lp    | ETH/MAR22 | 390500000000      | 0.3 | submission |
       | lp1 | lp    | ETH/MAR22 | 390500000000      | 0.3 | amendment  |
-    And the parties place the following pegged iceberg orders:
-      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lp    | ETH/MAR22 | 2         | 1                    | sell | ASK              | 13         | 10     |
-      | lp    | ETH/MAR22 | 2         | 1                    | buy  | BID              | 2          | 10     |
- 
+
     And the parties place the following orders:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference  |
       | party1 | ETH/MAR22 | buy  | 1      | 1000    | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-3  |
@@ -224,6 +216,8 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
       | party2 | ETH/MAR22 | sell | 5      | 9510    | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
       | party2 | ETH/MAR22 | sell | 5      | 12000   | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
       | party2 | ETH/MAR22 | sell | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-3 |
+      | lp     | ETH/MAR22 | buy  | 43438  | 8990    | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-4  |
+      | lp     | ETH/MAR22 | sell | 32515  | 12010   | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-4 |
 
     When the opening auction period ends for market "ETH/MAR22"
     Then the auction ends with a traded volume of "5" at a price of "9760"
@@ -248,7 +242,7 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
     # check the requried balances
     And the parties should have the following account balances:
       | party | asset | market id | margin      | general        | bond         |
-      | lp    | USD   | ETH/MAR22 | 25107538095 | 99584392461905 | 390500000000 |
+      | lp    | USD   | ETH/MAR22 | 24223781616 | 99585276218384 | 390500000000 |
 
     #check the margin levels
     Then the parties should have the following margin levels:
