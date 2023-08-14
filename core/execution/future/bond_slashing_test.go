@@ -439,7 +439,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	asset := tm.asset
 
 	bondPenaltyParameter := 0.1
-	tm.market.BondPenaltyFactorUpdate(ctx, num.DecimalFromFloat(bondPenaltyParameter))
+	tm.market.OnMarketLiquidityV2BondPenaltyFactorUpdate(num.DecimalFromFloat(bondPenaltyParameter))
 	// No fees
 	tm.market.OnFeeFactorsInfrastructureFeeUpdate(ctx, num.DecimalFromFloat(0))
 	tm.market.OnFeeFactorsMakerFeeUpdate(ctx, num.DecimalFromFloat(0))
@@ -568,7 +568,7 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout
 	asset := tm.asset
 
 	bondPenaltyParameter := 0.1
-	tm.market.BondPenaltyFactorUpdate(ctx, num.DecimalFromFloat(bondPenaltyParameter))
+	tm.market.OnMarketLiquidityV2BondPenaltyFactorUpdate(num.DecimalFromFloat(bondPenaltyParameter))
 
 	var mainPartyInitialDeposit uint64 = 800
 	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
