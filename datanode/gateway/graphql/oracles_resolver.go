@@ -139,6 +139,14 @@ func resolveDataSourceDefinition(d *vegapb.DataSourceDefinition) (ds *vegapb.Dat
 					},
 				},
 			}
+		case *vegapb.DataSourceSpecConfigurationTimeTrigger:
+			ds.SourceType = &vegapb.DataSourceDefinition_Internal{
+				Internal: &vegapb.DataSourceDefinitionInternal{
+					SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+						TimeTrigger: tp,
+					},
+				},
+			}
 		}
 	}
 
