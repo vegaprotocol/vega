@@ -226,16 +226,17 @@ func (e *Engine) SubmitLiquidityProvision(
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, provision))
 
 	provision.Status = types.LiquidityProvisionStatusPending
-	e.pendingProvisions.Set(party, provision)
+	e.pendingProvisions.Set(provision)
 	return false, nil
 }
 
-func (e *Engine) ApplyPendingProvisions(ctx context.Context, now time.Time) map[string]*types.LiquidityProvision {
-	updatedProvisionsPerParty := make(map[string]*types.LiquidityProvision, e.pendingProvisions.Len())
+func (e *Engine) ApplyPendingProvisions(ctx context.Context, now time.Time) Provisions {
+	updatedProvisionsPerParty := make(Provisions, e.pendingProvisions.Len())
 
-	for _, party := range e.pendingProvisions.sortedKeys() {
-		provision, _ := e.pendingProvisions.Get(party)
-		updatedProvisionsPerParty[party] = provision
+	for _, provision := range e.pendingProvisions.Slice() {
+		party := provision.Party
+
+		updatedProvisionsPerParty = append(updatedProvisionsPerParty, provision)
 		provision.UpdatedAt = now.UnixNano()
 
 		// if commitment was reduced to 0, all party provision related data can be deleted
@@ -265,8 +266,8 @@ func (e *Engine) PendingProvisionByPartyID(party string) *types.LiquidityProvisi
 	return provision
 }
 
-func (e *Engine) PendingProvision() map[string]*types.LiquidityProvision {
-	return e.pendingProvisions.PendingProvisions
+func (e *Engine) PendingProvision() Provisions {
+	return e.pendingProvisions.Slice()
 }
 
 // RejectLiquidityProvision removes a parties commitment of liquidity.
@@ -390,8 +391,8 @@ func (e *Engine) UpdatePartyCommitment(partyID string, newCommitment *num.Uint) 
 func (e *Engine) CalculateSuppliedStake() *num.Uint {
 	supplied := num.UintZero()
 
-	for party, pending := range e.pendingProvisions.PendingProvisions {
-		provision, ok := e.provisions.Get(party)
+	for _, pending := range e.pendingProvisions.PendingProvisions {
+		provision, ok := e.provisions.Get(pending.Party)
 		if ok && pending.CommitmentAmount.LT(provision.CommitmentAmount) {
 			supplied.AddSum(provision.CommitmentAmount)
 			continue
