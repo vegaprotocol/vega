@@ -42,10 +42,6 @@ Feature: test margin during amending orders
       | id  | party  | market id | commitment amount | fee   | lp type    |
       | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | submission |
       | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | amendment  |
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 500        | 20     |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 500        | 20     |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | party1 | ETH/MAR22 | buy  | 20     | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |

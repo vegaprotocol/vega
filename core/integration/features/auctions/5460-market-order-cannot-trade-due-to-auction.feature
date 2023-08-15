@@ -43,9 +43,9 @@ Feature: Test for issue 5460
       | lp1 | party0 | ETH/DEC21 | 200000000         | 0.001 | submission |
       | lp1 | party0 | ETH/DEC21 | 200000000         | 0.001 | submission |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 205    |
-      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 205    |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume   | offset |
+      | party0 | ETH/DEC21 | 1000      | 1                    | buy  | MID              | 200000   | 205    |
+      | party0 | ETH/DEC21 | 1000      | 1                    | sell | MID              | 300000   | 205    |
     And the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | party_a1 | ETH/DEC21 | buy  | 100000 | 30000 | 0                | TYPE_LIMIT | TIF_GTC |
@@ -70,8 +70,19 @@ Feature: Test for issue 5460
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC21"
 
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 30000      | TRADING_MODE_CONTINUOUS | 43200   | 24617     | 36510     | 1626         | 200000000      | 100000        |
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | static mid price |
+      | 30000      | TRADING_MODE_CONTINUOUS | 43200   | 24617     | 36510     | 1626         | 200000000      | 100000        | 30000            |
+
+    And the order book should have the following volumes for market "ETH/DEC21":
+      | side | price | volume |
+      | buy  | 29998 | 100000 |
+      | buy  | 29987 | 100000 |
+      | buy  | 29977 | 100000 |
+      | buy  | 29967 | 100000 |
+      | buy  | 29957 | 100000 |
+      | buy  | 29795 | 1000   |
+      | sell | 30002 | 100000 |
+      | sell | 30205 | 1000   |
 
     And the parties place the following orders:
       | party    | market id | side | volume | price  | resulting trades | type        | tif     |
@@ -84,9 +95,9 @@ Feature: Test for issue 5460
       | buy  | 29977 | 100000 |
       | buy  | 29967 | 100000 |
       | buy  | 29957 | 100000 |
-      | buy  | 29795 | 0      |
+      | buy  | 29795 | 1000   |
       | sell | 30002 | 0      |
-      | sell | 30205 | 0      |
+      | sell | 30204 | 0      |
     When the network moves ahead "1" blocks
 
     Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC21"
@@ -106,9 +117,9 @@ Feature: Test for issue 5460
       | buy  | 29977 | 100000    |
       | buy  | 29967 | 100000    |
       | buy  | 29957 | 100000    |
-      | buy  | 29795 | 671253567 |
+      | buy  | 29795 | 1000      |
       | sell | 30002 | 100000    |
-      | sell | 30205 | 662142030 |
+      | sell | 30205 | 1000      |
 
     And the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
@@ -121,11 +132,11 @@ Feature: Test for issue 5460
       | buy  | 29977  | 100000    |
       | buy  | 29967  | 100000    |
       | buy  | 29957  | 100000    |
-      | buy  | 29795  | 671253567 |
+      | buy  | 29795  | 1000      |
       | buy  | 400000 | 0         |
       | buy  | 29700  | 100000    |
       | sell | 30002  | 100000    |
-      | sell | 30205  | 662142030 |
+      | sell | 30205  | 1000      |
 
     And the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             | target stake | supplied stake | open interest |

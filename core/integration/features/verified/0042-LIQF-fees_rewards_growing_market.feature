@@ -19,6 +19,7 @@ Feature:
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | limits.markets.maxPeggedOrders                      | 8     |
+      | validators.epoch.length                             | 1s    |
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |  
@@ -68,18 +69,18 @@ Feature:
       | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | submission |
       | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 |            |
     And the parties place the following pegged iceberg orders:
-      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 3          | 1      |
-      | lp1   | ETH/MAR22 | 2         | 1                    | sell | MID              | 3          | 1      |
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset | reference    |
+      | lp1   | ETH/MAR22 | 4         | 1                    | buy  | MID              | 3          | 1      | lp1-ice-buy  |
+      | lp1   | ETH/MAR22 | 3         | 1                    | sell | MID              | 2          | 1      | lp1-ice-sell |
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | lp type    |
       | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | submission |
       | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 |            |
     And the parties place the following pegged iceberg orders:
-      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 3          | 1      |
-      | lp2   | ETH/MAR22 | 2         | 1                    | sell | MID              | 3          | 1      |
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume   | offset |
+      | lp2   | ETH/MAR22 | 47        | 1                    | buy  | MID              | 47       | 1      |
+      | lp2   | ETH/MAR22 | 46        | 1                    | sell | MID              | 46       | 1      |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -126,13 +127,21 @@ Feature:
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | lp type   |
       | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | amendment |
-    And the parties place the following pegged iceberg orders:
-      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 3          | 1      |
-      | lp1   | ETH/MAR22 | 2         | 1                    | sell | MID              | 3          | 1      |
+      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 |           |
+    # Amend orders so that lp1 uses time-priority at a price level and pre-SLA behaviour can be reproduced
+    And the parties amend the following pegged iceberg orders:
+      | party | reference    | size delta |
+      | lp1   | lp1-ice-buy  | 1          |
+      | lp1   | lp1-ice-sell | 1          |
 
-    # Confirm equity-like-shares updated immediately after liquidity amendment
+    # Confirm equity-like-shares unchanged immediately after liquidity amendment
+    Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
+      | party | equity like share | average entry valuation |
+      | lp1   | 0.08              | 4000                    |
+      | lp2   | 0.92              | 50000                   |
+
+    Then the network moves ahead "2" blocks
+    # Confirm equity-like-shares updated once we move to the new epoch
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
       | lp1   | 0.0612244897959184 | 4000                    |

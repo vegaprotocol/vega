@@ -25,13 +25,8 @@ Feature: test bugfix 614 for margin calculations
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
-
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.0 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.0 | submission |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |

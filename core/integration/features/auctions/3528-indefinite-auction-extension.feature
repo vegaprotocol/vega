@@ -213,11 +213,11 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | lp1 | party0 | ETH/DEC21 | 1010              | 0.001 | amendment |
       | lp1 | party0 | ETH/DEC21 | 1010              | 0.001 | amendment |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party0 | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1          | 2      |
-      | party0 | ETH/DEC21 | 2         | 1                    | buy  | MID              | 2          | 1      |
-      | party0 | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1          | 2      |
-      | party0 | ETH/DEC21 | 2         | 1                    | sell | MID              | 2          | 1      |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume  | offset |
+      | party0 | ETH/DEC21 | 9         | 1                    | buy  | BID              | 10      | 2      |
+      | party0 | ETH/DEC21 | 9         | 1                    | buy  | MID              | 20      | 1      |
+      | party0 | ETH/DEC21 | 9         | 1                    | sell | ASK              | 10      | 2      |
+      | party0 | ETH/DEC21 | 9         | 1                    | sell | MID              | 20      | 1      |
 
     When the network moves ahead "1" blocks
 
@@ -229,7 +229,6 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
-      #| party2 | ETH/DEC21 | sell | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | This trade does happen now that we've changed liquidity checks
       | party2 | ETH/DEC21 | sell | 10     | 1010  | 2                | TYPE_LIMIT | TIF_GTC |
     And the network moves ahead "1" blocks
 
@@ -237,7 +236,6 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode                    | auction trigger                          | extension trigger           | target stake | supplied stake | open interest | auction end | min bound | max bound |
       | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | AUCTION_TRIGGER_UNSPECIFIED | 2020         | 1010           | 20            | 1           | 1001      | 1019      |
-    #| 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | AUCTION_TRIGGER_UNSPECIFIED | 2020         | 1010           | 10            | 1           |  1001      | 1019     |
 
     # Place order outwith price monitoring bounds
     And the parties place the following orders:
@@ -255,7 +253,6 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode                    | auction trigger                          | extension trigger                        | target stake | supplied stake | open interest | auction end | min bound | max bound |
       | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 3090         | 1010           | 20            | 2           | 1001      | 1019      |
-    #| 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 2050         | 1010           | 20            | 2           |  1001      | 1019     |
 
     When the network moves ahead "10" blocks
 

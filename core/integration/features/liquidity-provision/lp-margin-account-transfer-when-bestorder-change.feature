@@ -24,7 +24,7 @@ Feature:  test 0038-OLIQ-008
       | limits.markets.maxPeggedOrders                         | 2     |
     And the average block duration is "1"
 
-  Scenario: If best bid / ask has changed and the LP order volume is moved around to match the shape / new peg levels then the margin requirement for the party may change. There is at most one transfer in / out of the margin account of the LP party as a result of one of the pegs moving. 0038-OLIQ-008
+  Scenario: If best bid / ask has changed and the LP order volume is moved around to match the new peg levels then the margin requirement for the party may change. There is at most one transfer in / out of the margin account of the LP party as a result of one of the pegs moving. 0038-OLIQ-008
 
     Given the parties deposit on asset's general account the following amount:
       | party | asset | amount        |
@@ -39,9 +39,9 @@ Feature:  test 0038-OLIQ-008
       | lp1 | lp    | ETH/DEC19 | 90000             | 0   | submission |
       | lp1 | lp    | ETH/DEC19 | 90000             | 0   | submission |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lp     | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10     |
-      | lp     | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 10     |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset | reference |
+      | lp     | ETH/DEC19 | 693       | 693                  | buy  | BID              | 693        | 10     | ice-buy   |
+      | lp     | ETH/DEC19 | 530       | 530                  | sell | ASK              | 530        | 10     | ice-sell  | 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux3  | ETH/DEC19 | buy  | 10     | 140   | 0                | TYPE_LIMIT | TIF_GTC | bestBid   |
@@ -90,6 +90,9 @@ Feature:  test 0038-OLIQ-008
     When the parties amend the following orders:
       | party | reference | price | size delta | tif     |
       | aux4  | bestOffer | 165   | 0          | TIF_GTC |
+    And the parties amend the following pegged iceberg orders:
+      | party | reference | size delta |
+      | lp    | ice-sell  | -15        |
 
     # observe volumes change
     Then the order book should have the following volumes for market "ETH/DEC19":
@@ -116,6 +119,9 @@ Feature:  test 0038-OLIQ-008
     When the parties amend the following orders:
       | party | reference | price | size delta | tif     |
       | aux4  | bestOffer | 220   | 0          | TIF_GTC |
+    And the parties amend the following pegged iceberg orders:
+      | party | reference | size delta |
+      | lp    | ice-sell  | -123       |
 
     # observe volumes change
     Then the order book should have the following volumes for market "ETH/DEC19":

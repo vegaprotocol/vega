@@ -27,8 +27,8 @@ Feature: test AC 0006-POSI-008
       | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | submission |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10     |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 10     |
+      | lpprov | ETH/DEC19 | 231       | 1                    | buy  | BID              | 231        | 10     |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 231        | 10     |
  
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     And the parties place the following orders:

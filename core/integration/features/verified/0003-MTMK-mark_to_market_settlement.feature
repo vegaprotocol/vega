@@ -22,8 +22,8 @@ Feature: Test mark to market settlement
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.0 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.0 | submission |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
       | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10     |
@@ -42,12 +42,7 @@ Feature: Test mark to market settlement
 
       And the market data for the market "ETH/DEC19" should be:
        | mark price | trading mode            | target stake | supplied stake | open interest |
-       | 1000       | TRADING_MODE_CONTINUOUS | 1100         | 0              | 1             |
-
-     #LP got closed out
-     Then the parties should have the following margin levels:
-       | party  | market id | maintenance | initial | search | release |
-       | lpprov | ETH/DEC19 | 0           | 0       | 0      | 0       |
+       | 1000       | TRADING_MODE_CONTINUOUS | 1100         | 90000          | 1             |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -101,8 +96,8 @@ Feature: Test mark to market settlement
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.0 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.0 | submission |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
       | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10     |
@@ -185,8 +180,8 @@ Feature: Test mark to market settlement
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.0 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.0 | submission |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
       | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10     |
@@ -245,12 +240,8 @@ Feature: Test mark to market settlement
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10     |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 10     |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.0 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.0 | submission |
  
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     And the parties place the following orders:
