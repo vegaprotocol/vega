@@ -117,8 +117,10 @@ Feature: Simple example of successor markets
       | trader3 | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
     Then the network moves ahead "2" blocks
 
-    And the insurance pool balance should be "6975" for the market "ETH/DEC19"
+    And the insurance pool balance should be "5077" for the market "ETH/DEC19"
     And the global insurance pool balance should be "0" for the asset "USD"
+
+    Then debug transfers
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general     |
@@ -140,12 +142,12 @@ Feature: Simple example of successor markets
 
     And the liquidity provider fee shares for the market "ETH/DEC19" should be:
       | party   | equity like share  | average entry valuation |
-      | lpprov1 | 0.8999012589484078 | 9000                    |
-      | lpprov2 | 0.1000987410515922 | 10000                   |
+      | lpprov1 | 0.9 | 9000  |
+      | lpprov2 | 0.1 | 10000 |
 
     And then the network moves ahead "2" blocks
 
-    And the insurance pool balance should be "6975" for the market "ETH/DEC19"
+    And the insurance pool balance should be "5077" for the market "ETH/DEC19"
     And the global insurance pool balance should be "0" for the asset "USD"
 
     When the oracles broadcast data signed with "0xCAFECAFE1":
@@ -166,15 +168,15 @@ Feature: Simple example of successor markets
       | trader5 | USD   | ETH/DEC19 | 0      | 0           |
 
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
-    And the insurance pool balance should be "6975" for the market "ETH/DEC19"
+    And the insurance pool balance should be "5077" for the market "ETH/DEC19"
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name             | value    |
       | prices.ETH.value | 14000000 |
 
-    And the insurance pool balance should be "14819" for the market "ETH/DEC19"
+    And the insurance pool balance should be "5078" for the market "ETH/DEC19"
 
     And then the network moves ahead "10" blocks
-    And the insurance pool balance should be "14819" for the market "ETH/DEC19"
+    And the insurance pool balance should be "5078" for the market "ETH/DEC19"
     And the global insurance pool balance should be "0" for the asset "USD"
 
     Then the parties should have the following profit and loss:
@@ -187,12 +189,13 @@ Feature: Simple example of successor markets
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general     |
-      | lpprov1 | USD   | ETH/DEC19 | 0      | 1999998291  |
-      | lpprov2 | USD   | ETH/DEC19 | 0      | 19999999811 |
+      | lpprov1 | USD | ETH/DEC19 | 0 | 2000007059  |
+      | lpprov2 | USD | ETH/DEC19 | 0 | 20000000784 |
       | trader1 | USD   | ETH/DEC19 | 0      | 1999990     |
       | trader2 | USD   | ETH/DEC19 | 0      | 2000010     |
       | trader3 | USD   | ETH/DEC19 | 0      | 2005924     |
       | trader4 | USD   | ETH/DEC19 | 0      | 2003075     |
       | trader5 | USD   | ETH/DEC19 | 0      | 0           |
+
 
 
