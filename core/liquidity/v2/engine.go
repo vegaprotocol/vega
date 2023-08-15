@@ -231,7 +231,7 @@ func (e *Engine) SubmitLiquidityProvision(
 }
 
 func (e *Engine) ApplyPendingProvisions(ctx context.Context, now time.Time) Provisions {
-	updatedProvisionsPerParty := make(Provisions, e.pendingProvisions.Len())
+	updatedProvisionsPerParty := make(Provisions, 0, e.pendingProvisions.Len())
 
 	for _, provision := range e.pendingProvisions.Slice() {
 		party := provision.Party
