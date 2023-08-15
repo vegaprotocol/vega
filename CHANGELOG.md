@@ -18,6 +18,12 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
+## 0.72.9
+
+### 🐛 Fixes
+
+- [9075](https://github.com/vegaprotocol/vega/issues/9075) - `Oracle Specs API` can fail when oracle data is null.
+
 ## 0.72.8
 
 ### 🐛 Fixes
