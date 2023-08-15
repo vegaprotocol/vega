@@ -3574,6 +3574,26 @@ enum TransferType {
   TRANSFER_TYPE_HOLDING_LOCK
   "An internal instruction to transfer an excess quantity corresponding to an active spot order from a holding account into a party general account"
   TRANSFER_TYPE_HOLDING_RELEASE
+  "Insurance pool fraction transfer from parent to successor market."
+  TRANSFER_TYPE_SUCCESSOR_INSURANCE_FRACTION
+  "Allocates liquidity fee earnings to each liquidity provider's network controlled liquidity fee account."
+  TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE
+  "Distributes net fee earnings from liquidity provider's fee account to their general account."
+  TRANSFER_TYPE_LIQUIDITY_FEE_NET_DISTRIBUTE
+  "Applies SLA penalty by moving funds from party's bond account to market's insurance pool."
+  TRANSFER_TYPE_SLA_PENALTY_BOND_APPLY
+  "Applies SLA penalty by moving funds from the liquidity provider's fee account to market insurance pool."
+  TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY
+  "Collects penalties from the liquidity provider's fee account before the fee revenue is paid, and transfers it to the market's bonus distribution account."
+  TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT
+  "Distributes performance bonus from market bonus to liquidity provider's general account."
+  TRANSFER_TYPE_SLA_PERFORMANCE_BONUS_DISTRIBUTE
+  "Funds deducted from margin account after a perpetuals funding loss."
+  TRANSFER_TYPE_PERPPETUALS_FUNDING_LOSS
+  "Funds added to margin account after a perpetuals funding gain."
+  TRANSFER_TYPE_PERPETUALS_FUNDING_WIN
+  "Funds moved from the vesting account to the vested account once the vesting period is reached."
+  TRANSFER_TYPE_REWARDS_VESTED
 }
 
 type FutureProduct {

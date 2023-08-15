@@ -47,6 +47,7 @@ func TestPeriodicSettlement(t *testing.T) {
 	t.Run("non-matching data points outside of period through callbacks", testRegisteredCallbacksWithDifferentData)
 	t.Run("funding payments with interest rate", testFundingPaymentsWithInterestRate)
 	t.Run("funding payments with interest rate clamped", testFundingPaymentsWithInterestRateClamped)
+	t.Run("terminate perps market test", testTerminateTrading)
 }
 
 func testIncomingDataIgnoredBeforeLeavingOpeningAuction(t *testing.T) {
@@ -499,6 +500,41 @@ func testFundingPaymentsWithInterestRateClamped(t *testing.T) {
 	assert.NotNil(t, fundingPayment)
 	assert.True(t, fundingPayment.IsInt())
 	assert.Equal(t, "23333333323", fundingPayment.String())
+}
+
+func testTerminateTrading(t *testing.T) {
+	perp := testPerpetual(t)
+	defer perp.ctrl.Finish()
+	ctx := context.Background()
+
+	// set of the data points such that difference in averages is 0
+	points := getTestDataPoints(t)
+
+	// tell the perpetual that we are ready to accept settlement stuff
+	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
+	perp.perpetual.OnLeaveOpeningAuction(ctx, points[0].t)
+
+	// send in some data points
+	perp.broker.EXPECT().Send(gomock.Any()).Times(len(points) * 2)
+	for _, p := range points {
+		// send in an external and a matching internal
+		require.NoError(t, perp.perpetual.SubmitDataPoint(ctx, p.price, p.t))
+		perp.perpetual.AddTestExternalPoint(ctx, p.price, p.t)
+	}
+
+	// ask for the funding payment
+	var fundingPayment *num.Numeric
+	fn := func(_ context.Context, fp *num.Numeric) {
+		fundingPayment = fp
+	}
+	perp.perpetual.SetSettlementListener(fn)
+
+	perp.broker.EXPECT().Send(gomock.Any()).Times(2)
+	perp.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	perp.perpetual.UnsubscribeTradingTerminated(ctx)
+	assert.NotNil(t, fundingPayment)
+	assert.True(t, fundingPayment.IsInt())
+	assert.Equal(t, "0", fundingPayment.String())
 }
 
 // submits the given data points as both external and interval but with the given different added to the internal price.

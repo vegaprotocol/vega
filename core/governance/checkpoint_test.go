@@ -186,10 +186,10 @@ func TestCheckpointSavingAndLoadingWithDroppedMarkets(t *testing.T) {
 		proposals = append(proposals, enactNewProposal(t, eng))
 	}
 
-	// market 1 has already been dropped of the execution engine
+	// market 1 has already been dropped of the execution engine, so it is removed from active and not added to enacted
 	// market 2 has trading terminated
 	// market 3 is there and should be saved to the checkpoint
-	eng.markets.EXPECT().GetMarketState(proposals[0].ID).Times(2).Return(types.MarketStateUnspecified, types.ErrInvalidMarketID)
+	eng.markets.EXPECT().GetMarketState(proposals[0].ID).Times(1).Return(types.MarketStateUnspecified, types.ErrInvalidMarketID)
 	eng.markets.EXPECT().GetMarketState(proposals[1].ID).Times(2).Return(types.MarketStateTradingTerminated, nil)
 	eng.markets.EXPECT().GetMarketState(proposals[2].ID).Times(2).Return(types.MarketStateActive, nil)
 
@@ -211,7 +211,6 @@ func TestCheckpointSavingAndLoadingWithDroppedMarkets(t *testing.T) {
 	data, err := eng.Checkpoint()
 	require.NoError(t, err)
 	require.NotEmpty(t, data)
-
 	eng2 := getTestEngine(t, time.Now())
 	defer eng2.ctrl.Finish()
 

@@ -48,8 +48,8 @@ var (
 	ErrErc20AddressAlreadyInUse                  = errors.New("erc20 address already in use")
 	ErrSpotsNotEnabled                           = errors.New("spot trading not enabled")
 	ErrParentMarketDoesNotExist                  = errors.New("market to succeed does not exist")
-	ErrParentMarketAlreadySucceeded              = errors.New("the market was already succeeded by a prior proposal")
-	ErrInvalidSuccessor                          = errors.New("the successor is no longer valid")
+	ErrParentMarketAlreadySucceeded              = errors.New("the parent market was already succeeded by a prior proposal")
+	ErrParentMarketSucceededByCompeting          = errors.New("the parent market has been succeeded by a competing propsal")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/governance Markets,StakingAccounts,Assets,TimeService,Witness,NetParams,Banking
@@ -297,11 +297,8 @@ func (e *Engine) preVoteClosedProposal(p *proposal) *VoteClosed {
 		startAuction := true
 		if p.State != types.ProposalStatePassed {
 			startAuction = false
-		} else {
-			// this proposal needs to be included in the checkpoint but we don't need to copy
-			// the proposal here, as it may reach the enacted state shortly
-			e.enactedProposals = append(e.enactedProposals, p)
 		}
+
 		vc.m = &NewMarketVoteClosed{
 			startAuction: startAuction,
 		}
@@ -343,7 +340,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 		// check if the market for successor proposals still exists, if not, reject the proposal
 		if nm := proposal.Terms.GetNewMarket(); nm != nil && nm.Successor() != nil {
 			if _, err := e.markets.GetMarketState(proposal.ID); err != nil {
-				proposal.RejectWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrInvalidSuccessor)
+				proposal.RejectWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketSucceededByCompeting)
 				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
 				toBeRemoved = append(toBeRemoved, proposal.ID)
 				continue
@@ -414,31 +411,15 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 			// to another successor leaving opening auction
 			if _, err := e.markets.GetMarketState(id); err != nil {
 				if nm := prop.Terms.GetNewMarket(); nm != nil && nm.Successor() != nil {
-					prop.Reject(types.ProposalErrorInvalidSuccessorMarket)
+					prop.RejectWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketSucceededByCompeting)
 					e.broker.Send(events.NewProposalEvent(ctx, *prop.Proposal))
-					toBeRemoved = append(toBeRemoved, prop.ID)
 					continue
 				}
 				e.log.Error("could not get state of market %s", logging.String("market-id", id))
 				continue
 			}
 		}
-		// just in case the proposal wasn't added for whatever reason (shouldn't be possible)
-		found := false
-		for i, p := range e.enactedProposals {
-			if p.ID == prop.ID {
-				e.enactedProposals[i] = &prop // replace with pointer to copy
-				found = true
-				break
-			}
-		}
-		// no need to append
-		if found {
-			toBeEnacted = append(toBeEnacted, preparedToEnact[i])
-			continue
-		}
 
-		// take a copy in the state just before the proposal was enacted
 		e.enactedProposals = append(e.enactedProposals, &prop)
 		toBeEnacted = append(toBeEnacted, preparedToEnact[i])
 	}

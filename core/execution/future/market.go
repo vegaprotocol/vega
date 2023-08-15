@@ -326,6 +326,10 @@ func (m *Market) IsSucceeded() bool {
 	return m.succeeded
 }
 
+func (m *Market) IsPerp() bool {
+	return m.perp
+}
+
 func (m *Market) StopSnapshots() {
 	m.matching.StopSnapshots()
 	m.position.StopSnapshots()
@@ -1035,7 +1039,7 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 	defer func() { m.idgen = nil }()
 	if changes.UpdateType == types.MarketStateUpdateTypeTerminate {
 		m.uncrossOrderAtAuctionEnd(ctx)
-		// terminate and settle
+		// terminate and settle data (either last traded price for perp, or settlement data provided via governance
 		m.tradingTerminatedWithFinalState(ctx, types.MarketStateClosed, num.UintZero().Mul(changes.SettlementPrice, m.priceFactor))
 	} else if changes.UpdateType == types.MarketStateUpdateTypeSuspend {
 		m.mkt.State = types.MarketStateSuspendedViaGovernance
