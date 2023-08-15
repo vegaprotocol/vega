@@ -60,10 +60,10 @@ Feature: test risk model parameter sigma
       | id  | party  | market id | commitment amount | fee   | lp type    |
       | lp1 | party0 | ETH/MAR53 | 100000000         | 0.001 | submission |
       | lp1 | party0 | ETH/MAR53 | 100000000         | 0.001 | amendment  |
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party0 | ETH/MAR53 | 2         | 1                    | sell | ASK              | 500        | 20     |
-      | party0 | ETH/MAR53 | 2         | 1                    | buy  | BID              | 500        | 20     |
+    When the parties place the following orders:
+      | party  | market id | side | volume    | price | resulting trades | type       | tif     | reference |
+      | party0 | ETH/MAR53 | buy  | 100000000 | 1     | 0                | TYPE_LIMIT | TIF_GTC | peg-1     |
+      | party0 | ETH/MAR53 | sell | 5000000   | 20    | 0                | TYPE_LIMIT | TIF_GTC | peg-2     |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -159,29 +159,4 @@ Feature: test risk model parameter sigma
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search   | initial  | release  |
       | party0 | ETH/MAR0  | 27361126    | 32833351 | 41041689 | 46513914 |
-
-# Scenario: 003, test market ETH/MAR54(sigma=100),
-#   And the following network parameters are set:
-#     | name                                          | value |
-#     | market.stake.target.timeWindow                | 24h   |
-#     | market.stake.target.scalingFactor             | 1     |
-#     | market.liquidityV2.bondPenaltyParameter       | 0.2   |
-#     | market.liquidity.targetstake.triggering.ratio | 0.1   |
-
-#   And the average block duration is "1"
-
-#   And the parties submit the following liquidity provision:
-#     | id  | party  | market id | commitment amount | fee   | side | pegged reference | volume     | offset | lp type    |
-#     | lp1 | party0 | ETH/MAR54 | 10000000          | 0.001 | sell | ASK              | 500        | 20     | submission |
-#     | lp1 | party0 | ETH/MAR54 | 10000000          | 0.001 | buy  | BID              | 500        | 20     | amendment  |
-
-#   And the parties place the following orders:
-#     | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-#     | party1 | ETH/MAR54 | buy  | 10     | 9     | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-11  |
-#     | party1 | ETH/MAR54 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-12  |
-#     | party2 | ETH/MAR54 | sell | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-13 |
-#     | party2 | ETH/MAR54 | sell | 10     | 11    | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-14 |
-
-#   When the opening auction period ends for market "ETH/MAR54"
-#   And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR54"
 
