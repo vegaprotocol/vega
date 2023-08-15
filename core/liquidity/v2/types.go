@@ -157,7 +157,7 @@ type SnapshotablePendingProvisions struct {
 
 func newSnapshotablePendingProvisions() *SnapshotablePendingProvisions {
 	return &SnapshotablePendingProvisions{
-		PendingProvisions: []*types.LiquidityProvision{},
+		PendingProvisions: Provisions{},
 	}
 }
 
