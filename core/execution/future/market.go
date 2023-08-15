@@ -3750,6 +3750,13 @@ func (m *Market) settlementData(ctx context.Context, settlementData *num.Numeric
 func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Numeric) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	_, blockHash := vegacontext.TraceIDFromContext(ctx)
+	m.idgen = idgeneration.New(blockHash + crypto.HashStrToHex("perpsettlement"+m.GetID()))
+	defer func() {
+		m.idgen = nil
+	}()
+
 	// take all positions, get funding transfers
 	sdi := settlementData.Int()
 	if !settlementData.IsInt() && settlementData.Decimal() != nil {
