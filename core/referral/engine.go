@@ -18,7 +18,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	proto "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type Engine struct {
@@ -58,12 +58,14 @@ func (e *Engine) HasProgramEnded() bool {
 
 func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 	switch ep.Action {
-	case proto.EpochAction_EPOCH_ACTION_END:
-		e.endProgramIfReached(ctx, ep.EndTime)
+	case vegapb.EpochAction_EPOCH_ACTION_END:
+		e.applyUpdate(ctx, ep.EndTime)
 	}
 }
 
-func (e *Engine) endProgramIfReached(ctx context.Context, epochEnd time.Time) {
+func (e *Engine) OnEpochRestore(_ context.Context, _ types.Epoch) {}
+
+func (e *Engine) applyUpdate(ctx context.Context, epochEnd time.Time) {
 	if e.newProgram != nil {
 		if e.currentProgram != nil {
 			e.endCurrentProgram()
@@ -84,8 +86,6 @@ func (e *Engine) endProgramIfReached(ctx context.Context, epochEnd time.Time) {
 		e.endCurrentProgram()
 	}
 }
-
-func (e *Engine) OnEpochRestore(_ context.Context, _ types.Epoch) {}
 
 func (e *Engine) endCurrentProgram() {
 	e.programHasEnded = true
@@ -108,6 +108,32 @@ func (e *Engine) notifyReferralProgramUpdated(ctx context.Context) {
 
 func (e *Engine) notifyReferralProgramEnded(ctx context.Context) {
 	e.broker.Send(events.NewReferralProgramEndedEvent(ctx, e.currentProgram.Version, e.currentProgram.ID))
+}
+
+func (e *Engine) loadCurrentReferralProgramFromSnapshot(program *vegapb.ReferralProgram) {
+	if program == nil {
+		e.currentProgram = nil
+		return
+	}
+
+	e.currentProgram = types.NewReferralProgramFromProto(program)
+
+	if e.latestProgramVersion < e.currentProgram.Version {
+		e.latestProgramVersion = e.currentProgram.Version
+	}
+}
+
+func (e *Engine) loadNewReferralProgramFromSnapshot(program *vegapb.ReferralProgram) {
+	if program == nil {
+		e.newProgram = nil
+		return
+	}
+
+	e.newProgram = types.NewReferralProgramFromProto(program)
+
+	if e.latestProgramVersion < e.newProgram.Version {
+		e.latestProgramVersion = e.newProgram.Version
+	}
 }
 
 func NewEngine(epochEngine EpochEngine, broker Broker) *Engine {
