@@ -194,8 +194,8 @@ func (o OrderReferenceCheck) HasMoved(changes uint8) bool {
 
 type LiquidityEngine interface {
 	ResetSLAEpoch(t time.Time, markPrice *num.Uint, midPrice *num.Uint, positionFactor num.Decimal)
-	ApplyPendingProvisions(ctx context.Context, now time.Time) map[string]*types.LiquidityProvision
-	PendingProvision() map[string]*types.LiquidityProvision
+	ApplyPendingProvisions(ctx context.Context, now time.Time) liquidity.Provisions
+	PendingProvision() liquidity.Provisions
 	PendingProvisionByPartyID(party string) *types.LiquidityProvision
 	CalculateSLAPenalties(time.Time) liquidity.SlaPenalties
 	ResetAverageLiquidityScores()

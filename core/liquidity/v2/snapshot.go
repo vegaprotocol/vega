@@ -303,7 +303,7 @@ func (e *SnapshotEngine) loadPendingProvisions(ctx context.Context, provisions [
 		if err != nil {
 			return err
 		}
-		e.Engine.pendingProvisions.Set(v.PartyId, provision)
+		e.Engine.pendingProvisions.Set(provision)
 		evts = append(evts, events.NewLiquidityProvisionEvent(ctx, provision))
 	}
 
