@@ -16,7 +16,7 @@ def commitHash = 'UNKNOWN'
 
 pipeline {
     agent {
-        label "core-build"
+        label params.NODE_LABEL
     }
     options {
         skipDefaultCheckout true
@@ -170,14 +170,6 @@ pipeline {
         //
         // End LINTERS
         //
-
-        stage('Cache go packages') {
-            steps {
-                script {
-                    sh "whoami"
-                }
-            }
-        }
 
         //
         // Begin TESTS
