@@ -241,6 +241,8 @@ func (m *MarketLiquidity) syncPartyCommitmentWithBondAccount(
 		appliedLiquidityProvisions = liquidity.Provisions{}
 	}
 
+	fmt.Printf("----- appliedLiquidityProvisions: %+v\n", appliedLiquidityProvisions)
+
 	for partyID, provision := range m.liquidityEngine.ProvisionsPerParty() {
 		acc, err := m.collateral.GetPartyBondAccount(m.marketID, partyID, m.asset)
 		if err != nil {
@@ -278,6 +280,7 @@ func (m *MarketLiquidity) syncPartyCommitmentWithBondAccount(
 	}
 
 	for _, provision := range appliedLiquidityProvisions {
+		fmt.Printf("----- provision: %+v\n", provision)
 		// now we can setup our party stake to calculate equities
 		m.equityShares.SetPartyStake(provision.Party, provision.CommitmentAmount.Clone())
 		// force update of shares so they are updated for all
