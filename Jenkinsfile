@@ -232,8 +232,8 @@ pipeline {
                 stage('core/integration perps tests') {
                     steps {
                         dir('vega/core/integration') {
-                            // sh 'go test -v  . -perps --godog.format=junit:core-integration-perps-report.xml'
-                            // junit checksName: 'Core Integration Perps Tests', testResults: 'core-integration-perps-report.xml'
+                            sh 'go test . -timeout 30m -perps --godog.format=junit:core-integration-perps-report.xml'
+                            junit checksName: 'Core Integration Perps Tests', testResults: 'core-integration-perps-report.xml'
                         }
                     }
                 }
@@ -326,11 +326,11 @@ pipeline {
                     }
                 }
                 stage('protos') {
-                    // environment {
-                    //     GOPATH = "${env.WORKSPACE}/GOPATH"
-                    //     GOBIN = "${env.GOPATH}/bin"
-                    //     PATH = "${env.GOBIN}:${env.PATH}"
-                    // }
+                    environment {
+                        GOPATH = "${env.WORKSPACE}/GOPATH"
+                        GOBIN = "${env.GOPATH}/bin"
+                        PATH = "${env.GOBIN}:${env.PATH}"
+                    }
                     stages {
                         stage('Install dependencies') {
                             // We are using specific tools versions
