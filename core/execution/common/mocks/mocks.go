@@ -1125,18 +1125,6 @@ func (mr *MockAuctionStateMockRecorder) ExtendAuction(arg0 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendAuction", reflect.TypeOf((*MockAuctionState)(nil).ExtendAuction), arg0)
 }
 
-// ExtendAuctionLiquidityNoOrders mocks base method.
-func (m *MockAuctionState) ExtendAuctionLiquidityNoOrders(arg0 types.AuctionDuration) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ExtendAuctionLiquidityNoOrders", arg0)
-}
-
-// ExtendAuctionLiquidityNoOrders indicates an expected call of ExtendAuctionLiquidityNoOrders.
-func (mr *MockAuctionStateMockRecorder) ExtendAuctionLiquidityNoOrders(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendAuctionLiquidityNoOrders", reflect.TypeOf((*MockAuctionState)(nil).ExtendAuctionLiquidityNoOrders), arg0)
-}
-
 // ExtendAuctionLiquidityUnmetTarget mocks base method.
 func (m *MockAuctionState) ExtendAuctionLiquidityUnmetTarget(arg0 types.AuctionDuration) {
 	m.ctrl.T.Helper()
@@ -1379,18 +1367,6 @@ func (mr *MockAuctionStateMockRecorder) StartGovernanceSuspensionAuction(arg0 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartGovernanceSuspensionAuction", reflect.TypeOf((*MockAuctionState)(nil).StartGovernanceSuspensionAuction), arg0)
 }
 
-// StartLiquidityAuctionNoOrders mocks base method.
-func (m *MockAuctionState) StartLiquidityAuctionNoOrders(arg0 time.Time, arg1 *types.AuctionDuration) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "StartLiquidityAuctionNoOrders", arg0, arg1)
-}
-
-// StartLiquidityAuctionNoOrders indicates an expected call of StartLiquidityAuctionNoOrders.
-func (mr *MockAuctionStateMockRecorder) StartLiquidityAuctionNoOrders(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartLiquidityAuctionNoOrders", reflect.TypeOf((*MockAuctionState)(nil).StartLiquidityAuctionNoOrders), arg0, arg1)
-}
-
 // StartLiquidityAuctionUnmetTarget mocks base method.
 func (m *MockAuctionState) StartLiquidityAuctionUnmetTarget(arg0 time.Time, arg1 *types.AuctionDuration) {
 	m.ctrl.T.Helper()
@@ -1481,10 +1457,10 @@ func (mr *MockLiquidityEngineMockRecorder) AmendLiquidityProvision(arg0, arg1, a
 }
 
 // ApplyPendingProvisions mocks base method.
-func (m *MockLiquidityEngine) ApplyPendingProvisions(arg0 context.Context, arg1 time.Time) map[string]*types.LiquidityProvision {
+func (m *MockLiquidityEngine) ApplyPendingProvisions(arg0 context.Context, arg1 time.Time) liquidity.Provisions {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ApplyPendingProvisions", arg0, arg1)
-	ret0, _ := ret[0].(map[string]*types.LiquidityProvision)
+	ret0, _ := ret[0].(liquidity.Provisions)
 	return ret0
 }
 
@@ -1750,10 +1726,10 @@ func (mr *MockLiquidityEngineMockRecorder) OnStakeToCcyVolumeUpdate(arg0 interfa
 }
 
 // PendingProvision mocks base method.
-func (m *MockLiquidityEngine) PendingProvision() map[string]*types.LiquidityProvision {
+func (m *MockLiquidityEngine) PendingProvision() liquidity.Provisions {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PendingProvision")
-	ret0, _ := ret[0].(map[string]*types.LiquidityProvision)
+	ret0, _ := ret[0].(liquidity.Provisions)
 	return ret0
 }
 
