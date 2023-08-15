@@ -123,7 +123,7 @@ func (m *MarketLiquidity) applyPendingProvisions(
 	ctx context.Context,
 	now time.Time,
 	targetStake *num.Uint,
-) map[string]*types.LiquidityProvision {
+) liquidity.Provisions {
 	provisions := m.liquidityEngine.ProvisionsPerParty()
 	pendingProvisions := m.liquidityEngine.PendingProvision()
 
@@ -143,8 +143,8 @@ func (m *MarketLiquidity) applyPendingProvisions(
 			m.log.Panic("can not get LP party bond account", logging.Error(err))
 		}
 
-		amendment, ok := pendingProvisions[partyID]
-		if !ok {
+		amendment, foundIdx := pendingProvisions.Get(partyID)
+		if foundIdx < 0 {
 			continue
 		}
 
@@ -235,10 +235,10 @@ func (m *MarketLiquidity) applyPendingProvisions(
 
 func (m *MarketLiquidity) syncPartyCommitmentWithBondAccount(
 	ctx context.Context,
-	appliedLiquidityProvisions map[string]*types.LiquidityProvision,
+	appliedLiquidityProvisions liquidity.Provisions,
 ) {
 	if len(appliedLiquidityProvisions) == 0 {
-		appliedLiquidityProvisions = map[string]*types.LiquidityProvision{}
+		appliedLiquidityProvisions = liquidity.Provisions{}
 	}
 
 	for partyID, provision := range m.liquidityEngine.ProvisionsPerParty() {
@@ -266,7 +266,7 @@ func (m *MarketLiquidity) syncPartyCommitmentWithBondAccount(
 			}
 
 			provision.CommitmentAmount = acc.Balance.Clone()
-			appliedLiquidityProvisions[partyID] = provision
+			appliedLiquidityProvisions.Set(provision)
 			continue
 		}
 
@@ -274,12 +274,12 @@ func (m *MarketLiquidity) syncPartyCommitmentWithBondAccount(
 		if err != nil {
 			m.log.Panic("failed to update party commitment", logging.Error(err))
 		}
-		appliedLiquidityProvisions[partyID] = updatedProvision
+		appliedLiquidityProvisions.Set(updatedProvision)
 	}
 
-	for party, provision := range appliedLiquidityProvisions {
+	for _, provision := range appliedLiquidityProvisions {
 		// now we can setup our party stake to calculate equities
-		m.equityShares.SetPartyStake(party, provision.CommitmentAmount.Clone())
+		m.equityShares.SetPartyStake(provision.Party, provision.CommitmentAmount.Clone())
 		// force update of shares so they are updated for all
 		_ = m.equityShares.AllShares()
 	}
