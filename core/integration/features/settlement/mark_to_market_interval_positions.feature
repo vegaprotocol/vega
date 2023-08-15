@@ -44,9 +44,9 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | submission |
       | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | amendment  |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset | reference |
+      | lpprov | ETH/DEC19 | 9000      | 1                    | buy  | BID              | 9009   | 0      | peg-1     |
+      | lpprov | ETH/DEC19 | 5         | 1                    | sell | ASK              | 5      | 1      | peg-2     |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general      | bond |
@@ -71,13 +71,25 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general      | bond |
-      | lpprov | USD   | ETH/DEC19 | 682144 | 999999308856 | 9000 |
+      | lpprov | USD | ETH/DEC19 | 682827 | 999999308173 | 9000 |
 
     # insurance pool generation - setup orderbook
     When the parties place the following orders:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 290    | 150   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
+
+    # Then debug detailed orderbook volumes for market "ETH/DEC19"
+
+    Then the parties cancel the following orders:
+      | party  | reference |
+      | lpprov | peg-1     |
+      | lpprov | peg-2     |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | lpprov | ETH/DEC19 | buy  | 225    | 40    | 0                | TYPE_LIMIT | TIF_GTC | peg-3     |
+      | lpprov | ETH/DEC19 | sell | 5      | 2100  | 0                | TYPE_LIMIT | TIF_GTC | peg-4     |
 
     # insurance pool generation - trade
     When the parties place the following orders:
@@ -100,9 +112,9 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | buy  | 40    | 225    |
       | buy  | 140   | 1      |
 
-    #designatedLoser has position of vol 290; price 150; calculated risk factor long: 0.336895684; risk factor short: 0.4878731
-    #what's on the order book to cover the position is shown above, which makes the exit price 38.65517241 =(1*10+40*280)/290, slippage per unit is 150-38.65517241=111.345
-    #margin level is PositionVol*(markPrice*RiskFactor+SlippagePerUnit) = 290*(150*0.336895684+111.345)=46946
+#designatedLoser has position of vol 290; price 150; calculated risk factor long: 0.336895684; risk factor short: 0.4878731
+#what's on the order book to cover the position is shown above, which makes the exit price 38.65517241 =(1*10+40*280)/290, slippage per unit is 150-38.65517241=111.345
+#margin level is PositionVol*(markPrice*RiskFactor+SlippagePerUnit) = 290*(150*0.336895684+111.345)=46946
 
     Then the parties should have the following margin levels:
       | party           | market id | maintenance | search | initial | release |
@@ -127,6 +139,14 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     And the parties place the following orders:
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | buySideProvider | ETH/DEC19 | buy  | 290    | 20    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
+
+    Then the parties cancel the following orders:
+      | party  | reference |
+      | lpprov | peg-3     |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | lpprov | ETH/DEC19 | buy  | 5800   | 1     | 0                | TYPE_LIMIT | TIF_GTC | peg-5     |
 
     # insurance pool generation - set new mark price (and trigger closeout)
     When the parties place the following orders:
@@ -178,7 +198,6 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
-
   Scenario: 002, closeout trade with price outside price mornitoring bounds will not trigger auction 0032-PRIM-019
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -197,14 +216,15 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | id  | party  | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov | ETH/DEC20 | 9000              | 0.1 | submission |
       | lp1 | lpprov | ETH/DEC20 | 9000              | 0.1 | amendment  |
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lpprov | ETH/DEC20 | 2         | 1                    | buy  | BID              | 50         | 100    |
-      | lpprov | ETH/DEC20 | 2         | 1                    | sell | ASK              | 50         | 100    |
+
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | lpprov | ETH/DEC20 | buy  | 9000   | 1     | 0                | TYPE_LIMIT | TIF_GTC | peg-1     |
+      | lpprov | ETH/DEC20 | sell | 5      | 2001  | 0                | TYPE_LIMIT | TIF_GTC | peg-2     |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general      | bond |
-      | lpprov | USD   | ETH/DEC20 | 0      | 999999991000 | 9000 |
+      | lpprov | USD | ETH/DEC20 | 7323 | 999999983677 | 9000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -233,6 +253,16 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | sellSideProvider | ETH/DEC20 | sell | 290    | 150   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC20 | buy  | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
 
+    Then the parties cancel the following orders:
+      | party  | reference |
+      | lpprov | peg-1     |
+      | lpprov | peg-2     |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | lpprov | ETH/DEC20 | buy  | 225    | 40    | 0                | TYPE_LIMIT | TIF_GTC | peg-3     |
+      | lpprov | ETH/DEC20 | sell | 5      | 2100  | 0                | TYPE_LIMIT | TIF_GTC | peg-4     |
+
     # insurance pool generation - trade
     When the parties place the following orders:
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -254,9 +284,9 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | buy  | 40    | 225    |
       | buy  | 140   | 1      |
 
-    #designatedLoser has position of vol 290; price 150; calculated risk factor long: 0.336895684; risk factor short: 0.4878731
-    #what's on the order book to cover the position is shown above, which makes the exit price 38.65517241 =(1*10+40*280)/290, slippage per unit is 150-38.65517241=111.345
-    #margin level is PositionVol*(markPrice*RiskFactor+SlippagePerUnit) = 290*(150*0.336895684+111.345)=46946
+#designatedLoser has position of vol 290; price 150; calculated risk factor long: 0.336895684; risk factor short: 0.4878731
+#what's on the order book to cover the position is shown above, which makes the exit price 38.65517241 =(1*10+40*280)/290, slippage per unit is 150-38.65517241=111.345
+#margin level is PositionVol*(markPrice*RiskFactor+SlippagePerUnit) = 290*(150*0.336895684+111.345)=46946
 
     Then the parties should have the following margin levels:
       | party           | market id | maintenance | search | initial | release |
@@ -282,6 +312,13 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | buySideProvider | ETH/DEC20 | buy  | 290    | 20    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
 
+    Then the parties cancel the following orders:
+      | party  | reference |
+      | lpprov | peg-3     |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | lpprov | ETH/DEC19 | buy  | 5800   | 1     | 0                | TYPE_LIMIT | TIF_GTC | peg-5     |
     # insurance pool generation - set new mark price (and trigger closeout)
     When the parties place the following orders:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -328,26 +365,28 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | id        | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/DEC19 | 1e0                    | 0                         | SLA        |
     And the parties deposit on asset's general account the following amount:
-      | party            | asset | amount        |
-      | aux              | USD   | 1000000000000 |
-      | aux2             | USD   | 1000000000000 |
-      | lp               | USD   | 1000000000000 |
-      | buyer            | USD   |       1000000 |
-      | seller           | USD   |       1000000 |
-      | party1           | USD   |       1000000 |
-      | party2           | USD   |       1000000 |
+      | party  | asset | amount        |
+      | aux    | USD   | 1000000000000 |
+      | aux2   | USD   | 1000000000000 |
+      | lp     | USD   | 1000000000000 |
+      | buyer  | USD   | 1000000       |
+      | seller | USD   | 1000000       |
+      | party1 | USD   | 1000000       |
+      | party2 | USD   | 1000000       |
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 10s   |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lp     | ETH/DEC19 | 9000              | 0.0 | submission |
-      | lp1 | lp     | ETH/DEC19 | 9000              | 0.0 | amendment  |
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lp     | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
-      | lp     | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
+      | id  | party | market id | commitment amount | fee | lp type    |
+      | lp1 | lp    | ETH/DEC19 | 9000              | 0.0 | submission |
+      | lp1 | lp    | ETH/DEC19 | 9000              | 0.0 | amendment  |
+
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | lp    | ETH/DEC20 | buy  | 9000   | 1     | 0                | TYPE_LIMIT | TIF_GTC | peg-1     |
+      | lp    | ETH/DEC20 | sell | 5      | 2001  | 0                | TYPE_LIMIT | TIF_GTC | peg-2     |
+
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux   | ETH/DEC19 | buy  | 10     | 1     | 0                | TYPE_LIMIT | TIF_GTC |
@@ -361,87 +400,87 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
 
     When the network moves ahead "1" blocks
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | buyer  | ETH/DEC19 | buy  |     6 |    90 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | buyer | ETH/DEC19 | buy  | 6      | 90    | 0                | TYPE_LIMIT | TIF_GTC |
  
     And the network moves ahead "1" blocks
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | buyer  | ETH/DEC19 | buy  |     9  |    95 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | buyer | ETH/DEC19 | buy  | 9      | 95    | 0                | TYPE_LIMIT | TIF_GTC |
     
     And the network moves ahead "1" blocks
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | buyer  | ETH/DEC19 | buy  |      5 |   100 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | buyer | ETH/DEC19 | buy  | 5      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
     And the network moves ahead "1" blocks
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/DEC19 | sell |     11 |    90 | 2                | TYPE_LIMIT | TIF_FOK |
+      | party1 | ETH/DEC19 | sell | 11 | 90 | 2 | TYPE_LIMIT | TIF_FOK |
     Then the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            |
       | 150        | TRADING_MODE_CONTINUOUS |
     And the following trades should be executed:
-      | buyer  | price | size | seller |
-      | buyer  |   100 |    5 | party1 | 
-      | buyer  |    95 |    6 | party1 | 
+      | buyer | price | size | seller |
+      | buyer | 100   | 5    | party1 |
+      | buyer | 95    | 6    | party1 |
      
     When the network moves ahead "1" blocks
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party2 | ETH/DEC19 | sell |      9 |    87 | 2                | TYPE_LIMIT | TIF_FOK|
+      | party2 | ETH/DEC19 | sell | 9 | 87 | 2 | TYPE_LIMIT | TIF_FOK |
     Then the following trades should be executed:
-      | buyer  | price | size | seller |
-      | buyer  |    95 |    3 | party2 | 
-      | buyer  |    90 |    6 | party2 | 
+      | buyer | price | size | seller |
+      | buyer | 95    | 3    | party2 |
+      | buyer | 90    | 6    | party2 |
     Then the parties should have the following margin levels:
       | party  | market id | maintenance |
-      | party1 | ETH/DEC19 |         805 |
-      | party2 | ETH/DEC19 |         659 |
+      | party1 | ETH/DEC19 | 805 |
+      | party2 | ETH/DEC19 | 659 |
 
     When the network moves ahead "1" blocks
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | seller | ETH/DEC19 | sell |     8  |    90 | 0                | TYPE_LIMIT | TIF_GTC |
-      | seller | ETH/DEC19 | sell |     7  |    85 | 0                | TYPE_LIMIT | TIF_GTC |
-      | seller | ETH/DEC19 | sell |     6  |    80 | 0                | TYPE_LIMIT | TIF_GTC |
+      | seller | ETH/DEC19 | sell | 8 | 90 | 0 | TYPE_LIMIT | TIF_GTC |
+      | seller | ETH/DEC19 | sell | 7 | 85 | 0 | TYPE_LIMIT | TIF_GTC |
+      | seller | ETH/DEC19 | sell | 6 | 80 | 0 | TYPE_LIMIT | TIF_GTC |
     And the network moves ahead "1" blocks
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/DEC19 | buy  |     11 |    90 | 2                | TYPE_LIMIT | TIF_FOK |
+      | party1 | ETH/DEC19 | buy | 11 | 90 | 2 | TYPE_LIMIT | TIF_FOK |
     Then the following trades should be executed:
       | buyer  | price | size | seller |
-      | party1 |    80 |    6 | seller | 
-      | party1 |    85 |    5 | seller | 
+      | party1 | 80 | 6 | seller |
+      | party1 | 85 | 5 | seller |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            |
       | 150        | TRADING_MODE_CONTINUOUS |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC19 |      0 | 1000000 |
-      | party2 | USD   | ETH/DEC19 |    988 |  999012 |
+      | party1 | USD | ETH/DEC19 | 0   | 1000000 |
+      | party2 | USD | ETH/DEC19 | 988 | 999012  |
   
     # Go to next MTM window
     When the network moves ahead "5" blocks
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC19 |      0 | 1000165 |
-      | party2 | USD   | ETH/DEC19 |    601 |  999459 |
+      | party1 | USD | ETH/DEC19 | 0   | 1000165 |
+      | party2 | USD | ETH/DEC19 | 601 | 999459  |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 |  0     |              0 |          165 |
-      | party2 | -9     |             60 |            0 |
+      | party1 | 0  | 0  | 165 |
+      | party2 | -9 | 60 | 0   |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            |
-      | 85        | TRADING_MODE_CONTINUOUS |
+      | 85 | TRADING_MODE_CONTINUOUS |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party2 | ETH/DEC19 | buy  |      9 |    90 | 2                | TYPE_LIMIT | TIF_FOK |
+      | party2 | ETH/DEC19 | buy | 9 | 90 | 2 | TYPE_LIMIT | TIF_FOK |
     Then the following trades should be executed:
       | buyer  | price | size | seller |
-      | party2 |    85 |    2 | seller | 
-      | party2 |    90 |    7 | seller | 
+      | party2 | 85 | 2 | seller |
+      | party2 | 90 | 7 | seller |
 
     # Go to next MTM window
     When the network moves ahead "9" blocks
@@ -449,13 +488,13 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     # party2 gains:  95*3+90*6-85*2-90*7=25
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC19 |      0 | 1000165 |
-      | party2 | USD   | ETH/DEC19 |      0 | 1000025 |
-      | buyer  | USD   | ETH/DEC19 |   3479 |  996426 |
-      | seller | USD   | ETH/DEC19 |   2674 |  997231 |
+      | party1 | USD | ETH/DEC19 | 0    | 1000165 |
+      | party2 | USD | ETH/DEC19 | 0    | 1000025 |
+      | buyer  | USD | ETH/DEC19 | 3509 | 996396  |
+      | seller | USD | ETH/DEC19 | 4084 | 995821  |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 |      0 |              0 |          165 |
-      | party2 |      0 |              0 |           25 |
-      | buyer  |     20 |            -95 |            0 |
-      | seller |    -20 |            -95 |            0 |
+      | party1 | 0   | 0   | 165 |
+      | party2 | 0   | 0   | 25  |
+      | buyer  | 20  | -95 | 0   |
+      | seller | -20 | -95 | 0   |
