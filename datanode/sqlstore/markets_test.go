@@ -17,6 +17,10 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
+
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -30,6 +34,8 @@ import (
 func TestMarkets_Add(t *testing.T) {
 	t.Run("Add should insert a valid market record", shouldInsertAValidMarketRecord)
 	t.Run("Add should update a valid market record if the block number already exists", shouldUpdateAValidMarketRecord)
+	t.Run("Add should insert a valid spot market record", shouldInsertAValidSpotMarketRecord)
+	t.Run("Add should insert a valid perpetual market record", shouldInsertAValidPerpetualMarketRecord)
 }
 
 func TestMarkets_Get(t *testing.T) {
@@ -37,6 +43,8 @@ func TestMarkets_Get(t *testing.T) {
 	t.Run("GetByID should return error if the market does not exist", getByIDShouldReturnErrorIfTheMarketDoesNotExist)
 	t.Run("GetAllPaged should not include rejected markets", getAllPagedShouldNotIncludeRejectedMarkets)
 	t.Run("GetByTxHash", getByTxHashReturnsMatchingMarkets)
+	t.Run("GetByID should return a spot market if it exists", getByIDShouldReturnASpotMarketIfItExists)
+	t.Run("GetByID should return a perpetual market if it exists", getByIDShouldReturnAPerpetualMarketIfItExists)
 }
 
 func getByIDShouldReturnTheRequestedMarketIfItExists(t *testing.T) {
@@ -61,6 +69,46 @@ func getByIDShouldReturnTheRequestedMarketIfItExists(t *testing.T) {
 	assert.Equal(t, market.TxHash, marketFromDB.TxHash)
 	assert.Equal(t, market.VegaTime, marketFromDB.VegaTime)
 	assert.Equal(t, market.State, marketFromDB.State)
+}
+
+func getByIDShouldReturnASpotMarketIfItExists(t *testing.T) {
+	bs, md := setupMarketsTest(t)
+
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	block := addTestBlock(t, ctx, bs)
+
+	marketProto := getTestSpotMarket()
+
+	market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
+	require.NoError(t, err, "Converting market proto to database entity")
+	err = md.Upsert(ctx, market)
+	require.NoError(t, err, "Saving market entity to database")
+
+	marketFromDB, err := md.GetByID(ctx, market.ID.String())
+	require.NoError(t, err)
+	marketToProto := marketFromDB.ToProto()
+	assert.IsType(t, &vega.Spot{}, marketToProto.TradableInstrument.GetInstrument().GetSpot())
+}
+
+func getByIDShouldReturnAPerpetualMarketIfItExists(t *testing.T) {
+	bs, md := setupMarketsTest(t)
+
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	block := addTestBlock(t, ctx, bs)
+
+	marketProto := getTestSpotMarket()
+
+	market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
+	require.NoError(t, err, "Converting market proto to database entity")
+	err = md.Upsert(ctx, market)
+	require.NoError(t, err, "Saving market entity to database")
+
+	marketFromDB, err := md.GetByID(ctx, market.ID.String())
+	require.NoError(t, err)
+	marketToProto := marketFromDB.ToProto()
+	assert.IsType(t, &vega.Perpetual{}, marketToProto.TradableInstrument.GetInstrument().GetPerpetual())
 }
 
 func getByTxHashReturnsMatchingMarkets(t *testing.T) {
@@ -163,7 +211,7 @@ func shouldInsertAValidMarketRecord(t *testing.T) {
 
 	block := addTestBlock(t, ctx, bs)
 
-	marketProto := getTestMarket(true)
+	marketProto := getTestFutureMarket(true)
 	marketProto.LiquidityMonitoringParameters.TriggeringRatio = "0.3"
 
 	market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
@@ -202,7 +250,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 
 	t.Run("should insert a valid market record to the database", func(t *testing.T) {
 		block = addTestBlock(t, ctx, bs)
-		marketProto = getTestMarket(false)
+		marketProto = getTestFutureMarket(false)
 
 		market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
 		require.NoError(t, err, "Converting market proto to database entity")
@@ -268,7 +316,222 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 	})
 }
 
-func getTestMarket(termInt bool) *vega.Market {
+func shouldInsertAValidSpotMarketRecord(t *testing.T) {
+	bs, md := setupMarketsTest(t)
+
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	conn := connectionSource.Connection
+	var rowCount int
+
+	err := conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+	require.NoError(t, err)
+	assert.Equal(t, 0, rowCount)
+
+	block := addTestBlock(t, ctx, bs)
+
+	marketProto := getTestSpotMarket()
+
+	market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
+	require.NoError(t, err, "Converting market proto to database entity")
+
+	err = md.Upsert(ctx, market)
+	require.NoError(t, err, "Saving market entity to database")
+	err = conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, rowCount)
+}
+
+func shouldInsertAValidPerpetualMarketRecord(t *testing.T) {
+	bs, md := setupMarketsTest(t)
+
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	conn := connectionSource.Connection
+	var rowCount int
+
+	err := conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+	require.NoError(t, err)
+	assert.Equal(t, 0, rowCount)
+
+	block := addTestBlock(t, ctx, bs)
+
+	marketProto := getTestPerpetualMarket()
+
+	market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
+	require.NoError(t, err, "Converting market proto to database entity")
+
+	err = md.Upsert(ctx, market)
+	require.NoError(t, err, "Saving market entity to database")
+	err = conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, rowCount)
+}
+
+func getTestSpotMarket() *vega.Market {
+	mkt := getTestMarket()
+
+	mkt.TradableInstrument.Instrument.Product = &vega.Instrument_Spot{
+		Spot: &vega.Spot{
+			BaseAsset:  "Ethereum",
+			QuoteAsset: "USD",
+			Name:       "ETH/USD",
+		},
+	}
+
+	return mkt
+}
+
+func getTestPerpetualMarket() *vega.Market {
+	pk := dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)
+	mkt := getTestMarket()
+	mkt.TradableInstrument.Instrument.Product = &vega.Instrument_Perpetual{
+		Perpetual: &vega.Perpetual{
+			SettlementAsset:     "Ethereum/Ether",
+			QuoteName:           "ETH-230929",
+			MarginFundingFactor: "0.5",
+			InterestRate:        "0.012",
+			ClampLowerBound:     "0.2",
+			ClampUpperBound:     "0.8",
+			DataSourceSpecForSettlementSchedule: &vega.DataSourceSpec{
+				Id:        "test-settlement-schedule",
+				CreatedAt: time.Now().UnixNano(),
+				UpdatedAt: time.Now().UnixNano(),
+				Data: vega.NewDataSourceDefinition(
+					vega.DataSourceContentTypeOracle,
+				).SetOracleConfig(
+					&vega.DataSourceDefinitionExternal_Oracle{
+						Oracle: &vega.DataSourceSpecConfiguration{
+							Signers: []*v1.Signer{pk.IntoProto()},
+							Filters: []*v1.Filter{
+								{
+									Key: &v1.PropertyKey{
+										Name: "prices.ETH.value",
+										Type: v1.PropertyKey_TYPE_INTEGER,
+									},
+									Conditions: []*v1.Condition{},
+								},
+							},
+						},
+					},
+				),
+				Status: vega.DataSourceSpec_STATUS_ACTIVE,
+			},
+			DataSourceSpecForSettlementData: &vega.DataSourceSpec{
+				Id:        "test-settlement-data",
+				CreatedAt: time.Now().UnixNano(),
+				UpdatedAt: time.Now().UnixNano(),
+				Data: vega.NewDataSourceDefinition(
+					vega.DataSourceContentTypeOracle,
+				).SetOracleConfig(
+					&vega.DataSourceDefinitionExternal_Oracle{
+						Oracle: &vega.DataSourceSpecConfiguration{
+							Signers: []*v1.Signer{pk.IntoProto()},
+							Filters: []*v1.Filter{
+								{
+									Key: &v1.PropertyKey{
+										Name: "prices.ETH.value",
+										Type: v1.PropertyKey_TYPE_INTEGER,
+									},
+									Conditions: []*v1.Condition{},
+								},
+							},
+						},
+					},
+				),
+				Status: vega.DataSourceSpec_STATUS_ACTIVE,
+			},
+			DataSourceSpecBinding: &vega.DataSourceSpecToPerpetualBinding{
+				SettlementDataProperty:     "prices.ETH.value",
+				SettlementScheduleProperty: "2023-09-29T00:00:00.000000000Z",
+			},
+		},
+	}
+	return mkt
+}
+
+func getTestMarket() *vega.Market {
+	return &vega.Market{
+		Id: helpers.GenerateID(),
+		TradableInstrument: &vega.TradableInstrument{
+			Instrument: &vega.Instrument{
+				Id:   "Crypto/BTCUSD/Futures/Dec19",
+				Code: "FX:BTCUSD/DEC19",
+				Name: "December 2019 BTC vs USD future",
+				Metadata: &vega.InstrumentMetadata{
+					Tags: []string{
+						"asset_class:fx/crypto",
+						"product:futures",
+					},
+				},
+			},
+			MarginCalculator: &vega.MarginCalculator{
+				ScalingFactors: &vega.ScalingFactors{
+					SearchLevel:       1.1,
+					InitialMargin:     1.2,
+					CollateralRelease: 1.4,
+				},
+			},
+			RiskModel: &vega.TradableInstrument_LogNormalRiskModel{
+				LogNormalRiskModel: &vega.LogNormalRiskModel{
+					RiskAversionParameter: 0.01,
+					Tau:                   1.0 / 365.25 / 24,
+					Params: &vega.LogNormalModelParams{
+						Mu:    0,
+						R:     0.016,
+						Sigma: 0.09,
+					},
+				},
+			},
+		},
+		Fees: &vega.Fees{
+			Factors: &vega.FeeFactors{
+				MakerFee:          "",
+				InfrastructureFee: "",
+				LiquidityFee:      "",
+			},
+		},
+		OpeningAuction: &vega.AuctionDuration{
+			Duration: 0,
+			Volume:   0,
+		},
+		PriceMonitoringSettings: &vega.PriceMonitoringSettings{
+			Parameters: &vega.PriceMonitoringParameters{
+				Triggers: []*vega.PriceMonitoringTrigger{
+					{
+						Horizon:          0,
+						Probability:      "",
+						AuctionExtension: 0,
+					},
+				},
+			},
+		},
+		LiquidityMonitoringParameters: &vega.LiquidityMonitoringParameters{
+			TargetStakeParameters: &vega.TargetStakeParameters{
+				TimeWindow:    0,
+				ScalingFactor: 0,
+			},
+			TriggeringRatio:  "0",
+			AuctionExtension: 0,
+		},
+		TradingMode: vega.Market_TRADING_MODE_CONTINUOUS,
+		State:       vega.Market_STATE_ACTIVE,
+		MarketTimestamps: &vega.MarketTimestamps{
+			Proposed: 0,
+			Pending:  0,
+			Open:     0,
+			Close:    0,
+		},
+		PositionDecimalPlaces:   8,
+		LpPriceRange:            "0.95",
+		LinearSlippageFactor:    "1.23",
+		QuadraticSlippageFactor: "5.67",
+	}
+}
+
+func getTestFutureMarket(termInt bool) *vega.Market {
 	term := &vega.DataSourceSpec{
 		Id:        "",
 		CreatedAt: 0,

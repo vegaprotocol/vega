@@ -53,6 +53,8 @@
 - [8917](https://github.com/vegaprotocol/vega/issues/8917) - Support teams engine snapshots
 - [9007](https://github.com/vegaprotocol/vega/issues/9007) - Add reward vesting mechanisms.
 - [8914](https://github.com/vegaprotocol/vega/issues/8914) - Add referral network parameters.
+- [8120](https://github.com/vegaprotocol/vega/issues/8120) - Data node `API` support for spot markets, data and governance.
+- [8762](https://github.com/vegaprotocol/vega/issues/8762) - Data node `API` support for perpetual markets, data and governance.
 - [8761](https://github.com/vegaprotocol/vega/issues/8761) - Add terminating `PERPS` via governance.
 
 ### 🐛 Fixes

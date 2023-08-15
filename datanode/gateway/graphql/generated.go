@@ -80,6 +80,7 @@ type ResolverRoot interface {
 	LiquidityProvider() LiquidityProviderResolver
 	LiquidityProvision() LiquidityProvisionResolver
 	LiquidityProvisionUpdate() LiquidityProvisionUpdateResolver
+	LiquiditySLAParameters() LiquiditySLAParametersResolver
 	MarginLevels() MarginLevelsResolver
 	MarginLevelsUpdate() MarginLevelsUpdateResolver
 	Market() MarketResolver
@@ -89,6 +90,7 @@ type ResolverRoot interface {
 	NewAsset() NewAssetResolver
 	NewFreeform() NewFreeformResolver
 	NewMarket() NewMarketResolver
+	NewSpotMarket() NewSpotMarketResolver
 	NewTransfer() NewTransferResolver
 	Node() NodeResolver
 	NodeData() NodeDataResolver
@@ -103,6 +105,8 @@ type ResolverRoot interface {
 	OrderUpdate() OrderUpdateResolver
 	Party() PartyResolver
 	PartyStake() PartyStakeResolver
+	Perpetual() PerpetualResolver
+	PerpetualProduct() PerpetualProductResolver
 	Position() PositionResolver
 	PositionUpdate() PositionUpdateResolver
 	PriceLevel() PriceLevelResolver
@@ -117,6 +121,8 @@ type ResolverRoot interface {
 	RecurringTransfer() RecurringTransferResolver
 	Reward() RewardResolver
 	RewardSummary() RewardSummaryResolver
+	Spot() SpotResolver
+	SpotProduct() SpotProductResolver
 	StakeLinking() StakeLinkingResolver
 	Statistics() StatisticsResolver
 	StopOrder() StopOrderResolver
@@ -131,6 +137,8 @@ type ResolverRoot interface {
 	UpdateMarketConfiguration() UpdateMarketConfigurationResolver
 	UpdateMarketState() UpdateMarketStateResolver
 	UpdateNetworkParameter() UpdateNetworkParameterResolver
+	UpdateSpotMarket() UpdateSpotMarketResolver
+	UpdateSpotMarketConfiguration() UpdateSpotMarketConfigurationResolver
 	Vote() VoteResolver
 	Withdrawal() WithdrawalResolver
 	DateRange() DateRangeResolver
@@ -367,6 +375,16 @@ type ComplexityRoot struct {
 
 	DataSourceSpecConfigurationTime struct {
 		Conditions func(childComplexity int) int
+	}
+
+	DataSourceSpecConfigurationTimeTrigger struct {
+		Conditions func(childComplexity int) int
+		Triggers   func(childComplexity int) int
+	}
+
+	DataSourceSpecPerpetualBinding struct {
+		SettlementDataProperty     func(childComplexity int) int
+		SettlementScheduleProperty func(childComplexity int) int
 	}
 
 	DataSourceSpecToFutureBinding struct {
@@ -727,10 +745,16 @@ type ComplexityRoot struct {
 		Code          func(childComplexity int) int
 		FutureProduct func(childComplexity int) int
 		Name          func(childComplexity int) int
+		Product       func(childComplexity int) int
 	}
 
 	InstrumentMetadata struct {
 		Tags func(childComplexity int) int
+	}
+
+	InternalTimeTrigger struct {
+		Every   func(childComplexity int) int
+		Initial func(childComplexity int) int
 	}
 
 	KeyRotation struct {
@@ -850,6 +874,14 @@ type ComplexityRoot struct {
 	LiquidityProvisionsEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
+	}
+
+	LiquiditySLAParameters struct {
+		CommitmentMinTimeFraction       func(childComplexity int) int
+		PerformanceHysteresisEpochs     func(childComplexity int) int
+		PriceRange                      func(childComplexity int) int
+		ProvidersFeeCalculationTimeStep func(childComplexity int) int
+		SLACompletionFactor             func(childComplexity int) int
 	}
 
 	LogNormalModelParams struct {
@@ -1087,6 +1119,17 @@ type ComplexityRoot struct {
 		QuadraticSlippageFactor       func(childComplexity int) int
 		RiskParameters                func(childComplexity int) int
 		SuccessorConfiguration        func(childComplexity int) int
+	}
+
+	NewSpotMarket struct {
+		DecimalPlaces             func(childComplexity int) int
+		Instrument                func(childComplexity int) int
+		LiquiditySLAParams        func(childComplexity int) int
+		Metadata                  func(childComplexity int) int
+		PositionDecimalPlaces     func(childComplexity int) int
+		PriceMonitoringParameters func(childComplexity int) int
+		RiskParameters            func(childComplexity int) int
+		TargetStakeParameters     func(childComplexity int) int
 	}
 
 	NewTransfer struct {
@@ -1392,6 +1435,30 @@ type ComplexityRoot struct {
 	PeggedOrder struct {
 		Offset    func(childComplexity int) int
 		Reference func(childComplexity int) int
+	}
+
+	Perpetual struct {
+		ClampLowerBound                     func(childComplexity int) int
+		ClampUpperBound                     func(childComplexity int) int
+		DataSourceSpecBinding               func(childComplexity int) int
+		DataSourceSpecForSettlementData     func(childComplexity int) int
+		DataSourceSpecForSettlementSchedule func(childComplexity int) int
+		InterestRate                        func(childComplexity int) int
+		MarginFundingFactor                 func(childComplexity int) int
+		QuoteName                           func(childComplexity int) int
+		SettlementAsset                     func(childComplexity int) int
+	}
+
+	PerpetualProduct struct {
+		ClampLowerBound                     func(childComplexity int) int
+		ClampUpperBound                     func(childComplexity int) int
+		DataSourceSpecBinding               func(childComplexity int) int
+		DataSourceSpecForSettlementData     func(childComplexity int) int
+		DataSourceSpecForSettlementSchedule func(childComplexity int) int
+		InterestRate                        func(childComplexity int) int
+		MarginFundingFactor                 func(childComplexity int) int
+		QuoteName                           func(childComplexity int) int
+		SettlementAsset                     func(childComplexity int) int
 	}
 
 	Position struct {
@@ -1754,6 +1821,18 @@ type ComplexityRoot struct {
 		FactorShort func(childComplexity int) int
 	}
 
+	Spot struct {
+		BaseAsset  func(childComplexity int) int
+		Name       func(childComplexity int) int
+		QuoteAsset func(childComplexity int) int
+	}
+
+	SpotProduct struct {
+		BaseAsset  func(childComplexity int) int
+		Name       func(childComplexity int) int
+		QuoteAsset func(childComplexity int) int
+	}
+
 	StakeLinking struct {
 		Amount      func(childComplexity int) int
 		BlockHeight func(childComplexity int) int
@@ -2058,6 +2137,30 @@ type ComplexityRoot struct {
 		NetworkParameter func(childComplexity int) int
 	}
 
+	UpdatePerpetualProduct struct {
+		ClampLowerBound                     func(childComplexity int) int
+		ClampUpperBound                     func(childComplexity int) int
+		DataSourceSpecBinding               func(childComplexity int) int
+		DataSourceSpecForSettlementData     func(childComplexity int) int
+		DataSourceSpecForSettlementSchedule func(childComplexity int) int
+		InterestRate                        func(childComplexity int) int
+		MarginFundingFactor                 func(childComplexity int) int
+		QuoteName                           func(childComplexity int) int
+	}
+
+	UpdateSpotMarket struct {
+		MarketId                      func(childComplexity int) int
+		UpdateSpotMarketConfiguration func(childComplexity int) int
+	}
+
+	UpdateSpotMarketConfiguration struct {
+		LiquiditySLAParams        func(childComplexity int) int
+		Metadata                  func(childComplexity int) int
+		PriceMonitoringParameters func(childComplexity int) int
+		RiskParameters            func(childComplexity int) int
+		TargetStakeParameters     func(childComplexity int) int
+	}
+
 	Vote struct {
 		Datetime               func(childComplexity int) int
 		EquityLikeShareWeight  func(childComplexity int) int
@@ -2244,6 +2347,7 @@ type InstrumentResolver interface {
 }
 type InstrumentConfigurationResolver interface {
 	FutureProduct(ctx context.Context, obj *vega.InstrumentConfiguration) (*vega.FutureProduct, error)
+	Product(ctx context.Context, obj *vega.InstrumentConfiguration) (ProductConfiguration, error)
 }
 type KeyRotationResolver interface {
 	BlockHeight(ctx context.Context, obj *v1.KeyRotation) (string, error)
@@ -2267,6 +2371,10 @@ type LiquidityProvisionResolver interface {
 }
 type LiquidityProvisionUpdateResolver interface {
 	Version(ctx context.Context, obj *vega.LiquidityProvision) (string, error)
+}
+type LiquiditySLAParametersResolver interface {
+	PerformanceHysteresisEpochs(ctx context.Context, obj *vega.LiquiditySLAParameters) (int, error)
+	SLACompletionFactor(ctx context.Context, obj *vega.LiquiditySLAParameters) (string, error)
 }
 type MarginLevelsResolver interface {
 	Market(ctx context.Context, obj *vega.MarginLevels) (*vega.Market, error)
@@ -2356,6 +2464,16 @@ type NewMarketResolver interface {
 	LinearSlippageFactor(ctx context.Context, obj *vega.NewMarket) (string, error)
 	QuadraticSlippageFactor(ctx context.Context, obj *vega.NewMarket) (string, error)
 	SuccessorConfiguration(ctx context.Context, obj *vega.NewMarket) (*vega.SuccessorConfiguration, error)
+}
+type NewSpotMarketResolver interface {
+	Instrument(ctx context.Context, obj *vega.NewSpotMarket) (*vega.InstrumentConfiguration, error)
+	DecimalPlaces(ctx context.Context, obj *vega.NewSpotMarket) (int, error)
+	Metadata(ctx context.Context, obj *vega.NewSpotMarket) ([]string, error)
+	PriceMonitoringParameters(ctx context.Context, obj *vega.NewSpotMarket) (*PriceMonitoringParameters, error)
+	TargetStakeParameters(ctx context.Context, obj *vega.NewSpotMarket) (*TargetStakeParameters, error)
+	RiskParameters(ctx context.Context, obj *vega.NewSpotMarket) (RiskModel, error)
+	PositionDecimalPlaces(ctx context.Context, obj *vega.NewSpotMarket) (int, error)
+	LiquiditySLAParams(ctx context.Context, obj *vega.NewSpotMarket) (*vega.LiquiditySLAParameters, error)
 }
 type NewTransferResolver interface {
 	Source(ctx context.Context, obj *vega.NewTransfer) (string, error)
@@ -2461,6 +2579,18 @@ type PartyResolver interface {
 }
 type PartyStakeResolver interface {
 	Linkings(ctx context.Context, obj *v2.GetStakeResponse) ([]*v1.StakeLinking, error)
+}
+type PerpetualResolver interface {
+	SettlementAsset(ctx context.Context, obj *vega.Perpetual) (*vega.Asset, error)
+
+	DataSourceSpecForSettlementSchedule(ctx context.Context, obj *vega.Perpetual) (*DataSourceSpec, error)
+	DataSourceSpecForSettlementData(ctx context.Context, obj *vega.Perpetual) (*DataSourceSpec, error)
+	DataSourceSpecBinding(ctx context.Context, obj *vega.Perpetual) (*DataSourceSpecPerpetualBinding, error)
+}
+type PerpetualProductResolver interface {
+	SettlementAsset(ctx context.Context, obj *vega.PerpetualProduct) (*vega.Asset, error)
+
+	DataSourceSpecBinding(ctx context.Context, obj *vega.PerpetualProduct) (*DataSourceSpecPerpetualBinding, error)
 }
 type PositionResolver interface {
 	Market(ctx context.Context, obj *vega.Position) (*vega.Market, error)
@@ -2603,6 +2733,14 @@ type RewardSummaryResolver interface {
 
 	RewardsConnection(ctx context.Context, obj *vega.RewardSummary, assetID *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
 }
+type SpotResolver interface {
+	BaseAsset(ctx context.Context, obj *vega.Spot) (*vega.Asset, error)
+	QuoteAsset(ctx context.Context, obj *vega.Spot) (*vega.Asset, error)
+}
+type SpotProductResolver interface {
+	BaseAsset(ctx context.Context, obj *vega.SpotProduct) (*vega.Asset, error)
+	QuoteAsset(ctx context.Context, obj *vega.SpotProduct) (*vega.Asset, error)
+}
 type StakeLinkingResolver interface {
 	Timestamp(ctx context.Context, obj *v1.StakeLinking) (int64, error)
 	Party(ctx context.Context, obj *v1.StakeLinking) (*vega.Party, error)
@@ -2724,6 +2862,15 @@ type UpdateMarketStateResolver interface {
 }
 type UpdateNetworkParameterResolver interface {
 	NetworkParameter(ctx context.Context, obj *vega.UpdateNetworkParameter) (*vega.NetworkParameter, error)
+}
+type UpdateSpotMarketResolver interface {
+	UpdateSpotMarketConfiguration(ctx context.Context, obj *vega.UpdateSpotMarket) (*vega.UpdateSpotMarketConfiguration, error)
+}
+type UpdateSpotMarketConfigurationResolver interface {
+	PriceMonitoringParameters(ctx context.Context, obj *vega.UpdateSpotMarketConfiguration) (*PriceMonitoringParameters, error)
+	TargetStakeParameters(ctx context.Context, obj *vega.UpdateSpotMarketConfiguration) (*TargetStakeParameters, error)
+	RiskParameters(ctx context.Context, obj *vega.UpdateSpotMarketConfiguration) (RiskModel, error)
+	LiquiditySLAParams(ctx context.Context, obj *vega.UpdateSpotMarketConfiguration) (*vega.LiquiditySLAParameters, error)
 }
 type VoteResolver interface {
 	Party(ctx context.Context, obj *vega.Vote) (*vega.Party, error)
@@ -3623,6 +3770,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DataSourceSpecConfigurationTime.Conditions(childComplexity), true
+
+	case "DataSourceSpecConfigurationTimeTrigger.conditions":
+		if e.complexity.DataSourceSpecConfigurationTimeTrigger.Conditions == nil {
+			break
+		}
+
+		return e.complexity.DataSourceSpecConfigurationTimeTrigger.Conditions(childComplexity), true
+
+	case "DataSourceSpecConfigurationTimeTrigger.triggers":
+		if e.complexity.DataSourceSpecConfigurationTimeTrigger.Triggers == nil {
+			break
+		}
+
+		return e.complexity.DataSourceSpecConfigurationTimeTrigger.Triggers(childComplexity), true
+
+	case "DataSourceSpecPerpetualBinding.settlementDataProperty":
+		if e.complexity.DataSourceSpecPerpetualBinding.SettlementDataProperty == nil {
+			break
+		}
+
+		return e.complexity.DataSourceSpecPerpetualBinding.SettlementDataProperty(childComplexity), true
+
+	case "DataSourceSpecPerpetualBinding.settlementScheduleProperty":
+		if e.complexity.DataSourceSpecPerpetualBinding.SettlementScheduleProperty == nil {
+			break
+		}
+
+		return e.complexity.DataSourceSpecPerpetualBinding.SettlementScheduleProperty(childComplexity), true
 
 	case "DataSourceSpecToFutureBinding.settlementDataProperty":
 		if e.complexity.DataSourceSpecToFutureBinding.SettlementDataProperty == nil {
@@ -5020,12 +5195,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentConfiguration.Name(childComplexity), true
 
+	case "InstrumentConfiguration.product":
+		if e.complexity.InstrumentConfiguration.Product == nil {
+			break
+		}
+
+		return e.complexity.InstrumentConfiguration.Product(childComplexity), true
+
 	case "InstrumentMetadata.tags":
 		if e.complexity.InstrumentMetadata.Tags == nil {
 			break
 		}
 
 		return e.complexity.InstrumentMetadata.Tags(childComplexity), true
+
+	case "InternalTimeTrigger.every":
+		if e.complexity.InternalTimeTrigger.Every == nil {
+			break
+		}
+
+		return e.complexity.InternalTimeTrigger.Every(childComplexity), true
+
+	case "InternalTimeTrigger.initial":
+		if e.complexity.InternalTimeTrigger.Initial == nil {
+			break
+		}
+
+		return e.complexity.InternalTimeTrigger.Initial(childComplexity), true
 
 	case "KeyRotation.blockHeight":
 		if e.complexity.KeyRotation.BlockHeight == nil {
@@ -5502,6 +5698,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LiquidityProvisionsEdge.Node(childComplexity), true
+
+	case "LiquiditySLAParameters.commitmentMinTimeFraction":
+		if e.complexity.LiquiditySLAParameters.CommitmentMinTimeFraction == nil {
+			break
+		}
+
+		return e.complexity.LiquiditySLAParameters.CommitmentMinTimeFraction(childComplexity), true
+
+	case "LiquiditySLAParameters.performanceHysteresisEpochs":
+		if e.complexity.LiquiditySLAParameters.PerformanceHysteresisEpochs == nil {
+			break
+		}
+
+		return e.complexity.LiquiditySLAParameters.PerformanceHysteresisEpochs(childComplexity), true
+
+	case "LiquiditySLAParameters.priceRange":
+		if e.complexity.LiquiditySLAParameters.PriceRange == nil {
+			break
+		}
+
+		return e.complexity.LiquiditySLAParameters.PriceRange(childComplexity), true
+
+	case "LiquiditySLAParameters.providersFeeCalculationTimeStep":
+		if e.complexity.LiquiditySLAParameters.ProvidersFeeCalculationTimeStep == nil {
+			break
+		}
+
+		return e.complexity.LiquiditySLAParameters.ProvidersFeeCalculationTimeStep(childComplexity), true
+
+	case "LiquiditySLAParameters.slaCompletionFactor":
+		if e.complexity.LiquiditySLAParameters.SLACompletionFactor == nil {
+			break
+		}
+
+		return e.complexity.LiquiditySLAParameters.SLACompletionFactor(childComplexity), true
 
 	case "LogNormalModelParams.mu":
 		if e.complexity.LogNormalModelParams.Mu == nil {
@@ -6582,6 +6813,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NewMarket.SuccessorConfiguration(childComplexity), true
+
+	case "NewSpotMarket.decimal_places":
+		if e.complexity.NewSpotMarket.DecimalPlaces == nil {
+			break
+		}
+
+		return e.complexity.NewSpotMarket.DecimalPlaces(childComplexity), true
+
+	case "NewSpotMarket.instrument":
+		if e.complexity.NewSpotMarket.Instrument == nil {
+			break
+		}
+
+		return e.complexity.NewSpotMarket.Instrument(childComplexity), true
+
+	case "NewSpotMarket.liquiditySLAParams":
+		if e.complexity.NewSpotMarket.LiquiditySLAParams == nil {
+			break
+		}
+
+		return e.complexity.NewSpotMarket.LiquiditySLAParams(childComplexity), true
+
+	case "NewSpotMarket.metadata":
+		if e.complexity.NewSpotMarket.Metadata == nil {
+			break
+		}
+
+		return e.complexity.NewSpotMarket.Metadata(childComplexity), true
+
+	case "NewSpotMarket.positionDecimalPlaces":
+		if e.complexity.NewSpotMarket.PositionDecimalPlaces == nil {
+			break
+		}
+
+		return e.complexity.NewSpotMarket.PositionDecimalPlaces(childComplexity), true
+
+	case "NewSpotMarket.priceMonitoringParameters":
+		if e.complexity.NewSpotMarket.PriceMonitoringParameters == nil {
+			break
+		}
+
+		return e.complexity.NewSpotMarket.PriceMonitoringParameters(childComplexity), true
+
+	case "NewSpotMarket.riskParameters":
+		if e.complexity.NewSpotMarket.RiskParameters == nil {
+			break
+		}
+
+		return e.complexity.NewSpotMarket.RiskParameters(childComplexity), true
+
+	case "NewSpotMarket.targetStakeParameters":
+		if e.complexity.NewSpotMarket.TargetStakeParameters == nil {
+			break
+		}
+
+		return e.complexity.NewSpotMarket.TargetStakeParameters(childComplexity), true
 
 	case "NewTransfer.amount":
 		if e.complexity.NewTransfer.Amount == nil {
@@ -8093,6 +8380,132 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PeggedOrder.Reference(childComplexity), true
+
+	case "Perpetual.clampLowerBound":
+		if e.complexity.Perpetual.ClampLowerBound == nil {
+			break
+		}
+
+		return e.complexity.Perpetual.ClampLowerBound(childComplexity), true
+
+	case "Perpetual.clampUpperBound":
+		if e.complexity.Perpetual.ClampUpperBound == nil {
+			break
+		}
+
+		return e.complexity.Perpetual.ClampUpperBound(childComplexity), true
+
+	case "Perpetual.dataSourceSpecBinding":
+		if e.complexity.Perpetual.DataSourceSpecBinding == nil {
+			break
+		}
+
+		return e.complexity.Perpetual.DataSourceSpecBinding(childComplexity), true
+
+	case "Perpetual.dataSourceSpecForSettlementData":
+		if e.complexity.Perpetual.DataSourceSpecForSettlementData == nil {
+			break
+		}
+
+		return e.complexity.Perpetual.DataSourceSpecForSettlementData(childComplexity), true
+
+	case "Perpetual.dataSourceSpecForSettlementSchedule":
+		if e.complexity.Perpetual.DataSourceSpecForSettlementSchedule == nil {
+			break
+		}
+
+		return e.complexity.Perpetual.DataSourceSpecForSettlementSchedule(childComplexity), true
+
+	case "Perpetual.interestRate":
+		if e.complexity.Perpetual.InterestRate == nil {
+			break
+		}
+
+		return e.complexity.Perpetual.InterestRate(childComplexity), true
+
+	case "Perpetual.marginFundingFactor":
+		if e.complexity.Perpetual.MarginFundingFactor == nil {
+			break
+		}
+
+		return e.complexity.Perpetual.MarginFundingFactor(childComplexity), true
+
+	case "Perpetual.quoteName":
+		if e.complexity.Perpetual.QuoteName == nil {
+			break
+		}
+
+		return e.complexity.Perpetual.QuoteName(childComplexity), true
+
+	case "Perpetual.settlementAsset":
+		if e.complexity.Perpetual.SettlementAsset == nil {
+			break
+		}
+
+		return e.complexity.Perpetual.SettlementAsset(childComplexity), true
+
+	case "PerpetualProduct.clampLowerBound":
+		if e.complexity.PerpetualProduct.ClampLowerBound == nil {
+			break
+		}
+
+		return e.complexity.PerpetualProduct.ClampLowerBound(childComplexity), true
+
+	case "PerpetualProduct.clampUpperBound":
+		if e.complexity.PerpetualProduct.ClampUpperBound == nil {
+			break
+		}
+
+		return e.complexity.PerpetualProduct.ClampUpperBound(childComplexity), true
+
+	case "PerpetualProduct.dataSourceSpecBinding":
+		if e.complexity.PerpetualProduct.DataSourceSpecBinding == nil {
+			break
+		}
+
+		return e.complexity.PerpetualProduct.DataSourceSpecBinding(childComplexity), true
+
+	case "PerpetualProduct.dataSourceSpecForSettlementData":
+		if e.complexity.PerpetualProduct.DataSourceSpecForSettlementData == nil {
+			break
+		}
+
+		return e.complexity.PerpetualProduct.DataSourceSpecForSettlementData(childComplexity), true
+
+	case "PerpetualProduct.dataSourceSpecForSettlementSchedule":
+		if e.complexity.PerpetualProduct.DataSourceSpecForSettlementSchedule == nil {
+			break
+		}
+
+		return e.complexity.PerpetualProduct.DataSourceSpecForSettlementSchedule(childComplexity), true
+
+	case "PerpetualProduct.interestRate":
+		if e.complexity.PerpetualProduct.InterestRate == nil {
+			break
+		}
+
+		return e.complexity.PerpetualProduct.InterestRate(childComplexity), true
+
+	case "PerpetualProduct.marginFundingFactor":
+		if e.complexity.PerpetualProduct.MarginFundingFactor == nil {
+			break
+		}
+
+		return e.complexity.PerpetualProduct.MarginFundingFactor(childComplexity), true
+
+	case "PerpetualProduct.quoteName":
+		if e.complexity.PerpetualProduct.QuoteName == nil {
+			break
+		}
+
+		return e.complexity.PerpetualProduct.QuoteName(childComplexity), true
+
+	case "PerpetualProduct.settlementAsset":
+		if e.complexity.PerpetualProduct.SettlementAsset == nil {
+			break
+		}
+
+		return e.complexity.PerpetualProduct.SettlementAsset(childComplexity), true
 
 	case "Position.averageEntryPrice":
 		if e.complexity.Position.AverageEntryPrice == nil {
@@ -9892,6 +10305,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SimpleRiskModelParams.FactorShort(childComplexity), true
 
+	case "Spot.baseAsset":
+		if e.complexity.Spot.BaseAsset == nil {
+			break
+		}
+
+		return e.complexity.Spot.BaseAsset(childComplexity), true
+
+	case "Spot.name":
+		if e.complexity.Spot.Name == nil {
+			break
+		}
+
+		return e.complexity.Spot.Name(childComplexity), true
+
+	case "Spot.quoteAsset":
+		if e.complexity.Spot.QuoteAsset == nil {
+			break
+		}
+
+		return e.complexity.Spot.QuoteAsset(childComplexity), true
+
+	case "SpotProduct.baseAsset":
+		if e.complexity.SpotProduct.BaseAsset == nil {
+			break
+		}
+
+		return e.complexity.SpotProduct.BaseAsset(childComplexity), true
+
+	case "SpotProduct.name":
+		if e.complexity.SpotProduct.Name == nil {
+			break
+		}
+
+		return e.complexity.SpotProduct.Name(childComplexity), true
+
+	case "SpotProduct.quoteAsset":
+		if e.complexity.SpotProduct.QuoteAsset == nil {
+			break
+		}
+
+		return e.complexity.SpotProduct.QuoteAsset(childComplexity), true
+
 	case "StakeLinking.amount":
 		if e.complexity.StakeLinking.Amount == nil {
 			break
@@ -11212,6 +11667,111 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.UpdateNetworkParameter.NetworkParameter(childComplexity), true
+
+	case "UpdatePerpetualProduct.clampLowerBound":
+		if e.complexity.UpdatePerpetualProduct.ClampLowerBound == nil {
+			break
+		}
+
+		return e.complexity.UpdatePerpetualProduct.ClampLowerBound(childComplexity), true
+
+	case "UpdatePerpetualProduct.clampUpperBound":
+		if e.complexity.UpdatePerpetualProduct.ClampUpperBound == nil {
+			break
+		}
+
+		return e.complexity.UpdatePerpetualProduct.ClampUpperBound(childComplexity), true
+
+	case "UpdatePerpetualProduct.dataSourceSpecBinding":
+		if e.complexity.UpdatePerpetualProduct.DataSourceSpecBinding == nil {
+			break
+		}
+
+		return e.complexity.UpdatePerpetualProduct.DataSourceSpecBinding(childComplexity), true
+
+	case "UpdatePerpetualProduct.dataSourceSpecForSettlementData":
+		if e.complexity.UpdatePerpetualProduct.DataSourceSpecForSettlementData == nil {
+			break
+		}
+
+		return e.complexity.UpdatePerpetualProduct.DataSourceSpecForSettlementData(childComplexity), true
+
+	case "UpdatePerpetualProduct.dataSourceSpecForSettlementSchedule":
+		if e.complexity.UpdatePerpetualProduct.DataSourceSpecForSettlementSchedule == nil {
+			break
+		}
+
+		return e.complexity.UpdatePerpetualProduct.DataSourceSpecForSettlementSchedule(childComplexity), true
+
+	case "UpdatePerpetualProduct.interestRate":
+		if e.complexity.UpdatePerpetualProduct.InterestRate == nil {
+			break
+		}
+
+		return e.complexity.UpdatePerpetualProduct.InterestRate(childComplexity), true
+
+	case "UpdatePerpetualProduct.marginFundingFactor":
+		if e.complexity.UpdatePerpetualProduct.MarginFundingFactor == nil {
+			break
+		}
+
+		return e.complexity.UpdatePerpetualProduct.MarginFundingFactor(childComplexity), true
+
+	case "UpdatePerpetualProduct.quoteName":
+		if e.complexity.UpdatePerpetualProduct.QuoteName == nil {
+			break
+		}
+
+		return e.complexity.UpdatePerpetualProduct.QuoteName(childComplexity), true
+
+	case "UpdateSpotMarket.marketId":
+		if e.complexity.UpdateSpotMarket.MarketId == nil {
+			break
+		}
+
+		return e.complexity.UpdateSpotMarket.MarketId(childComplexity), true
+
+	case "UpdateSpotMarket.updateSpotMarketConfiguration":
+		if e.complexity.UpdateSpotMarket.UpdateSpotMarketConfiguration == nil {
+			break
+		}
+
+		return e.complexity.UpdateSpotMarket.UpdateSpotMarketConfiguration(childComplexity), true
+
+	case "UpdateSpotMarketConfiguration.liquiditySLAParams":
+		if e.complexity.UpdateSpotMarketConfiguration.LiquiditySLAParams == nil {
+			break
+		}
+
+		return e.complexity.UpdateSpotMarketConfiguration.LiquiditySLAParams(childComplexity), true
+
+	case "UpdateSpotMarketConfiguration.metadata":
+		if e.complexity.UpdateSpotMarketConfiguration.Metadata == nil {
+			break
+		}
+
+		return e.complexity.UpdateSpotMarketConfiguration.Metadata(childComplexity), true
+
+	case "UpdateSpotMarketConfiguration.priceMonitoringParameters":
+		if e.complexity.UpdateSpotMarketConfiguration.PriceMonitoringParameters == nil {
+			break
+		}
+
+		return e.complexity.UpdateSpotMarketConfiguration.PriceMonitoringParameters(childComplexity), true
+
+	case "UpdateSpotMarketConfiguration.riskParameters":
+		if e.complexity.UpdateSpotMarketConfiguration.RiskParameters == nil {
+			break
+		}
+
+		return e.complexity.UpdateSpotMarketConfiguration.RiskParameters(childComplexity), true
+
+	case "UpdateSpotMarketConfiguration.targetStakeParameters":
+		if e.complexity.UpdateSpotMarketConfiguration.TargetStakeParameters == nil {
+			break
+		}
+
+		return e.complexity.UpdateSpotMarketConfiguration.TargetStakeParameters(childComplexity), true
 
 	case "Vote.datetime":
 		if e.complexity.Vote.Datetime == nil {
@@ -19694,6 +20254,194 @@ func (ec *executionContext) fieldContext_DataSourceSpecConfigurationTime_conditi
 				return ec.fieldContext_Condition_value(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataSourceSpecConfigurationTimeTrigger_conditions(ctx context.Context, field graphql.CollectedField, obj *vega.DataSourceSpecConfigurationTimeTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataSourceSpecConfigurationTimeTrigger_conditions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Conditions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*v12.Condition)
+	fc.Result = res
+	return ec.marshalNCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐCondition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataSourceSpecConfigurationTimeTrigger_conditions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataSourceSpecConfigurationTimeTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "operator":
+				return ec.fieldContext_Condition_operator(ctx, field)
+			case "value":
+				return ec.fieldContext_Condition_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataSourceSpecConfigurationTimeTrigger_triggers(ctx context.Context, field graphql.CollectedField, obj *vega.DataSourceSpecConfigurationTimeTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataSourceSpecConfigurationTimeTrigger_triggers(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Triggers, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*v12.InternalTimeTrigger)
+	fc.Result = res
+	return ec.marshalNInternalTimeTrigger2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐInternalTimeTrigger(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataSourceSpecConfigurationTimeTrigger_triggers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataSourceSpecConfigurationTimeTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "initial":
+				return ec.fieldContext_InternalTimeTrigger_initial(ctx, field)
+			case "every":
+				return ec.fieldContext_InternalTimeTrigger_every(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InternalTimeTrigger", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataSourceSpecPerpetualBinding_settlementDataProperty(ctx context.Context, field graphql.CollectedField, obj *DataSourceSpecPerpetualBinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataSourceSpecPerpetualBinding_settlementDataProperty(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SettlementDataProperty, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataSourceSpecPerpetualBinding_settlementDataProperty(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataSourceSpecPerpetualBinding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataSourceSpecPerpetualBinding_settlementScheduleProperty(ctx context.Context, field graphql.CollectedField, obj *DataSourceSpecPerpetualBinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataSourceSpecPerpetualBinding_settlementScheduleProperty(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SettlementScheduleProperty, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataSourceSpecPerpetualBinding_settlementScheduleProperty(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataSourceSpecPerpetualBinding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -29366,6 +30114,47 @@ func (ec *executionContext) fieldContext_InstrumentConfiguration_futureProduct(c
 	return fc, nil
 }
 
+func (ec *executionContext) _InstrumentConfiguration_product(ctx context.Context, field graphql.CollectedField, obj *vega.InstrumentConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentConfiguration_product(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.InstrumentConfiguration().Product(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(ProductConfiguration)
+	fc.Result = res
+	return ec.marshalOProductConfiguration2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProductConfiguration(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentConfiguration_product(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentConfiguration",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ProductConfiguration does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InstrumentMetadata_tags(ctx context.Context, field graphql.CollectedField, obj *vega.InstrumentMetadata) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentMetadata_tags(ctx, field)
 	if err != nil {
@@ -29402,6 +30191,88 @@ func (ec *executionContext) fieldContext_InstrumentMetadata_tags(ctx context.Con
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InternalTimeTrigger_initial(ctx context.Context, field graphql.CollectedField, obj *v12.InternalTimeTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InternalTimeTrigger_initial(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Initial, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int64)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InternalTimeTrigger_initial(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InternalTimeTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InternalTimeTrigger_every(ctx context.Context, field graphql.CollectedField, obj *v12.InternalTimeTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InternalTimeTrigger_every(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Every, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalOInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InternalTimeTrigger_every(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InternalTimeTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -32711,6 +33582,226 @@ func (ec *executionContext) fieldContext_LiquidityProvisionsEdge_cursor(ctx cont
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquiditySLAParameters_priceRange(ctx context.Context, field graphql.CollectedField, obj *vega.LiquiditySLAParameters) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquiditySLAParameters_priceRange(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PriceRange, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquiditySLAParameters_priceRange(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquiditySLAParameters",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquiditySLAParameters_commitmentMinTimeFraction(ctx context.Context, field graphql.CollectedField, obj *vega.LiquiditySLAParameters) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquiditySLAParameters_commitmentMinTimeFraction(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CommitmentMinTimeFraction, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquiditySLAParameters_commitmentMinTimeFraction(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquiditySLAParameters",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx context.Context, field graphql.CollectedField, obj *vega.LiquiditySLAParameters) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProvidersFeeCalculationTimeStep, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquiditySLAParameters",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquiditySLAParameters_performanceHysteresisEpochs(ctx context.Context, field graphql.CollectedField, obj *vega.LiquiditySLAParameters) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquiditySLAParameters_performanceHysteresisEpochs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.LiquiditySLAParameters().PerformanceHysteresisEpochs(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquiditySLAParameters_performanceHysteresisEpochs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquiditySLAParameters",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquiditySLAParameters_slaCompletionFactor(ctx context.Context, field graphql.CollectedField, obj *vega.LiquiditySLAParameters) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquiditySLAParameters_slaCompletionFactor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.LiquiditySLAParameters().SLACompletionFactor(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquiditySLAParameters_slaCompletionFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquiditySLAParameters",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -39674,6 +40765,8 @@ func (ec *executionContext) fieldContext_NewMarket_instrument(ctx context.Contex
 				return ec.fieldContext_InstrumentConfiguration_code(ctx, field)
 			case "futureProduct":
 				return ec.fieldContext_InstrumentConfiguration_futureProduct(ctx, field)
+			case "product":
+				return ec.fieldContext_InstrumentConfiguration_product(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentConfiguration", field.Name)
 		},
@@ -40128,6 +41221,387 @@ func (ec *executionContext) fieldContext_NewMarket_successorConfiguration(ctx co
 				return ec.fieldContext_SuccessorConfiguration_insurancePoolFraction(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type SuccessorConfiguration", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewSpotMarket_instrument(ctx context.Context, field graphql.CollectedField, obj *vega.NewSpotMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NewSpotMarket_instrument(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewSpotMarket().Instrument(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.InstrumentConfiguration)
+	fc.Result = res
+	return ec.marshalNInstrumentConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐInstrumentConfiguration(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NewSpotMarket_instrument(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewSpotMarket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_InstrumentConfiguration_name(ctx, field)
+			case "code":
+				return ec.fieldContext_InstrumentConfiguration_code(ctx, field)
+			case "futureProduct":
+				return ec.fieldContext_InstrumentConfiguration_futureProduct(ctx, field)
+			case "product":
+				return ec.fieldContext_InstrumentConfiguration_product(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InstrumentConfiguration", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewSpotMarket_decimal_places(ctx context.Context, field graphql.CollectedField, obj *vega.NewSpotMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NewSpotMarket_decimal_places(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewSpotMarket().DecimalPlaces(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NewSpotMarket_decimal_places(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewSpotMarket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewSpotMarket_metadata(ctx context.Context, field graphql.CollectedField, obj *vega.NewSpotMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NewSpotMarket_metadata(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewSpotMarket().Metadata(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NewSpotMarket_metadata(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewSpotMarket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewSpotMarket_priceMonitoringParameters(ctx context.Context, field graphql.CollectedField, obj *vega.NewSpotMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NewSpotMarket_priceMonitoringParameters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewSpotMarket().PriceMonitoringParameters(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PriceMonitoringParameters)
+	fc.Result = res
+	return ec.marshalNPriceMonitoringParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐPriceMonitoringParameters(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NewSpotMarket_priceMonitoringParameters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewSpotMarket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "triggers":
+				return ec.fieldContext_PriceMonitoringParameters_triggers(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PriceMonitoringParameters", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewSpotMarket_targetStakeParameters(ctx context.Context, field graphql.CollectedField, obj *vega.NewSpotMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NewSpotMarket_targetStakeParameters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewSpotMarket().TargetStakeParameters(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*TargetStakeParameters)
+	fc.Result = res
+	return ec.marshalNTargetStakeParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTargetStakeParameters(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NewSpotMarket_targetStakeParameters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewSpotMarket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "timeWindow":
+				return ec.fieldContext_TargetStakeParameters_timeWindow(ctx, field)
+			case "scalingFactor":
+				return ec.fieldContext_TargetStakeParameters_scalingFactor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TargetStakeParameters", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewSpotMarket_riskParameters(ctx context.Context, field graphql.CollectedField, obj *vega.NewSpotMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NewSpotMarket_riskParameters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewSpotMarket().RiskParameters(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(RiskModel)
+	fc.Result = res
+	return ec.marshalORiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRiskModel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NewSpotMarket_riskParameters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewSpotMarket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type RiskModel does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewSpotMarket_positionDecimalPlaces(ctx context.Context, field graphql.CollectedField, obj *vega.NewSpotMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NewSpotMarket_positionDecimalPlaces(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewSpotMarket().PositionDecimalPlaces(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NewSpotMarket_positionDecimalPlaces(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewSpotMarket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewSpotMarket_liquiditySLAParams(ctx context.Context, field graphql.CollectedField, obj *vega.NewSpotMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NewSpotMarket_liquiditySLAParams(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewSpotMarket().LiquiditySLAParams(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.LiquiditySLAParameters)
+	fc.Result = res
+	return ec.marshalNLiquiditySLAParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquiditySLAParameters(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NewSpotMarket_liquiditySLAParams(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewSpotMarket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "priceRange":
+				return ec.fieldContext_LiquiditySLAParameters_priceRange(ctx, field)
+			case "commitmentMinTimeFraction":
+				return ec.fieldContext_LiquiditySLAParameters_commitmentMinTimeFraction(ctx, field)
+			case "providersFeeCalculationTimeStep":
+				return ec.fieldContext_LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx, field)
+			case "performanceHysteresisEpochs":
+				return ec.fieldContext_LiquiditySLAParameters_performanceHysteresisEpochs(ctx, field)
+			case "slaCompletionFactor":
+				return ec.fieldContext_LiquiditySLAParameters_slaCompletionFactor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquiditySLAParameters", field.Name)
 		},
 	}
 	return fc, nil
@@ -49771,6 +51245,906 @@ func (ec *executionContext) fieldContext_PeggedOrder_offset(ctx context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Perpetual_settlementAsset(ctx context.Context, field graphql.CollectedField, obj *vega.Perpetual) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Perpetual_settlementAsset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Perpetual().SettlementAsset(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Asset)
+	fc.Result = res
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Perpetual_settlementAsset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Perpetual",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Asset_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Asset_name(ctx, field)
+			case "symbol":
+				return ec.fieldContext_Asset_symbol(ctx, field)
+			case "decimals":
+				return ec.fieldContext_Asset_decimals(ctx, field)
+			case "quantum":
+				return ec.fieldContext_Asset_quantum(ctx, field)
+			case "source":
+				return ec.fieldContext_Asset_source(ctx, field)
+			case "status":
+				return ec.fieldContext_Asset_status(ctx, field)
+			case "infrastructureFeeAccount":
+				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
+			case "globalRewardPoolAccount":
+				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
+			case "takerFeeRewardAccount":
+				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
+			case "makerFeeRewardAccount":
+				return ec.fieldContext_Asset_makerFeeRewardAccount(ctx, field)
+			case "lpFeeRewardAccount":
+				return ec.fieldContext_Asset_lpFeeRewardAccount(ctx, field)
+			case "marketProposerRewardAccount":
+				return ec.fieldContext_Asset_marketProposerRewardAccount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Perpetual_quoteName(ctx context.Context, field graphql.CollectedField, obj *vega.Perpetual) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Perpetual_quoteName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.QuoteName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Perpetual_quoteName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Perpetual",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Perpetual_marginFundingFactor(ctx context.Context, field graphql.CollectedField, obj *vega.Perpetual) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Perpetual_marginFundingFactor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarginFundingFactor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Perpetual_marginFundingFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Perpetual",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Perpetual_interestRate(ctx context.Context, field graphql.CollectedField, obj *vega.Perpetual) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Perpetual_interestRate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InterestRate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Perpetual_interestRate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Perpetual",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Perpetual_clampLowerBound(ctx context.Context, field graphql.CollectedField, obj *vega.Perpetual) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Perpetual_clampLowerBound(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClampLowerBound, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Perpetual_clampLowerBound(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Perpetual",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Perpetual_clampUpperBound(ctx context.Context, field graphql.CollectedField, obj *vega.Perpetual) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Perpetual_clampUpperBound(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClampUpperBound, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Perpetual_clampUpperBound(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Perpetual",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Perpetual_dataSourceSpecForSettlementSchedule(ctx context.Context, field graphql.CollectedField, obj *vega.Perpetual) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Perpetual_dataSourceSpecForSettlementSchedule(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Perpetual().DataSourceSpecForSettlementSchedule(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*DataSourceSpec)
+	fc.Result = res
+	return ec.marshalNDataSourceSpec2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceSpec(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Perpetual_dataSourceSpecForSettlementSchedule(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Perpetual",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_DataSourceSpec_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_DataSourceSpec_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_DataSourceSpec_updatedAt(ctx, field)
+			case "data":
+				return ec.fieldContext_DataSourceSpec_data(ctx, field)
+			case "status":
+				return ec.fieldContext_DataSourceSpec_status(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataSourceSpec", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Perpetual_dataSourceSpecForSettlementData(ctx context.Context, field graphql.CollectedField, obj *vega.Perpetual) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Perpetual_dataSourceSpecForSettlementData(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Perpetual().DataSourceSpecForSettlementData(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*DataSourceSpec)
+	fc.Result = res
+	return ec.marshalNDataSourceSpec2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceSpec(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Perpetual_dataSourceSpecForSettlementData(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Perpetual",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_DataSourceSpec_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_DataSourceSpec_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_DataSourceSpec_updatedAt(ctx, field)
+			case "data":
+				return ec.fieldContext_DataSourceSpec_data(ctx, field)
+			case "status":
+				return ec.fieldContext_DataSourceSpec_status(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataSourceSpec", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Perpetual_dataSourceSpecBinding(ctx context.Context, field graphql.CollectedField, obj *vega.Perpetual) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Perpetual_dataSourceSpecBinding(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Perpetual().DataSourceSpecBinding(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*DataSourceSpecPerpetualBinding)
+	fc.Result = res
+	return ec.marshalNDataSourceSpecPerpetualBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceSpecPerpetualBinding(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Perpetual_dataSourceSpecBinding(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Perpetual",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "settlementDataProperty":
+				return ec.fieldContext_DataSourceSpecPerpetualBinding_settlementDataProperty(ctx, field)
+			case "settlementScheduleProperty":
+				return ec.fieldContext_DataSourceSpecPerpetualBinding_settlementScheduleProperty(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataSourceSpecPerpetualBinding", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PerpetualProduct_settlementAsset(ctx context.Context, field graphql.CollectedField, obj *vega.PerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PerpetualProduct_settlementAsset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PerpetualProduct().SettlementAsset(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Asset)
+	fc.Result = res
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PerpetualProduct_settlementAsset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PerpetualProduct",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Asset_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Asset_name(ctx, field)
+			case "symbol":
+				return ec.fieldContext_Asset_symbol(ctx, field)
+			case "decimals":
+				return ec.fieldContext_Asset_decimals(ctx, field)
+			case "quantum":
+				return ec.fieldContext_Asset_quantum(ctx, field)
+			case "source":
+				return ec.fieldContext_Asset_source(ctx, field)
+			case "status":
+				return ec.fieldContext_Asset_status(ctx, field)
+			case "infrastructureFeeAccount":
+				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
+			case "globalRewardPoolAccount":
+				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
+			case "takerFeeRewardAccount":
+				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
+			case "makerFeeRewardAccount":
+				return ec.fieldContext_Asset_makerFeeRewardAccount(ctx, field)
+			case "lpFeeRewardAccount":
+				return ec.fieldContext_Asset_lpFeeRewardAccount(ctx, field)
+			case "marketProposerRewardAccount":
+				return ec.fieldContext_Asset_marketProposerRewardAccount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PerpetualProduct_quoteName(ctx context.Context, field graphql.CollectedField, obj *vega.PerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PerpetualProduct_quoteName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.QuoteName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PerpetualProduct_quoteName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PerpetualProduct_marginFundingFactor(ctx context.Context, field graphql.CollectedField, obj *vega.PerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PerpetualProduct_marginFundingFactor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarginFundingFactor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PerpetualProduct_marginFundingFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PerpetualProduct_interestRate(ctx context.Context, field graphql.CollectedField, obj *vega.PerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PerpetualProduct_interestRate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InterestRate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PerpetualProduct_interestRate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PerpetualProduct_clampLowerBound(ctx context.Context, field graphql.CollectedField, obj *vega.PerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PerpetualProduct_clampLowerBound(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClampLowerBound, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PerpetualProduct_clampLowerBound(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PerpetualProduct_clampUpperBound(ctx context.Context, field graphql.CollectedField, obj *vega.PerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PerpetualProduct_clampUpperBound(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClampUpperBound, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PerpetualProduct_clampUpperBound(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PerpetualProduct_dataSourceSpecForSettlementSchedule(ctx context.Context, field graphql.CollectedField, obj *vega.PerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PerpetualProduct_dataSourceSpecForSettlementSchedule(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DataSourceSpecForSettlementSchedule, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.DataSourceDefinition)
+	fc.Result = res
+	return ec.marshalNDataSourceDefinition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDataSourceDefinition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PerpetualProduct_dataSourceSpecForSettlementSchedule(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "sourceType":
+				return ec.fieldContext_DataSourceDefinition_sourceType(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataSourceDefinition", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PerpetualProduct_dataSourceSpecForSettlementData(ctx context.Context, field graphql.CollectedField, obj *vega.PerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PerpetualProduct_dataSourceSpecForSettlementData(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DataSourceSpecForSettlementData, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.DataSourceDefinition)
+	fc.Result = res
+	return ec.marshalNDataSourceDefinition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDataSourceDefinition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PerpetualProduct_dataSourceSpecForSettlementData(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "sourceType":
+				return ec.fieldContext_DataSourceDefinition_sourceType(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataSourceDefinition", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PerpetualProduct_dataSourceSpecBinding(ctx context.Context, field graphql.CollectedField, obj *vega.PerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PerpetualProduct_dataSourceSpecBinding(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PerpetualProduct().DataSourceSpecBinding(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*DataSourceSpecPerpetualBinding)
+	fc.Result = res
+	return ec.marshalNDataSourceSpecPerpetualBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceSpecPerpetualBinding(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PerpetualProduct_dataSourceSpecBinding(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PerpetualProduct",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "settlementDataProperty":
+				return ec.fieldContext_DataSourceSpecPerpetualBinding_settlementDataProperty(ctx, field)
+			case "settlementScheduleProperty":
+				return ec.fieldContext_DataSourceSpecPerpetualBinding_settlementScheduleProperty(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataSourceSpecPerpetualBinding", field.Name)
 		},
 	}
 	return fc, nil
@@ -61283,6 +63657,398 @@ func (ec *executionContext) fieldContext_SimpleRiskModelParams_factorShort(ctx c
 	return fc, nil
 }
 
+func (ec *executionContext) _Spot_baseAsset(ctx context.Context, field graphql.CollectedField, obj *vega.Spot) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Spot_baseAsset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Spot().BaseAsset(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Asset)
+	fc.Result = res
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Spot_baseAsset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Spot",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Asset_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Asset_name(ctx, field)
+			case "symbol":
+				return ec.fieldContext_Asset_symbol(ctx, field)
+			case "decimals":
+				return ec.fieldContext_Asset_decimals(ctx, field)
+			case "quantum":
+				return ec.fieldContext_Asset_quantum(ctx, field)
+			case "source":
+				return ec.fieldContext_Asset_source(ctx, field)
+			case "status":
+				return ec.fieldContext_Asset_status(ctx, field)
+			case "infrastructureFeeAccount":
+				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
+			case "globalRewardPoolAccount":
+				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
+			case "takerFeeRewardAccount":
+				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
+			case "makerFeeRewardAccount":
+				return ec.fieldContext_Asset_makerFeeRewardAccount(ctx, field)
+			case "lpFeeRewardAccount":
+				return ec.fieldContext_Asset_lpFeeRewardAccount(ctx, field)
+			case "marketProposerRewardAccount":
+				return ec.fieldContext_Asset_marketProposerRewardAccount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Spot_quoteAsset(ctx context.Context, field graphql.CollectedField, obj *vega.Spot) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Spot_quoteAsset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Spot().QuoteAsset(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Asset)
+	fc.Result = res
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Spot_quoteAsset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Spot",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Asset_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Asset_name(ctx, field)
+			case "symbol":
+				return ec.fieldContext_Asset_symbol(ctx, field)
+			case "decimals":
+				return ec.fieldContext_Asset_decimals(ctx, field)
+			case "quantum":
+				return ec.fieldContext_Asset_quantum(ctx, field)
+			case "source":
+				return ec.fieldContext_Asset_source(ctx, field)
+			case "status":
+				return ec.fieldContext_Asset_status(ctx, field)
+			case "infrastructureFeeAccount":
+				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
+			case "globalRewardPoolAccount":
+				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
+			case "takerFeeRewardAccount":
+				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
+			case "makerFeeRewardAccount":
+				return ec.fieldContext_Asset_makerFeeRewardAccount(ctx, field)
+			case "lpFeeRewardAccount":
+				return ec.fieldContext_Asset_lpFeeRewardAccount(ctx, field)
+			case "marketProposerRewardAccount":
+				return ec.fieldContext_Asset_marketProposerRewardAccount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Spot_name(ctx context.Context, field graphql.CollectedField, obj *vega.Spot) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Spot_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Spot_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Spot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SpotProduct_baseAsset(ctx context.Context, field graphql.CollectedField, obj *vega.SpotProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SpotProduct_baseAsset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.SpotProduct().BaseAsset(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Asset)
+	fc.Result = res
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SpotProduct_baseAsset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SpotProduct",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Asset_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Asset_name(ctx, field)
+			case "symbol":
+				return ec.fieldContext_Asset_symbol(ctx, field)
+			case "decimals":
+				return ec.fieldContext_Asset_decimals(ctx, field)
+			case "quantum":
+				return ec.fieldContext_Asset_quantum(ctx, field)
+			case "source":
+				return ec.fieldContext_Asset_source(ctx, field)
+			case "status":
+				return ec.fieldContext_Asset_status(ctx, field)
+			case "infrastructureFeeAccount":
+				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
+			case "globalRewardPoolAccount":
+				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
+			case "takerFeeRewardAccount":
+				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
+			case "makerFeeRewardAccount":
+				return ec.fieldContext_Asset_makerFeeRewardAccount(ctx, field)
+			case "lpFeeRewardAccount":
+				return ec.fieldContext_Asset_lpFeeRewardAccount(ctx, field)
+			case "marketProposerRewardAccount":
+				return ec.fieldContext_Asset_marketProposerRewardAccount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SpotProduct_quoteAsset(ctx context.Context, field graphql.CollectedField, obj *vega.SpotProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SpotProduct_quoteAsset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.SpotProduct().QuoteAsset(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Asset)
+	fc.Result = res
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SpotProduct_quoteAsset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SpotProduct",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Asset_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Asset_name(ctx, field)
+			case "symbol":
+				return ec.fieldContext_Asset_symbol(ctx, field)
+			case "decimals":
+				return ec.fieldContext_Asset_decimals(ctx, field)
+			case "quantum":
+				return ec.fieldContext_Asset_quantum(ctx, field)
+			case "source":
+				return ec.fieldContext_Asset_source(ctx, field)
+			case "status":
+				return ec.fieldContext_Asset_status(ctx, field)
+			case "infrastructureFeeAccount":
+				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
+			case "globalRewardPoolAccount":
+				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
+			case "takerFeeRewardAccount":
+				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
+			case "makerFeeRewardAccount":
+				return ec.fieldContext_Asset_makerFeeRewardAccount(ctx, field)
+			case "lpFeeRewardAccount":
+				return ec.fieldContext_Asset_lpFeeRewardAccount(ctx, field)
+			case "marketProposerRewardAccount":
+				return ec.fieldContext_Asset_marketProposerRewardAccount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SpotProduct_name(ctx context.Context, field graphql.CollectedField, obj *vega.SpotProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SpotProduct_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SpotProduct_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SpotProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _StakeLinking_id(ctx context.Context, field graphql.CollectedField, obj *v1.StakeLinking) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_StakeLinking_id(ctx, field)
 	if err != nil {
@@ -69768,9 +72534,9 @@ func (ec *executionContext) _UpdateInstrumentConfiguration_product(ctx context.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*vega.UpdateFutureProduct)
+	res := resTmp.(UpdateProductConfiguration)
 	fc.Result = res
-	return ec.marshalNUpdateFutureProduct2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐUpdateFutureProduct(ctx, field.Selections, res)
+	return ec.marshalNUpdateProductConfiguration2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐUpdateProductConfiguration(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_UpdateInstrumentConfiguration_product(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -69780,17 +72546,7 @@ func (ec *executionContext) fieldContext_UpdateInstrumentConfiguration_product(c
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "quoteName":
-				return ec.fieldContext_UpdateFutureProduct_quoteName(ctx, field)
-			case "dataSourceSpecForSettlementData":
-				return ec.fieldContext_UpdateFutureProduct_dataSourceSpecForSettlementData(ctx, field)
-			case "dataSourceSpecForTradingTermination":
-				return ec.fieldContext_UpdateFutureProduct_dataSourceSpecForTradingTermination(ctx, field)
-			case "dataSourceSpecBinding":
-				return ec.fieldContext_UpdateFutureProduct_dataSourceSpecBinding(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type UpdateFutureProduct", field.Name)
+			return nil, errors.New("field of type UpdateProductConfiguration does not have child fields")
 		},
 	}
 	return fc, nil
@@ -70455,6 +73211,714 @@ func (ec *executionContext) fieldContext_UpdateNetworkParameter_networkParameter
 				return ec.fieldContext_NetworkParameter_value(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type NetworkParameter", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdatePerpetualProduct_quoteName(ctx context.Context, field graphql.CollectedField, obj *UpdatePerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdatePerpetualProduct_quoteName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.QuoteName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdatePerpetualProduct_quoteName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdatePerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdatePerpetualProduct_marginFundingFactor(ctx context.Context, field graphql.CollectedField, obj *UpdatePerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdatePerpetualProduct_marginFundingFactor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarginFundingFactor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdatePerpetualProduct_marginFundingFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdatePerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdatePerpetualProduct_interestRate(ctx context.Context, field graphql.CollectedField, obj *UpdatePerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdatePerpetualProduct_interestRate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InterestRate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdatePerpetualProduct_interestRate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdatePerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdatePerpetualProduct_clampLowerBound(ctx context.Context, field graphql.CollectedField, obj *UpdatePerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdatePerpetualProduct_clampLowerBound(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClampLowerBound, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdatePerpetualProduct_clampLowerBound(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdatePerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdatePerpetualProduct_clampUpperBound(ctx context.Context, field graphql.CollectedField, obj *UpdatePerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdatePerpetualProduct_clampUpperBound(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClampUpperBound, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdatePerpetualProduct_clampUpperBound(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdatePerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdatePerpetualProduct_dataSourceSpecForSettlementSchedule(ctx context.Context, field graphql.CollectedField, obj *UpdatePerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdatePerpetualProduct_dataSourceSpecForSettlementSchedule(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DataSourceSpecForSettlementSchedule, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.DataSourceDefinition)
+	fc.Result = res
+	return ec.marshalNDataSourceDefinition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDataSourceDefinition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdatePerpetualProduct_dataSourceSpecForSettlementSchedule(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdatePerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "sourceType":
+				return ec.fieldContext_DataSourceDefinition_sourceType(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataSourceDefinition", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdatePerpetualProduct_dataSourceSpecForSettlementData(ctx context.Context, field graphql.CollectedField, obj *UpdatePerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdatePerpetualProduct_dataSourceSpecForSettlementData(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DataSourceSpecForSettlementData, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.DataSourceDefinition)
+	fc.Result = res
+	return ec.marshalNDataSourceDefinition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDataSourceDefinition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdatePerpetualProduct_dataSourceSpecForSettlementData(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdatePerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "sourceType":
+				return ec.fieldContext_DataSourceDefinition_sourceType(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataSourceDefinition", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdatePerpetualProduct_dataSourceSpecBinding(ctx context.Context, field graphql.CollectedField, obj *UpdatePerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdatePerpetualProduct_dataSourceSpecBinding(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DataSourceSpecBinding, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*DataSourceSpecPerpetualBinding)
+	fc.Result = res
+	return ec.marshalNDataSourceSpecPerpetualBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceSpecPerpetualBinding(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdatePerpetualProduct_dataSourceSpecBinding(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdatePerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "settlementDataProperty":
+				return ec.fieldContext_DataSourceSpecPerpetualBinding_settlementDataProperty(ctx, field)
+			case "settlementScheduleProperty":
+				return ec.fieldContext_DataSourceSpecPerpetualBinding_settlementScheduleProperty(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataSourceSpecPerpetualBinding", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdateSpotMarket_marketId(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateSpotMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdateSpotMarket_marketId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdateSpotMarket_marketId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdateSpotMarket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdateSpotMarket_updateSpotMarketConfiguration(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateSpotMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdateSpotMarket_updateSpotMarketConfiguration(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UpdateSpotMarket().UpdateSpotMarketConfiguration(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.UpdateSpotMarketConfiguration)
+	fc.Result = res
+	return ec.marshalNUpdateSpotMarketConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐUpdateSpotMarketConfiguration(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdateSpotMarket_updateSpotMarketConfiguration(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdateSpotMarket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "metadata":
+				return ec.fieldContext_UpdateSpotMarketConfiguration_metadata(ctx, field)
+			case "priceMonitoringParameters":
+				return ec.fieldContext_UpdateSpotMarketConfiguration_priceMonitoringParameters(ctx, field)
+			case "targetStakeParameters":
+				return ec.fieldContext_UpdateSpotMarketConfiguration_targetStakeParameters(ctx, field)
+			case "riskParameters":
+				return ec.fieldContext_UpdateSpotMarketConfiguration_riskParameters(ctx, field)
+			case "liquiditySLAParams":
+				return ec.fieldContext_UpdateSpotMarketConfiguration_liquiditySLAParams(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UpdateSpotMarketConfiguration", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdateSpotMarketConfiguration_metadata(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateSpotMarketConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdateSpotMarketConfiguration_metadata(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Metadata, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdateSpotMarketConfiguration_metadata(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdateSpotMarketConfiguration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdateSpotMarketConfiguration_priceMonitoringParameters(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateSpotMarketConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdateSpotMarketConfiguration_priceMonitoringParameters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UpdateSpotMarketConfiguration().PriceMonitoringParameters(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PriceMonitoringParameters)
+	fc.Result = res
+	return ec.marshalNPriceMonitoringParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐPriceMonitoringParameters(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdateSpotMarketConfiguration_priceMonitoringParameters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdateSpotMarketConfiguration",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "triggers":
+				return ec.fieldContext_PriceMonitoringParameters_triggers(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PriceMonitoringParameters", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdateSpotMarketConfiguration_targetStakeParameters(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateSpotMarketConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdateSpotMarketConfiguration_targetStakeParameters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UpdateSpotMarketConfiguration().TargetStakeParameters(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*TargetStakeParameters)
+	fc.Result = res
+	return ec.marshalNTargetStakeParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTargetStakeParameters(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdateSpotMarketConfiguration_targetStakeParameters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdateSpotMarketConfiguration",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "timeWindow":
+				return ec.fieldContext_TargetStakeParameters_timeWindow(ctx, field)
+			case "scalingFactor":
+				return ec.fieldContext_TargetStakeParameters_scalingFactor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TargetStakeParameters", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdateSpotMarketConfiguration_riskParameters(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateSpotMarketConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdateSpotMarketConfiguration_riskParameters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UpdateSpotMarketConfiguration().RiskParameters(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(RiskModel)
+	fc.Result = res
+	return ec.marshalNRiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRiskModel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdateSpotMarketConfiguration_riskParameters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdateSpotMarketConfiguration",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type RiskModel does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdateSpotMarketConfiguration_liquiditySLAParams(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateSpotMarketConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdateSpotMarketConfiguration_liquiditySLAParams(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UpdateSpotMarketConfiguration().LiquiditySLAParams(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.LiquiditySLAParameters)
+	fc.Result = res
+	return ec.marshalNLiquiditySLAParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquiditySLAParameters(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdateSpotMarketConfiguration_liquiditySLAParams(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdateSpotMarketConfiguration",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "priceRange":
+				return ec.fieldContext_LiquiditySLAParameters_priceRange(ctx, field)
+			case "commitmentMinTimeFraction":
+				return ec.fieldContext_LiquiditySLAParameters_commitmentMinTimeFraction(ctx, field)
+			case "providersFeeCalculationTimeStep":
+				return ec.fieldContext_LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx, field)
+			case "performanceHysteresisEpochs":
+				return ec.fieldContext_LiquiditySLAParameters_performanceHysteresisEpochs(ctx, field)
+			case "slaCompletionFactor":
+				return ec.fieldContext_LiquiditySLAParameters_slaCompletionFactor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquiditySLAParameters", field.Name)
 		},
 	}
 	return fc, nil
@@ -74309,6 +77773,13 @@ func (ec *executionContext) _InternalDataSourceKind(ctx context.Context, sel ast
 			return graphql.Null
 		}
 		return ec._DataSourceSpecConfigurationTime(ctx, sel, obj)
+	case vega.DataSourceSpecConfigurationTimeTrigger:
+		return ec._DataSourceSpecConfigurationTimeTrigger(ctx, sel, &obj)
+	case *vega.DataSourceSpecConfigurationTimeTrigger:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._DataSourceSpecConfigurationTimeTrigger(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -74341,6 +77812,50 @@ func (ec *executionContext) _Product(ctx context.Context, sel ast.SelectionSet, 
 			return graphql.Null
 		}
 		return ec._Future(ctx, sel, obj)
+	case vega.Spot:
+		return ec._Spot(ctx, sel, &obj)
+	case *vega.Spot:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Spot(ctx, sel, obj)
+	case vega.Perpetual:
+		return ec._Perpetual(ctx, sel, &obj)
+	case *vega.Perpetual:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Perpetual(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
+func (ec *executionContext) _ProductConfiguration(ctx context.Context, sel ast.SelectionSet, obj ProductConfiguration) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case vega.FutureProduct:
+		return ec._FutureProduct(ctx, sel, &obj)
+	case *vega.FutureProduct:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._FutureProduct(ctx, sel, obj)
+	case vega.SpotProduct:
+		return ec._SpotProduct(ctx, sel, &obj)
+	case *vega.SpotProduct:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._SpotProduct(ctx, sel, obj)
+	case vega.PerpetualProduct:
+		return ec._PerpetualProduct(ctx, sel, &obj)
+	case *vega.PerpetualProduct:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._PerpetualProduct(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -74413,6 +77928,20 @@ func (ec *executionContext) _ProposalChange(ctx context.Context, sel ast.Selecti
 			return graphql.Null
 		}
 		return ec._UpdateMarketState(ctx, sel, obj)
+	case vega.NewSpotMarket:
+		return ec._NewSpotMarket(ctx, sel, &obj)
+	case *vega.NewSpotMarket:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._NewSpotMarket(ctx, sel, obj)
+	case vega.UpdateSpotMarket:
+		return ec._UpdateSpotMarket(ctx, sel, &obj)
+	case *vega.UpdateSpotMarket:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._UpdateSpotMarket(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -74574,6 +78103,29 @@ func (ec *executionContext) _UpdateMarketRiskParameters(ctx context.Context, sel
 			return graphql.Null
 		}
 		return ec._UpdateMarketLogNormalRiskModel(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
+func (ec *executionContext) _UpdateProductConfiguration(ctx context.Context, sel ast.SelectionSet, obj UpdateProductConfiguration) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case vega.UpdateFutureProduct:
+		return ec._UpdateFutureProduct(ctx, sel, &obj)
+	case *vega.UpdateFutureProduct:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._UpdateFutureProduct(ctx, sel, obj)
+	case UpdatePerpetualProduct:
+		return ec._UpdatePerpetualProduct(ctx, sel, &obj)
+	case *UpdatePerpetualProduct:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._UpdatePerpetualProduct(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -76505,6 +80057,76 @@ func (ec *executionContext) _DataSourceSpecConfigurationTime(ctx context.Context
 		case "conditions":
 
 			out.Values[i] = ec._DataSourceSpecConfigurationTime_conditions(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var dataSourceSpecConfigurationTimeTriggerImplementors = []string{"DataSourceSpecConfigurationTimeTrigger", "InternalDataSourceKind"}
+
+func (ec *executionContext) _DataSourceSpecConfigurationTimeTrigger(ctx context.Context, sel ast.SelectionSet, obj *vega.DataSourceSpecConfigurationTimeTrigger) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, dataSourceSpecConfigurationTimeTriggerImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DataSourceSpecConfigurationTimeTrigger")
+		case "conditions":
+
+			out.Values[i] = ec._DataSourceSpecConfigurationTimeTrigger_conditions(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "triggers":
+
+			out.Values[i] = ec._DataSourceSpecConfigurationTimeTrigger_triggers(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var dataSourceSpecPerpetualBindingImplementors = []string{"DataSourceSpecPerpetualBinding"}
+
+func (ec *executionContext) _DataSourceSpecPerpetualBinding(ctx context.Context, sel ast.SelectionSet, obj *DataSourceSpecPerpetualBinding) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, dataSourceSpecPerpetualBindingImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DataSourceSpecPerpetualBinding")
+		case "settlementDataProperty":
+
+			out.Values[i] = ec._DataSourceSpecPerpetualBinding_settlementDataProperty(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "settlementScheduleProperty":
+
+			out.Values[i] = ec._DataSourceSpecPerpetualBinding_settlementScheduleProperty(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -78988,7 +82610,7 @@ func (ec *executionContext) _Future(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
-var futureProductImplementors = []string{"FutureProduct"}
+var futureProductImplementors = []string{"FutureProduct", "ProductConfiguration"}
 
 func (ec *executionContext) _FutureProduct(ctx context.Context, sel ast.SelectionSet, obj *vega.FutureProduct) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, futureProductImplementors)
@@ -79290,6 +82912,23 @@ func (ec *executionContext) _InstrumentConfiguration(ctx context.Context, sel as
 				return innerFunc(ctx)
 
 			})
+		case "product":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._InstrumentConfiguration_product(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -79314,6 +82953,35 @@ func (ec *executionContext) _InstrumentMetadata(ctx context.Context, sel ast.Sel
 		case "tags":
 
 			out.Values[i] = ec._InstrumentMetadata_tags(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var internalTimeTriggerImplementors = []string{"InternalTimeTrigger"}
+
+func (ec *executionContext) _InternalTimeTrigger(ctx context.Context, sel ast.SelectionSet, obj *v12.InternalTimeTrigger) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, internalTimeTriggerImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InternalTimeTrigger")
+		case "initial":
+
+			out.Values[i] = ec._InternalTimeTrigger_initial(ctx, field, obj)
+
+		case "every":
+
+			out.Values[i] = ec._InternalTimeTrigger_every(ctx, field, obj)
 
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -80238,6 +83906,88 @@ func (ec *executionContext) _LiquidityProvisionsEdge(ctx context.Context, sel as
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var liquiditySLAParametersImplementors = []string{"LiquiditySLAParameters"}
+
+func (ec *executionContext) _LiquiditySLAParameters(ctx context.Context, sel ast.SelectionSet, obj *vega.LiquiditySLAParameters) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liquiditySLAParametersImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiquiditySLAParameters")
+		case "priceRange":
+
+			out.Values[i] = ec._LiquiditySLAParameters_priceRange(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "commitmentMinTimeFraction":
+
+			out.Values[i] = ec._LiquiditySLAParameters_commitmentMinTimeFraction(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "providersFeeCalculationTimeStep":
+
+			out.Values[i] = ec._LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "performanceHysteresisEpochs":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._LiquiditySLAParameters_performanceHysteresisEpochs(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "slaCompletionFactor":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._LiquiditySLAParameters_slaCompletionFactor(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -82513,6 +86263,184 @@ func (ec *executionContext) _NewMarket(ctx context.Context, sel ast.SelectionSet
 					}
 				}()
 				res = ec._NewMarket_successorConfiguration(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var newSpotMarketImplementors = []string{"NewSpotMarket", "ProposalChange"}
+
+func (ec *executionContext) _NewSpotMarket(ctx context.Context, sel ast.SelectionSet, obj *vega.NewSpotMarket) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, newSpotMarketImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NewSpotMarket")
+		case "instrument":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewSpotMarket_instrument(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "decimal_places":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewSpotMarket_decimal_places(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "metadata":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewSpotMarket_metadata(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "priceMonitoringParameters":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewSpotMarket_priceMonitoringParameters(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "targetStakeParameters":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewSpotMarket_targetStakeParameters(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "riskParameters":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewSpotMarket_riskParameters(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "positionDecimalPlaces":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewSpotMarket_positionDecimalPlaces(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "liquiditySLAParams":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewSpotMarket_liquiditySLAParams(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -85286,6 +89214,252 @@ func (ec *executionContext) _PeggedOrder(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var perpetualImplementors = []string{"Perpetual", "Product"}
+
+func (ec *executionContext) _Perpetual(ctx context.Context, sel ast.SelectionSet, obj *vega.Perpetual) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, perpetualImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Perpetual")
+		case "settlementAsset":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Perpetual_settlementAsset(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "quoteName":
+
+			out.Values[i] = ec._Perpetual_quoteName(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "marginFundingFactor":
+
+			out.Values[i] = ec._Perpetual_marginFundingFactor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "interestRate":
+
+			out.Values[i] = ec._Perpetual_interestRate(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "clampLowerBound":
+
+			out.Values[i] = ec._Perpetual_clampLowerBound(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "clampUpperBound":
+
+			out.Values[i] = ec._Perpetual_clampUpperBound(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "dataSourceSpecForSettlementSchedule":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Perpetual_dataSourceSpecForSettlementSchedule(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "dataSourceSpecForSettlementData":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Perpetual_dataSourceSpecForSettlementData(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "dataSourceSpecBinding":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Perpetual_dataSourceSpecBinding(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var perpetualProductImplementors = []string{"PerpetualProduct", "ProductConfiguration"}
+
+func (ec *executionContext) _PerpetualProduct(ctx context.Context, sel ast.SelectionSet, obj *vega.PerpetualProduct) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, perpetualProductImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PerpetualProduct")
+		case "settlementAsset":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PerpetualProduct_settlementAsset(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "quoteName":
+
+			out.Values[i] = ec._PerpetualProduct_quoteName(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "marginFundingFactor":
+
+			out.Values[i] = ec._PerpetualProduct_marginFundingFactor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "interestRate":
+
+			out.Values[i] = ec._PerpetualProduct_interestRate(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "clampLowerBound":
+
+			out.Values[i] = ec._PerpetualProduct_clampLowerBound(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "clampUpperBound":
+
+			out.Values[i] = ec._PerpetualProduct_clampUpperBound(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "dataSourceSpecForSettlementSchedule":
+
+			out.Values[i] = ec._PerpetualProduct_dataSourceSpecForSettlementSchedule(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "dataSourceSpecForSettlementData":
+
+			out.Values[i] = ec._PerpetualProduct_dataSourceSpecForSettlementData(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "dataSourceSpecBinding":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PerpetualProduct_dataSourceSpecBinding(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -89130,6 +93304,142 @@ func (ec *executionContext) _SimpleRiskModelParams(ctx context.Context, sel ast.
 	return out
 }
 
+var spotImplementors = []string{"Spot", "Product"}
+
+func (ec *executionContext) _Spot(ctx context.Context, sel ast.SelectionSet, obj *vega.Spot) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, spotImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Spot")
+		case "baseAsset":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Spot_baseAsset(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "quoteAsset":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Spot_quoteAsset(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "name":
+
+			out.Values[i] = ec._Spot_name(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var spotProductImplementors = []string{"SpotProduct", "ProductConfiguration"}
+
+func (ec *executionContext) _SpotProduct(ctx context.Context, sel ast.SelectionSet, obj *vega.SpotProduct) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, spotProductImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SpotProduct")
+		case "baseAsset":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._SpotProduct_baseAsset(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "quoteAsset":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._SpotProduct_quoteAsset(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "name":
+
+			out.Values[i] = ec._SpotProduct_name(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var stakeLinkingImplementors = []string{"StakeLinking"}
 
 func (ec *executionContext) _StakeLinking(ctx context.Context, sel ast.SelectionSet, obj *v1.StakeLinking) graphql.Marshaler {
@@ -91576,7 +95886,7 @@ func (ec *executionContext) _UpdateERC20(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
-var updateFutureProductImplementors = []string{"UpdateFutureProduct"}
+var updateFutureProductImplementors = []string{"UpdateFutureProduct", "UpdateProductConfiguration"}
 
 func (ec *executionContext) _UpdateFutureProduct(ctx context.Context, sel ast.SelectionSet, obj *vega.UpdateFutureProduct) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, updateFutureProductImplementors)
@@ -91961,6 +96271,239 @@ func (ec *executionContext) _UpdateNetworkParameter(ctx context.Context, sel ast
 					}
 				}()
 				res = ec._UpdateNetworkParameter_networkParameter(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var updatePerpetualProductImplementors = []string{"UpdatePerpetualProduct", "UpdateProductConfiguration"}
+
+func (ec *executionContext) _UpdatePerpetualProduct(ctx context.Context, sel ast.SelectionSet, obj *UpdatePerpetualProduct) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, updatePerpetualProductImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UpdatePerpetualProduct")
+		case "quoteName":
+
+			out.Values[i] = ec._UpdatePerpetualProduct_quoteName(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "marginFundingFactor":
+
+			out.Values[i] = ec._UpdatePerpetualProduct_marginFundingFactor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "interestRate":
+
+			out.Values[i] = ec._UpdatePerpetualProduct_interestRate(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "clampLowerBound":
+
+			out.Values[i] = ec._UpdatePerpetualProduct_clampLowerBound(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "clampUpperBound":
+
+			out.Values[i] = ec._UpdatePerpetualProduct_clampUpperBound(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "dataSourceSpecForSettlementSchedule":
+
+			out.Values[i] = ec._UpdatePerpetualProduct_dataSourceSpecForSettlementSchedule(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "dataSourceSpecForSettlementData":
+
+			out.Values[i] = ec._UpdatePerpetualProduct_dataSourceSpecForSettlementData(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "dataSourceSpecBinding":
+
+			out.Values[i] = ec._UpdatePerpetualProduct_dataSourceSpecBinding(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var updateSpotMarketImplementors = []string{"UpdateSpotMarket", "ProposalChange"}
+
+func (ec *executionContext) _UpdateSpotMarket(ctx context.Context, sel ast.SelectionSet, obj *vega.UpdateSpotMarket) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, updateSpotMarketImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UpdateSpotMarket")
+		case "marketId":
+
+			out.Values[i] = ec._UpdateSpotMarket_marketId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "updateSpotMarketConfiguration":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UpdateSpotMarket_updateSpotMarketConfiguration(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var updateSpotMarketConfigurationImplementors = []string{"UpdateSpotMarketConfiguration"}
+
+func (ec *executionContext) _UpdateSpotMarketConfiguration(ctx context.Context, sel ast.SelectionSet, obj *vega.UpdateSpotMarketConfiguration) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, updateSpotMarketConfigurationImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UpdateSpotMarketConfiguration")
+		case "metadata":
+
+			out.Values[i] = ec._UpdateSpotMarketConfiguration_metadata(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "priceMonitoringParameters":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UpdateSpotMarketConfiguration_priceMonitoringParameters(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "targetStakeParameters":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UpdateSpotMarketConfiguration_targetStakeParameters(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "riskParameters":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UpdateSpotMarketConfiguration_riskParameters(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "liquiditySLAParams":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UpdateSpotMarketConfiguration_liquiditySLAParams(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -93216,6 +97759,20 @@ func (ec *executionContext) marshalNDataSourceSpec2ᚖcodeᚗvegaprotocolᚗio�
 	return ec._DataSourceSpec(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNDataSourceSpecPerpetualBinding2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceSpecPerpetualBinding(ctx context.Context, sel ast.SelectionSet, v DataSourceSpecPerpetualBinding) graphql.Marshaler {
+	return ec._DataSourceSpecPerpetualBinding(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDataSourceSpecPerpetualBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceSpecPerpetualBinding(ctx context.Context, sel ast.SelectionSet, v *DataSourceSpecPerpetualBinding) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._DataSourceSpecPerpetualBinding(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNDataSourceSpecStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceSpecStatus(ctx context.Context, v interface{}) (DataSourceSpecStatus, error) {
 	var res DataSourceSpecStatus
 	err := res.UnmarshalGQL(v)
@@ -93936,6 +98493,44 @@ func (ec *executionContext) marshalNInternalDataSourceKind2codeᚗvegaprotocol�
 	return ec._InternalDataSourceKind(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNInternalTimeTrigger2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐInternalTimeTrigger(ctx context.Context, sel ast.SelectionSet, v []*v12.InternalTimeTrigger) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOInternalTimeTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐInternalTimeTrigger(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐInterval(ctx context.Context, v interface{}) (vega.Interval, error) {
 	res, err := marshallers.UnmarshalInterval(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -94180,6 +98775,20 @@ func (ec *executionContext) marshalNLiquidityProvisionUpdate2ᚖcodeᚗvegaproto
 		return graphql.Null
 	}
 	return ec._LiquidityProvisionUpdate(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLiquiditySLAParameters2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquiditySLAParameters(ctx context.Context, sel ast.SelectionSet, v vega.LiquiditySLAParameters) graphql.Marshaler {
+	return ec._LiquiditySLAParameters(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLiquiditySLAParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquiditySLAParameters(ctx context.Context, sel ast.SelectionSet, v *vega.LiquiditySLAParameters) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LiquiditySLAParameters(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNLogNormalModelParams2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLogNormalModelParams(ctx context.Context, sel ast.SelectionSet, v *vega.LogNormalModelParams) graphql.Marshaler {
@@ -95653,6 +100262,10 @@ func (ec *executionContext) marshalNSuccessorMarketEdge2ᚖcodeᚗvegaprotocol�
 	return ec._SuccessorMarketEdge(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNTargetStakeParameters2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTargetStakeParameters(ctx context.Context, sel ast.SelectionSet, v TargetStakeParameters) graphql.Marshaler {
+	return ec._TargetStakeParameters(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNTargetStakeParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTargetStakeParameters(ctx context.Context, sel ast.SelectionSet, v *TargetStakeParameters) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -95896,16 +100509,6 @@ func (ec *executionContext) marshalNUpdateAssetSource2codeᚗvegaprotocolᚗio�
 	return ec._UpdateAssetSource(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNUpdateFutureProduct2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐUpdateFutureProduct(ctx context.Context, sel ast.SelectionSet, v *vega.UpdateFutureProduct) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._UpdateFutureProduct(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNUpdateInstrumentConfiguration2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐUpdateInstrumentConfiguration(ctx context.Context, sel ast.SelectionSet, v UpdateInstrumentConfiguration) graphql.Marshaler {
 	return ec._UpdateInstrumentConfiguration(ctx, sel, &v)
 }
@@ -95942,6 +100545,30 @@ func (ec *executionContext) marshalNUpdateMarketRiskParameters2codeᚗvegaprotoc
 		return graphql.Null
 	}
 	return ec._UpdateMarketRiskParameters(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNUpdateProductConfiguration2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐUpdateProductConfiguration(ctx context.Context, sel ast.SelectionSet, v UpdateProductConfiguration) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UpdateProductConfiguration(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNUpdateSpotMarketConfiguration2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐUpdateSpotMarketConfiguration(ctx context.Context, sel ast.SelectionSet, v vega.UpdateSpotMarketConfiguration) graphql.Marshaler {
+	return ec._UpdateSpotMarketConfiguration(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUpdateSpotMarketConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐUpdateSpotMarketConfiguration(ctx context.Context, sel ast.SelectionSet, v *vega.UpdateSpotMarketConfiguration) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UpdateSpotMarketConfiguration(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNValidatorStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐValidatorNodeStatus(ctx context.Context, v interface{}) (vega.ValidatorNodeStatus, error) {
@@ -97588,6 +102215,16 @@ func (ec *executionContext) marshalOIcebergOrder2ᚖcodeᚗvegaprotocolᚗioᚋv
 	return ec._IcebergOrder(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOInt2int64(ctx context.Context, v interface{}) (int64, error) {
+	res, err := graphql.UnmarshalInt64(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+	res := graphql.MarshalInt64(v)
+	return res
+}
+
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
 	if v == nil {
 		return nil, nil
@@ -97618,6 +102255,29 @@ func (ec *executionContext) marshalOInt2ᚖint32(ctx context.Context, sel ast.Se
 	}
 	res := graphql.MarshalInt32(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint64(ctx context.Context, v interface{}) (*int64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt64(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint64(ctx context.Context, sel ast.SelectionSet, v *int64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalInt64(*v)
+	return res
+}
+
+func (ec *executionContext) marshalOInternalTimeTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐInternalTimeTrigger(ctx context.Context, sel ast.SelectionSet, v *v12.InternalTimeTrigger) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._InternalTimeTrigger(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOKeyRotation2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐKeyRotation(ctx context.Context, sel ast.SelectionSet, v []*v1.KeyRotation) graphql.Marshaler {
@@ -99632,6 +104292,13 @@ func (ec *executionContext) marshalOPriceMonitoringTrigger2ᚕᚖcodeᚗvegaprot
 	return ret
 }
 
+func (ec *executionContext) marshalOProductConfiguration2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProductConfiguration(ctx context.Context, sel ast.SelectionSet, v ProductConfiguration) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ProductConfiguration(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐProperty(ctx context.Context, sel ast.SelectionSet, v []*v12.Property) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -100324,6 +104991,13 @@ func (ec *executionContext) marshalORiskFactor2ᚖcodeᚗvegaprotocolᚗioᚋveg
 		return graphql.Null
 	}
 	return ec._RiskFactor(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRiskModel(ctx context.Context, sel ast.SelectionSet, v RiskModel) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RiskModel(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOSigner2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐSignerᚄ(ctx context.Context, sel ast.SelectionSet, v []*Signer) graphql.Marshaler {
