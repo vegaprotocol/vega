@@ -28,6 +28,7 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | market.liquidityV2.stakeToCcyVolume     | 1     |
       | limits.markets.maxPeggedOrders          | 2     |
+    And the average block duration is "1"
   Scenario: 001 Replicate a scenario from Lewis with Elias' implementation on Exit_price when there is insufficient orders, linear slippage factor = 1e6, quadratic slippage factor = 1e6, 0019-MCAL-001, 0019-MCAL-002
     # 1. trader B made LP commitment 150,000
     # 2. trader C and A cross at 0.5 with size of 111, and this opens continuous trading (trade B is short)
@@ -49,7 +50,7 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
     And the parties place the following pegged iceberg orders:
       | party   | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
       | traderB | ETH/DEC20 | 5173 | 1 | sell | ASK | 5173 | 20 |
-      | traderB | ETH/DEC20 | 74   | 1 | buy  | BID | 74   | 20 |
+      | traderB | ETH/DEC20 | 75 | 1 | buy | BID | 75 | 20 |
 
     And the market data for the market "ETH/DEC20" should be:
       | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
@@ -66,6 +67,7 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | traderA | ETH/DEC20 | buy  | 1      | 350   | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1    |
       | traderB | ETH/DEC20 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1    |
       | traderB | ETH/DEC20 | sell | 1      | 3000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1    |
+
     When the opening auction period ends for market "ETH/DEC20"
     And the market data for the market "ETH/DEC20" should be:
       | trading mode            | target stake | supplied stake | open interest |
@@ -78,10 +80,14 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | party   | market id | maintenance | search  | initial | release |
       | traderB | ETH/DEC20 | 5385 | 8077 | 10770 | 16155 |
 
+    And the network moves ahead "1" blocks
+
 #margin for traderB: 1*(2000-350)+1*350*3.5569036+2*350*3.5569036=5385
     And the following trades should be executed:
       | buyer   | price | size | seller  |
       | traderA | 350   | 1    | traderB |
+
+    And the insurance pool balance should be "0" for the market "ETH/DEC20"
 
     Then debug transfers
 
