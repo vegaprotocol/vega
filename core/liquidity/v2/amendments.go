@@ -34,8 +34,9 @@ func (e *Engine) AmendLiquidityProvision(ctx context.Context, lpa *types.Liquidi
 	}
 	updatedLp := e.createAmendedProvision(lp, lpa)
 
-	// add to pending provision since the change in CommitmentAmount should be reflected at the beginning of next epoch.
-	if lp.CommitmentAmount.NEQ(lpa.CommitmentAmount) {
+	// add to pending provision since the change in CommitmentAmount should be reflected at the beginning of next epoch
+	// if it's not opening auction.
+	if lp.CommitmentAmount.NEQ(lpa.CommitmentAmount) && !e.auctionState.IsOpeningAuction() {
 		e.pendingProvisions.Set(updatedLp)
 		e.broker.Send(events.NewLiquidityProvisionEvent(ctx, updatedLp))
 		return nil
