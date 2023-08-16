@@ -61,18 +61,6 @@ func (mr *MockAuctionStateMockRecorder) ExpiresAt() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExpiresAt", reflect.TypeOf((*MockAuctionState)(nil).ExpiresAt))
 }
 
-// ExtendAuctionLiquidityNoOrders mocks base method.
-func (m *MockAuctionState) ExtendAuctionLiquidityNoOrders(arg0 types.AuctionDuration) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ExtendAuctionLiquidityNoOrders", arg0)
-}
-
-// ExtendAuctionLiquidityNoOrders indicates an expected call of ExtendAuctionLiquidityNoOrders.
-func (mr *MockAuctionStateMockRecorder) ExtendAuctionLiquidityNoOrders(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendAuctionLiquidityNoOrders", reflect.TypeOf((*MockAuctionState)(nil).ExtendAuctionLiquidityNoOrders), arg0)
-}
-
 // ExtendAuctionLiquidityUnmetTarget mocks base method.
 func (m *MockAuctionState) ExtendAuctionLiquidityUnmetTarget(arg0 types.AuctionDuration) {
 	m.ctrl.T.Helper()
@@ -163,18 +151,6 @@ func (m *MockAuctionState) StartGovernanceSuspensionAuction(arg0 time.Time) {
 func (mr *MockAuctionStateMockRecorder) StartGovernanceSuspensionAuction(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartGovernanceSuspensionAuction", reflect.TypeOf((*MockAuctionState)(nil).StartGovernanceSuspensionAuction), arg0)
-}
-
-// StartLiquidityAuctionNoOrders mocks base method.
-func (m *MockAuctionState) StartLiquidityAuctionNoOrders(arg0 time.Time, arg1 *types.AuctionDuration) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "StartLiquidityAuctionNoOrders", arg0, arg1)
-}
-
-// StartLiquidityAuctionNoOrders indicates an expected call of StartLiquidityAuctionNoOrders.
-func (mr *MockAuctionStateMockRecorder) StartLiquidityAuctionNoOrders(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartLiquidityAuctionNoOrders", reflect.TypeOf((*MockAuctionState)(nil).StartLiquidityAuctionNoOrders), arg0, arg1)
 }
 
 // StartLiquidityAuctionUnmetTarget mocks base method.
