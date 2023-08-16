@@ -345,7 +345,6 @@ func newPerpMarket(config *market.Config, netparams *netparams.Store, row market
 		panic(err)
 	}
 
-	lpPriceRange := row.lpPriceRange()
 	linearSlippageFactor := row.linearSlippageFactor()
 	quadraticSlippageFactor := row.quadraticSlippageFactor()
 
@@ -378,7 +377,6 @@ func newPerpMarket(config *market.Config, netparams *netparams.Store, row market
 		OpeningAuction:                openingAuction(row),
 		PriceMonitoringSettings:       types.PriceMonitoringSettingsFromProto(priceMonitoring),
 		LiquidityMonitoringParameters: liqMon,
-		LPPriceRange:                  num.DecimalFromFloat(lpPriceRange),
 		LinearSlippageFactor:          num.DecimalFromFloat(linearSlippageFactor),
 		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
 	}
