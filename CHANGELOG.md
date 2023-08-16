@@ -57,6 +57,7 @@
 - [8762](https://github.com/vegaprotocol/vega/issues/8762) - Data node `API` support for perpetual markets, data and governance.
 - [8761](https://github.com/vegaprotocol/vega/issues/8761) - Add terminating `PERPS` via governance.
 - [9021](https://github.com/vegaprotocol/vega/issues/9021) - Add rejection reason to stop orders.
+- [8999](https://github.com/vegaprotocol/vega/issues/8999) - Enable the `PERPS` integration test run.
 
 ### 🐛 Fixes
 
