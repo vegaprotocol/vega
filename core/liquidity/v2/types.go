@@ -171,7 +171,7 @@ func (s *SnapshotablePendingProvisions) Delete(key string) {
 		return
 	}
 
-	s.PendingProvisions = Provisions(append(s.PendingProvisions[:id], s.PendingProvisions[id+1:]...))
+	s.PendingProvisions = append(s.PendingProvisions[:id], s.PendingProvisions[id+1:]...)
 }
 
 func (s *SnapshotablePendingProvisions) Get(key string) (*types.LiquidityProvision, bool) {
