@@ -1899,6 +1899,7 @@ type ComplexityRoot struct {
 		OcoLinkID        func(childComplexity int) int
 		Order            func(childComplexity int) int
 		PartyID          func(childComplexity int) int
+		RejectionReason  func(childComplexity int) int
 		Status           func(childComplexity int) int
 		Submission       func(childComplexity int) int
 		Trigger          func(childComplexity int) int
@@ -2787,6 +2788,7 @@ type StopOrderResolver interface {
 	Trigger(ctx context.Context, obj *v1.StopOrderEvent) (StopOrderTrigger, error)
 
 	Order(ctx context.Context, obj *v1.StopOrderEvent) (*vega.Order, error)
+	RejectionReason(ctx context.Context, obj *v1.StopOrderEvent) (*vega.StopOrder_RejectionReason, error)
 }
 type SubscriptionResolver interface {
 	Accounts(ctx context.Context, marketID *string, partyID *string, assetID *string, typeArg *vega.AccountType) (<-chan []*v2.AccountBalance, error)
@@ -10701,6 +10703,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.StopOrder.PartyID(childComplexity), true
+
+	case "StopOrder.rejectionReason":
+		if e.complexity.StopOrder.RejectionReason == nil {
+			break
+		}
+
+		return e.complexity.StopOrder.RejectionReason(childComplexity), true
 
 	case "StopOrder.status":
 		if e.complexity.StopOrder.Status == nil {
@@ -60498,6 +60507,8 @@ func (ec *executionContext) fieldContext_Query_stopOrder(ctx context.Context, fi
 				return ec.fieldContext_StopOrder_submission(ctx, field)
 			case "order":
 				return ec.fieldContext_StopOrder_order(ctx, field)
+			case "rejectionReason":
+				return ec.fieldContext_StopOrder_rejectionReason(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type StopOrder", field.Name)
 		},
@@ -66607,6 +66618,47 @@ func (ec *executionContext) fieldContext_StopOrder_order(ctx context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _StopOrder_rejectionReason(ctx context.Context, field graphql.CollectedField, obj *v1.StopOrderEvent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StopOrder_rejectionReason(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.StopOrder().RejectionReason(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.StopOrder_RejectionReason)
+	fc.Result = res
+	return ec.marshalOStopOrderRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐStopOrder_RejectionReason(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StopOrder_rejectionReason(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StopOrder",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type StopOrderRejectionReason does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _StopOrderConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.StopOrderConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_StopOrderConnection_edges(ctx, field)
 	if err != nil {
@@ -66767,6 +66819,8 @@ func (ec *executionContext) fieldContext_StopOrderEdge_node(ctx context.Context,
 				return ec.fieldContext_StopOrder_submission(ctx, field)
 			case "order":
 				return ec.fieldContext_StopOrder_order(ctx, field)
+			case "rejectionReason":
+				return ec.fieldContext_StopOrder_rejectionReason(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type StopOrder", field.Name)
 		},
@@ -94387,6 +94441,23 @@ func (ec *executionContext) _StopOrder(ctx context.Context, sel ast.SelectionSet
 				return innerFunc(ctx)
 
 			})
+		case "rejectionReason":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._StopOrder_rejectionReason(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -105299,6 +105370,22 @@ func (ec *executionContext) unmarshalOStopOrderFilter2ᚖcodeᚗvegaprotocolᚗi
 	}
 	res, err := ec.unmarshalInputStopOrderFilter(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOStopOrderRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐStopOrder_RejectionReason(ctx context.Context, v interface{}) (*vega.StopOrder_RejectionReason, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := marshallers.UnmarshalStopOrderRejectionReason(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOStopOrderRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐStopOrder_RejectionReason(ctx context.Context, sel ast.SelectionSet, v *vega.StopOrder_RejectionReason) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := marshallers.MarshalStopOrderRejectionReason(*v)
+	return res
 }
 
 func (ec *executionContext) unmarshalOStopOrderStatus2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐStopOrder_Statusᚄ(ctx context.Context, v interface{}) ([]vega.StopOrder_Status, error) {

@@ -1382,10 +1382,11 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 	m.broker.SendBatch(evts)
 }
 
-func rejectStopOrders(orders ...*types.StopOrder) {
+func rejectStopOrders(rejectionReason types.StopOrderRejectionReason, orders ...*types.StopOrder) {
 	for _, o := range orders {
 		if o != nil {
 			o.Status = types.StopOrderStatusRejected
+			o.RejectionReason = ptr.From(rejectionReason)
 		}
 	}
 }
@@ -1418,7 +1419,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	}()
 
 	if !m.canTrade() {
-		rejectStopOrders(fallsBelow, risesAbove)
+		rejectStopOrders(types.StopOrderRejectionTradingNotAllowed, fallsBelow, risesAbove)
 		return nil, common.ErrTradingNotAllowed
 	}
 
@@ -1426,22 +1427,22 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	orderCnt := 0
 	if fallsBelow != nil {
 		if fallsBelow.Expiry.Expires() && fallsBelow.Expiry.ExpiresAt.Before(now) {
-			rejectStopOrders(fallsBelow, risesAbove)
+			rejectStopOrders(types.StopOrderRejectionExpiryInThePast, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderExpiryInThePast
 		}
 		if !fallsBelow.OrderSubmission.ReduceOnly {
-			rejectStopOrders(fallsBelow, risesAbove)
+			rejectStopOrders(types.StopOrderRejectionMustBeReduceOnly, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderMustBeReduceOnly
 		}
 		orderCnt++
 	}
 	if risesAbove != nil {
 		if risesAbove.Expiry.Expires() && risesAbove.Expiry.ExpiresAt.Before(now) {
-			rejectStopOrders(fallsBelow, risesAbove)
+			rejectStopOrders(types.StopOrderRejectionExpiryInThePast, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderExpiryInThePast
 		}
 		if !risesAbove.OrderSubmission.ReduceOnly {
-			rejectStopOrders(fallsBelow, risesAbove)
+			rejectStopOrders(types.StopOrderRejectionMustBeReduceOnly, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderMustBeReduceOnly
 		}
 		orderCnt++
@@ -1449,7 +1450,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 
 	// now check if that party hasn't exceeded the max amount per market
 	if m.stopOrders.CountForParty(party)+uint64(orderCnt) > m.maxStopOrdersPerParties.Uint64() {
-		rejectStopOrders(fallsBelow, risesAbove)
+		rejectStopOrders(types.StopOrderRejectionMaxStopOrdersPerPartyReached, fallsBelow, risesAbove)
 		return nil, common.ErrMaxStopOrdersPerPartyReached
 	}
 
@@ -1460,7 +1461,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	}
 
 	if len(positions) < 1 {
-		rejectStopOrders(fallsBelow, risesAbove)
+		rejectStopOrders(types.StopOrderRejectionNotAllowedWithoutAPosition, fallsBelow, risesAbove)
 		return nil, common.ErrStopOrderSubmissionNotAllowedWithoutExistingPosition
 	}
 
@@ -1481,12 +1482,12 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	switch stopOrderSide {
 	case types.SideBuy:
 		if potentialSize >= 0 && size >= 0 {
-			rejectStopOrders(fallsBelow, risesAbove)
+			rejectStopOrders(types.StopOrderRejectionNotClosingThePosition, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderSideNotClosingThePosition
 		}
 	case types.SideSell:
 		if potentialSize <= 0 && size <= 0 {
-			rejectStopOrders(fallsBelow, risesAbove)
+			rejectStopOrders(types.StopOrderRejectionNotClosingThePosition, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderSideNotClosingThePosition
 		}
 	}

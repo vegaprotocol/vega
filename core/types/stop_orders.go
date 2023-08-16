@@ -53,6 +53,19 @@ const (
 	StopOrderStatusRejected = vega.StopOrder_STATUS_REJECTED
 )
 
+type StopOrderRejectionReason = vega.StopOrder_RejectionReason
+
+const (
+	// Never valid.
+	StopOrderRejectionUnspecified                  StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_UNSPECIFIED
+	StopOrderRejectionTradingNotAllowed            StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_TRADING_NOT_ALLOWED
+	StopOrderRejectionExpiryInThePast              StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_EXPIRY_IN_THE_PAST
+	StopOrderRejectionMustBeReduceOnly             StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_MUST_BE_REDUCE_ONLY
+	StopOrderRejectionMaxStopOrdersPerPartyReached StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_MAX_STOP_ORDERS_PER_PARTY_REACHED
+	StopOrderRejectionNotAllowedWithoutAPosition   StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION
+	StopOrderRejectionNotClosingThePosition        StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_DOES_NOT_CLOSE_POSITION
+)
+
 type StopOrderExpiry struct {
 	ExpiresAt      *time.Time
 	ExpiryStrategy *StopOrderExpiryStrategy
@@ -273,11 +286,16 @@ type StopOrder struct {
 	Status          StopOrderStatus
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+	RejectionReason *StopOrderRejectionReason
 }
 
 func (s *StopOrder) String() string {
+	rejectionReason := "nil"
+	if s.RejectionReason != nil {
+		rejectionReason = s.RejectionReason.String()
+	}
 	return fmt.Sprintf(
-		"id(%v) party(%v) market(%v) orderSubmission(%v) orderId(%v) ocoLink(%v) expiry(%v) trigger(%v) status(%v) createdAt(%v) updatedAt(%v)",
+		"id(%v) party(%v) market(%v) orderSubmission(%v) orderId(%v) ocoLink(%v) expiry(%v) trigger(%v) status(%v) createdAt(%v) updatedAt(%v) rejectionReason(%v)",
 		s.ID,
 		s.Party,
 		s.Market,
@@ -289,6 +307,7 @@ func (s *StopOrder) String() string {
 		s.Status,
 		s.CreatedAt,
 		s.UpdatedAt,
+		rejectionReason,
 	)
 }
 
@@ -335,6 +354,7 @@ func NewStopOrderFromProto(p *eventspb.StopOrderEvent) *StopOrder {
 		OrderSubmission: sub,
 		Trigger:         trigger,
 		Expiry:          expiry,
+		RejectionReason: p.StopOrder.RejectionReason,
 	}
 }
 
@@ -361,6 +381,7 @@ func (s *StopOrder) ToProtoEvent() *eventspb.StopOrderEvent {
 			CreatedAt:        s.CreatedAt.UnixNano(),
 			UpdatedAt:        updatedAt,
 			TriggerDirection: s.Trigger.Direction,
+			RejectionReason:  s.RejectionReason,
 		},
 	}
 

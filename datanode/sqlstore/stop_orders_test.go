@@ -60,6 +60,7 @@ func generateTestStopOrders(t *testing.T, testOrders []testStopOrderInputs) []en
 				Type:        entities.OrderTypeMarket,
 				Reference:   o.orderID,
 			},
+			RejectionReason: entities.StopOrderRejectionReasonUnspecified,
 		}
 		orders = append(orders, so)
 	}
