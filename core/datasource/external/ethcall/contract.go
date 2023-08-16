@@ -52,7 +52,7 @@ func (q *ContractCallEvent) IntoProto() *vegapb.EthContractCallEvent {
 
 func (q ContractCallEvent) Hash() string {
 	blockHeight := strconv.FormatUint(q.BlockHeight, 10)
-	blockTime := strconv.FormatUint(q.BlockHeight, 10)
+	blockTime := strconv.FormatUint(q.BlockTime, 10)
 	bytes := []byte(blockHeight + blockTime + q.SpecId)
 	bytes = append(bytes, q.Result...)
 	if q.Error != nil {
