@@ -53,11 +53,7 @@ func TestCheckTransactionsInDirectoryThrowsNoErrAndReturnsAccurateMetrics(t *tes
 func TestCheckTransactionsInDirectoryThrowsErrIfFileContainsInvalidBase64Data(t *testing.T) {
 	testDir := t.TempDir()
 	defer clearTestData(t, testDir)
-	encodedTransaction, err := CreatedEncodedTransactionData()
-	assert.NoErrorf(t, err, "error occurred when attempting to create encoded test data")
-
 	createTestDataFile(t, testDir, "transaction1.txt", "12345")
-	createTestDataFile(t, testDir, "transaction2.txt", encodedTransaction)
 
 	resultData, err := CheckTransactionsInDirectory(testDir)
 	assert.Errorf(t, err, "expected to exit CheckTransactionsInDirectory with an err when one of the files has invalid data, no error was thrown")
