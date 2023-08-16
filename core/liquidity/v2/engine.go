@@ -242,7 +242,7 @@ func (e *Engine) ApplyPendingProvisions(ctx context.Context, now time.Time) Prov
 		// if commitment was reduced to 0, all party provision related data can be deleted
 		// otherwise we apply the new commitment
 		if provision.CommitmentAmount.IsZero() {
-			provision.Status = types.LiquidityProvisionStatusStopped
+			provision.Status = types.LiquidityProvisionStatusCancelled
 			e.destroyProvision(party)
 		} else {
 			provision.Status = types.LiquidityProvisionStatusActive
