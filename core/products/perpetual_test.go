@@ -48,6 +48,7 @@ func TestPeriodicSettlement(t *testing.T) {
 	t.Run("funding payments with interest rate", testFundingPaymentsWithInterestRate)
 	t.Run("funding payments with interest rate clamped", testFundingPaymentsWithInterestRateClamped)
 	t.Run("terminate perps market test", testTerminateTrading)
+	t.Run("margin increase", testGetMarginIncrease)
 }
 
 func testIncomingDataIgnoredBeforeLeavingOpeningAuction(t *testing.T) {
@@ -405,7 +406,7 @@ func testRegisteredCallbacksWithDifferentData(t *testing.T) {
 }
 
 func testFundingPaymentsWithInterestRate(t *testing.T) {
-	perp := testPerpetualWithInterestRates(t, "0.01", "-1", "1")
+	perp := testPerpetualWithOpts(t, "0.01", "-1", "1", "0")
 	defer perp.ctrl.Finish()
 	ctx := context.Background()
 
@@ -453,7 +454,7 @@ func testFundingPaymentsWithInterestRate(t *testing.T) {
 }
 
 func testFundingPaymentsWithInterestRateClamped(t *testing.T) {
-	perp := testPerpetualWithInterestRates(t, "0.5", "0.001", "0.002")
+	perp := testPerpetualWithOpts(t, "0.5", "0.001", "0.002", "0")
 	defer perp.ctrl.Finish()
 	ctx := context.Background()
 
@@ -537,6 +538,36 @@ func testTerminateTrading(t *testing.T) {
 	assert.Equal(t, "0", fundingPayment.String())
 }
 
+func testGetMarginIncrease(t *testing.T) {
+	// margin factor is 0.5
+	perp := testPerpetualWithOpts(t, "0", "0", "0", "0.5")
+	defer perp.ctrl.Finish()
+	ctx := context.Background()
+
+	// test data
+	points := getTestDataPoints(t)
+
+	// before we've started the first funding interval margin increase is 0
+	inc := perp.perpetual.GetMarginIncrease(points[0].t)
+	assert.Equal(t, "0", inc.String())
+
+	// start funding period
+	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
+	perp.perpetual.OnLeaveOpeningAuction(ctx, 1000)
+
+	// started interval, but not points, margin increase is 0
+	inc = perp.perpetual.GetMarginIncrease(points[0].t)
+	assert.Equal(t, "0", inc.String())
+
+	// and: the difference in external/internal prices are is 10
+	submitDataWithDifference(t, perp, points, 10)
+
+	lastPoint := points[len(points)-1]
+	inc = perp.perpetual.GetMarginIncrease(lastPoint.t)
+	// margin increase is margin_factor * funding-payment = 0.5 * 10
+	assert.Equal(t, "5", inc.String())
+}
+
 // submits the given data points as both external and interval but with the given different added to the internal price.
 func submitDataWithDifference(t *testing.T, perp *tstPerp, points []*testDataPoint, diff int) {
 	t.Helper()
@@ -602,10 +633,10 @@ type tstPerp struct {
 
 func testPerpetual(t *testing.T) *tstPerp {
 	t.Helper()
-	return testPerpetualWithInterestRates(t, "0", "0", "0")
+	return testPerpetualWithOpts(t, "0", "0", "0", "0")
 }
 
-func testPerpetualWithInterestRates(t *testing.T, interestRate, clampLowerBound, clampUpperBound string) *tstPerp {
+func testPerpetualWithOpts(t *testing.T, interestRate, clampLowerBound, clampUpperBound, marginFactor string) *tstPerp {
 	t.Helper()
 
 	log := logging.NewTestLogger()
@@ -619,6 +650,7 @@ func testPerpetualWithInterestRates(t *testing.T, interestRate, clampLowerBound,
 	perp.InterestRate = num.MustDecimalFromString(interestRate)
 	perp.ClampLowerBound = num.MustDecimalFromString(clampLowerBound)
 	perp.ClampUpperBound = num.MustDecimalFromString(clampUpperBound)
+	perp.MarginFundingFactor = num.MustDecimalFromString(marginFactor)
 
 	if err != nil {
 		t.Fatalf("couldn't create a perp for testing: %v", err)
