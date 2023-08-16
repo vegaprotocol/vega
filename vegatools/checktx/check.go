@@ -18,7 +18,7 @@ func CheckTransaction(encodedTransaction string) error {
 		return fmt.Errorf("error occurred when attempting to unmarshal the encoded transaction data.\nerr: %w", err)
 	}
 
-	logrus.Infof("reencoding the tranaction...")
+	logrus.Infof("reencoding the transaction...")
 	reEncodedTransaction, err := marshalAndEncodeTransaction(unmarshalledTransaction)
 	if err != nil {
 		return fmt.Errorf("error occurred when attempting to marshal and re-encode the transaction")
