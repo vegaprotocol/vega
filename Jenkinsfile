@@ -38,13 +38,16 @@ pipeline {
                 description: 'Git branch, tag or hash of the vegaprotocol/vega-market-sim repository')
         string( name: 'JENKINS_SHARED_LIB_BRANCH', defaultValue: 'main',
                 description: 'Git branch, tag or hash of the vegaprotocol/jenkins-shared-library repository')
-        string( name: 'NODE_LABEL', defaultValue: 's-4vcpu-8gb',
+        string( name: 'NODE_LABEL', defaultValue: 'core-build',
                 description: 'Label on which vega build should be run, if empty any any node is used')
     }
     environment {
         CGO_ENABLED = 0
         GO111MODULE = 'on'
         BUILD_UID="${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
+        GOPATH = "/jenkins/GOPATH"
+        GOBIN = "${env.GOPATH}/bin"
+        PATH = "${env.GOBIN}:${env.PATH}"
     }
 
     stages {
@@ -221,8 +224,8 @@ pipeline {
                 stage('core/integration perps tests') {
                     steps {
                         dir('vega/core/integration') {
-                            // sh 'go test -v  . -perps --godog.format=junit:core-integration-perps-report.xml'
-                            // junit checksName: 'Core Integration Perps Tests', testResults: 'core-integration-perps-report.xml'
+                            sh 'go test . -timeout 30m -perps --godog.format=junit:core-integration-perps-report.xml'
+                            junit checksName: 'Core Integration Perps Tests', testResults: 'core-integration-perps-report.xml'
                         }
                     }
                 }

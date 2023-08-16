@@ -40,6 +40,7 @@ type (
 		SeqNum               uint64
 		TxHash               TxHash
 		Submission           *commandspb.OrderSubmission
+		RejectionReason      StopOrderRejectionReason
 	}
 )
 
@@ -67,6 +68,7 @@ var StopOrderColumns = []string{
 	"seq_num",
 	"tx_hash",
 	"submission",
+	"rejection_reason",
 }
 
 func (o StopOrder) ToProto() *pbevents.StopOrderEvent {
@@ -100,6 +102,14 @@ func (o StopOrder) ToProto() *pbevents.StopOrderEvent {
 		}
 	}
 
+	// We cannot copy a nil value to a enum field in the database when using copy, so we only set the
+	// rejection reason on the proto if the stop order is rejected. Otherwise, we will leave the proto field
+	// as nil
+	var rejectionReason *vega.StopOrder_RejectionReason
+	if o.Status == StopOrderStatusRejected {
+		rejectionReason = ptr.From(vega.StopOrder_RejectionReason(o.RejectionReason))
+	}
+
 	stopOrder := &vega.StopOrder{
 		Id:               o.ID.String(),
 		OcoLinkId:        ocoLinkID,
@@ -112,6 +122,7 @@ func (o StopOrder) ToProto() *pbevents.StopOrderEvent {
 		OrderId:          o.OrderID.String(),
 		PartyId:          o.PartyID.String(),
 		MarketId:         o.MarketID.String(),
+		RejectionReason:  rejectionReason,
 	}
 
 	if triggerPrice != nil {
@@ -209,6 +220,14 @@ func StopOrderFromProto(so *pbevents.StopOrderEvent, vegaTime time.Time, seqNum 
 		triggerPercentOffset = ptr.From(offset)
 	}
 
+	// We will default to unspecified as we need to have a value in the enum field for the pgx copy command to work
+	// as it calls EncodeText on the enum fields and this will fail if the value is nil
+	// We will only use the rejection reason when we convert back to proto if the status of the order is rejected.
+	rejectionReason := StopOrderRejectionReasonUnspecified
+	if so.StopOrder.RejectionReason != nil {
+		rejectionReason = StopOrderRejectionReason(*so.StopOrder.RejectionReason)
+	}
+
 	stopOrder := StopOrder{
 		ID:                   StopOrderID(so.StopOrder.Id),
 		OCOLinkID:            ocoLinkID,
@@ -227,6 +246,7 @@ func StopOrderFromProto(so *pbevents.StopOrderEvent, vegaTime time.Time, seqNum 
 		SeqNum:               seqNum,
 		TxHash:               txHash,
 		Submission:           so.Submission,
+		RejectionReason:      rejectionReason,
 	}
 
 	return stopOrder, nil
@@ -251,6 +271,7 @@ func (so StopOrder) ToRow() []interface{} {
 		so.SeqNum,
 		so.TxHash,
 		so.Submission,
+		so.RejectionReason,
 	}
 }
 

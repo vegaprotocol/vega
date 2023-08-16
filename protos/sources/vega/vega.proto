@@ -42,6 +42,23 @@ message StopOrder {
     STATUS_REJECTED = 6;
   }
 
+  enum RejectionReason {
+    // Never valid
+    REJECTION_REASON_UNSPECIFIED = 0;
+    // Trading is not allowed yet
+    REJECTION_REASON_TRADING_NOT_ALLOWED = 1;
+    // Expiry of the stop order is in the past
+    REJECTION_REASON_EXPIRY_IN_THE_PAST = 2;
+    // Stop orders submission must be reduce only
+    REJECTION_REASON_MUST_BE_REDUCE_ONLY = 3;
+    // Party has reached the maximum stop orders allowed for this market
+    REJECTION_REASON_MAX_STOP_ORDERS_PER_PARTY_REACHED = 4;
+    // Stop orders are not allowed if there is no open position
+    REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION = 5;
+    // This stop order does not close the position
+    REJECTION_REASON_STOP_ORDER_DOES_NOT_CLOSE_POSITION = 6;
+  }
+
   // ID of this stop order
   // also the ID of the associated order if it is ever triggered
   string id = 1;
@@ -65,6 +82,8 @@ message StopOrder {
   string party_id = 10;
   // ID of the market the stop order is submitted to.
   string market_id = 11;
+  // An optional reason for why a stop order was rejected
+  optional RejectionReason rejection_reason = 12;
 
   // Trigger that will need to be breached for the order
   // to be submitted to the book.

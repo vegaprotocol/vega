@@ -58,6 +58,10 @@ func (di myDataSourceDefinitionInternalResolver) SourceType(_ context.Context, o
 				if tp.Time != nil {
 					return tp.Time, nil
 				}
+			case *vegapb.DataSourceDefinitionInternal_TimeTrigger:
+				if tp.TimeTrigger != nil {
+					return tp.TimeTrigger, nil
+				}
 			}
 		}
 	}

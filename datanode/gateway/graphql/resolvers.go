@@ -455,6 +455,38 @@ func (r *VegaResolverRoot) FundingPeriodDataPoint() FundingPeriodDataPointResolv
 	return (*fundingPeriodDataPointResolver)(r)
 }
 
+func (r *VegaResolverRoot) Perpetual() PerpetualResolver {
+	return (*perpetualResolver)(r)
+}
+
+func (r *VegaResolverRoot) PerpetualProduct() PerpetualProductResolver {
+	return (*perpetualProductResolver)(r)
+}
+
+func (r *VegaResolverRoot) Spot() SpotResolver {
+	return (*spotResolver)(r)
+}
+
+func (r *VegaResolverRoot) SpotProduct() SpotProductResolver {
+	return (*spotProductResolver)(r)
+}
+
+func (r *VegaResolverRoot) LiquiditySLAParameters() LiquiditySLAParametersResolver {
+	return (*liquiditySLAParametersResolver)(r)
+}
+
+func (r *VegaResolverRoot) NewSpotMarket() NewSpotMarketResolver {
+	return (*newSpotMarketResolver)(r)
+}
+
+func (r *VegaResolverRoot) UpdateSpotMarket() UpdateSpotMarketResolver {
+	return (*updateSpotMarketResolver)(r)
+}
+
+func (r *VegaResolverRoot) UpdateSpotMarketConfiguration() UpdateSpotMarketConfigurationResolver {
+	return (*updateSpotMarketConfigurationResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {

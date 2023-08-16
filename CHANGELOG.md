@@ -54,7 +54,10 @@
 - [9007](https://github.com/vegaprotocol/vega/issues/9007) - Add reward vesting mechanisms.
 - [8914](https://github.com/vegaprotocol/vega/issues/8914) - Add referral network parameters.
 - [9023](https://github.com/vegaprotocol/vega/issues/9023) - Add transaction comparison tool.
+- [8120](https://github.com/vegaprotocol/vega/issues/8120) - Data node `API` support for spot markets, data and governance.
+- [8762](https://github.com/vegaprotocol/vega/issues/8762) - Data node `API` support for perpetual markets, data and governance.
 - [8761](https://github.com/vegaprotocol/vega/issues/8761) - Add terminating `PERPS` via governance.
+- [9021](https://github.com/vegaprotocol/vega/issues/9021) - Add rejection reason to stop orders.
 
 ### 🐛 Fixes
 
@@ -87,6 +90,7 @@
 - [8878](https://github.com/vegaprotocol/vega/issues/8878) - Fix amend to consider market decimals when checking for sufficient funds.
 - [8698](https://github.com/vegaprotocol/vega/issues/8698) - Final settlement rounding can be off by a 1 factor instead of just one.
 - [8861](https://github.com/vegaprotocol/vega/issues/8861) - Fix successor proposals never leaving proposed state.
+- [9086](https://github.com/vegaprotocol/vega/issues/9086) - Set identifier generator during perpetual settlement for closed out orders.
 - [8884](https://github.com/vegaprotocol/vega/issues/8884) - Do not assume `\n` is present on the first read chunk of the input
 - [8477](https://github.com/vegaprotocol/vega/issues/8477) - Do not allow opening auction duration of 0
 - [8891](https://github.com/vegaprotocol/vega/issues/8891) - Emit market update event when resuming via governance
@@ -101,6 +105,7 @@
 - [9009](https://github.com/vegaprotocol/vega/issues/9009) - Fix non determinism in `RollbackParentELS`
 - [8945](https://github.com/vegaprotocol/vega/issues/8945) - Expose missing order from the stop order `GraphQL` endpoint.
 - [9034](https://github.com/vegaprotocol/vega/issues/9034) - Add missing transfer types to `GraphQL` schema definition.
+- [9075](https://github.com/vegaprotocol/vega/issues/9075) - `Oracle Specs API` can fail when oracle data is null.
 
 ## 0.72.1
 

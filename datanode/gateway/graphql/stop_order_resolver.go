@@ -109,6 +109,10 @@ func (s stopOrderResolver) Order(ctx context.Context, obj *eventspb.StopOrderEve
 	return s.r.getOrderByID(ctx, obj.StopOrder.OrderId, nil)
 }
 
+func (s stopOrderResolver) RejectionReason(ctx context.Context, obj *eventspb.StopOrderEvent) (*vega.StopOrder_RejectionReason, error) {
+	return obj.StopOrder.RejectionReason, nil
+}
+
 type stopOrderFilterResolver VegaResolverRoot
 
 func (s stopOrderFilterResolver) Parties(ctx context.Context, obj *v2.StopOrderFilter, data []string) error {
