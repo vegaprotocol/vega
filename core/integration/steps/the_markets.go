@@ -673,8 +673,8 @@ func (r marketRow) liquiditySLA() string {
 }
 
 func (r marketUpdateRow) tryLiquiditySLA() (string, bool) {
-	if r.row.HasColumn("SLA") {
-		sla := r.row.MustStr("SLA")
+	if r.row.HasColumn("sla params") {
+		sla := r.row.MustStr("sla params")
 		return sla, true
 	}
 	return "", false
