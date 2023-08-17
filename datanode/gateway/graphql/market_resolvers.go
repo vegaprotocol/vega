@@ -240,3 +240,7 @@ func (r *myMarketResolver) CandlesConnection(ctx context.Context, market *types.
 ) (*v2.CandleDataConnection, error) {
 	return handleCandleConnectionRequest(ctx, r.tradingDataClientV2, market, sinceRaw, toRaw, interval, pagination)
 }
+
+func (r *myMarketResolver) LiquiditySLAParameters(ctx context.Context, obj *types.Market) (*types.LiquiditySLAParameters, error) {
+	return obj.LiquiditySlaParams, nil
+}

@@ -59,6 +59,7 @@
 - [8761](https://github.com/vegaprotocol/vega/issues/8761) - Add terminating `PERPS` via governance.
 - [9021](https://github.com/vegaprotocol/vega/issues/9021) - Add rejection reason to stop orders.
 - [9012](https://github.com/vegaprotocol/vega/issues/9012) - Add governance to update the referral program.
+- [9077](https://github.com/vegaprotocol/vega/issues/9077) - Ensure liquidity `SLA` parameters are exposed on markets and proposals
 
 ### 🐛 Fixes
 
