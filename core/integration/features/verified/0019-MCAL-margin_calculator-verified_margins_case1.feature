@@ -81,7 +81,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    And "party1" should have general account balance of "806558865" for asset "ETH"
+    And "party1" should have general account balance of "821118876" for asset "ETH"
     And the order book should have the following volumes for market "ETH/DEC19":
       | side | price    | volume |
       | buy  | 1        | 1      |
@@ -113,7 +113,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
-      | party1 | ETH | ETH/DEC19 | 178881144 | 806558865 |
+      | party1 | ETH | ETH/DEC19 | 178881144 | 821118876 |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search    | initial   | release   |
       | party1 | ETH/DEC19 | 44720286 | 143104915 | 178881144 | 223601430 |
@@ -151,7 +151,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
-      | party1 | ETH | ETH/DEC19 | 178881144 | 806558865 |
+      | party1 | ETH | ETH/DEC19 | 178881144 | 821118876 |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search    | initial   | release   |
       | party1 | ETH/DEC19 | 44720286 | 143104915 | 178881144 | 223601430 |
@@ -172,7 +172,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
-      | party1 | ETH | ETH/DEC19 | 215281014 | 806558865 |
+      | party1 | ETH | ETH/DEC19 | 215281014 | 821118876 |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search    | initial   | release   |
       | party1 | ETH/DEC19 | 65800007 | 210560022 | 263200028 | 329000035 |
