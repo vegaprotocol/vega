@@ -104,6 +104,21 @@ func (e *Engine) getUpdateMarketStateProposalParameters() *ProposalParameters {
 	)
 }
 
+func (e *Engine) getReferralProgramNetworkParameters() *ProposalParameters {
+	return e.getProposalParametersFromNetParams(netparams.GovernanceProposalUpdateMarketMinClose,
+		netparams.GovernanceProposalReferralProgramMaxClose,
+		netparams.GovernanceProposalReferralProgramMinEnact,
+		netparams.GovernanceProposalReferralProgramMaxEnact,
+		netparams.GovernanceProposalReferralProgramRequiredParticipation,
+		netparams.GovernanceProposalReferralProgramRequiredMajority,
+		netparams.GovernanceProposalReferralProgramMinProposerBalance,
+		netparams.GovernanceProposalReferralProgramMinVoterBalance,
+		"0",
+		"0",
+		"0",
+	)
+}
+
 func (e *Engine) getNewAssetProposalParameters() *ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalAssetMinClose,

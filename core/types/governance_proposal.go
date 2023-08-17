@@ -122,6 +122,8 @@ const (
 	ProposalErrorMissingSLAParams ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_SLA_PARAMS
 	// ProposalErrorInvalidPerpsProduct Market proposal market contained invalid product definition.
 	ProposalErrorInvalidPerpsProduct ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_PERPETUAL_PRODUCT
+	// ProposalErrorInvalidReferralProgram is returned when the referral program proposal is not valid.
+	ProposalErrorInvalidReferralProgram ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_REFERRAL_PROGRAM
 )
 
 type ProposalState = vegapb.Proposal_State
@@ -159,6 +161,7 @@ const (
 	ProposalTermsTypeUpdateSpotMarket
 	ProposalTermsTypeCancelTransfer
 	ProposalTermsTypeUpdateMarketState
+	ProposalTermsTypeUpdateReferralProgram
 )
 
 type ProposalSubmission struct {
@@ -249,6 +252,15 @@ func (p *Proposal) IsMarketUpdate() bool {
 func (p *Proposal) IsSpotMarketUpdate() bool {
 	switch p.Terms.Change.(type) {
 	case *ProposalTermsUpdateSpotMarket:
+		return true
+	default:
+		return false
+	}
+}
+
+func (p *Proposal) IsReferralProgramUpdate() bool {
+	switch p.Terms.Change.(type) {
+	case *ProposalTermsUpdateReferralProgram:
 		return true
 	default:
 		return false
@@ -484,11 +496,7 @@ type ProposalTerms struct {
 	ClosingTimestamp    int64
 	EnactmentTimestamp  int64
 	ValidationTimestamp int64
-	// *ProposalTermsUpdateMarket
-	// *ProposalTermsNewMarket
-	// *ProposalTermsUpdateNetworkParameter
-	// *ProposalTermsNewAsset
-	Change proposalTerm
+	Change              proposalTerm
 }
 
 func (p ProposalTerms) IntoProto() *vegapb.ProposalTerms {
@@ -521,6 +529,8 @@ func (p ProposalTerms) IntoProto() *vegapb.ProposalTerms {
 	case *vegapb.ProposalTerms_UpdateSpotMarket:
 		r.Change = ch
 	case *vegapb.ProposalTerms_UpdateMarketState:
+		r.Change = ch
+	case *vegapb.ProposalTerms_UpdateReferralProgram:
 		r.Change = ch
 	}
 	return r
@@ -623,6 +633,15 @@ func (p *ProposalTerms) GetUpdateSpotMarket() *UpdateSpotMarket {
 	}
 }
 
+func (p *ProposalTerms) GetUpdateReferralProgram() *UpdateReferralProgram {
+	switch c := p.Change.(type) {
+	case *ProposalTermsUpdateReferralProgram:
+		return c.UpdateReferralProgram
+	default:
+		return nil
+	}
+}
+
 func (p *ProposalTerms) GetUpdateNetworkParameter() *UpdateNetworkParameter {
 	switch c := p.Change.(type) {
 	case *ProposalTermsUpdateNetworkParameter:
@@ -670,6 +689,8 @@ func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
 			change, err = NewCancelGovernanceTransferFromProto(ch)
 		case *vegapb.ProposalTerms_UpdateMarketState:
 			change, err = NewTerminateMarketFromProto(ch)
+		case *vegapb.ProposalTerms_UpdateReferralProgram:
+			change, err = NewUpdateReferralProgramProposalFromProto(ch)
 		}
 	}
 	if err != nil {

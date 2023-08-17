@@ -1590,3 +1590,27 @@ message VectorValue {
 message MatrixValue {
   repeated VectorValue value = 1;
 }
+
+message ReferralProgram {
+  // Defined tiers in increasing order. First element will give Tier 1, second
+  // element will give Tier 2, and so on.
+  repeated BenefitTier benefit_tiers = 1;
+  //  Timestamp as Unix time in seconds after which when the current epoch ends, the
+  // programs status will become STATE_CLOSED and benefits will be disabled.
+  int64 end_of_program_timestamp = 2;
+  // Number of epochs over which to evaluate a referral set's running volume.
+  uint64 window_length = 3;
+}
+
+message BenefitTier {
+  // Required running notional taker volume in quantum units for parties
+  // to access this tier.
+  string minimum_running_notional_taker_volume = 1;
+  // Required number of epochs a party must have been in a referral set to
+  // access this tier.
+  string minimum_epochs = 2;
+  // Proportion of the referee's taker fees to be rewarded to the referrer
+  string referral_reward_factor = 3;
+  // Proportion of the referee's taker fees to be discounted
+  string referral_discount_factor = 4;
+}

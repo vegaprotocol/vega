@@ -50,6 +50,7 @@ type ToEnact struct {
 	t                 *ToEnactTransfer
 	c                 *ToEnactCancelTransfer
 	msu               *ToEnactMarketStateUpdate
+	referralProgram   *types.ReferralProgram
 }
 
 type ToEnactMarketStateUpdate struct{}
@@ -68,6 +69,10 @@ type ToEnactNewSpotMarket struct{}
 
 // ToEnactFreeform there is nothing to enact with a freeform proposal.
 type ToEnactFreeform struct{}
+
+func (t ToEnact) IsReferralProgramUpdate() bool {
+	return t.referralProgram != nil
+}
 
 func (t ToEnact) IsMarketStateUpdate() bool {
 	return t.msu != nil
@@ -140,6 +145,10 @@ func (t *ToEnact) NewAssetDetails() *types.AssetDetails {
 
 func (t *ToEnact) UpdateNetworkParameter() *types.NetworkParameter {
 	return t.n
+}
+
+func (t *ToEnact) ReferralProgramUpdate() *types.ReferralProgram {
+	return t.referralProgram
 }
 
 func (t *ToEnact) UpdateMarket() *types.Market {
