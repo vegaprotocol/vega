@@ -114,7 +114,7 @@ func (es *EquityShares) LpsToLiquidityProviderFeeShare(ls map[string]num.Decimal
 			EquityLikeShare:       v.share.String(),
 			AverageEntryValuation: v.avg.String(),
 			AverageScore:          ls[k].String(),
-			VirtualStake:          v.vStake.String(),
+			VirtualStake:          v.vStake.StringFixed(16),
 		})
 	}
 
