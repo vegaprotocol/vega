@@ -69,10 +69,11 @@ Feature: Test LP orders
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status        |
       | lp1 | party1 | ETH/DEC19 | 50000             | STATUS_ACTIVE |
+
     Then the orders should have the following states:
       | party  | market id | side | volume | price | status        |
-      | party1 | ETH/DEC19 | buy  | 499    | 100   | STATUS_ACTIVE |
-      | party1 | ETH/DEC19 | sell | 384    | 130   | STATUS_ACTIVE |
+      | party1 | ETH/DEC19 | buy  | 500 | 100 | STATUS_ACTIVE |
+      | party1 | ETH/DEC19 | sell | 500 | 130 | STATUS_ACTIVE |
 
   Scenario: 002, create liquidity provisions (0038-OLIQ-additional-tests); test decimal; asset 3; market 1; position:2 AC: 0070-MKTD-004;0070-MKTD-005; 0070-MKTD-006; 0070-MKTD-007;0070-MKTD-008
     Given the following assets are registered:
@@ -104,10 +105,10 @@ Feature: Test LP orders
       | lp1 | party1 | ETH/DEC19 | 50000000          | 0.1 | submission |
       | lp1 | party1 | ETH/DEC19 | 50000000          | 0.1 | submission |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party1 | ETH/DEC19 | 2         | 1                    | buy  | BID              | 500        | 100    |
-      | party1 | ETH/DEC19 | 2         | 1                    | sell | ASK              | 500        | 100    |
- 
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party1 | ETH/DEC19 | 2         | 1                    | buy  | BID              | 500    | 100    |
+      | party1 | ETH/DEC19 | 2         | 1                    | sell | ASK              | 500    | 100    |
+
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | sell | 1200  | 100    |
@@ -140,7 +141,8 @@ Feature: Test LP orders
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status        |
       | lp1 | party1 | ETH/DEC19 | 50000000          | STATUS_ACTIVE |
+
     Then the orders should have the following states:
-      | party  | market id | side | volume | price | status        |
-      | party1 | ETH/DEC19 | buy  | 44500  | 1000  | STATUS_ACTIVE |
-      | party1 | ETH/DEC19 | sell | 33847  | 1300  | STATUS_ACTIVE |
+      | party | market id | side | volume | price | status |
+      | party1 | ETH/DEC19 | buy  | 500 | 1000 | STATUS_ACTIVE |
+      | party1 | ETH/DEC19 | sell | 500 | 1300 | STATUS_ACTIVE |
