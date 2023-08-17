@@ -73,9 +73,7 @@ func TestExternalDataPointTWAPInSequence(t *testing.T) {
 		if dp.seq > seq {
 			perp.broker.EXPECT().Send(gomock.Any()).Times(2)
 			if dp.seq == 2 {
-				perp.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
-					fmt.Printf("SEQ: %d\n%#v\n", dp.seq, evts)
-				})
+				perp.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 			}
 			perp.perpetual.PromptSettlementCue(ctx, dp.t)
 			seq = dp.seq
