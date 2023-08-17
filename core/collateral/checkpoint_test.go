@@ -63,14 +63,14 @@ func newCheckpointTestEngine(t *testing.T) *checkpointTestEngine {
 func TestCheckPointLoadingWithAlias(t *testing.T) {
 	e := newCheckpointTestEngine(t)
 
-	e.broker.EXPECT().Send(gomock.Any()).Times(4).Do(func(e events.Event) {
+	e.broker.EXPECT().Send(gomock.Any()).Times(7).Do(func(e events.Event) {
 		ledgerMovmenentsE, ok := e.(*events.LedgerMovements)
 		if !ok {
 			return
 		}
 
 		mvts := ledgerMovmenentsE.LedgerMovements()
-		assert.Len(t, mvts, 3)
+		assert.Len(t, mvts, 4)
 		assert.Len(t, mvts[0].Entries, 1)
 		// no owner + from externa
 		assert.Nil(t, mvts[0].Entries[0].FromAccount.Owner)
@@ -105,6 +105,8 @@ func TestCheckPointLoadingWithAlias(t *testing.T) {
 		{Party: "*", Asset: "VEGA", Balance: "1000"},
 		{Party: "*ACCOUNT_TYPE_NETWORK_TREASURY", Asset: "VEGA", Balance: "2000"},
 		{Party: "*ACCOUNT_TYPE_GLOBAL_INSURANCE", Asset: "VEGA", Balance: "9000"},
+		// covers for vesting accounts
+		{Party: "vesting6d449ee7716fc5c740b2fe7596ceb91d671ec6f7b9d771edf4a610829bb8a658", Asset: "VEGA", Balance: "4242424"},
 	}
 
 	msg := &checkpoint.Collateral{
@@ -123,6 +125,14 @@ func TestCheckPointLoadingWithAlias(t *testing.T) {
 	acc, err = e.GetGlobalInsuranceAccount("VEGA")
 	require.NoError(t, err)
 	require.Equal(t, "9000", acc.Balance.String())
+
+	acc = e.GetOrCreatePartyVestingRewardAccount(
+		context.Background(),
+		"6d449ee7716fc5c740b2fe7596ceb91d671ec6f7b9d771edf4a610829bb8a658",
+		"VEGA",
+	)
+
+	require.Equal(t, "4242424", acc.Balance.String())
 
 	_, err = e.GetPartyGeneralAccount("*ACCOUNT_TYPE_GLOBAL_REWARD", "VEGA")
 	require.Error(t, err)

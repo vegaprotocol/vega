@@ -119,6 +119,16 @@ type StateVarEngine interface {
 	OnBlockEnd(ctx context.Context)
 }
 
+type TeamsEngine interface {
+	CreateTeam(context.Context, types.PartyID, types.TeamID, *commandspb.CreateTeam) error
+	UpdateTeam(context.Context, types.PartyID, *commandspb.UpdateTeam) error
+	JoinTeam(context.Context, types.PartyID, *commandspb.JoinTeam) error
+}
+
+type ReferralProgram interface {
+	Update(program *types.ReferralProgram)
+}
+
 type BlockchainClient interface {
 	Validators(height *int64) ([]*tmtypesint.Validator, error)
 }
@@ -180,6 +190,8 @@ type App struct {
 	epoch                  EpochService
 	snapshotEngine         SnapshotEngine
 	stateVar               StateVarEngine
+	teamsEngine            TeamsEngine
+	referralProgram        ReferralProgram
 	protocolUpgradeService ProtocolUpgradeService
 	erc20MultiSigTopology  ERC20MultiSigTopology
 	gastimator             *Gastimator
@@ -220,6 +232,8 @@ func NewApp(
 	stakingAccounts StakingAccounts,
 	snapshot SnapshotEngine,
 	stateVarEngine StateVarEngine,
+	teamsEngine TeamsEngine,
+	referralProgram ReferralProgram,
 	blockchainClient BlockchainClient,
 	erc20MultiSigTopology ERC20MultiSigTopology,
 	version string, // we need the version for snapshot reload
@@ -266,6 +280,8 @@ func NewApp(
 		epoch:                  epoch,
 		snapshotEngine:         snapshot,
 		stateVar:               stateVarEngine,
+		teamsEngine:            teamsEngine,
+		referralProgram:        referralProgram,
 		version:                version,
 		blockchainClient:       blockchainClient,
 		erc20MultiSigTopology:  erc20MultiSigTopology,
@@ -408,6 +424,15 @@ func NewApp(
 					addDeterministicID(app.DeliverBatchMarketInstructions),
 				),
 			),
+		).
+		HandleDeliverTx(txn.CreateTeamCommand,
+			app.SendTransactionResult(addDeterministicID(app.CreateTeam)),
+		).
+		HandleDeliverTx(txn.UpdateTeamCommand,
+			app.SendTransactionResult(app.UpdateTeam),
+		).
+		HandleDeliverTx(txn.JoinTeamCommand,
+			app.SendTransactionResult(app.JoinTeam),
 		)
 
 	app.time.NotifyOnTick(app.onTick)
@@ -1123,7 +1148,10 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 			if p.Terms.GetNewMarket().Changes.ProductType() == types.ProductTypePerps && !app.limits.CanProposePerpsMarket() {
 				return ErrPerpsMarketProposalDisabled
 			}
-			return validateUseOfEthOracles(p.Terms.GetNewMarket(), app.netp)
+			return validateUseOfEthOracles(p.Terms, app.netp)
+		case types.ProposalTermsTypeUpdateMarket:
+			return validateUseOfEthOracles(p.Terms, app.netp)
+
 		case types.ProposalTermsTypeNewAsset:
 			if !app.limits.CanProposeAsset() {
 				return ErrAssetProposalDisabled
@@ -1137,32 +1165,73 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 	return nil
 }
 
-func validateUseOfEthOracles(terms *types.NewMarket, netp NetworkParameters) error {
-	if terms.Changes == nil {
-		return nil
-	}
-
-	if terms.Changes.Instrument == nil {
-		return nil
-	}
-
-	if terms.Changes.Instrument.Product == nil {
-		return nil
-	}
-
+func validateUseOfEthOracles(terms *types.ProposalTerms, netp NetworkParameters) error {
 	ethOracleEnabled, _ := netp.GetInt(netparams.EthereumOraclesEnabled)
 
-	switch product := terms.Changes.Instrument.Product.(type) {
-	case *types.InstrumentConfigurationFuture:
-		if product.Future == nil {
+	switch terms.Change.GetTermType() {
+	case types.ProposalTermsTypeNewMarket:
+		m := terms.GetNewMarket()
+		if m == nil {
 			return nil
 		}
-		terminatedWithEthOracle := !product.Future.DataSourceSpecForTradingTermination.GetEthCallSpec().IsZero()
-		settledWithEthOracle := !product.Future.DataSourceSpecForSettlementData.GetEthCallSpec().IsZero()
-		if (terminatedWithEthOracle || settledWithEthOracle) && ethOracleEnabled != 1 {
-			return ErrEthOraclesDisabled
+
+		if m.Changes == nil {
+			return nil
+		}
+
+		// Here the instrument is *types.InstrumentConfiguration
+		if m.Changes.Instrument == nil {
+			return nil
+		}
+
+		if m.Changes.Instrument.Product == nil {
+			return nil
+		}
+
+		switch product := m.Changes.Instrument.Product.(type) {
+		case *types.InstrumentConfigurationFuture:
+			if product.Future == nil {
+				return nil
+			}
+			terminatedWithEthOracle := !product.Future.DataSourceSpecForTradingTermination.GetEthCallSpec().IsZero()
+			settledWithEthOracle := !product.Future.DataSourceSpecForSettlementData.GetEthCallSpec().IsZero()
+			if (terminatedWithEthOracle || settledWithEthOracle) && ethOracleEnabled != 1 {
+				return ErrEthOraclesDisabled
+			}
+		}
+
+	case types.ProposalTermsTypeUpdateMarket:
+		m := terms.GetUpdateMarket()
+		if m == nil {
+			return nil
+		}
+
+		if m.Changes == nil {
+			return nil
+		}
+
+		// Here the instrument is *types.UpdateInstrumentConfiguration
+		if m.Changes.Instrument == nil {
+			return nil
+		}
+
+		if m.Changes.Instrument.Product == nil {
+			return nil
+		}
+
+		switch product := m.Changes.Instrument.Product.(type) {
+		case *types.UpdateInstrumentConfigurationFuture:
+			if product.Future == nil {
+				return nil
+			}
+			terminatedWithEthOracle := !product.Future.DataSourceSpecForTradingTermination.GetEthCallSpec().IsZero()
+			settledWithEthOracle := !product.Future.DataSourceSpecForSettlementData.GetEthCallSpec().IsZero()
+			if (terminatedWithEthOracle || settledWithEthOracle) && ethOracleEnabled != 1 {
+				return ErrEthOraclesDisabled
+			}
 		}
 	}
+
 	return nil
 }
 
@@ -1835,6 +1904,8 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			app.enactCancelTransfer(ctx, prop)
 		case toEnact.IsMarketStateUpdate():
 			app.enactMarketStateUpdate(ctx, prop)
+		case toEnact.IsReferralProgramUpdate():
+			app.referralProgram.Update(toEnact.ReferralProgramUpdate())
 		default:
 			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
 			prop.FailUnexpectedly(fmt.Errorf("unknown proposal \"%s\" cannot be enacted", prop.ID))
@@ -2109,4 +2180,31 @@ func (app *App) DeliverEthereumKeyRotateSubmission(ctx context.Context, tx abci.
 		kr,
 		signatures.VerifyEthereumSignature,
 	)
+}
+
+func (app *App) CreateTeam(ctx context.Context, tx abci.Tx, deterministicID string) error {
+	params := &commandspb.CreateTeam{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize CreateTeam command: %w", err)
+	}
+
+	return app.teamsEngine.CreateTeam(ctx, types.PartyID(tx.Party()), types.TeamID(deterministicID), params)
+}
+
+func (app *App) UpdateTeam(ctx context.Context, tx abci.Tx) error {
+	params := &commandspb.UpdateTeam{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize UpdateTeam command: %w", err)
+	}
+
+	return app.teamsEngine.UpdateTeam(ctx, types.PartyID(tx.Party()), params)
+}
+
+func (app *App) JoinTeam(ctx context.Context, tx abci.Tx) error {
+	params := &commandspb.JoinTeam{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize JoinTeam command: %w", err)
+	}
+
+	return app.teamsEngine.JoinTeam(ctx, types.PartyID(tx.Party()), params)
 }

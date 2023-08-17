@@ -23,6 +23,7 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 	te := newEngine(t)
 
 	referrer1 := newPartyID(t)
+	teamID1 := newTeamID(t)
 	name := vgrand.RandomStr(5)
 	teamURL := "https://" + name + ".io"
 	avatarURL := "https://avatar." + name + ".io"
@@ -32,10 +33,7 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 	team1CreationDate := time.Now()
 	te.timeService.EXPECT().GetTimeNow().Return(team1CreationDate).Times(1)
 
-	teamID1, err := te.engine.CreateTeam(ctx, referrer1, name, teamURL, avatarURL)
-	require.NoError(t, err)
-	assert.NotEmpty(t, teamID1)
-	assert.Len(t, teamID1, 64)
+	require.NoError(t, te.engine.CreateTeam(ctx, referrer1, teamID1, createTeamCmd(t, name, teamURL, avatarURL)))
 
 	assert.Equal(t, []types.Team{
 		{
@@ -52,6 +50,7 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 	}, te.engine.ListTeams())
 
 	referrer2 := newPartyID(t)
+	teamID2 := newTeamID(t)
 
 	expectTeamCreatedEvent(t, te)
 
@@ -59,10 +58,7 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 	te.timeService.EXPECT().GetTimeNow().Return(team2CreationDate).Times(1)
 
 	// Using same name, team URL and avatar URL as the first team is permitted.
-	teamID2, err := te.engine.CreateTeam(ctx, referrer2, name, teamURL, avatarURL)
-	require.NoError(t, err)
-	assert.NotEmpty(t, teamID2)
-	assert.Len(t, teamID2, 64)
+	require.NoError(t, te.engine.CreateTeam(ctx, referrer2, teamID2, createTeamCmd(t, name, teamURL, avatarURL)))
 
 	assert.NotEqual(t, teamID1, teamID2, "Creating a team should generate an unique ID")
 
@@ -90,10 +86,13 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 		},
 	}, te.engine.ListTeams())
 
+	teamID3 := newTeamID(t)
+
 	// A party can only create one team.
-	teamID3, err := te.engine.CreateTeam(ctx, referrer2, name, teamURL, avatarURL)
-	require.EqualError(t, err, teams.ErrPartyAlreadyBelongsToTeam(referrer2).Error())
-	assert.Empty(t, teamID3)
+	require.EqualError(t,
+		te.engine.CreateTeam(ctx, referrer2, teamID3, createTeamCmd(t, name, teamURL, avatarURL)),
+		teams.ErrPartyAlreadyBelongsToTeam(referrer2).Error(),
+	)
 
 	assertEqualTeams(t, []types.Team{
 		{
@@ -120,6 +119,7 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 	}, te.engine.ListTeams())
 
 	referrer3 := newPartyID(t)
+	teamID4 := newTeamID(t)
 
 	expectTeamCreatedEvent(t, te)
 
@@ -127,10 +127,7 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 	te.timeService.EXPECT().GetTimeNow().Return(team4CreationDate).Times(1)
 
 	// Name, team URL and avatar URL are optional.
-	teamID4, err := te.engine.CreateTeam(ctx, referrer3, "", "", "")
-	require.NoError(t, err)
-	assert.NotEmpty(t, teamID4)
-	assert.Len(t, teamID4, 64)
+	require.NoError(t, te.engine.CreateTeam(ctx, referrer3, teamID4, createTeamCmd(t, "", "", "")))
 
 	assert.NotEqual(t, teamID1, teamID4, "Creating a team should generate an unique ID")
 	assert.NotEqual(t, teamID2, teamID4, "Creating a team should generate an unique ID")
@@ -177,7 +174,7 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 
 	expectTeamUpdatedEvent(t, te)
 
-	require.NoError(t, te.engine.UpdateTeam(ctx, teamID1, updatedName, updatedTeamURL, updatedAvatarURL))
+	require.NoError(t, te.engine.UpdateTeam(ctx, referrer1, updateTeamCmd(t, teamID1, updatedName, updatedTeamURL, updatedAvatarURL)))
 
 	assertEqualTeams(t, []types.Team{
 		{
@@ -215,8 +212,13 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 
 	unknownTeamID := types.NewTeamID()
 	require.EqualError(t,
-		te.engine.UpdateTeam(ctx, unknownTeamID, updatedName, updatedTeamURL, updatedAvatarURL),
+		te.engine.UpdateTeam(ctx, referrer1, updateTeamCmd(t, unknownTeamID, updatedName, updatedTeamURL, updatedAvatarURL)),
 		teams.ErrNoTeamMatchesID(unknownTeamID).Error(),
+	)
+
+	require.ErrorIs(t,
+		teams.ErrOnlyReferrerCanUpdateTeam,
+		te.engine.UpdateTeam(ctx, referrer2, updateTeamCmd(t, teamID1, updatedName, updatedTeamURL, updatedAvatarURL)),
 	)
 }
 
@@ -233,14 +235,14 @@ func testJoiningTeamSucceeds(t *testing.T) {
 	te.timeService.EXPECT().GetTimeNow().Return(team2CreationDate).Times(1)
 	teamID2, referrer2 := newTeam(t, ctx, te)
 
-	require.ErrorIs(t, te.engine.JoinTeam(ctx, teamID1, referrer1), teams.ErrReferrerCannotJoinAnotherTeam)
-	require.ErrorIs(t, te.engine.JoinTeam(ctx, teamID1, referrer2), teams.ErrReferrerCannotJoinAnotherTeam)
+	require.ErrorIs(t, te.engine.JoinTeam(ctx, referrer1, joinTeamCmd(t, teamID1)), teams.ErrReferrerCannotJoinAnotherTeam)
+	require.ErrorIs(t, te.engine.JoinTeam(ctx, referrer2, joinTeamCmd(t, teamID1)), teams.ErrReferrerCannotJoinAnotherTeam)
 
 	referee1 := newPartyID(t)
 	referee1JoiningDate := time.Now()
 	te.timeService.EXPECT().GetTimeNow().Return(referee1JoiningDate).Times(1)
 	expectRefereeJoinedTeamEvent(t, te)
-	require.NoError(t, te.engine.JoinTeam(ctx, teamID1, referee1))
+	require.NoError(t, te.engine.JoinTeam(ctx, referee1, joinTeamCmd(t, teamID1)))
 	require.True(t, te.engine.IsTeamMember(referee1))
 
 	referee2 := newPartyID(t)
@@ -248,7 +250,7 @@ func testJoiningTeamSucceeds(t *testing.T) {
 	// referee2 tries to join a non-existing team.
 	unknownTeamID := types.NewTeamID()
 	require.EqualError(t,
-		te.engine.JoinTeam(ctx, unknownTeamID, referee2),
+		te.engine.JoinTeam(ctx, referee2, joinTeamCmd(t, unknownTeamID)),
 		teams.ErrNoTeamMatchesID(unknownTeamID).Error(),
 	)
 	require.False(t, te.engine.IsTeamMember(referee2))
@@ -257,11 +259,11 @@ func testJoiningTeamSucceeds(t *testing.T) {
 	expectRefereeJoinedTeamEvent(t, te)
 	referee2JoiningDate := time.Now()
 	te.timeService.EXPECT().GetTimeNow().Return(referee2JoiningDate).Times(1)
-	require.NoError(t, te.engine.JoinTeam(ctx, teamID1, referee2))
+	require.NoError(t, te.engine.JoinTeam(ctx, referee2, joinTeamCmd(t, teamID1)))
 	require.True(t, te.engine.IsTeamMember(referee2))
 
 	// referee2 just joined another team and want to move on next epoch.
-	require.NoError(t, te.engine.JoinTeam(ctx, teamID2, referee2))
+	require.NoError(t, te.engine.JoinTeam(ctx, referee2, joinTeamCmd(t, teamID2)))
 	require.True(t, te.engine.IsTeamMember(referee2))
 
 	// This shows the referee2 joined the first team he applied to, despite
@@ -333,7 +335,7 @@ func testJoiningTeamSucceeds(t *testing.T) {
 	// referee2 just re-joins team 1.
 	referee2JoiningDate3 := time.Now()
 	te.timeService.EXPECT().GetTimeNow().Return(referee2JoiningDate3).Times(1)
-	require.NoError(t, te.engine.JoinTeam(ctx, teamID1, referee2))
+	require.NoError(t, te.engine.JoinTeam(ctx, referee2, joinTeamCmd(t, teamID1)))
 	require.True(t, te.engine.IsTeamMember(referee2))
 
 	// Simulating end of epoch.

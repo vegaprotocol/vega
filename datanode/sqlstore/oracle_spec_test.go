@@ -386,7 +386,7 @@ func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *s
 					ID:        entities.SpecID(fmt.Sprintf("deadbeef%02d", i+1)),
 					CreatedAt: time.Now().Truncate(time.Microsecond),
 					UpdatedAt: time.Now().Truncate(time.Microsecond),
-					Data: entities.DataSourceDefinition{
+					Data: &entities.DataSourceDefinition{
 						DataSourceDefinition: &vegapb.DataSourceDefinition{
 							SourceType: &vegapb.DataSourceDefinition_External{
 								External: &vegapb.DataSourceDefinitionExternal{

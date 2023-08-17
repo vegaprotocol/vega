@@ -26,6 +26,7 @@ func NewPerpetualFromSnapshot(
 	ctx context.Context,
 	log *logging.Logger,
 	p *types.Perps,
+	marketID string,
 	oe OracleEngine,
 	broker Broker,
 	state *snapshotpb.Perps,
@@ -34,9 +35,9 @@ func NewPerpetualFromSnapshot(
 ) (*Perpetual, error) {
 	// set next trigger from the settlement cue, it'll roll forward from `initial` to the next trigger time after `now`
 	tt := p.DataSourceSpecForSettlementSchedule.Data.GetInternalTimeTriggerSpecConfiguration()
-	tt.SetNextTrigger(tm)
+	tt.SetNextTrigger(tm.Truncate(time.Second))
 
-	perps, err := NewPerpetual(ctx, log, p, oe, broker, assetDP)
+	perps, err := NewPerpetual(ctx, log, p, marketID, oe, broker, assetDP)
 	if err != nil {
 		return nil, err
 	}

@@ -42,6 +42,23 @@ message StopOrder {
     STATUS_REJECTED = 6;
   }
 
+  enum RejectionReason {
+    // Never valid
+    REJECTION_REASON_UNSPECIFIED = 0;
+    // Trading is not allowed yet
+    REJECTION_REASON_TRADING_NOT_ALLOWED = 1;
+    // Expiry of the stop order is in the past
+    REJECTION_REASON_EXPIRY_IN_THE_PAST = 2;
+    // Stop orders submission must be reduce only
+    REJECTION_REASON_MUST_BE_REDUCE_ONLY = 3;
+    // Party has reached the maximum stop orders allowed for this market
+    REJECTION_REASON_MAX_STOP_ORDERS_PER_PARTY_REACHED = 4;
+    // Stop orders are not allowed if there is no open position
+    REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION = 5;
+    // This stop order does not close the position
+    REJECTION_REASON_STOP_ORDER_DOES_NOT_CLOSE_POSITION = 6;
+  }
+
   // ID of this stop order
   // also the ID of the associated order if it is ever triggered
   string id = 1;
@@ -65,6 +82,8 @@ message StopOrder {
   string party_id = 10;
   // ID of the market the stop order is submitted to.
   string market_id = 11;
+  // An optional reason for why a stop order was rejected
+  optional RejectionReason rejection_reason = 12;
 
   // Trigger that will need to be breached for the order
   // to be submitted to the book.
@@ -792,6 +811,12 @@ enum AccountType {
   // Network controlled treasury
   ACCOUNT_TYPE_NETWORK_TREASURY = 21;
 
+  // Account holding user's rewards for the vesting period
+  ACCOUNT_TYPE_VESTING_REWARDS = 22;
+
+  // Account holding user's rewards after the vesting period
+  ACCOUNT_TYPE_VESTED_REWARDS = 23;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
@@ -896,9 +921,11 @@ enum TransferType {
   // Distributes performance bonus from market bonus to liquidity provider's general account.
   TRANSFER_TYPE_SLA_PERFORMANCE_BONUS_DISTRIBUTE = 35;
   // Funds deducted from margin account after a perpetuals funding loss.
-  TRANSFER_TYPE_PERP_FUNDING_LOSS = 36;
+  TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS = 36;
   // Funds added to margin account after a perpetuals funding gain.
-  TRANSFER_TYPE_PERP_FUNDING_WIN = 37;
+  TRANSFER_TYPE_PERPETUALS_FUNDING_WIN = 37;
+  // Funds moved from the vesting account to the vested account once the vesting period is reached.
+  TRANSFER_TYPE_REWARDS_VESTED = 38;
 }
 
 // Represents a financial transfer within Vega
@@ -1562,4 +1589,28 @@ message VectorValue {
 
 message MatrixValue {
   repeated VectorValue value = 1;
+}
+
+message ReferralProgram {
+  // Defined tiers in increasing order. First element will give Tier 1, second
+  // element will give Tier 2, and so on.
+  repeated BenefitTier benefit_tiers = 1;
+  //  Timestamp as Unix time in seconds after which when the current epoch ends, the
+  // programs status will become STATE_CLOSED and benefits will be disabled.
+  int64 end_of_program_timestamp = 2;
+  // Number of epochs over which to evaluate a referral set's running volume.
+  uint64 window_length = 3;
+}
+
+message BenefitTier {
+  // Required running notional taker volume in quantum units for parties
+  // to access this tier.
+  string minimum_running_notional_taker_volume = 1;
+  // Required number of epochs a party must have been in a referral set to
+  // access this tier.
+  string minimum_epochs = 2;
+  // Proportion of the referee's taker fees to be rewarded to the referrer
+  string referral_reward_factor = 3;
+  // Proportion of the referee's taker fees to be discounted
+  string referral_discount_factor = 4;
 }

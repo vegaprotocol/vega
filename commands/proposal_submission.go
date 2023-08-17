@@ -157,11 +157,13 @@ func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
 	case *protoTypes.ProposalTerms_NewFreeform:
 		errs.Merge(CheckNewFreeformChanges(c))
 	case *protoTypes.ProposalTerms_NewTransfer:
-		errs.Merge((checkNewTransferChanges(c)))
+		errs.Merge(checkNewTransferChanges(c))
 	case *protoTypes.ProposalTerms_CancelTransfer:
-		errs.Merge((checkCancelTransferChanges(c)))
+		errs.Merge(checkCancelTransferChanges(c))
 	case *protoTypes.ProposalTerms_UpdateMarketState:
-		errs.Merge((checkMarketUpdateState(c)))
+		errs.Merge(checkMarketUpdateState(c))
+	case *protoTypes.ProposalTerms_UpdateReferralProgram:
+		errs.Merge(checkReferralProgram(terms, c))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change", ErrIsNotValid)
 	}
@@ -258,6 +260,83 @@ func checkCancelTransferChanges(change *protoTypes.ProposalTerms_CancelTransfer)
 	if len(changes.TransferId) == 0 {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.cancel_transfer.changes.transferId", ErrIsRequired)
 	}
+	return errs
+}
+
+func checkReferralProgram(terms *vegapb.ProposalTerms, change *vegapb.ProposalTerms_UpdateReferralProgram) Errors {
+	errs := NewErrors()
+	if change.UpdateReferralProgram == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_referral_program", ErrIsRequired)
+	}
+	if change.UpdateReferralProgram.Changes == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_referral_program.changes", ErrIsRequired)
+	}
+	changes := change.UpdateReferralProgram.Changes
+	if changes.EndOfProgramTimestamp == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.end_of_program_timestamp", ErrIsRequired)
+	} else if changes.EndOfProgramTimestamp < 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.end_of_program_timestamp", ErrMustBePositive)
+	} else if changes.EndOfProgramTimestamp < terms.EnactmentTimestamp {
+		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.end_of_program_timestamp", ErrMustBeGreaterThanEnactmentTimestamp)
+	}
+	if changes.WindowLength == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.window_length", ErrIsRequired)
+	}
+	for i, tier := range changes.BenefitTiers {
+		errs.Merge(checkBenefitTier(i, tier))
+	}
+	return errs
+}
+
+func checkBenefitTier(index int, tier *vegapb.BenefitTier) Errors {
+	errs := NewErrors()
+
+	propertyPath := fmt.Sprintf("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.%d", index)
+
+	if len(tier.MinimumRunningNotionalTakerVolume) == 0 {
+		errs.AddForProperty(propertyPath+".minimum_running_notional_taker_volume", ErrIsRequired)
+	} else {
+		mrtv, overflow := num.UintFromString(tier.MinimumRunningNotionalTakerVolume, 10)
+		if overflow {
+			errs.AddForProperty(propertyPath+".minimum_running_notional_taker_volume", ErrIsNotValidNumber)
+		} else if mrtv.IsNegative() || mrtv.IsZero() {
+			errs.AddForProperty(propertyPath+".minimum_running_notional_taker_volume", ErrMustBePositive)
+		}
+	}
+
+	if len(tier.MinimumEpochs) == 0 {
+		errs.AddForProperty(propertyPath+".minimum_epochs", ErrIsRequired)
+	} else {
+		me, overflow := num.UintFromString(tier.MinimumEpochs, 10)
+		if overflow {
+			errs.AddForProperty(propertyPath+".minimum_epochs", ErrIsNotValidNumber)
+		} else if me.IsNegative() || me.IsZero() {
+			errs.AddForProperty(propertyPath+".minimum_epochs", ErrMustBePositive)
+		}
+	}
+
+	if len(tier.ReferralRewardFactor) == 0 {
+		errs.AddForProperty(propertyPath+".referral_reward_factor", ErrIsRequired)
+	} else {
+		rrf, err := num.DecimalFromString(tier.ReferralRewardFactor)
+		if err != nil {
+			errs.AddForProperty(propertyPath+".referral_reward_factor", ErrIsNotValidNumber)
+		} else if rrf.IsNegative() {
+			errs.AddForProperty(propertyPath+".referral_reward_factor", ErrMustBePositiveOrZero)
+		}
+	}
+
+	if len(tier.ReferralDiscountFactor) == 0 {
+		errs.AddForProperty(propertyPath+".referral_discount_factor", ErrIsRequired)
+	} else {
+		rdf, err := num.DecimalFromString(tier.ReferralDiscountFactor)
+		if err != nil {
+			errs.AddForProperty(propertyPath+".referral_discount_factor", ErrIsNotValidNumber)
+		} else if rdf.IsNegative() {
+			errs.AddForProperty(propertyPath+".referral_discount_factor", ErrMustBePositiveOrZero)
+		}
+	}
+
 	return errs
 }
 

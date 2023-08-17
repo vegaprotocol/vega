@@ -635,6 +635,20 @@ func AuctionTrigger(name string) (types.AuctionTrigger, error) {
 	return types.AuctionTrigger(at), nil
 }
 
+func (r RowWrapper) MustMarketUpdateState(name string) types.MarketStateUpdateType {
+	msu, err := MarketStateUpdate(r.MustStr(name))
+	panicW(name, err)
+	return msu
+}
+
+func MarketStateUpdate(name string) (types.MarketStateUpdateType, error) {
+	msu, ok := proto.MarketStateUpdateType_value[name]
+	if !ok {
+		return types.MarketStateUpdateTypeUnspecified, fmt.Errorf("couldn't find %s as market state update type", name)
+	}
+	return types.MarketStateUpdateType(msu), nil
+}
+
 func (r RowWrapper) MustTradingMode(name string) types.MarketTradingMode {
 	ty, err := TradingMode(r.MustStr(name))
 	panicW(name, err)

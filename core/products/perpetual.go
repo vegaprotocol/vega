@@ -32,6 +32,8 @@ import (
 )
 
 var (
+	year = num.DecimalFromInt64((24 * 365 * time.Hour).Nanoseconds())
+
 	ErrDataPointAlreadyExistsAtTime = errors.New("data-point already exists at timestamp")
 	ErrInitialPeriodNotStarted      = errors.New("initial settlement period not started")
 )
@@ -71,10 +73,11 @@ type Perpetual struct {
 	// the time that this period interval started
 	startedAt int64
 	// asset decimal places
-	assetDP uint32
+	assetDP    uint32
+	terminated bool
 }
 
-func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, oe OracleEngine, broker Broker, assetDP uint32) (*Perpetual, error) {
+func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, marketID string, oe OracleEngine, broker Broker, assetDP uint32) (*Perpetual, error) {
 	// make sure we have all we need
 	if p.DataSourceSpecForSettlementData == nil || p.DataSourceSpecForSettlementSchedule == nil || p.DataSourceSpecBinding == nil {
 		return nil, ErrDataSourceSpecAndBindingAreRequired
@@ -87,6 +90,7 @@ func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, oe O
 	// check decimal places for settlement data
 	perp := &Perpetual{
 		p:       p,
+		id:      marketID,
 		log:     log,
 		broker:  broker,
 		assetDP: assetDP,
@@ -128,8 +132,30 @@ func (p *Perpetual) ScaleSettlementDataToDecimalPlaces(price *num.Numeric, dp ui
 
 // Settle a position against the perpetual.
 func (p *Perpetual) Settle(entryPriceInAsset, settlementData *num.Uint, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, rounding num.Decimal, err error) {
-	p.log.Panic("not implemented")
-	return nil, false, num.DecimalZero(), nil
+	amount, neg := settlementData.Delta(settlementData, entryPriceInAsset)
+	// Make sure net position is positive
+	if netFractionalPosition.IsNegative() {
+		netFractionalPosition = netFractionalPosition.Neg()
+		neg = !neg
+	}
+
+	if p.log.IsDebug() {
+		p.log.Debug("settlement",
+			logging.String("entry-price-in-asset", entryPriceInAsset.String()),
+			logging.String("settlement-data-in-asset", settlementData.String()),
+			logging.String("net-fractional-position", netFractionalPosition.String()),
+			logging.String("amount-in-decimal", netFractionalPosition.Mul(amount.ToDecimal()).String()),
+			logging.String("amount-in-uint", amount.String()),
+		)
+	}
+	a, rem := num.UintFromDecimalWithFraction(netFractionalPosition.Mul(amount.ToDecimal()))
+
+	return &types.FinancialAmount{
+		Asset:  p.p.SettlementAsset,
+		Amount: a,
+	}, neg, rem, nil
+	// p.log.Panic("not implemented")
+	// return nil, false, num.DecimalZero(), nil
 }
 
 // Value - returns the nominal value of a unit given a current mark price.
@@ -139,7 +165,7 @@ func (p *Perpetual) Value(markPrice *num.Uint) (*num.Uint, error) {
 
 // IsTradingTerminated - returns true when the oracle has signalled terminated market.
 func (p *Perpetual) IsTradingTerminated() bool {
-	return false
+	return p.terminated
 }
 
 // GetAsset return the asset used by the future.
@@ -149,8 +175,10 @@ func (p *Perpetual) GetAsset() string {
 
 func (p *Perpetual) UnsubscribeTradingTerminated(ctx context.Context) {
 	// we could just use this call to indicate the underlying perp was terminted
-	// p.oracle.unsubAll(ctx)
-	p.log.Panic("not expecting trading terminated with perpetual")
+	p.log.Info("unsubscribed trading data and cue oracle on perpetual termination", logging.String("quote-name", p.p.QuoteName))
+	p.terminated = true
+	p.oracle.unsubAll(ctx)
+	p.sendFinalSettlementCue(ctx)
 }
 
 func (p *Perpetual) UnsubscribeSettlementData(ctx context.Context) {
@@ -284,6 +312,22 @@ func (p *Perpetual) receiveSettlementCue(ctx context.Context, data dscommon.Data
 	return nil
 }
 
+func (p *Perpetual) sendFinalSettlementCue(ctx context.Context) {
+	// get the max time to include all data-points in the final settlement
+	max := int64(0)
+	for _, i := range p.internal {
+		if i.t > max {
+			max = i.t
+		}
+	}
+	for _, e := range p.external {
+		if e.t > max {
+			max = e.t
+		}
+	}
+	p.handleSettlementCue(ctx, max)
+}
+
 // handleSettlementCue will be hooked up as a subscriber to the oracle data for the notification that the settlement period has ended.
 func (p *Perpetual) handleSettlementCue(ctx context.Context, t int64) {
 	if !p.readyForData() {
@@ -303,8 +347,18 @@ func (p *Perpetual) handleSettlementCue(ctx context.Context, t int64) {
 	internalTWAP := twap(p.internal, p.startedAt, t)
 	// and calculate the same using the external oracle data-points over the same period
 	externalTWAP := twap(p.external, p.startedAt, t)
+
 	// do the calculation
 	fundingPayment, fundingRate := p.calculateFundingPayment(internalTWAP, externalTWAP)
+
+	// apply interest-rates if necessary
+	if !p.p.InterestRate.IsZero() {
+		delta := t - p.internal[0].t
+		if p.log.GetLevel() == logging.DebugLevel {
+			p.log.Debug("applying interest-rate with clamping", logging.String("funding-payment", fundingPayment.String()), logging.Int64("delta", delta))
+		}
+		fundingPayment.Add(p.calculateInterestTerm(externalTWAP, internalTWAP, delta))
+	}
 
 	// send it away!
 	fp := &num.Numeric{}
@@ -451,6 +505,36 @@ func (p *Perpetual) calculateFundingPayment(internalTWAP, externalTWAP *num.Uint
 		logging.String("funding-rate", fundingRate.String()))
 
 	return fundingPayment, &fundingRate
+}
+
+func (p *Perpetual) calculateInterestTerm(externalTWAP, internalTWAP *num.Uint, delta int64) *num.Int {
+	// get delta in terms of years
+	td := num.DecimalFromInt64(delta).Div(year)
+
+	// convert into num types we need
+	sTWAP := num.DecimalFromUint(externalTWAP)
+	fTWAP := num.DecimalFromUint(internalTWAP)
+
+	// interest = (1 + r * td) * s_swap - f_swap
+	interest := num.DecimalOne().Add(p.p.InterestRate.Mul(td)).Mul(sTWAP)
+	interest = interest.Sub(fTWAP)
+
+	upperBound := num.DecimalFromUint(externalTWAP).Mul(p.p.ClampUpperBound)
+	lowerBound := num.DecimalFromUint(externalTWAP).Mul(p.p.ClampLowerBound)
+
+	clampedInterest := num.MinD(upperBound, num.MaxD(lowerBound, interest))
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("clamped interest and bounds",
+			logging.MarketID(p.id),
+			logging.String("lower-bound", p.p.ClampLowerBound.String()),
+			logging.String("interest", interest.String()),
+			logging.String("upper-bound", p.p.ClampUpperBound.String()),
+			logging.String("clamped-interest", clampedInterest.String()),
+		)
+	}
+
+	result, _ := num.IntFromDecimal(clampedInterest)
+	return result
 }
 
 // GetMarginIncrease returns the estimated extra margin required to account for the next funding payment.

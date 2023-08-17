@@ -315,6 +315,8 @@ message ProposalTerms {
     CancelTransfer cancel_transfer = 110;
     // Proposal change for updating the state of a market.
     UpdateMarketState update_market_state = 111;
+    // Proposal change for updating the referral program.
+    UpdateReferralProgram update_referral_program = 112;
   }
 }
 
@@ -512,6 +514,8 @@ enum ProposalError {
   PROPOSAL_ERROR_MISSING_SLA_PARAMS = 54;
   // Perpetual market proposal contained invalid product definition
   PROPOSAL_ERROR_INVALID_PERPETUAL_PRODUCT = 55;
+  // Referral program proposal is invalid
+  PROPOSAL_ERROR_INVALID_REFERRAL_PROGRAM = 56;
 }
 
 // Governance vote
@@ -544,6 +548,11 @@ message Vote {
   string total_governance_token_weight = 6;
   // The weight of the vote compared to the total amount of equity-like share on the market.
   string total_equity_like_share_weight = 7;
+}
+
+message UpdateReferralProgram {
+  // Configuration for change to update a referral program.
+  ReferralProgram changes = 1;
 }
 
 message UpdateMarketState {

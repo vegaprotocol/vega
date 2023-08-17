@@ -176,6 +176,16 @@ func defaultNetParams() map[string]value {
 		GovernanceTransferMaxAmount:                     NewDecimal(gteD1).Mutable(true).MustUpdate("7000000000000000000000"),
 		GovernanceTransferMaxFraction:                   NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("1"),
 
+		// Update referral program.
+		GovernanceProposalReferralProgramMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalReferralProgramMaxClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalReferralProgramMinEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalReferralProgramMaxEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalReferralProgramRequiredParticipation: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00001"),
+		GovernanceProposalReferralProgramRequiredMajority:      NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.66"),
+		GovernanceProposalReferralProgramMinProposerBalance:    NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
+		GovernanceProposalReferralProgramMinVoterBalance:       NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
+
 		// Delegation default params
 		DelegationMinAmount: NewDecimal(gtD0).Mutable(true).MustUpdate("1"),
 
@@ -254,6 +264,16 @@ func defaultNetParams() map[string]value {
 		ValidatorPerformanceScalingFactor:    NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
 		MarketSuccessorLaunchWindow:          NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate("168h"), // 168h == 7 days
 		SpamProtectionMaxStopOrdersPerMarket: NewUint(UintGTE(num.UintZero()), UintLTE(num.NewUint(100))).Mutable(true).MustUpdate("4"),
+
+		RewardsVestingBaseRate:       NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("0.01"),
+		RewardVestingMinimumTransfer: NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("0.01"),
+
+		// Referral program
+		ReferralProgramMaxBenefitTiers:                         NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10))).Mutable(true).MustUpdate("0"),
+		ReferralProgramMaxReferralRewardFactor:                 NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
+		ReferralProgramMaxReferralDiscountFactor:               NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
+		ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch: NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("0"),
+		ReferralProgramMinStakedVegaTokens:                     NewDecimal(gteD1).Mutable(true).MustUpdate("1e18"),
 	}
 
 	// add additional cross net param rules

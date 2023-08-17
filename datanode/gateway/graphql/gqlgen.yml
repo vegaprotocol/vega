@@ -50,6 +50,9 @@ models:
   OrderRejectionReason:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.OrderRejectionReason
+  StopOrderRejectionReason:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.StopOrderRejectionReason
   PeggedReference:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.PeggedReference
@@ -182,6 +185,10 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.LiquidityOrderReference
   Future:
     model: code.vegaprotocol.io/vega/protos/vega.Future
+  Spot:
+    model: code.vegaprotocol.io/vega/protos/vega.Spot
+  Perpetual:
+    model: code.vegaprotocol.io/vega/protos/vega.Perpetual
   TradableInstrument:
     model: code.vegaprotocol.io/vega/protos/vega.TradableInstrument
   SimpleRiskModel:
@@ -285,6 +292,18 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.SuccessorConfiguration
   FutureProduct:
     model: code.vegaprotocol.io/vega/protos/vega.FutureProduct
+  SpotProduct:
+    model: code.vegaprotocol.io/vega/protos/vega.SpotProduct
+  PerpetualProduct:
+    model: code.vegaprotocol.io/vega/protos/vega.PerpetualProduct
+  NewSpotMarket:
+    model: code.vegaprotocol.io/vega/protos/vega.NewSpotMarket
+  UpdateSpotMarket:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdateSpotMarket
+  UpdateSpotMarketConfiguration:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdateSpotMarketConfiguration
+  LiquiditySLAParameters:
+    model: code.vegaprotocol.io/vega/protos/vega.LiquiditySLAParameters
   Asset:
     model: code.vegaprotocol.io/vega/protos/vega.Asset
     fields:
@@ -315,6 +334,10 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.EthCallSpec
   DataSourceSpecConfigurationTime:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecConfigurationTime
+  DataSourceSpecConfigurationTimeTrigger:
+    model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecConfigurationTimeTrigger
+  InternalTimeTrigger:
+    model: code.vegaprotocol.io/vega/protos/vega/data/v1.InternalTimeTrigger
   OracleSpec:
     model: code.vegaprotocol.io/vega/protos/vega.OracleSpec
   Filter:

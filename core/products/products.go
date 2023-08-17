@@ -70,7 +70,7 @@ type Product interface {
 }
 
 // New instance a new product from a Market framework product configuration.
-func New(ctx context.Context, log *logging.Logger, pp interface{}, oe OracleEngine, broker Broker, assetDP uint32) (Product, error) {
+func New(ctx context.Context, log *logging.Logger, pp interface{}, marketID string, oe OracleEngine, broker Broker, assetDP uint32) (Product, error) {
 	if pp == nil {
 		return nil, ErrNilProduct
 	}
@@ -79,7 +79,7 @@ func New(ctx context.Context, log *logging.Logger, pp interface{}, oe OracleEngi
 	case *types.InstrumentFuture:
 		return NewFuture(ctx, log, p.Future, oe, assetDP)
 	case *types.InstrumentPerps:
-		return NewPerpetual(ctx, log, p.Perps, oe, broker, assetDP)
+		return NewPerpetual(ctx, log, p.Perps, marketID, oe, broker, assetDP)
 	default:
 		return nil, ErrUnimplementedProduct
 	}

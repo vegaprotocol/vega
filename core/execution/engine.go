@@ -545,9 +545,9 @@ func (e *Engine) UpdateSpotMarket(ctx context.Context, marketConfig *types.Marke
 }
 
 func (e *Engine) VerifyUpdateMarketState(changes *types.MarketStateUpdateConfiguration) error {
-	// futures market
+	// futures or perps market
 	if market, ok := e.futureMarkets[changes.MarketID]; ok {
-		if changes.SettlementPrice == nil && changes.UpdateType == types.MarketStateUpdateTypeTerminate {
+		if changes.SettlementPrice == nil && changes.UpdateType == types.MarketStateUpdateTypeTerminate && !market.IsPerp() {
 			return fmt.Errorf("missing settlement price for governance initiated futures market termination")
 		}
 		state := market.GetMarketState()
@@ -1330,9 +1330,20 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		}
 		e.removeMarket(id)
 	}
+
+	// sort the marketCPStates by ID since the order we clear insurance pools
+	// changes the division when we split it across remaining markets and
+	// who the remainder ends up with if it doesn't divide equally.
+	allIDs := []string{}
+	for id := range e.marketCPStates {
+		allIDs = append(allIDs, id)
+	}
+	sort.Strings(allIDs)
+
 	// find state that should expire
-	for id, cpm := range e.marketCPStates {
+	for _, id := range allIDs {
 		// market field will be nil if the market is still current (ie not closed/settled)
+		cpm := e.marketCPStates[id]
 		if !cpm.TTL.Before(t) {
 			// CP data has not expired yet
 			continue

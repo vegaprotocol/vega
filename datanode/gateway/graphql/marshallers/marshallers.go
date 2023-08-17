@@ -308,6 +308,16 @@ func UnmarshalOrderRejectionReason(v interface{}) (vega.OrderError, error) {
 	return vega.OrderError_ORDER_ERROR_UNSPECIFIED, ErrUnimplemented
 }
 
+func MarshalStopOrderRejectionReason(s vega.StopOrder_RejectionReason) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalStopOrderRejectionReason(v interface{}) (vega.StopOrder_RejectionReason, error) {
+	return vega.StopOrder_REJECTION_REASON_UNSPECIFIED, ErrUnimplemented
+}
+
 func MarshalOrderType(s vega.Order_Type) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		w.Write([]byte(strconv.Quote(s.String())))

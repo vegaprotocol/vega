@@ -84,7 +84,7 @@ func (f *Decimal) GetDispatch() func(context.Context, interface{}) error {
 
 func (f *Decimal) CheckDispatch(fn interface{}) error {
 	if _, ok := fn.(func(context.Context, num.Decimal) error); !ok {
-		return errors.New("invalid type, expected func(context.Context, float64) error")
+		return errors.New("invalid type, expected func(context.Context, num.Decimal) error")
 	}
 	return nil
 }
@@ -751,7 +751,7 @@ func (j *JSON) GetDispatch() func(context.Context, interface{}) error {
 
 func (j *JSON) CheckDispatch(fn interface{}) error {
 	if _, ok := fn.(func(context.Context, interface{}) error); !ok {
-		return errors.New("invalid type, expected func(context.Context, float64) error")
+		return errors.New("invalid type, expected func(context.Context, interface{}) error")
 	}
 	return nil
 }

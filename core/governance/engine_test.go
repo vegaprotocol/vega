@@ -1699,6 +1699,30 @@ func (e *tstEngine) newProposalForMarketUpdate(marketID, partyID string, now tim
 	return prop
 }
 
+func (e *tstEngine) newProposalForReferralProgramUpdate(partyID string, now time.Time, configuration *types.ReferralProgram) types.Proposal {
+	id := e.newProposalID()
+	prop := types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     partyID,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(96 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(4 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(2 * time.Hour).Unix(),
+			Change: &types.ProposalTermsUpdateReferralProgram{
+				UpdateReferralProgram: &types.UpdateReferralProgram{
+					Changes: configuration,
+				},
+			},
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+	return prop
+}
+
 func (e *tstEngine) newProposalForNewAsset(partyID string, now time.Time) types.Proposal {
 	id := e.newProposalID()
 	return types.Proposal{

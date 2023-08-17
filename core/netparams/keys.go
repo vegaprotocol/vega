@@ -121,6 +121,16 @@ const (
 	GovernanceTransferMaxAmount                     = "governance.proposal.transfer.maxAmount"
 	GovernanceTransferMaxFraction                   = "governance.proposal.transfer.maxFraction"
 
+	// Network parameters for referral program update.
+	GovernanceProposalReferralProgramMinClose              = "governance.proposal.referralProgram.minClose"
+	GovernanceProposalReferralProgramMaxClose              = "governance.proposal.referralProgram.maxClose"
+	GovernanceProposalReferralProgramMinEnact              = "governance.proposal.referralProgram.minEnact"
+	GovernanceProposalReferralProgramMaxEnact              = "governance.proposal.referralProgram.maxEnact"
+	GovernanceProposalReferralProgramRequiredParticipation = "governance.proposal.referralProgram.requiredParticipation"
+	GovernanceProposalReferralProgramRequiredMajority      = "governance.proposal.referralProgram.requiredMajority"
+	GovernanceProposalReferralProgramMinProposerBalance    = "governance.proposal.referralProgram.minProposerBalance"
+	GovernanceProposalReferralProgramMinVoterBalance       = "governance.proposal.referralProgram.minVoterBalance"
+
 	// staking and delegation reward network params.
 	StakingAndDelegationRewardPayoutFraction          = "reward.staking.delegation.payoutFraction"
 	StakingAndDelegationRewardMaxPayoutPerParticipant = "reward.staking.delegation.maxPayoutPerParticipant"
@@ -198,6 +208,16 @@ const (
 
 	// how much to scale the number of proposed blocks used for performance calculation.
 	ValidatorPerformanceScalingFactor = "validator.performance.scaling.factor"
+
+	RewardsVestingBaseRate       = "rewards.vesting.baseRate"
+	RewardVestingMinimumTransfer = "rewards.vesting.minimumTransfer"
+
+	// Referral program.
+	ReferralProgramMaxBenefitTiers                         = "referralProgram.maxBenefitTiers"
+	ReferralProgramMaxReferralRewardFactor                 = "referralProgram.maxReferralRewardFactor"
+	ReferralProgramMaxReferralDiscountFactor               = "referralProgram.maxReferralDiscountFactor"
+	ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch = "referralProgram.maxPartyNotionalVolumeByQuantumPerEpoch"
+	ReferralProgramMinStakedVegaTokens                     = "referralProgram.minStakedVegaTokens"
 )
 
 var Deprecated = map[string]struct{}{
@@ -207,6 +227,8 @@ var Deprecated = map[string]struct{}{
 }
 
 var AllKeys = map[string]struct{}{
+	RewardVestingMinimumTransfer:                             {},
+	RewardsVestingBaseRate:                                   {},
 	SpotMarketTradingEnabled:                                 {},
 	PerpsMarketTradingEnabled:                                {},
 	EthereumOraclesEnabled:                                   {},
@@ -287,6 +309,14 @@ var AllKeys = map[string]struct{}{
 	GovernanceProposalTransferMinVoterBalance:                {},
 	GovernanceTransferMaxAmount:                              {},
 	GovernanceTransferMaxFraction:                            {},
+	GovernanceProposalReferralProgramMinClose:                {},
+	GovernanceProposalReferralProgramMaxClose:                {},
+	GovernanceProposalReferralProgramMinEnact:                {},
+	GovernanceProposalReferralProgramMaxEnact:                {},
+	GovernanceProposalReferralProgramRequiredParticipation:   {},
+	GovernanceProposalReferralProgramRequiredMajority:        {},
+	GovernanceProposalReferralProgramMinProposerBalance:      {},
+	GovernanceProposalReferralProgramMinVoterBalance:         {},
 	BlockchainsEthereumConfig:                                {},
 	MarketLiquidityProvisionShapesMaxSize:                    {},
 	MarketProbabilityOfTradingTauScaling:                     {},
@@ -344,4 +374,9 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionMinMultisigUpdates:                         {},
 	MarketSuccessorLaunchWindow:                              {},
 	SpamProtectionMaxStopOrdersPerMarket:                     {},
+	ReferralProgramMaxBenefitTiers:                           {},
+	ReferralProgramMaxReferralRewardFactor:                   {},
+	ReferralProgramMaxReferralDiscountFactor:                 {},
+	ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch:   {},
+	ReferralProgramMinStakedVegaTokens:                       {},
 }

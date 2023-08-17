@@ -180,7 +180,7 @@ func NewMarket(
 	assetDecimals := assetDetails.DecimalPlaces()
 	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(mkt.PositionDecimalPlaces))
 
-	tradableInstrument, err := markets.NewTradableInstrument(ctx, log, mkt.TradableInstrument, oracleEngine, broker, uint32(assetDecimals))
+	tradableInstrument, err := markets.NewTradableInstrument(ctx, log, mkt.TradableInstrument, mkt.ID, oracleEngine, broker, uint32(assetDecimals))
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}
@@ -326,6 +326,10 @@ func (m *Market) IsSucceeded() bool {
 	return m.succeeded
 }
 
+func (m *Market) IsPerp() bool {
+	return m.perp
+}
+
 func (m *Market) StopSnapshots() {
 	m.matching.StopSnapshots()
 	m.position.StopSnapshots()
@@ -385,7 +389,7 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	} else {
 		m.tradableInstrument.Instrument.Unsubscribe(ctx)
 	}
-	if err := m.tradableInstrument.UpdateInstrument(ctx, m.log, m.mkt.TradableInstrument, oracleEngine, m.broker); err != nil {
+	if err := m.tradableInstrument.UpdateInstrument(ctx, m.log, m.mkt.TradableInstrument, m.GetID(), oracleEngine, m.broker); err != nil {
 		return err
 	}
 	m.risk.UpdateModel(m.stateVarEngine, m.tradableInstrument.MarginCalculator, m.tradableInstrument.RiskModel)
@@ -1035,7 +1039,7 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 	defer func() { m.idgen = nil }()
 	if changes.UpdateType == types.MarketStateUpdateTypeTerminate {
 		m.uncrossOrderAtAuctionEnd(ctx)
-		// terminate and settle
+		// terminate and settle data (either last traded price for perp, or settlement data provided via governance
 		m.tradingTerminatedWithFinalState(ctx, types.MarketStateClosed, num.UintZero().Mul(changes.SettlementPrice, m.priceFactor))
 	} else if changes.UpdateType == types.MarketStateUpdateTypeSuspend {
 		m.mkt.State = types.MarketStateSuspendedViaGovernance
@@ -1378,10 +1382,11 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 	m.broker.SendBatch(evts)
 }
 
-func rejectStopOrders(orders ...*types.StopOrder) {
+func rejectStopOrders(rejectionReason types.StopOrderRejectionReason, orders ...*types.StopOrder) {
 	for _, o := range orders {
 		if o != nil {
 			o.Status = types.StopOrderStatusRejected
+			o.RejectionReason = ptr.From(rejectionReason)
 		}
 	}
 }
@@ -1414,7 +1419,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	}()
 
 	if !m.canTrade() {
-		rejectStopOrders(fallsBelow, risesAbove)
+		rejectStopOrders(types.StopOrderRejectionTradingNotAllowed, fallsBelow, risesAbove)
 		return nil, common.ErrTradingNotAllowed
 	}
 
@@ -1422,22 +1427,22 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	orderCnt := 0
 	if fallsBelow != nil {
 		if fallsBelow.Expiry.Expires() && fallsBelow.Expiry.ExpiresAt.Before(now) {
-			rejectStopOrders(fallsBelow, risesAbove)
+			rejectStopOrders(types.StopOrderRejectionExpiryInThePast, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderExpiryInThePast
 		}
 		if !fallsBelow.OrderSubmission.ReduceOnly {
-			rejectStopOrders(fallsBelow, risesAbove)
+			rejectStopOrders(types.StopOrderRejectionMustBeReduceOnly, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderMustBeReduceOnly
 		}
 		orderCnt++
 	}
 	if risesAbove != nil {
 		if risesAbove.Expiry.Expires() && risesAbove.Expiry.ExpiresAt.Before(now) {
-			rejectStopOrders(fallsBelow, risesAbove)
+			rejectStopOrders(types.StopOrderRejectionExpiryInThePast, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderExpiryInThePast
 		}
 		if !risesAbove.OrderSubmission.ReduceOnly {
-			rejectStopOrders(fallsBelow, risesAbove)
+			rejectStopOrders(types.StopOrderRejectionMustBeReduceOnly, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderMustBeReduceOnly
 		}
 		orderCnt++
@@ -1445,7 +1450,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 
 	// now check if that party hasn't exceeded the max amount per market
 	if m.stopOrders.CountForParty(party)+uint64(orderCnt) > m.maxStopOrdersPerParties.Uint64() {
-		rejectStopOrders(fallsBelow, risesAbove)
+		rejectStopOrders(types.StopOrderRejectionMaxStopOrdersPerPartyReached, fallsBelow, risesAbove)
 		return nil, common.ErrMaxStopOrdersPerPartyReached
 	}
 
@@ -1456,7 +1461,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	}
 
 	if len(positions) < 1 {
-		rejectStopOrders(fallsBelow, risesAbove)
+		rejectStopOrders(types.StopOrderRejectionNotAllowedWithoutAPosition, fallsBelow, risesAbove)
 		return nil, common.ErrStopOrderSubmissionNotAllowedWithoutExistingPosition
 	}
 
@@ -1477,12 +1482,12 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	switch stopOrderSide {
 	case types.SideBuy:
 		if potentialSize >= 0 && size >= 0 {
-			rejectStopOrders(fallsBelow, risesAbove)
+			rejectStopOrders(types.StopOrderRejectionNotClosingThePosition, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderSideNotClosingThePosition
 		}
 	case types.SideSell:
 		if potentialSize <= 0 && size <= 0 {
-			rejectStopOrders(fallsBelow, risesAbove)
+			rejectStopOrders(types.StopOrderRejectionNotClosingThePosition, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderSideNotClosingThePosition
 		}
 	}
@@ -3746,6 +3751,13 @@ func (m *Market) settlementData(ctx context.Context, settlementData *num.Numeric
 func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Numeric) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	_, blockHash := vegacontext.TraceIDFromContext(ctx)
+	m.idgen = idgeneration.New(blockHash + crypto.HashStrToHex("perpsettlement"+m.GetID()))
+	defer func() {
+		m.idgen = nil
+	}()
+
 	// take all positions, get funding transfers
 	sdi := settlementData.Int()
 	if !settlementData.IsInt() && settlementData.Decimal() != nil {

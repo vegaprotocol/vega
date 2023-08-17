@@ -16,12 +16,6 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/core/datasource"
-	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
-	"code.vegaprotocol.io/vega/core/datasource/external/ethverifier"
-
-	"code.vegaprotocol.io/vega/libs/subscribers"
-
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/banking"
 	"code.vegaprotocol.io/vega/core/blockchain"
@@ -33,6 +27,9 @@ import (
 	ethclient "code.vegaprotocol.io/vega/core/client/eth"
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/core/datasource"
+	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
+	"code.vegaprotocol.io/vega/core/datasource/external/ethverifier"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/datasource/spec/adaptors"
 	oracleAdaptors "code.vegaprotocol.io/vega/core/datasource/spec/adaptors"
@@ -52,16 +49,21 @@ import (
 	"code.vegaprotocol.io/vega/core/pow"
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/protocolupgrade"
+	"code.vegaprotocol.io/vega/core/referral"
 	"code.vegaprotocol.io/vega/core/rewards"
 	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/spam"
 	"code.vegaprotocol.io/vega/core/staking"
 	"code.vegaprotocol.io/vega/core/statevar"
 	"code.vegaprotocol.io/vega/core/stats"
+	"code.vegaprotocol.io/vega/core/teams"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/erc20multisig"
 	"code.vegaprotocol.io/vega/core/vegatime"
+	"code.vegaprotocol.io/vega/core/vesting"
+	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/version"
@@ -127,6 +129,9 @@ type allServices struct {
 	genesisHandler        *genesis.Handler
 	protocolUpgradeEngine *protocolupgrade.Engine
 
+	teamsEngine     *teams.SnapshottedEngine
+	referralProgram *referral.Engine
+
 	// staking
 	ethClient             *ethclient.Client
 	ethConfirmations      *ethclient.EthereumConfirmations
@@ -139,6 +144,8 @@ type allServices struct {
 
 	commander  *nodewallets.Commander
 	gastimator *processor.Gastimator
+
+	vesting *vesting.SnapshotEngine
 }
 
 func newServices(
@@ -287,7 +294,10 @@ func newServices(
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, svcs.stakingAccounts, svcs.epochService, svcs.timeService)
 	}
 
+	svcs.vesting = vesting.NewSnapshotEngine(svcs.log, svcs.collateral, DummyASVM{}, svcs.broker, svcs.assets)
 	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology)
+	// register this after the rewards engine is created to make sure the on epoch is called in the right order.
+	svcs.epochService.NotifyOnEpoch(svcs.vesting.OnEpochEvent, svcs.vesting.OnEpochRestore)
 
 	svcs.registerTimeServiceCallbacks()
 
@@ -302,6 +312,7 @@ func newServices(
 		// checkpoint have been loaded
 		// which means that genesis has been loaded as well
 		// we should be fully ready to start the event sourcing from ethereum
+		svcs.vesting.OnCheckpointLoaded()
 	})
 
 	svcs.genesisHandler.OnGenesisAppStateLoaded(
@@ -330,7 +341,7 @@ func newServices(
 
 	svcs.snapshotEngine.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
 		svcs.notary, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar,
-		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier)
+		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier, svcs.vesting)
 
 	svcs.snapshotEngine.AddProviders(svcs.spam)
 
@@ -338,7 +349,6 @@ func newServices(
 	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
 		pow.DisableVerification()
 	}
-
 	svcs.pow = pow
 	svcs.snapshotEngine.AddProviders(pow)
 	powWatchers := []netparams.WatchParam{
@@ -367,6 +377,19 @@ func newServices(
 			Watcher: pow.OnEpochDurationChanged,
 		},
 	}
+
+	// The referral program is used to compute rewards, and can end when reaching
+	// the end of epoch. Since the engine will reject computations when the program
+	// is marked as ended, it needs to be one of the last service to register on
+	// epoch update, so the computation can happen for this epoch.
+	svcs.referralProgram = referral.NewEngine(svcs.epochService, svcs.broker)
+
+	// The team engine is used to know the team a party belongs to. The computation
+	// of the referral program rewards requires this information. Since the team
+	// switches happen when the end of epoch is reached, it needs to be one of the
+	// last services to register on epoch update, so the computation is made based
+	// on the team the parties belonged to during the epoch and not the new one.
+	svcs.teamsEngine = teams.NewSnapshottedEngine(svcs.epochService, svcs.broker, svcs.timeService)
 
 	// setup config reloads for all engines / services /etc
 	svcs.registerConfigWatchers()
@@ -769,6 +792,34 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Param:   netparams.SpamProtectionMaxStopOrdersPerMarket,
 			Watcher: svcs.executionEngine.OnMarketPartiesMaximumStopOrdersUpdate,
 		},
+		{
+			Param:   netparams.RewardVestingMinimumTransfer,
+			Watcher: svcs.vesting.OnRewardVestingMinimumTransferUpdate,
+		},
+		{
+			Param:   netparams.RewardsVestingBaseRate,
+			Watcher: svcs.vesting.OnRewardVestingBaseRateUpdate,
+		},
+		{
+			Param:   netparams.ReferralProgramMaxBenefitTiers,
+			Watcher: svcs.teamsEngine.OnReferralProgramMaxBenefitTiersUpdate,
+		},
+		{
+			Param:   netparams.ReferralProgramMaxReferralRewardFactor,
+			Watcher: svcs.teamsEngine.OnReferralProgramMaxReferralRewardFactorUpdate,
+		},
+		{
+			Param:   netparams.ReferralProgramMaxReferralDiscountFactor,
+			Watcher: svcs.teamsEngine.OnReferralProgramMaxReferralDiscountFactorUpdate,
+		},
+		{
+			Param:   netparams.ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch,
+			Watcher: svcs.teamsEngine.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate,
+		},
+		{
+			Param:   netparams.ReferralProgramMinStakedVegaTokens,
+			Watcher: svcs.teamsEngine.OnReferralProgramMinStakedVegaTokensUpdate,
+		},
 	}
 
 	watchers = append(watchers, powWatchers...)
@@ -776,4 +827,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 
 	// now add some watcher for our netparams
 	return svcs.netParams.Watch(watchers...)
+}
+
+type DummyASVM struct{}
+
+func (DummyASVM) Get(_ string) num.Decimal {
+	return num.MustDecimalFromString("0.01")
 }

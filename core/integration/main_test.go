@@ -224,6 +224,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the following network parameters are set:$`, func(table *godog.Table) error {
 		return steps.TheFollowingNetworkParametersAreSet(execsetup.netParams, table)
 	})
+	s.Step(`^the market states are updated through governance:`, func(data *godog.Table) error {
+		return steps.TheMarketStateIsUpdatedTo(execsetup.executionEngine, data)
+	})
 	s.Step(`^time is updated to "([^"]*)"$`, func(rawTime string) error {
 		steps.TimeIsUpdatedTo(execsetup.executionEngine, execsetup.timeService, rawTime)
 		return nil

@@ -39,3 +39,15 @@ func (EthCallSpec) IsExternalDataSourceKind()                             {}
 func (DataSourceSpecConfigurationTime) IsInternalDataSourceKind()         {}
 func (OneOffTransfer) IsGovernanceTransferKind()                          {}
 func (RecurringTransfer) IsGovernanceTransferKind()                       {}
+func (FutureProduct) IsProductConfiguration()                             {}
+func (SpotProduct) IsProductConfiguration()                               {}
+func (PerpetualProduct) IsProductConfiguration()                          {}
+func (Spot) IsProduct()                                                   {}
+func (Perpetual) IsProduct()                                              {}
+func (UpdateFutureProduct) IsUpdateProductConfiguration()                 {}
+func (UpdatePerpetualProduct) IsUpdateProductConfiguration()              {}
+func (UpdateSpotMarketConfiguration_LogNormal) IsRiskModel()              {}
+func (UpdateSpotMarketConfiguration_Simple) IsRiskModel()                 {}
+func (NewSpotMarketConfiguration_Simple) IsRiskModel()                    {}
+func (NewSpotMarketConfiguration_LogNormal) IsRiskModel()                 {}
+func (DataSourceSpecConfigurationTimeTrigger) IsInternalDataSourceKind()  {}
