@@ -63,7 +63,7 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    And "party1" should have general account balance of "729759337" for asset "ETH"
+    And "party1" should have general account balance of "744319348" for asset "ETH"
     And the following trades should be executed:
       | buyer  | price    | size | seller     |
       | party1 | 11200000 | 2  | sellSideMM |
@@ -75,7 +75,7 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
-      | party1 | ETH | ETH/DEC19 | 255680672 | 729759337 |
+      | party1 | ETH | ETH/DEC19 | 255680672 | 744319348 |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search    | initial   | release   |
       | party1 | ETH/DEC19 | 63920168 | 204544537 | 255680672 | 319600840 |
@@ -91,7 +91,7 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
-      | party1 | ETH | ETH/DEC19 | 255680672 | 729759337 |
+      | party1 | ETH | ETH/DEC19 | 255680672 | 744319348 |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search    | initial   | release   |
       | party1 | ETH/DEC19 | 63920168 | 204544537 | 255680672 | 319600840 |
@@ -112,7 +112,7 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
-      | party1 | ETH | ETH/DEC19 | 240080542 | 729759337 |
+      | party1 | ETH | ETH/DEC19 | 240080542 | 744319348 |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search    | initial   | release   |
       | party1 | ETH/DEC19 | 52000000    | 166400000 | 208000000 | 260000000 |
@@ -126,7 +126,7 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
       | party1 | ETH/DEC19 | sell | 10     | 8000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
-      | party1 | ETH | ETH/DEC19 | 19200000 | 916639879 |
+      | party1 | ETH | ETH/DEC19 | 19200000 | 939199890 |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search   | initial  | release  |
       | party1 | ETH/DEC19 | 4800000     | 15360000 | 19200000 | 24000000 |
@@ -140,7 +140,7 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
       | party1 | ETH/DEC19 | sell | 3      | 7000000 | 1                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general   |
-      | party1 | ETH | ETH/DEC19 | 0 | 933439879 |
+      | party1 | ETH | ETH/DEC19 | 0 | 958399890 |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       |
