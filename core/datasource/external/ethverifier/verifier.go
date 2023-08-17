@@ -181,8 +181,14 @@ func (s *Verifier) ProcessEthereumContractCallResult(callEvent ethcall.ContractC
 		logging.String("call-event", fmt.Sprintf("%+v", callEvent)))
 
 	// Timeout for the check set to 1 day, to allow for validator outage scenarios
-	return s.witness.StartCheck(
+	err := s.witness.StartCheck(
 		pending, s.onCallEventVerified, s.timeService.GetTimeNow().Add(24*time.Hour))
+	if err != nil {
+		s.log.Error("could not start witness routine", logging.String("id", pending.GetID()))
+		s.removePendingCallEvent(pending.GetID())
+	}
+
+	return err
 }
 
 func (s *Verifier) checkCallEventResult(ctx context.Context, callEvent ethcall.ContractCallEvent) error {

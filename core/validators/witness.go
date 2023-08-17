@@ -73,7 +73,7 @@ const (
 
 const (
 	minValidationPeriod = 1                   // sec minutes
-	maxValidationPeriod = 30 * 24 * time.Hour // 2 days
+	maxValidationPeriod = 30 * 24 * time.Hour // 30 days
 	// by default all validators needs to sign.
 )
 
