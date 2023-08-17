@@ -4124,6 +4124,7 @@ func PayloadEthContractCallEventFromProto(svd *snapshot.Payload_EthContractCallR
 			BlockTime:   pr.BlockTime,
 			SpecId:      pr.SpecId,
 			Result:      pr.Result,
+			Error:       pr.Error,
 		}
 
 		pending = append(pending, result)
@@ -4144,6 +4145,7 @@ func (p *PayloadEthContractCallEvent) IntoProto() *snapshot.Payload_EthContractC
 				BlockTime:   p.BlockTime,
 				SpecId:      p.SpecId,
 				Result:      p.Result,
+				Error:       p.Error,
 			})
 	}
 
