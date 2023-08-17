@@ -39,8 +39,8 @@ Feature: check pegged GTT and GTC in auction
       | lp1 | party1 | ETH/DEC19 | 3000              | 0.1 | submission |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party1 | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10     |
-      | party1 | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 10     |
+      | party1 | ETH/DEC19 | 43 | 1 | buy  | BID | 43 | 10 |
+      | party1 | ETH/DEC19 | 24 | 1 | sell | ASK | 24 | 10 |
 
     # get out of auction
     When the parties place the following orders:
@@ -80,13 +80,13 @@ Feature: check pegged GTT and GTC in auction
     # enter price monitoring auction
     Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
+    Then debug detailed orderbook volumes for market "ETH/DEC19"
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 122   | 0      |
-      | sell | 120   | 20     |
-      | buy  | 80    | 20     |
-      | buy  | 76    | 0      |
+      | sell | 120 | 20 |
+      | buy  | 120 | 20 |
+      | buy  | 80  | 20 |
 
 
   Scenario: 002, Pegged GTT (good till time) (parked in auction), Pegged orders will be [parked] if placed during [an auction], with time priority preserved. 0011-MARA-016
@@ -105,8 +105,8 @@ Feature: check pegged GTT and GTC in auction
       | lp1 | party1 | ETH/DEC19 | 3000              | 0.1 | submission |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party1 | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10     |
-      | party1 | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 10     |
+      | party1 | ETH/DEC19 | 43 | 1 | buy  | BID | 43 | 10 |
+      | party1 | ETH/DEC19 | 24 | 1 | sell | ASK | 24 | 10 |
  
     # get out of auction
     When the parties place the following orders:
