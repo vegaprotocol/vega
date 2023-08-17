@@ -122,8 +122,8 @@ Feature: test risk model parameter sigma
       | lp1 | party0 | ETH/MAR0  | 10000000          | 0.001 | amendment  |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party0 | ETH/MAR0  | 2         | 1                    | sell | ASK              | 500        | 20     |
-      | party0 | ETH/MAR0  | 2         | 1                    | buy  | BID              | 500        | 20     |
+      | party0 | ETH/MAR0 | 500 | 1 | sell | ASK | 500 | 1 |
+      | party0 | ETH/MAR0 | 500 | 1 | buy  | BID | 500 | 1 |
  
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -143,20 +143,17 @@ Feature: test risk model parameter sigma
     Then the order book should have the following volumes for market "ETH/MAR0":
       | side | price | volume |
       | sell | 110   | 10     |
-      | sell | 109   | 0      |
-      | buy  | 91    | 0      |
-      | buy  | 90    | 10     |
+      | sell | 111 | 500 |
+      | buy  | 89  | 500 |
+      | buy  | 90  | 10  |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin   | general                     | bond     |
-      | party0 | USD   | ETH/MAR0  | 41041689 | 499999999999999999948958311 | 10000000 |
+      | party0 | USD | ETH/MAR0 | 266769 | 499999999999999999989733231 | 10000000 |
       | party1 | USD   | ETH/MAR0  | 1201     | 4999998799                  |          |
       | party2 | USD   | ETH/MAR0  | 6403     | 4999993597                  |          |
 
-    # mentainance margin level for LP: 181819*100*3.5569036=6.47e7
-    # initial  margin level for LP: 181819*100*3.5569036 *1.2=9.7e7
-
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search   | initial  | release  |
-      | party0 | ETH/MAR0  | 27361126    | 32833351 | 41041689 | 46513914 |
+      | party0 | ETH/MAR0 | 177846 | 213415 | 266769 | 302338 |
 
