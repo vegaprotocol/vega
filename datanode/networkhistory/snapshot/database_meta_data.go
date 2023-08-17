@@ -52,6 +52,12 @@ type HypertablePartitionColumns struct {
 }
 
 func NewDatabaseMetaData(ctx context.Context, connPool *pgxpool.Pool) (DatabaseMetadata, error) {
+	// Ensure timescale extension is enabled before attempting to get metadata
+	_, err := connPool.Exec(ctx, "create extension if not exists timescaledb")
+	if err != nil {
+		return DatabaseMetadata{}, fmt.Errorf("failed to create timescale extension: %w", err)
+	}
+
 	dbVersion, err := getDBVersion(ctx, connPool)
 	if err != nil {
 		return DatabaseMetadata{}, fmt.Errorf("failed to get database version: %w", err)
