@@ -28,6 +28,7 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | market.liquidityV2.stakeToCcyVolume     | 1     |
       | limits.markets.maxPeggedOrders          | 2     |
+    And the average block duration is "1"
   Scenario: 001 Replicate a scenario from Lewis with Elias' implementation on Exit_price when there is insufficient orders, linear slippage factor = 1e6, quadratic slippage factor = 1e6, 0019-MCAL-001, 0019-MCAL-002
     # 1. trader B made LP commitment 150,000
     # 2. trader C and A cross at 0.5 with size of 111, and this opens continuous trading (trade B is short)
@@ -39,48 +40,64 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
     Given the parties deposit on asset's general account the following amount:
       | party   | asset | amount         |
       | traderA | USD   | 10000000000000 |
-      | traderB | USD   | 3100000        |
+      | traderB | USD | 3100000 |
       | traderC | USD   | 10000000000000 |
 
     When the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | lp type    |
       | lp1 | traderB | ETH/DEC20 | 150000            | 0.001 | submission |
       | lp1 | traderB | ETH/DEC20 | 150000            | 0.001 | amendmend  |
-    And the parties place the following pegged iceberg orders:
-      | party   | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | traderB | ETH/DEC20 | 2         | 1                    | sell | ASK              | 100        | 20     |
-      | traderB | ETH/DEC20 | 2         | 1                    | buy  | BID              | 100        | 20     |
+
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | traderB | ETH/DEC20 | sell | 75     | 2020  | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
+      | traderB | ETH/DEC20 | buy  | 5173   | 29    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
+
+    And the market data for the market "ETH/DEC20" should be:
+      | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
+      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 0            | 150000         | 0             |
+
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin  | general | bond   |
+      | traderB | USD   | ETH/DEC20 | 1077742 | 1872258 | 150000 |
 
     Then the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | traderA | ETH/DEC20 | buy  | 1      | 49    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-5    |
       | traderB | ETH/DEC20 | sell | 1      | 350   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1000 |
       | traderA | ETH/DEC20 | buy  | 1      | 350   | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1    |
-      | traderB | ETH/DEC20 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1    |
+      | traderC | ETH/DEC20 | sell | 2 | 2000 | 0 | TYPE_LIMIT | TIF_GTC | aux-s-1 |
       | traderB | ETH/DEC20 | sell | 1      | 3000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1    |
+
     When the opening auction period ends for market "ETH/DEC20"
+    And the market data for the market "ETH/DEC20" should be:
+      | trading mode            | target stake | supplied stake | open interest |
+      | TRADING_MODE_CONTINUOUS | 12449        | 150000         | 1             |
 
     And the parties should have the following account balances:
       | party   | asset | market id | margin  | general | bond   |
-      | traderB | USD   | ETH/DEC20 | 2899518 | 50482   | 150000 |
+      | traderB | USD | ETH/DEC20 | 2899518 | 50482 | 150000 |
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search  | initial | release |
-      | traderB | ETH/DEC20 | 1449759     | 2174638 | 2899518 | 4349277 |
+      | traderB | ETH/DEC20 | 1449759 | 2174638 | 2899518 | 4349277 |
 
+    And the network moves ahead "1" blocks
+
+#margin for traderB: 1*(2000-350)+1*350*3.5569036+2*350*3.5569036=5385
     And the following trades should be executed:
       | buyer   | price | size | seller  |
       | traderA | 350   | 1    | traderB |
 
-    And the market data for the market "ETH/DEC20" should be:
-      | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 12449        | 150000         | 1             |
+    And the insurance pool balance should be "0" for the market "ETH/DEC20"
+
+    Then debug detailed orderbook volumes for market "ETH/DEC20"
 
     Then the order book should have the following volumes for market "ETH/DEC20":
       | side | price | volume |
       | buy  | 29    | 5173   |
       | buy  | 49    | 1      |
-      | sell | 2000  | 1      |
-      | sell | 2020  | 74     |
+      | sell | 2000 | 2  |
+      | sell | 2020 | 75 |
       | sell | 3000  | 1      |
 
     When the parties place the following orders with ticks:
@@ -90,31 +107,29 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
 
     Then the order book should have the following volumes for market "ETH/DEC20":
       | side | price | volume |
-      | buy  | 29    | 0   |
       | buy  | 49    | 1      |
-      | sell | 2000  | 0      |
-      | sell | 2020  | 0     |
-      | sell | 3000  | 0      |
+      | sell | 2000 | 2 |
 
-    # traderB has both LP pegged orders, limit order, and positions
-    # margin for pegged orders long: 5173*0.801225765*50=207237.0441
-    # margin for pegged+limit orders short:76*3.5569036*50=13516.23368
-    # margin for short positions: min(112*9000000000000000, 50*(112*1e6+112^2*1e6))+112*50*3.55690359157934000 = 632,800,019,918.66 
-    # margin_long = 207237.0441
-    # margin_short= 632,800,019,918.66
-    
+# traderB has both LP pegged orders, limit order, and positions
+# margin for pegged orders long: 5173*0.801225765*50=207237.0441
+# margin for pegged+limit orders short:76*3.5569036*50=13516.23368
+# margin for short positions: min(112*9000000000000000, 50*(112*1e6+112^2*1e6))+112*50*3.55690359157934000 = 632,800,019,918.66
+# margin_long = 207237.0441
+# margin_short= 632,800,019,918.66
+
     And the parties should have the following account balances:
-      | party   | asset | market id | margin  | general | bond  |
-      | traderB | USD   | ETH/DEC20 | 3100294 | 0       | 0     |
+      | party   | asset | market id | margin  | general | bond |
+      | traderB | USD   | ETH/DEC20 | 3100294 | 0       | 0    |
+    Then the network moves ahead "1" blocks
 
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search       | initial       | release       |
-      | traderB | ETH/DEC20 | 632800019919| 949200029878 | 1265600039838 | 1898400059757 |
+      | party   | market id | maintenance  | search       | initial       | release       |
+      | traderB | ETH/DEC20 | 632800019919 | 949200029878 | 1265600039838 | 1898400059757 |
 
     And the market data for the market "ETH/DEC20" should be:
-      | mark price | trading mode                    | auction trigger                            | target stake | supplied stake | open interest |
-      | 50         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS | 199186       | 0              | 112           |
-     
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 150000         | 112           |
+
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
 
   Scenario: 002 Replicate a scenario from Lewis, linear slippage factor = 1e0, quadratic slippage factor = 1e2
@@ -128,10 +143,11 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | id  | party   | market id | commitment amount | fee   | lp type    |
       | lp1 | traderB | ETH/DEC21 | 150000            | 0.001 | submission |
       | lp1 | traderB | ETH/DEC21 | 150000            | 0.001 | amendmend  |
-    And the parties place the following pegged iceberg orders:
-      | party   | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | traderB | ETH/DEC21 | 2         | 1                    | sell | ASK              | 100        | 20     |
-      | traderB | ETH/DEC21 | 2         | 1                    | buy  | BID              | 100        | 20     |
+
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | traderB | ETH/DEC21 | sell | 74     | 2020  | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
+      | traderB | ETH/DEC21 | buy  | 5173   | 29    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
 
     Then the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -167,12 +183,12 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | traderB | ETH/DEC21 | sell | 111    | 50    | 1                | TYPE_LIMIT | TIF_GTC |
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin | general | bond   |
-      | traderB | USD   | ETH/DEC21 | 3100294| 0       | 0      |
+      | party   | asset | market id | margin  | general | bond |
+      | traderB | USD   | ETH/DEC21 | 3100294 | 0       | 0    |
 
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger                            | target stake | supplied stake | open interest |
-      | 50         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS | 199186       | 0              | 112           |
+      | mark price | trading mode                    | auction trigger                          | target stake | supplied stake | open interest |
+      | 50         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 199186       | 150000         | 112           |
 
     # traderB has both LP pegged orders, limit order, and positions
     # margin for pegged orders long: 5173*0.801225765*50=207237.0441
@@ -181,17 +197,18 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
     # margin_long = 207237.0441
     # margin_short= 62745518.66
     And the parties should have the following account balances:
-      | party   | asset | market id | margin     | general       | 
-      | traderA | USD   | ETH/DEC21 | 125460250  | 9999874539450 | 
+      | party   | asset | market id | margin    | general       |
+      | traderA | USD   | ETH/DEC21 | 125460250 | 9999874539450 |
 
-      Then the parties should have the following margin levels:
+    Then the parties should have the following margin levels:
       | party   | market id | maintenance | search   | initial   | release   |
       | traderB | ETH/DEC21 | 62745519    | 94118278 | 125491038 | 188236557 |
 
-      And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger                            | target stake | supplied stake | open interest |
-      | 50         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS | 199186       | 0              | 112           |
-    
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode                    | auction trigger                          | target stake | supplied stake | open interest |
+      | 50         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 199186       | 150000         | 112           |
+#supplied stake is only updated with bond account at the end of epoch
+
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
   Scenario: 003 Replicate a scenario from Lewis, linear slippage factor = 1e1, quadratic slippage factor = 1e3
@@ -205,10 +222,10 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | id  | party   | market id | commitment amount | fee   | lp type    |
       | lp1 | traderB | ETH/DEC22 | 150000            | 0.001 | submission |
       | lp1 | traderB | ETH/DEC22 | 150000            | 0.001 | amendmend  |
-    And the parties place the following pegged iceberg orders:
-      | party   | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | traderB | ETH/DEC22 | 2         | 1                    | sell | ASK              | 100        | 20     |
-      | traderB | ETH/DEC22 | 2         | 1                    | buy  | BID              | 100        | 20     |
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | traderB | ETH/DEC22 | sell | 74     | 2020  | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
+      | traderB | ETH/DEC22 | buy  | 5173   | 29    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
 
     Then the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -247,14 +264,14 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | traderA | ETH/DEC22 | buy  | 111    | 50    | 0                | TYPE_LIMIT | TIF_GTC |
       | traderB | ETH/DEC22 | sell | 111    | 50    | 1                | TYPE_LIMIT | TIF_GTC |
 
-    # traderB has both LP pegged orders, limit order, and positions
-    # margin for pegged orders long: 5173*0.801225765*50=207237.0441
-    # margin for pegged orders long and short: max(76*3.5569036,5173*0.800728208)*350=1449758.457
-    # margin for short position: min(112*9000000000000000, 50*(112*1e1+112^2*1e3))+112*50*3.55690359157934000 =627275918.7
-   
+# traderB has both LP pegged orders, limit order, and positions
+# margin for pegged orders long: 5173*0.801225765*50=207237.0441
+# margin for pegged orders long and short: max(76*3.5569036,5173*0.800728208)*350=1449758.457
+# margin for short position: min(112*9000000000000000, 50*(112*1e1+112^2*1e3))+112*50*3.55690359157934000 =627275918.7
+
     And the parties should have the following account balances:
-      | party   | asset | market id | margin  | general | bond   |
-      | traderB | USD   | ETH/DEC22 | 3100294 | 0       | 0      |
+      | party   | asset | market id | margin  | general | bond |
+      | traderB | USD   | ETH/DEC22 | 3100294 | 0       | 0    |
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search    | initial    | release    |
@@ -274,10 +291,10 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | id  | party   | market id | commitment amount | fee   | lp type    |
       | lp1 | traderB | ETH/DEC23 | 150000            | 0.001 | submission |
       | lp1 | traderB | ETH/DEC23 | 150000            | 0.001 | amendmend  |
-    And the parties place the following pegged iceberg orders:
-      | party   | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | traderB | ETH/DEC23 | 2         | 1                    | sell | ASK              | 100        | 20     |
-      | traderB | ETH/DEC23 | 2         | 1                    | buy  | BID              | 100        | 20     |
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | traderB | ETH/DEC23 | sell | 74     | 2020  | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
+      | traderB | ETH/DEC23 | buy  | 5173   | 29    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
  
     Then the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -296,10 +313,10 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | sell | 2020  | 74     |
       | sell | 3000  | 1      |
 
-    # traderB has both LP pegged orders, limit order, and positions
-    # margin for pegged orders long and short: max(76*3.5569036,5173*0.800728208)*350=1449758.457
-    # margin for short position: min(1*(2000-350)*1/1, 350*(1*1e2+1^2*1e0))+1*350*3.55690359157934000 =2894.916257
-    # margin for the long position/orders is larger than the short size, so we take the margin for long side which is 1449759
+# traderB has both LP pegged orders, limit order, and positions
+# margin for pegged orders long and short: max(76*3.5569036,5173*0.800728208)*350=1449758.457
+# margin for short position: min(1*(2000-350)*1/1, 350*(1*1e2+1^2*1e0))+1*350*3.55690359157934000 =2894.916257
+# margin for the long position/orders is larger than the short size, so we take the margin for long side which is 1449759
 
     And the parties should have the following account balances:
       | party   | asset | market id | margin  | general  | bond   |
@@ -330,17 +347,17 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | traderA | ETH/DEC23 | buy  | 111    | 50    | 0                | TYPE_LIMIT | TIF_GTC |
       | traderB | ETH/DEC23 | sell | 111    | 50    | 1                | TYPE_LIMIT | TIF_GTC |
 
-    # traderB has both LP pegged orders, limit order, and positions
-    # margin for pegged orders long: 5173*0.801225765*50=207237.0441
-    # margin for pegged+limit orders short:76*3.5569036*50=13516.23368
-    # margin for short positions: min(112*900000000000, 50*(112*1e2+112^2*1e0))+112*50*3.55690359157934000 =1207118.66
-    # margin_long = 207237.0441
-    # margin_short= 13516.23368+1207118.66=1220634.894
+# traderB has both LP pegged orders, limit order, and positions
+# margin for pegged orders long: 5173*0.801225765*50=207237.0441
+# margin for pegged+limit orders short:76*3.5569036*50=13516.23368
+# margin for short positions: min(112*900000000000, 50*(112*1e2+112^2*1e0))+112*50*3.55690359157934000 =1207118.66
+# margin_long = 207237.0441
+# margin_short= 13516.23368+1207118.66=1220634.894
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin  | general       | 
-      | traderA | USD   | ETH/DEC23 | 13754   | 9999999985946 | 
-      | traderB | USD   | ETH/DEC23 | 2441270 | 19109024      | 
+      | party   | asset | market id | margin | general       |
+      | traderA | USD   | ETH/DEC23 | 13754  | 9999999985946 |
+      | traderB | USD | ETH/DEC23 | 2899818 | 18650476 |
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search  | initial | release |
@@ -373,18 +390,18 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | traderA | 112    | -300           | 0            |
       | traderB | -112   | 300            | 0            |
 
-    # traderB has both LP pegged orders, limit order, and positions
-    # margin for pegged orders long: 5173*0.801225765*50=207237.0441
-    # margin for pegged orders short:76*3.5569036*50=13516.23368
-    # margin for short positions: min(112*((2000-50)*1/112+(2020-50)*74/112+(3000-50)*1/112+(45000000000-50)*36/112), 50*(112*1e2+112^2*1e0))+112*50*3.55690359157934000 =1207118.66
-    # margin_long = 207237.0441
-    # margin_short= 13516.23368+1207118.66=1220634.894
+# traderB has both LP pegged orders, limit order, and positions
+# margin for pegged orders long: 5173*0.801225765*50=207237.0441
+# margin for pegged orders short:76*3.5569036*50=13516.23368
+# margin for short positions: min(112*((2000-50)*1/112+(2020-50)*74/112+(3000-50)*1/112+(45000000000-50)*36/112), 50*(112*1e2+112^2*1e0))+112*50*3.55690359157934000 =1207118.66
+# margin_long = 207237.0441
+# margin_short= 13516.23368+1207118.66=1220634.894
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin  | general       | 
-      | traderA | USD   | ETH/DEC23 | 13754   | 9999999985946 | 
-      | traderB | USD   | ETH/DEC23 | 2441270 | 19109024      | 
-      | traderC | USD   | ETH/DEC23 | 42684   | 9999999957316 | 
+      | party   | asset | market id | margin | general       |
+      | traderA | USD   | ETH/DEC23 | 13754  | 9999999985946 |
+      | traderB | USD | ETH/DEC23 | 2899818 | 18650476      |
+      | traderC | USD | ETH/DEC23 | 42684   | 9999999957316 |
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search  | initial | release |
@@ -407,9 +424,9 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | traderE | ETH/DEC23 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTC |
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin | general | 
-      | traderD | USD   | ETH/DEC23 | 82     | 9918    | 
-      | traderE | USD   | ETH/DEC23 | 4256   | 5743    | 
+      | party   | asset | market id | margin | general |
+      | traderD | USD   | ETH/DEC23 | 82     | 9918    |
+      | traderE | USD   | ETH/DEC23 | 4256   | 5743    |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
@@ -418,14 +435,15 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
 
     #for traderD and E, zero position and zero orders results in all zero margin levels
     And the parties should have the following account balances:
-      | party   | asset | market id | margin | general | 
-      | traderD | USD   | ETH/DEC23 | 0      | 9999    | 
-      | traderE | USD   | ETH/DEC23 | 0      | 9999    | 
+      | party   | asset | market id | margin | general |
+      | traderD | USD   | ETH/DEC23 | 0      | 9999    |
+      | traderE | USD   | ETH/DEC23 | 0      | 9999    |
 
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
       | traderD | 0      | 0              | 0            |
       | traderE | 0      | 0              | 0            |
+
 
 
 
