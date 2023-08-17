@@ -75,6 +75,7 @@
 - [8773](https://github.com/vegaprotocol/vega/issues/8773) - Fix panic with stop orders
 - [8792](https://github.com/vegaprotocol/vega/issues/8792) - Fix panic when starting null block chain node.
 - [8739](https://github.com/vegaprotocol/vega/issues/8739) - Cancel orders for rejected markets.
+- [9105](https://github.com/vegaprotocol/vega/issues/9105) - Truncate virtual stake decimal places
 - [8800](https://github.com/vegaprotocol/vega/issues/8800) - `expiresAt` is always null in the Stop Orders `API`.
 - [8796](https://github.com/vegaprotocol/vega/issues/8796) - Avoid updating active proposals slice while iterating over it.
 - [8679](https://github.com/vegaprotocol/vega/issues/8679) - Disallow snapshot state-sync if local snapshots exist
