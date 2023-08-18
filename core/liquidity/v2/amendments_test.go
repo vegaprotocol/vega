@@ -43,7 +43,7 @@ func TestAmendments(t *testing.T) {
 	defer tng.ctrl.Finish()
 
 	assert.EqualError(t,
-		tng.engine.CanAmend(nil, party),
+		tng.engine.CanAmend(nil, party, true),
 		liquidity.ErrPartyHaveNoLiquidityProvision.Error(),
 	)
 
@@ -80,9 +80,9 @@ func TestAmendments(t *testing.T) {
 		Reference:        "ref-lp-submission-1",
 	})
 	// now we can do a OK can amend
-	assert.NoError(t, tng.engine.CanAmend(lpa, party))
+	assert.NoError(t, tng.engine.CanAmend(lpa, party, true))
 
-	assert.NoError(t, tng.engine.AmendLiquidityProvision(ctx, lpa, party))
+	assert.NoError(t, tng.engine.AmendLiquidityProvision(ctx, lpa, party, true))
 
 	// first validate that the amendment is pending
 	pendingLp := tng.engine.PendingProvisionByPartyID(party)
@@ -108,7 +108,7 @@ func TestAmendments(t *testing.T) {
 	// so let's check for negatives instead
 	lpa.Fee = num.DecimalFromFloat(-1)
 	assert.EqualError(t,
-		tng.engine.CanAmend(lpa, party),
+		tng.engine.CanAmend(lpa, party, true),
 		"invalid liquidity provision fee",
 	)
 }
