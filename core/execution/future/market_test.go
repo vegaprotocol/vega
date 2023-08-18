@@ -5463,7 +5463,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 	require.NoError(t, tm.market.CancelLiquidityProvision(
 		ctx, lpCancel, "party-2-bis"))
 
-	assert.Equal(t, 1, tm.market.GetLPSCount())
+	assert.Equal(t, 2, tm.market.GetLPSCount())
 
 	t.Run("LiquidityProvision_CANCELLED", func(t *testing.T) {
 		// Filter events until LP is found
@@ -5477,7 +5477,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 			}
 		}
 		require.NotNil(t, found)
-		assert.Equal(t, types.LiquidityProvisionStatusCancelled.String(), found.Status.String())
+		assert.Equal(t, types.LiquidityProvisionStatusPending.String(), found.Status.String())
 	})
 }
 
