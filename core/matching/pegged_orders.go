@@ -2,9 +2,7 @@ package matching
 
 import "github.com/pkg/errors"
 
-var (
-	ErrUnknownPeggedOrderID = errors.New("unknow pegged order")
-)
+var ErrUnknownPeggedOrderID = errors.New("unknow pegged order")
 
 type peggedOrders struct {
 	ids []string
