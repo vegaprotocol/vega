@@ -70,7 +70,7 @@ type Perpetual struct {
 	internal []*dataPoint
 	// enumeration of the settlement period so that we can track which points landed in each interval
 	seq uint64
-	// the time that this period interval started
+	// the time that this period interval started (in nanoseconds)
 	startedAt int64
 	// asset decimal places
 	assetDP    uint32
@@ -315,15 +315,11 @@ func (p *Perpetual) receiveSettlementCue(ctx context.Context, data dscommon.Data
 func (p *Perpetual) sendFinalSettlementCue(ctx context.Context) {
 	// get the max time to include all data-points in the final settlement
 	max := int64(0)
-	for _, i := range p.internal {
-		if i.t > max {
-			max = i.t
-		}
+	if i := len(p.internal); i > 0 {
+		max = p.internal[i-1].t
 	}
-	for _, e := range p.external {
-		if e.t > max {
-			max = e.t
-		}
+	if i := len(p.external); i > 0 && max < p.external[i-1].t {
+		max = p.external[i-1].t
 	}
 	p.handleSettlementCue(ctx, max)
 }
@@ -455,8 +451,11 @@ func (p *Perpetual) addExternal(dp *dataPoint) error {
 
 		if dp.t < data.t {
 			// insert this point at position i - 1 then leave
-			p.external = append(p.external, p.external[i-1:]...)
-			p.external[i-1] = dp
+			ext := make([]*dataPoint, 0, len(p.external)+1)
+			ext = append(ext, p.external[:i-1]...)
+			ext = append(ext, dp)
+			ext = append(ext, p.external[i-1:]...)
+			p.external = ext
 			break
 		}
 
