@@ -130,7 +130,7 @@ func NewMarketFromSnapshot(
 		pMonitor, book, as, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams,
 	)
 
-	equityShares := common.NewEquityShares(num.DecimalZero())
+	equityShares := common.NewEquitySharesFromSnapshot(em.EquityShare)
 
 	marketLiquidity := common.NewMarketLiquidity(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
@@ -179,7 +179,7 @@ func NewMarketFromSnapshot(
 		pMonitor:                pMonitor,
 		peggedOrders:            common.NewPeggedOrdersFromSnapshot(log, timeService, em.PeggedOrders),
 		expiringOrders:          common.NewExpiringOrdersFromState(em.ExpiringOrders),
-		equityShares:            common.NewEquitySharesFromSnapshot(em.EquityShare),
+		equityShares:            equityShares,
 		lastBestBidPrice:        em.LastBestBid.Clone(),
 		lastBestAskPrice:        em.LastBestAsk.Clone(),
 		lastMidBuyPrice:         em.LastMidBid.Clone(),
