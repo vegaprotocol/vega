@@ -201,8 +201,7 @@ func (n *SnapshotNotary) restoreNotary(notary *types.Notary, p *types.Payload) e
 			n.log.Panic("invalid signature from snapshot", logging.Error(err))
 		}
 		ns := nodeSig{node: s.Node, sig: string(sig)}
-
-		if isValidator {
+		if isValidator && s.Pending {
 			signed := selfSigned[idK]
 			if !signed {
 				selfSigned[idK] = strings.EqualFold(s.Node, self)
@@ -225,6 +224,7 @@ func (n *SnapshotNotary) restoreNotary(notary *types.Notary, p *types.Payload) e
 	for resource, ok := range selfSigned {
 		if !ok {
 			// this is not signed, just add it to the retries list
+			n.log.Info("self-signature missing, adding to retry list", logging.String("id", resource.id))
 			retries.Add(resource, nil)
 		}
 	}
