@@ -203,7 +203,7 @@ type LiquidityEngine interface {
 	GetAverageLiquidityScores() map[string]num.Decimal
 	SubmitLiquidityProvision(context.Context, *types.LiquidityProvisionSubmission, string, liquidity.IDGen) (bool, error)
 	RejectLiquidityProvision(context.Context, string) error
-	AmendLiquidityProvision(context.Context, *types.LiquidityProvisionAmendment, string) error
+	AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string, isCancel bool) error
 	CancelLiquidityProvision(context.Context, string) error
 	ValidateLiquidityProvisionAmendment(*types.LiquidityProvisionAmendment) error
 	StopLiquidityProvision(context.Context, string) error
