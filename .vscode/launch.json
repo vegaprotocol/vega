@@ -13,6 +13,6 @@
                 "pretty",
                 "${workspaceFolder}/core/integration/features/liquidity-provision/margin-release-cancel.feature:23"
             ]
-        },
+        }
     ]
 }
