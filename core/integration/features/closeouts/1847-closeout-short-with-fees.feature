@@ -28,12 +28,8 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
       | party-lp | BTC   | 100000000 |
     And the parties submit the following liquidity provision:
       | id  | party    | market id | commitment amount | fee   | lp type    |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0.001 | submission |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0.001 | amendment  |
-    And the parties place the following pegged iceberg orders:
-      | party    | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party-lp | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10     |
-      | party-lp | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 10     |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0.000 | submission |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0.000 | amendment  |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |

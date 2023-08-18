@@ -6,7 +6,6 @@ Feature: Ensure we can enter and leave liquidity auction
       | market.auction.minimumDuration    | 1     |
       | market.stake.target.scalingFactor | 1     |
       | limits.markets.maxPeggedOrders    | 1500  |
-      | limits.markets.maxPeggedOrders    | 2     |
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.01                   | 0                         | default-futures |

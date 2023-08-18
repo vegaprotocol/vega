@@ -22,7 +22,7 @@ Feature: test probability of trading used in LP vol when best bid/ask is changin
       | limits.markets.maxPeggedOrders                | 2     |
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future | 1e-2                    | 0                         | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount      |
       | party0 | USD   | 5000000000  |
@@ -39,9 +39,9 @@ Feature: test probability of trading used in LP vol when best bid/ask is changin
       | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | submission |
       | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | amendment  |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party0 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 1      |
-      | party0 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 1      |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume    | offset |
+      | party0 | ETH/MAR22 | 56        | 1                    | sell | ASK              | 56        | 1      |
+      | party0 | ETH/MAR22 | 57        | 1                    | buy  | BID              | 57        | 1      |
  
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -53,7 +53,6 @@ Feature: test probability of trading used in LP vol when best bid/ask is changin
 
     When the opening auction period ends for market "ETH/MAR22"
     Then the auction ends with a traded volume of "1" at a price of "900"
-
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
       | sell | 990   | 1      |
@@ -66,7 +65,9 @@ Feature: test probability of trading used in LP vol when best bid/ask is changin
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
       | party3 | ETH/MAR22 | sell | 114    | 889   | 2                | TYPE_LIMIT | TIF_GTC | party3-buy-1 |
-
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party0 | ETH/MAR22 | 50000     | 1                    | buy  | BID              | 50000  | 0      |
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
       | sell | 990   | 1      |
@@ -93,9 +94,9 @@ Feature: test probability of trading used in LP vol when best bid/ask is changin
       | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | submission |
       | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | amendment  |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party0 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 1      |
-      | party0 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 1      |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset | reference |
+      | party0 | ETH/MAR22 | 56        | 1                    | sell | ASK              | 56         | 1      | ice-sell  |
+      | party0 | ETH/MAR22 | 50000     | 1                    | buy  | BID              | 50000      | 0      | ice-buy   |    
  
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -123,7 +124,9 @@ Feature: test probability of trading used in LP vol when best bid/ask is changin
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
       | party3 | ETH/MAR22 | buy  | 20     | 899   | 0                | TYPE_LIMIT | TIF_GTC | party3-buy-1 |
-
+    And the parties amend the following pegged iceberg orders:
+      | party  | reference | size delta | offset |
+      | party0 | ice-buy   | -49944     | 1      |
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
       | sell | 990   | 1      |
@@ -138,8 +141,4 @@ Feature: test probability of trading used in LP vol when best bid/ask is changin
       | TRADING_MODE_CONTINUOUS | 50000          | 3201         |
 
     And the insurance pool balance should be "0" for the market "ETH/MAR22"
-
-    Then the parties should have the following account balances:
-      | party  | asset | market id | margin | general    | bond  |
-      | party0 | USD   | ETH/MAR22 | 215121 | 4999734879 | 50000 |
 

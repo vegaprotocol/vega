@@ -31,8 +31,8 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | lp1 | party1 | DAI/DEC22 | 20000000000       | 0.01 | lp-1      | submission |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party1 | DAI/DEC22 | 5         | 1                    | buy  | MID              | 5          | 10     |
-      | party1 | DAI/DEC22 | 5         | 1                    | sell | MID              | 5          | 10     |
+      | party1 | DAI/DEC22 | 5         | 3                    | buy  | MID              | 5          | 10     |
+      | party1 | DAI/DEC22 | 5         | 3                    | sell | MID              | 5          | 10     |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price      | resulting trades | type       | tif     | reference |
