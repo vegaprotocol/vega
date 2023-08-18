@@ -179,28 +179,28 @@ Feature: test risk model parameter ranges
       | lp12 | party0 | ETH/MAR51 | 50000             | 0.001 | amendment  |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party0 | ETH/MAR0  | 2         | 1                    | sell | ASK              | 500        | 20     |
-      | party0 | ETH/MAR0  | 2         | 1                    | buy  | BID              | 500        | 20     |
-      | party0 | ETH/MAR11 | 2         | 1                    | sell | ASK              | 500        | 20     |
-      | party0 | ETH/MAR11 | 2         | 1                    | buy  | BID              | 500        | 20     |
-      | party0 | ETH/MAR12 | 2         | 1                    | sell | ASK              | 500        | 20     |
-      | party0 | ETH/MAR12 | 2         | 1                    | buy  | BID              | 500        | 20     |
-      | party0 | ETH/MAR21 | 2         | 1                    | sell | ASK              | 500        | 20     |
-      | party0 | ETH/MAR21 | 2         | 1                    | buy  | BID              | 500        | 20     |
-      | party0 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 20     |
-      | party0 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 20     |
-      | party0 | ETH/MAR31 | 2         | 1                    | buy  | BID              | 500        | 20     |
-      | party0 | ETH/MAR31 | 2         | 1                    | sell | ASK              | 500        | 20     |
-      | party0 | ETH/MAR32 | 2         | 1                    | buy  | BID              | 500        | 20     |
-      | party0 | ETH/MAR32 | 2         | 1                    | sell | ASK              | 500        | 20     |
-      | party0 | ETH/MAR41 | 2         | 1                    | buy  | BID              | 500        | 20     |
-      | party0 | ETH/MAR41 | 2         | 1                    | sell | ASK              | 500        | 20     |
-      | party0 | ETH/MAR42 | 2         | 1                    | buy  | BID              | 500        | 20     |
-      | party0 | ETH/MAR42 | 2         | 1                    | sell | ASK              | 500        | 20     |
-      | party0 | ETH/MAR43 | 2         | 1                    | buy  | BID              | 500        | 20     |
-      | party0 | ETH/MAR43 | 2         | 1                    | sell | ASK              | 500        | 20     |
-      | party0 | ETH/MAR51 | 2         | 1                    | buy  | BID              | 500        | 20     |
-      | party0 | ETH/MAR51 | 2         | 1                    | sell | ASK              | 500        | 20     |
+      | party0 | ETH/MAR0  | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR0  | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR11 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR11 | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR12 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR12 | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR21 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR21 | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR22 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR22 | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR31 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR31 | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR32 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR32 | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR41 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR41 | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR42 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR42 | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR43 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR43 | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR51 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR51 | 57 | 1 | buy  | BID | 57 | 20 |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -462,7 +462,7 @@ Feature: test risk model parameter ranges
       | party1 | USD   | ETH/MAR51 | 1437   | 49999999893293 |       |
       | party2 | USD   | ETH/MAR51 | 1437   | 49999999589597 |       |
 
-  @Now @NoPerp
+@Now @NoPerp
   Scenario: 002, test market ETH/MAR23 (tau=1)
 
     Given the liquidity monitoring parameters:
@@ -497,8 +497,8 @@ Feature: test risk model parameter ranges
       | lp1 | party0 | ETH/MAR23 | 5000000           | 0.001 | amendment  |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party0 | ETH/MAR23 | 2         | 1                    | sell | ASK              | 500        | 20     |
-      | party0 | ETH/MAR23 | 2         | 1                    | buy  | BID              | 500        | 20     |
+      | party0 | ETH/MAR23 | 4465 | 1 | sell | ASK | 4465 | 20 |
+      | party0 | ETH/MAR23 | 5682 | 1 | buy  | BID | 5682 | 20 |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -563,8 +563,8 @@ Feature: test risk model parameter ranges
       | lp1 | party0 | ETH/MAR52 | 600000            | 0.001 | amendment  |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party0 | ETH/MAR52 | 2         | 1                    | sell | ASK              | 500        | 20     |
-      | party0 | ETH/MAR52 | 2         | 1                    | buy  | BID              | 500        | 20     |
+      | party0 | ETH/MAR52 | 30000  | 1 | sell | ASK | 30000  | 9 |
+      | party0 | ETH/MAR52 | 600000 | 1 | buy  | BID | 600000 | 8 |
  
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -595,4 +595,5 @@ Feature: test risk model parameter ranges
       | party2 | USD   | ETH/MAR52 | 8033370     | 49999991966630 |        |
 
 # initial margin level for LP = 10*114559*55787.2881561700*1.2=7.66e10
+
 
