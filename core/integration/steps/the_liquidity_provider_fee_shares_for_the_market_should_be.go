@@ -41,6 +41,17 @@ func TheLiquidityProviderFeeSharesForTheMarketShouldBe(engine Execution, marketI
 				v.AverageEntryValuation == expected.AverageEntryValuation {
 				found = true
 			}
+			if row.HasColumn("average score") &&
+				v.AverageScore != row.MustStr("average score") {
+				found = false
+			}
+			if row.HasColumn("virtual stake") &&
+				v.VirtualStake != row.MustStr("virtual stake") {
+				found = false
+			}
+			if found {
+				break // No need to continue checking once a match is found
+			}
 		}
 
 		if !found {
@@ -60,5 +71,8 @@ func parseLiquidityFeeSharesTable(table *godog.Table) []RowWrapper {
 		"party",
 		"equity like share",
 		"average entry valuation",
-	}, []string{})
+	}, []string{
+		"average score",
+		"virtual stake",
+	})
 }
