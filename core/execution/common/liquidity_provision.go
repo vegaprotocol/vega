@@ -148,11 +148,11 @@ func (m *MarketLiquidity) applyPendingProvisions(
 			continue
 		}
 
-		// originalCommitment - amendedCommitment
-		proposedCommitmentVariation := provision.CommitmentAmount.ToDecimal().Sub(amendment.CommitmentAmount.ToDecimal())
+		// amendedCommitment- originalCommitment
+		proposedCommitmentVariation := amendment.CommitmentAmount.ToDecimal().Sub(provision.CommitmentAmount.ToDecimal())
 
 		// if commitment is increased, there is not penalty applied
-		if !proposedCommitmentVariation.IsPositive() {
+		if proposedCommitmentVariation.IsPositive() {
 			continue
 		}
 
