@@ -911,13 +911,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	resp.Data = snapHash
 
 	if len(snapHash) == 0 {
-		// @karel logs here
 		resp.Data = vgcrypto.Hash([]byte(app.version))
-		fmt.Println("app.exec.Hash():", app.exec.Hash())
-		fmt.Println("app.delegation.Hash():", app.delegation.Hash())
-		fmt.Println("app.gov.Hash():", app.gov.Hash())
-		fmt.Println("app.stakingAccounts.Hash():", app.stakingAccounts.Hash())
-
 		resp.Data = append(resp.Data, app.exec.Hash()...)
 		resp.Data = append(resp.Data, app.delegation.Hash()...)
 		resp.Data = append(resp.Data, app.gov.Hash()...)
