@@ -32,9 +32,9 @@ Feature: Set up a market with an opening auction, then uncross the book so that 
       | lp1 | lp    | ETH/DEC19 | 160000            | 0.01 | submission |
       | lp1 | lp    | ETH/DEC19 | 160000            | 0.01 | submission |
     And the parties place the following pegged iceberg orders:
-      | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lp    | ETH/DEC19 | 2         | 1                    | buy  | MID              | 50         | 100    |
-      | lp    | ETH/DEC19 | 2         | 1                    | sell | MID              | 50         | 100    |
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lp    | ETH/DEC19 | 27        | 1                    | buy  | MID              | 36     | 100    |
+      | lp    | ETH/DEC19 | 27        | 1                    | sell | MID              | 27     | 100    |
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 15680   |

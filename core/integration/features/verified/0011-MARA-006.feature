@@ -50,7 +50,7 @@ Feature: check margin account with partially filled order
       | auxiliary2 | ETH/DEC20 | buy  | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-10    |
       | auxiliary1 | ETH/DEC20 | sell | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-s-10    |
 
-    When the opening auction period ends for market "ETH/DEC20"
+    When the opening auction period ends for market "ETH/DEC20"a
     And the mark price should be "10" for the market "ETH/DEC20"
 
     # setup trader2 position for an order which is partially filled and leading to a reduced position

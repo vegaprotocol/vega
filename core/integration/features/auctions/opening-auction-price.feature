@@ -55,8 +55,8 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | MID              | 50         | 100    |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | MID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 16        | 1                    | buy  | MID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 15        | 1                    | sell | MID              | 50         | 100    |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | t3-b-1    |

@@ -59,15 +59,13 @@ Feature: Multiple successor markets allowed for single parent
       | lp4 | lpprov | ETH/DEC20c | 10000000000000000000000 | 0.3 | submission |
       | lp4 | lpprov | ETH/DEC20c | 10000000000000000000000 | 0.3 | submission |
     And the parties place the following pegged iceberg orders:
-      | party  | market id  | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lpprov | ETH/DEC19  | 2         | 1                    | buy  | BID              | 1          | 1      |
-      | lpprov | ETH/DEC19  | 2         | 1                    | sell | ASK              | 1          | 1      |
-      | lpprov | ETH/DEC20a | 2         | 1                    | buy  | BID              | 1          | 1      |
-      | lpprov | ETH/DEC20a | 2         | 1                    | sell | ASK              | 1          | 1      |
-      | lpprov | ETH/DEC20b | 2         | 1                    | buy  | BID              | 1          | 1      |
-      | lpprov | ETH/DEC20b | 2         | 1                    | sell | ASK              | 1          | 1      |
-      | lpprov | ETH/DEC20c | 2         | 1                    | buy  | BID              | 1          | 1      |
-      | lpprov | ETH/DEC20c | 2         | 1                    | sell | ASK              | 1          | 1      |
+      | party  | market id  | peak size | minimum visible size | side | pegged reference | volume          | offset |
+      | lpprov | ETH/DEC19  | 2         | 1                    | buy  | BID              | 25000000000000  | 1      |
+      | lpprov | ETH/DEC19  | 2         | 1                    | sell | ASK              | 23792446795000  | 1      |
+      | lpprov | ETH/DEC20a | 2         | 1                    | buy  | BID              | 25000000000000  | 1      |
+      | lpprov | ETH/DEC20a | 2         | 1                    | sell | ASK              | 23792446795000  | 1      |
+      | lpprov | ETH/DEC20b | 2         | 1                    | buy  | BID              | 25000000000000  | 1      |
+      | lpprov | ETH/DEC20b | 2         | 1                    | sell | ASK              | 23792446795000  | 1      |
  
     And the parties should have the following account balances:
       | party  | asset | market id  | general                   | margin | bond                    |

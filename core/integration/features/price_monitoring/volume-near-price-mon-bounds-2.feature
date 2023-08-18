@@ -44,9 +44,9 @@ Feature: Test margin for lp near price monitoring boundaries
       | commitment1 | lp1   | ETH2/MAR22 | 3000000           | 0.001 | submission |
       | commitment1 | lp1   | ETH2/MAR22 | 3000000           | 0.001 | amendment  |
     And the parties place the following pegged iceberg orders:
-      | party  | market id  | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lp1    | ETH2/MAR22 | 2         | 1                    | buy  | BID              | 500        | 100    |
-      | lp1    | ETH2/MAR22 | 2         | 1                    | sell | ASK              | 500        | 100    |
+      | party  | market id  | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lp1    | ETH2/MAR22 | 34        | 1                    | buy  | BID              | 34     | 100    |
+      | lp1    | ETH2/MAR22 | 28        | 1                    | sell | ASK              | 28     | 100    |
  
     And the parties place the following orders:
       | party  | market id  | side | volume | price  | resulting trades | type       | tif     | reference  |

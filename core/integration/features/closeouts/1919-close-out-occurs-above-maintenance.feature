@@ -47,11 +47,11 @@ Feature: Setting up 5 parties so that at once all the orders are places they end
       | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 90000     | 1                    | buy  | BID              | 90000      |  94    |
+      | lpprov | ETH/DEC19 | 306       | 1                    | sell | ASK              | 306        |  95    |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "100" for the market "ETH/DEC19"
-
+   
     # place orders and generate trades
     When the parties place the following orders "1" blocks apart:
       | party  | market id | side | volume | price | resulting trades | type        | tif     | reference | expires in |
@@ -76,6 +76,8 @@ Feature: Setting up 5 parties so that at once all the orders are places they end
 
 
     And the mark price should be "100" for the market "ETH/DEC19"
+
+
 
     # checking margins
     And the parties should have the following margin levels:

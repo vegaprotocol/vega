@@ -57,9 +57,9 @@ Feature: check the impact from change of market parameter: market.liquidityV2.st
       | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | submission |
       | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | amendment  |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party0 | ETH/MAR22 | 2         | 1                    | sell | ASK              | 500        | 20     |
-      | party0 | ETH/MAR22 | 2         | 1                    | buy  | BID              | 500        | 20     |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party0 | ETH/MAR22 | 9862      | 1                    | sell | ASK              | 9862   | 4      |
+      | party0 | ETH/MAR22 | 10142     | 1                    | buy  | BID              | 10142  | 4      |
  
     # party1 :=  buy order volume * vwap * rf_long  = (900  + 990  + 50 * 1000) * 0.8007282079844139 =  41549.786712311237271
     # party2 := sell order volume * vwap * rf_short = (1100 + 1010 + 50 * 1000) * 3.556903591579342  = 185350.246157199511620
@@ -72,8 +72,8 @@ Feature: check the impact from change of market parameter: market.liquidityV2.st
     Then the auction ends with a traded volume of "50" at a price of "1000"
     And the insurance pool balance should be "0" for the market "ETH/MAR22"
     And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1000    | 986       | 1014      | 177845       | 5000000        | 50            |
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | best static bid price | best static offer price |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1000    | 986       | 1014      | 177845       | 5000000        | 50            | 990                   | 1010                    |
 
     #check the volume on the order book
     Then the order book should have the following volumes for market "ETH/MAR22":
@@ -123,6 +123,10 @@ Feature: check the impact from change of market parameter: market.liquidityV2.st
       | id  | party  | market id | commitment amount | fee | lp type    |
       | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | submission |
       | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party0 | ETH/MAR22 | 2466      | 1                    | sell | ASK              | 2466   | 4      |
+      | party0 | ETH/MAR22 | 2536      | 1                    | buy  | BID              | 2536   | 4      |
 
     When the opening auction period ends for market "ETH/MAR22"
     Then the auction ends with a traded volume of "50" at a price of "1000"
@@ -138,7 +142,7 @@ Feature: check the impact from change of market parameter: market.liquidityV2.st
       | sell | 1100  | 1      |
       | sell | 1014  | 2466   |
       | sell | 1010  | 1      |
-      | sell | 1000  | 0      |
+      | sell | 1000  | 0      | 
       | buy  | 1000  | 0      |
       | buy  | 990   | 1      |
       | buy  | 986   | 2536   |

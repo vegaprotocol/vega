@@ -26,9 +26,9 @@ Feature: Regression test for issue 596
       | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
       | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume  | offset | reference |
+      | lpprov | ETH/DEC19 | 90000     | 1                    | buy  | BID              | 90000   | 98     | ice-buy   |
+      | lpprov | ETH/DEC19 | 444       | 1                    | sell | ASK              | 444     | 99     | ice-sell  |
  
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -71,8 +71,13 @@ Feature: Regression test for issue 596
       | chris  | BTC   | ETH/DEC19 | 790    | 8761    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
     And the cumulated balance for all accounts should be worth "3041000"
+    
+    When the parties amend the following pegged iceberg orders:
+      | party  | reference | size delta | offset |
+      | lpprov | ice-sell  | 0          | 96     |
+      | lpprov | ice-buy   | 0          | 95     |
     # then chris is trading out
-    When the parties place the following orders with ticks:
+    And the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | chris | ETH/DEC19 | sell | 50     | 0     | 4                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then the parties should have the following account balances:
@@ -123,9 +128,9 @@ Feature: Regression test for issue 596
       | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
       | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume  | offset | reference |
+      | lpprov | ETH/DEC19 | 90000     | 1                    | buy  | BID              | 90000   | 98     | ice-buy   |
+      | lpprov | ETH/DEC19 | 444       | 1                    | sell | ASK              | 444     | 99     | ice-sell  |
  
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -167,8 +172,13 @@ Feature: Regression test for issue 596
       | chris  | BTC   | ETH/DEC19 | 790    | 8761    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
     And the cumulated balance for all accounts should be worth "3041000"
+    
+    When the parties amend the following pegged iceberg orders:
+      | party  | reference | size delta | offset |
+      | lpprov | ice-sell  | 0          | 96     |
+      | lpprov | ice-buy   | 0          | 95     |
     # then chris is trading out
-    When the parties place the following orders with ticks:
+    And the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | chris | ETH/DEC19 | sell | 50     | 0     | 4                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then the parties should have the following account balances:

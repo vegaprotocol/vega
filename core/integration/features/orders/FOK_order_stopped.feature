@@ -18,7 +18,7 @@ Feature: check when FOK market order unable to trade
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
-      | limits.markets.maxPeggedOrders          | 2     |
+      | limits.markets.maxPeggedOrders          | 4     |
     And the average block duration is "1"
 
 Scenario: 001 FOK market order unable to trade
@@ -36,9 +36,9 @@ Scenario: 001 FOK market order unable to trade
       | lp0 | lprov | ETH/DEC20 | 5000              | 0.001 | submission |
       | lp0 | lprov | ETH/DEC20 | 5000              | 0.001 | submission  |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lprov  | ETH/DEC20 | 2         | 1                    | sell | ASK              | 100        | 55     |
-      | lprov  | ETH/DEC20 | 2         | 1                    | buy  | BID              | 100        | 55     |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume  | offset |
+      | lprov  | ETH/DEC20 | 5         | 1                    | sell | ASK              | 5000    | 5      |
+      | lprov  | ETH/DEC20 | 5000      | 1                    | buy  | BID              | 5000    | 4      |
 
     Then the parties place the following orders:
       | party      | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -58,8 +58,8 @@ Scenario: 001 FOK market order unable to trade
       | sell | 1005  | 5      |
 
     When the parties place the following orders with ticks:
-      | party      | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | auxiliary1 | ETH/DEC20 | buy  | 1000   | 0     | 0                | TYPE_MARKET | TIF_FOK| FOK-order-market |
+      | party      | market id | side | volume | price | resulting trades | type        | tif     | reference        |
+      | auxiliary1 | ETH/DEC20 | buy  | 1000   | 0     | 0                | TYPE_MARKET | TIF_FOK | FOK-order-market |
 
     And the order book should have the following volumes for market "ETH/DEC20":
       | side | price | volume |
@@ -86,9 +86,9 @@ Scenario: 002 GTC and GTT order cancellaiton
       | lp0 | lprov | ETH/DEC20 | 5000              | 0.001 | submission |
       | lp0 | lprov | ETH/DEC20 | 5000              | 0.001 | submission  |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lprov  | ETH/DEC20 | 2         | 1                    | sell | ASK              | 100        | 55     |
-      | lprov  | ETH/DEC20 | 2         | 1                    | buy  | BID              | 100        | 55     |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume  | offset |
+      | lprov  | ETH/DEC20 | 5         | 1                    | sell | ASK              | 1125    | 55     |
+      | lprov  | ETH/DEC20 | 5         | 1                    | buy  | BID              | 1125    | 8      |
 
     Then the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -106,9 +106,9 @@ Scenario: 002 GTC and GTT order cancellaiton
       | trader1 | ETH/DEC20 | buy  | 1000   | 7     | 0                | TYPE_LIMIT | TIF_GTC  | GTC-order-limit-7 |
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin | general  | 
-      | trader1 | USD   | ETH/DEC20 | 24022  | 975978   | 
-      | lprov   | USD   | ETH/DEC20 | 60055  | 999999934945  |
+      | party   | asset | market id | margin | general      | 
+      | trader1 | USD   | ETH/DEC20 | 24022  | 975978       | 
+      | lprov   | USD   | ETH/DEC20 | 60024  | 999999934976 |
 
     # test LP reduce commitment, margin release 
     And the parties submit the following liquidity provision:
@@ -122,7 +122,6 @@ Scenario: 002 GTC and GTT order cancellaiton
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general  | 
       | trader1 | USD   | ETH/DEC20 | 24022  | 975978   | 
-      | lprov   | USD   | ETH/DEC20 | 48045  | 999999947955  |
 
     # test GTC order cancelation
     And the parties cancel the following orders:

@@ -9,7 +9,7 @@ Feature: Test how offsets are applied with decimals
             | market.stake.target.scalingFactor                   | 1     |
             | market.liquidity.targetstake.triggering.ratio       | 0     |
             | network.markPriceUpdateMaximumFrequency             | 0s    |
-            | limits.markets.maxPeggedOrders                      | 4     |
+            | limits.markets.maxPeggedOrders                      | 8     |
         And the following assets are registered:
             | id  | decimal places |
             | ETH | 5              |
@@ -48,11 +48,11 @@ Feature: Test how offsets are applied with decimals
             | lp1 | lp1   | USD/DEC19 | 10000000000       | 0.001 | submission |
             | lp1 | lp1   | USD/DEC19 | 10000000000       | 0.001 | submission |
         And the parties place the following pegged iceberg orders:
-            | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-            | lp1    | USD/DEC19 | 2         | 1                    | buy  | BID              | 1          | 0      |
-            | lp1    | USD/DEC19 | 2         | 1                    | buy  | MID              | 2          | 1      |
-            | lp1    | USD/DEC19 | 2         | 1                    | sell | ASK              | 1          | 0      |
-            | lp1    | USD/DEC19 | 2         | 1                    | sell | MID              | 2          | 1      |
+            | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+            | lp1    | USD/DEC19 | 2         | 1                    | buy  | BID              | 66667  | 0      |
+            | lp1    | USD/DEC19 | 2         | 1                    | buy  | MID              | 33334  | 1      |
+            | lp1    | USD/DEC19 | 2         | 1                    | sell | MID              | 33334  | 1      |
+            | lp1    | USD/DEC19 | 2         | 1                    | sell | ASK              | 66667  | 0      |
     
         Then the parties place the following orders:
             | party  | market id | side | volume | price   | resulting trades | type       | tif     |
@@ -63,6 +63,9 @@ Feature: Test how offsets are applied with decimals
 
         Then the opening auction period ends for market "USD/DEC19"
         And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "USD/DEC19"
+        And the market data for the market "USD/DEC19" should be:
+            | mark price | trading mode            | best static bid price | static mid price | best static offer price |
+            | 1000000    | TRADING_MODE_CONTINUOUS | 999999                | 1000000          | 1000001                 |
         Then the orders should have the following states:
             | party | market id | side | volume | price   | status        |
             | lp1   | USD/DEC19 | buy  | 66667  | 999999  | STATUS_ACTIVE |

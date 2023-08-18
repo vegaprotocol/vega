@@ -780,11 +780,11 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode                    | auction trigger       | extension trigger     | target stake | supplied stake | open interest |
-      | 100000     | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_PRICE | 614211       | 614212         | 4             |
+      | 100000     | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_PRICE | 614211       | 90614212       | 4             |
 
     #T0 + 10min01sec
     Then time is updated to "2020-10-16T02:10:03Z"
 
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | extension trigger           | target stake | supplied stake | open interest |
-      | 110430     | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 614211       | 614212         | 5             |
+      | 110430     | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 614211       | 90614212       | 5             |

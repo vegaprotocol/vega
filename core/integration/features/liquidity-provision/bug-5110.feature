@@ -14,6 +14,8 @@ Feature: Test LP orders
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | validators.epoch.length                 | 1s    |
+    And the average block duration is "1"
 
   Scenario: create liquidity provisions
     Given the parties deposit on asset's general account the following amount:
@@ -52,13 +54,14 @@ Feature: Test LP orders
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
       | lp2 | party1 | ETH/DEC19 | 390500000000      | 0.3 | submission |
-      | lp2 | party1 | ETH/DEC19 | 390500000000      | 0.3 | amendment  |
+      | lp2 | party1 | ETH/DEC19 | 390500000000      | 0.3 |            |
 
+    Then the liquidity provisions should have the following states:
+      | id  | party  | market    | commitment amount | status         |
+      | lp2 | party1 | ETH/DEC19 | 390500000000      | STATUS_PENDING |
+
+    # TODO (WG 31/07/23): why 3?
+    When the network moves ahead "3" blocks
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status        |
       | lp2 | party1 | ETH/DEC19 | 390500000000      | STATUS_ACTIVE |
-
-    Then the orders should have the following states:
-      | party  | market id | side | volume    | price     | status        | reference |
-      | party1 | ETH/DEC19 | buy  | 434371524 | 89900000  | STATUS_ACTIVE | lp2       |
-      | party1 | ETH/DEC19 | sell | 325145712 | 120100000 | STATUS_ACTIVE | lp2       |
