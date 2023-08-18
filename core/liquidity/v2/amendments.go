@@ -22,8 +22,13 @@ import (
 
 var ErrPartyHaveNoLiquidityProvision = errors.New("party have no liquidity provision")
 
-func (e *Engine) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string) error {
-	if err := e.CanAmend(lpa, party); err != nil {
+func (e *Engine) AmendLiquidityProvision(
+	ctx context.Context,
+	lpa *types.LiquidityProvisionAmendment,
+	party string,
+	isCancel bool,
+) error {
+	if err := e.CanAmend(lpa, party, !isCancel); err != nil {
 		return err
 	}
 
@@ -67,9 +72,13 @@ func (e *Engine) createAmendedProvision(
 	}
 }
 
-func (e *Engine) CanAmend(lps *types.LiquidityProvisionAmendment, party string) error {
+func (e *Engine) CanAmend(lps *types.LiquidityProvisionAmendment, party string, shouldValidate bool) error {
 	if !e.IsLiquidityProvider(party) {
 		return ErrPartyHaveNoLiquidityProvision
+	}
+
+	if !shouldValidate {
+		return nil
 	}
 
 	if err := e.ValidateLiquidityProvisionAmendment(lps); err != nil {
