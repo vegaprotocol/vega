@@ -13,6 +13,7 @@
 package matching
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -59,7 +60,7 @@ type OrderBook struct {
 
 	// we keep track here of which type of orders are in the orderbook so we can quickly
 	// find an order of a certain type. These get updated when orders are added or removed from the book.
-	peggedOrders map[string]struct{}
+	peggedOrders *peggedOrders
 
 	peggedOrdersCount uint64
 	peggedCountNotify func(int64)
@@ -83,7 +84,7 @@ func (b *OrderBook) Hash() []byte {
 func NewOrderBook(log *logging.Logger, config Config, marketID string, auction bool, peggedCountNotify func(int64)) *OrderBook {
 	// setup logger
 	log = log.Named(namedLogger)
-	log.SetLevel(config.Level.Get())
+	log.SetLevel(logging.DebugLevel)
 
 	return &OrderBook{
 		log:             log,
@@ -102,7 +103,7 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string, auction b
 				MarketID: marketID,
 			},
 		},
-		peggedOrders:      map[string]struct{}{},
+		peggedOrders:      newPeggedOrders(),
 		peggedOrdersCount: 0,
 		peggedCountNotify: peggedCountNotify,
 	}
@@ -778,6 +779,8 @@ func (b *OrderBook) ReplaceOrder(rm, rpl *types.Order) (*types.OrderConfirmation
 }
 
 func (b *OrderBook) ReSubmitSpecialOrders(order *types.Order) {
+	fmt.Printf("RESUBMIT SPECIAL: %v\n", order.String())
+
 	// not allowed to submit a normal order here
 	if order.PeggedOrder == nil {
 		b.log.Panic("only pegged orders allowed", logging.Order(order))
@@ -1103,8 +1106,8 @@ func (b *OrderBook) Settled() []*types.Order {
 
 // GetActivePeggedOrderIDs returns the order identifiers of all pegged orders in the order book that are not parked.
 func (b *OrderBook) GetActivePeggedOrderIDs() []string {
-	pegged := make([]string, 0, len(b.peggedOrders))
-	for ID := range b.peggedOrders {
+	pegged := make([]string, 0, b.peggedOrders.Len())
+	for _, ID := range b.peggedOrders.Iter() {
 		if o, ok := b.ordersByID[ID]; ok {
 			if o.Status == vega.Order_STATUS_PARKED {
 				b.log.Panic("unexpected parked pegged order in order book",
@@ -1113,7 +1116,6 @@ func (b *OrderBook) GetActivePeggedOrderIDs() []string {
 			pegged = append(pegged, o.ID)
 		}
 	}
-	sort.Strings(pegged)
 	return pegged
 }
 
@@ -1141,13 +1143,13 @@ func (b *OrderBook) icebergRefresh(o *types.Order) {
 
 // remove removes the given order from all the lookup map.
 func (b *OrderBook) remove(o *types.Order) {
-	if _, ok := b.peggedOrders[o.ID]; ok {
+	if ok := b.peggedOrders.Exists(o.ID); ok {
 		b.peggedOrdersCount--
 		b.peggedCountNotify(-1)
+		b.peggedOrders.Delete(o.ID)
 	}
 	delete(b.ordersByID, o.ID)
 	delete(b.ordersPerParty[o.Party], o.ID)
-	delete(b.peggedOrders, o.ID)
 }
 
 // add adds the given order too all the lookup maps.
@@ -1162,7 +1164,7 @@ func (b *OrderBook) add(o *types.Order) {
 	}
 
 	if o.PeggedOrder != nil {
-		b.peggedOrders[o.ID] = struct{}{}
+		b.peggedOrders.Add(o.ID)
 		b.peggedOrdersCount++
 		b.peggedCountNotify(1)
 	}
@@ -1173,7 +1175,7 @@ func (b *OrderBook) cleanup() {
 	b.ordersByID = map[string]*types.Order{}
 	b.ordersPerParty = map[string]map[string]struct{}{}
 	b.indicativePriceAndVolume = nil
-	b.peggedOrders = map[string]struct{}{}
+	b.peggedOrders.Clear()
 	b.peggedCountNotify(-int64(b.peggedOrdersCount))
 	b.peggedOrdersCount = 0
 }
