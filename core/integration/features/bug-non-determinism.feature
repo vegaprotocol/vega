@@ -1,6 +1,6 @@
 Feature: Non-determinism encountered
 
-  Scenario: 
+  Scenario:
 
     Given the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
@@ -20,7 +20,7 @@ Feature: Non-determinism encountered
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | limits.markets.maxPeggedOrders                      | 8     |
       | validators.epoch.length                             | 24h   |
-    
+
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
@@ -94,7 +94,14 @@ Feature: Non-determinism encountered
     Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
-      | party2 | ETH/MAR22 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party2-buy  |
+
+    Then debug orders
+
+    Then the parties place the following orders with ticks:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
+      | party2 | ETH/MAR22 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party2-buy  |
+
+
     And the liquidity fee factor should be "0.001" for the market "ETH/MAR22"
     #liquidity fee: 20*1000*0.001=20
     And the accumulated liquidity fees should be "20" for the market "ETH/MAR22"
