@@ -567,7 +567,7 @@ func (m *MarketLiquidity) AmendLiquidityProvision(
 		}
 	}
 
-	err := m.liquidityEngine.AmendLiquidityProvision(ctx, lpa, party)
+	err := m.liquidityEngine.AmendLiquidityProvision(ctx, lpa, party, false)
 	if err != nil {
 		m.log.Panic("error while amending liquidity provision, this should not happen at this point, the LP was validated earlier",
 			logging.Error(err))
@@ -602,7 +602,7 @@ func (m *MarketLiquidity) CancelLiquidityProvision(ctx context.Context, party st
 		Fee:              num.DecimalZero(),
 	}
 
-	err := m.liquidityEngine.AmendLiquidityProvision(ctx, amendment, party)
+	err := m.liquidityEngine.AmendLiquidityProvision(ctx, amendment, party, true)
 	if err != nil {
 		m.log.Panic("error while amending liquidity provision, this should not happen at this point, the LP was validated earlier",
 			logging.Error(err))
