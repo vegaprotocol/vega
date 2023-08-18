@@ -192,11 +192,15 @@ type sliceRing[T any] struct {
 	pos int
 }
 
-func restoreSliceRing[T any](s []T, position int) *sliceRing[T] {
-	return &sliceRing[T]{
+func restoreSliceRing[T any](s []T, size uint64, position int) *sliceRing[T] {
+	sr := &sliceRing[T]{
 		s:   s,
 		pos: position,
 	}
+
+	sr.ModifySize(size)
+
+	return sr
 }
 
 func NewSliceRing[T any](size uint64) *sliceRing[T] {

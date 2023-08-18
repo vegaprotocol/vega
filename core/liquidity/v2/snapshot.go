@@ -202,6 +202,7 @@ func (e *SnapshotEngine) serialisePerformances() ([]byte, error) {
 			RegisteredPenaltiesPerEpoch:      registeredPenaltiesPerEpochSnapshot,
 			PositionInPenaltiesPerEpoch:      uint32(partyPerformance.previousPenalties.Position()),
 		}
+
 		performancePerPartySnapshot = append(performancePerPartySnapshot, partyPerformanceSnapshot)
 	}
 
@@ -331,6 +332,7 @@ func (e *SnapshotEngine) loadPerformances(performances *snapshotpb.LiquidityV2Pe
 
 		previousPenalties := restoreSliceRing[*num.Decimal](
 			registeredPenaltiesPerEpochAsDecimal,
+			e.Engine.slaParams.PerformanceHysteresisEpochs,
 			int(partyPerformance.PositionInPenaltiesPerEpoch),
 		)
 
@@ -338,6 +340,7 @@ func (e *SnapshotEngine) loadPerformances(performances *snapshotpb.LiquidityV2Pe
 		if partyPerformance.CommitmentStartTime > 0 {
 			startTime = time.Unix(0, partyPerformance.CommitmentStartTime)
 		}
+
 		e.Engine.slaPerformance[partyPerformance.Party] = &slaPerformance{
 			s:                 time.Duration(partyPerformance.ElapsedTimeMeetingSlaDuringEpoch),
 			start:             startTime,
