@@ -13,7 +13,6 @@
 package matching
 
 import (
-	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -84,7 +83,7 @@ func (b *OrderBook) Hash() []byte {
 func NewOrderBook(log *logging.Logger, config Config, marketID string, auction bool, peggedCountNotify func(int64)) *OrderBook {
 	// setup logger
 	log = log.Named(namedLogger)
-	log.SetLevel(logging.DebugLevel)
+	log.SetLevel(config.Level.Get())
 
 	return &OrderBook{
 		log:             log,
@@ -779,8 +778,6 @@ func (b *OrderBook) ReplaceOrder(rm, rpl *types.Order) (*types.OrderConfirmation
 }
 
 func (b *OrderBook) ReSubmitSpecialOrders(order *types.Order) {
-	fmt.Printf("RESUBMIT SPECIAL: %v\n", order.String())
-
 	// not allowed to submit a normal order here
 	if order.PeggedOrder == nil {
 		b.log.Panic("only pegged orders allowed", logging.Order(order))
