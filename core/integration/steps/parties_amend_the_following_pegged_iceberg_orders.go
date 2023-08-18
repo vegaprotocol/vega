@@ -65,7 +65,6 @@ func PartiesAmendTheFollowingPeggedIcebergOrders(
 		if err := checkExpectedError(row, err, nil); err != nil {
 			return err
 		}
-
 	}
 	return nil
 }
