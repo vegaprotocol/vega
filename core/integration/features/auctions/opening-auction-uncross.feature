@@ -123,9 +123,9 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
       | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | MID              | 50         | 100    |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | MID              | 50         | 100    |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset | reference |
+      | lpprov | ETH/DEC19 | 100       | 1                    | buy  | MID              | 100    | 100    | ice-buy   |
+      | lpprov | ETH/DEC19 | 82        | 82                   | sell | MID              | 86     | 100    | ice-sell  |
     Then the pegged orders should have the following states:
       | party  | market id | side | volume | reference | offset | price | status        |
       | party4 | ETH/DEC19 | buy  | 100000 | BID       | 1      | 0     | STATUS_PARKED |
@@ -156,8 +156,19 @@ Feature: Set up a market, with an opening auction, then uncross the book
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+    And the parties cancel the following orders:
+      | party  | reference |
+      | lpprov | ice-sell  |
+      | lpprov | ice-buy   |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC19 | 86        | 86                   | sell | MID              | 86     | 100    |
+      | lpprov | ETH/DEC19 | 106       | 1                    | buy  | MID              | 106    | 100    |
+    Then the network moves ahead "3" blocks
     Then the pegged orders should have the following states:
       | party  | market id | side | volume | reference | offset | price | status           |
+      | lpprov | ETH/DEC19 | buy  | 100    | MID       | 100    | 850   | STATUS_ACTIVE    |
+      | lpprov | ETH/DEC19 | sell | 86     | MID       | 100    | 1050  | STATUS_ACTIVE    |
       | party4 | ETH/DEC19 | buy  | 100000 | BID       | 1      | 899   | STATUS_ACTIVE    |
       | party4 | ETH/DEC19 | buy  | 100000 | MID       | 1      | 949   | STATUS_ACTIVE    |
       | party5 | ETH/DEC19 | sell | 100000 | ASK       | 1      | 1101  | STATUS_CANCELLED |

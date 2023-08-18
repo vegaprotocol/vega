@@ -43,15 +43,15 @@ Feature: Test margin for lp near price monitoring boundaries
       | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | submission |
       | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | amendment  |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lp1    | ETH/DEC21 | 2         | 1                    | buy  | BID              | 500        | 100    |
-      | lp1    | ETH/DEC21 | 2         | 1                    | sell | ASK              | 500        | 100    |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lp1    | ETH/DEC21 | 2         | 1                    | buy  | BID              | 97500  | 100    |
+      | lp1    | ETH/DEC21 | 2         | 1                    | sell | ASK              | 97500  | 100    |
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
-      | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
-      | party1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
-      | party2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
-      | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     When the opening auction period ends for market "ETH/DEC21"
     Then the auction ends with a traded volume of "10" at a price of "1000"
@@ -65,13 +65,6 @@ Feature: Test margin for lp near price monitoring boundaries
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 1       | 900       | 1100      | 1000         | 78000000       | 10            |
 
-    # at this point what's left on the book is the buy @ 900 and sell @ 1100
-    # so the best bid/ask coincides with the price monitoring bounds.
-    # Since the lp1 offset is +/- 100 (depending on side) the lp1 volume "should" go to 800 and 1200
-    # but because the price monitoring bounds are 900 and 1100 the volume gets pushed to these
-    # i.e. it's placed at 900 / 1100.
-    # As these are the best bid / best ask the probability of trading used is 1/2.
-
     And the parties should have the following margin levels:
       | party | market id | maintenance | search   | initial  | release  |
       | lp1   | ETH/DEC21 | 9750000     | 10725000 | 11700000 | 13650000 |
@@ -82,8 +75,8 @@ Feature: Test margin for lp near price monitoring boundaries
 
 
     Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-3 |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
 
     And the parties should have the following margin levels:
       | party | market id | maintenance | search   | initial  | release  |
@@ -91,16 +84,13 @@ Feature: Test margin for lp near price monitoring boundaries
 
     # now we place an order which makes the best bid 901.
     Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC21 | buy  | 1      | 901   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-4 |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 1      | 901   | 0                | TYPE_LIMIT | TIF_GTC |
 
-    # the lp1 one volume on this side should go to 801 but because price monitoring bound is still 900 it gets pushed to 900.
-    # but 900 is no longer the best bid, so the risk model is used to get prob of trading. This is 0.1 (see above).
-    # Hence a lot more volume is required to meet commitment and thus the margin requirement jumps substantially.
-
+    # margin unaffected as requirement is driven by sell side anyway
     And the parties should have the following margin levels:
       | party | market id | maintenance | search   | initial  | release  |
-      | lp1   | ETH/DEC21 | 9737900     | 10711690 | 11685480 | 13633060 |
+      | lp1   | ETH/DEC21 | 9750000     | 10725000 | 11700000 | 13650000 |
 
   Scenario: second scenario for volume at near price monitoring bounds with log-normal
 
@@ -129,15 +119,15 @@ Feature: Test margin for lp near price monitoring boundaries
       | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | submission |
       | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | amendment  |
     And the parties place the following pegged iceberg orders:
-      | party  | market id  | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lp1    | ETH2/MAR22 | 2         | 1                    | buy  | BID              | 500        | 100    |
-      | lp1    | ETH2/MAR22 | 2         | 1                    | sell | ASK              | 500        | 100    |
+      | party  | market id  | peak size | minimum visible size | side | pegged reference | volume | offset | reference |
+      | lp1    | ETH2/MAR22 | 62500     | 1                    | buy  | BID              | 62500  | 100    | ice-buy   |
+      | lp1    | ETH2/MAR22 | 41357     | 1                    | sell | ASK              | 41357  | 100    | ice-sell  |
     And the parties place the following orders:
-      | party  | market id  | side | volume | price | resulting trades | type       | tif     | reference  |
-      | party1 | ETH2/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
-      | party1 | ETH2/MAR22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
-      | party2 | ETH2/MAR22 | sell | 1      | 1109  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
-      | party2 | ETH2/MAR22 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
+      | party  | market id  | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH2/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH2/MAR22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH2/MAR22 | sell | 1      | 1109  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH2/MAR22 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     When the opening auction period ends for market "ETH2/MAR22"
     Then the auction ends with a traded volume of "10" at a price of "1000"
@@ -197,6 +187,10 @@ Feature: Test margin for lp near price monitoring boundaries
     And the market data for the market "ETH2/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3611         | 50000000       | 10            |
+
+    And the parties amend the following pegged iceberg orders:
+      | party | reference | size delta |
+      | lp1   | ice-buy   | -78        |
 
     Then the order book should have the following volumes for market "ETH2/MAR22":
       | side | price | volume |

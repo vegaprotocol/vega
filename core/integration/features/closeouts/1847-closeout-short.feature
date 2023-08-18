@@ -37,10 +37,9 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
       | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 90000     | 1                    | buy  | BID              | 90000      | 0      |
+      | lpprov | ETH/DEC19 | 448       | 1                    | sell | ASK              | 448        | 1      |
     Then the opening auction period ends for market "ETH/DEC19"
-
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
     # place orders and generate trades

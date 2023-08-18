@@ -30,9 +30,9 @@ Feature: Ensure we don't uncross when leaving liquidity auction
       | lp1 | party1 | ETH/DEC19 | 300000            | 0.1 | submission |
       | lp1 | party1 | ETH/DEC19 | 300000            | 0.1 | submission |
     And the parties place the following pegged iceberg orders:
-      | party   | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | partyy1 | ETH/DEC19 | 2         | 1                    | buy  | MID              | 1          | 21     |
-      | partyy1 | ETH/DEC19 | 2         | 1                    | sell | MID              | 1          | 21     |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party1 | ETH/DEC19 | 2         | 1                    | buy  | MID              | 1          | 21     |
+      | party1 | ETH/DEC19 | 2         | 1                    | sell | MID              | 1          | 21     |
  
     # get out of auction
     When the parties place the following orders:

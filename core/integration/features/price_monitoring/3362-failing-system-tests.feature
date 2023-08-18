@@ -40,9 +40,9 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
       | lp1 | party1 | ETH/DEC20 | 16000000          | 0.3 | submission |
       | lp1 | party1 | ETH/DEC20 | 16000000          | 0.3 | amendment  |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party1 | ETH/DEC20 | 2         | 1                    | buy  | BID              | 2          | 10     |
-      | party1 | ETH/DEC20 | 2         | 1                    | sell | ASK              | 13         | 10     | 
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party1 | ETH/DEC20 |  152      | 1                    | buy  | BID              | 152    | 10     |
+      | party1 | ETH/DEC20 | 150       | 1                    | sell | ASK              | 150    | 10     | 
     Then the mark price should be "0" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 

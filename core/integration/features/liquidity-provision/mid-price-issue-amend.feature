@@ -15,7 +15,7 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | market.auction.minimumDuration          | 1     |
       | market.stake.target.scalingFactor       | 10    |
       | network.markPriceUpdateMaximumFrequency | 0s    |
-      | limits.markets.maxPeggedOrders           | 2     |
+      | limits.markets.maxPeggedOrders          | 2     |
  
   @MidPrice @LPAmend
   Scenario: Changing orders copying the script
@@ -30,7 +30,7 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | lp1 | party1 | DAI/DEC22 | 10000000000       | 0.01 | lp-1      | submission |
     And the parties place the following pegged iceberg orders:
       | party |  market id | peak size | minimum visible size | side | pegged reference | volume     | offset   |
-      | party1 | DAI/DEC22 | 2         | 1                    | buy  | MID              | 1          | 10000000 |
+      | party1 | DAI/DEC22 | 3         | 1                    | buy  | MID              | 3          | 10000000 |
       | party1 | DAI/DEC22 | 2         | 1                    | sell | MID              | 1          | 10000000 |
 
     When the parties place the following orders:
@@ -147,12 +147,12 @@ Feature: Replicate unexpected margin issues - no mid price pegs
     Then the market data for the market "DAI/DEC22" should be:
       | mark price | best static bid price | static mid price | best static offer price |
       | 3500000000 | 810000000             | 4500000000       | 8190000000              |
-    # Pegged order prices unchanged as MID hasn't changed, but volume goes up on sell side as the LP has cancelled their limit order
+    # Pegged order prices unchanged as MID hasn't changed, volume unchanged as cancelling the limit order has no impact on pegged iceberg orders.
     And the order book should have the following volumes for market "DAI/DEC22":
       | side | price      | volume |
       | sell | 8200000000 | 0      |
       | sell | 8190000000 | 1      |
-      | sell | 4510000000 | 3      |
+      | sell | 4510000000 | 1      |
       | sell | 4515000000 | 0      |
       | buy  | 4495000000 | 0      |
       | buy  | 4490000000 | 3      |
@@ -171,7 +171,7 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | lp1 | party1 | DAI/DEC22 | 10000000000       | 0.01 | lp-1      | submission |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset   |
-      | party1 | DAI/DEC22 | 2         | 1                    | buy  | MID              | 1      | 10000000 |
+      | party1 | DAI/DEC22 | 3         | 1                    | buy  | MID              | 3      | 10000000 |
       | party1 | DAI/DEC22 | 2         | 1                    | sell | MID              | 1      | 10000000 |
 
     When the parties place the following orders:
