@@ -439,9 +439,9 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
     Then the network moves ahead "10" blocks
 
     # This should be slashed, as amendment brought market below target stake, but is currently not
-    # And the parties should have the following account balances:
-    #   | party | asset | market id | margin  | general        | bond |
-    #   | lp1   | ETH   | USD/DEC19 | 5554318 | 99997426328683 | 10   |
+    And the parties should have the following account balances:
+      | party | asset | market id | margin  | general        | bond |
+      | lp1   | ETH   | USD/DEC19 | 5554318 | 99997426328683 | 10   |
     And the parties should have the following account balances:
       | party | asset | market id | margin  | general        | bond |
       | lp1   | ETH   | USD/DEC19 | 5554318 | 99999988565801 | 10   |
