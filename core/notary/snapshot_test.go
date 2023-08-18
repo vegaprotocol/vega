@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -144,4 +145,59 @@ func TestNotarySnapshotRoundTrip(t *testing.T) {
 	_, ok2 := notr.IsSigned(context.Background(), "resid1", types.NodeSignatureKindAssetNew)
 	require.True(t, ok1)
 	require.True(t, ok2)
+}
+
+func TestRetryPendingOnly(t *testing.T) {
+	notr := getTestNotary(t)
+	defer notr.ctrl.Finish()
+
+	notr.top.EXPECT().Len().AnyTimes().Return(1)
+	notr.top.EXPECT().IsValidatorVegaPubKey(gomock.Any()).AnyTimes().Return(true)
+	notr.top.EXPECT().IsTendermintValidator(gomock.Any()).AnyTimes().Return(true)
+	notr.top.EXPECT().IsValidator().AnyTimes().Return(true)
+	notr.top.EXPECT().SelfVegaPubKey().AnyTimes().Return("123456")
+
+	// we will start this signature aggregation but not send in a signature
+	notr.StartAggregate(
+		"resid1", types.NodeSignatureKindERC20MultiSigSignerAdded, []byte("123444"))
+
+	// we will start another one send in signatures from a pretend other validator
+	resID := "resid2"
+	notr.StartAggregate(resID, types.NodeSignatureKindAssetNew, []byte("123456"))
+	key := "other-validator"
+	ns := commandspb.NodeSignature{
+		Sig:  []byte("123456"),
+		Id:   resID,
+		Kind: types.NodeSignatureKindAssetNew,
+	}
+	err := notr.RegisterSignature(context.Background(), key, ns)
+	require.Nil(t, err)
+
+	// get the snapshot state and load into a new engine
+	state, _, err := notr.GetState(allKey)
+	require.Nil(t, err)
+
+	snap := &snapshot.Payload{}
+	err = proto.Unmarshal(state, snap)
+	require.Nil(t, err)
+
+	snapNotr := getTestNotary(t)
+	defer snapNotr.ctrl.Finish()
+	snapNotr.top.EXPECT().Len().AnyTimes().Return(1)
+	snapNotr.top.EXPECT().IsValidator().AnyTimes().Return(true)
+	snapNotr.top.EXPECT().SelfVegaPubKey().AnyTimes().Return("this-validator")
+	snapNotr.top.EXPECT().IsValidatorVegaPubKey(gomock.Any()).AnyTimes().Return(true)
+	snapNotr.top.EXPECT().IsTendermintValidator(gomock.Any()).AnyTimes().Return(true)
+
+	_, err = snapNotr.LoadState(context.Background(), types.PayloadFromProto(snap))
+	require.Nil(t, err)
+
+	s1, _, err := notr.GetState(allKey)
+	require.Nil(t, err)
+	s2, _, err := notr.GetState(allKey)
+	require.Nil(t, err)
+	require.True(t, bytes.Equal(s1, s2))
+
+	snapNotr.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	snapNotr.OnTick(context.Background(), time.Now())
 }
