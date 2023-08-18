@@ -171,11 +171,10 @@ func (p *PeggedOrders) EnterAuction(ctx context.Context) []events.Event {
 }
 
 func (p *PeggedOrders) GetParkedIDs() []string {
-	ids := make([]string, 0, len(p.isParked))
-	for k := range p.isParked {
-		ids = append(ids, k)
+	ids := make([]string, 0, len(p.parked))
+	for _, v := range p.parked {
+		ids = append(ids, v.ID)
 	}
-	sort.Strings(ids)
 	return ids
 }
 
@@ -185,7 +184,6 @@ func (p *PeggedOrders) GetAllParkedForParty(party string) (orders []*types.Order
 			orders = append(orders, order)
 		}
 	}
-	sort.Slice(orders, func(i, j int) bool { return orders[i].ID < orders[j].ID })
 	return
 }
 
