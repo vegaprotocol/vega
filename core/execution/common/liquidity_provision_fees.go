@@ -61,7 +61,7 @@ func (ft FeeTransfer) TotalFeesAmountPerParty() map[string]*num.Uint {
 }
 
 func (m *MarketLiquidity) readyForFeesAllocation(now time.Time) bool {
-	return now.Sub(m.lastFeeDistribution) > m.feeCalculationTimeStep
+	return now.Sub(m.liquidityEngine.GetLastFeeDistributionTime()) > m.feeCalculationTimeStep
 }
 
 // AllocateFees distributes fee from a market fee account to LP fee accounts.

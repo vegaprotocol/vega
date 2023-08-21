@@ -921,6 +921,7 @@ message LiquidityV2Scores {
 
   int32 running_average_counter = 2;
   repeated LiquidityScore scores = 3;
+  int64 lastFeeDistributionTime = 4;
 }
 
 message LiquidityV2Supplied {
