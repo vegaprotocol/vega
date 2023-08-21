@@ -141,8 +141,8 @@ func (n *SnapshotNotary) OfferSignatures(
 func (n *SnapshotNotary) serialiseNotary() ([]byte, error) {
 	sigs := make([]*types.NotarySigs, 0, len(n.sigs)) // it will likely be longer than this but we don't know yet
 	for ik, ns := range n.sigs {
+		_, pending := n.pendingSignatures[ik]
 		for _n := range ns {
-			_, pending := n.pendingSignatures[ik]
 			sigs = append(sigs,
 				&types.NotarySigs{
 					ID:      ik.id,
@@ -156,7 +156,7 @@ func (n *SnapshotNotary) serialiseNotary() ([]byte, error) {
 
 		// the case where aggregate has started but we have no node sigs
 		if len(ns) == 0 {
-			sigs = append(sigs, &types.NotarySigs{ID: ik.id, Kind: int32(ik.kind)})
+			sigs = append(sigs, &types.NotarySigs{ID: ik.id, Kind: int32(ik.kind), Pending: pending})
 		}
 	}
 
@@ -201,8 +201,7 @@ func (n *SnapshotNotary) restoreNotary(notary *types.Notary, p *types.Payload) e
 			n.log.Panic("invalid signature from snapshot", logging.Error(err))
 		}
 		ns := nodeSig{node: s.Node, sig: string(sig)}
-
-		if isValidator {
+		if isValidator && s.Pending {
 			signed := selfSigned[idK]
 			if !signed {
 				selfSigned[idK] = strings.EqualFold(s.Node, self)
@@ -225,6 +224,7 @@ func (n *SnapshotNotary) restoreNotary(notary *types.Notary, p *types.Payload) e
 	for resource, ok := range selfSigned {
 		if !ok {
 			// this is not signed, just add it to the retries list
+			n.log.Info("self-signature missing, adding to retry list", logging.String("id", resource.id))
 			retries.Add(resource, nil)
 		}
 	}

@@ -14,7 +14,9 @@ package products_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -49,6 +51,90 @@ func TestPeriodicSettlement(t *testing.T) {
 	t.Run("funding payments with interest rate clamped", testFundingPaymentsWithInterestRateClamped)
 	t.Run("terminate perps market test", testTerminateTrading)
 	t.Run("margin increase", testGetMarginIncrease)
+}
+
+func TestExternalDataPointTWAPInSequence(t *testing.T) {
+	perp := testPerpetual(t)
+	defer perp.ctrl.Finish()
+
+	ctx := context.Background()
+	tstData, err := getGQLData()
+	require.NoError(t, err)
+	data := tstData.GetDataPoints()
+	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
+	// leave opening auction
+	perp.perpetual.OnLeaveOpeningAuction(ctx, data[0].t-1)
+
+	seq := data[0].seq
+	// set the first internal data-point
+	// perp.broker.EXPECT().Send(gomock.Any()).Times(1)
+	// perp.perpetual.SubmitDataPoint(ctx, data[0].price.Clone(), data[0].t)
+	for i, dp := range data {
+		if dp.seq > seq {
+			perp.broker.EXPECT().Send(gomock.Any()).Times(2)
+			if dp.seq == 2 {
+				perp.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+			}
+			perp.perpetual.PromptSettlementCue(ctx, dp.t)
+			seq = dp.seq
+		}
+		check := func(e events.Event) {
+			de, ok := e.(*events.FundingPeriodDataPoint)
+			require.True(t, ok)
+			dep := de.Proto()
+			if dep.Twap == "0" {
+				return
+			}
+			require.Equal(t, dp.twap.String(), dep.Twap, fmt.Sprintf("IDX: %d\n%#v\n", i, dep))
+		}
+		perp.broker.EXPECT().Send(gomock.Any()).Times(1).Do(check)
+		perp.perpetual.AddTestExternalPoint(ctx, dp.price, dp.t)
+	}
+}
+
+func TestExternalDataPointTWAPOutSequence(t *testing.T) {
+	perp := testPerpetual(t)
+	defer perp.ctrl.Finish()
+
+	ctx := context.Background()
+	tstData, err := getGQLData()
+	require.NoError(t, err)
+	data := tstData.GetDataPoints()
+	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
+	// leave opening auction
+	perp.perpetual.OnLeaveOpeningAuction(ctx, data[0].t-1)
+
+	seq := data[0].seq
+	last := 0
+	for i := 0; i < len(data); i++ {
+		if data[i].seq != seq {
+			break
+		}
+		last = i
+	}
+	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
+	// add the first (earliest) data-point first
+	perp.perpetual.AddTestExternalPoint(ctx, data[0].price, data[0].t)
+	// submit external data points in non-sequential order
+	for j := last; j < 0; j-- {
+		dp := data[j]
+		if dp.seq > seq {
+			// break
+			perp.broker.EXPECT().Send(gomock.Any()).Times(2)
+			perp.perpetual.PromptSettlementCue(ctx, dp.t)
+		}
+		check := func(e events.Event) {
+			de, ok := e.(*events.FundingPeriodDataPoint)
+			require.True(t, ok)
+			dep := de.Proto()
+			if dep.Twap == "0" {
+				return
+			}
+			require.Equal(t, dp.twap.String(), dep.Twap, fmt.Sprintf("IDX: %d\n%#v\n", j, dep))
+		}
+		perp.broker.EXPECT().Send(gomock.Any()).Times(1).Do(check)
+		perp.perpetual.AddTestExternalPoint(ctx, dp.price, dp.t)
+	}
 }
 
 func testIncomingDataIgnoredBeforeLeavingOpeningAuction(t *testing.T) {
@@ -718,4 +804,600 @@ func getTestPerpProd(t *testing.T) *types.Perps {
 			SettlementScheduleProperty: "bar",
 		},
 	}
+}
+
+type DataPoint struct {
+	price *num.Uint
+	t     int64
+	seq   int
+	twap  *num.Uint
+}
+
+type FundingNode struct {
+	Timestamp time.Time `json:"timestamp"`
+	Seq       int       `json:"seq"`
+	Price     string    `json:"price"`
+	TWAP      string    `json:"twap"`
+	Source    string    `json:"dataPointSource"`
+}
+
+type Edge struct {
+	Node FundingNode `json:"node"`
+}
+
+type FundingDataPoints struct {
+	Edges []Edge `json:"edges"`
+}
+
+type GQLData struct {
+	FundingDataPoints FundingDataPoints `json:"fundingPeriodDataPoints"`
+}
+
+type GQL struct {
+	Data GQLData `json:"data"`
+}
+
+const testData = `{
+  "data": {
+    "fundingPeriodDataPoints": {
+      "edges": [
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:52:00Z",
+            "seq": 6,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:51:36Z",
+            "seq": 6,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:51:00Z",
+            "seq": 6,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:50:36Z",
+            "seq": 6,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:50:00Z",
+            "seq": 6,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:49:36Z",
+            "seq": 6,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:49:00Z",
+            "seq": 5,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:48:36Z",
+            "seq": 5,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:48:12Z",
+            "seq": 5,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:47:36Z",
+            "seq": 5,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:47:00Z",
+            "seq": 5,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:46:36Z",
+            "seq": 5,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:46:00Z",
+            "seq": 5,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:45:36Z",
+            "seq": 5,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:45:00Z",
+            "seq": 5,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:44:36Z",
+            "seq": 5,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:44:00Z",
+            "seq": 4,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:43:36Z",
+            "seq": 4,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:43:00Z",
+            "seq": 4,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:42:36Z",
+            "seq": 4,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:42:00Z",
+            "seq": 4,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:41:36Z",
+            "seq": 4,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:41:24Z",
+            "seq": 4,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:40:36Z",
+            "seq": 4,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:40:00Z",
+            "seq": 4,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:39:36Z",
+            "seq": 4,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:39:12Z",
+            "seq": 4,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:39:12Z",
+            "seq": 3,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:38:48Z",
+            "seq": 4,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:38:12Z",
+            "seq": 3,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:37:36Z",
+            "seq": 3,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:37:00Z",
+            "seq": 3,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:36:36Z",
+            "seq": 3,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:36:00Z",
+            "seq": 3,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:35:36Z",
+            "seq": 3,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:35:00Z",
+            "seq": 3,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:34:36Z",
+            "seq": 3,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:34:00Z",
+            "seq": 2,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:33:36Z",
+            "seq": 2,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:33:00Z",
+            "seq": 2,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:32:36Z",
+            "seq": 2,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:32:00Z",
+            "seq": 2,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:31:48Z",
+            "seq": 2,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:31:00Z",
+            "seq": 2,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:30:36Z",
+            "seq": 2,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:30:00Z",
+            "seq": 2,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:29:36Z",
+            "seq": 2,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:29:00Z",
+            "seq": 1,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:28:36Z",
+            "seq": 1,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:28:00Z",
+            "seq": 1,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:27:36Z",
+            "seq": 1,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:27:12Z",
+            "seq": 1,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:26:36Z",
+            "seq": 1,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:26:00Z",
+            "seq": 1,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:25:36Z",
+            "seq": 1,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:25:12Z",
+            "seq": 1,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:24:48Z",
+            "seq": 1,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        },
+        {
+          "node": {
+            "timestamp": "2023-08-16T13:24:00Z",
+            "seq": 1,
+            "price": "29124220000",
+            "twap": "29124220000",
+            "dataPointSource": "SOURCE_EXTERNAL"
+          }
+        }
+      ]
+    }
+  }
+}`
+
+func getGQLData() (*GQL, error) {
+	ret := GQL{}
+	if err := json.Unmarshal([]byte(testData), &ret); err != nil {
+		return nil, err
+	}
+	ret.Sort()
+	return &ret, nil
+}
+
+func (g *GQL) Sort() {
+	// group by sequence
+	sort.SliceStable(g.Data.FundingDataPoints.Edges, func(i, j int) bool {
+		return g.Data.FundingDataPoints.Edges[i].Node.Seq < g.Data.FundingDataPoints.Edges[j].Node.Seq
+	})
+	for i, j := 0, len(g.Data.FundingDataPoints.Edges)-1; i < j; i, j = i+1, j-1 {
+		g.Data.FundingDataPoints.Edges[i], g.Data.FundingDataPoints.Edges[j] = g.Data.FundingDataPoints.Edges[j], g.Data.FundingDataPoints.Edges[i]
+	}
+}
+
+func (g *GQL) GetDataPoints() []DataPoint {
+	ret := make([]DataPoint, 0, len(g.Data.FundingDataPoints.Edges))
+	for _, n := range g.Data.FundingDataPoints.Edges {
+		p, _ := num.UintFromString(n.Node.Price, 10)
+		twap, _ := num.UintFromString(n.Node.TWAP, 10)
+		ret = append(ret, DataPoint{
+			price: p,
+			t:     n.Node.Timestamp.UnixNano(),
+			seq:   n.Node.Seq,
+			twap:  twap,
+		})
+	}
+	return ret
 }

@@ -14,6 +14,7 @@ package ethcall
 
 import (
 	"encoding/hex"
+	"errors"
 	"strconv"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -30,14 +31,19 @@ type ContractCallEvent struct {
 
 func EthereumContractCallResultFromProto(
 	qr *vegapb.EthContractCallEvent,
-) ContractCallEvent {
+) (ContractCallEvent, error) {
+	if len(qr.SpecId) <= 0 || qr.BlockHeight == 0 || qr.BlockTime <= 0 ||
+		(len(qr.Result) <= 0 && qr.Error == nil) {
+		return ContractCallEvent{}, errors.New("invalid contract call payload")
+	}
+
 	return ContractCallEvent{
 		SpecId:      qr.SpecId,
 		BlockHeight: qr.BlockHeight,
 		BlockTime:   qr.BlockTime,
 		Result:      qr.Result,
 		Error:       qr.Error,
-	}
+	}, nil
 }
 
 func (q *ContractCallEvent) IntoProto() *vegapb.EthContractCallEvent {
@@ -52,7 +58,7 @@ func (q *ContractCallEvent) IntoProto() *vegapb.EthContractCallEvent {
 
 func (q ContractCallEvent) Hash() string {
 	blockHeight := strconv.FormatUint(q.BlockHeight, 10)
-	blockTime := strconv.FormatUint(q.BlockHeight, 10)
+	blockTime := strconv.FormatUint(q.BlockTime, 10)
 	bytes := []byte(blockHeight + blockTime + q.SpecId)
 	bytes = append(bytes, q.Result...)
 	if q.Error != nil {

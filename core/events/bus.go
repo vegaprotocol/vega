@@ -144,6 +144,9 @@ const (
 	TeamUpdatedEvent
 	RefereeSwitchedTeamEvent
 	RefereeJoinedTeamEvent
+	ReferralProgramStartedEvent
+	ReferralProgramEndedEvent
+	ReferralProgramUpdatedEvent
 )
 
 var (
@@ -222,6 +225,9 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_TEAM_UPDATED:                     TeamUpdatedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_SWITCHED_TEAM:            RefereeSwitchedTeamEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_TEAM:              RefereeJoinedTeamEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_STARTED:         ReferralProgramStartedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_ENDED:           ReferralProgramEndedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_UPDATED:         ReferralProgramUpdatedEvent,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -291,6 +297,9 @@ var (
 		TeamUpdatedEvent:                  eventspb.BusEventType_BUS_EVENT_TYPE_TEAM_UPDATED,
 		RefereeSwitchedTeamEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_SWITCHED_TEAM,
 		RefereeJoinedTeamEvent:            eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_TEAM,
+		ReferralProgramStartedEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_STARTED,
+		ReferralProgramEndedEvent:         eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_ENDED,
+		ReferralProgramUpdatedEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_UPDATED,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -361,6 +370,9 @@ var (
 		TeamUpdatedEvent:                  "TeamUpdatedEvent",
 		RefereeSwitchedTeamEvent:          "RefereeSwitchedTeamEvent",
 		RefereeJoinedTeamEvent:            "RefereeJoinedTeamEvent",
+		ReferralProgramStartedEvent:       "ReferralProgramStartedEvent",
+		ReferralProgramEndedEvent:         "ReferralProgramEndedEvent",
+		ReferralProgramUpdatedEvent:       "ReferralProgramUpdatedEvent",
 	}
 )
 

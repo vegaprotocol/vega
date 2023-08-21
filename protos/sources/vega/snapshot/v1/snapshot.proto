@@ -755,6 +755,7 @@ message EthContractCallResult {
   uint64 block_time = 2;
   string spec_id = 3;
   bytes result = 4;
+  optional string error = 5;
 }
 
 message PendingKeyRotation {

@@ -22,6 +22,7 @@ pipeline {
         skipDefaultCheckout true
         timestamps()
         timeout(time: isPRBuild() ? 50 : 120, unit: 'MINUTES')
+        disableConcurrentBuilds(abortPrevious: true)
     }
     parameters {
         string( name: 'SYSTEM_TESTS_BRANCH', defaultValue: 'develop',

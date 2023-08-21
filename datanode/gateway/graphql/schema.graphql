@@ -2028,6 +2028,9 @@ type Market {
 
   "Optional: Market ID of the successor to this market if one exists"
   successorMarketID: ID
+
+  "Optional: Liquidity SLA parameters for the market"
+  liquiditySLAParameters: LiquiditySLAParameters
 }
 
 """

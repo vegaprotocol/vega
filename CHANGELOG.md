@@ -59,6 +59,8 @@
 - [8761](https://github.com/vegaprotocol/vega/issues/8761) - Add terminating `PERPS` via governance.
 - [9021](https://github.com/vegaprotocol/vega/issues/9021) - Add rejection reason to stop orders.
 - [9012](https://github.com/vegaprotocol/vega/issues/9012) - Add governance to update the referral program.
+- [9077](https://github.com/vegaprotocol/vega/issues/9077) - Ensure liquidity `SLA` parameters are exposed on markets and proposals
+- [9046](https://github.com/vegaprotocol/vega/issues/9046) - Send event on referral engine state change.
 
 ### 🐛 Fixes
 
@@ -74,14 +76,17 @@
 - [8773](https://github.com/vegaprotocol/vega/issues/8773) - Fix panic with stop orders
 - [8792](https://github.com/vegaprotocol/vega/issues/8792) - Fix panic when starting null block chain node.
 - [8739](https://github.com/vegaprotocol/vega/issues/8739) - Cancel orders for rejected markets.
+- [9105](https://github.com/vegaprotocol/vega/issues/9105) - Truncate virtual stake decimal places
 - [8800](https://github.com/vegaprotocol/vega/issues/8800) - `expiresAt` is always null in the Stop Orders `API`.
 - [8796](https://github.com/vegaprotocol/vega/issues/8796) - Avoid updating active proposals slice while iterating over it.
 - [8679](https://github.com/vegaprotocol/vega/issues/8679) - Disallow snapshot state-sync if local snapshots exist
+- [8364](https://github.com/vegaprotocol/vega/issues/8364) - Initialising from network history not working after database wipe
 - [8827](https://github.com/vegaprotocol/vega/issues/8827) - Add block height validation to validator initiated transactions and pruning to the `pow` engine cache
 - [8836](https://github.com/vegaprotocol/vega/issues/8836) - Fix enactment of market update state
 - [8848](https://github.com/vegaprotocol/vega/issues/8848) - Handle the case where the market is terminated and the epoch ends at the same block.
 - [8853](https://github.com/vegaprotocol/vega/issues/8853) - Liquidity provision amendment bug fixes
 - [8862](https://github.com/vegaprotocol/vega/issues/8862) - Fix settlement via governance
+- [9088](https://github.com/vegaprotocol/vega/issues/9088) - Include error field in `contractCall` snapshot.
 - [8854](https://github.com/vegaprotocol/vega/issues/8854) - Add liquidity `v2` snapshots to the list of providers
 - [8772](https://github.com/vegaprotocol/vega/issues/8772) - Checkpoint panic on successor markets.
 - [8962](https://github.com/vegaprotocol/vega/issues/8962) - Refreshed pegged iceberg orders remain tracked as pegged orders.
@@ -90,6 +95,7 @@
 - [9038](https://github.com/vegaprotocol/vega/issues/9038) - New market proposals are no longer in both the active and enacted slices to prevent pointer sharing.
 - [8878](https://github.com/vegaprotocol/vega/issues/8878) - Fix amend to consider market decimals when checking for sufficient funds.
 - [8698](https://github.com/vegaprotocol/vega/issues/8698) - Final settlement rounding can be off by a 1 factor instead of just one.
+- [9113](https://github.com/vegaprotocol/vega/issues/9113) - Only add pending signatures to the retry list when the notary engine snapshot restores.
 - [8861](https://github.com/vegaprotocol/vega/issues/8861) - Fix successor proposals never leaving proposed state.
 - [9086](https://github.com/vegaprotocol/vega/issues/9086) - Set identifier generator during perpetual settlement for closed out orders.
 - [8884](https://github.com/vegaprotocol/vega/issues/8884) - Do not assume `\n` is present on the first read chunk of the input

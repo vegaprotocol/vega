@@ -147,6 +147,12 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.RefereeSwitchedTeamEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_TEAM:
 		return events.RefereeJoinedTeamEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_STARTED:
+		return events.ReferralProgramStartedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_ENDED:
+		return events.ReferralProgramEndedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_UPDATED:
+		return events.ReferralProgramUpdatedEventFromStream(ctx, be)
 	}
 
 	return nil

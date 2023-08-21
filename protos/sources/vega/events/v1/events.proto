@@ -727,6 +727,23 @@ message RefereeJoinedTeam {
   int64 joined_at = 3;
 }
 
+message ReferralProgramStarted {
+  // Referral program that has started.
+  vega.ReferralProgram program = 1;
+}
+
+message ReferralProgramUpdated {
+  // The updated referral program.
+  vega.ReferralProgram program = 1;
+}
+
+message ReferralProgramEnded {
+  // Program update version.
+  uint64 version = 1;
+  // Unique ID of the referral program.
+  string id = 2;
+}
+
 // Bus event type is used to specify a type of event
 // It has 2 styles of event:
 // Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item
@@ -877,6 +894,15 @@ enum BusEventType {
   // Event indicating a referee joined a team.
   BUS_EVENT_TYPE_REFEREE_JOINED_TEAM = 66;
 
+  // Event indicating a referral program started.
+  BUS_EVENT_TYPE_REFERRAL_PROGRAM_STARTED = 67;
+
+  // Event indicating a referral program has been updated.
+  BUS_EVENT_TYPE_REFERRAL_PROGRAM_UPDATED = 68;
+
+  // Event indicating a referral program ended.
+  BUS_EVENT_TYPE_REFERRAL_PROGRAM_ENDED = 69;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1018,6 +1044,12 @@ message BusEvent {
     RefereeSwitchedTeam referee_switched_team = 163;
     // Event notifying that a referee joined a team.
     RefereeJoinedTeam referee_joined_team = 164;
+    // Event notifying that a referral program has started.
+    ReferralProgramStarted referral_program_started = 165;
+    // Event notifying that a referral program has been updated.
+    ReferralProgramUpdated referral_program_updated = 166;
+    // Event notifying that a referral program has ended.
+    ReferralProgramEnded referral_program_ended = 167;
 
     // Market tick events
     MarketEvent market = 1001;
