@@ -161,6 +161,8 @@ http:
       get: "/api/v2/funding-periods/{market_id}"
     - selector: datanode.api.v2.TradingDataService.ListFundingPeriodDataPoints
       get: "/api/v2/funding-periods/data-points/{market_id}"
+    - selector: datanode.api.v2.TradingDataService.GetCurrentReferralProgram
+      get: "/api/v2/referral-programs/current"
 
     # websockets
 

@@ -435,6 +435,10 @@ type TradingDataServiceClient interface {
 	//
 	// Get a party's activity across epochs
 	GetPartyActivityStreak(ctx context.Context, in *GetPartyActivityStreakRequest, opts ...grpc.CallOption) (*GetPartyActivityStreakResponse, error)
+	// Get current referral program
+	//
+	// Get the on-going referral program.
+	GetCurrentReferralProgram(ctx context.Context, in *GetCurrentReferralProgramRequest, opts ...grpc.CallOption) (*GetCurrentReferralProgramResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -1693,6 +1697,15 @@ func (c *tradingDataServiceClient) GetPartyActivityStreak(ctx context.Context, i
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) GetCurrentReferralProgram(ctx context.Context, in *GetCurrentReferralProgramRequest, opts ...grpc.CallOption) (*GetCurrentReferralProgramResponse, error) {
+	out := new(GetCurrentReferralProgramResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetCurrentReferralProgram", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
 	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
@@ -2150,6 +2163,10 @@ type TradingDataServiceServer interface {
 	//
 	// Get a party's activity across epochs
 	GetPartyActivityStreak(context.Context, *GetPartyActivityStreakRequest) (*GetPartyActivityStreakResponse, error)
+	// Get current referral program
+	//
+	// Get the on-going referral program.
+	GetCurrentReferralProgram(context.Context, *GetCurrentReferralProgramRequest) (*GetCurrentReferralProgramResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2501,6 +2518,9 @@ func (UnimplementedTradingDataServiceServer) ListFundingPeriodDataPoints(context
 }
 func (UnimplementedTradingDataServiceServer) GetPartyActivityStreak(context.Context, *GetPartyActivityStreakRequest) (*GetPartyActivityStreakResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPartyActivityStreak not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetCurrentReferralProgram(context.Context, *GetCurrentReferralProgramRequest) (*GetCurrentReferralProgramResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCurrentReferralProgram not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
@@ -4245,6 +4265,24 @@ func _TradingDataService_GetPartyActivityStreak_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_GetCurrentReferralProgram_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCurrentReferralProgramRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetCurrentReferralProgram(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetCurrentReferralProgram",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetCurrentReferralProgram(ctx, req.(*GetCurrentReferralProgramRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ExportNetworkHistory_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportNetworkHistoryRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -4602,6 +4640,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPartyActivityStreak",
 			Handler:    _TradingDataService_GetPartyActivityStreak_Handler,
+		},
+		{
+			MethodName: "GetCurrentReferralProgram",
+			Handler:    _TradingDataService_GetCurrentReferralProgram_Handler,
 		},
 		{
 			MethodName: "Ping",

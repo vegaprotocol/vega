@@ -400,6 +400,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetAsset(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAsset", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetAsset), varargs...)
 }
 
+// GetCurrentReferralProgram mocks base method.
+func (m *MockTradingDataServiceClientV2) GetCurrentReferralProgram(arg0 context.Context, arg1 *v2.GetCurrentReferralProgramRequest, arg2 ...grpc.CallOption) (*v2.GetCurrentReferralProgramResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetCurrentReferralProgram", varargs...)
+	ret0, _ := ret[0].(*v2.GetCurrentReferralProgramResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCurrentReferralProgram indicates an expected call of GetCurrentReferralProgram.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetCurrentReferralProgram(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentReferralProgram", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetCurrentReferralProgram), varargs...)
+}
+
 // GetDeposit mocks base method.
 func (m *MockTradingDataServiceClientV2) GetDeposit(arg0 context.Context, arg1 *v2.GetDepositRequest, arg2 ...grpc.CallOption) (*v2.GetDepositResponse, error) {
 	m.ctrl.T.Helper()
