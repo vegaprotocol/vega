@@ -90,7 +90,6 @@ func (e *Engine) getAllActiveOrders(party string) []*types.Order {
 }
 
 func (e *Engine) ResetAverageLiquidityScores() {
-	fmt.Printf("ResetAverageLiquidityScores: %+v \n", e.avgScores)
 	e.avgScores = make(map[string]num.Decimal, len(e.avgScores))
 	e.nAvg = 1
 }
