@@ -18,6 +18,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -54,6 +55,10 @@ func (e *Engine) Update(newProgram *types.ReferralProgram) {
 
 func (e *Engine) HasProgramEnded() bool {
 	return e.programHasEnded
+}
+
+func (e *Engine) RewardsFactorForParty(party types.PartyID) num.Decimal {
+	return num.DecimalZero()
 }
 
 func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {

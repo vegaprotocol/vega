@@ -53,18 +53,22 @@ func assertEqualTeams(t *testing.T, expected, actual []types.Team) {
 	}
 
 	for i := 0; i < len(expected); i++ {
-		expectedTeam := expected[i]
-		actualTeam := actual[i]
-		assert.Equal(t, expectedTeam.ID, actualTeam.ID)
-		assert.Equal(t, expectedTeam.Name, actualTeam.Name)
-		assert.Equal(t, expectedTeam.TeamURL, actualTeam.TeamURL)
-		assert.Equal(t, expectedTeam.AvatarURL, actualTeam.AvatarURL)
-		assert.Equal(t, expectedTeam.CreatedAt.UnixNano(), actualTeam.CreatedAt.UnixNano())
-		assertEqualMembership(t, expectedTeam.Referrer, actualTeam.Referrer)
+		t.Run(fmt.Sprintf("team %d", i), func(tt *testing.T) {
+			expectedTeam := expected[i]
+			actualTeam := actual[i]
+			assert.Equal(tt, expectedTeam.ID, actualTeam.ID)
+			assert.Equal(tt, expectedTeam.Name, actualTeam.Name)
+			assert.Equal(tt, expectedTeam.TeamURL, actualTeam.TeamURL)
+			assert.Equal(tt, expectedTeam.AvatarURL, actualTeam.AvatarURL)
+			assert.Equal(tt, expectedTeam.CreatedAt.UnixNano(), actualTeam.CreatedAt.UnixNano())
+			assertEqualMembership(tt, expectedTeam.Referrer, actualTeam.Referrer)
 
-		for i := 0; i < len(expectedTeam.Referees); i++ {
-			assertEqualMembership(t, expectedTeam.Referees[i], actualTeam.Referees[i])
-		}
+			for j := 0; j < len(expectedTeam.Referees); j++ {
+				tt.Run(fmt.Sprintf("referee %d", j), func(ttt *testing.T) {
+					assertEqualMembership(ttt, expectedTeam.Referees[j], actualTeam.Referees[j])
+				})
+			}
+		})
 	}
 }
 
@@ -73,6 +77,7 @@ func assertEqualMembership(t *testing.T, expected, actual *types.Membership) {
 
 	assert.Equal(t, expected.PartyID, actual.PartyID)
 	assert.Equal(t, expected.JoinedAt.UnixNano(), actual.JoinedAt.UnixNano())
+	assert.Equal(t, expected.NumberOfEpoch, actual.NumberOfEpoch)
 }
 
 func expectTeamCreatedEvent(t *testing.T, engine *testEngine) {
@@ -111,11 +116,16 @@ func expectRefereeSwitchedTeamEvent(t *testing.T, engine *testEngine) {
 	}).Times(1)
 }
 
-func endEpoch(t *testing.T, ctx context.Context, te *testEngine) {
+func nextEpoch(t *testing.T, ctx context.Context, te *testEngine, startEpochTime time.Time) {
 	t.Helper()
 
 	te.engine.OnEpoch(ctx, types.Epoch{
-		Action: typespb.EpochAction_EPOCH_ACTION_END,
+		Action:  typespb.EpochAction_EPOCH_ACTION_END,
+		EndTime: startEpochTime.Add(-1 * time.Second),
+	})
+	te.engine.OnEpoch(ctx, types.Epoch{
+		Action:    typespb.EpochAction_EPOCH_ACTION_START,
+		StartTime: startEpochTime,
 	})
 }
 
