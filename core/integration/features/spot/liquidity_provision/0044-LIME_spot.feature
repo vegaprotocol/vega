@@ -162,16 +162,18 @@ Feature: Spot market
     Then the network moves ahead "7" blocks
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake |
-      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 20           | 1              |
+      | 15 | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 20 | 2 |
 
-    And the network treasury balance should be "200" for the asset "ETH"
+    And the network treasury balance should be "209" for the asset "ETH"
     And the global insurance pool balance should be "0" for the asset "ETH"
     And the global insurance pool balance should be "0" for the asset "BTC"
     And the party "lpprov" lp liquidity fee account balance should be "0" for the market "BTC/ETH"
     Then "lpprov" should have holding account balance of "1200" for asset "ETH"
-    Then "lpprov" should have general account balance of "2614" for asset "ETH"
+    Then "lpprov" should have general account balance of "2604" for asset "ETH"
 
     Then "lpprov" should have holding account balance of "60" for asset "BTC"
     Then "lpprov" should have general account balance of "0" for asset "BTC"
-    Then the party "lpprov" lp liquidity bond account balance should be "1" for the market "BTC/ETH"
+    Then the party "lpprov" lp liquidity bond account balance should be "2" for the market "BTC/ETH"
+
+    Then debug transfers
 
