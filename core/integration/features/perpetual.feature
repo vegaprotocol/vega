@@ -9,10 +9,13 @@ Feature: Simple test creating a perpetual market.
     And the perpetual oracles from "0xCAFECAFE1":
       | name        | asset | settlement property | settlement type | schedule property | schedule type  | margin funding factor | interest rate | clamp lower bound | clamp upper bound | quote name | settlement decimals |
       | perp-oracle | ETH   | perp.ETH.value      | TYPE_INTEGER    | perp.funding.cue  | TYPE_TIMESTAMP | 0                     | 0             | 0                 | 0                 | ETH        | 18                  |
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 2592000                             | 1                             | 1.0                    |
 
     And the markets:
-      | id        | quote name | asset | risk model            | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | market type |
-      | ETH/DEC19 | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | perp-oracle        | 0.1                    | 0                         | 5              | 5                       | perp        |
+      | id        | quote name | asset | risk model            | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | market type | sla params |
+      | ETH/DEC19 | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | perp-oracle        | 0.1                    | 0                         | 5              | 5                       | perp        | SLA        |
     And the following network parameters are set:
       | name                                          | value |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
@@ -23,7 +26,7 @@ Feature: Simple test creating a perpetual market.
       | market.fee.factors.infrastructureFee          | 0.001 |
       | market.fee.factors.makerFee                   | 0.004 |
       | market.value.windowLength                     | 60s   |
-      | market.liquidity.bondPenaltyParameter         | 0.1   |
+      | market.liquidityV2.bondPenaltyParameter | 0.1 |
       | market.liquidityProvision.shapes.maxSize      | 10    |
       | validators.epoch.length                       | 5s    |
       | market.liquidity.stakeToCcyVolume             | 0.2   |
@@ -73,7 +76,7 @@ Feature: Simple test creating a perpetual market.
     And debug orders
     And debug detailed orderbook volumes for market "ETH/DEC19"
     # example of how to use the oracle
-	When the oracles broadcast data with block time signed with "0xCAFECAFE1":
+    When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value      | time offset |
       | perp.funding.cue | 1511924180 | -100s       |
       | perp.ETH.value   | 975        | -2s         |
@@ -111,7 +114,7 @@ Feature: Simple test creating a perpetual market.
     And debug orders
     And debug detailed orderbook volumes for market "ETH/DEC19"
     # example of how to use the oracle
-	When the oracles broadcast data with block time signed with "0xCAFECAFE1":
+    When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value      | time offset |
       | perp.funding.cue | 1511924180 | -100s       |
       | perp.ETH.value   | 975        | -2s         |
@@ -121,3 +124,4 @@ Feature: Simple test creating a perpetual market.
       | market id | state                              | settlement price |
       | ETH/DEC19 | MARKET_STATE_UPDATE_TYPE_TERMINATE | 976              |
     Then the market state should be "STATE_CLOSED" for the market "ETH/DEC19"
+
