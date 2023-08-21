@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	typespb "code.vegaprotocol.io/vega/protos/vega"
@@ -33,8 +34,15 @@ import (
 )
 
 type testEngine struct {
-	engine *referral.SnapshottedEngine
-	broker *mocks.MockBroker
+	engine      *referral.SnapshottedEngine
+	broker      *mocks.MockBroker
+	teamsEngine *mocks.MockTeamsEngine
+}
+
+func newPartyID(t *testing.T) types.PartyID {
+	t.Helper()
+
+	return types.PartyID(vgrand.RandomStr(5))
 }
 
 func newSnapshotEngine(t *testing.T, vegaPath paths.Paths, now time.Time, engine *referral.SnapshottedEngine) *snapshot.Engine {
@@ -63,25 +71,27 @@ func newEngine(t *testing.T) *testEngine {
 	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any())
 
 	broker := mocks.NewMockBroker(ctrl)
+	teamsEngine := mocks.NewMockTeamsEngine(ctrl)
 
-	engine := referral.NewSnapshottedEngine(epochEngine, broker)
+	engine := referral.NewSnapshottedEngine(epochEngine, broker, teamsEngine)
 
 	return &testEngine{
-		engine: engine,
-		broker: broker,
+		engine:      engine,
+		broker:      broker,
+		teamsEngine: teamsEngine,
 	}
 }
 
-func endEpoch(t *testing.T, ctx context.Context, te *testEngine, endTime time.Time) {
+func nextEpoch(t *testing.T, ctx context.Context, te *testEngine, startEpochTime time.Time) {
 	t.Helper()
 
 	te.engine.OnEpoch(ctx, types.Epoch{
 		Action:  typespb.EpochAction_EPOCH_ACTION_END,
-		EndTime: endTime,
+		EndTime: startEpochTime.Add(-1 * time.Second),
 	})
 	te.engine.OnEpoch(ctx, types.Epoch{
-		StartTime: endTime.Add(1 * time.Second),
 		Action:    typespb.EpochAction_EPOCH_ACTION_START,
+		StartTime: startEpochTime,
 	})
 }
 

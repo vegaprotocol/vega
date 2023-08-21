@@ -130,7 +130,7 @@ type allServices struct {
 	protocolUpgradeEngine *protocolupgrade.Engine
 
 	teamsEngine     *teams.SnapshottedEngine
-	referralProgram *referral.Engine
+	referralProgram *referral.SnapshottedEngine
 
 	// staking
 	ethClient             *ethclient.Client
@@ -378,18 +378,20 @@ func newServices(
 		},
 	}
 
-	// The referral program is used to compute rewards, and can end when reaching
-	// the end of epoch. Since the engine will reject computations when the program
-	// is marked as ended, it needs to be one of the last service to register on
-	// epoch update, so the computation can happen for this epoch.
-	svcs.referralProgram = referral.NewEngine(svcs.epochService, svcs.broker)
-
 	// The team engine is used to know the team a party belongs to. The computation
 	// of the referral program rewards requires this information. Since the team
 	// switches happen when the end of epoch is reached, it needs to be one of the
 	// last services to register on epoch update, so the computation is made based
 	// on the team the parties belonged to during the epoch and not the new one.
 	svcs.teamsEngine = teams.NewSnapshottedEngine(svcs.epochService, svcs.broker, svcs.timeService)
+	svcs.snapshotEngine.AddProviders(svcs.teamsEngine)
+
+	// The referral program is used to compute rewards, and can end when reaching
+	// the end of epoch. Since the engine will reject computations when the program
+	// is marked as ended, it needs to be one of the last service to register on
+	// epoch update, so the computation can happen for this epoch.
+	svcs.referralProgram = referral.NewSnapshottedEngine(svcs.epochService, svcs.broker, svcs.teamsEngine)
+	svcs.snapshotEngine.AddProviders(svcs.referralProgram)
 
 	// setup config reloads for all engines / services /etc
 	svcs.registerConfigWatchers()
