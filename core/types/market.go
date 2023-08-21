@@ -772,6 +772,7 @@ type MarketData struct {
 	LiquidityProviderFeeShare []*LiquidityProviderFeeShare
 	NextMTM                   int64
 	MarketGrowth              num.Decimal
+	FundingRate               *num.Decimal
 }
 
 func (m MarketData) DeepClone() *MarketData {
@@ -830,6 +831,11 @@ func (m MarketData) IntoProto() *vegapb.MarketData {
 		LiquidityProviderFeeShare: make([]*vegapb.LiquidityProviderFeeShare, 0, len(m.LiquidityProviderFeeShare)),
 		NextMarkToMarket:          m.NextMTM,
 		MarketGrowth:              m.MarketGrowth.String(),
+		FundingRate:               "0.0",
+	}
+
+	if m.FundingRate != nil {
+		r.FundingRate = m.FundingRate.String()
 	}
 	for _, pmb := range m.PriceMonitoringBounds {
 		r.PriceMonitoringBounds = append(r.PriceMonitoringBounds, pmb.IntoProto())

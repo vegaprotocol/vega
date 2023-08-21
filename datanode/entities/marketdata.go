@@ -75,9 +75,9 @@ type MarketData struct {
 	// When a market auction is extended, this field indicates what caused the extension
 	ExtensionTrigger string
 	// Targeted stake for the given market
-	TargetStake decimal.Decimal
+	TargetStake num.Decimal
 	// Available stake for the given market
-	SuppliedStake decimal.Decimal
+	SuppliedStake num.Decimal
 	// One or more price monitoring bounds for the current timestamp
 	PriceMonitoringBounds []*types.PriceMonitoringBounds
 	// the market value proxy
@@ -98,7 +98,9 @@ type MarketData struct {
 	MarketGrowth num.Decimal
 	// Last traded price, as an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
-	LastTradedPrice decimal.Decimal
+	LastTradedPrice num.Decimal
+	// Current funding rate
+	FundingRate num.Decimal
 }
 
 type PriceMonitoringTrigger struct {
@@ -122,7 +124,7 @@ func (trigger PriceMonitoringTrigger) ToProto() *types.PriceMonitoringTrigger {
 }
 
 func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, error) {
-	var mark, bid, offer, staticBid, staticOffer, mid, staticMid, indicative, targetStake, suppliedStake, growth, lastTradedPrice decimal.Decimal
+	var mark, bid, offer, staticBid, staticOffer, mid, staticMid, indicative, targetStake, suppliedStake, growth, lastTradedPrice, fundingRate num.Decimal
 	var err error
 
 	if mark, err = parseDecimal(data.MarkPrice); err != nil {
@@ -161,6 +163,9 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 	if growth, err = parseDecimal(data.MarketGrowth); err != nil {
 		return nil, err
 	}
+	if fundingRate, err = parseDecimal(data.FundingRate); err != nil {
+		return nil, err
+	}
 	nextMTM := time.Unix(0, data.NextMarkToMarket)
 
 	marketData := &MarketData{
@@ -194,6 +199,7 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 		TxHash:                     txHash,
 		NextMarkToMarket:           nextMTM,
 		MarketGrowth:               growth,
+		FundingRate:                fundingRate,
 	}
 
 	return marketData, nil
@@ -242,7 +248,8 @@ func (md MarketData) Equal(other MarketData) bool {
 		md.TxHash == other.TxHash &&
 		md.MarketState == other.MarketState &&
 		md.NextMarkToMarket.Equal(other.NextMarkToMarket) &&
-		md.MarketGrowth.Equal(other.MarketGrowth)
+		md.MarketGrowth.Equal(other.MarketGrowth) &&
+		md.FundingRate.Equal(other.FundingRate)
 }
 
 func priceMonitoringBoundsMatches(bounds, other []*types.PriceMonitoringBounds) bool {
@@ -322,6 +329,7 @@ func (md MarketData) ToProto() *types.MarketData {
 		LiquidityProviderFeeShare: md.LiquidityProviderFeeShares,
 		NextMarkToMarket:          md.NextMarkToMarket.UnixNano(),
 		MarketGrowth:              md.MarketGrowth.String(),
+		FundingRate:               md.FundingRate.String(),
 	}
 
 	return &result

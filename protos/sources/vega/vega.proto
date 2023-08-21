@@ -1114,6 +1114,8 @@ message MarketData {
   string last_traded_price = 29;
   // Market growth at the last market time window.
   string market_growth = 30;
+  // Current funding rate. This applies only to a perpetual market.
+  string funding_rate = 31;
 }
 
 // Equity like share of liquidity fee for each liquidity provider

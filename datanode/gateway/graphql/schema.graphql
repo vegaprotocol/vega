@@ -256,6 +256,8 @@ type MarketData {
   marketGrowth: String!
   "The last traded price (an unsigned integer)"
   lastTradedPrice: String!
+  "The current funding rate. This applies only to a perpetual market"
+  fundingRate: String!
 }
 
 "Live data of a Market"
