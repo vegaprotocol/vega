@@ -310,7 +310,6 @@ func (m *MarketLiquidity) calculateAndDistribute(ctx context.Context, t time.Tim
 func (m *MarketLiquidity) OnTick(ctx context.Context, t time.Time) {
 	// distribute liquidity fees each feeDistributionTimeStep
 	if m.readyForFeesAllocation(t) {
-		fmt.Println("raeady innit")
 		if err := m.AllocateFees(ctx); err != nil {
 			m.log.Panic("liquidity fee distribution error", logging.Error(err))
 		}
