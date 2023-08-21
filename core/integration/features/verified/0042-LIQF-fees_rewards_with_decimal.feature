@@ -411,7 +411,6 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
       | id  | party | market id | commitment amount | fee   | lp type   |
       | lp1 | lp1   | USD/DEC19 | 3600000000        | 0.001 | amendment |
 
-
     And the market data for the market "USD/DEC19" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1001000    | 1001000           | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 5000000000     | 10005         |
@@ -442,9 +441,6 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
     And the parties should have the following account balances:
       | party | asset | market id | margin  | general        | bond |
       | lp1   | ETH   | USD/DEC19 | 5554318 | 99997426328683 | 10   |
-    And the parties should have the following account balances:
-      | party | asset | market id | margin  | general        | bond |
-      | lp1   | ETH   | USD/DEC19 | 5554318 | 99999988565801 | 10   |
 
     And the market data for the market "USD/DEC19" should be:
       | mark price | last traded price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |

@@ -175,7 +175,7 @@ func (m *MarketLiquidity) applyPendingProvisions(
 
 		// transfer entire decreased commitment to their general account, no penalty will be applied
 		if commitmentVariation.LessThanOrEqual(partyMaxPenaltyFreeReductionAmount) {
-			commitmentVariationU, _ := num.UintFromDecimal(commitmentVariation.Neg())
+			commitmentVariationU, _ := num.UintFromDecimal(commitmentVariation)
 			if commitmentVariationU.IsZero() {
 				continue
 			}
