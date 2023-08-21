@@ -30,6 +30,7 @@ func updatedReferralProgramFromProposal(p *proposal) *types.ReferralProgram {
 	terms := p.Terms.GetUpdateReferralProgram()
 
 	return &types.ReferralProgram{
+		ID:                    p.ID,
 		EndOfProgramTimestamp: terms.Changes.EndOfProgramTimestamp,
 		WindowLength:          terms.Changes.WindowLength,
 		BenefitTiers:          terms.Changes.BenefitTiers,
