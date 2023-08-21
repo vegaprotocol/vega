@@ -321,11 +321,11 @@ Feature: Simple example of successor markets
     And the insurance pool balance should be "10336" for the market "ETH/DEC20"
     And the global insurance pool balance should be "2585" for the asset "USD"
 
-    # this is from ETH/DEC19 market
+#this is from ETH/DEC19 market
     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
-      | party   | equity like share | average entry valuation |
-      | lpprov1 | 0.9 | 9000  |
-      | lpprov2 | 0.1 | 11750 |
+      | party   | equity like share  | average entry valuation |
+      | lpprov1 | 0.3333333333333333 | 9000                    |
+      | lpprov2 | 0.6666666666666667 | 11750                   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC20"
 
