@@ -110,7 +110,7 @@ func NewReferralProgramFromProto(c *vegapb.ReferralProgram) *ReferralProgram {
 	return &ReferralProgram{
 		ID:                    c.Id,
 		Version:               c.Version,
-		EndOfProgramTimestamp: time.Unix(0, c.EndOfProgramTimestamp),
+		EndOfProgramTimestamp: time.Unix(c.EndOfProgramTimestamp, 0),
 		WindowLength:          c.WindowLength,
 		BenefitTiers:          benefitTiers,
 	}

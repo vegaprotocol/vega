@@ -61,6 +61,7 @@
 - [9012](https://github.com/vegaprotocol/vega/issues/9012) - Add governance to update the referral program.
 - [9077](https://github.com/vegaprotocol/vega/issues/9077) - Ensure liquidity `SLA` parameters are exposed on markets and proposals
 - [9046](https://github.com/vegaprotocol/vega/issues/9046) - Send event on referral engine state change.
+- [9045](https://github.com/vegaprotocol/vega/issues/9045) - Snapshot the referral engine.
 
 ### 🐛 Fixes
 

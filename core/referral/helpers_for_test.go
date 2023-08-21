@@ -18,17 +18,40 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/referral"
 	"code.vegaprotocol.io/vega/core/referral/mocks"
+	"code.vegaprotocol.io/vega/core/snapshot"
+	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 	typespb "code.vegaprotocol.io/vega/protos/vega"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type testEngine struct {
-	engine *referral.Engine
+	engine *referral.SnapshottedEngine
 	broker *mocks.MockBroker
+}
+
+func newSnapshotEngine(t *testing.T, vegaPath paths.Paths, now time.Time, engine *referral.SnapshottedEngine) *snapshot.Engine {
+	t.Helper()
+
+	log := logging.NewTestLogger()
+	timeService := stubs.NewTimeStub()
+	timeService.SetTime(now)
+	statsData := stats.New(log, stats.NewDefaultConfig())
+	config := snapshot.DefaultConfig()
+
+	snapshotEngine, err := snapshot.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
+	require.NoError(t, err)
+
+	snapshotEngine.AddProviders(engine)
+
+	return snapshotEngine
 }
 
 func newEngine(t *testing.T) *testEngine {
@@ -41,7 +64,7 @@ func newEngine(t *testing.T) *testEngine {
 
 	broker := mocks.NewMockBroker(ctrl)
 
-	engine := referral.NewEngine(epochEngine, broker)
+	engine := referral.NewSnapshottedEngine(epochEngine, broker)
 
 	return &testEngine{
 		engine: engine,

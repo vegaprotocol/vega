@@ -134,6 +134,8 @@ message Payload {
     Teams teams = 70;
     TeamSwitches team_switches = 71;
     Vesting vesting = 72;
+    CurrentReferralProgram current_referral_program = 73;
+    NewReferralProgram new_referral_program = 74;
   }
 }
 
@@ -1076,6 +1078,14 @@ message PartyReward {
   string party = 1;
   repeated AssetLocked asset_locked = 2;
   repeated InVesting in_vesting = 3;
+}
+
+message CurrentReferralProgram {
+  vega.ReferralProgram referral_program = 1;
+}
+
+message NewReferralProgram {
+  vega.ReferralProgram referral_program = 1;
 }
 
 message AssetLocked {
