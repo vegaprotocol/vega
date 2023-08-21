@@ -61,8 +61,6 @@ type MarketLiquidity struct {
 	feeCalculationTimeStep    time.Duration
 
 	bondPenaltyFactor num.Decimal
-
-	lastFeeDistribution time.Time
 }
 
 func NewMarketLiquidity(
@@ -318,7 +316,7 @@ func (m *MarketLiquidity) OnTick(ctx context.Context, t time.Time) {
 
 		// reset next distribution period
 		m.liquidityEngine.ResetAverageLiquidityScores()
-		m.lastFeeDistribution = t
+		m.liquidityEngine.SetLastFeeDistributionTime(t)
 		return
 	}
 

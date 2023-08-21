@@ -1552,6 +1552,20 @@ func (mr *MockLiquidityEngineMockRecorder) GetAverageLiquidityScores() *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAverageLiquidityScores", reflect.TypeOf((*MockLiquidityEngine)(nil).GetAverageLiquidityScores))
 }
 
+// GetLastFeeDistributionTime mocks base method.
+func (m *MockLiquidityEngine) GetLastFeeDistributionTime() time.Time {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLastFeeDistributionTime")
+	ret0, _ := ret[0].(time.Time)
+	return ret0
+}
+
+// GetLastFeeDistributionTime indicates an expected call of GetLastFeeDistributionTime.
+func (mr *MockLiquidityEngineMockRecorder) GetLastFeeDistributionTime() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastFeeDistributionTime", reflect.TypeOf((*MockLiquidityEngine)(nil).GetLastFeeDistributionTime))
+}
+
 // GetState mocks base method.
 func (m *MockLiquidityEngine) GetState(arg0 string) ([]byte, []types.StateProvider, error) {
 	m.ctrl.T.Helper()
@@ -1803,6 +1817,18 @@ func (m *MockLiquidityEngine) ResetSLAEpoch(arg0 time.Time, arg1, arg2 *num.Uint
 func (mr *MockLiquidityEngineMockRecorder) ResetSLAEpoch(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetSLAEpoch", reflect.TypeOf((*MockLiquidityEngine)(nil).ResetSLAEpoch), arg0, arg1, arg2, arg3)
+}
+
+// SetLastFeeDistributionTime mocks base method.
+func (m *MockLiquidityEngine) SetLastFeeDistributionTime(arg0 time.Time) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetLastFeeDistributionTime", arg0)
+}
+
+// SetLastFeeDistributionTime indicates an expected call of SetLastFeeDistributionTime.
+func (mr *MockLiquidityEngineMockRecorder) SetLastFeeDistributionTime(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastFeeDistributionTime", reflect.TypeOf((*MockLiquidityEngine)(nil).SetLastFeeDistributionTime), arg0)
 }
 
 // StopLiquidityProvision mocks base method.
