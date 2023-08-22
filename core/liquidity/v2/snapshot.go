@@ -254,12 +254,18 @@ func (e *SnapshotEngine) serialiseScores() ([]byte, error) {
 		scores = append(scores, s)
 	}
 
+	var lastFeeDistributionTime int64
+	if e.lastFeeDistribution != (time.Time{}) {
+		lastFeeDistributionTime = e.lastFeeDistribution.UnixNano()
+	}
+
 	payload := &snapshotpb.Payload{
 		Data: &snapshotpb.Payload_LiquidityV2Scores{
 			LiquidityV2Scores: &snapshotpb.LiquidityV2Scores{
-				MarketId:              e.market,
-				RunningAverageCounter: int32(e.nAvg),
-				Scores:                scores,
+				MarketId:                e.market,
+				RunningAverageCounter:   int32(e.nAvg),
+				Scores:                  scores,
+				LastFeeDistributionTime: lastFeeDistributionTime,
 			},
 		},
 	}
@@ -370,7 +376,9 @@ func (e *SnapshotEngine) loadSupplied(ls *snapshotpb.LiquidityV2Supplied, p *typ
 
 func (e *SnapshotEngine) loadScores(ls *snapshotpb.LiquidityV2Scores, p *types.Payload) error {
 	var err error
+
 	e.nAvg = int64(ls.RunningAverageCounter)
+	e.lastFeeDistribution = time.Unix(0, ls.LastFeeDistributionTime)
 
 	scores := make(map[string]num.Decimal, len(ls.Scores))
 	for _, p := range ls.Scores {

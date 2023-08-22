@@ -223,6 +223,9 @@ type LiquidityEngine interface {
 	OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal)
 	IsProbabilityOfTradingInitialised() bool
 
+	SetLastFeeDistributionTime(t time.Time)
+	GetLastFeeDistributionTime() time.Time
+
 	Namespace() types.SnapshotNamespace
 	Keys() []string
 	GetState(k string) ([]byte, []types.StateProvider, error)

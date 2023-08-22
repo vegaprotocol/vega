@@ -129,6 +129,8 @@ type Engine struct {
 	// fields related to SLA commitment
 	slaPerformance map[string]*slaPerformance
 	slaEpochStart  time.Time
+
+	lastFeeDistribution time.Time
 }
 
 // NewEngine returns a new Liquidity Engine.
@@ -178,6 +180,14 @@ func NewEngine(config Config,
 	e.ResetAverageLiquidityScores() // initialise
 
 	return e
+}
+
+func (e *Engine) SetLastFeeDistributionTime(t time.Time) {
+	e.lastFeeDistribution = t
+}
+
+func (e *Engine) GetLastFeeDistributionTime() time.Time {
+	return e.lastFeeDistribution
 }
 
 // SubmitLiquidityProvision handles a new liquidity provision submission.

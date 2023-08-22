@@ -262,7 +262,8 @@ func TestLiquidityProvisionsFeeDistribution(t *testing.T) {
 	testLiquidity.liquidityEngine.EXPECT().ResetSLAEpoch(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	// start epoch.
-	now := time.Now()
+	lastDistributionStep := time.Now()
+	now := lastDistributionStep.Add(time.Second * 5)
 
 	testLiquidity.marketLiquidity.OnEpochStart(testLiquidity.ctx, now, uintOne, uintOne, uintOne, decimalOne)
 
@@ -271,6 +272,12 @@ func TestLiquidityProvisionsFeeDistribution(t *testing.T) {
 	testLiquidity.equityShares.EXPECT().AllShares().DoAndReturn(func() map[string]num.Decimal {
 		return weightsPerLP
 	})
+
+	testLiquidity.liquidityEngine.EXPECT().GetLastFeeDistributionTime().DoAndReturn(func() time.Time {
+		return lastDistributionStep
+	})
+
+	testLiquidity.liquidityEngine.EXPECT().SetLastFeeDistributionTime(gomock.Any())
 
 	testLiquidity.liquidityEngine.EXPECT().GetAverageLiquidityScores().DoAndReturn(func() map[string]num.Decimal {
 		return scoresPerLP
