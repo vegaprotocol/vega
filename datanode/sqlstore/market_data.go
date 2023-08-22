@@ -46,7 +46,7 @@ const selectMarketDataColumns = `synthetic_time, tx_hash, vega_time, seq_num,
 			market_trading_mode, auction_trigger, extension_trigger, target_stake,
 			supplied_stake, price_monitoring_bounds, market_value_proxy, liquidity_provider_fee_shares,
 			market_state, next_mark_to_market, coalesce(market_growth, 0) as market_growth,
-			coalesce(last_traded_price, 0) as last_traded_price, coalesce(funding_rate, 0.0) funding_rate`
+			coalesce(last_traded_price, 0) as last_traded_price, funding_rate`
 
 func NewMarketData(connectionSource *ConnectionSource) *MarketData {
 	return &MarketData{

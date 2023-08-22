@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"strings"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
+
 	"code.vegaprotocol.io/vega/core/datasource"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/stringer"
@@ -831,11 +833,11 @@ func (m MarketData) IntoProto() *vegapb.MarketData {
 		LiquidityProviderFeeShare: make([]*vegapb.LiquidityProviderFeeShare, 0, len(m.LiquidityProviderFeeShare)),
 		NextMarkToMarket:          m.NextMTM,
 		MarketGrowth:              m.MarketGrowth.String(),
-		FundingRate:               "0.0",
+		FundingRate:               nil,
 	}
 
 	if m.FundingRate != nil {
-		r.FundingRate = m.FundingRate.String()
+		r.FundingRate = ptr.From(m.FundingRate.String())
 	}
 	for _, pmb := range m.PriceMonitoringBounds {
 		r.PriceMonitoringBounds = append(r.PriceMonitoringBounds, pmb.IntoProto())

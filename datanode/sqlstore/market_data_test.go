@@ -182,7 +182,7 @@ func getLatestMarketData(t *testing.T) {
 		},
 		MarketGrowth:    num.DecimalZero(),
 		LastTradedPrice: mustParseDecimal(t, "999992588"),
-		FundingRate:     num.DecimalZero(),
+		FundingRate:     nil,
 	}
 	got, err := store.GetMarketDataByID(ctx, "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
 	assert.NoError(t, err)
@@ -1013,6 +1013,6 @@ func csvToMarketData(t *testing.T, line []string, seqNum int) *entities.MarketDa
 		SyntheticTime:              syntheticTime,
 		MarketGrowth:               mustParseDecimal(t, line[csvColumnMarketGrowth]),
 		LastTradedPrice:            mustParseDecimal(t, line[csvColumnLastTradedPrice]),
-		FundingRate:                num.DecimalZero(),
+		FundingRate:                nil,
 	}
 }

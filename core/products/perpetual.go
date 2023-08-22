@@ -366,6 +366,10 @@ func (p *Perpetual) handleSettlementCue(ctx context.Context, t int64) {
 }
 
 func (p *Perpetual) GetFundingRate(t int64) *num.Decimal {
+	if !p.haveData(t) {
+		return ptr.From(num.DecimalZero())
+	}
+
 	internalTWAP := twap(p.internal, p.startedAt, t)
 	// and calculate the same using the external oracle data-points over the same period
 	externalTWAP := twap(p.external, p.startedAt, t)

@@ -257,7 +257,7 @@ type MarketData {
   "The last traded price (an unsigned integer)"
   lastTradedPrice: String!
   "The current funding rate. This applies only to a perpetual market"
-  fundingRate: String!
+  fundingRate: String
 }
 
 "Live data of a Market"
@@ -322,6 +322,8 @@ type ObservableMarketData {
   marketGrowth: String!
   "The last traded price (an unsigned integer)"
   lastTradedPrice: String!
+  "The current funding rate. This applies only to a perpetual market"
+  fundingRate: String
 }
 
 "Timestamps for when the market changes state"
