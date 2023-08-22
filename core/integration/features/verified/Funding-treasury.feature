@@ -60,23 +60,23 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | party            | asset | amount        |
       | sellSideProvider | USD   | 1000000000000 |
       | buySideProvider  | USD   | 1000000000000 |
-      | designatedLooser | USD   | 22000         |
+      | designatedLooser | USD   | 21981         |
       | aux              | USD   | 1000000000000 |
       | aux2             | USD   | 1000000000000 |
       | lpprov           | USD   | 1000000000000 |
 
-    When the parties submit the following liquidity provision:
+    Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | amendment  |
       | lp2 | lpprov | ETH/DEC20 | 9000              | 0.1 | submission |
-      | lp2 | lpprov | ETH/DEC20 | 9000              | 0.1 | amendment  |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
-      | lpprov | ETH/DEC20 | 2         | 1                    | buy  | BID              | 50         | 100    |
-      | lpprov | ETH/DEC20 | 2         | 1                    | sell | ASK              | 50         | 100    |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC19 | 225       | 18                   | buy  | BID              | 225    | 100    |
+      | lpprov | ETH/DEC19 | 36        | 18                   | sell | ASK              | 36     | 100    |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC20 | 225       | 18                   | buy  | BID              | 225    | 100    |
+      | lpprov | ETH/DEC20 | 36        | 18                   | sell | ASK              | 36     | 100    |
  
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -119,7 +119,7 @@ Feature: check the insurance pool getting shared equally between all markets wit
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
-      | designatedLooser | USD   | ETH/DEC19 | 17650  | 0       |
+      | designatedLooser | USD   | ETH/DEC19 | 17631  | 0       |
 
     Then the parties should have the following margin levels:
       | party            | market id | maintenance | search | initial | release |
@@ -174,11 +174,11 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | designatedLooser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC19 | 3480   | USD   |
       | designatedLooser |                 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC19 | 0      | USD   |
       | market           | buySideProvider | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC19 | 0      | USD   |
-      | designatedLooser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 11270  | USD   |
+      | designatedLooser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 11251  | USD   |
       | market           | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 | 5800   | USD   |
       | market           | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 5800   | USD   |
 
-    And the insurance pool balance should be "5470" for the market "ETH/DEC19"
+    And the insurance pool balance should be "5451" for the market "ETH/DEC19"
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general      |
@@ -194,7 +194,7 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | mark price | trading mode            | target stake | supplied stake | open interest |
       | 120        | TRADING_MODE_CONTINUOUS | 340728       | 9000           | 291           |
 
-    And the insurance pool balance should be "5470" for the market "ETH/DEC19"
+    And the insurance pool balance should be "5451" for the market "ETH/DEC19"
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general      |
@@ -205,7 +205,7 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | from            | to               | from account            | to account              | market id | amount | asset |
       | buySideProvider | market           | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 5820   | USD   |
       | market          | sellSideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 5820   | USD   |
-    And the insurance pool balance should be "5470" for the market "ETH/DEC19"
+    And the insurance pool balance should be "5451" for the market "ETH/DEC19"
     When the oracles broadcast data signed with "0xCAFECAFE19":
       | name               | value |
       | trading.terminated | true  |
@@ -226,10 +226,10 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | party | reference | status         |
       | aux   | aux-1-19  | STATUS_STOPPED |
 
-    And the global insurance pool balance should be "1824" for the asset "USD"
+    And the global insurance pool balance should be "1817" for the asset "USD"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "1823" for the market "ETH/DEC20"
-    And the insurance pool balance should be "1823" for the market "ETH/DEC21"
+    And the insurance pool balance should be "1817" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1817" for the market "ETH/DEC21"
 
     When the oracles broadcast data signed with "0xCAFECAFE20":
       | name               | value |
@@ -242,16 +242,16 @@ Feature: check the insurance pool getting shared equally between all markets wit
 
     And the network moves ahead "3" blocks
     # When a market ETH/DEC20 is closed, the insurance pool account has its outstanding funds transferred to the [network treasury]
-    And the global insurance pool balance should be "2736" for the asset "USD"
+    And the global insurance pool balance should be "2726" for the asset "USD"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
-    And the insurance pool balance should be "2734" for the market "ETH/DEC21"
+    And the insurance pool balance should be "2725" for the market "ETH/DEC21"
 
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
       | sellSideProvider | -291   | 8720           | 0            |
       | buySideProvider  | 291    | -20            | 0            |
-      | designatedLooser | 0      | 0              | -17650       |
+      | designatedLooser | 0      | 0              | -17631       |
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general       |
