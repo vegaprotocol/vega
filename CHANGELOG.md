@@ -60,6 +60,8 @@
 - [9021](https://github.com/vegaprotocol/vega/issues/9021) - Add rejection reason to stop orders.
 - [9012](https://github.com/vegaprotocol/vega/issues/9012) - Add governance to update the referral program.
 - [9077](https://github.com/vegaprotocol/vega/issues/9077) - Ensure liquidity `SLA` parameters are exposed on markets and proposals
+- [9046](https://github.com/vegaprotocol/vega/issues/9046) - Send event on referral engine state change.
+- [9045](https://github.com/vegaprotocol/vega/issues/9045) - Snapshot the referral engine.
 
 ### 🐛 Fixes
 
@@ -94,6 +96,7 @@
 - [9038](https://github.com/vegaprotocol/vega/issues/9038) - New market proposals are no longer in both the active and enacted slices to prevent pointer sharing.
 - [8878](https://github.com/vegaprotocol/vega/issues/8878) - Fix amend to consider market decimals when checking for sufficient funds.
 - [8698](https://github.com/vegaprotocol/vega/issues/8698) - Final settlement rounding can be off by a 1 factor instead of just one.
+- [9113](https://github.com/vegaprotocol/vega/issues/9113) - Only add pending signatures to the retry list when the notary engine snapshot restores.
 - [8861](https://github.com/vegaprotocol/vega/issues/8861) - Fix successor proposals never leaving proposed state.
 - [9086](https://github.com/vegaprotocol/vega/issues/9086) - Set identifier generator during perpetual settlement for closed out orders.
 - [8884](https://github.com/vegaprotocol/vega/issues/8884) - Do not assume `\n` is present on the first read chunk of the input

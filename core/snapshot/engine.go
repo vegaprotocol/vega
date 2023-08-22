@@ -686,7 +686,14 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 	doneCh := make(chan interface{})
 
 	save := func() {
-		defer close(doneCh)
+		defer func() {
+			close(doneCh)
+
+			if r := recover(); r != nil {
+				e.log.Panic("Panic occurred", zap.Any("reason", r))
+			}
+		}()
+
 		if err := e.snapshotTree.SaveVersion(); err != nil {
 			// If this fails, we are screwed. The tree version is used to construct
 			// the root-hash so if we can't save it, the next snapshot we take

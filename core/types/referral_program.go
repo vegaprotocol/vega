@@ -9,6 +9,8 @@ import (
 )
 
 type ReferralProgram struct {
+	ID                    string
+	Version               uint64
 	EndOfProgramTimestamp time.Time
 	WindowLength          uint64
 	BenefitTiers          []*BenefitTier
@@ -56,6 +58,8 @@ func (c ReferralProgram) IntoProto() *vegapb.ReferralProgram {
 	}
 
 	return &vegapb.ReferralProgram{
+		Version:               c.Version,
+		Id:                    c.ID,
 		BenefitTiers:          benefitTiers,
 		EndOfProgramTimestamp: c.EndOfProgramTimestamp.Unix(),
 		WindowLength:          c.WindowLength,
@@ -74,6 +78,8 @@ func (c ReferralProgram) DeepClone() *ReferralProgram {
 	}
 
 	cpy := ReferralProgram{
+		ID:                    c.ID,
+		Version:               c.Version,
 		EndOfProgramTimestamp: c.EndOfProgramTimestamp,
 		WindowLength:          c.WindowLength,
 		BenefitTiers:          benefitTiers,
@@ -102,7 +108,9 @@ func NewReferralProgramFromProto(c *vegapb.ReferralProgram) *ReferralProgram {
 	}
 
 	return &ReferralProgram{
-		EndOfProgramTimestamp: time.Unix(0, c.EndOfProgramTimestamp),
+		ID:                    c.Id,
+		Version:               c.Version,
+		EndOfProgramTimestamp: time.Unix(c.EndOfProgramTimestamp, 0),
 		WindowLength:          c.WindowLength,
 		BenefitTiers:          benefitTiers,
 	}
