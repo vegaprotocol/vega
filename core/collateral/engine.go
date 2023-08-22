@@ -131,6 +131,26 @@ func New(log *logging.Logger, conf Config, ts TimeService, broker Broker) *Engin
 	}
 }
 
+func (e *Engine) GetAllVestingQuantumBalance(party string) *num.Uint {
+	balance := num.UintZero()
+
+	for asset, details := range e.enabledAssets {
+		// vesting balance
+		if acc, ok := e.accs[e.accountID(noMarket, party, asset, types.AccountTypeVestingRewards)]; ok {
+			quantumBalance, _ := num.UintFromDecimal(acc.Balance.ToDecimal().Div(details.Details.Quantum))
+			balance.Add(balance, quantumBalance)
+		}
+
+		// vested balance
+		if acc, ok := e.accs[e.accountID(noMarket, party, asset, types.AccountTypeVestedRewards)]; ok {
+			quantumBalance, _ := num.UintFromDecimal(acc.Balance.ToDecimal().Div(details.Details.Quantum))
+			balance.Add(balance, quantumBalance)
+		}
+	}
+
+	return balance
+}
+
 func (e *Engine) GetVestingRecovery() map[string]map[string]*num.Uint {
 	out := e.vesting
 	e.vesting = map[string]map[string]*num.Uint{}
