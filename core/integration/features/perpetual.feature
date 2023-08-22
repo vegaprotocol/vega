@@ -26,10 +26,9 @@ Feature: Simple test creating a perpetual market.
       | market.fee.factors.infrastructureFee          | 0.001 |
       | market.fee.factors.makerFee                   | 0.004 |
       | market.value.windowLength                     | 60s   |
-      | market.liquidityV2.bondPenaltyParameter | 0.1 |
-      | market.liquidityProvision.shapes.maxSize      | 10    |
+      | market.liquidityV2.bondPenaltyParameter       | 0.1   |
       | validators.epoch.length                       | 5s    |
-      | market.liquidity.stakeToCcyVolume             | 0.2   |
+      | limits.markets.maxPeggedOrders                | 2     |
 
     And the average block duration is "1"
 
@@ -52,9 +51,12 @@ Feature: Simple test creating a perpetual market.
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.01  |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | buy  | BID              | 2          | 1      | submission |
-      | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | sell | ASK              | 13         | 1      | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size        | minimum visible size | side | pegged reference | volume           | offset | reference   |
+      | lpprov | ETH/DEC19 | 4000000000000000 | 3905000000000000     | buy  | BID              | 4000000000000000 | 1      | lp-ice-buy  |
+      | lpprov | ETH/DEC19 | 4000000000000000 | 3905000000000000     | sell | ASK              | 4000000000000000 | 1      | lp-ice-sell |
     And the parties place the following orders:
       | party   | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 5      | 1001   | 0                | TYPE_LIMIT | TIF_GTC | t1-b-1    |
@@ -90,9 +92,12 @@ Feature: Simple test creating a perpetual market.
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.01  |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | buy  | BID              | 2          | 1      | submission |
-      | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | sell | ASK              | 13         | 1      | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size        | minimum visible size | side | pegged reference | volume           | offset | reference   |
+      | lpprov | ETH/DEC19 | 4000000000000000 | 3905000000000000     | buy  | BID              | 4000000000000000 | 1      | lp-ice-buy  |
+      | lpprov | ETH/DEC19 | 4000000000000000 | 3905000000000000     | sell | ASK              | 4000000000000000 | 1      | lp-ice-sell |
     And the parties place the following orders:
       | party   | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 5      | 1001   | 0                | TYPE_LIMIT | TIF_GTC | t1-b-1    |
