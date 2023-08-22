@@ -62,6 +62,7 @@
 - [9077](https://github.com/vegaprotocol/vega/issues/9077) - Ensure liquidity `SLA` parameters are exposed on markets and proposals
 - [9046](https://github.com/vegaprotocol/vega/issues/9046) - Send event on referral engine state change.
 - [9045](https://github.com/vegaprotocol/vega/issues/9045) - Snapshot the referral engine.
+- [9136](https://github.com/vegaprotocol/vega/issues/9136) - Referral engine returns reward factor for a given party
 
 ### 🐛 Fixes
 

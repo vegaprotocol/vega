@@ -139,9 +139,9 @@ func (e *SnapshottedEngine) buildHashKeys() {
 	e.hashKeys = append([]string{}, e.currentProgramKey, e.newProgramKey)
 }
 
-func NewSnapshottedEngine(epochEngine EpochEngine, broker Broker) *SnapshottedEngine {
+func NewSnapshottedEngine(epochEngine EpochEngine, broker Broker, teamsEngine TeamsEngine) *SnapshottedEngine {
 	se := &SnapshottedEngine{
-		Engine:  NewEngine(epochEngine, broker),
+		Engine:  NewEngine(epochEngine, broker, teamsEngine),
 		pl:      types.Payload{},
 		stopped: false,
 	}

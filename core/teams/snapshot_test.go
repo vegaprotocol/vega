@@ -84,20 +84,21 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 
 	expectRefereeSwitchedTeamEvent(t, te1)
 	referee2JoiningDate2 := time.Now()
-	te1.timeService.EXPECT().GetTimeNow().Return(referee2JoiningDate2).Times(1)
-	endEpoch(t, ctx, te1)
+	nextEpoch(t, ctx, te1, referee2JoiningDate2)
 
 	assertEqualTeams(t, []types.Team{
 		{
 			ID: teamID1,
 			Referrer: &types.Membership{
-				PartyID:  referrer1,
-				JoinedAt: team1CreationDate,
+				PartyID:       referrer1,
+				JoinedAt:      team1CreationDate,
+				NumberOfEpoch: 1,
 			},
 			Referees: []*types.Membership{
 				{
-					PartyID:  referee1,
-					JoinedAt: referee1JoiningDate,
+					PartyID:       referee1,
+					JoinedAt:      referee1JoiningDate,
+					NumberOfEpoch: 1,
 				},
 			},
 			Name:      name1,
@@ -107,16 +108,18 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 		}, {
 			ID: teamID2,
 			Referrer: &types.Membership{
-				PartyID:  referrer2,
-				JoinedAt: team2CreationDate,
+				PartyID:       referrer2,
+				JoinedAt:      team2CreationDate,
+				NumberOfEpoch: 1,
 			},
 			Name:      name2,
 			TeamURL:   teamURL2,
 			AvatarURL: avatarURL2,
 			Referees: []*types.Membership{
 				{
-					PartyID:  referee2,
-					JoinedAt: referee2JoiningDate2,
+					PartyID:       referee2,
+					JoinedAt:      referee2JoiningDate2,
+					NumberOfEpoch: 0,
 				},
 			},
 			CreatedAt: team2CreationDate,
@@ -147,20 +150,21 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 	require.Equal(t, hash1, hash2)
 
 	expectRefereeSwitchedTeamEvent(t, te2)
-	te2.timeService.EXPECT().GetTimeNow().Return(referee2JoiningDate2).Times(1)
-	endEpoch(t, ctx, te2)
+	nextEpoch(t, ctx, te2, referee2JoiningDate2)
 
 	assertEqualTeams(t, []types.Team{
 		{
 			ID: teamID1,
 			Referrer: &types.Membership{
-				PartyID:  referrer1,
-				JoinedAt: team1CreationDate,
+				PartyID:       referrer1,
+				JoinedAt:      team1CreationDate,
+				NumberOfEpoch: 1,
 			},
 			Referees: []*types.Membership{
 				{
-					PartyID:  referee1,
-					JoinedAt: referee1JoiningDate,
+					PartyID:       referee1,
+					JoinedAt:      referee1JoiningDate,
+					NumberOfEpoch: 1,
 				},
 			},
 			Name:      name1,
@@ -170,16 +174,18 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 		}, {
 			ID: teamID2,
 			Referrer: &types.Membership{
-				PartyID:  referrer2,
-				JoinedAt: team2CreationDate,
+				PartyID:       referrer2,
+				JoinedAt:      team2CreationDate,
+				NumberOfEpoch: 1,
 			},
 			Name:      name2,
 			TeamURL:   teamURL2,
 			AvatarURL: avatarURL2,
 			Referees: []*types.Membership{
 				{
-					PartyID:  referee2,
-					JoinedAt: referee2JoiningDate2,
+					PartyID:       referee2,
+					JoinedAt:      referee2JoiningDate2,
+					NumberOfEpoch: 0,
 				},
 			},
 			CreatedAt: team2CreationDate,

@@ -17,9 +17,11 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,34 +39,34 @@ func TestUpdatingReferralProgramSucceeds(t *testing.T) {
 	}
 
 	// Set the first program.
-	te.engine.Update(program1)
+	te.engine.UpdateProgram(program1)
 
 	require.True(t, te.engine.HasProgramEnded(), "The program should start only on the next epoch")
 
 	// Simulating end of epoch.
 	// The program should be applied.
 	expectReferralProgramStartedEvent(t, te)
-	lastEpochEndTime := program1.EndOfProgramTimestamp.Add(-2 * time.Hour)
-	endEpoch(t, ctx, te, lastEpochEndTime)
+	lastEpochStartTime := program1.EndOfProgramTimestamp.Add(-2 * time.Hour)
+	nextEpoch(t, ctx, te, lastEpochStartTime)
 
 	require.False(t, te.engine.HasProgramEnded(), "The program should have started.")
 
 	// Simulating end of epoch.
 	// The program should have reached its end.
 	expectReferralProgramEndedEvent(t, te)
-	lastEpochEndTime = program1.EndOfProgramTimestamp.Add(1 * time.Second)
-	endEpoch(t, ctx, te, lastEpochEndTime)
+	lastEpochStartTime = program1.EndOfProgramTimestamp.Add(1 * time.Second)
+	nextEpoch(t, ctx, te, lastEpochStartTime)
 
 	require.True(t, te.engine.HasProgramEnded(), "The program should have reached its ending.")
 
 	program2 := &types.ReferralProgram{
-		EndOfProgramTimestamp: lastEpochEndTime.Add(10 * time.Hour),
+		EndOfProgramTimestamp: lastEpochStartTime.Add(10 * time.Hour),
 		WindowLength:          10,
 		BenefitTiers:          []*types.BenefitTier{},
 	}
 
 	// Set second the program.
-	te.engine.Update(program2)
+	te.engine.UpdateProgram(program2)
 
 	require.True(t, te.engine.HasProgramEnded(), "The program should start only on the next epoch")
 
@@ -77,39 +79,39 @@ func TestUpdatingReferralProgramSucceeds(t *testing.T) {
 	}
 
 	// Override the second program by a third.
-	te.engine.Update(program3)
+	te.engine.UpdateProgram(program3)
 
 	// Simulating end of epoch.
 	// The third program should have started.
 	expectReferralProgramStartedEvent(t, te)
-	lastEpochEndTime = program3.EndOfProgramTimestamp.Add(-1 * time.Second)
-	endEpoch(t, ctx, te, lastEpochEndTime)
+	lastEpochStartTime = program3.EndOfProgramTimestamp.Add(-1 * time.Second)
+	nextEpoch(t, ctx, te, lastEpochStartTime)
 
 	require.False(t, te.engine.HasProgramEnded(), "The program should have started.")
 
 	program4 := &types.ReferralProgram{
-		EndOfProgramTimestamp: lastEpochEndTime.Add(10 * time.Hour),
+		EndOfProgramTimestamp: lastEpochStartTime.Add(10 * time.Hour),
 		WindowLength:          10,
 		BenefitTiers:          []*types.BenefitTier{},
 	}
 
 	// Update to replace the third program by the fourth one.
-	te.engine.Update(program4)
+	te.engine.UpdateProgram(program4)
 
 	// Simulating end of epoch.
 	// The current program should have been updated by the fourth one.
 	expectReferralProgramUpdatedEvent(t, te)
-	lastEpochEndTime = program4.EndOfProgramTimestamp.Add(-1 * time.Second)
-	endEpoch(t, ctx, te, lastEpochEndTime)
+	lastEpochStartTime = program4.EndOfProgramTimestamp.Add(-1 * time.Second)
+	nextEpoch(t, ctx, te, lastEpochStartTime)
 
 	program5 := &types.ReferralProgram{
-		EndOfProgramTimestamp: lastEpochEndTime.Add(10 * time.Hour),
+		EndOfProgramTimestamp: lastEpochStartTime.Add(10 * time.Hour),
 		WindowLength:          10,
 		BenefitTiers:          []*types.BenefitTier{},
 	}
 
 	// Update with new program.
-	te.engine.Update(program5)
+	te.engine.UpdateProgram(program5)
 
 	require.False(t, te.engine.HasProgramEnded(), "The fourth program should still be up")
 
@@ -119,8 +121,61 @@ func TestUpdatingReferralProgramSucceeds(t *testing.T) {
 		expectReferralProgramUpdatedEvent(t, te),
 		expectReferralProgramEndedEvent(t, te),
 	)
-	lastEpochEndTime = program5.EndOfProgramTimestamp.Add(1 * time.Second)
-	endEpoch(t, ctx, te, lastEpochEndTime)
+	lastEpochStartTime = program5.EndOfProgramTimestamp.Add(1 * time.Second)
+	nextEpoch(t, ctx, te, lastEpochStartTime)
 
 	require.True(t, te.engine.HasProgramEnded(), "The program should have ended before it even started")
+}
+
+func TestGettingRewardFactor(t *testing.T) {
+	ctx := vgtest.VegaContext(vgrand.RandomStr(5), vgtest.RandomI64())
+
+	te := newEngine(t)
+
+	program1 := &types.ReferralProgram{
+		EndOfProgramTimestamp: time.Now().Add(24 * time.Hour),
+		WindowLength:          10,
+		BenefitTiers: []*types.BenefitTier{
+			{
+				MinimumEpochs:                     num.UintFromUint64(2),
+				MinimumRunningNotionalTakerVolume: num.UintFromUint64(1000),
+				ReferralRewardFactor:              num.DecimalFromFloat(0.001),
+				ReferralDiscountFactor:            num.DecimalFromFloat(0.002),
+			}, {
+				MinimumEpochs:                     num.UintFromUint64(10),
+				MinimumRunningNotionalTakerVolume: num.UintFromUint64(10000),
+				ReferralRewardFactor:              num.DecimalFromFloat(0.01),
+				ReferralDiscountFactor:            num.DecimalFromFloat(0.02),
+			}, {
+				MinimumEpochs:                     num.UintFromUint64(20),
+				MinimumRunningNotionalTakerVolume: num.UintFromUint64(100000),
+				ReferralRewardFactor:              num.DecimalFromFloat(0.1),
+				ReferralDiscountFactor:            num.DecimalFromFloat(0.2),
+			},
+		},
+	}
+
+	// Set the first program.
+	te.engine.UpdateProgram(program1)
+
+	expectReferralProgramStartedEvent(t, te)
+	lastEpochStartTime := program1.EndOfProgramTimestamp.Add(-2 * time.Hour)
+	nextEpoch(t, ctx, te, lastEpochStartTime)
+
+	// Looking for reward factor for party without a team.
+	loneWolfParty := newPartyID(t)
+	te.teamsEngine.EXPECT().IsTeamMember(loneWolfParty).Return(false)
+	assert.Equal(t, num.DecimalZero(), te.engine.RewardsFactorForParty(loneWolfParty))
+
+	// Looking for reward factor for party with a team, but not for long enough.
+	noobParty := newPartyID(t)
+	te.teamsEngine.EXPECT().IsTeamMember(noobParty).Return(true)
+	te.teamsEngine.EXPECT().NumberOfEpochInTeamForParty(noobParty).Return(uint64(1))
+	assert.Equal(t, num.DecimalZero(), te.engine.RewardsFactorForParty(noobParty))
+
+	// Looking for reward factor for party with a team, matching tier 2.
+	eligibleParty := newPartyID(t)
+	te.teamsEngine.EXPECT().IsTeamMember(eligibleParty).Return(true)
+	te.teamsEngine.EXPECT().NumberOfEpochInTeamForParty(eligibleParty).Return(uint64(13))
+	assert.Equal(t, num.DecimalFromFloat(0.01), te.engine.RewardsFactorForParty(eligibleParty))
 }

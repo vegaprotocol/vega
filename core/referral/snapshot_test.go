@@ -42,22 +42,22 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 		BenefitTiers:          []*types.BenefitTier{},
 	}
 
-	te1.engine.Update(program1)
+	te1.engine.UpdateProgram(program1)
 
 	// Simulating end of epoch.
 	// The program should be applied.
 	expectReferralProgramStartedEvent(t, te1)
-	lastEpochEndTime := program1.EndOfProgramTimestamp.Add(-2 * time.Hour)
-	endEpoch(t, ctx, te1, lastEpochEndTime)
+	lastEpochStartTime := program1.EndOfProgramTimestamp.Add(-2 * time.Hour)
+	nextEpoch(t, ctx, te1, lastEpochStartTime)
 
 	program2 := &types.ReferralProgram{
-		EndOfProgramTimestamp: lastEpochEndTime.Add(10 * time.Hour),
+		EndOfProgramTimestamp: lastEpochStartTime.Add(10 * time.Hour),
 		WindowLength:          10,
 		BenefitTiers:          []*types.BenefitTier{},
 	}
 
 	// Set new program.
-	te1.engine.Update(program2)
+	te1.engine.UpdateProgram(program2)
 
 	// Take a snapshot.
 	hash1, err := snapshotEngine1.SnapshotNow(ctx)
@@ -66,8 +66,8 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 	// Simulating end of epoch.
 	// The program should be updated with the new one.
 	expectReferralProgramUpdatedEvent(t, te1)
-	lastEpochEndTime = program2.EndOfProgramTimestamp.Add(-2 * time.Hour)
-	endEpoch(t, ctx, te1, lastEpochEndTime)
+	lastEpochStartTime = program2.EndOfProgramTimestamp.Add(-2 * time.Hour)
+	nextEpoch(t, ctx, te1, lastEpochStartTime)
 
 	state1 := map[string][]byte{}
 	for _, key := range te1.engine.Keys() {
@@ -95,8 +95,8 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 	// Simulating end of epoch.
 	// The program should be updated with the new one.
 	expectReferralProgramUpdatedEvent(t, te2)
-	lastEpochEndTime = program2.EndOfProgramTimestamp.Add(-2 * time.Hour)
-	endEpoch(t, ctx, te2, lastEpochEndTime)
+	lastEpochStartTime = program2.EndOfProgramTimestamp.Add(-2 * time.Hour)
+	nextEpoch(t, ctx, te2, lastEpochStartTime)
 
 	state2 := map[string][]byte{}
 	for _, key := range te2.engine.Keys() {
