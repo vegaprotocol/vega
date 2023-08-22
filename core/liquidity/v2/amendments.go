@@ -27,9 +27,9 @@ func (e *Engine) AmendLiquidityProvision(
 	lpa *types.LiquidityProvisionAmendment,
 	party string,
 	isCancel bool,
-) error {
+) (bool, error) {
 	if err := e.CanAmend(lpa, party, !isCancel); err != nil {
-		return err
+		return false, err
 	}
 
 	// LP exists, checked in the previous func.
@@ -44,14 +44,14 @@ func (e *Engine) AmendLiquidityProvision(
 	if lp.CommitmentAmount.NEQ(lpa.CommitmentAmount) && !e.auctionState.IsOpeningAuction() {
 		e.pendingProvisions.Set(updatedLp)
 		e.broker.Send(events.NewLiquidityProvisionEvent(ctx, updatedLp))
-		return nil
+		return false, nil
 	}
 
 	// we can update immediately since the commitment amount has not changed.
 	updatedLp.Status = types.LiquidityProvisionStatusActive
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, updatedLp))
 	e.provisions.Set(party, updatedLp)
-	return nil
+	return true, nil
 }
 
 func (e *Engine) createAmendedProvision(

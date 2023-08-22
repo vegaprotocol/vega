@@ -82,7 +82,8 @@ func TestAmendments(t *testing.T) {
 	// now we can do a OK can amend
 	assert.NoError(t, tng.engine.CanAmend(lpa, party, true))
 
-	assert.NoError(t, tng.engine.AmendLiquidityProvision(ctx, lpa, party, true))
+	_, err = tng.engine.AmendLiquidityProvision(ctx, lpa, party, true)
+	assert.NoError(t, err)
 
 	// first validate that the amendment is pending
 	pendingLp := tng.engine.PendingProvisionByPartyID(party)
