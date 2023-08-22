@@ -13,8 +13,6 @@
 package liquidity
 
 import (
-	"fmt"
-
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
