@@ -350,6 +350,11 @@ func newPerpMarket(config *market.Config, netparams *netparams.Store, row market
 
 	setLiquidityMonitoringNetParams(liqMon, netparams)
 
+	slaParams, err := config.LiquiditySLAParams.Get(row.liquiditySLA())
+	if err != nil {
+		panic(err)
+	}
+
 	m := types.Market{
 		TradingMode:           types.MarketTradingModeContinuous,
 		State:                 types.MarketStateActive,
@@ -379,6 +384,7 @@ func newPerpMarket(config *market.Config, netparams *netparams.Store, row market
 		LiquidityMonitoringParameters: liqMon,
 		LinearSlippageFactor:          num.DecimalFromFloat(linearSlippageFactor),
 		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
+		LiquiditySLAParams:            types.LiquiditySLAParamsFromProto(slaParams),
 	}
 
 	if row.isSuccessor() {
