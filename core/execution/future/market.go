@@ -3728,6 +3728,7 @@ func (m *Market) settlementData(ctx context.Context, settlementData *num.Numeric
 		m.log.Error(err.Error())
 		return
 	}
+
 	m.settlementDataWithLock(ctx, types.MarketStateSettled, settlementDataInAsset)
 }
 

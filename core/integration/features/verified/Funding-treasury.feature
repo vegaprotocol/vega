@@ -16,16 +16,16 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | 1.2           | 1.5            | 2              |
 
     And the oracle spec for settlement data filtering data from "0xCAFECAFE19" named "ethDec19Oracle":
-      | property         | type         | binding         |
-      | prices.ETH.value | TYPE_INTEGER | settlement data |
+      | property         | type         | binding         | decimals |
+      | prices.ETH.value | TYPE_INTEGER | settlement data | 0 |
 
     And the oracle spec for trading termination filtering data from "0xCAFECAFE19" named "ethDec19Oracle":
       | property           | type         | binding             |
       | trading.terminated | TYPE_BOOLEAN | trading termination |
 
     And the oracle spec for settlement data filtering data from "0xCAFECAFE20" named "ethDec20Oracle":
-      | property         | type         | binding         |
-      | prices.ETH.value | TYPE_INTEGER | settlement data |
+      | property         | type         | binding         | decimals |
+      | prices.ETH.value | TYPE_INTEGER | settlement data | 0 |
 
     And the oracle spec for trading termination filtering data from "0xCAFECAFE20" named "ethDec20Oracle":
       | property           | type         | binding             |
@@ -53,6 +53,7 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | network.markPriceUpdateMaximumFrequency      | 0s    |
       | market.liquidity.successorLaunchWindowLength | 1s    |
       | limits.markets.maxPeggedOrders               | 4     |
+
   Scenario: using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book; and check the funding of treasury. 0012-POSR-002, 0012-POSR-005, 0013-ACCT-001, 0013-ACCT-022
 
     # setup accounts
@@ -77,7 +78,7 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
       | lpprov | ETH/DEC20 | 225       | 18                   | buy  | BID              | 225    | 100    |
       | lpprov | ETH/DEC20 | 36        | 18                   | sell | ASK              | 36     | 100    |
- 
+
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -257,4 +258,7 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | party            | asset | market id | margin | general       |
       | buySideProvider  | USD   | ETH/DEC19 | 0      | 999999988326  |
       | sellSideProvider | USD   | ETH/DEC19 | 0      | 1000000020360 |
-
+      | designatedLooser | USD   | ETH/DEC19 | 0      | 0             |
+      | aux              | USD   | ETH/DEC19 | 0      | 999999999900  |
+      | aux2             | USD   | ETH/DEC19 | 0      | 1000000000088 |
+      | lpprov           | USD   | ETH/DEC19 | 0      | 1000000007856 |
