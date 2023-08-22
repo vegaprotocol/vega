@@ -991,6 +991,7 @@ type ComplexityRoot struct {
 		BestStaticOfferVolume     func(childComplexity int) int
 		Commitments               func(childComplexity int) int
 		ExtensionTrigger          func(childComplexity int) int
+		FundingRate               func(childComplexity int) int
 		IndicativePrice           func(childComplexity int) int
 		IndicativeVolume          func(childComplexity int) int
 		LastTradedPrice           func(childComplexity int) int
@@ -1240,6 +1241,7 @@ type ComplexityRoot struct {
 		BestStaticOfferPrice      func(childComplexity int) int
 		BestStaticOfferVolume     func(childComplexity int) int
 		ExtensionTrigger          func(childComplexity int) int
+		FundingRate               func(childComplexity int) int
 		IndicativePrice           func(childComplexity int) int
 		IndicativeVolume          func(childComplexity int) int
 		LastTradedPrice           func(childComplexity int) int
@@ -6280,6 +6282,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarketData.ExtensionTrigger(childComplexity), true
 
+	case "MarketData.fundingRate":
+		if e.complexity.MarketData.FundingRate == nil {
+			break
+		}
+
+		return e.complexity.MarketData.FundingRate(childComplexity), true
+
 	case "MarketData.indicativePrice":
 		if e.complexity.MarketData.IndicativePrice == nil {
 			break
@@ -7397,6 +7406,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ObservableMarketData.ExtensionTrigger(childComplexity), true
+
+	case "ObservableMarketData.fundingRate":
+		if e.complexity.ObservableMarketData.FundingRate == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.FundingRate(childComplexity), true
 
 	case "ObservableMarketData.indicativePrice":
 		if e.complexity.ObservableMarketData.IndicativePrice == nil {
@@ -36381,6 +36397,8 @@ func (ec *executionContext) fieldContext_Market_data(ctx context.Context, field 
 				return ec.fieldContext_MarketData_marketGrowth(ctx, field)
 			case "lastTradedPrice":
 				return ec.fieldContext_MarketData_lastTradedPrice(ctx, field)
+			case "fundingRate":
+				return ec.fieldContext_MarketData_fundingRate(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MarketData", field.Name)
 		},
@@ -38391,6 +38409,47 @@ func (ec *executionContext) fieldContext_MarketData_lastTradedPrice(ctx context.
 	return fc, nil
 }
 
+func (ec *executionContext) _MarketData_fundingRate(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MarketData_fundingRate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FundingRate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MarketData_fundingRate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarketData",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MarketDataCommitments_sells(ctx context.Context, field graphql.CollectedField, obj *MarketDataCommitments) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MarketDataCommitments_sells(ctx, field)
 	if err != nil {
@@ -38684,6 +38743,8 @@ func (ec *executionContext) fieldContext_MarketDataEdge_node(ctx context.Context
 				return ec.fieldContext_MarketData_marketGrowth(ctx, field)
 			case "lastTradedPrice":
 				return ec.fieldContext_MarketData_lastTradedPrice(ctx, field)
+			case "fundingRate":
+				return ec.fieldContext_MarketData_fundingRate(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MarketData", field.Name)
 		},
@@ -45893,6 +45954,47 @@ func (ec *executionContext) _ObservableMarketData_lastTradedPrice(ctx context.Co
 }
 
 func (ec *executionContext) fieldContext_ObservableMarketData_lastTradedPrice(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ObservableMarketData_fundingRate(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ObservableMarketData_fundingRate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FundingRate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ObservableMarketData_fundingRate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ObservableMarketData",
 		Field:      field,
@@ -67580,6 +67682,8 @@ func (ec *executionContext) fieldContext_Subscription_marketsData(ctx context.Co
 				return ec.fieldContext_ObservableMarketData_marketGrowth(ctx, field)
 			case "lastTradedPrice":
 				return ec.fieldContext_ObservableMarketData_lastTradedPrice(ctx, field)
+			case "fundingRate":
+				return ec.fieldContext_ObservableMarketData_fundingRate(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ObservableMarketData", field.Name)
 		},
@@ -85410,6 +85514,10 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "fundingRate":
+
+			out.Values[i] = ec._MarketData_fundingRate(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -87802,6 +87910,10 @@ func (ec *executionContext) _ObservableMarketData(ctx context.Context, sel ast.S
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "fundingRate":
+
+			out.Values[i] = ec._ObservableMarketData_fundingRate(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

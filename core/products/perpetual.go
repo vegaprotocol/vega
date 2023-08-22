@@ -365,6 +365,19 @@ func (p *Perpetual) handleSettlementCue(ctx context.Context, t int64) {
 	p.startNewFundingPeriod(ctx, t)
 }
 
+func (p *Perpetual) GetFundingRate(t int64) *num.Decimal {
+	if !p.haveData(t) {
+		return ptr.From(num.DecimalZero())
+	}
+
+	internalTWAP := twap(p.internal, p.startedAt, t)
+	// and calculate the same using the external oracle data-points over the same period
+	externalTWAP := twap(p.external, p.startedAt, t)
+	_, fundingRate := p.calculateFundingPayment(internalTWAP, externalTWAP)
+
+	return fundingRate
+}
+
 // restarts the funcing period at time st.
 func (p *Perpetual) startNewFundingPeriod(ctx context.Context, endAt int64) {
 	// increment seq and set start to the time the previous ended
@@ -496,7 +509,10 @@ func (p *Perpetual) calculateFundingPayment(internalTWAP, externalTWAP *num.Uint
 
 	// the funding payment is the difference between the two, the sign representing the direction of cash flow
 	fundingPayment := num.IntFromUint(internalTWAP, true).Sub(num.IntFromUint(externalTWAP, true))
-	fundingRate := num.DecimalFromInt(fundingPayment).Div(num.DecimalFromUint(externalTWAP))
+	fundingRate := num.DecimalZero()
+	if !externalTWAP.IsZero() {
+		fundingRate = num.DecimalFromInt(fundingPayment).Div(num.DecimalFromUint(externalTWAP))
+	}
 	p.log.Info("funding payment calculated",
 		logging.MarketID(p.id),
 		logging.Uint64("seq", p.seq),
@@ -591,6 +607,12 @@ func twap(points []*dataPoint, start, end int64) *num.Uint {
 	// process the final interval
 	tdiff := num.NewUint(uint64(end - num.MaxV(start, prev.t)))
 	sum.Add(sum, num.UintZero().Mul(prev.price, tdiff))
+
+	denom := end - num.MaxV(start, points[0].t)
+
+	if denom == 0 {
+		return num.UintZero()
+	}
 
 	return sum.Div(sum, num.NewUint(uint64(end-num.MaxV(start, points[0].t))))
 }
