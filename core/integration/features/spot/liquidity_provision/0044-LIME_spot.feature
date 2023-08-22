@@ -89,7 +89,7 @@ Feature: Spot market
     When the opening auction period ends for market "BTC/ETH"
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 360000  | 10        | 22        | 10           | 1000            | 0             |
+      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 360000  | 10        | 22        | 10           | 1000           | 0             |
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type   |
@@ -174,6 +174,3 @@ Feature: Spot market
     Then "lpprov" should have holding account balance of "60" for asset "BTC"
     Then "lpprov" should have general account balance of "0" for asset "BTC"
     Then the party "lpprov" lp liquidity bond account balance should be "2" for the market "BTC/ETH"
-
-    Then debug transfers
-

@@ -380,3 +380,129 @@ func TestLiquidityProvisionsFeeDistribution(t *testing.T) {
 	testLiquidity.equityShares.EXPECT().AllShares().AnyTimes()
 	testLiquidity.marketLiquidity.OnEpochStart(testLiquidity.ctx, now, uintOne, uintOne, uintOne, decimalOne)
 }
+
+func TestLiquidityProvisionsAmendments(t *testing.T) {
+	testLiquidity := newMarketLiquidity(t)
+
+	ctx := context.Background()
+
+	testLiquidity.timeService.EXPECT().GetTimeNow().DoAndReturn(func() time.Time {
+		return time.Now()
+	}).AnyTimes()
+
+	testLiquidity.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	testLiquidity.liquidityEngine.EXPECT().UpdatePartyCommitment(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(partyID string, amount *num.Uint) (*types.LiquidityProvision, error) {
+			return &types.LiquidityProvision{
+				Party:            partyID,
+				CommitmentAmount: amount.Clone(),
+			}, nil
+		}).AnyTimes()
+
+	// enable asset first.
+	err := testLiquidity.collateralEngine.EnableAsset(ctx, types.Asset{
+		ID: testLiquidity.asset,
+		Details: &types.AssetDetails{
+			Name:     testLiquidity.asset,
+			Symbol:   testLiquidity.asset,
+			Decimals: 0,
+			Source: types.AssetDetailsErc20{
+				ERC20: &types.ERC20{
+					ContractAddress: "addrs",
+				},
+			},
+		},
+	})
+	assert.NoError(t, err)
+
+	// create all required accounts for spot market.
+	_, _, err = testLiquidity.collateralEngine.CreateMarketAccounts(ctx, testLiquidity.marketID, testLiquidity.asset)
+	assert.NoError(t, err)
+
+	testLiquidity.liquidityEngine.EXPECT().
+		SubmitLiquidityProvision(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		AnyTimes()
+
+	testLiquidity.liquidityEngine.EXPECT().PendingProvision().Return(nil).AnyTimes()
+	one := num.UintOne()
+	testLiquidity.liquidityEngine.EXPECT().CalculateSuppliedStakeWithoutPending().Return(one).AnyTimes()
+	testLiquidity.liquidityEngine.EXPECT().ApplyPendingProvisions(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	provider := "lp-1"
+	commitmentAmount := num.NewUint(10000)
+
+	// create providers general account and deposit funds into it.
+	_, err = testLiquidity.collateralEngine.CreatePartyGeneralAccount(ctx, provider, testLiquidity.asset)
+	assert.NoError(t, err)
+
+	_, err = testLiquidity.collateralEngine.Deposit(ctx, provider, testLiquidity.asset, commitmentAmount)
+	assert.NoError(t, err)
+
+	// submit the provision.
+	provision := &types.LiquidityProvisionSubmission{
+		MarketID:         testLiquidity.marketID,
+		CommitmentAmount: commitmentAmount,
+		Reference:        provider,
+	}
+
+	deterministicID := hex.EncodeToString(vgcrypto.Hash([]byte(provider)))
+	err = testLiquidity.marketLiquidity.SubmitLiquidityProvision(ctx, provision, provider,
+		deterministicID, types.MarketStateActive)
+	assert.NoError(t, err)
+
+	bAcc, err := testLiquidity.collateralEngine.GetPartyBondAccount(testLiquidity.marketID, provider, testLiquidity.asset)
+	assert.NoError(t, err)
+	t.Log(bAcc)
+
+	gAcc, err := testLiquidity.collateralEngine.GetPartyGeneralAccount(provider, testLiquidity.asset)
+	assert.NoError(t, err)
+	t.Log(gAcc)
+
+	testLiquidity.liquidityEngine.EXPECT().
+		AmendLiquidityProvision(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(true, nil).
+		AnyTimes()
+
+	testLiquidity.liquidityEngine.EXPECT().
+		ValidateLiquidityProvisionAmendment(gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
+	testLiquidity.liquidityEngine.EXPECT().
+		PendingProvisionByPartyID(gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
+	testLiquidity.liquidityEngine.EXPECT().
+		IsLiquidityProvider(gomock.Any()).
+		Return(true).
+		AnyTimes()
+
+	testLiquidity.liquidityEngine.EXPECT().
+		LiquidityProvisionByPartyID(gomock.Any()).
+		Return(&types.LiquidityProvision{
+			ID:               provider,
+			Party:            provider,
+			CommitmentAmount: commitmentAmount,
+		}).
+		AnyTimes()
+
+	lpa := &types.LiquidityProvisionAmendment{
+		MarketID:         testLiquidity.marketID,
+		CommitmentAmount: num.NewUint(1000),
+	}
+	err = testLiquidity.marketLiquidity.AmendLiquidityProvision(ctx, lpa, provider,
+		deterministicID, types.MarketStateActive)
+	assert.NoError(t, err)
+
+	t.Log("---------------------------------- after")
+
+	bAcc, err = testLiquidity.collateralEngine.GetPartyBondAccount(testLiquidity.marketID, provider, testLiquidity.asset)
+	assert.NoError(t, err)
+	t.Log(bAcc)
+
+	gAcc, err = testLiquidity.collateralEngine.GetPartyGeneralAccount(provider, testLiquidity.asset)
+	assert.NoError(t, err)
+	t.Log(gAcc)
+}

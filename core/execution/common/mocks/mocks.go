@@ -1443,11 +1443,12 @@ func (m *MockLiquidityEngine) EXPECT() *MockLiquidityEngineMockRecorder {
 }
 
 // AmendLiquidityProvision mocks base method.
-func (m *MockLiquidityEngine) AmendLiquidityProvision(arg0 context.Context, arg1 *types.LiquidityProvisionAmendment, arg2 string, arg3 bool) error {
+func (m *MockLiquidityEngine) AmendLiquidityProvision(arg0 context.Context, arg1 *types.LiquidityProvisionAmendment, arg2 string, arg3 bool) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AmendLiquidityProvision", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // AmendLiquidityProvision indicates an expected call of AmendLiquidityProvision.
