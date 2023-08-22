@@ -163,7 +163,7 @@ func NewLogFilterer(
 func (f *LogFilterer) CurrentHeight(ctx context.Context) uint64 {
 	currentHeight := new(uint64)
 
-	infiniteRetry(ctx, func() error {
+	infiniteRetry(func() error {
 		height, err := f.client.CurrentHeight(ctx)
 		if err != nil {
 			return fmt.Errorf("couldn't get the current height of Ethereum blockchain: %e", err)
@@ -248,7 +248,7 @@ func (f *LogFilterer) FilterMultisigControlEvents(ctx context.Context, startAt, 
 func (f *LogFilterer) filterLogs(ctx context.Context, query eth.FilterQuery) []ethtypes.Log {
 	var logs []ethtypes.Log
 
-	infiniteRetry(ctx, func() error {
+	infiniteRetry(func() error {
 		l, err := f.client.FilterLogs(ctx, query)
 		if err != nil {
 			fromBlock := big.NewInt(0)
@@ -853,7 +853,7 @@ func (f *blockTimeFetcher) TimeForBlock(ctx context.Context, blockNumber uint64)
 
 func (f *blockTimeFetcher) fetchTimeByBlock(ctx context.Context, blockNumber uint64) uint64 {
 	var header *ethtypes.Header
-	infiniteRetry(ctx, func() error {
+	infiniteRetry(func() error {
 		h, err := f.client.HeaderByNumber(ctx, new(big.Int).SetUint64(blockNumber))
 		if err != nil {
 			f.log.Error("Couldn't retrieve the block header for given number on the staking bridge",
@@ -870,9 +870,8 @@ func (f *blockTimeFetcher) fetchTimeByBlock(ctx context.Context, blockNumber uin
 
 // We are retrying infinitely, on purpose, as we don't want the Ethereum
 // Forwarder to exit, and this under any circumstances. Failure is not an option.
-func infiniteRetry(ctx context.Context, fn backoff.Operation, durationBetweenTwoRetry time.Duration) {
+func infiniteRetry(fn backoff.Operation, durationBetweenTwoRetry time.Duration) {
 	// No need to retrieve the error, as we are waiting indefinitely for a
 	// success.
-	bo := backoff.WithContext(backoff.NewConstantBackOff(durationBetweenTwoRetry), ctx)
-	_ = backoff.Retry(fn, bo)
+	_ = backoff.Retry(fn, backoff.NewConstantBackOff(durationBetweenTwoRetry))
 }
