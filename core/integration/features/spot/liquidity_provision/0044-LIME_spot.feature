@@ -175,5 +175,3 @@ Feature: Spot market
     Then "lpprov" should have general account balance of "0" for asset "BTC"
     Then the party "lpprov" lp liquidity bond account balance should be "2" for the market "BTC/ETH"
 
-    Then debug transfers
-
