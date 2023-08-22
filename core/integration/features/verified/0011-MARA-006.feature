@@ -50,7 +50,7 @@ Feature: check margin account with partially filled order
       | auxiliary2 | ETH/DEC20 | buy  | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-10    |
       | auxiliary1 | ETH/DEC20 | sell | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-s-10    |
 
-    When the opening auction period ends for market "ETH/DEC20"a
+    When the opening auction period ends for market "ETH/DEC20"
     And the mark price should be "10" for the market "ETH/DEC20"
 
     # setup trader2 position for an order which is partially filled and leading to a reduced position
@@ -283,7 +283,7 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
       | lprov | ETH/DEC21 | 2         | 1                    | sell | ASK              | 100        | 55     |
       | lprov | ETH/DEC21 | 2         | 1                    | buy  | BID              | 100        | 55     |
- 
+
     Then the parties place the following orders:
       | party      | market id | side | volume | price | resulting trades | type       | tif     |
       | auxiliary2 | ETH/DEC21 | buy  | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC |
