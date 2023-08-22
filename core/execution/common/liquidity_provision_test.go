@@ -15,7 +15,6 @@ package common_test
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 	"testing"
 	"time"
 
@@ -447,11 +446,11 @@ func TestLiquidityProvisionsAmendments(t *testing.T) {
 
 	bAcc, err := testLiquidity.collateralEngine.GetPartyBondAccount(testLiquidity.marketID, provider, testLiquidity.asset)
 	assert.NoError(t, err)
-	fmt.Println(bAcc)
+	t.Log(bAcc)
 
 	gAcc, err := testLiquidity.collateralEngine.GetPartyGeneralAccount(provider, testLiquidity.asset)
 	assert.NoError(t, err)
-	fmt.Println(gAcc)
+	t.Log(gAcc)
 
 	testLiquidity.liquidityEngine.EXPECT().
 		AmendLiquidityProvision(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
@@ -490,14 +489,13 @@ func TestLiquidityProvisionsAmendments(t *testing.T) {
 		deterministicID, types.MarketStateActive)
 	assert.NoError(t, err)
 
-	fmt.Println("---------------------------------- after")
+	t.Log("---------------------------------- after")
 
 	bAcc, err = testLiquidity.collateralEngine.GetPartyBondAccount(testLiquidity.marketID, provider, testLiquidity.asset)
 	assert.NoError(t, err)
-	fmt.Println(bAcc)
+	t.Log(bAcc)
 
 	gAcc, err = testLiquidity.collateralEngine.GetPartyGeneralAccount(provider, testLiquidity.asset)
 	assert.NoError(t, err)
-	fmt.Println(gAcc)
-
+	t.Log(gAcc)
 }
