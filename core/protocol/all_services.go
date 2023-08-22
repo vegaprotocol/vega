@@ -803,20 +803,8 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.vesting.OnRewardVestingBaseRateUpdate,
 		},
 		{
-			Param:   netparams.ReferralProgramMaxBenefitTiers,
-			Watcher: svcs.teamsEngine.OnReferralProgramMaxBenefitTiersUpdate,
-		},
-		{
-			Param:   netparams.ReferralProgramMaxReferralRewardFactor,
-			Watcher: svcs.teamsEngine.OnReferralProgramMaxReferralRewardFactorUpdate,
-		},
-		{
-			Param:   netparams.ReferralProgramMaxReferralDiscountFactor,
-			Watcher: svcs.teamsEngine.OnReferralProgramMaxReferralDiscountFactorUpdate,
-		},
-		{
 			Param:   netparams.ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch,
-			Watcher: svcs.teamsEngine.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate,
+			Watcher: svcs.referralProgram.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate,
 		},
 		{
 			Param:   netparams.ReferralProgramMinStakedVegaTokens,

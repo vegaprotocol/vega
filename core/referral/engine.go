@@ -26,6 +26,10 @@ type Engine struct {
 	broker      Broker
 	teamsEngine TeamsEngine
 
+	// maxPartyNotionalVolumeByQuantumPerEpoch limits the volume in quantum units
+	// which is eligible each epoch for referral program mechanisms.
+	maxPartyNotionalVolumeByQuantumPerEpoch *num.Uint
+
 	// latestProgramVersion tracks the latest version of the program. It used to
 	// value any new program that comes in. It starts at 1.
 	// It's incremented every time an update is received. Therefore, if, during
@@ -76,6 +80,11 @@ func (e *Engine) RewardsFactorForParty(party types.PartyID) num.Decimal {
 	}
 
 	return tier.ReferralRewardFactor
+}
+
+func (e *Engine) OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate(_ context.Context, value *num.Uint) error {
+	e.maxPartyNotionalVolumeByQuantumPerEpoch = value
+	return nil
 }
 
 func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
