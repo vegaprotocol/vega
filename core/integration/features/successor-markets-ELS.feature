@@ -315,7 +315,7 @@ Feature: Simple example of successor markets
     When the opening auction period ends for market "ETH/DEC20"
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 150 | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 82 | 12000 | 1 |
+      | 150 | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 82 | 10000 | 1 |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "10336" for the market "ETH/DEC20"
@@ -324,8 +324,8 @@ Feature: Simple example of successor markets
 #this is from ETH/DEC19 market
     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
       | party   | equity like share  | average entry valuation |
-      | lpprov1 | 0.3333333333333333 | 9000                    |
-      | lpprov2 | 0.6666666666666667 | 11750                   |
+      | lpprov1 | 0.9 | 9000  |
+      | lpprov2 | 0.1 | 11750 |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC20"
 
@@ -433,8 +433,8 @@ Feature: Simple example of successor markets
     # this is from ETH/DEC19 market
     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
       | party   | equity like share | average entry valuation |
-      | lpprov1 | 0.9 | 9000  |
-      | lpprov2 | 0.1 | 10000 |
+      | lpprov1 | 0.9               | 9000                    |
+      | lpprov2 | 0.1               | 10000                   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC20"
 
