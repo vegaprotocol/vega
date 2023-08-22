@@ -89,7 +89,7 @@ Feature: Spot market
     When the opening auction period ends for market "BTC/ETH"
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 360000  | 10        | 22        | 10           | 800            | 0             |
+      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 360000  | 10        | 22        | 10           | 1000            | 0             |
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type   |
