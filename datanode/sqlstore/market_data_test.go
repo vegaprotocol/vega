@@ -26,6 +26,8 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/num"
+
 	"code.vegaprotocol.io/vega/protos/vega"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
@@ -134,7 +136,6 @@ func getLatestMarketData(t *testing.T) {
 	marketID := entities.MarketID("8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
 
 	want := entities.MarketData{
-		LastTradedPrice:       mustParseDecimal(t, "999992588"),
 		MarkPrice:             mustParseDecimal(t, "999992587"),
 		BestBidPrice:          mustParseDecimal(t, "1000056152"),
 		BestBidVolume:         3,
@@ -152,8 +153,8 @@ func getLatestMarketData(t *testing.T) {
 		AuctionStart:          1644573911314794695,
 		IndicativePrice:       mustParseDecimal(t, "1000026624"),
 		IndicativeVolume:      3,
-		MarketState:           "STATE_ACTIVE",
 		MarketTradingMode:     "TRADING_MODE_MONITORING_AUCTION",
+		MarketState:           "STATE_ACTIVE",
 		AuctionTrigger:        "AUCTION_TRIGGER_LIQUIDITY",
 		ExtensionTrigger:      "AUCTION_TRIGGER_UNSPECIFIED",
 		TargetStake:           mustParseDecimal(t, "67499499622"),
@@ -179,7 +180,9 @@ func getLatestMarketData(t *testing.T) {
 				AverageScore:          "123",
 			},
 		},
-		VegaTime: time.Date(2022, 2, 11, 10, 5, 41, 0, time.UTC),
+		MarketGrowth:    num.DecimalZero(),
+		LastTradedPrice: mustParseDecimal(t, "999992588"),
+		FundingRate:     nil,
 	}
 	got, err := store.GetMarketDataByID(ctx, "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
 	assert.NoError(t, err)
@@ -1010,5 +1013,6 @@ func csvToMarketData(t *testing.T, line []string, seqNum int) *entities.MarketDa
 		SyntheticTime:              syntheticTime,
 		MarketGrowth:               mustParseDecimal(t, line[csvColumnMarketGrowth]),
 		LastTradedPrice:            mustParseDecimal(t, line[csvColumnLastTradedPrice]),
+		FundingRate:                nil,
 	}
 }

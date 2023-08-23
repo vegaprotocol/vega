@@ -18,11 +18,17 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type Engine struct {
-	broker Broker
+	broker      Broker
+	teamsEngine TeamsEngine
+
+	// maxPartyNotionalVolumeByQuantumPerEpoch limits the volume in quantum units
+	// which is eligible each epoch for referral program mechanisms.
+	maxPartyNotionalVolumeByQuantumPerEpoch *num.Uint
 
 	// latestProgramVersion tracks the latest version of the program. It used to
 	// value any new program that comes in. It starts at 1.
@@ -39,14 +45,13 @@ type Engine struct {
 	// programHasEnded tells if the current program has reached it's
 	// end. It's flipped at the end of the epoch.
 	programHasEnded bool
-
 	// newProgram is the program born from the last enacted UpdateReferralProgram
 	// proposal to apply at the start of the next epoch.
 	// It's `nil` is there is none.
 	newProgram *types.ReferralProgram
 }
 
-func (e *Engine) Update(newProgram *types.ReferralProgram) {
+func (e *Engine) UpdateProgram(newProgram *types.ReferralProgram) {
 	e.latestProgramVersion += 1
 	e.newProgram = newProgram
 	e.newProgram.Version = e.latestProgramVersion
@@ -54,6 +59,32 @@ func (e *Engine) Update(newProgram *types.ReferralProgram) {
 
 func (e *Engine) HasProgramEnded() bool {
 	return e.programHasEnded
+}
+
+func (e *Engine) RewardsFactorForParty(party types.PartyID) num.Decimal {
+	if e.programHasEnded {
+		return num.DecimalZero()
+	}
+
+	if !e.teamsEngine.IsTeamMember(party) {
+		// This party is not eligible to referral program rewards.
+		return num.DecimalZero()
+	}
+
+	epochCount := e.teamsEngine.NumberOfEpochInTeamForParty(party)
+
+	tier := e.findTierByEpochCount(epochCount)
+	if tier == nil {
+		// This party has not stayed in a team long enough to match a tier.
+		return num.DecimalZero()
+	}
+
+	return tier.ReferralRewardFactor
+}
+
+func (e *Engine) OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate(_ context.Context, value *num.Uint) error {
+	e.maxPartyNotionalVolumeByQuantumPerEpoch = value
+	return nil
 }
 
 func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
@@ -136,9 +167,23 @@ func (e *Engine) loadNewReferralProgramFromSnapshot(program *vegapb.ReferralProg
 	}
 }
 
-func NewEngine(epochEngine EpochEngine, broker Broker) *Engine {
+func (e *Engine) findTierByEpochCount(epochCount uint64) *types.BenefitTier {
+	tiersLen := len(e.currentProgram.BenefitTiers)
+
+	for i := tiersLen - 1; i >= 0; i-- {
+		tier := e.currentProgram.BenefitTiers[i]
+		if epochCount >= tier.MinimumEpochs.Uint64() {
+			return tier
+		}
+	}
+
+	return nil
+}
+
+func NewEngine(epochEngine EpochEngine, broker Broker, teamsEngine TeamsEngine) *Engine {
 	engine := &Engine{
-		broker: broker,
+		broker:      broker,
+		teamsEngine: teamsEngine,
 
 		// There is no program yet, so we mark it has ended so consumer of this
 		// engine can know there is no reward computation to be done.
