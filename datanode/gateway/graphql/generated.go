@@ -77600,7 +77600,7 @@ func (ec *executionContext) unmarshalInputStopOrderFilter(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"parties", "markets", "status", "expiryStrategy", "dateRange"}
+	fieldsInOrder := [...]string{"parties", "markets", "status", "expiryStrategy", "dateRange", "liveOnly"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -77656,6 +77656,14 @@ func (ec *executionContext) unmarshalInputStopOrderFilter(ctx context.Context, o
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateRange"))
 			it.DateRange, err = ec.unmarshalODateRange2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDateRange(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "liveOnly":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("liveOnly"))
+			it.LiveOnly, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
