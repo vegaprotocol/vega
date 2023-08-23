@@ -128,9 +128,11 @@ func (s *Verifier) LoadState(ctx context.Context, payload *types.Payload) ([]typ
 }
 
 func (s *Verifier) OnStateLoaded(ctx context.Context) error {
-	// tell the eth call engine what the last block seen was so it does not retrigger calls
+	// tell the eth call engine what the last block seen was, so it does not re-trigger calls
 	if s.lastBlock != nil && s.lastBlock.Height > 0 {
-		s.ethEngine.UpdatePreviousEthBlock(s.lastBlock.Height, s.lastBlock.Time)
+		s.ethEngine.StartAtHeight(s.lastBlock.Height, s.lastBlock.Time)
+	} else {
+		s.ethEngine.Start()
 	}
 
 	return nil
