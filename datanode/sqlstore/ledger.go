@@ -233,7 +233,7 @@ func (ls *Ledger) Export(
 			INNER JOIN accounts AS fa ON l.account_from_id=fa.id
 			INNER JOIN accounts AS ta ON l.account_to_id=ta.id
 
-		WHERE ta.party_id = $1 OR fa.party_id = $1
+		WHERE (ta.party_id = $1 OR fa.party_id = $1)
 		`
 
 	if assetID != nil {

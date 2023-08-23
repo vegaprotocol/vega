@@ -1276,7 +1276,7 @@ message ExportLedgerEntriesRequest {
   // Restrict exported ledger entries to those relating to the given party ID.
   string party_id = 1 [(google.api.field_behavior) = REQUIRED];
   // Restrict exported ledger entries to those relating to the given asset ID.
-  string asset_id = 2 [(google.api.field_behavior) = REQUIRED];
+  optional string asset_id = 2;
   // Date range to export ledger entries for.
   optional DateRange date_range = 4;
 }
