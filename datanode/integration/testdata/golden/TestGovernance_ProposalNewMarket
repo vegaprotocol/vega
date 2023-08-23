@@ -1,6 +1,6 @@
 {
 	"TestName": "TestGovernance_ProposalNewMarket",
-	"Query": "{ proposalsConnection { edges { node { id terms { change { ... on NewMarket { instrument { name } decimalPlaces riskParameters { ... on SimpleRiskModel { params { factorLong factorShort } } } metadata priceMonitoringParameters { triggers { horizonSecs probability auctionExtensionSecs } } liquidityMonitoringParameters { targetStakeParameters { timeWindow scalingFactor } triggeringRatio auctionExtensionSecs } positionDecimalPlaces lpPriceRange } } } } } } }",
+	"Query": "{ proposalsConnection { edges { node { id terms { change { ... on NewMarket { instrument { name } decimalPlaces riskParameters { ... on SimpleRiskModel { params { factorLong factorShort } } } metadata priceMonitoringParameters { triggers { horizonSecs probability auctionExtensionSecs } } liquidityMonitoringParameters { targetStakeParameters { timeWindow scalingFactor } triggeringRatio auctionExtensionSecs } positionDecimalPlaces } } } } } } }",
 	"Result": {
 		"proposalsConnection": {
 			"edges": [
@@ -29,7 +29,6 @@
 									},
 									"triggeringRatio": "0"
 								},
-								"lpPriceRange": "1",
 								"metadata": [
 									"asset_class:fx/crypto",
 									"product:futures"
@@ -84,7 +83,6 @@
 									},
 									"triggeringRatio": "0"
 								},
-								"lpPriceRange": "1",
 								"metadata": [
 									"asset_class:fx/crypto",
 									"product:futures"
@@ -115,7 +113,6 @@
 									},
 									"triggeringRatio": "0"
 								},
-								"lpPriceRange": "1",
 								"metadata": [
 									"asset_class:fx/crypto",
 									"product:futures"

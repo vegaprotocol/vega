@@ -4,6 +4,7 @@ Feature: Fees calculations
     Given the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 4     |
 
   Scenario: Testing fees in continuous trading with one trade
 
@@ -19,8 +20,8 @@ Feature: Fees calculations
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       | default-futures |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -38,9 +39,13 @@ Feature: Fees calculations
       | aux1  | ETH/DEC21 | buy  | 100    | 900   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 100    | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC21 | 10000     | 1                    | buy  | BID              | 20000  | 100    |
+      | lpprov | ETH/DEC21 | 10000     | 1                    | sell | ASK              | 20000  | 100    |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -110,8 +115,8 @@ Feature: Fees calculations
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       | default-futures |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -130,9 +135,13 @@ Feature: Fees calculations
       | aux1  | ETH/DEC21 | buy  | 100    | 900   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 100    | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC21 | 10000     | 1                    | buy  | BID              | 20000  | 100    |
+      | lpprov | ETH/DEC21 | 10000     | 1                    | sell | ASK              | 20000  | 100    |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -201,12 +210,8 @@ Feature: Fees calculations
 
   Scenario: Testing fees in continuous trading with two trades and one liquidity providers with 10 and 0 s liquidity fee distribution timestep
 
-    When the following network parameters are set:
-      | name                                                | value |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
-    And the average block duration is "1"
-
-    Given the fees configuration named "fees-config-1":
+    Given the average block duration is "1"
+    And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
     And the price monitoring named "price-monitoring":
@@ -216,10 +221,12 @@ Feature: Fees calculations
     When the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
-
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       | SLA        |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -238,9 +245,13 @@ Feature: Fees calculations
       | aux2  | ETH/DEC21 | sell | 100    | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | submission |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | aux1  | ETH/DEC21 | 998       | 1                    | buy  | BID              | 4000   | 10     |
+      | aux1  | ETH/DEC21 | 918       | 1                    | sell | ASK              | 4000   | 10     |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -319,14 +330,10 @@ Feature: Fees calculations
     When the network moves ahead "11" blocks
 
     And the following transfers should happen:
-      | from   | to   | from account                | to account           | market id | amount | asset |
-      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 5      | ETH   |
+      | from   | to   | from account                | to account                     | market id | amount | asset |
+      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/DEC21 | 5      | ETH   |
 
     # Scenario: WIP - Testing fees in continuous trading with two trades and one liquidity providers with 0s liquidity fee distribution timestep
-    When the following network parameters are set:
-      | name                                                | value |
-      | market.liquidity.providers.fee.distributionTimeStep | 0s    |
-
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader4 | ETH/DEC21 | sell | 200    | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -350,11 +357,11 @@ Feature: Fees calculations
 
     And the accumulated liquidity fees should be "2" for the market "ETH/DEC21"
 
-    When the network moves ahead "1" blocks
+    When the network moves ahead "11" blocks
 
     And the following transfers should happen:
-      | from   | to   | from account                | to account           | market id | amount | asset |
-      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 2      | ETH   |
+      | from   | to   | from account                | to account                     | market id | amount | asset |
+      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/DEC21 | 2      | ETH   |
 
   Scenario: Testing fees get collected when amended order trades
 
@@ -370,8 +377,8 @@ Feature: Fees calculations
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       | default-futures |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -390,9 +397,13 @@ Feature: Fees calculations
       | aux1  | ETH/DEC21 | buy  | 100    | 920   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 100    | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC21 | 2000      | 1                    | buy  | BID              | 4000   | 100    |
+      | lpprov | ETH/DEC21 | 2000      | 1                    | sell | ASK              | 4000   | 100    |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -496,8 +507,8 @@ Feature: Fees calculations
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       | default-futures |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -515,9 +526,13 @@ Feature: Fees calculations
       | aux1  | ETH/DEC21 | buy  | 100    | 995   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 100    | 1005  | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 10     | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 10     | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume   | offset |
+      | lpprov | ETH/DEC21 | 10000000  | 1                    | buy  | BID              | 10000000 | 10     |
+      | lpprov | ETH/DEC21 | 10000000  | 1                    | sell | ASK              | 10000000 | 10     |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -581,8 +596,8 @@ Feature: Fees calculations
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       | default-futures |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -600,10 +615,14 @@ Feature: Fees calculations
       | aux1  | ETH/DEC21 | buy  | 100    | 997   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 100    | 1003  | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 1      | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 1      | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC21 | 2         | 1                    | buy  | BID              | 50     | 1      |
+      | lpprov | ETH/DEC21 | 2         | 1                    | sell | ASK              | 50     | 1      |
+ 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
@@ -633,10 +652,7 @@ Feature: Fees calculations
     # <PC> - Just need to confirm if the trades doesn't go through, then general and margin account balances are expected to be 0.
     # <PC> - Also need to confirm if all 4 internal levels of margin should be 0, as in another case where the trade shouldn't be going through it's non-zero
 
-    Given the following network parameters are set:
-      | name                                                | value |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
-    And the average block duration is "1"
+    Given the average block duration is "1"
 
     When the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -648,10 +664,12 @@ Feature: Fees calculations
     When the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
-
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       | SLA        |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -669,9 +687,13 @@ Feature: Fees calculations
       | aux2  | ETH/DEC21 | sell | 1000   | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | submission |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | aux1  | ETH/DEC21 | 88        | 1                    | buy  | BID              | 10000  | 10     |
+      | aux1  | ETH/DEC21 | 918       | 1                    | sell | ASK              | 10000  | 10     |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -714,7 +736,7 @@ Feature: Fees calculations
       | party   | asset | market id | margin | general |
       | trader3 | ETH   | ETH/DEC21 | 339    | 9999667 |
       #| trader3 | ETH   | ETH/DEC21 | 240    | 9999766 |
-      | trader4 | ETH   | ETH/DEC21 | 0      | 0       |
+      | trader4 | ETH | ETH/DEC21 | 0 | 0 |
 
     And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "4" for the market "ETH/DEC21"
@@ -722,17 +744,16 @@ Feature: Fees calculations
     When the network moves ahead "11" blocks
 
     And the following transfers should happen:
-      | from   | to   | from account                | to account           | market id | amount | asset |
-      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 4      | ETH   |
+      | from   | to   | from account                | to account                     | market id | amount | asset |
+      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/DEC21 | 4      | ETH   |
 
   Scenario: Testing fees in auctions session with each side of a trade debited 1/2 IF & LP
 
     Given the following network parameters are set:
-      | name                                                | value |
-      | market.stake.target.timeWindow                      | 24h   |
-      | market.stake.target.scalingFactor                   | 1     |
-      | market.liquidity.targetstake.triggering.ratio       | 1     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
+      | name                                          | value |
+      | market.stake.target.timeWindow                | 24h   |
+      | market.stake.target.scalingFactor             | 1     |
+      | market.liquidity.targetstake.triggering.ratio | 1     |
 
     And the average block duration is "1"
 
@@ -749,10 +770,14 @@ Feature: Fees calculations
     And the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r   | sigma |
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
+    
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
 
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1                      | 0                         |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1                      | 0                         | SLA        |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -770,9 +795,13 @@ Feature: Fees calculations
       | trader4  | ETH/DEC21 | sell | 100    | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          | 10     | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | submission |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | aux1  | ETH/DEC21 | 2         | 1                    | buy  | BID              | 1      | 10     |
+      | aux1  | ETH/DEC21 | 2         | 1                    | sell | ASK              | 1      | 10     |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -802,10 +831,13 @@ Feature: Fees calculations
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
-
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | aux1  | ETH/DEC21 | 1939      | 1                    | buy  | BID              | 2000   | 10     |
+      | aux1  | ETH/DEC21 | 498       | 1                    | sell | ASK              | 2000   | 10     |
     When the network moves ahead "1" blocks
 
     # TODO: This seems to be suming the traded volume from the previous auction, verify and raise a bug - No longer valid
@@ -831,10 +863,10 @@ Feature: Fees calculations
 
     Then the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
-      | sell | 2010  | 498    |
+      | sell | 2010  | 499    |
       | sell | 2000  | 100    |
       | buy  | 500   | 100    |
-      | buy  | 490   | 1939   |
+      | buy  | 490   | 1940   |
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 3410   | 6606    |
@@ -889,11 +921,10 @@ Feature: Fees calculations
   Scenario: Testing fees in Liquidity auction session trading with insufficient balance in their general account but margin covers the fees
 
     Given the following network parameters are set:
-      | name                                                | value |
-      | market.stake.target.timeWindow                      | 24h   |
-      | market.stake.target.scalingFactor                   | 1     |
-      | market.liquidity.targetstake.triggering.ratio       | 1     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
+      | name                                          | value |
+      | market.stake.target.timeWindow                | 24h   |
+      | market.stake.target.scalingFactor             | 1     |
+      | market.liquidity.targetstake.triggering.ratio | 1     |
 
     And the average block duration is "1"
 
@@ -910,10 +941,12 @@ Feature: Fees calculations
     And the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r   | sigma |
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
-
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e0                    | 0                         |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e0                    | 0                         | SLA        |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -931,9 +964,13 @@ Feature: Fees calculations
       | trader4  | ETH/DEC21 | sell | 100    | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          | 10     | submission |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | submission |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | aux1  | ETH/DEC21 | 20000     | 1                    | buy  | BID              | 40000  | 10     |
+      | aux1  | ETH/DEC21 | 20000     | 1                    | sell | ASK              | 40000  | 10     |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -953,9 +990,9 @@ Feature: Fees calculations
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
 
     When the network moves ahead "1" blocks
 
@@ -980,8 +1017,8 @@ Feature: Fees calculations
     #| trader3a | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 2      | ETH   |
 
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | initial | 
-      | trader4 | ETH/DEC21 | 4409        | 5290    | 
+      | party   | market id | maintenance | initial |
+      | trader4 | ETH/DEC21 | 4409        | 5290    |
 
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
@@ -1002,11 +1039,10 @@ Feature: Fees calculations
   Scenario: Testing fees in Price auction session trading with insufficient balance in their general account but margin covers the fees
 
     Given the following network parameters are set:
-      | name                                                | value |
-      | market.stake.target.timeWindow                      | 24h   |
-      | market.stake.target.scalingFactor                   | 1     |
-      | market.liquidity.targetstake.triggering.ratio       | 1     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
+      | name                                          | value |
+      | market.stake.target.timeWindow                | 24h   |
+      | market.stake.target.scalingFactor             | 1     |
+      | market.liquidity.targetstake.triggering.ratio | 1     |
 
     And the average block duration is "1"
 
@@ -1023,10 +1059,12 @@ Feature: Fees calculations
     And the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r   | sigma |
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
-
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e6                    | 1e6                       | SLA        |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -1044,17 +1082,19 @@ Feature: Fees calculations
       | trader4  | ETH/DEC21 | sell | 100    | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          | 10     | amendment  |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | submission |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | aux1  | ETH/DEC21 | 20000     | 1                    | buy  | BID              | 40000  | 10     |
+      | aux1  | ETH/DEC21 | 20000     | 1                    | sell | ASK              | 40000  | 10     |
     Then the opening auction period ends for market "ETH/DEC21"
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
-
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1002       | TRADING_MODE_CONTINUOUS | 1       | 903       | 1101      | 200          | 10000          | 100           |
@@ -1147,7 +1187,7 @@ Feature: Fees calculations
   #   | trader4  | ETH/DEC21 | sell | 100    | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
   # Given the parties submit the following liquidity provision:
-  #   | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+  #   | id  | party | market id | commitment amount | fee   | side | pegged reference | volume     | offset | lp type    |
   #   | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | 10     | submission |
   #   | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          | 10     | submission |
 
@@ -1166,7 +1206,7 @@ Feature: Fees calculations
   #   | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
   # Given the parties submit the following liquidity provision:
-  #   | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+  #   | id  | party | market id | commitment amount | fee   | side | pegged reference | volume     | offset | lp type   |
   #   | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
   #   | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
 
@@ -1208,12 +1248,10 @@ Feature: Fees calculations
   Scenario: Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead
 
     Given the following network parameters are set:
-      | name                                                | value |
-      | market.stake.target.timeWindow                      | 24h   |
-      | market.stake.target.scalingFactor                   | 1     |
-      | market.liquidity.targetstake.triggering.ratio       | 1     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
-
+      | name                                          | value |
+      | market.stake.target.timeWindow                | 24h   |
+      | market.stake.target.scalingFactor             | 1     |
+      | market.liquidity.targetstake.triggering.ratio | 1     |
     And the average block duration is "1"
 
     And the fees configuration named "fees-config-1":
@@ -1229,10 +1267,12 @@ Feature: Fees calculations
     And the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r   | sigma |
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
-
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e0                    | 0                         |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e0                    | 0                         | SLA        |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -1250,17 +1290,19 @@ Feature: Fees calculations
       | trader4  | ETH/DEC21 | sell | 100    | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          | 10     | amendment  |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | submission |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | aux1  | ETH/DEC21 | 2000      | 1                    | buy  | BID              | 4000   | 10     |
+      | aux1  | ETH/DEC21 | 2000      | 1                    | sell | ASK              | 4000   | 10     |
     Then the opening auction period ends for market "ETH/DEC21"
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
-
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1002       | TRADING_MODE_CONTINUOUS | 1       | 903       | 1101      | 200          | 10000          | 100           |
@@ -1302,8 +1344,8 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 |      0 | 0       |
-      | trader4  | ETH   | ETH/DEC21 |   3564 | 237     |
+      | trader3a | ETH   | ETH/DEC21 | 0      | 0       |
+      | trader4  | ETH   | ETH/DEC21 | 3564   | 237     |
 
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             |
@@ -1315,11 +1357,10 @@ Feature: Fees calculations
     # Reducing account balances somehow lowers the margin requirement so the fees again gets covered by the deficient created.
 
     Given the following network parameters are set:
-      | name                                                | value |
-      | market.stake.target.timeWindow                      | 24h   |
-      | market.stake.target.scalingFactor                   | 1     |
-      | market.liquidity.targetstake.triggering.ratio       | 1     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
+      | name                                          | value |
+      | market.stake.target.timeWindow                | 24h   |
+      | market.stake.target.scalingFactor             | 1     |
+      | market.liquidity.targetstake.triggering.ratio | 1     |
 
     And the average block duration is "1"
 
@@ -1337,9 +1378,13 @@ Feature: Fees calculations
       | risk aversion | tau | mu | r   | sigma |
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
 
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e0                    | 0                         |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e0                    | 0                         | SLA        |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -1359,17 +1404,19 @@ Feature: Fees calculations
       | trader4  | ETH/DEC21 | sell | 100    | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          | 10     | amendment  |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | submission |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | aux1  | ETH/DEC21 | 2000      | 1                    | buy  | BID              | 3000   | 10     |
+      | aux1  | ETH/DEC21 | 2000      | 1                    | sell | ASK              | 3000   | 10     |
     Then the opening auction period ends for market "ETH/DEC21"
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
-
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1002       | TRADING_MODE_CONTINUOUS | 1       | 903       | 1101      | 200          | 10000          | 100           |
@@ -1422,8 +1469,8 @@ Feature: Fees calculations
       | 0.005     | 0.002              |
 
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | default-simple-risk-model-2 | default-overkill-margin-calculator | 2                | fees-config-1 | default-none     | default-eth-for-future | 2                       | 1e0                    | 0                         |
+      | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC21 | ETH        | ETH   | default-simple-risk-model-2 | default-overkill-margin-calculator | 2                | fees-config-1 | default-none     | default-eth-for-future | 2                       | 1e0                    | 0                         | default-futures |
 
     And the parties deposit on asset's general account the following amount:
       | party    | asset | amount        |
@@ -1523,8 +1570,8 @@ Feature: Fees calculations
       | 0.005     | 0.003              |
 
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | default-simple-risk-model-2 | default-overkill-margin-calculator | 2                | fees-config-1 | default-none     | default-eth-for-future | 2                       | 1e0                    | 0                         |
+      | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC21 | ETH        | ETH   | default-simple-risk-model-2 | default-overkill-margin-calculator | 2                | fees-config-1 | default-none     | default-eth-for-future | 2                       | 1e0                    | 0                         | default-futures |
 
     And the parties deposit on asset's general account the following amount:
       | party    | asset | amount        |
@@ -1615,12 +1662,8 @@ Feature: Fees calculations
   Scenario: WIP - Testing fees in continuous trading with two pegged trades and one liquidity providers
     # <PC> - Somehow the trades for party aux1 with size = 20 at price = 990 are getting cancelled and new trades of size = 21 at price = 965 are getting placed; but fees look ok
 
-    When the following network parameters are set:
-      | name                                                | value |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
-    And the average block duration is "1"
-
-    Given the fees configuration named "fees-config-1":
+    Given the average block duration is "1"
+    And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
     And the price monitoring named "price-monitoring":
@@ -1630,10 +1673,12 @@ Feature: Fees calculations
     When the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
-
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       | SLA        |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -1651,10 +1696,13 @@ Feature: Fees calculations
       | aux2  | ETH/DEC21 | sell | 100    | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 1          | 10     | amendment  |
-
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | submission |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | aux1  | ETH/DEC21 | 918       | 1                    | buy  | BID              | 4000   | 10     |
+      | aux1  | ETH/DEC21 | 991       | 1                    | sell | ASK              | 4000   | 10     |
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
@@ -1664,31 +1712,21 @@ Feature: Fees calculations
       | side | price | volume |
       | sell | 1080  | 100    |
       | buy  | 920   | 100    |
-      | buy  | 990   | 918    |
-      | sell | 1010  | 991    |
+      | buy  | 910   | 918    |
+      | sell | 1090  | 991    |
 
     Then the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 1000   | 990   | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4  | ETH/DEC21 | sell | 3000   | 990   | 2                | TYPE_LIMIT | TIF_GTC |
+      | trader4  | ETH/DEC21 | sell | 3000   | 990   | 1                | TYPE_LIMIT | TIF_GTC |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 2928   | 97122   |
-      # | trader3a | ETH   | ETH/DEC21 | 3216   | 96834   |
-      | trader4  | ETH   | ETH/DEC21 | 3910   | 96245   |
-    # | trader4  | ETH   | ETH/DEC21 | 5506   | 94934   |
+      | trader3a | ETH   | ETH/DEC21 | 3324   | 96726   |
+      | trader4  | ETH   | ETH/DEC21 | 3600   | 96320   |
 
     And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
-    And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
-
-    Then the following trades should be executed:
-      # | buyer    | price | size | seller  | maker   | taker   | buyer_fee | seller_fee | maker_fee |
-      # | trader3a | 1002  | 2    | trader4 | trader3 | trader4 | 30        | 11         | 11        |
-      # TODO to be implemented by Core Team
-      | buyer    | price | size | seller  |
-      # | aux1     | 990   | 19   | trader4 |
-      | trader3a | 990   | 1000 | trader4 |
+    And the accumulated liquidity fees should be "10" for the market "ETH/DEC21"
 
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
@@ -1710,25 +1748,22 @@ Feature: Fees calculations
     And the following transfers should happen:
       | from    | to       | from account            | to account                       | market id | amount | asset |
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 50     | ETH   |
-      | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 39     | ETH   |
-      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 20     | ETH   |
+      | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 20     | ETH   |
+      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 10     | ETH   |
       | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 50     | ETH   |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 2928   | 97122   |
-      # | trader3a | ETH   | ETH/DEC21 | 3216   | 96834   |
-      | trader4  | ETH   | ETH/DEC21 | 3910   | 96245   |
-    # | trader4  | ETH   | ETH/DEC21 | 5506   | 94934   |
+      | trader3a | ETH   | ETH/DEC21 | 3324   | 96726   |
+      | trader4  | ETH   | ETH/DEC21 | 3600   | 96320   |
 
-    # And the accumulated infrastructure fee should be "20" for the market "ETH/DEC21"
-    And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "10" for the market "ETH/DEC21"
 
     When the network moves ahead "11" blocks
 
     And the following transfers should happen:
-      | from   | to   | from account                | to account           | market id | amount | asset |
-      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 20     | ETH   |
+      | from   | to   | from account                | to account                     | market id | amount | asset |
+      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/DEC21 | 10     | ETH   |
 
   Scenario: Testing fees when network parameters are changed (in continuous trading with one trade)
     Description : Changing net params does change the fees being collected appropriately even if the market is already running
@@ -1745,17 +1780,17 @@ Feature: Fees calculations
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       | default-futures |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
-      | party   | asset | amount    |
-      | aux1    | ETH   | 100000000 |
-      | aux2    | ETH   | 100000000 |
-      | trader3 | ETH   | 10000     |
-      | trader4 | ETH   | 10000     |
-      | lpprov  | ETH   | 100000000 |
+      | party   | asset | amount      |
+      | aux1    | ETH   | 100000000   |
+      | aux2    | ETH   | 100000000   |
+      | trader3 | ETH   | 10000       |
+      | trader4 | ETH   | 10000       |
+      | lpprov  | ETH   | 10000000000 |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -1764,10 +1799,13 @@ Feature: Fees calculations
       | aux1  | ETH/DEC21 | buy  | 100    | 900   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 100    | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC21 | 100000    | 1                    | buy  | BID              | 200000 | 100    |
+      | lpprov | ETH/DEC21 | 100000    | 1                    | sell | ASK              | 200000 | 100    |
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |

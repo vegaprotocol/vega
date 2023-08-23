@@ -98,21 +98,21 @@ Feature: test risk model parameter ranges
       | 43200   | 0.99        | 300               |
 
     And the markets:
-      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/MAR0  | ETH        | USD   | log-normal-risk-model-0  | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/MAR11 | ETH        | USD   | log-normal-risk-model-11 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/MAR12 | ETH        | USD   | log-normal-risk-model-12 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/MAR21 | ETH        | USD   | log-normal-risk-model-21 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-22 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/MAR23 | ETH        | USD   | log-normal-risk-model-23 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/MAR31 | ETH        | USD   | log-normal-risk-model-31 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/MAR32 | ETH        | USD   | log-normal-risk-model-32 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/MAR41 | ETH        | USD   | log-normal-risk-model-41 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/MAR42 | ETH        | USD   | log-normal-risk-model-42 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/MAR43 | ETH        | USD   | log-normal-risk-model-43 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/MAR51 | ETH        | USD   | log-normal-risk-model-51 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/MAR52 | ETH        | USD   | log-normal-risk-model-52 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/MAR53 | ETH        | USD   | log-normal-risk-model-53 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/MAR0  | ETH        | USD   | log-normal-risk-model-0  | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR11 | ETH        | USD   | log-normal-risk-model-11 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR12 | ETH        | USD   | log-normal-risk-model-12 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR21 | ETH        | USD   | log-normal-risk-model-21 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-22 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR23 | ETH        | USD   | log-normal-risk-model-23 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR31 | ETH        | USD   | log-normal-risk-model-31 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR32 | ETH        | USD   | log-normal-risk-model-32 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR41 | ETH        | USD   | log-normal-risk-model-41 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR42 | ETH        | USD   | log-normal-risk-model-42 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR43 | ETH        | USD   | log-normal-risk-model-43 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR51 | ETH        | USD   | log-normal-risk-model-51 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR52 | ETH        | USD   | log-normal-risk-model-52 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR53 | ETH        | USD   | log-normal-risk-model-53 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount         |
       | party0 | USD   | 50000000000000 |
@@ -122,6 +122,7 @@ Feature: test risk model parameter ranges
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 22    |
 
   @Now @NoPerp
   Scenario: 001, test different value of risk parameters within defined ranges in different market, AC: 0018-RSKM-001
@@ -148,34 +149,58 @@ Feature: test risk model parameter ranges
 
     And the following network parameters are set:
       | name                                  | value |
-      | market.liquidity.bondPenaltyParameter | 0.2   |
+      | market.liquidityV2.bondPenaltyParameter | 0.2   |
 
     And the average block duration is "1"
 
     And the parties submit the following liquidity provision:
-      | id   | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1  | party0 | ETH/MAR0  | 50000             | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp1  | party0 | ETH/MAR0  | 50000             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
-      | lp2  | party0 | ETH/MAR11 | 50000             | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp2  | party0 | ETH/MAR11 | 50000             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
-      | lp3  | party0 | ETH/MAR12 | 50000             | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp3  | party0 | ETH/MAR12 | 50000             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
-      | lp4  | party0 | ETH/MAR21 | 50000             | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp4  | party0 | ETH/MAR21 | 50000             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
-      | lp5  | party0 | ETH/MAR22 | 50000             | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp5  | party0 | ETH/MAR22 | 50000             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
-      | lp6  | party0 | ETH/MAR31 | 50000             | 0.001 | buy  | BID              | 500        | 20     | submission |
-      | lp6  | party0 | ETH/MAR31 | 50000             | 0.001 | sell | ASK              | 500        | 20     | amendment  |
-      | lp7  | party0 | ETH/MAR32 | 50000             | 0.001 | buy  | BID              | 500        | 20     | submission |
-      | lp7  | party0 | ETH/MAR32 | 50000             | 0.001 | sell | ASK              | 500        | 20     | amendment  |
-      | lp9  | party0 | ETH/MAR41 | 50000             | 0.001 | buy  | BID              | 500        | 20     | submission |
-      | lp9  | party0 | ETH/MAR41 | 50000             | 0.001 | sell | ASK              | 500        | 20     | amendment  |
-      | lp10 | party0 | ETH/MAR42 | 50000             | 0.001 | buy  | BID              | 500        | 20     | submission |
-      | lp10 | party0 | ETH/MAR42 | 50000             | 0.001 | sell | ASK              | 500        | 20     | amendment  |
-      | lp11 | party0 | ETH/MAR43 | 50000             | 0.001 | buy  | BID              | 500        | 20     | submission |
-      | lp11 | party0 | ETH/MAR43 | 50000             | 0.001 | sell | ASK              | 500        | 20     | amendment  |
-      | lp12 | party0 | ETH/MAR51 | 50000             | 0.001 | buy  | BID              | 500        | 20     | submission |
-      | lp12 | party0 | ETH/MAR51 | 50000             | 0.001 | sell | ASK              | 500        | 20     | amendment  |
+      | id   | party  | market id | commitment amount | fee   | lp type    |
+      | lp1  | party0 | ETH/MAR0  | 50000             | 0.001 | submission |
+      | lp1  | party0 | ETH/MAR0  | 50000             | 0.001 | amendment  |
+      | lp2  | party0 | ETH/MAR11 | 50000             | 0.001 | submission |
+      | lp2  | party0 | ETH/MAR11 | 50000             | 0.001 | amendment  |
+      | lp3  | party0 | ETH/MAR12 | 50000             | 0.001 | submission |
+      | lp3  | party0 | ETH/MAR12 | 50000             | 0.001 | amendment  |
+      | lp4  | party0 | ETH/MAR21 | 50000             | 0.001 | submission |
+      | lp4  | party0 | ETH/MAR21 | 50000             | 0.001 | amendment  |
+      | lp5  | party0 | ETH/MAR22 | 50000             | 0.001 | submission |
+      | lp5  | party0 | ETH/MAR22 | 50000             | 0.001 | amendment  |
+      | lp6  | party0 | ETH/MAR31 | 50000             | 0.001 | submission |
+      | lp6  | party0 | ETH/MAR31 | 50000             | 0.001 | amendment  |
+      | lp7  | party0 | ETH/MAR32 | 50000             | 0.001 | submission |
+      | lp7  | party0 | ETH/MAR32 | 50000             | 0.001 | amendment  |
+      | lp9  | party0 | ETH/MAR41 | 50000             | 0.001 | submission |
+      | lp9  | party0 | ETH/MAR41 | 50000             | 0.001 | amendment  |
+      | lp10 | party0 | ETH/MAR42 | 50000             | 0.001 | submission |
+      | lp10 | party0 | ETH/MAR42 | 50000             | 0.001 | amendment  |
+      | lp11 | party0 | ETH/MAR43 | 50000             | 0.001 | submission |
+      | lp11 | party0 | ETH/MAR43 | 50000             | 0.001 | amendment  |
+      | lp12 | party0 | ETH/MAR51 | 50000             | 0.001 | submission |
+      | lp12 | party0 | ETH/MAR51 | 50000             | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/MAR0  | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR0  | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR11 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR11 | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR12 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR12 | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR21 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR21 | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR22 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR22 | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR31 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR31 | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR32 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR32 | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR41 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR41 | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR42 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR42 | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR43 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR43 | 57 | 1 | buy  | BID | 57 | 20 |
+      | party0 | ETH/MAR51 | 45 | 1 | sell | ASK | 45 | 20 |
+      | party0 | ETH/MAR51 | 57 | 1 | buy  | BID | 57 | 20 |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -437,7 +462,7 @@ Feature: test risk model parameter ranges
       | party1 | USD   | ETH/MAR51 | 1437   | 49999999893293 |       |
       | party2 | USD   | ETH/MAR51 | 1437   | 49999999589597 |       |
 
-  @Now @NoPerp
+@Now @NoPerp
   Scenario: 002, test market ETH/MAR23 (tau=1)
 
     Given the liquidity monitoring parameters:
@@ -462,14 +487,18 @@ Feature: test risk model parameter ranges
 
     And the following network parameters are set:
       | name                                  | value |
-      | market.liquidity.bondPenaltyParameter | 0.2   |
+      | market.liquidityV2.bondPenaltyParameter | 0.2   |
 
     And the average block duration is "1"
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/MAR23 | 5000000           | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp1 | party0 | ETH/MAR23 | 5000000           | 0.001 | buy  | BID              | 500        | 20     | amendment  |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/MAR23 | 5000000           | 0.001 | submission |
+      | lp1 | party0 | ETH/MAR23 | 5000000           | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/MAR23 | 4465 | 1 | sell | ASK | 4465 | 20 |
+      | party0 | ETH/MAR23 | 5682 | 1 | buy  | BID | 5682 | 20 |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -524,15 +553,19 @@ Feature: test risk model parameter ranges
       | ETH/MAR53 | updated-lqm-params   | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                  | value |
-      | market.liquidity.bondPenaltyParameter | 0.2   |
+      | market.liquidityV2.bondPenaltyParameter | 0.2   |
 
     And the average block duration is "1"
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/MAR52 | 600000            | 0.001 | sell | ASK              | 500        | 20     | submission |
-      | lp1 | party0 | ETH/MAR52 | 600000            | 0.001 | buy  | BID              | 500        | 20     | amendment  |
-
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/MAR52 | 600000            | 0.001 | submission |
+      | lp1 | party0 | ETH/MAR52 | 600000            | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party0 | ETH/MAR52 | 30000  | 1 | sell | ASK | 30000  | 9 |
+      | party0 | ETH/MAR52 | 600000 | 1 | buy  | BID | 600000 | 8 |
+ 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR52 | buy  | 10     | 9     | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-11  |
@@ -562,4 +595,5 @@ Feature: test risk model parameter ranges
       | party2 | USD   | ETH/MAR52 | 8033370     | 49999991966630 |        |
 
 # initial margin level for LP = 10*114559*55787.2881561700*1.2=7.66e10
+
 

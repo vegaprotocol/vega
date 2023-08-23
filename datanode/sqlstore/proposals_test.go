@@ -990,7 +990,6 @@ func TestProposeSuccessorMarket(t *testing.T) {
 			LiquidityMonitoringParameters: nil,
 			RiskParameters:                nil,
 			PositionDecimalPlaces:         0,
-			LpPriceRange:                  "",
 			LinearSlippageFactor:          "",
 			QuadraticSlippageFactor:       "",
 			Successor:                     nil,
@@ -1005,7 +1004,6 @@ func TestProposeSuccessorMarket(t *testing.T) {
 			LiquidityMonitoringParameters: nil,
 			RiskParameters:                nil,
 			PositionDecimalPlaces:         0,
-			LpPriceRange:                  "",
 			LinearSlippageFactor:          "",
 			QuadraticSlippageFactor:       "",
 			Successor: &vega.SuccessorConfiguration{

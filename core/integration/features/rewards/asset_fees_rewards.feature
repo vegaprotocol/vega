@@ -13,6 +13,7 @@ Feature: Fees reward calculations for a single asset, single market
       | reward.staking.delegation.minValidators           | 5      |
       | reward.staking.delegation.optimalStakeMultiplier  | 5.0    |
       | network.markPriceUpdateMaximumFrequency           | 0s     |
+      | limits.markets.maxPeggedOrders                    | 2      |
 
     Given time is updated to "2021-08-26T00:00:00Z"
     Given the average block duration is "2"
@@ -26,15 +27,15 @@ Feature: Fees reward calculations for a single asset, single market
       | 0.005     | 0.002              |
     And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
-      | 1       | 0.99        | 3                 |
+      | 3600 | 0.99 | 3 |
 
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
 
     Given the parties deposit on asset's general account the following amount:
       | party                                                            | asset | amount  |
@@ -55,31 +56,41 @@ Feature: Fees reward calculations for a single asset, single market
       | lpprov  | ETH   | 100000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC21 | 90        | 1                    | buy  | BID              | 90     | 10     |
+      | lpprov | ETH/DEC21 | 90        | 1                    | sell | ASK              | 90     | 10     |
 
     Then the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy1      |
+      | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell1     |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            |
-      | 1000       | TRADING_MODE_CONTINUOUS |
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 900       | 1100      | 20000        | 90000          | 10            |
+
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 720    | 9280    |
+      | trader3 | ETH | ETH/DEC21 | 720 | 9280 |
 
     And the accumulated infrastructure fees should be "0" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+    # Then debug detailed orderbook volumes for market "ETH/DEC21"
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            |
+      | 1000       | TRADING_MODE_CONTINUOUS |
 
     Then the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
@@ -93,10 +104,10 @@ Feature: Fees reward calculations for a single asset, single market
       | buyer   | price | size | seller  | aggressor side |
       | trader3 | 1002  | 3    | trader4 | sell           |
 
-    # trade_value_for_fee_purposes = size_of_trade 0000000000000000000000000000000000000000000000000000000000000000 price_of_trade = 3 00000000000000000000000000000000000000000000000000000000000000001002 = 3006
-    # infrastructure_fee = fee_factor[infrastructure] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.002 0000000000000000000000000000000000000000000000000000000000000000 3006 = 6.012 = 7 (rounded up to nearest whole value)
-    # maker_fee =  fee_factor[maker]  0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.005 0000000000000000000000000000000000000000000000000000000000000000 3006 = 15.030 = 16 (rounded up to nearest whole value)
-    # liquidity_fee = fee_factor[liquidity] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0 0000000000000000000000000000000000000000000000000000000000000000 3006 = 0
+# trade_value_for_fee_purposes = size_of_trade 0000000000000000000000000000000000000000000000000000000000000000 price_of_trade = 3 00000000000000000000000000000000000000000000000000000000000000001002 = 3006
+# infrastructure_fee = fee_factor[infrastructure] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.002 0000000000000000000000000000000000000000000000000000000000000000 3006 = 6.012 = 7 (rounded up to nearest whole value)
+# maker_fee =  fee_factor[maker]  0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.005 0000000000000000000000000000000000000000000000000000000000000000 3006 = 15.030 = 16 (rounded up to nearest whole value)
+# liquidity_fee = fee_factor[liquidity] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0 0000000000000000000000000000000000000000000000000000000000000000 3006 = 0
 
     And the following transfers should happen:
       | from    | to      | from account            | to account                       | market id | amount | asset |
@@ -105,14 +116,14 @@ Feature: Fees reward calculations for a single asset, single market
       | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 301    | ETH   |
       | market  | trader3 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 16     | ETH   |
 
-    # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 7 + 16 + 0 = 23
-    # Trader3 margin + general account balance = 10000 + 16 ( Maker fees) = 10016
-    # Trader4 margin + general account balance = 10000 - 16 ( Maker fees) - 7 (Infra fee) = 99977
+# total_fee = infrastructure_fee + maker_fee + liquidity_fee = 7 + 16 + 0 = 23
+# Trader3 margin + general account balance = 10000 + 16 ( Maker fees) = 10016
+# Trader4 margin + general account balance = 10000 - 16 ( Maker fees) - 7 (Infra fee) -301 (liq fee)= 9676
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1330   | 8686    |
-      | trader4 | ETH   | ETH/DEC21 | 718    | 8958    |
+      | trader3 | ETH | ETH/DEC21 | 1114 | 8902 |
+      | trader4 | ETH | ETH/DEC21 | 480  | 9196 |
 
     And the accumulated infrastructure fees should be "7" for the asset "ETH"
     And the accumulated liquidity fees should be "301" for the market "ETH/DEC21"
@@ -122,8 +133,8 @@ Feature: Fees reward calculations for a single asset, single market
     # only trader3 received the maker fees so only they get the reward of 10k
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1330   | 8686    |
-      | trader4 | ETH   | ETH/DEC21 | 718    | 8958    |
+      | trader3 | ETH | ETH/DEC21 | 1114 | 8902 |
+      | trader4 | ETH | ETH/DEC21 | 480  | 9196 |
 
     Then "trader3" should have general account balance of "10000" for asset "VEGA"
 
@@ -132,8 +143,8 @@ Feature: Fees reward calculations for a single asset, single market
     # expect no change to anyone
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1330   | 8686    |
-      | trader4 | ETH   | ETH/DEC21 | 718    | 8958    |
+      | trader3 | ETH | ETH/DEC21 | 1114 | 8902 |
+      | trader4 | ETH | ETH/DEC21 | 480  | 9196 |
 
     Then "trader3" should have general account balance of "10000" for asset "VEGA"
 
@@ -151,8 +162,8 @@ Feature: Fees reward calculations for a single asset, single market
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
 
     Given the parties deposit on asset's general account the following amount:
       | party                                                            | asset | amount   |
@@ -175,9 +186,14 @@ Feature: Fees reward calculations for a single asset, single market
       | lpprov   | ETH   | 100000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC21 | 90        | 1                    | buy  | BID              | 90     | 10     |
+      | lpprov | ETH/DEC21 | 90        | 1                    | sell | ASK              | 90     | 10     |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -216,17 +232,17 @@ Feature: Fees reward calculations for a single asset, single market
       | trader3a | 1002  | 2    | trader4 | sell           |
       | trader3b | 1002  | 1    | trader4 | sell           |
 
-    # For trader3a-
-    # trade_value_for_fee_purposes for trader3a = size_of_trade 0000000000000000000000000000000000000000000000000000000000000000 price_of_trade = 2 0000000000000000000000000000000000000000000000000000000000000000 1002 = 2004
-    # infrastructure_fee = fee_factor[infrastructure] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.002 0000000000000000000000000000000000000000000000000000000000000000 2004 = 4.008 = 5 (rounded up to nearest whole value)
-    # maker_fee =  fee_factor[maker]  0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.005 0000000000000000000000000000000000000000000000000000000000000000 2004 = 10.02 = 11 (rounded up to nearest whole value)
-    # liquidity_fee = fee_factor[liquidity] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0 0000000000000000000000000000000000000000000000000000000000000000 3006 = 0
+# For trader3a-
+# trade_value_for_fee_purposes for trader3a = size_of_trade 0000000000000000000000000000000000000000000000000000000000000000 price_of_trade = 2 0000000000000000000000000000000000000000000000000000000000000000 1002 = 2004
+# infrastructure_fee = fee_factor[infrastructure] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.002 0000000000000000000000000000000000000000000000000000000000000000 2004 = 4.008 = 5 (rounded up to nearest whole value)
+# maker_fee =  fee_factor[maker]  0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.005 0000000000000000000000000000000000000000000000000000000000000000 2004 = 10.02 = 11 (rounded up to nearest whole value)
+# liquidity_fee = fee_factor[liquidity] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0 0000000000000000000000000000000000000000000000000000000000000000 3006 = 0
 
-    # For trader3b -
-    # trade_value_for_fee_purposes = size_of_trade 0000000000000000000000000000000000000000000000000000000000000000 price_of_trade = 1 0000000000000000000000000000000000000000000000000000000000000000 1002 = 1002
-    # infrastructure_fee = fee_factor[infrastructure] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.002 0000000000000000000000000000000000000000000000000000000000000000 1002 = 2.004 = 3 (rounded up to nearest whole value)
-    # maker_fee =  fee_factor[maker]  0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.005 0000000000000000000000000000000000000000000000000000000000000000 1002 = 5.01 = 6 (rounded up to nearest whole value)
-    # liquidity_fee = fee_factor[liquidity] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0 0000000000000000000000000000000000000000000000000000000000000000 3006 = 0
+# For trader3b -
+# trade_value_for_fee_purposes = size_of_trade 0000000000000000000000000000000000000000000000000000000000000000 price_of_trade = 1 0000000000000000000000000000000000000000000000000000000000000000 1002 = 1002
+# infrastructure_fee = fee_factor[infrastructure] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.002 0000000000000000000000000000000000000000000000000000000000000000 1002 = 2.004 = 3 (rounded up to nearest whole value)
+# maker_fee =  fee_factor[maker]  0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.005 0000000000000000000000000000000000000000000000000000000000000000 1002 = 5.01 = 6 (rounded up to nearest whole value)
+# liquidity_fee = fee_factor[liquidity] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0 0000000000000000000000000000000000000000000000000000000000000000 3006 = 0
 
     And the following transfers should happen:
       | from    | to       | from account            | to account                       | market id | amount | asset |
@@ -237,16 +253,16 @@ Feature: Fees reward calculations for a single asset, single market
       | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 11     | ETH   |
       | market  | trader3b | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |
 
-    # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 8 + 11 + 6 + 0 = 25 ??
-    # Trader3a margin + general account balance = 10000 + 11 ( Maker fees) = 10011
-    # Trader3b margin + general account balance = 10000 + 6 ( Maker fees) = 10006
-    # Trader4  margin + general account balance = 10000 - (11+6) ( Maker fees) - 8 (Infra fee) = 99975
+# total_fee = infrastructure_fee + maker_fee + liquidity_fee = 8 + 11 + 6 + 0 = 25 ??
+# Trader3a margin + general account balance = 10000 + 11 ( Maker fees) = 10011
+# Trader3b margin + general account balance = 10000 + 6 ( Maker fees) = 10006
+# Trader4  margin + general account balance = 10000 - (11+6) ( Maker fees) - 8 (Infra fee) = 99975
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 846    | 9165    |
+      | trader3a | ETH | ETH/DEC21 | 738 | 9273 |
       | trader3b | ETH   | ETH/DEC21 | 363    | 9643    |
-      | trader4  | ETH   | ETH/DEC21 | 718    | 8955    |
+      | trader4 | ETH | ETH/DEC21 | 480 | 9193 |
 
     And the accumulated infrastructure fees should be "8" for the asset "ETH"
     And the accumulated liquidity fees should be "302" for the market "ETH/DEC21"
@@ -256,9 +272,9 @@ Feature: Fees reward calculations for a single asset, single market
     # only trader3 received the maker fees so only they get the reward of 10k
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 846    | 9165    |
+      | trader3a | ETH | ETH/DEC21 | 738 | 9273 |
       | trader3b | ETH   | ETH/DEC21 | 363    | 9643    |
-      | trader4  | ETH   | ETH/DEC21 | 718    | 8955    |
+      | trader4 | ETH | ETH/DEC21 | 480 | 9193 |
 
     Then "trader3a" should have general account balance of "6470" for asset "VEGA"
     And "trader3b" should have general account balance of "3529" for asset "VEGA"
@@ -269,15 +285,11 @@ Feature: Fees reward calculations for a single asset, single market
     # expect no change to anyone
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 846    | 9165    |
+      | trader3a | ETH | ETH/DEC21 | 738 | 9273 |
       | trader3b | ETH   | ETH/DEC21 | 363    | 9643    |
-      | trader4  | ETH   | ETH/DEC21 | 718    | 8955    |
+      | trader4 | ETH | ETH/DEC21 | 480 | 9193 |
 
   Scenario: Testing fees in continuous trading with two trades and one liquidity providers with 10 and 0 s liquidity fee distribution timestep - test maker fee received, taker fee paid and lp fees rewards
-    When the following network parameters are set:
-      | name                                                | value |
-      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
-
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
@@ -289,9 +301,13 @@ Feature: Fees reward calculations for a single asset, single market
       | long | short | max move up | min move down | probability of trading |
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       | SLA        |
 
     Given the parties deposit on asset's general account the following amount:
       | party                                                            | asset | amount   |
@@ -322,10 +338,15 @@ Feature: Fees reward calculations for a single asset, single market
       | aux2  | ETH/DEC21 | sell | 1      | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | submission |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment  |
 
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | aux1  | ETH/DEC21 | 10        | 1                    | buy  | BID              | 10     | 10     |
+      | aux1  | ETH/DEC21 | 10        | 1                    | sell | ASK              | 10     | 10     |
+ 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
@@ -356,17 +377,17 @@ Feature: Fees reward calculations for a single asset, single market
       | mark price | trading mode            |
       | 1002       | TRADING_MODE_CONTINUOUS |
 
-    # For trader3a-
-    # trade_value_for_fee_purposes for trader3a = size_of_trade 0000000000000000000000000000000000000000000000000000000000000000 price_of_trade = 2 0000000000000000000000000000000000000000000000000000000000000000 1002 = 2004
-    # infrastructure_fee = fee_factor[infrastructure] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.002 0000000000000000000000000000000000000000000000000000000000000000 2004 = 4.008 = 5 (rounded up to nearest whole value)
-    # maker_fee =  fee_factor[maker]  0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.005 0000000000000000000000000000000000000000000000000000000000000000 2004 = 10.02 = 11 (rounded up to nearest whole value)
-    # liquidity_fee = fee_factor[liquidity] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.001 0000000000000000000000000000000000000000000000000000000000000000 2004 = 2.004 = 3 (rounded up to nearest whole value)
+# For trader3a-
+# trade_value_for_fee_purposes for trader3a = size_of_trade 0000000000000000000000000000000000000000000000000000000000000000 price_of_trade = 2 0000000000000000000000000000000000000000000000000000000000000000 1002 = 2004
+# infrastructure_fee = fee_factor[infrastructure] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.002 0000000000000000000000000000000000000000000000000000000000000000 2004 = 4.008 = 5 (rounded up to nearest whole value)
+# maker_fee =  fee_factor[maker]  0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.005 0000000000000000000000000000000000000000000000000000000000000000 2004 = 10.02 = 11 (rounded up to nearest whole value)
+# liquidity_fee = fee_factor[liquidity] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.001 0000000000000000000000000000000000000000000000000000000000000000 2004 = 2.004 = 3 (rounded up to nearest whole value)
 
-    # For trader3b -
-    # trade_value_for_fee_purposes = size_of_trade 0000000000000000000000000000000000000000000000000000000000000000 price_of_trade = 1 0000000000000000000000000000000000000000000000000000000000000000 1002 = 1002
-    # infrastructure_fee = fee_factor[infrastructure] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.002 0000000000000000000000000000000000000000000000000000000000000000 1002 = 2.004 = 3 (rounded up to nearest whole value)
-    # maker_fee =  fee_factor[maker]  0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.005 0000000000000000000000000000000000000000000000000000000000000000 1002 = 5.01 = 6 (rounded up to nearest whole value)
-    # liquidity_fee = fee_factor[liquidity] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.001 0000000000000000000000000000000000000000000000000000000000000000 1002 = 1.002 = 2 (rounded up to nearest whole value)
+# For trader3b -
+# trade_value_for_fee_purposes = size_of_trade 0000000000000000000000000000000000000000000000000000000000000000 price_of_trade = 1 0000000000000000000000000000000000000000000000000000000000000000 1002 = 1002
+# infrastructure_fee = fee_factor[infrastructure] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.002 0000000000000000000000000000000000000000000000000000000000000000 1002 = 2.004 = 3 (rounded up to nearest whole value)
+# maker_fee =  fee_factor[maker]  0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.005 0000000000000000000000000000000000000000000000000000000000000000 1002 = 5.01 = 6 (rounded up to nearest whole value)
+# liquidity_fee = fee_factor[liquidity] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.001 0000000000000000000000000000000000000000000000000000000000000000 1002 = 1.002 = 2 (rounded up to nearest whole value)
 
     Then the following trades should be executed:
       | buyer    | price | size | seller  | aggressor side | buyer fee | seller fee | infrastructure fee | maker fee | liquidity fee |
@@ -378,24 +399,21 @@ Feature: Fees reward calculations for a single asset, single market
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 11     | ETH   |
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 6      | ETH   |
       | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 8      | ETH   |
-      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 5      | ETH   |
+      | trader4 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/DEC21 | 5 | ETH |
       | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 11     | ETH   |
       | market  | trader3b | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |
 
-    # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 8 + 11 + 6 + 0 = 25
-    # Trader3a margin + general account balance = 10000 + 11 ( Maker fees) = 10011
-    # Trader3b margin + general account balance = 10000 + 6 ( Maker fees) = 10006
-    # Trader4  margin + general account balance = 10000 - (11+6) ( Maker fees) - 8 (Infra fee) = 99975
+# total_fee = infrastructure_fee + maker_fee + liquidity_fee = 8 + 11 + 6 + 0 = 25
+# Trader3a margin + general account balance = 10000 + 11 ( Maker fees) = 10011
+# Trader3b margin + general account balance = 10000 + 6 ( Maker fees) = 10006
+# Trader4  margin + general account balance = 10000 - (11+6) ( Maker fees) - 8 (Infra fee) = 99975
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general  |
       | trader3a | ETH   | ETH/DEC21 | 690    | 9321     |
       | trader3b | ETH   | ETH/DEC21 | 339    | 9667     |
       | trader4  | ETH   | ETH/DEC21 | 480    | 9490     |
-      | aux1     | ETH   | ETH/DEC21 | 2978   | 99987024 |
-    #| trader3a | ETH   | ETH/DEC21 | 480    | 9531     |
-    #| trader3b | ETH   | ETH/DEC21 | 240    | 9766     |
-    #| trader4  | ETH   | ETH/DEC21 | 679    | 9291     |
+      | aux1 | ETH | ETH/DEC21 | 2978 | 99987024 |
 
     And the accumulated infrastructure fees should be "8" for the asset "ETH"
     And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
@@ -403,21 +421,13 @@ Feature: Fees reward calculations for a single asset, single market
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks
 
-    # Not sure why this transfer is gone now?
-    And the following transfers should happen:
-      | from   | to   | from account                | to account           | market id | amount | asset |
-      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 5      | ETH   |
-
     # only trader3 received the maker fees so only they get the reward of 10k
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general  |
       | trader3a | ETH   | ETH/DEC21 | 690    | 9321     |
       | trader3b | ETH   | ETH/DEC21 | 339    | 9667     |
       | trader4  | ETH   | ETH/DEC21 | 480    | 9490     |
-      | aux1     | ETH   | ETH/DEC21 | 2978   | 99987029 |
-    #| trader3a | ETH   | ETH/DEC21 | 480    | 9531     |
-    #| trader3b | ETH   | ETH/DEC21 | 240    | 9766     |
-    #| trader4  | ETH   | ETH/DEC21 | 679    | 9291     |
+      | aux1 | ETH | ETH/DEC21 | 2978 | 99987024 |
 
     # 11/17 x 10000 -> maker fee received reward
     Then "trader3a" should have general account balance of "6470" for asset "VEGA"

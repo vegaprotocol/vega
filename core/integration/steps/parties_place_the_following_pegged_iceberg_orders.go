@@ -33,13 +33,22 @@ func PartiesPlaceTheFollowingPeggedIcebergOrders(
 	for _, r := range parseSubmitPeggedIcebergOrderTable(table) {
 		row := submitPeggedIcebergOrderRow{row: r}
 
+		typ := types.OrderTypeLimit
+		if row.HasOrderType() {
+			typ = row.OrderType()
+		}
+		tif := types.OrderTimeInForceGTC
+		if row.HasTimeInForce() {
+			tif = row.TimeInForce()
+		}
+
 		orderSubmission := types.OrderSubmission{
 			MarketID:    row.MarketID(),
 			Side:        row.Side(),
 			Size:        row.Volume(),
 			ExpiresAt:   row.ExpirationDate(now),
-			Type:        row.OrderType(),
-			TimeInForce: row.TimeInForce(),
+			Type:        typ,
+			TimeInForce: tif,
 			Reference:   row.Reference(),
 			IcebergOrder: &types.IcebergOrder{
 				PeakSize:           row.InitialPeak(),
@@ -88,13 +97,13 @@ func parseSubmitPeggedIcebergOrderTable(table *godog.Table) []RowWrapper {
 		"market id",
 		"side",
 		"volume",
-		"type",
-		"tif",
 		"peak size",
 		"minimum visible size",
 		"pegged reference",
 		"offset",
 	}, []string{
+		"type",
+		"tif",
 		"reference",
 		"error",
 		"resulting trades",
@@ -123,6 +132,14 @@ func (r submitPeggedIcebergOrderRow) Volume() uint64 {
 	return r.row.MustU64("volume")
 }
 
+func (r submitPeggedIcebergOrderRow) HasOrderType() bool {
+	return r.row.HasColumn("type")
+}
+
+func (r submitPeggedIcebergOrderRow) HasTimeInForce() bool {
+	return r.row.HasColumn("tif")
+}
+
 func (r submitPeggedIcebergOrderRow) OrderType() types.OrderType {
 	return r.row.MustOrderType("type")
 }
@@ -132,11 +149,11 @@ func (r submitPeggedIcebergOrderRow) TimeInForce() types.OrderTimeInForce {
 }
 
 func (r submitPeggedIcebergOrderRow) ExpirationDate(now time.Time) int64 {
-	if r.OrderType() == types.OrderTypeMarket {
+	if r.HasOrderType() && r.OrderType() == types.OrderTypeMarket {
 		return 0
 	}
 
-	if r.TimeInForce() == types.OrderTimeInForceGTT {
+	if r.HasTimeInForce() && r.TimeInForce() == types.OrderTimeInForceGTT {
 		return now.Add(r.row.MustDurationSec("expires in")).Local().UnixNano()
 	}
 	// non GTT orders don't need an expiry time

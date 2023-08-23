@@ -29,16 +29,6 @@ var (
 	ErrNoValidOrders = errors.New("no valid orders to cover the liquidity obligation with")
 )
 
-// LiquidityOrder contains information required to compute volume required to fullfil liquidity obligation per set of liquidity provision orders for one side of the order book.
-type LiquidityOrder struct {
-	OrderID string
-
-	Price   *num.Uint
-	Details *types.LiquidityOrder
-
-	LiquidityImpliedVolume uint64
-}
-
 // RiskModel allows calculation of min/max price range and a probability of trading.
 //
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_model_mock.go -package mocks code.vegaprotocol.io/vega/core/liquidity/supplied RiskModel
@@ -157,76 +147,4 @@ func (e *Engine) CalculateLiquidityScore(
 		return bLiq
 	}
 	return sLiq
-}
-
-// CalculateLiquidityImpliedVolumes updates the LiquidityImpliedSize fields in LiquidityOrderReference so that the liquidity commitment is met.
-// Current market price, liquidity obligation, and orders must be specified.
-// Note that due to integer order size the actual liquidity provided will be more than or equal to the commitment amount.
-func (e *Engine) CalculateLiquidityImpliedVolumes(
-	liquidityObligation *num.Uint,
-	orders []*types.Order,
-	minLpPrice, maxLpPrice *num.Uint,
-	buyShapes, sellShapes []*LiquidityOrder,
-) {
-	buySupplied, sellSupplied := e.CalculateUnweightedBuySellLiquidityWithinLPRange(orders, minLpPrice, maxLpPrice)
-
-	buyRemaining := liquidityObligation.Clone()
-	buyRemaining.Sub(buyRemaining, buySupplied)
-	e.updateSizes(buyRemaining, buyShapes)
-
-	sellRemaining := liquidityObligation.Clone()
-	sellRemaining.Sub(sellRemaining, sellSupplied)
-	e.updateSizes(sellRemaining, sellShapes)
-}
-
-// CalculateUnweightedBuySellLiquidityWithinLPRange returns the sum of price x remaining volume for each order within LP range.
-func (e *Engine) CalculateUnweightedBuySellLiquidityWithinLPRange(orders []*types.Order, minLpPrice, maxLpPrice *num.Uint) (*num.Uint, *num.Uint) {
-	bLiq := num.UintZero()
-	sLiq := num.UintZero()
-	for _, o := range orders {
-		if o.Price.LT(minLpPrice) || o.Price.GT(maxLpPrice) {
-			continue
-		}
-		l := num.NewUint(o.Remaining)
-		l.Mul(l, o.Price)
-		if o.Side == types.SideBuy {
-			bLiq.Add(bLiq, l)
-		}
-		if o.Side == types.SideSell {
-			sLiq.Add(sLiq, l)
-		}
-	}
-
-	// descale provided liquidity by 10^pdp
-	bl, _ := num.UintFromDecimal(bLiq.ToDecimal().Div(e.positionFactor))
-	sl, _ := num.UintFromDecimal(sLiq.ToDecimal().Div(e.positionFactor))
-	return bl, sl
-}
-
-func (e *Engine) updateSizes(liquidityObligation *num.Uint, orders []*LiquidityOrder) {
-	if liquidityObligation.IsZero() || liquidityObligation.IsNegative() {
-		setSizesTo0(orders)
-		return
-	}
-	sum := num.DecimalZero()
-	proportionsD := make([]num.Decimal, 0, len(orders))
-	for _, o := range orders {
-		prop := num.DecimalFromUint(num.NewUint(uint64(o.Details.Proportion)))
-		proportionsD = append(proportionsD, prop)
-		sum = sum.Add(prop)
-	}
-
-	for i, o := range orders {
-		scaling := proportionsD[i].Div(sum)
-		d := num.DecimalFromUint(liquidityObligation).Mul(scaling)
-		// scale the volume by 10^pdp BEFORE dividing by price for better precision.
-		liv, _ := num.UintFromDecimal(d.Mul(e.positionFactor).Div(num.DecimalFromUint(o.Price)).Ceil())
-		o.LiquidityImpliedVolume = liv.Uint64()
-	}
-}
-
-func setSizesTo0(orders []*LiquidityOrder) {
-	for _, o := range orders {
-		o.LiquidityImpliedVolume = 0
-	}
 }

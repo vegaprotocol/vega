@@ -70,10 +70,6 @@ func (r *newMarketResolver) PositionDecimalPlaces(_ context.Context, obj *types.
 	return int(obj.Changes.PositionDecimalPlaces), nil
 }
 
-func (r *newMarketResolver) LpPriceRange(_ context.Context, obj *types.NewMarket) (string, error) {
-	return obj.Changes.LpPriceRange, nil
-}
-
 func (r *newMarketResolver) LinearSlippageFactor(_ context.Context, obj *types.NewMarket) (string, error) {
 	return obj.Changes.LinearSlippageFactor, nil
 }

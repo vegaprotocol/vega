@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/protos/vega"
+	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -30,15 +31,11 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a market change with position decimal places equal to 0 succeeds", testNewMarketChangeSubmissionWithPositionDecimalPlacesEqualTo0Succeeds)
 	t.Run("Submitting a market change with position decimal places above or equal to 6 fails", testNewMarketChangeSubmissionWithPositionDecimalPlacesAboveOrEqualTo7Fails)
 	t.Run("Submitting a market change with position decimal places below 6 succeeds", testNewMarketChangeSubmissionWithPositionDecimalPlacesBelow7Succeeds)
-	t.Run("Submitting a market change with lp price range 'banana' fails", testNewMarketChangeSubmissionWithLpRangeBananaFails)
 	t.Run("Submitting a market change with slippage factor 'banana' fails", testNewMarketChangeSubmissionWithSlippageFactorBananaFails)
 	t.Run("Submitting a market change with negative slippage factor fails", testNewMarketChangeSubmissionWithSlippageFactorNegativeFails)
 	t.Run("Submitting a market change with empty max slippage factor succeeds", testNewMarketChangeSubmissionWithEmptySlippageFactorPasses)
 	t.Run("Submitting a market change with too large slippage factor fails", testNewMarketChangeSubmissionWithSlippageFactorTooLargeFails)
-	t.Run("Submitting a market change with lp price range below 0 fails", testNewMarketChangeSubmissionWithLpRangeNegativeFails)
-	t.Run("Submitting a market change with lp price range equal to 0 fails", testNewMarketChangeSubmissionWithLpRangeZeroFails)
-	t.Run("Submitting a market change with lp price range in [0,100] range succeeds", testNewMarketChangeSubmissionWithLpRangeGreaterThan100)
-	t.Run("Submitting a market change with lp price range above 100 fails", testNewMarketChangeSubmissionWithLpRangePositiveSucceeds)
+
 	t.Run("Submitting a new market without price monitoring succeeds", testNewMarketChangeSubmissionWithoutPriceMonitoringSucceeds)
 	t.Run("Submitting a new market with price monitoring succeeds", testNewMarketChangeSubmissionWithPriceMonitoringSucceeds)
 	t.Run("Submitting a price monitoring change without triggers succeeds", testPriceMonitoringChangeSubmissionWithoutTriggersSucceeds)
@@ -105,7 +102,6 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a simple risk parameters change with simple risk parameters succeeds", testNewSimpleRiskParametersChangeSubmissionWithSimpleRiskParametersSucceeds)
 	t.Run("Submitting a simple risk parameters change with min move down fails", testNewSimpleRiskParametersChangeSubmissionWithPositiveMinMoveDownFails)
 	t.Run("Submitting a simple risk parameters change with min move down succeeds", testNewSimpleRiskParametersChangeSubmissionWithNonPositiveMinMoveDownSucceeds)
-	t.Run("Submitting a simple risk parameters change with max move up fails", testNewSpotSimpleRiskParametersChangeSubmissionWithNegativeMaxMoveUpFails)
 	t.Run("Submitting a simple risk parameters change with max move up succeeds", testNewSimpleRiskParametersChangeSubmissionWithNonNegativeMaxMoveUpSucceeds)
 	t.Run("Submitting a simple risk parameters change with wrong probability of trading fails", testNewSimpleRiskParametersChangeSubmissionWithWrongProbabilityOfTradingFails)
 	t.Run("Submitting a simple risk parameters change with right probability of trading succeeds", testNewSimpleRiskParametersChangeSubmissionWithRightProbabilityOfTradingSucceeds)
@@ -164,6 +160,16 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a perps market change with a mismatch between binding property name and filter fails", testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingFails)
 	t.Run("Submitting a perps market change with match between binding property name and filter succeeds", testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingSucceeds)
 	t.Run("Submitting a perps market change with settlement data and trading termination properties succeeds", testNewPerpsMarketChangeSubmissionWithSettlementDataPropertySucceeds)
+	t.Run("Submitting a new market with invalid SLA price range fails", testNewMarketChangeSubmissionWithInvalidLpRangeFails)
+	t.Run("Submitting a new market with valid SLA price range succeeds", testNewMarketChangeSubmissionWithValidLpRangeSucceeds)
+	t.Run("Submitting a new market with invalid min time fraction fails", testNewMarketChangeSubmissionWithInvalidMinTimeFractionFails)
+	t.Run("Submitting a new market with valid min time fraction succeeds", testNewMarketChangeSubmissionWithValidMinTimeFractionSucceeds)
+	t.Run("Submitting a new market with invalid fee calculation time step fails", testNewMarketChangeSubmissionWithInvalidCalculationTimeStepFails)
+	t.Run("Submitting a new market with valid fee calculation time step succeeds", testNewMarketChangeSubmissionWithValidCalculationTimeStepSucceeds)
+	t.Run("Submitting a new market with invalid competition factor fails", testNewMarketChangeSubmissionWithInvalidCompetitionFactorFails)
+	t.Run("Submitting a new market with valid competition factor succeeds", testNewMarketChangeSubmissionWithValidCompetitionFactorSucceeds)
+	t.Run("Submitting a new market with invalid hysteresis epochs fails", testNewMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails)
+	t.Run("Submitting a new market with valid hysteresis epochs succeeds", testNewMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds)
 }
 
 func testNewMarketChangeSubmissionWithoutNewMarketFails(t *testing.T) {
@@ -340,22 +346,6 @@ func testNewMarketChangeSubmissionWithPositionDecimalPlacesBelow7Succeeds(t *tes
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.position_decimal_places"), commands.ErrMustBeWithinRange7)
 }
 
-func testNewMarketChangeSubmissionWithLpRangeBananaFails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &vegapb.ProposalTerms{
-			Change: &vegapb.ProposalTerms_NewMarket{
-				NewMarket: &vegapb.NewMarket{
-					Changes: &vegapb.NewMarketConfiguration{
-						LpPriceRange: "banana",
-					},
-				},
-			},
-		},
-	})
-
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrIsNotValidNumber)
-}
-
 func testNewMarketChangeSubmissionWithSlippageFactorBananaFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &vegapb.ProposalTerms{
@@ -452,104 +442,6 @@ func testNewMarketChangeSubmissionWithEmptySlippageFactorPasses(t *testing.T) {
 	})
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.linear_slippage_factor"), commands.ErrIsNotValidNumber)
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor"), commands.ErrIsNotValidNumber)
-}
-
-func testNewMarketChangeSubmissionWithLpRangeNegativeFails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &vegapb.ProposalTerms{
-			Change: &vegapb.ProposalTerms_NewMarket{
-				NewMarket: &vegapb.NewMarket{
-					Changes: &vegapb.NewMarketConfiguration{
-						LpPriceRange: "-1e-17",
-					},
-				},
-			},
-		},
-	})
-
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBePositive)
-}
-
-func testNewMarketChangeSubmissionWithLpRangeGreaterThan100(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &vegapb.ProposalTerms{
-			Change: &vegapb.ProposalTerms_NewMarket{
-				NewMarket: &vegapb.NewMarket{
-					Changes: &vegapb.NewMarketConfiguration{
-						LpPriceRange: "100.0000000000001",
-					},
-				},
-			},
-		},
-	})
-
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBeAtMost100)
-}
-
-func testNewMarketChangeSubmissionWithLpRangeZeroFails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &vegapb.ProposalTerms{
-			Change: &vegapb.ProposalTerms_NewMarket{
-				NewMarket: &vegapb.NewMarket{
-					Changes: &vegapb.NewMarketConfiguration{
-						LpPriceRange: "0",
-					},
-				},
-			},
-		},
-	})
-
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBePositive)
-}
-
-func testNewMarketChangeSubmissionWithLpRangePositiveSucceeds(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &vegapb.ProposalTerms{
-			Change: &vegapb.ProposalTerms_NewMarket{
-				NewMarket: &vegapb.NewMarket{
-					Changes: &vegapb.NewMarketConfiguration{
-						LpPriceRange: "1e-17",
-					},
-				},
-			},
-		},
-	})
-
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrIsNotValidNumber)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBePositive)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBeAtMost100)
-
-	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &vegapb.ProposalTerms{
-			Change: &vegapb.ProposalTerms_NewMarket{
-				NewMarket: &vegapb.NewMarket{
-					Changes: &vegapb.NewMarketConfiguration{
-						LpPriceRange: "0.95",
-					},
-				},
-			},
-		},
-	})
-
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrIsNotValidNumber)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBePositive)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBeAtMost100)
-
-	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &vegapb.ProposalTerms{
-			Change: &vegapb.ProposalTerms_NewMarket{
-				NewMarket: &vegapb.NewMarket{
-					Changes: &vegapb.NewMarketConfiguration{
-						LpPriceRange: "100",
-					},
-				},
-			},
-		},
-	})
-
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrIsNotValidNumber)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBePositive)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.lp_price_range"), commands.ErrMustBeAtMost100)
 }
 
 func testNewMarketChangeSubmissionWithoutLiquidityMonitoringSucceeds(t *testing.T) {
@@ -1341,33 +1233,6 @@ func testNewFutureMarketChangeSubmissionWithoutOracleSpecFails(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data"), commands.ErrIsRequired)
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination"), commands.ErrIsRequired)
 }
-
-// func testNewFutureMarketChangeSubmissionWithInvalidOracleSpecVegaPubkeySignerFails(t *testing.T) {
-// 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-// 		Terms: &vegapb.ProposalTerms{
-// 			Change: &vegapb.ProposalTerms_NewMarket{
-// 				NewMarket: &vegapb.NewMarket{
-// 					Changes: &vegapb.NewMarketConfiguration{
-// 						Instrument: &vegapb.InstrumentConfiguration{
-// 							Product: &vegapb.InstrumentConfiguration_Future{
-// 								Future: &vegapb.FutureProduct{
-// 									DataSourceSpecForSettlementData: &vegapb.DataSourceDefinition{
-// 										SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
-
-// 										}
-// 									}
-// 								},
-// 							},
-// 						},
-// 					},
-// 				},
-// 			},
-// 		},
-// 	})
-
-// 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data"), commands.ErrIsRequired)
-// 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination"), commands.ErrIsRequired)
-// }
 
 func testNewFutureMarketChangeSubmissionMissingSingleOracleSpecFails(t *testing.T) {
 	testNewFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t, "data_source_spec_for_settlement_data")
@@ -2552,26 +2417,6 @@ func testNewSimpleRiskParametersChangeSubmissionWithNonPositiveMinMoveDownSuccee
 			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.simple.min_move_down"), commands.ErrMustBeNegativeOrZero)
 		})
 	}
-}
-
-func testNewSpotSimpleRiskParametersChangeSubmissionWithNegativeMaxMoveUpFails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &vegapb.ProposalTerms{
-			Change: &vegapb.ProposalTerms_NewMarket{
-				NewMarket: &vegapb.NewMarket{
-					Changes: &vegapb.NewMarketConfiguration{
-						RiskParameters: &vegapb.NewMarketConfiguration_Simple{
-							Simple: &vegapb.SimpleModelParams{
-								MaxMoveUp: -1,
-							},
-						},
-					},
-				},
-			},
-		},
-	})
-
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.simple.max_move_up"), commands.ErrMustBePositiveOrZero)
 }
 
 func testNewSimpleRiskParametersChangeSubmissionWithNonNegativeMaxMoveUpSucceeds(t *testing.T) {
@@ -5644,4 +5489,487 @@ func testFutureMarketSubmissionWithInternalTimeTriggerSettlementDataFails(t *tes
 	})
 
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.internal.timetrigger"), commands.ErrIsNotValid)
+}
+
+func TestNewMarketChangeSubmissionWithInvalidLpRangeFails(t *testing.T) {
+	priceRanges := []string{"banana", "-1", "0", "101"}
+	errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBePositive, commands.ErrMustBePositive, commands.ErrMustBeAtMost100}
+
+	for i, v := range priceRanges {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &protoTypes.ProposalTerms{
+				Change: &protoTypes.ProposalTerms_NewMarket{
+					NewMarket: &protoTypes.NewMarket{
+						Changes: &protoTypes.NewMarketConfiguration{
+							Instrument: &protoTypes.InstrumentConfiguration{
+								Product: &protoTypes.InstrumentConfiguration_Future{},
+							},
+							LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+								PriceRange: v,
+							},
+						},
+					},
+				},
+			},
+		})
+		assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.price_range"), errors[i])
+	}
+}
+
+func TestNewMarketChangeSubmissionWithInvalidMinTimeFractionFails(t *testing.T) {
+	minTimeFraction := []string{"banana", "-1", "-1.1", "1.1", "100"}
+	errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01}
+
+	for i, v := range minTimeFraction {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &protoTypes.ProposalTerms{
+				Change: &protoTypes.ProposalTerms_NewMarket{
+					NewMarket: &protoTypes.NewMarket{
+						Changes: &protoTypes.NewMarketConfiguration{
+							Instrument: &protoTypes.InstrumentConfiguration{
+								Product: &protoTypes.InstrumentConfiguration_Future{},
+							},
+							LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+								CommitmentMinTimeFraction: v,
+							},
+						},
+					},
+				},
+			},
+		})
+		assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.commitment_min_time_fraction"), errors[i])
+	}
+}
+
+func TestNewMarketChangeSubmissionWithValidMinTimeFractionSucceeds(t *testing.T) {
+	minTimeFraction := []string{"0", "0.1", "0.99", "1"}
+
+	for _, v := range minTimeFraction {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &protoTypes.ProposalTerms{
+				Change: &protoTypes.ProposalTerms_NewMarket{
+					NewMarket: &protoTypes.NewMarket{
+						Changes: &protoTypes.NewMarketConfiguration{
+							Instrument: &protoTypes.InstrumentConfiguration{
+								Product: &protoTypes.InstrumentConfiguration_Future{},
+							},
+							LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+								CommitmentMinTimeFraction: v,
+							},
+						},
+					},
+				},
+			},
+		})
+
+		errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBeWithinRange01}
+		for _, e := range errors {
+			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.commitment_min_time_fraction"), e)
+		}
+	}
+}
+
+func TestNewMarketChangeSubmissionWithInvalidCalculationTimeStepFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{},
+						},
+						LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+							ProvidersFeeCalculationTimeStep: -1,
+						},
+					},
+				},
+			},
+		},
+	})
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.providers.fee.calculation_time_step"), commands.ErrMustBePositiveOrZero)
+}
+
+func TestNewMarketChangeSubmissionWithValidCalculationTimeStepSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{},
+						},
+						LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+							ProvidersFeeCalculationTimeStep: 1,
+						},
+					},
+				},
+			},
+		},
+	})
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.providers.fee.calculation_time_step"), commands.ErrMustBePositive)
+}
+
+func TestNewMarketChangeSubmissionWithInvalidCompetitionFactorFails(t *testing.T) {
+	competitionFactors := []string{"banana", "-1", "-1.1", "1.1", "100"}
+	errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01}
+
+	for i, v := range competitionFactors {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &protoTypes.ProposalTerms{
+				Change: &protoTypes.ProposalTerms_NewMarket{
+					NewMarket: &protoTypes.NewMarket{
+						Changes: &protoTypes.NewMarketConfiguration{
+							Instrument: &protoTypes.InstrumentConfiguration{
+								Product: &protoTypes.InstrumentConfiguration_Future{},
+							},
+							LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+								SlaCompetitionFactor: v,
+							},
+						},
+					},
+				},
+			},
+		})
+		assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.sla_competition_factor"), errors[i])
+	}
+}
+
+func TestNewMarketChangeSubmissionWithValidCompetitionFactorSucceeds(t *testing.T) {
+	minTimeFraction := []string{"0", "0.1", "0.99", "1"}
+
+	for _, v := range minTimeFraction {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &protoTypes.ProposalTerms{
+				Change: &protoTypes.ProposalTerms_NewMarket{
+					NewMarket: &protoTypes.NewMarket{
+						Changes: &protoTypes.NewMarketConfiguration{
+							Instrument: &protoTypes.InstrumentConfiguration{
+								Product: &protoTypes.InstrumentConfiguration_Future{},
+							},
+							LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+								SlaCompetitionFactor: v,
+							},
+						},
+					},
+				},
+			},
+		})
+
+		errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBeWithinRange01}
+		for _, e := range errors {
+			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.sla_competition_factor"), e)
+		}
+	}
+}
+
+func TestNewMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{},
+						},
+						LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+							PerformanceHysteresisEpochs: 0,
+						},
+					},
+				},
+			},
+		},
+	})
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBeWithinRange1366)
+
+	err = checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{},
+						},
+						LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+							PerformanceHysteresisEpochs: 367,
+						},
+					},
+				},
+			},
+		},
+	})
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBeWithinRange1366)
+}
+
+func TestNewMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{},
+						},
+						LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+							PerformanceHysteresisEpochs: 1,
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBePositive)
+}
+
+func testNewMarketChangeSubmissionWithInvalidLpRangeFails(t *testing.T) {
+	priceRanges := []string{"banana", "-1", "0", "101"}
+	errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBePositive, commands.ErrMustBePositive, commands.ErrMustBeAtMost100}
+
+	for i, v := range priceRanges {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &protoTypes.ProposalTerms{
+				Change: &protoTypes.ProposalTerms_NewMarket{
+					NewMarket: &protoTypes.NewMarket{
+						Changes: &protoTypes.NewMarketConfiguration{
+							Instrument: &protoTypes.InstrumentConfiguration{
+								Product: &protoTypes.InstrumentConfiguration_Future{},
+							},
+							LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+								PriceRange: v,
+							},
+						},
+					},
+				},
+			},
+		})
+		assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.price_range"), errors[i])
+	}
+}
+
+func testNewMarketChangeSubmissionWithValidLpRangeSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{},
+						},
+						LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+							PriceRange: "50",
+						},
+					},
+				},
+			},
+		},
+	})
+	errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBePositive, commands.ErrMustBePositive, commands.ErrMustBeAtMost100}
+	for _, e := range errors {
+		assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.price_range"), e)
+	}
+}
+
+func testNewMarketChangeSubmissionWithInvalidMinTimeFractionFails(t *testing.T) {
+	minTimeFraction := []string{"banana", "-1", "-1.1", "1.1", "100"}
+	errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01}
+
+	for i, v := range minTimeFraction {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &protoTypes.ProposalTerms{
+				Change: &protoTypes.ProposalTerms_NewMarket{
+					NewMarket: &protoTypes.NewMarket{
+						Changes: &protoTypes.NewMarketConfiguration{
+							Instrument: &protoTypes.InstrumentConfiguration{
+								Product: &protoTypes.InstrumentConfiguration_Future{},
+							},
+							LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+								CommitmentMinTimeFraction: v,
+							},
+						},
+					},
+				},
+			},
+		})
+		assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.commitment_min_time_fraction"), errors[i])
+	}
+}
+
+func testNewMarketChangeSubmissionWithValidMinTimeFractionSucceeds(t *testing.T) {
+	minTimeFraction := []string{"0", "0.1", "0.99", "1"}
+
+	for _, v := range minTimeFraction {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &protoTypes.ProposalTerms{
+				Change: &protoTypes.ProposalTerms_NewMarket{
+					NewMarket: &protoTypes.NewMarket{
+						Changes: &protoTypes.NewMarketConfiguration{
+							Instrument: &protoTypes.InstrumentConfiguration{
+								Product: &protoTypes.InstrumentConfiguration_Future{},
+							},
+							LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+								CommitmentMinTimeFraction: v,
+							},
+						},
+					},
+				},
+			},
+		})
+
+		errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBeWithinRange01}
+		for _, e := range errors {
+			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.commitment_min_time_fraction"), e)
+		}
+	}
+}
+
+func testNewMarketChangeSubmissionWithInvalidCalculationTimeStepFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{},
+						},
+						LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+							ProvidersFeeCalculationTimeStep: -1,
+						},
+					},
+				},
+			},
+		},
+	})
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.providers.fee.calculation_time_step"), commands.ErrMustBePositiveOrZero)
+}
+
+func testNewMarketChangeSubmissionWithValidCalculationTimeStepSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{},
+						},
+						LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+							ProvidersFeeCalculationTimeStep: 0,
+						},
+					},
+				},
+			},
+		},
+	})
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.providers.fee.calculation_time_step"), commands.ErrMustBePositive)
+}
+
+func testNewMarketChangeSubmissionWithInvalidCompetitionFactorFails(t *testing.T) {
+	competitionFactors := []string{"banana", "-1", "-1.1", "1.1", "100"}
+	errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01}
+
+	for i, v := range competitionFactors {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &protoTypes.ProposalTerms{
+				Change: &protoTypes.ProposalTerms_NewMarket{
+					NewMarket: &protoTypes.NewMarket{
+						Changes: &protoTypes.NewMarketConfiguration{
+							Instrument: &protoTypes.InstrumentConfiguration{
+								Product: &protoTypes.InstrumentConfiguration_Future{},
+							},
+							LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+								SlaCompetitionFactor: v,
+							},
+						},
+					},
+				},
+			},
+		})
+		assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.sla_competition_factor"), errors[i])
+	}
+}
+
+func testNewMarketChangeSubmissionWithValidCompetitionFactorSucceeds(t *testing.T) {
+	minTimeFraction := []string{"0", "0.1", "0.99", "1"}
+
+	for _, v := range minTimeFraction {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &protoTypes.ProposalTerms{
+				Change: &protoTypes.ProposalTerms_NewMarket{
+					NewMarket: &protoTypes.NewMarket{
+						Changes: &protoTypes.NewMarketConfiguration{
+							Instrument: &protoTypes.InstrumentConfiguration{
+								Product: &protoTypes.InstrumentConfiguration_Future{},
+							},
+							LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+								SlaCompetitionFactor: v,
+							},
+						},
+					},
+				},
+			},
+		})
+
+		errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBeWithinRange01}
+		for _, e := range errors {
+			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.sla_competition_factor"), e)
+		}
+	}
+}
+
+func testNewMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{},
+						},
+						LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+							PerformanceHysteresisEpochs: 0,
+						},
+					},
+				},
+			},
+		},
+	})
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBeWithinRange1366)
+
+	err = checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{},
+						},
+						LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+							PerformanceHysteresisEpochs: 367,
+						},
+					},
+				},
+			},
+		},
+	})
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBeWithinRange1366)
+}
+
+func testNewMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{},
+						},
+						LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
+							PerformanceHysteresisEpochs: 1,
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBePositive)
 }

@@ -28,7 +28,7 @@ Feature: Simple Spot Order Market fee and infrastructure fee calculation
       | party2 | BTC   | 100000   |
 
     #When the parties submit the following liquidity provision:
-    #      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+    #      | id  | party  | market id | commitment amount | fee | side | pegged reference | volume     | offset | lp type    |
     #     | lp1 | lpprov | BTC/ETH   | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
     #    | lp1 | lpprov | BTC/ETH   | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
