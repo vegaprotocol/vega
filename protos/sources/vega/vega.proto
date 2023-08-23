@@ -1693,7 +1693,6 @@ message BenefitTier {
   string referral_discount_factor = 4;
 }
 
-
 message VestingBenefitTiers {
   repeated VestingBenefitTier tiers = 1;
 }
