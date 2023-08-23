@@ -22,8 +22,8 @@ If you need a specific version you can get that by running
 git checkout vX.XX
 ``` 
 
-## Install golang
-The version of golang required can be found at the top of the `go.mod` file in the root of the vega repository. To install the software follow the link below and choose the correct version and platform you require. Then follow the instructions given.
+## Install `golang`
+The version of `golang` required can be found at the top of the `go.mod` file in the root of the vega repository. To install the software follow the link below and choose the correct version and platform you require. Then follow the instructions given.
 
 `https://go.dev/dl/`
 
