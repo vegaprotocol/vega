@@ -124,6 +124,7 @@
 - [9066](https://github.com/vegaprotocol/vega/issues/9066) - Ensure a party have a liquidity provision before trying to cancel
 - [9140](https://github.com/vegaprotocol/vega/issues/9140) - Stop orders table should be a `hypertable` with retention policy.
 - [9153](https://github.com/vegaprotocol/vega/issues/9153) - `MTM` win transfers can be less than one.
+- [9178](https://github.com/vegaprotocol/vega/issues/9178) - Fix LP amendment panic
 
 ## 0.72.1
 
