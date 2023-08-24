@@ -24,7 +24,7 @@ func TestSubmitOrder(t *testing.T) {
 		command:      txn.SubmitOrderCommand,
 		unmarshaller: unmarshalSubmitOrder(&commandspb.OrderSubmission{MarketId: "1"}),
 	}
-	testOrderSubmitAmendAndLP(t, tx)
+	testSubmitOrAmendOrder(t, tx)
 }
 
 func TestAmendOrder(t *testing.T) {
@@ -32,34 +32,10 @@ func TestAmendOrder(t *testing.T) {
 		command:      txn.AmendOrderCommand,
 		unmarshaller: unmarshalAmendtOrder(&commandspb.OrderAmendment{MarketId: "1"}),
 	}
-	testOrderSubmitAmendAndLP(t, tx)
+	testSubmitOrAmendOrder(t, tx)
 }
 
-func TestSubmitLP(t *testing.T) {
-	tx := &testTx{
-		command:      txn.LiquidityProvisionCommand,
-		unmarshaller: unmarshalLPSubmission(&commandspb.LiquidityProvisionSubmission{MarketId: "1"}),
-	}
-	testOrderSubmitAmendAndLP(t, tx)
-}
-
-func TestAmendLP(t *testing.T) {
-	tx := &testTx{
-		command:      txn.AmendLiquidityProvisionCommand,
-		unmarshaller: unmarshalLPAmendment(&commandspb.LiquidityProvisionAmendment{MarketId: "1"}),
-	}
-	testOrderSubmitAmendAndLP(t, tx)
-}
-
-func TestCancelLP(t *testing.T) {
-	tx := &testTx{
-		command:      txn.CancelLiquidityProvisionCommand,
-		unmarshaller: unmarshalLPCancellation(&commandspb.LiquidityProvisionCancellation{MarketId: "1"}),
-	}
-	testOrderSubmitAmendAndLP(t, tx)
-}
-
-func testOrderSubmitAmendAndLP(t *testing.T, tx *testTx) {
+func testSubmitOrAmendOrder(t *testing.T, tx *testTx) {
 	t.Helper()
 	marketCounters := map[string]*types.MarketCounters{}
 	eet := &ExecEngineTest{marketCounters: marketCounters}
@@ -82,34 +58,31 @@ func testOrderSubmitAmendAndLP(t *testing.T, tx *testTx) {
 	// set some counters
 	marketCounters["1"] = &types.MarketCounters{
 		PeggedOrderCounter:  1,
-		LPShapeCount:        5,
 		PositionCount:       2,
 		OrderbookLevelCount: 10,
 	}
 	gastimator.OnBlockEnd()
 
 	// gasOrder = network.transaction.defaultgas + peg cost factor x pegs
-	//                                         + LP shape cost factor x shapes
 	//                                         + position factor x positions
 	//                                         + level factor x levels
 	// gasOrder = min(maxGas-1,gasOrder)
-	// gasOrder = min(1233, 10 + 50 * 1 + 100 * 5 + 2 + 10 * 0.1) = 563
+	// gasOrder = min(1233, 10 + 50 * 1 + 2 + 10 * 0.1) = 563
 	count, err = gastimator.CalcGasWantedForTx(tx)
 	require.NoError(t, err)
-	require.Equal(t, uint64(563), count)
+	require.Equal(t, uint64(63), count)
 
 	// update counters such that now the max gas is lower than gas wanted for the order
 	marketCounters["1"] = &types.MarketCounters{
 		PeggedOrderCounter:  8,
-		LPShapeCount:        10,
 		PositionCount:       2,
 		OrderbookLevelCount: 100,
 	}
 
-	// gasOrder = min(1233, 10 + 50 * 8 + 100 * 10 + 2 + 100 * 0.1) = 1233
+	// gasOrder = min(1233, 10 + 50 * 8 + 2 + 100 * 0.1) = 422
 	count, err = gastimator.CalcGasWantedForTx(tx)
 	require.NoError(t, err)
-	require.Equal(t, uint64(1233), count)
+	require.Equal(t, uint64(422), count)
 }
 
 func TestCancelOrder(t *testing.T) {
@@ -139,33 +112,30 @@ func TestCancelOrder(t *testing.T) {
 	// set some counters
 	marketCounters["1"] = &types.MarketCounters{
 		PeggedOrderCounter:  1,
-		LPShapeCount:        5,
 		PositionCount:       2,
 		OrderbookLevelCount: 10,
 	}
 	gastimator.OnBlockEnd()
 
 	// gasCancel = network.transaction.defaultgas + peg cost factor x pegs
-	// 	+ LP shape cost factor x shapes
 	// 	+ level factor x levels
 	// gasCancel = min(maxGas-1,gasCancel)
-	// gasOrder = min(1233, 10 + 50 * 1 + 100 * 5 + 10 * 0.1) = 561
+	// gasOrder = min(1233, 10 + 50 * 1 + 10 * 0.1) = 561
 	count, err = gastimator.CalcGasWantedForTx(tx)
 	require.NoError(t, err)
-	require.Equal(t, uint64(561), count)
+	require.Equal(t, uint64(61), count)
 
 	// update counters such that now the max gas is lower than gasCancel
 	marketCounters["1"] = &types.MarketCounters{
 		PeggedOrderCounter:  8,
-		LPShapeCount:        10,
 		PositionCount:       2,
 		OrderbookLevelCount: 100,
 	}
 
-	// gasOrder = min(1233, 10 + 50 * 8 + 100 * 10 + 100 * 0.1) = 1233
+	// gasOrder = min(1233, 10 + 50 * 8 + 100 * 0.1) = 420
 	count, err = gastimator.CalcGasWantedForTx(tx)
 	require.NoError(t, err)
-	require.Equal(t, uint64(1233), count)
+	require.Equal(t, uint64(420), count)
 }
 
 func TestBatch(t *testing.T) {
@@ -203,7 +173,6 @@ func TestBatch(t *testing.T) {
 	// set some counters
 	marketCounters["1"] = &types.MarketCounters{
 		PeggedOrderCounter:  1,
-		LPShapeCount:        5,
 		PositionCount:       2,
 		OrderbookLevelCount: 10,
 	}
@@ -211,22 +180,20 @@ func TestBatch(t *testing.T) {
 	gastimator.OnBlockEnd()
 
 	// we have 3 submissions, 5 cancellations and 4 amendments
-	// gas = 563*2 + 561 * 3 + 563 * 2.5 = 4216
 	count, err = gastimator.CalcGasWantedForTx(tx)
 	require.NoError(t, err)
-	require.Equal(t, uint64(4216), count)
+	require.Equal(t, uint64(466), count)
 
 	// update counters such that now the max gas is lower than gasCancel
 	marketCounters["1"] = &types.MarketCounters{
 		PeggedOrderCounter:  8,
-		LPShapeCount:        10,
 		PositionCount:       2,
 		OrderbookLevelCount: 100,
 	}
 
 	count, err = gastimator.CalcGasWantedForTx(tx)
 	require.NoError(t, err)
-	require.Equal(t, uint64(9999), count)
+	require.Equal(t, uint64(3159), count)
 }
 
 func TestGetPriority(t *testing.T) {
@@ -306,30 +273,6 @@ func unmarshalAmendtOrder(order *commandspb.OrderAmendment) func(interface{}) er
 func unmarshalCancelOrder(order *commandspb.OrderCancellation) func(interface{}) error {
 	return func(i interface{}) error {
 		underlyingCmd, _ := i.(*commandspb.OrderCancellation)
-		*underlyingCmd = *order
-		return nil
-	}
-}
-
-func unmarshalLPSubmission(order *commandspb.LiquidityProvisionSubmission) func(interface{}) error {
-	return func(i interface{}) error {
-		underlyingCmd, _ := i.(*commandspb.LiquidityProvisionSubmission)
-		*underlyingCmd = *order
-		return nil
-	}
-}
-
-func unmarshalLPAmendment(order *commandspb.LiquidityProvisionAmendment) func(interface{}) error {
-	return func(i interface{}) error {
-		underlyingCmd, _ := i.(*commandspb.LiquidityProvisionAmendment)
-		*underlyingCmd = *order
-		return nil
-	}
-}
-
-func unmarshalLPCancellation(order *commandspb.LiquidityProvisionCancellation) func(interface{}) error {
-	return func(i interface{}) error {
-		underlyingCmd, _ := i.(*commandspb.LiquidityProvisionCancellation)
 		*underlyingCmd = *order
 		return nil
 	}

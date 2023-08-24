@@ -3,11 +3,12 @@ Feature: Regression test for issue 3885
   Background:
 
     Given the markets:
-      | id        | quote name | asset | auction duration | risk model                    | margin calculator         | fees         | data source config     | price monitoring | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | BTC        | BTC   | 1                | default-log-normal-risk-model | default-margin-calculator | default-none | default-eth-for-future | default-none     | 1e0                    | 0                         |
+      | id        | quote name | asset | auction duration | risk model                    | margin calculator         | fees         | data source config     | price monitoring | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | BTC        | BTC   | 1                | default-log-normal-risk-model | default-margin-calculator | default-none | default-eth-for-future | default-none     | 1e0                    | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
 
   @Cancel
   Scenario: Margin should be released after the order was canceled
@@ -20,9 +21,13 @@ Feature: Regression test for issue 3885
       | lpprov | BTC   | 10000  |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |

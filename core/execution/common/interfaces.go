@@ -193,9 +193,9 @@ func (o OrderReferenceCheck) HasMoved(changes uint8) bool {
 }
 
 type LiquidityEngine interface {
-	ResetSLAEpoch(time.Time, *num.Uint, *num.Uint, num.Decimal)
-	ApplyPendingProvisions(ctx context.Context, now time.Time) map[string]*types.LiquidityProvision
-	PendingProvision() map[string]*types.LiquidityProvision
+	ResetSLAEpoch(t time.Time, markPrice *num.Uint, midPrice *num.Uint, positionFactor num.Decimal)
+	ApplyPendingProvisions(ctx context.Context, now time.Time) liquidity.Provisions
+	PendingProvision() liquidity.Provisions
 	PendingProvisionByPartyID(party string) *types.LiquidityProvision
 	CalculateSLAPenalties(time.Time) liquidity.SlaPenalties
 	ResetAverageLiquidityScores()
@@ -203,7 +203,7 @@ type LiquidityEngine interface {
 	GetAverageLiquidityScores() map[string]num.Decimal
 	SubmitLiquidityProvision(context.Context, *types.LiquidityProvisionSubmission, string, liquidity.IDGen) (bool, error)
 	RejectLiquidityProvision(context.Context, string) error
-	AmendLiquidityProvision(context.Context, *types.LiquidityProvisionAmendment, string) error
+	AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string, isCancel bool) (bool, error)
 	CancelLiquidityProvision(context.Context, string) error
 	ValidateLiquidityProvisionAmendment(*types.LiquidityProvisionAmendment) error
 	StopLiquidityProvision(context.Context, string) error
@@ -222,6 +222,9 @@ type LiquidityEngine interface {
 	OnMaximumLiquidityFeeFactorLevelUpdate(num.Decimal)
 	OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal)
 	IsProbabilityOfTradingInitialised() bool
+
+	SetLastFeeDistributionTime(t time.Time)
+	GetLastFeeDistributionTime() time.Time
 
 	Namespace() types.SnapshotNamespace
 	Keys() []string
@@ -242,6 +245,7 @@ type MarketLiquidityEngine interface {
 	UpdateMarketConfig(liquidity.RiskModel, liquidity.PriceMonitor, *types.LiquiditySLAParams)
 	OnEarlyExitPenalty(num.Decimal)
 	OnMinLPStakeQuantumMultiple(num.Decimal)
+	OnBondPenaltyFactorUpdate(num.Decimal)
 	OnNonPerformanceBondPenaltySlopeUpdate(num.Decimal)
 	OnNonPerformanceBondPenaltyMaxUpdate(num.Decimal)
 	OnMinProbabilityOfTradingLPOrdersUpdate(num.Decimal)
@@ -287,6 +291,11 @@ type CommonMarket interface {
 	OnFeeFactorsMakerFeeUpdate(context.Context, num.Decimal)
 	OnMarkPriceUpdateMaximumFrequency(context.Context, time.Duration)
 	OnMarketAuctionMinimumDurationUpdate(context.Context, time.Duration)
+	OnMarketLiquidityV2EarlyExitPenaltyUpdate(num.Decimal)
+	OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate(num.Decimal)
+	OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(num.Decimal)
+	OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(num.Decimal)
+	OnMarketLiquidityV2StakeToCCYVolume(d num.Decimal)
 
 	// liquidity provision
 	CancelLiquidityProvision(context.Context, *types.LiquidityProvisionCancellation, string) error

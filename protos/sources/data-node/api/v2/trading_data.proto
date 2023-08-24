@@ -1090,6 +1090,8 @@ message StopOrderFilter {
   repeated string party_ids = 4;
   // Restrict orders to those placed on the given market IDs.
   repeated string market_ids = 5;
+  // Live stop orders only
+  optional bool live_only = 6;
 }
 
 // Order data with the corresponding cursor.

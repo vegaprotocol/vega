@@ -97,7 +97,7 @@ func (s *OrderBookSide) BestStaticPrice() (*num.Uint, error) {
 	for i := len(s.levels) - 1; i >= 0; i-- {
 		pricelevel := s.levels[i]
 		for _, order := range pricelevel.orders {
-			if order.PeggedOrder == nil && len(order.LiquidityProvisionID) <= 0 {
+			if order.PeggedOrder == nil {
 				return pricelevel.price.Clone(), nil
 			}
 		}
@@ -119,7 +119,7 @@ func (s *OrderBookSide) BestStaticPriceAndVolume() (*num.Uint, uint64, error) {
 	for i := len(s.levels) - 1; i >= 0; i-- {
 		pricelevel := s.levels[i]
 		for _, order := range pricelevel.orders {
-			if order.PeggedOrder == nil && len(order.LiquidityProvisionID) <= 0 {
+			if order.PeggedOrder == nil {
 				bestPrice = pricelevel.price
 				bestVolume += order.Remaining
 			}

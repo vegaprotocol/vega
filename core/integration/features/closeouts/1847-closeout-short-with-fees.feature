@@ -6,12 +6,13 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
       | maker fee | infrastructure fee |
       | 0.00025   | 0.0005             |
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees           | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | my-fees-config | default-none     | default-eth-for-future | 1e4                    | 1e4                       |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees           | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | my-fees-config | default-none     | default-eth-for-future | 1e4                    | 1e4                       | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
 
   Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
     # setup accounts
@@ -26,9 +27,9 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
       | t2_aux   | BTC   | 100000000 |
       | party-lp | BTC   | 100000000 |
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0.001 | buy  | BID              | 50         | 10     | submission |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0.001 | sell | ASK              | 50         | 10     | amendment  |
+      | id  | party    | market id | commitment amount | fee   | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0.000 | submission |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0.000 | amendment  |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |

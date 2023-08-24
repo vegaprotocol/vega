@@ -28,6 +28,7 @@ Feature: Test settlement at expiry time from internal oracle
       | market.auction.minimumDuration               | 1     |
       | network.markPriceUpdateMaximumFrequency      | 0s    |
       | market.liquidity.successorLaunchWindowLength | 1s    |
+      | limits.markets.maxPeggedOrders               | 4     |
 
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -40,9 +41,9 @@ Feature: Test settlement at expiry time from internal oracle
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle     | 1e6                    | 1e6                       |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle     | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e6                    | 1e6                       | default-futures |
 
   Scenario: Order cannot be placed once the market is expired
     Given the parties deposit on asset's general account the following amount:
@@ -53,10 +54,14 @@ Feature: Test settlement at expiry time from internal oracle
       | lpprov | ETH   | 100000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 10000             | 0.001 | buy  | BID              | 50         | 1      | submission |
-      | lp1 | lpprov | ETH/DEC19 | 10000             | 0.001 | sell | ASK              | 50         | 1      | submission |
-
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 10000             | 0.001 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 10000             | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC19 | 100       | 1                    | buy  | BID              | 300    | 1      |
+      | lpprov | ETH/DEC19 | 100       | 1                    | sell | ASK              | 300    | 1      |
+ 
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux1  | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -91,11 +96,17 @@ Feature: Test settlement at expiry time from internal oracle
     And the cumulated balance for all accounts should be worth "100236000"
 
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
-      | lp2 | party-lp | ETH/DEC21 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
-      | lp2 | party-lp | ETH/DEC21 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
+      | id  | party    | market id | commitment amount | fee | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 3000000           | 0   | submission |
+      | lp1 | party-lp | ETH/DEC19 | 3000000           | 0   | amendment  |
+      | lp2 | party-lp | ETH/DEC21 | 3000000           | 0   | submission |
+      | lp2 | party-lp | ETH/DEC21 | 3000000           | 0   | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party    | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party-lp | ETH/DEC19 | 60000     | 30000                | buy  | BID              | 180000 | 10     |
+      | party-lp | ETH/DEC19 | 60000     | 30000                | sell | ASK              | 180000 | 10     |
+      | party-lp | ETH/DEC19 | 600000    | 30000                | buy  | BID              | 180000 | 10     |
+      | party-lp | ETH/DEC19 | 60000     | 30000                | sell | ASK              | 180000 | 10     |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -195,7 +206,7 @@ Feature: Test settlement at expiry time from internal oracle
       | prices.ETH.value | 42    |
 
     Then time is updated to "2020-01-01T01:01:02Z"
-
+    
     Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | OrderError: Invalid Market ID |
@@ -228,11 +239,15 @@ Feature: Test settlement at expiry time from internal oracle
 
 
     When the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0     | buy  | BID              | 50         | 10     | submission |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0     | sell | ASK              | 50         | 10     | amendment  |
-      | lp2 | lpprov   | ETH/DEC21 | 30000000          | 0.001 | buy  | BID              | 50         | 10     | submission |
-      | lp2 | lpprov   | ETH/DEC21 | 30000000          | 0.001 | sell | ASK              | 50         | 10     | submission |
+      | id  | party    | market id | commitment amount | fee   | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 30000             | 0     | submission |
+      | lp2 | lpprov   | ETH/DEC21 | 30000             | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party    | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party-lp | ETH/DEC19 | 600       | 300                  | buy  | BID              | 1800   | 1      |
+      | party-lp | ETH/DEC19 | 600       | 300                  | sell | ASK              | 1800   | 1      |
+      | lpprov   | ETH/DEC21 | 600       | 300                  | buy  | BID              | 1800   | 1      |
+      | lpprov   | ETH/DEC21 | 600       | 300                  | sell | ASK              | 1800   | 1      |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -276,7 +291,7 @@ Feature: Test settlement at expiry time from internal oracle
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC21"
 
-    And the insurance pool balance should be "10000" for the market "ETH/DEC21"
+    And the insurance pool balance should be "10001" for the market "ETH/DEC21"
     And the insurance pool balance should be "10000" for the market "ETH/DEC19"
 
     When the oracles broadcast data signed with "0xCAFECAFE1":
@@ -337,11 +352,17 @@ Feature: Test settlement at expiry time from internal oracle
       | aux2     | ETH   | 100000    |
       | party-lp | ETH   | 100000000 |
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
-      | lp2 | party-lp | ETH/DEC21 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
-      | lp2 | party-lp | ETH/DEC21 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
+      | id  | party    | market id | commitment amount | fee | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | submission |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | amendment  |
+      | lp2 | party-lp | ETH/DEC21 | 30000000          | 0   | submission |
+      | lp2 | party-lp | ETH/DEC21 | 30000000          | 0   | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party    | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party-lp | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 10     |
+      | party-lp | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 10     |
+      | party-lp | ETH/DEC21 | 2         | 1                    | buy  | BID              | 50     | 10     |
+      | party-lp | ETH/DEC21 | 2         | 1                    | sell | ASK              | 50     | 10     |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -415,11 +436,17 @@ Feature: Test settlement at expiry time from internal oracle
     And the cumulated balance for all accounts should be worth "102012000"
 
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
-      | lp2 | party-lp | ETH/DEC21 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
-      | lp2 | party-lp | ETH/DEC21 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
+      | id  | party    | market id | commitment amount | fee | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | submission |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | amendment  |
+      | lp2 | party-lp | ETH/DEC21 | 30000000          | 0   | submission |
+      | lp2 | party-lp | ETH/DEC21 | 30000000          | 0   | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party    | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party-lp | ETH/DEC19 | 40000     | 30000                | buy  | BID              | 40000  | 10     |
+      | party-lp | ETH/DEC19 | 40000     | 30000                | sell | ASK              | 40000  | 10     |
+      | party-lp | ETH/DEC21 | 40000     | 30000                | buy  | BID              | 40000  | 10     |
+      | party-lp | ETH/DEC21 | 30000     | 30000                | sell | ASK              | 40000  | 10     |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -486,9 +513,13 @@ Feature: Test settlement at expiry time from internal oracle
     And the cumulated balance for all accounts should be worth "102012000"
 
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party-lp | ETH/DEC21 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
-      | lp1 | party-lp | ETH/DEC21 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
+      | id  | party    | market id | commitment amount | fee | lp type    |
+      | lp1 | party-lp | ETH/DEC21 | 30000000          | 0   | submission |
+      | lp1 | party-lp | ETH/DEC21 | 30000000          | 0   | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party    | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party-lp | ETH/DEC21 | 40000     | 30000                | buy  | BID              | 40000  | 10     |
+      | party-lp | ETH/DEC21 | 40000     | 30000                | sell | ASK              | 40000  | 10     |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -517,7 +548,7 @@ Feature: Test settlement at expiry time from internal oracle
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC21 | 252    | 9753    |
       #| party1 | ETH   | ETH/DEC21 | 132    | 9873    |
-      | party2 | ETH   | ETH/DEC21 | 372    | 603     |
+      | party2 | ETH | ETH/DEC21 | 372 | 603 |
 
     And then the network moves ahead "10" blocks
 
@@ -579,10 +610,14 @@ Feature: Test settlement at expiry time from internal oracle
       | lpprov | ETH   | 100000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 50         | 1      | submission |
-      | lp1 | lpprov | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 50         | 1      | submission |
-
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 10000             | 0.001 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 10000             | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC21 | 20        | 10                   | buy  | BID              | 20     | 1      |
+      | lpprov | ETH/DEC21 | 20        | 10                   | sell | ASK              | 20     | 1      |
+ 
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux1  | ETH/DEC21 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |

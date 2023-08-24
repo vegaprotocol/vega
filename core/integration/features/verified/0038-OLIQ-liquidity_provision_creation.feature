@@ -1,15 +1,14 @@
 Feature: Test LP orders
 
   Scenario: 001, create liquidity provisions (0038-OLIQ-additional-tests)
-  Background:
-
     Given the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
 
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount    |
@@ -20,9 +19,13 @@ Feature: Test LP orders
       | aux2             | ETH   | 100000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party1 | ETH/DEC19 | 50000             | 0.1 | buy  | BID              | 500        | 10     | submission |
-      | lp1 | party1 | ETH/DEC19 | 50000             | 0.1 | sell | ASK              | 500        | 10     | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | party1 | ETH/DEC19 | 50000             | 0.1 | submission |
+      | lp1 | party1 | ETH/DEC19 | 50000             | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party1 | ETH/DEC19 | 2         | 1                    | buy  | BID              | 500        | 10     |
+      | party1 | ETH/DEC19 | 2         | 1                    | sell | ASK              | 500        | 10     |
     And the parties place the following orders:
       | party     | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | auxiliary | ETH/DEC19 | buy  | 1      | 80    | 0                | TYPE_LIMIT | TIF_GTC | oa-b-1    |
@@ -66,22 +69,24 @@ Feature: Test LP orders
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status        |
       | lp1 | party1 | ETH/DEC19 | 50000             | STATUS_ACTIVE |
+
     Then the orders should have the following states:
       | party  | market id | side | volume | price | status        |
-      | party1 | ETH/DEC19 | buy  | 499    | 100   | STATUS_ACTIVE |
-      | party1 | ETH/DEC19 | sell | 384    | 130   | STATUS_ACTIVE |
+      | party1 | ETH/DEC19 | buy  | 500 | 100 | STATUS_ACTIVE |
+      | party1 | ETH/DEC19 | sell | 500 | 130 | STATUS_ACTIVE |
 
   Scenario: 002, create liquidity provisions (0038-OLIQ-additional-tests); test decimal; asset 3; market 1; position:2 AC: 0070-MKTD-004;0070-MKTD-005; 0070-MKTD-006; 0070-MKTD-007;0070-MKTD-008
     Given the following assets are registered:
       | id  | decimal places |
       | ETH | 3              |
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1              | 2                       | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1              | 2                       | 1e6                    | 1e6                       | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount          |
       | party1           | ETH   | 100000000000    |
@@ -96,9 +101,13 @@ Feature: Test LP orders
       | aux2      | ETH/DEC19 | buy  | 100    | 1000  | 0                | TYPE_LIMIT | TIF_GTC | oa-b-2    |
       | auxiliary | ETH/DEC19 | sell | 100    | 1000  | 0                | TYPE_LIMIT | TIF_GTC | oa-s-2    |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party1 | ETH/DEC19 | 50000000          | 0.1 | buy  | BID              | 500        | 100    | submission |
-      | lp1 | party1 | ETH/DEC19 | 50000000          | 0.1 | sell | ASK              | 500        | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | party1 | ETH/DEC19 | 50000000          | 0.1 | submission |
+      | lp1 | party1 | ETH/DEC19 | 50000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party1 | ETH/DEC19 | 2         | 1                    | buy  | BID              | 500    | 100    |
+      | party1 | ETH/DEC19 | 2         | 1                    | sell | ASK              | 500    | 100    |
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
@@ -132,7 +141,8 @@ Feature: Test LP orders
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status        |
       | lp1 | party1 | ETH/DEC19 | 50000000          | STATUS_ACTIVE |
+
     Then the orders should have the following states:
-      | party  | market id | side | volume | price | status        |
-      | party1 | ETH/DEC19 | buy  | 44500  | 1000  | STATUS_ACTIVE |
-      | party1 | ETH/DEC19 | sell | 33847  | 1300  | STATUS_ACTIVE |
+      | party | market id | side | volume | price | status |
+      | party1 | ETH/DEC19 | buy  | 500 | 1000 | STATUS_ACTIVE |
+      | party1 | ETH/DEC19 | sell | 500 | 1300 | STATUS_ACTIVE |

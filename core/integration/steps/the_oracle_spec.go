@@ -21,6 +21,7 @@ import (
 
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -40,10 +41,16 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 	filters := make([]*datav1.Filter, 0, len(rows))
 	for _, r := range rows {
 		row := oracleSpecRow{row: r}
+		var numDec *uint64
+		decimals, ok := row.propertyDecimals()
+		if ok {
+			numDec = ptr.From(decimals)
+		}
 		filter := &datav1.Filter{
 			Key: &datav1.PropertyKey{
-				Name: row.propertyName(),
-				Type: row.propertyType(),
+				Name:                row.propertyName(),
+				Type:                row.propertyType(),
+				NumberDecimalPlaces: numDec,
 			},
 			Conditions: []*datav1.Condition{},
 		}
@@ -107,6 +114,7 @@ func parseOracleSpecTable(table *godog.Table) []RowWrapper {
 		"type",
 		"binding",
 	}, []string{
+		"decimals",
 		"condition",
 		"value",
 	})
@@ -122,6 +130,10 @@ func (r oracleSpecRow) propertyName() string {
 
 func (r oracleSpecRow) propertyType() datav1.PropertyKey_Type {
 	return r.row.MustOracleSpecPropertyType("type")
+}
+
+func (r oracleSpecRow) propertyDecimals() (uint64, bool) {
+	return r.row.U64B("decimals")
 }
 
 func (r oracleSpecRow) destination() string {

@@ -5,13 +5,14 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 2           | -3            | 0.2                    |
     Given the markets:
-      | id        | quote name | asset | risk model           | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | BTC        | BTC   | my-simple-risk-model | default-margin-calculator | 5                | default-none | default-basic    | default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model           | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | BTC        | BTC   | my-simple-risk-model | default-margin-calculator | 5                | default-none | default-basic    | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 5     |
       | network.floatingPointUpdates.delay      | 10s   |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
 
   @OpenIP
   Scenario: Simple test with different indicative price before auction uncross
@@ -49,9 +50,13 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | trading mode                 |
       | TRADING_MODE_OPENING_AUCTION |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 16        | 1                    | buy  | MID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 15        | 1                    | sell | MID              | 50         | 100    |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | t3-b-1    |
@@ -137,9 +142,13 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party1 | ETH/DEC19 | buy  | 4      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t1-b-3    |
       | party2 | ETH/DEC19 | sell | 3      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t2-s-3    |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | MID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | MID              | 50         | 100    |
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 15680   |
@@ -208,9 +217,13 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | trading mode                 |
       | TRADING_MODE_OPENING_AUCTION |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | MID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | MID              | 50         | 100    |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | t3-b-1    |
@@ -297,9 +310,13 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party  | reference |
       | party5 | t5-s-1    |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | MID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | MID              | 50         | 100    |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | t3-b-1    |

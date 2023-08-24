@@ -112,9 +112,6 @@ func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
 		{"Current <  (Target * c1)", num.NewUint(10), num.NewUint(30), 1, 1, types.AuctionTriggerLiquidityTargetNotMet},
 		{"Current >  (Target * c1)", num.NewUint(15), num.NewUint(15), 1, 1, types.AuctionTriggerUnspecified},
 		{"Current == (Target * c1)", num.NewUint(10), num.NewUint(20), 1, 1, types.AuctionTriggerUnspecified},
-		{"Current >  (Target * c1), no best bid", num.NewUint(15), num.NewUint(15), 0, 1, types.AuctionTriggerUnableToDeployLPOrders},
-		{"Current == (Target * c1), no best ask", num.NewUint(10), num.NewUint(20), 1, 0, types.AuctionTriggerUnableToDeployLPOrders},
-		{"Current == (Target * c1), no best bid and ask", num.NewUint(10), num.NewUint(20), 0, 0, types.AuctionTriggerUnableToDeployLPOrders},
 	}
 
 	h := newTestHarness(t).WhenInLiquidityAuction(false)
@@ -126,8 +123,6 @@ func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			if test.auctionTrigger == types.AuctionTriggerLiquidityTargetNotMet {
 				h.AuctionState.EXPECT().StartLiquidityAuctionUnmetTarget(now, gomock.Any()).Times(1)
-			} else if test.auctionTrigger == types.AuctionTriggerUnableToDeployLPOrders {
-				h.AuctionState.EXPECT().StartLiquidityAuctionNoOrders(now, gomock.Any()).Times(1)
 			}
 			var trades []*types.Trade
 			rf := types.RiskFactor{}
@@ -157,9 +152,6 @@ func TestEngineInOpeningAuction(t *testing.T) {
 		{"Current >  (Target)", num.NewUint(15), num.NewUint(15), 1, 1, types.AuctionTriggerUnspecified},
 		{"Current == (Target * C1)", num.NewUint(10), num.NewUint(20), 1, 1, types.AuctionTriggerLiquidityTargetNotMet},
 		{"Current == (Target)", num.NewUint(20), num.NewUint(20), 1, 1, types.AuctionTriggerUnspecified},
-		{"Current >  (Target), no best bid", num.NewUint(15), num.NewUint(15), 0, 1, types.AuctionTriggerUnableToDeployLPOrders},
-		{"Current == (Target), no best ask", num.NewUint(10), num.NewUint(20), 1, 0, types.AuctionTriggerUnableToDeployLPOrders},
-		{"Current == (Target), no best bid and ask", num.NewUint(10), num.NewUint(20), 0, 0, types.AuctionTriggerUnableToDeployLPOrders},
 	}
 
 	h := newTestHarness(t).WhenInOpeningAuction()
@@ -171,8 +163,6 @@ func TestEngineInOpeningAuction(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			if test.auctionTrigger == types.AuctionTriggerLiquidityTargetNotMet {
 				h.AuctionState.EXPECT().ExtendAuctionLiquidityUnmetTarget(gomock.Any()).Times(1)
-			} else if test.auctionTrigger == types.AuctionTriggerUnableToDeployLPOrders {
-				h.AuctionState.EXPECT().ExtendAuctionLiquidityNoOrders(gomock.Any()).Times(1)
 			} else {
 				// opening auciton is flagged as ready to leave
 				h.AuctionState.EXPECT().SetReadyToLeave().Times(1)

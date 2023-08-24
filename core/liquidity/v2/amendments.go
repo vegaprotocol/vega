@@ -22,27 +22,36 @@ import (
 
 var ErrPartyHaveNoLiquidityProvision = errors.New("party have no liquidity provision")
 
-func (e *Engine) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string) error {
-	if err := e.CanAmend(lpa, party); err != nil {
-		return err
+func (e *Engine) AmendLiquidityProvision(
+	ctx context.Context,
+	lpa *types.LiquidityProvisionAmendment,
+	party string,
+	isCancel bool,
+) (bool, error) {
+	if err := e.CanAmend(lpa, party, !isCancel); err != nil {
+		return false, err
 	}
 
 	// LP exists, checked in the previous func.
 	lp, _ := e.provisions.Get(party)
+	if lp == nil {
+		lp, _ = e.pendingProvisions.Get(party)
+	}
 	updatedLp := e.createAmendedProvision(lp, lpa)
 
-	// add to pending provision since the change in CommitmentAmount should be reflected at the beginning of next epoch.
-	if lp.CommitmentAmount.NEQ(lpa.CommitmentAmount) {
-		e.pendingProvisions.Set(party, updatedLp)
+	// add to pending provision since the change in CommitmentAmount should be reflected at the beginning of next epoch
+	// if it's not opening auction.
+	if lp.CommitmentAmount.NEQ(lpa.CommitmentAmount) && !e.auctionState.IsOpeningAuction() {
+		e.pendingProvisions.Set(updatedLp)
 		e.broker.Send(events.NewLiquidityProvisionEvent(ctx, updatedLp))
-		return nil
+		return false, nil
 	}
 
 	// we can update immediately since the commitment amount has not changed.
 	updatedLp.Status = types.LiquidityProvisionStatusActive
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, updatedLp))
 	e.provisions.Set(party, updatedLp)
-	return nil
+	return true, nil
 }
 
 func (e *Engine) createAmendedProvision(
@@ -63,9 +72,13 @@ func (e *Engine) createAmendedProvision(
 	}
 }
 
-func (e *Engine) CanAmend(lps *types.LiquidityProvisionAmendment, party string) error {
+func (e *Engine) CanAmend(lps *types.LiquidityProvisionAmendment, party string, shouldValidate bool) error {
 	if !e.IsLiquidityProvider(party) {
 		return ErrPartyHaveNoLiquidityProvision
+	}
+
+	if !shouldValidate {
+		return nil
 	}
 
 	if err := e.ValidateLiquidityProvisionAmendment(lps); err != nil {

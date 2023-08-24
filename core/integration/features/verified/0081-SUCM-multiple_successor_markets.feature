@@ -29,17 +29,19 @@ Feature: Multiple successor markets allowed for single parent
       | property           | type         | binding             |
       | trading.terminated | TYPE_BOOLEAN | trading termination |
     And the settlement data decimals for the oracle named "ethDec20Oracle" is given in "5" decimal places
-
+    And the following network parameters are set:
+      | name                                    | value |
+      | limits.markets.maxPeggedOrders          | 8     |
 
   Scenario: Two pending successor markets, and one proposed successor market. A pending successor market is enacted and the remaining successors are rejected (0081-SUCM-014)
 
     # Create a parent market, two pending successor markets, and one proposed successor market
     Given the markets:
-      | id         | quote name | asset | risk model            | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | is passed |
-      | ETH/DEC19  | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | ethDec19Oracle     | 0.1                    | 0                         | 5              | 5                       |                  |                         |                   | true      |
-      | ETH/DEC20a | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | ethDec20Oracle     | 0.1                    | 0                         | 5              | 5                       | ETH/DEC19        | 1                       | 10                | true      |
-      | ETH/DEC20b | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | ethDec20Oracle     | 0.1                    | 0                         | 5              | 5                       | ETH/DEC19        | 1                       | 10                | true      |
-      | ETH/DEC20c | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | ethDec20Oracle     | 0.1                    | 0                         | 5              | 5                       | ETH/DEC19        | 1                       | 10                | false     |
+      | id         | quote name | asset | risk model            | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | is passed | sla params      |
+      | ETH/DEC19  | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | ethDec19Oracle     | 0.1                    | 0                         | 5              | 5                       |                  |                         |                   | true      | default-futures |
+      | ETH/DEC20a | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | ethDec20Oracle     | 0.1                    | 0                         | 5              | 5                       | ETH/DEC19        | 1                       | 10                | true      | default-futures | 
+      | ETH/DEC20b | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | ethDec20Oracle     | 0.1                    | 0                         | 5              | 5                       | ETH/DEC19        | 1                       | 10                | true      | default-futures |
+      | ETH/DEC20c | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | ethDec20Oracle     | 0.1                    | 0                         | 5              | 5                       | ETH/DEC19        | 1                       | 10                | false     | default-futures |
     Then the market state should be "STATE_PENDING" for the market "ETH/DEC19"
     And the market state should be "STATE_PENDING" for the market "ETH/DEC20a"
     And the market state should be "STATE_PENDING" for the market "ETH/DEC20b"
@@ -47,15 +49,24 @@ Feature: Multiple successor markets allowed for single parent
 
     # LP submits commitments to the parent and all three successor markets. The funds are transfered to the relevant bond accounts.
     Given the parties submit the following liquidity provision:
-      | id  | party  | market id  | commitment amount       | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19  | 10000000000000000000000 | 0.3 | buy  | BID              | 1          | 1      | submission |
-      | lp1 | lpprov | ETH/DEC19  | 10000000000000000000000 | 0.3 | sell | ASK              | 1          | 1      | submission |
-      | lp2 | lpprov | ETH/DEC20a | 10000000000000000000000 | 0.3 | buy  | BID              | 1          | 1      | submission |
-      | lp2 | lpprov | ETH/DEC20a | 10000000000000000000000 | 0.3 | sell | ASK              | 1          | 1      | submission |
-      | lp3 | lpprov | ETH/DEC20b | 10000000000000000000000 | 0.3 | buy  | BID              | 1          | 1      | submission |
-      | lp3 | lpprov | ETH/DEC20b | 10000000000000000000000 | 0.3 | sell | ASK              | 1          | 1      | submission |
-      | lp4 | lpprov | ETH/DEC20c | 10000000000000000000000 | 0.3 | buy  | BID              | 1          | 1      | submission |
-      | lp4 | lpprov | ETH/DEC20c | 10000000000000000000000 | 0.3 | sell | ASK              | 1          | 1      | submission |
+      | id  | party  | market id  | commitment amount       | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19  | 10000000000000000000000 | 0.3 | submission |
+      | lp1 | lpprov | ETH/DEC19  | 10000000000000000000000 | 0.3 | submission |
+      | lp2 | lpprov | ETH/DEC20a | 10000000000000000000000 | 0.3 | submission |
+      | lp2 | lpprov | ETH/DEC20a | 10000000000000000000000 | 0.3 | submission |
+      | lp3 | lpprov | ETH/DEC20b | 10000000000000000000000 | 0.3 | submission |
+      | lp3 | lpprov | ETH/DEC20b | 10000000000000000000000 | 0.3 | submission |
+      | lp4 | lpprov | ETH/DEC20c | 10000000000000000000000 | 0.3 | submission |
+      | lp4 | lpprov | ETH/DEC20c | 10000000000000000000000 | 0.3 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id  | peak size | minimum visible size | side | pegged reference | volume          | offset |
+      | lpprov | ETH/DEC19  | 2         | 1                    | buy  | BID              | 25000000000000  | 1      |
+      | lpprov | ETH/DEC19  | 2         | 1                    | sell | ASK              | 23792446795000  | 1      |
+      | lpprov | ETH/DEC20a | 2         | 1                    | buy  | BID              | 25000000000000  | 1      |
+      | lpprov | ETH/DEC20a | 2         | 1                    | sell | ASK              | 23792446795000  | 1      |
+      | lpprov | ETH/DEC20b | 2         | 1                    | buy  | BID              | 25000000000000  | 1      |
+      | lpprov | ETH/DEC20b | 2         | 1                    | sell | ASK              | 23792446795000  | 1      |
+ 
     And the parties should have the following account balances:
       | party  | asset | market id  | general                   | margin | bond                    |
       | lpprov | ETH   | ETH/DEC19  | 9960000000000000000000000 | 0      | 10000000000000000000000 |
