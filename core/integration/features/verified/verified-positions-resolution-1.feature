@@ -124,9 +124,9 @@ Feature: Position resolution case 1
     And then the network moves ahead "10" blocks
 
     Then the parties should have the following profit and loss:
-      | party            | volume | unrealised pnl | realised pnl |
-      | designatedLooser | 290    | -8700          | 0            |
-      | sellSideProvider | -291   | 8700           | 0            |
-      | buySideProvider  | 1      | 0              | 0            |
-      | aux              | 1      | -30            | 0            |
-      | aux2             | -1     | 30             | 0            |
+      | party            | volume | realised pnl | unrealised pnl |
+      | designatedLooser | 290    | -8700        | 0              |
+      | sellSideProvider | -291   | 8700         | 0              |
+      | buySideProvider  | 1      | 0            | 0              |
+      | aux              | 1      | -30          | 0              |
+      | aux2             | -1     | 30           | 0              |

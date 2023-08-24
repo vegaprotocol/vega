@@ -230,10 +230,9 @@ func (p *Positions) handleSettleMarket(e SME) {
 	for pid, pos := range mp {
 		openVolumeDec := num.DecimalFromInt64(pos.OpenVolume)
 
-		unrealisedPnl := openVolumeDec.Mul(markPriceDec.Sub(pos.AverageEntryPriceFP)).Div(posFactor)
+		unrealisedPnl := openVolumeDec.Mul(markPriceDec.Sub(pos.AverageEntryPriceFP)).Div(posFactor).Round(0)
 		pos.RealisedPnl = pos.RealisedPnl.Add(unrealisedPnl)
 		pos.UnrealisedPnl = num.DecimalZero()
-		pos.OpenVolume = 0
 		p.data[market][pid] = pos
 	}
 }
