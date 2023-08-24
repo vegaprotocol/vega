@@ -54,6 +54,7 @@ pipeline {
     stages {
     	stage('CI Config') {
                 steps {
+                    echo "${env.JENKINS_URL}"
                     sh "printenv"
                     echo "params=${params.inspect()}"
                     script {
