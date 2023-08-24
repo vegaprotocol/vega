@@ -23,6 +23,7 @@
 ### 🐛 Fixes
 
 - [9140](https://github.com/vegaprotocol/vega/issues/9140) - Stop orders table should be a `hypertable` with retention policy.
+- [9189](https://github.com/vegaprotocol/vega/issues/9189) - Fix stop orders snapshots
 
 
 ## 0.72.10
