@@ -118,12 +118,12 @@
 - [9034](https://github.com/vegaprotocol/vega/issues/9034) - Add missing transfer types to `GraphQL` schema definition.
 - [9075](https://github.com/vegaprotocol/vega/issues/9075) - `Oracle Specs API` can fail when oracle data is null.
 - [8971](https://github.com/vegaprotocol/vega/issues/8971) - Record the epoch start time even in opening auction
-- [8971](https://github.com/vegaprotocol/vega/issues/8971) - Record the epoch start time even in opening auction
 - [8992](https://github.com/vegaprotocol/vega/issues/8992) - allow for 0 time step for `SLA` fee calculation
 - [8988](https://github.com/vegaprotocol/vega/issues/8988) - allow amend/cancel of pending liquidity provision
 - [8993](https://github.com/vegaprotocol/vega/issues/8993) - handle the case where commitment min time fraction is 1
 - [9066](https://github.com/vegaprotocol/vega/issues/9066) - Ensure a party have a liquidity provision before trying to cancel
 - [9140](https://github.com/vegaprotocol/vega/issues/9140) - Stop orders table should be a `hypertable` with retention policy.
+- [9153](https://github.com/vegaprotocol/vega/issues/9153) - `MTM` win transfers can be less than one.
 
 ## 0.72.1
 

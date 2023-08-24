@@ -77,6 +77,7 @@ func TestMarkToMarket(t *testing.T) {
 func TestMTMWinDistribution(t *testing.T) {
 	t.Run("A MTM loss party with a loss of value 1, with several parties needing a win", testMTMWinOneExcess)
 	t.Run("Distribute win excess in a scenario where no transfer amount is < 1", testMTMWinNoZero)
+	t.Run("Distribute loss excess in a scenario where no transfer amount is < 1", testMTMWinWithZero)
 }
 
 func testSettlingAFundingPeriod(t *testing.T) {
@@ -863,6 +864,103 @@ func testMTMNetworkZero(t *testing.T) {
 		}
 	}
 	require.True(t, hasNetwork)
+}
+
+func testMTMWinWithZero(t *testing.T) {
+	// cheat by setting the factor to some specific value, makes it easier to create a scenario where win/loss amounts don't match
+	engine := getTestEngineWithFactor(t, 5)
+	defer engine.Finish()
+
+	price := num.NewUint(100000)
+	one := num.NewUint(1)
+	ctx := context.Background()
+
+	initPos := []testPos{
+		{
+			price: price.Clone(),
+			party: "party1",
+			size:  1,
+		},
+		{
+			price: price.Clone(),
+			party: "party2",
+			size:  2,
+		},
+		{
+			price: price.Clone(),
+			party: "party3",
+			size:  -3,
+		},
+		{
+			price: price.Clone(),
+			party: "party4",
+			size:  1,
+		},
+		{
+			price: price.Clone(),
+			party: "party5",
+			size:  -3,
+		},
+		{
+			price: price.Clone(),
+			party: "party6",
+			size:  2,
+		},
+	}
+
+	init := make([]events.MarketPosition, 0, len(initPos))
+	for _, p := range initPos {
+		init = append(init, p)
+	}
+
+	newPrice := num.Sum(price, one, one, one)
+	somePrice := num.Sum(price, one)
+	newParty := testPos{
+		size:  3,
+		price: newPrice.Clone(),
+		party: "party4",
+	}
+
+	trades := []*types.Trade{
+		{
+			Size:   1,
+			Buyer:  newParty.party,
+			Seller: initPos[0].party,
+			Price:  somePrice.Clone(),
+		},
+		{
+			Size:   1,
+			Buyer:  newParty.party,
+			Seller: initPos[1].party,
+			Price:  somePrice.Clone(),
+		},
+		{
+			Size:   1,
+			Buyer:  newParty.party,
+			Seller: initPos[2].party,
+			Price:  newPrice.Clone(),
+		},
+	}
+	updates := make([]events.MarketPosition, 0, len(initPos)+2)
+	for _, trade := range trades {
+		for i, p := range initPos {
+			if p.party == trade.Seller {
+				p.size -= int64(trade.Size)
+			}
+			p.price = trade.Price.Clone()
+			initPos[i] = p
+		}
+	}
+	for _, p := range initPos {
+		updates = append(updates, p)
+	}
+	updates = append(updates, newParty)
+	engine.Update(init)
+	for _, trade := range trades {
+		engine.AddTrade(trade)
+	}
+	transfers := engine.SettleMTM(ctx, newPrice.Clone(), updates)
+	require.NotEmpty(t, transfers)
 }
 
 // {{{.
