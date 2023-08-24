@@ -13,11 +13,10 @@ func TheLiquiditySLAPArams(config *market.Config, name string, table *godog.Tabl
 	return config.LiquiditySLAParams.Add(
 		name,
 		&types.LiquiditySLAParameters{
-			PriceRange:                      row.priceRange(),
-			CommitmentMinTimeFraction:       row.commitmentMinTimeFraction(),
-			SlaCompetitionFactor:            row.slaCompetitionFactor(),
-			ProvidersFeeCalculationTimeStep: row.providersFeeCalculationTimeStep(),
-			PerformanceHysteresisEpochs:     uint64(row.performanceHysteresisEpochs()),
+			PriceRange:                  row.priceRange(),
+			CommitmentMinTimeFraction:   row.commitmentMinTimeFraction(),
+			SlaCompetitionFactor:        row.slaCompetitionFactor(),
+			PerformanceHysteresisEpochs: uint64(row.performanceHysteresisEpochs()),
 		})
 }
 

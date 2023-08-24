@@ -49,6 +49,7 @@ const (
 	MarketLiquidityV2SLANonPerformanceBondPenaltyMax   = "market.liquidityV2.sla.nonPerformanceBondPenaltyMax"
 	MarketLiquidityV2SLANonPerformanceBondPenaltySlope = "market.liquidityV2.sla.nonPerformanceBondPenaltySlope"
 	MarketLiquidityV2StakeToCCYVolume                  = "market.liquidityV2.stakeToCcyVolume"
+	MarketLiquidityV2ProvidersFeeCalculationTimeStep   = "market.liquidityV2.providers_fee_calculation_time_step"
 
 	RewardAsset = "reward.asset"
 
@@ -270,6 +271,7 @@ var AllKeys = map[string]struct{}{
 	MarketLiquidityV2SLANonPerformanceBondPenaltySlope:       {},
 	MarketLiquidityV2SLANonPerformanceBondPenaltyMax:         {},
 	MarketLiquidityV2StakeToCCYVolume:                        {},
+	MarketLiquidityV2ProvidersFeeCalculationTimeStep:         {},
 	MarketTargetStakeTimeWindow:                              {},
 	MarketTargetStakeScalingFactor:                           {},
 	MarketPriceMonitoringDefaultParameters:                   {},

@@ -15,7 +15,6 @@ package events_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/vega/core/datasource"
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
@@ -213,11 +212,10 @@ func TestMarketDeepClone(t *testing.T) {
 			AuctionExtension: 5000,
 		},
 		LiquiditySlaParams: &vegapb.LiquiditySLAParameters{
-			PriceRange:                      "0.95",
-			CommitmentMinTimeFraction:       "0.5",
-			ProvidersFeeCalculationTimeStep: (5 * time.Second).Nanoseconds(),
-			PerformanceHysteresisEpochs:     4,
-			SlaCompetitionFactor:            "0.5",
+			PriceRange:                  "0.95",
+			CommitmentMinTimeFraction:   "0.5",
+			PerformanceHysteresisEpochs: 4,
+			SlaCompetitionFactor:        "0.5",
 		},
 		TradingMode: vegapb.Market_TRADING_MODE_CONTINUOUS,
 		State:       vegapb.Market_STATE_ACTIVE,

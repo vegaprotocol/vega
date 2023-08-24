@@ -164,8 +164,6 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a new market with valid SLA price range succeeds", testNewMarketChangeSubmissionWithValidLpRangeSucceeds)
 	t.Run("Submitting a new market with invalid min time fraction fails", testNewMarketChangeSubmissionWithInvalidMinTimeFractionFails)
 	t.Run("Submitting a new market with valid min time fraction succeeds", testNewMarketChangeSubmissionWithValidMinTimeFractionSucceeds)
-	t.Run("Submitting a new market with invalid fee calculation time step fails", testNewMarketChangeSubmissionWithInvalidCalculationTimeStepFails)
-	t.Run("Submitting a new market with valid fee calculation time step succeeds", testNewMarketChangeSubmissionWithValidCalculationTimeStepSucceeds)
 	t.Run("Submitting a new market with invalid competition factor fails", testNewMarketChangeSubmissionWithInvalidCompetitionFactorFails)
 	t.Run("Submitting a new market with valid competition factor succeeds", testNewMarketChangeSubmissionWithValidCompetitionFactorSucceeds)
 	t.Run("Submitting a new market with invalid hysteresis epochs fails", testNewMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails)
@@ -5569,46 +5567,6 @@ func TestNewMarketChangeSubmissionWithValidMinTimeFractionSucceeds(t *testing.T)
 	}
 }
 
-func TestNewMarketChangeSubmissionWithInvalidCalculationTimeStepFails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{},
-						},
-						LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
-							ProvidersFeeCalculationTimeStep: -1,
-						},
-					},
-				},
-			},
-		},
-	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.providers.fee.calculation_time_step"), commands.ErrMustBePositiveOrZero)
-}
-
-func TestNewMarketChangeSubmissionWithValidCalculationTimeStepSucceeds(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{},
-						},
-						LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
-							ProvidersFeeCalculationTimeStep: 1,
-						},
-					},
-				},
-			},
-		},
-	})
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.providers.fee.calculation_time_step"), commands.ErrMustBePositive)
-}
-
 func TestNewMarketChangeSubmissionWithInvalidCompetitionFactorFails(t *testing.T) {
 	competitionFactors := []string{"banana", "-1", "-1.1", "1.1", "100"}
 	errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01, commands.ErrMustBeWithinRange01}
@@ -5820,46 +5778,6 @@ func testNewMarketChangeSubmissionWithValidMinTimeFractionSucceeds(t *testing.T)
 			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.commitment_min_time_fraction"), e)
 		}
 	}
-}
-
-func testNewMarketChangeSubmissionWithInvalidCalculationTimeStepFails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{},
-						},
-						LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
-							ProvidersFeeCalculationTimeStep: -1,
-						},
-					},
-				},
-			},
-		},
-	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.providers.fee.calculation_time_step"), commands.ErrMustBePositiveOrZero)
-}
-
-func testNewMarketChangeSubmissionWithValidCalculationTimeStepSucceeds(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{},
-						},
-						LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
-							ProvidersFeeCalculationTimeStep: 0,
-						},
-					},
-				},
-			},
-		},
-	})
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.providers.fee.calculation_time_step"), commands.ErrMustBePositive)
 }
 
 func testNewMarketChangeSubmissionWithInvalidCompetitionFactorFails(t *testing.T) {

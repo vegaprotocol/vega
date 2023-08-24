@@ -668,6 +668,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
 			Watcher: svcs.executionEngine.OnMarketLiquidityV2StakeToCCYVolumeUpdate,
 		},
+		{
+			Param:   netparams.MarketLiquidityV2ProvidersFeeCalculationTimeStep,
+			Watcher: svcs.executionEngine.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep,
+		},
 		// End of liquidity version 2.
 		{
 			Param:   netparams.ValidatorsEpochLength,

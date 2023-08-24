@@ -136,7 +136,6 @@ func NewMarketFromSnapshot(
 	marketLiquidity := common.NewMarketLiquidity(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
 		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange,
-		mkt.LiquiditySLAParams.ProvidersFeeCalculationTimeStep,
 	)
 
 	// backward compatibility check for nil

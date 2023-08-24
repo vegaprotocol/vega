@@ -245,11 +245,11 @@ message LiquidityMonitoringParameters {
 }
 
 message LiquiditySLAParameters {
+  reserved 3; // Deprecated "providers_fee_calculation_time_step"
+
   string price_range = 1;
   // Specifies the minimum fraction of time LPs must spend "on the book" providing their committed liquidity.
   string commitment_min_time_fraction = 2;
-  // Specifies how often the quality of liquidity supplied by the LPs is evaluated and fees arising from that period are earmarked for specific parties.
-  int64 providers_fee_calculation_time_step = 3;
   // Specifies the number of liquidity epochs over which past performance will continue to affect rewards.
   uint64 performance_hysteresis_epochs = 4;
   // Specifies the maximum fraction of their accrued fees an LP that meets the SLA implied by market.liquidity.commitmentMinTimeFraction will lose to liquidity providers
