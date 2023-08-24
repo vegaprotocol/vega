@@ -14,17 +14,28 @@ package steps
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/core/netparams"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 var unwatched = map[string]struct{}{
 	netparams.MarketLiquidityTargetStakeTriggeringRatio: {},
 	netparams.MarketTargetStakeScalingFactor:            {},
 	netparams.MarketTargetStakeTimeWindow:               {},
+}
+
+func DebugNetworkParameter(log *logging.Logger, netParams *netparams.Store, key string) error {
+	value, err := netParams.Get(key)
+	if err != nil {
+		return err
+	}
+	log.Info(fmt.Sprintf("\n\n%s: %s\n", key, value))
+	return nil
 }
 
 func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *godog.Table) error {

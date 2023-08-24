@@ -14,82 +14,13 @@ package future
 
 import (
 	"context"
-	"fmt"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
-
-func (m *Market) calcMarginsLiquidityProvisionAmendContinuous(
-	ctx context.Context, pos *positions.MarketPosition,
-) error {
-	market := m.GetID()
-
-	// first we build the margin events from the collateral.
-	e, err := m.collateral.GetPartyMargin(pos, m.settlementAsset, market)
-	if err != nil {
-		return err
-	}
-
-	increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
-	_, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, e, m.getCurrentMarkPrice(), increment)
-	if err != nil {
-		return err
-	}
-
-	// if evt is different to nil,
-	// this means a margin shortfall would happen
-	// we need to return an error
-	if evt != nil {
-		return fmt.Errorf(
-			"margin would be below maintenance with amend during continuous: %w",
-			common.ErrMarginCheckInsufficient,
-		)
-	}
-
-	// any other case is fine
-	return nil
-}
-
-func (m *Market) calcMarginsLiquidityProvisionAmendAuction(
-	ctx context.Context, pos *positions.MarketPosition, price *num.Uint,
-) (events.Risk, error) {
-	market := m.GetID()
-
-	// first we build the margin events from the collateral.
-	e, err := m.collateral.GetPartyMargin(pos, m.settlementAsset, market)
-	if err != nil {
-		return nil, err
-	}
-
-	// then we calculated margins for this party
-	increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
-	risk, closed := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, price, increment)
-	if len(closed) > 0 {
-		// this order would take party below maintenance -> stop here
-		return nil, fmt.Errorf(
-			"margin would be below maintenance: %w", common.ErrMarginCheckInsufficient)
-	}
-
-	// in this case, if no risk event is emitted, this means
-	// that the margins is covered, nothing needsto happen
-	if len(risk) <= 0 {
-		return nil, nil
-	}
-
-	// then we check if the required top-up is greated that the amound in
-	// the GeneralBalance, if yes it means we would have to use the bond
-	// account which is not acceptable at this point, we return an error as well
-	if risk[0].Amount().GT(num.UintZero().Sub(risk[0].GeneralBalance(), risk[0].BondBalance())) {
-		return nil, fmt.Errorf("margin would require bond: %w", common.ErrMarginCheckInsufficient)
-	}
-
-	return risk[0], nil
-}
 
 func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {
 	if m.as.InAuction() {
@@ -154,9 +85,6 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 		return nil, nil, nil
 	}
 	if evt != nil {
-		if m.liquidity.IsPending(order.Party) {
-			return nil, nil, ErrBondSlashing
-		}
 		return []events.Risk{risk}, []events.MarketPosition{evt}, nil
 	}
 	return []events.Risk{risk}, nil, nil

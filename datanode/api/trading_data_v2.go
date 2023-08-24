@@ -3859,13 +3859,21 @@ func (t *TradingDataServiceV2) ListStopOrders(ctx context.Context, req *v2.ListS
 	var filter entities.StopOrderFilter
 	if req.Filter != nil {
 		dateRange := entities.DateRangeFromProto(req.Filter.DateRange)
+		liveOnly := false
+
+		if req.Filter.LiveOnly != nil {
+			liveOnly = *req.Filter.LiveOnly
+		}
+
 		filter = entities.StopOrderFilter{
 			Statuses:       stopOrderStatusesFromProto(req.Filter.Statuses),
 			ExpiryStrategy: stopOrderExpiryStrategyFromProto(req.Filter.ExpiryStrategies),
 			PartyIDs:       req.Filter.PartyIds,
 			MarketIDs:      req.Filter.MarketIds,
 			DateRange:      &entities.DateRange{Start: dateRange.Start, End: dateRange.End},
+			LiveOnly:       liveOnly,
 		}
+
 		if err := VegaIDsSlice(req.Filter.MarketIds).Ensure(); err != nil {
 			return nil, formatE(err, errors.New("one or more market id is invalid"))
 		}

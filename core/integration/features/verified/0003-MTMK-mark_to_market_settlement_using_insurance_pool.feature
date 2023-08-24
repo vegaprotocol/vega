@@ -2,12 +2,13 @@ Feature: Test mark to market settlement with insurance pool
 
   Background:
     Given the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e0                    | 0                         |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e0                    | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
 
   Scenario: If settlement amount > party’s margin account balance + party’s general account balance for the asset, the full balance of the party’s margin account is transferred to the market’s temporary settlement account, the full balance of the party’s general account for the assets are transferred to the market’s temporary settlement account, the minimum insurance pool account balance for the market & asset, and the remainder, i.e. the difference between the total amount transferred from the trader’s margin + general accounts and the settlement amount, is transferred from the insurance pool account for the market to the temporary settlement account for the market (0003-MTMK-003)
     Given the initial insurance pool balance is "10000" for all the markets
@@ -21,9 +22,13 @@ Feature: Test mark to market settlement with insurance pool
       | lpprov | ETH   | 100000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 10     | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 10     | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 90 | 1 | buy  | BID | 90 | 10 |
+      | lpprov | ETH/DEC19 | 15 | 1 | sell | ASK | 15 | 10 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -36,10 +41,10 @@ Feature: Test mark to market settlement with insurance pool
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1100         | 0              | 1             |
+      | 1000 | TRADING_MODE_CONTINUOUS | 1100 | 88120 | 1 |
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin | general |
-      | lpprov | ETH   | ETH/DEC19 | 0      | 100000  |
+      | party  | asset | market id | margin | general | bond  |
+      | lpprov | ETH   | ETH/DEC19 | 11880  | 0       | 88120 |
      
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     When the parties place the following orders with ticks:
@@ -49,7 +54,7 @@ Feature: Test mark to market settlement with insurance pool
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 1320   | 3802    |
-      | party2 | ETH   | ETH/DEC19 | 132    | 9868    |
+      | party2 | ETH | ETH/DEC19 | 132 | 9768 |
 
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     When the parties place the following orders with ticks:
@@ -57,17 +62,19 @@ Feature: Test mark to market settlement with insurance pool
       | party2 | ETH/DEC19 | buy  | 1      | 6000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party2 | ETH   | ETH/DEC19 | 265    | 9735    |
+      | party2 | ETH | ETH/DEC19 | 265 | 9635 |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party3 | ETH/DEC19 | sell | 1      | 5000  | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party3 | ETH/DEC19 | sell | 1 | 6000 | 1 | TYPE_LIMIT | TIF_GTC | ref-3 |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 0      | 0       |
-      | party2 | ETH   | ETH/DEC19 | 15000  | 0       |
-      | party3 | ETH   | ETH/DEC19 | 7920   | 2080    |
+      | party2 | ETH | ETH/DEC19 | 13598 | 1302 |
+      | party3 | ETH | ETH/DEC19 | 721   | 8679 |
 
     And the cumulated balance for all accounts should be worth "155122"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "10121" for the market "ETH/DEC19"
+    And the insurance pool balance should be "9999" for the market "ETH/DEC19"
+
+

@@ -1131,14 +1131,14 @@ func testUpdateSpotMarketChangeSubmissionWithInvalidCalculationTimeStepFails(t *
 				UpdateSpotMarket: &protoTypes.UpdateSpotMarket{
 					Changes: &protoTypes.UpdateSpotMarketConfiguration{
 						SlaParams: &protoTypes.LiquiditySLAParameters{
-							ProvidersFeeCalculationTimeStep: 0,
+							ProvidersFeeCalculationTimeStep: -1,
 						},
 					},
 				},
 			},
 		},
 	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_spot_market.changes.sla_params.providers.fee.calculation_time_step"), commands.ErrMustBePositive)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_spot_market.changes.sla_params.providers.fee.calculation_time_step"), commands.ErrMustBePositiveOrZero)
 }
 
 func testUpdateSpotMarketChangeSubmissionWithValidCalculationTimeStepSucceeds(t *testing.T) {
@@ -1148,7 +1148,7 @@ func testUpdateSpotMarketChangeSubmissionWithValidCalculationTimeStepSucceeds(t 
 				UpdateSpotMarket: &protoTypes.UpdateSpotMarket{
 					Changes: &protoTypes.UpdateSpotMarketConfiguration{
 						SlaParams: &protoTypes.LiquiditySLAParameters{
-							ProvidersFeeCalculationTimeStep: 1,
+							ProvidersFeeCalculationTimeStep: 0,
 						},
 					},
 				},
@@ -1219,7 +1219,22 @@ func testUpdateSpotMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsF
 			},
 		},
 	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_spot_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBePositive)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_spot_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBeWithinRange1366)
+
+	err = checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_UpdateSpotMarket{
+				UpdateSpotMarket: &protoTypes.UpdateSpotMarket{
+					Changes: &protoTypes.UpdateSpotMarketConfiguration{
+						SlaParams: &protoTypes.LiquiditySLAParameters{
+							PerformanceHysteresisEpochs: 367,
+						},
+					},
+				},
+			},
+		},
+	})
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_spot_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBeWithinRange1366)
 }
 
 func testUpdateSpotMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds(t *testing.T) {

@@ -5,11 +5,13 @@ Feature: Ensure we don't uncross when leaving liquidity auction
       | id  | decimal places |
       | ETH | 5              |
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 2              | 0.01                   | 0                         |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 2              | 0.01                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
+      | limits.markets.maxPeggedOrders | 2     |
+
 
   @Panic
   Scenario:
@@ -24,10 +26,14 @@ Feature: Ensure we don't uncross when leaving liquidity auction
 
     # submit our LP
     Then the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party1 | ETH/DEC19 | 300000            | 0.1 | buy  | MID              | 1          | 21     | submission |
-      | lp1 | party1 | ETH/DEC19 | 300000            | 0.1 | sell | MID              | 1          | 21     | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | party1 | ETH/DEC19 | 300000            | 0.1 | submission |
+      | lp1 | party1 | ETH/DEC19 | 300000            | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party1 | ETH/DEC19 | 2         | 1                    | buy  | MID              | 1          | 21     |
+      | party1 | ETH/DEC19 | 2         | 1                    | sell | MID              | 1          | 21     |
+ 
     # get out of auction
     When the parties place the following orders:
       | party     | market id | side | volume | price | resulting trades | type       | tif     | reference |

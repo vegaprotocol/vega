@@ -27,6 +27,7 @@ Feature: Test settlement at expiry time from internal oracle
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 2     |
 
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -39,9 +40,9 @@ Feature: Test settlement at expiry time from internal oracle
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle     | 1e6                    | 1e6                       |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle     | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e6                    | 1e6                       | default-futures |
 
   @STest
   Scenario: Order cannot be placed once the market is expired
@@ -54,12 +55,17 @@ Feature: Test settlement at expiry time from internal oracle
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 5s    |
+      | limits.markets.maxPeggedOrders          | 2     |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 10000             | 0.001 | buy  | BID              | 50         | 1      | submission |
-      | lp1 | lpprov | ETH/DEC19 | 10000             | 0.001 | sell | ASK              | 50         | 1      | submission |
-
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 10000             | 0.001 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 10000             | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 1      |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 1      |
+  
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux1  | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |

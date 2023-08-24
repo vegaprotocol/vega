@@ -202,6 +202,7 @@ func (e *SnapshotEngine) serialisePerformances() ([]byte, error) {
 			RegisteredPenaltiesPerEpoch:      registeredPenaltiesPerEpochSnapshot,
 			PositionInPenaltiesPerEpoch:      uint32(partyPerformance.previousPenalties.Position()),
 		}
+
 		performancePerPartySnapshot = append(performancePerPartySnapshot, partyPerformanceSnapshot)
 	}
 
@@ -253,12 +254,18 @@ func (e *SnapshotEngine) serialiseScores() ([]byte, error) {
 		scores = append(scores, s)
 	}
 
+	var lastFeeDistributionTime int64
+	if e.lastFeeDistribution != (time.Time{}) {
+		lastFeeDistributionTime = e.lastFeeDistribution.UnixNano()
+	}
+
 	payload := &snapshotpb.Payload{
 		Data: &snapshotpb.Payload_LiquidityV2Scores{
 			LiquidityV2Scores: &snapshotpb.LiquidityV2Scores{
-				MarketId:              e.market,
-				RunningAverageCounter: int32(e.nAvg),
-				Scores:                scores,
+				MarketId:                e.market,
+				RunningAverageCounter:   int32(e.nAvg),
+				Scores:                  scores,
+				LastFeeDistributionTime: lastFeeDistributionTime,
 			},
 		},
 	}
@@ -303,7 +310,7 @@ func (e *SnapshotEngine) loadPendingProvisions(ctx context.Context, provisions [
 		if err != nil {
 			return err
 		}
-		e.Engine.pendingProvisions.Set(v.PartyId, provision)
+		e.Engine.pendingProvisions.Set(provision)
 		evts = append(evts, events.NewLiquidityProvisionEvent(ctx, provision))
 	}
 
@@ -331,6 +338,7 @@ func (e *SnapshotEngine) loadPerformances(performances *snapshotpb.LiquidityV2Pe
 
 		previousPenalties := restoreSliceRing[*num.Decimal](
 			registeredPenaltiesPerEpochAsDecimal,
+			e.Engine.slaParams.PerformanceHysteresisEpochs,
 			int(partyPerformance.PositionInPenaltiesPerEpoch),
 		)
 
@@ -338,6 +346,7 @@ func (e *SnapshotEngine) loadPerformances(performances *snapshotpb.LiquidityV2Pe
 		if partyPerformance.CommitmentStartTime > 0 {
 			startTime = time.Unix(0, partyPerformance.CommitmentStartTime)
 		}
+
 		e.Engine.slaPerformance[partyPerformance.Party] = &slaPerformance{
 			s:                 time.Duration(partyPerformance.ElapsedTimeMeetingSlaDuringEpoch),
 			start:             startTime,
@@ -367,7 +376,9 @@ func (e *SnapshotEngine) loadSupplied(ls *snapshotpb.LiquidityV2Supplied, p *typ
 
 func (e *SnapshotEngine) loadScores(ls *snapshotpb.LiquidityV2Scores, p *types.Payload) error {
 	var err error
+
 	e.nAvg = int64(ls.RunningAverageCounter)
+	e.lastFeeDistribution = time.Unix(0, ls.LastFeeDistributionTime)
 
 	scores := make(map[string]num.Decimal, len(ls.Scores))
 	for _, p := range ls.Scores {

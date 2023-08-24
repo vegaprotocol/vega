@@ -50,6 +50,27 @@ func (l Provisions) sortByFee() Provisions {
 	return l
 }
 
+func (pp Provisions) Get(key string) (*types.LiquidityProvision, int) {
+	for idx, pp := range pp {
+		if pp.Party == key {
+			return pp, idx
+		}
+	}
+
+	return nil, -1
+}
+
+func (pp *Provisions) Set(lp *types.LiquidityProvision) {
+	_, idx := pp.Get(lp.Party)
+	if idx > -1 {
+		p := *pp
+		p[idx] = lp
+		return
+	}
+
+	*pp = append(*pp, lp)
+}
+
 // ProvisionsPerParty maps parties to *types.LiquidityProvision.
 type ProvisionsPerParty map[string]*types.LiquidityProvision
 
@@ -130,51 +151,36 @@ func (ords Orders) ByParty() []PartyOrders {
 	return partyOrders
 }
 
-type PendingProvisions map[string]*types.LiquidityProvision
-
-// Slice returns the parties as a slice.
-func (ps PendingProvisions) Slice() Provisions {
-	slice := make(Provisions, 0, len(ps))
-	for _, p := range ps {
-		slice = append(slice, p)
-	}
-	// sorting by partyId to ensure any processing in a deterministic manner later on
-	sort.SliceStable(slice, func(i, j int) bool { return slice[i].Party < slice[j].Party })
-	return slice
-}
-
-func (ps PendingProvisions) sortedKeys() []string {
-	keys := make([]string, 0, len(ps))
-	for key := range ps {
-		keys = append(keys, key)
-	}
-
-	sort.Strings(keys)
-
-	return keys
-}
-
 type SnapshotablePendingProvisions struct {
-	PendingProvisions
+	PendingProvisions Provisions
 }
 
 func newSnapshotablePendingProvisions() *SnapshotablePendingProvisions {
 	return &SnapshotablePendingProvisions{
-		PendingProvisions: map[string]*types.LiquidityProvision{},
+		PendingProvisions: Provisions{},
 	}
 }
 
+func (s SnapshotablePendingProvisions) Slice() Provisions {
+	return s.PendingProvisions
+}
+
 func (s *SnapshotablePendingProvisions) Delete(key string) {
-	delete(s.PendingProvisions, key)
+	_, id := s.PendingProvisions.Get(key)
+	if id == -1 {
+		return
+	}
+
+	s.PendingProvisions = append(s.PendingProvisions[:id], s.PendingProvisions[id+1:]...)
 }
 
 func (s *SnapshotablePendingProvisions) Get(key string) (*types.LiquidityProvision, bool) {
-	p, ok := s.PendingProvisions[key]
-	return p, ok
+	lp, idx := s.PendingProvisions.Get(key)
+	return lp, idx > -1
 }
 
-func (s *SnapshotablePendingProvisions) Set(key string, p *types.LiquidityProvision) {
-	s.PendingProvisions[key] = p
+func (s *SnapshotablePendingProvisions) Set(lp *types.LiquidityProvision) {
+	s.PendingProvisions.Set(lp)
 }
 
 func (s *SnapshotablePendingProvisions) Len() int {
@@ -186,11 +192,15 @@ type sliceRing[T any] struct {
 	pos int
 }
 
-func restoreSliceRing[T any](s []T, position int) *sliceRing[T] {
-	return &sliceRing[T]{
+func restoreSliceRing[T any](s []T, size uint64, position int) *sliceRing[T] {
+	sr := &sliceRing[T]{
 		s:   s,
 		pos: position,
 	}
+
+	sr.ModifySize(size)
+
+	return sr
 }
 
 func NewSliceRing[T any](size uint64) *sliceRing[T] {

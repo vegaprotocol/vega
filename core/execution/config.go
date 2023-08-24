@@ -14,8 +14,7 @@ package execution
 
 import (
 	"code.vegaprotocol.io/vega/core/fee"
-	"code.vegaprotocol.io/vega/core/liquidity"
-	lv2 "code.vegaprotocol.io/vega/core/liquidity/v2"
+	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/risk"
@@ -34,27 +33,25 @@ const (
 type Config struct {
 	Level encoding.LogLevel `long:"log-level"`
 
-	Matching    matching.Config   `group:"Matching"    namespace:"matching"`
-	Risk        risk.Config       `group:"Risk"        namespace:"risk"`
-	Position    positions.Config  `group:"Position"    namespace:"position"`
-	Settlement  settlement.Config `group:"Settlement"  namespace:"settlement"`
-	Fee         fee.Config        `group:"Fee"         namespace:"fee"`
-	Liquidity   liquidity.Config  `group:"Liquidity"   namespace:"liquidity"`
-	LiquidityV2 lv2.Config        `group:"LiquidityV2" namespace:"liquidityV2"`
+	Matching   matching.Config   `group:"Matching"    namespace:"matching"`
+	Risk       risk.Config       `group:"Risk"        namespace:"risk"`
+	Position   positions.Config  `group:"Position"    namespace:"position"`
+	Settlement settlement.Config `group:"Settlement"  namespace:"settlement"`
+	Fee        fee.Config        `group:"Fee"         namespace:"fee"`
+	Liquidity  liquidity.Config  `group:"LiquidityV2" namespace:"liquidityV2"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
 // pointer to a logger instance to be used for logging within the package.
 func NewDefaultConfig() Config {
 	c := Config{
-		Level:       encoding.LogLevel{Level: logging.InfoLevel},
-		Matching:    matching.NewDefaultConfig(),
-		Risk:        risk.NewDefaultConfig(),
-		Position:    positions.NewDefaultConfig(),
-		Settlement:  settlement.NewDefaultConfig(),
-		Fee:         fee.NewDefaultConfig(),
-		Liquidity:   liquidity.NewDefaultConfig(),
-		LiquidityV2: lv2.NewDefaultConfig(),
+		Level:      encoding.LogLevel{Level: logging.InfoLevel},
+		Matching:   matching.NewDefaultConfig(),
+		Risk:       risk.NewDefaultConfig(),
+		Position:   positions.NewDefaultConfig(),
+		Settlement: settlement.NewDefaultConfig(),
+		Fee:        fee.NewDefaultConfig(),
+		Liquidity:  liquidity.NewDefaultConfig(),
 	}
 	return c
 }

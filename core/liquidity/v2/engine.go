@@ -129,6 +129,8 @@ type Engine struct {
 	// fields related to SLA commitment
 	slaPerformance map[string]*slaPerformance
 	slaEpochStart  time.Time
+
+	lastFeeDistribution time.Time
 }
 
 // NewEngine returns a new Liquidity Engine.
@@ -180,6 +182,14 @@ func NewEngine(config Config,
 	return e
 }
 
+func (e *Engine) SetLastFeeDistributionTime(t time.Time) {
+	e.lastFeeDistribution = t
+}
+
+func (e *Engine) GetLastFeeDistributionTime() time.Time {
+	return e.lastFeeDistribution
+}
+
 // SubmitLiquidityProvision handles a new liquidity provision submission.
 // Returns whether or not submission has been applied immediately.
 func (e *Engine) SubmitLiquidityProvision(
@@ -226,22 +236,23 @@ func (e *Engine) SubmitLiquidityProvision(
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, provision))
 
 	provision.Status = types.LiquidityProvisionStatusPending
-	e.pendingProvisions.Set(party, provision)
+	e.pendingProvisions.Set(provision)
 	return false, nil
 }
 
-func (e *Engine) ApplyPendingProvisions(ctx context.Context, now time.Time) map[string]*types.LiquidityProvision {
-	updatedProvisionsPerParty := make(map[string]*types.LiquidityProvision, e.pendingProvisions.Len())
+func (e *Engine) ApplyPendingProvisions(ctx context.Context, now time.Time) Provisions {
+	updatedProvisionsPerParty := make(Provisions, 0, e.pendingProvisions.Len())
 
-	for _, party := range e.pendingProvisions.sortedKeys() {
-		provision, _ := e.pendingProvisions.Get(party)
-		updatedProvisionsPerParty[party] = provision
+	for _, provision := range e.pendingProvisions.Slice() {
+		party := provision.Party
+
+		updatedProvisionsPerParty = append(updatedProvisionsPerParty, provision)
 		provision.UpdatedAt = now.UnixNano()
 
 		// if commitment was reduced to 0, all party provision related data can be deleted
 		// otherwise we apply the new commitment
 		if provision.CommitmentAmount.IsZero() {
-			provision.Status = types.LiquidityProvisionStatusStopped
+			provision.Status = types.LiquidityProvisionStatusCancelled
 			e.destroyProvision(party)
 		} else {
 			provision.Status = types.LiquidityProvisionStatusActive
@@ -265,8 +276,8 @@ func (e *Engine) PendingProvisionByPartyID(party string) *types.LiquidityProvisi
 	return provision
 }
 
-func (e *Engine) PendingProvision() map[string]*types.LiquidityProvision {
-	return e.pendingProvisions.PendingProvisions
+func (e *Engine) PendingProvision() Provisions {
+	return e.pendingProvisions.Slice()
 }
 
 // RejectLiquidityProvision removes a parties commitment of liquidity.
@@ -316,9 +327,11 @@ func (e *Engine) stopLiquidityProvision(
 ) error {
 	lp, ok := e.provisions.Get(party)
 	if !ok {
-		return errors.New("party have no liquidity provision orders")
+		lp, ok = e.pendingProvisions.Get(party)
+		if !ok {
+			return errors.New("party is not a liquidity provider")
+		}
 	}
-
 	now := e.timeService.GetTimeNow().UnixNano()
 
 	lp.Status = status
@@ -354,7 +367,8 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *ty
 // IsLiquidityProvider returns true if the party hold any liquidity commitment.
 func (e *Engine) IsLiquidityProvider(party string) bool {
 	_, ok := e.provisions.Get(party)
-	return ok
+	_, pendingOk := e.pendingProvisions.Get(party)
+	return ok || pendingOk
 }
 
 // ProvisionsPerParty returns the registered a map of party-id -> LiquidityProvision.
@@ -387,8 +401,8 @@ func (e *Engine) UpdatePartyCommitment(partyID string, newCommitment *num.Uint) 
 func (e *Engine) CalculateSuppliedStake() *num.Uint {
 	supplied := num.UintZero()
 
-	for party, pending := range e.pendingProvisions.PendingProvisions {
-		provision, ok := e.provisions.Get(party)
+	for _, pending := range e.pendingProvisions.PendingProvisions {
+		provision, ok := e.provisions.Get(pending.Party)
 		if ok && pending.CommitmentAmount.LT(provision.CommitmentAmount) {
 			supplied.AddSum(provision.CommitmentAmount)
 			continue
