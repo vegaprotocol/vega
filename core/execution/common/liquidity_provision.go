@@ -515,7 +515,10 @@ func (m *MarketLiquidity) AmendLiquidityProvision(
 	provisionToCopy := currentProvision
 	if currentProvision == nil {
 		if pendingAmendment == nil {
-			return fmt.Errorf("cannot edit liquidity provision from a non liquidity provider party (%v)", party)
+			m.log.Panic(
+				"cannot edit liquidity provision from a non liquidity provider party",
+				logging.PartyID(party),
+			)
 		}
 
 		provisionToCopy = pendingAmendment
