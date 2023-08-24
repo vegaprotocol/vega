@@ -588,8 +588,8 @@ Feature: Test settlement at expiry time from internal oracle
     # Check that party positions and overall account balances are the same as before auction start (accounting for a settlement transfer of 200 from party2 to party1)
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | -1     | 0              | 0            |
-      | party2 | 1      | 0              | 0            |
+      | party1 | -1     | 0              | 200          |
+      | party2 | 1      | 0              | -200         |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |

@@ -262,8 +262,8 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
     # Check that party positions and overall account balances are the same as before auction start (accounting for a settlement transfer of 200 from party2 to party1)
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | -5     | 0              | 360          |
-      | party2 | 5      | 0              | -360         |
+      | party1 | -5     | 0              | 1375         |
+      | party2 | 5      | 0              | -1375        |
 
     # all the asset from margin account should be moved to general account:
     # party1: 21534+99979841=100001375

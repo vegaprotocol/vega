@@ -125,6 +125,7 @@
 - [9140](https://github.com/vegaprotocol/vega/issues/9140) - Stop orders table should be a `hypertable` with retention policy.
 - [9153](https://github.com/vegaprotocol/vega/issues/9153) - `MTM` win transfers can be less than one.
 - [9178](https://github.com/vegaprotocol/vega/issues/9178) - Fix LP amendment panic
+- [9053](https://github.com/vegaprotocol/vega/issues/9053) - Handle settle market events in core positions plug-in.
 
 ## 0.72.1
 
