@@ -133,7 +133,7 @@ func testAddFundingPeriodShouldUpdateIfMarketExistsAndSequenceExists(t *testing.
 
 func TestFundingPeriod_AddFundingPeriodDataPoint(t *testing.T) {
 	t.Run("should add data points for existing funding periods", testAddForExistingFundingPeriods)
-	t.Run("should error if the funding period does not exist", testShouldErrorIfNoFundingPeriod)
+	t.Run("should not error if the funding period does not exist", testShouldNotErrorIfNoFundingPeriod)
 	t.Run("should update the data point if multiple data points for the same source is received in the same block", testShouldUpdateDataPointInSameBlock)
 }
 
@@ -171,7 +171,10 @@ func testAddForExistingFundingPeriods(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func testShouldErrorIfNoFundingPeriod(t *testing.T) {
+func testShouldNotErrorIfNoFundingPeriod(t *testing.T) {
+	// Note: this test was changed from should error to should not error as we can not rely on the
+	// foreign key constraint to the funding_period table which has been dropped due to the
+	// funding_period_data_point table being migrated to a TimescaleDB hypertable.
 	ctx, rollback := tempTransaction(t)
 	defer rollback()
 
@@ -188,7 +191,7 @@ func testShouldErrorIfNoFundingPeriod(t *testing.T) {
 	}
 
 	err := stores.fp.AddDataPoint(ctx, &dataPoint)
-	require.Error(t, err)
+	require.NoError(t, err)
 }
 
 func testShouldUpdateDataPointInSameBlock(t *testing.T) {
