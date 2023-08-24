@@ -38,6 +38,16 @@ type MarketData struct {
 
 var ErrInvalidDateRange = errors.New("invalid date range, end date must be after start date")
 
+const selectMarketDataColumns = `synthetic_time, tx_hash, vega_time, seq_num,
+			market, mark_price, best_bid_price, best_bid_volume,
+			best_offer_price, best_offer_volume, best_static_bid_price, best_static_bid_volume,
+			best_static_offer_price, best_static_offer_volume, mid_price, static_mid_price,
+			open_interest, auction_end, auction_start, indicative_price, indicative_volume,
+			market_trading_mode, auction_trigger, extension_trigger, target_stake,
+			supplied_stake, price_monitoring_bounds, market_value_proxy, liquidity_provider_fee_shares,
+			market_state, next_mark_to_market, coalesce(market_growth, 0) as market_growth,
+			coalesce(last_traded_price, 0) as last_traded_price, funding_rate`
+
 func NewMarketData(connectionSource *ConnectionSource) *MarketData {
 	return &MarketData{
 		ConnectionSource: connectionSource,
@@ -49,7 +59,7 @@ func NewMarketData(connectionSource *ConnectionSource) *MarketData {
 			"open_interest", "auction_end", "auction_start", "indicative_price", "indicative_volume",
 			"market_trading_mode", "auction_trigger", "extension_trigger", "target_stake",
 			"supplied_stake", "price_monitoring_bounds", "market_value_proxy", "liquidity_provider_fee_shares",
-			"market_state", "next_mark_to_market", "market_growth", "last_traded_price",
+			"market_state", "next_mark_to_market", "market_growth", "last_traded_price", "funding_rate",
 		},
 	}
 }
@@ -70,7 +80,8 @@ func (md *MarketData) Flush(ctx context.Context) ([]*entities.MarketData, error)
 			data.MidPrice, data.StaticMidPrice, data.OpenInterest, data.AuctionEnd,
 			data.AuctionStart, data.IndicativePrice, data.IndicativeVolume, data.MarketTradingMode,
 			data.AuctionTrigger, data.ExtensionTrigger, data.TargetStake, data.SuppliedStake,
-			data.PriceMonitoringBounds, data.MarketValueProxy, data.LiquidityProviderFeeShares, data.MarketState, data.NextMarkToMarket, data.MarketGrowth, data.LastTradedPrice,
+			data.PriceMonitoringBounds, data.MarketValueProxy, data.LiquidityProviderFeeShares, data.MarketState,
+			data.NextMarkToMarket, data.MarketGrowth, data.LastTradedPrice, data.FundingRate,
 		})
 	}
 	defer metrics.StartSQLQuery("MarketData", "Flush")()
@@ -99,7 +110,7 @@ func (md *MarketData) GetMarketDataByID(ctx context.Context, marketID string) (e
 	md.log.Debug("Retrieving market data from Postgres", logging.String("market-id", marketID))
 
 	var marketData entities.MarketData
-	query := "select * from current_market_data where market = $1"
+	query := fmt.Sprintf("select %s from current_market_data where market = $1", selectMarketDataColumns)
 
 	return marketData, md.wrapE(pgxscan.Get(ctx, md.Connection, &marketData, query, entities.MarketID(marketID)))
 }
@@ -108,7 +119,7 @@ func (md *MarketData) GetMarketsData(ctx context.Context) ([]entities.MarketData
 	md.log.Debug("Retrieving markets data from Postgres")
 
 	var marketData []entities.MarketData
-	query := "select * from current_market_data"
+	query := fmt.Sprintf("select %s from current_market_data", selectMarketDataColumns)
 
 	defer metrics.StartSQLQuery("MarketData", "GetMarketsData")()
 	err := pgxscan.Select(ctx, md.Connection, &marketData, query)
@@ -151,7 +162,7 @@ func (md *MarketData) getBetweenDatesByID(ctx context.Context, marketID string, 
 	defer metrics.StartSQLQuery("MarketData", "getBetweenDatesByID")()
 	market := entities.MarketID(marketID)
 
-	selectStatement := `select * from market_data`
+	selectStatement := fmt.Sprintf(`select %s from market_data`, selectMarketDataColumns)
 	args := make([]interface{}, 0)
 
 	var (

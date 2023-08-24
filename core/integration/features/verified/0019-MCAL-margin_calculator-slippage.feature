@@ -15,9 +15,9 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
             | 0.1  | 0.1   | 100         | -100          | 0.2                    |
 
         And the markets:
-            | id        | quote name | asset | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config           | linear slippage factor | quadratic slippage factor |
-            | ETH/FEB23 | ETH        | USD   | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future       | 0.25                   | 0.25                      |
-            | ETH/MAR23 | ETH        | USD   | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future       | 100                    | 100                       |
+            | id        | quote name | asset | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config           | linear slippage factor | quadratic slippage factor | sla params      |
+            | ETH/FEB23 | ETH        | USD   | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future       | 0.25                   | 0.25                      | default-futures |
+            | ETH/MAR23 | ETH        | USD   | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future       | 100                    | 100                       | default-futures |
 
 
     Scenario: Check slippage-factors yield the correct maximum slippage for a specific market state (0019-MCAL-011)(0019-MCAL-012)

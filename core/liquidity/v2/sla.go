@@ -15,6 +15,7 @@ func (e *Engine) ResetSLAEpoch(
 	midPrice *num.Uint,
 	positionFactor num.Decimal,
 ) {
+	e.slaEpochStart = now
 	if e.auctionState.IsOpeningAuction() {
 		return
 	}
@@ -26,8 +27,6 @@ func (e *Engine) ResetSLAEpoch(
 
 		commitment.s = 0
 	}
-
-	e.slaEpochStart = now
 }
 
 func (e *Engine) EndBlock(markPrice *num.Uint, midPrice *num.Uint, positionFactor num.Decimal) {
@@ -54,20 +53,32 @@ func (e *Engine) EndBlock(markPrice *num.Uint, midPrice *num.Uint, positionFacto
 
 // CalculateSLAPenalties should be called at the and of epoch to calculate SLA penalties based on LP performance in the epoch.
 func (e *Engine) CalculateSLAPenalties(now time.Time) SlaPenalties {
+	penaltiesPerParty := map[string]*SlaPenalty{}
+
+	// Do not apply any penalties during opening auction
+	if e.auctionState.IsOpeningAuction() {
+		return SlaPenalties{
+			AllPartiesHaveFullFeePenalty: false,
+			PenaltiesPerParty:            penaltiesPerParty,
+		}
+	}
+
 	observedEpochLength := now.Sub(e.slaEpochStart)
 
 	one := num.DecimalOne()
 	partiesWithFullFeePenaltyCount := 0
 
-	penaltiesPerParty := map[string]*SlaPenalty{}
 	for party, commitment := range e.slaPerformance {
 		if !commitment.start.IsZero() {
 			commitment.s += now.Sub(commitment.start)
 		}
 
-		s := num.DecimalFromInt64(commitment.s.Nanoseconds())
-		observedEpochLengthD := num.DecimalFromInt64(observedEpochLength.Nanoseconds())
-		timeBookFraction := s.Div(observedEpochLengthD)
+		println(commitment.s.Nanoseconds())
+		timeBookFraction := num.DecimalZero()
+		lNano := observedEpochLength.Nanoseconds()
+		if lNano > 0 {
+			timeBookFraction = num.DecimalFromInt64(commitment.s.Nanoseconds()).Div(num.DecimalFromInt64(lNano))
+		}
 
 		var feePenalty, bondPenalty num.Decimal
 
@@ -158,6 +169,14 @@ func (e *Engine) doesLPMeetsCommitment(
 func (e *Engine) calculateCurrentFeePenalty(timeBookFraction num.Decimal) num.Decimal {
 	one := num.DecimalOne()
 
+	if timeBookFraction.LessThan(e.slaParams.CommitmentMinTimeFraction) {
+		return one
+	}
+
+	if timeBookFraction.Equal(e.slaParams.CommitmentMinTimeFraction) && timeBookFraction.Equal(one) {
+		return num.DecimalZero()
+	}
+
 	// p = (1-[timeBookFraction-commitmentMinTimeFraction/1-commitmentMinTimeFraction]) * slaCompetitionFactor
 	return one.Sub(
 		timeBookFraction.Sub(e.slaParams.CommitmentMinTimeFraction).Div(one.Sub(e.slaParams.CommitmentMinTimeFraction)),
@@ -170,6 +189,14 @@ func (e *Engine) calculateBondPenalty(timeBookFraction num.Decimal) num.Decimal 
 		e.nonPerformanceBondPenaltyMax,
 		e.nonPerformanceBondPenaltySlope.Mul(num.DecimalOne().Sub(timeBookFraction.Div(e.slaParams.CommitmentMinTimeFraction))),
 	)
+
+	println("timeBookFraction", timeBookFraction.String())
+	println("e.nonPerformanceBondPenaltyMax", e.nonPerformanceBondPenaltyMax.String())
+	println("e.nonPerformanceBondPenaltySlope", e.nonPerformanceBondPenaltySlope.String())
+	println("e.slaParams.CommitmentMinTimeFraction", e.slaParams.CommitmentMinTimeFraction.String())
+	println("timeBookFraction.Div(e.slaParams.CommitmentMinTimeFraction)", timeBookFraction.Div(e.slaParams.CommitmentMinTimeFraction).String())
+	println("num.DecimalOne().Sub(timeBookFraction.Div(e.slaParams.CommitmentMinTimeFraction))", num.DecimalOne().Sub(timeBookFraction.Div(e.slaParams.CommitmentMinTimeFraction)).String())
+	println("min", min.String())
 
 	// max(0, min)
 	return num.MaxD(num.DecimalZero(), min)

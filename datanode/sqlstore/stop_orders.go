@@ -128,6 +128,10 @@ func stopOrderView(f entities.StopOrderFilter, p entities.CursorPagination) (str
 		return "", false, fmt.Errorf("oldest first order query is not currently supported")
 	}
 
+	if f.LiveOnly {
+		return "stop_orders_live", false, nil
+	}
+
 	if len(f.PartyIDs) > 0 {
 		return "stop_orders_current_desc_by_party", true, nil
 	}

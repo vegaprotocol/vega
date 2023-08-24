@@ -18,13 +18,13 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/idgeneration"
+	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/libs/crypto"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code.vegaprotocol.io/vega/core/liquidity"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -43,7 +43,7 @@ func TestAmendments(t *testing.T) {
 	defer tng.ctrl.Finish()
 
 	assert.EqualError(t,
-		tng.engine.CanAmend(nil, party),
+		tng.engine.CanAmend(nil, party, true),
 		liquidity.ErrPartyHaveNoLiquidityProvision.Error(),
 	)
 
@@ -80,9 +80,10 @@ func TestAmendments(t *testing.T) {
 		Reference:        "ref-lp-submission-1",
 	})
 	// now we can do a OK can amend
-	assert.NoError(t, tng.engine.CanAmend(lpa, party))
+	assert.NoError(t, tng.engine.CanAmend(lpa, party, true))
 
-	assert.NoError(t, tng.engine.AmendLiquidityProvision(ctx, lpa, party))
+	_, err = tng.engine.AmendLiquidityProvision(ctx, lpa, party, true)
+	assert.NoError(t, err)
 
 	// first validate that the amendment is pending
 	pendingLp := tng.engine.PendingProvisionByPartyID(party)
@@ -108,7 +109,7 @@ func TestAmendments(t *testing.T) {
 	// so let's check for negatives instead
 	lpa.Fee = num.DecimalFromFloat(-1)
 	assert.EqualError(t,
-		tng.engine.CanAmend(lpa, party),
+		tng.engine.CanAmend(lpa, party, true),
 		"invalid liquidity provision fee",
 	)
 }

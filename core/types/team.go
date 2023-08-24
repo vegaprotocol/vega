@@ -23,14 +23,16 @@ type Team struct {
 }
 
 type Membership struct {
-	PartyID  PartyID
-	JoinedAt time.Time
+	PartyID       PartyID
+	JoinedAt      time.Time
+	NumberOfEpoch uint64
 }
 
 func (t *Team) AddReferee(partyID PartyID, joinedAt time.Time) {
 	t.Referees = append(t.Referees, &Membership{
-		PartyID:  partyID,
-		JoinedAt: joinedAt,
+		PartyID:       partyID,
+		JoinedAt:      joinedAt,
+		NumberOfEpoch: 0,
 	})
 }
 

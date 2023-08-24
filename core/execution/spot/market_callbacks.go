@@ -95,6 +95,6 @@ func (m *Market) OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(d num.
 	m.liquidity.OnNonPerformanceBondPenaltyMaxUpdate(d)
 }
 
-func (m *Market) OnMarketLiquidityV2SuppliedStakeToObligationFactorUpdate(d num.Decimal) {
+func (m *Market) OnMarketLiquidityV2StakeToCCYVolume(d num.Decimal) {
 	m.liquidity.OnStakeToCcyVolumeUpdate(d)
 }

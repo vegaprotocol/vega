@@ -1125,18 +1125,6 @@ func (mr *MockAuctionStateMockRecorder) ExtendAuction(arg0 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendAuction", reflect.TypeOf((*MockAuctionState)(nil).ExtendAuction), arg0)
 }
 
-// ExtendAuctionLiquidityNoOrders mocks base method.
-func (m *MockAuctionState) ExtendAuctionLiquidityNoOrders(arg0 types.AuctionDuration) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ExtendAuctionLiquidityNoOrders", arg0)
-}
-
-// ExtendAuctionLiquidityNoOrders indicates an expected call of ExtendAuctionLiquidityNoOrders.
-func (mr *MockAuctionStateMockRecorder) ExtendAuctionLiquidityNoOrders(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendAuctionLiquidityNoOrders", reflect.TypeOf((*MockAuctionState)(nil).ExtendAuctionLiquidityNoOrders), arg0)
-}
-
 // ExtendAuctionLiquidityUnmetTarget mocks base method.
 func (m *MockAuctionState) ExtendAuctionLiquidityUnmetTarget(arg0 types.AuctionDuration) {
 	m.ctrl.T.Helper()
@@ -1379,18 +1367,6 @@ func (mr *MockAuctionStateMockRecorder) StartGovernanceSuspensionAuction(arg0 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartGovernanceSuspensionAuction", reflect.TypeOf((*MockAuctionState)(nil).StartGovernanceSuspensionAuction), arg0)
 }
 
-// StartLiquidityAuctionNoOrders mocks base method.
-func (m *MockAuctionState) StartLiquidityAuctionNoOrders(arg0 time.Time, arg1 *types.AuctionDuration) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "StartLiquidityAuctionNoOrders", arg0, arg1)
-}
-
-// StartLiquidityAuctionNoOrders indicates an expected call of StartLiquidityAuctionNoOrders.
-func (mr *MockAuctionStateMockRecorder) StartLiquidityAuctionNoOrders(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartLiquidityAuctionNoOrders", reflect.TypeOf((*MockAuctionState)(nil).StartLiquidityAuctionNoOrders), arg0, arg1)
-}
-
 // StartLiquidityAuctionUnmetTarget mocks base method.
 func (m *MockAuctionState) StartLiquidityAuctionUnmetTarget(arg0 time.Time, arg1 *types.AuctionDuration) {
 	m.ctrl.T.Helper()
@@ -1467,24 +1443,25 @@ func (m *MockLiquidityEngine) EXPECT() *MockLiquidityEngineMockRecorder {
 }
 
 // AmendLiquidityProvision mocks base method.
-func (m *MockLiquidityEngine) AmendLiquidityProvision(arg0 context.Context, arg1 *types.LiquidityProvisionAmendment, arg2 string) error {
+func (m *MockLiquidityEngine) AmendLiquidityProvision(arg0 context.Context, arg1 *types.LiquidityProvisionAmendment, arg2 string, arg3 bool) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AmendLiquidityProvision", arg0, arg1, arg2)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "AmendLiquidityProvision", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // AmendLiquidityProvision indicates an expected call of AmendLiquidityProvision.
-func (mr *MockLiquidityEngineMockRecorder) AmendLiquidityProvision(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockLiquidityEngineMockRecorder) AmendLiquidityProvision(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendLiquidityProvision", reflect.TypeOf((*MockLiquidityEngine)(nil).AmendLiquidityProvision), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendLiquidityProvision", reflect.TypeOf((*MockLiquidityEngine)(nil).AmendLiquidityProvision), arg0, arg1, arg2, arg3)
 }
 
 // ApplyPendingProvisions mocks base method.
-func (m *MockLiquidityEngine) ApplyPendingProvisions(arg0 context.Context, arg1 time.Time) map[string]*types.LiquidityProvision {
+func (m *MockLiquidityEngine) ApplyPendingProvisions(arg0 context.Context, arg1 time.Time) liquidity.Provisions {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ApplyPendingProvisions", arg0, arg1)
-	ret0, _ := ret[0].(map[string]*types.LiquidityProvision)
+	ret0, _ := ret[0].(liquidity.Provisions)
 	return ret0
 }
 
@@ -1574,6 +1551,20 @@ func (m *MockLiquidityEngine) GetAverageLiquidityScores() map[string]decimal.Dec
 func (mr *MockLiquidityEngineMockRecorder) GetAverageLiquidityScores() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAverageLiquidityScores", reflect.TypeOf((*MockLiquidityEngine)(nil).GetAverageLiquidityScores))
+}
+
+// GetLastFeeDistributionTime mocks base method.
+func (m *MockLiquidityEngine) GetLastFeeDistributionTime() time.Time {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLastFeeDistributionTime")
+	ret0, _ := ret[0].(time.Time)
+	return ret0
+}
+
+// GetLastFeeDistributionTime indicates an expected call of GetLastFeeDistributionTime.
+func (mr *MockLiquidityEngineMockRecorder) GetLastFeeDistributionTime() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastFeeDistributionTime", reflect.TypeOf((*MockLiquidityEngine)(nil).GetLastFeeDistributionTime))
 }
 
 // GetState mocks base method.
@@ -1750,10 +1741,10 @@ func (mr *MockLiquidityEngineMockRecorder) OnStakeToCcyVolumeUpdate(arg0 interfa
 }
 
 // PendingProvision mocks base method.
-func (m *MockLiquidityEngine) PendingProvision() map[string]*types.LiquidityProvision {
+func (m *MockLiquidityEngine) PendingProvision() liquidity.Provisions {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PendingProvision")
-	ret0, _ := ret[0].(map[string]*types.LiquidityProvision)
+	ret0, _ := ret[0].(liquidity.Provisions)
 	return ret0
 }
 
@@ -1827,6 +1818,18 @@ func (m *MockLiquidityEngine) ResetSLAEpoch(arg0 time.Time, arg1, arg2 *num.Uint
 func (mr *MockLiquidityEngineMockRecorder) ResetSLAEpoch(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetSLAEpoch", reflect.TypeOf((*MockLiquidityEngine)(nil).ResetSLAEpoch), arg0, arg1, arg2, arg3)
+}
+
+// SetLastFeeDistributionTime mocks base method.
+func (m *MockLiquidityEngine) SetLastFeeDistributionTime(arg0 time.Time) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetLastFeeDistributionTime", arg0)
+}
+
+// SetLastFeeDistributionTime indicates an expected call of SetLastFeeDistributionTime.
+func (mr *MockLiquidityEngineMockRecorder) SetLastFeeDistributionTime(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastFeeDistributionTime", reflect.TypeOf((*MockLiquidityEngine)(nil).SetLastFeeDistributionTime), arg0)
 }
 
 // StopLiquidityProvision mocks base method.
@@ -2089,6 +2092,18 @@ func (m *MockMarketLiquidityEngine) IsProbabilityOfTradingInitialised() bool {
 func (mr *MockMarketLiquidityEngineMockRecorder) IsProbabilityOfTradingInitialised() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsProbabilityOfTradingInitialised", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).IsProbabilityOfTradingInitialised))
+}
+
+// OnBondPenaltyFactorUpdate mocks base method.
+func (m *MockMarketLiquidityEngine) OnBondPenaltyFactorUpdate(arg0 decimal.Decimal) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "OnBondPenaltyFactorUpdate", arg0)
+}
+
+// OnBondPenaltyFactorUpdate indicates an expected call of OnBondPenaltyFactorUpdate.
+func (mr *MockMarketLiquidityEngineMockRecorder) OnBondPenaltyFactorUpdate(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnBondPenaltyFactorUpdate", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).OnBondPenaltyFactorUpdate), arg0)
 }
 
 // OnEarlyExitPenalty mocks base method.

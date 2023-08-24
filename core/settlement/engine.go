@@ -352,9 +352,10 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	delta := num.UintZero().Sub(lossTotal, winTotal)
 	if !delta.IsZero() {
 		if zeroAmts {
+			zRound := num.DecimalFromInt64(int64(len(zeroShares)))
 			// there are more transfers from losses than we pay out to wins, but some winning parties have zero transfers
 			// this delta should == combined win decimals, let's sanity check this!
-			if winTotalDec.LessThan(lossTotalDec) {
+			if winTotalDec.LessThan(lossTotalDec) && winTotalDec.LessThan(lossTotalDec.Sub(zRound)) {
 				e.log.Panic("There's less MTM wins than losses, even accounting for decimals",
 					logging.Decimal("total loss", lossTotalDec),
 					logging.Decimal("total wins", winTotalDec),

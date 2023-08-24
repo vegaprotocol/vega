@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
+
 	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
@@ -75,9 +77,9 @@ type MarketData struct {
 	// When a market auction is extended, this field indicates what caused the extension
 	ExtensionTrigger string
 	// Targeted stake for the given market
-	TargetStake decimal.Decimal
+	TargetStake num.Decimal
 	// Available stake for the given market
-	SuppliedStake decimal.Decimal
+	SuppliedStake num.Decimal
 	// One or more price monitoring bounds for the current timestamp
 	PriceMonitoringBounds []*types.PriceMonitoringBounds
 	// the market value proxy
@@ -98,7 +100,9 @@ type MarketData struct {
 	MarketGrowth num.Decimal
 	// Last traded price, as an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
-	LastTradedPrice decimal.Decimal
+	LastTradedPrice num.Decimal
+	// Current funding rate
+	FundingRate *num.Decimal
 }
 
 type PriceMonitoringTrigger struct {
@@ -122,8 +126,17 @@ func (trigger PriceMonitoringTrigger) ToProto() *types.PriceMonitoringTrigger {
 }
 
 func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, error) {
-	var mark, bid, offer, staticBid, staticOffer, mid, staticMid, indicative, targetStake, suppliedStake, growth, lastTradedPrice decimal.Decimal
+	var mark, bid, offer, staticBid, staticOffer, mid, staticMid, indicative, targetStake, suppliedStake, growth, lastTradedPrice num.Decimal
 	var err error
+	var fundingRate *num.Decimal
+
+	if data.FundingRate != nil {
+		rate, err := parseDecimal(*data.FundingRate)
+		if err != nil {
+			return nil, err
+		}
+		fundingRate = &rate
+	}
 
 	if mark, err = parseDecimal(data.MarkPrice); err != nil {
 		return nil, err
@@ -194,6 +207,7 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 		TxHash:                     txHash,
 		NextMarkToMarket:           nextMTM,
 		MarketGrowth:               growth,
+		FundingRate:                fundingRate,
 	}
 
 	return marketData, nil
@@ -242,7 +256,20 @@ func (md MarketData) Equal(other MarketData) bool {
 		md.TxHash == other.TxHash &&
 		md.MarketState == other.MarketState &&
 		md.NextMarkToMarket.Equal(other.NextMarkToMarket) &&
-		md.MarketGrowth.Equal(other.MarketGrowth)
+		md.MarketGrowth.Equal(other.MarketGrowth) &&
+		decimalPtrMatches(md.FundingRate, other.FundingRate)
+}
+
+func decimalPtrMatches(a, b *num.Decimal) bool {
+	if a == nil && b == nil {
+		return true
+	}
+
+	if a == nil && b != nil || a != nil && b == nil {
+		return false
+	}
+
+	return a.Equal(*b)
 }
 
 func priceMonitoringBoundsMatches(bounds, other []*types.PriceMonitoringBounds) bool {
@@ -291,6 +318,12 @@ func liquidityProviderFeeShareMatches(feeShares, other []*types.LiquidityProvide
 }
 
 func (md MarketData) ToProto() *types.MarketData {
+	var fundingRate *string
+
+	if md.FundingRate != nil {
+		fundingRate = ptr.From(md.FundingRate.String())
+	}
+
 	result := types.MarketData{
 		LastTradedPrice:           md.LastTradedPrice.String(),
 		MarkPrice:                 md.MarkPrice.String(),
@@ -322,6 +355,7 @@ func (md MarketData) ToProto() *types.MarketData {
 		LiquidityProviderFeeShare: md.LiquidityProviderFeeShares,
 		NextMarkToMarket:          md.NextMarkToMarket.UnixNano(),
 		MarketGrowth:              md.MarketGrowth.String(),
+		FundingRate:               fundingRate,
 	}
 
 	return &result

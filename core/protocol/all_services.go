@@ -130,7 +130,7 @@ type allServices struct {
 	protocolUpgradeEngine *protocolupgrade.Engine
 
 	teamsEngine     *teams.SnapshottedEngine
-	referralProgram *referral.Engine
+	referralProgram *referral.SnapshottedEngine
 
 	// staking
 	ethClient             *ethclient.Client
@@ -378,18 +378,20 @@ func newServices(
 		},
 	}
 
-	// The referral program is used to compute rewards, and can end when reaching
-	// the end of epoch. Since the engine will reject computations when the program
-	// is marked as ended, it needs to be one of the last service to register on
-	// epoch update, so the computation can happen for this epoch.
-	svcs.referralProgram = referral.NewEngine(svcs.epochService, svcs.broker)
-
 	// The team engine is used to know the team a party belongs to. The computation
 	// of the referral program rewards requires this information. Since the team
 	// switches happen when the end of epoch is reached, it needs to be one of the
 	// last services to register on epoch update, so the computation is made based
 	// on the team the parties belonged to during the epoch and not the new one.
 	svcs.teamsEngine = teams.NewSnapshottedEngine(svcs.epochService, svcs.broker, svcs.timeService)
+	svcs.snapshotEngine.AddProviders(svcs.teamsEngine)
+
+	// The referral program is used to compute rewards, and can end when reaching
+	// the end of epoch. Since the engine will reject computations when the program
+	// is marked as ended, it needs to be one of the last service to register on
+	// epoch update, so the computation can happen for this epoch.
+	svcs.referralProgram = referral.NewSnapshottedEngine(svcs.epochService, svcs.broker, svcs.teamsEngine)
+	svcs.snapshotEngine.AddProviders(svcs.referralProgram)
 
 	// setup config reloads for all engines / services /etc
 	svcs.registerConfigWatchers()
@@ -580,10 +582,6 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMarketFeeFactorsInfrastructureFeeUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityStakeToCCYVolume,
-			Watcher: svcs.executionEngine.OnSuppliedStakeToObligationFactorUpdate,
-		},
-		{
 			Param:   netparams.MarketValueWindowLength,
 			Watcher: svcs.executionEngine.OnMarketValueWindowLengthUpdate,
 		},
@@ -607,14 +605,6 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMaxPeggedOrderUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityProvidersFeeDistributionTimeStep,
-			Watcher: svcs.executionEngine.OnMarketLiquidityProvidersFeeDistributionTimeStep,
-		},
-		{
-			Param:   netparams.MarketLiquidityProvisionShapesMaxSize,
-			Watcher: svcs.executionEngine.OnMarketLiquidityProvisionShapesMaxSizeUpdate,
-		},
-		{
 			Param:   netparams.MarketMinLpStakeQuantumMultiple,
 			Watcher: svcs.executionEngine.OnMinLpStakeQuantumMultipleUpdate,
 		},
@@ -625,10 +615,6 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
 			Watcher: svcs.executionEngine.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate,
-		},
-		{
-			Param:   netparams.MarketLiquidityBondPenaltyParameter,
-			Watcher: svcs.executionEngine.OnMarketLiquidityBondPenaltyUpdate,
 		},
 		{
 			Param:   netparams.MarketAuctionMinimumDuration,
@@ -665,7 +651,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		},
 		{
 			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
-			Watcher: svcs.executionEngine.OnMarketLiquidityV2SuppliedStakeToObligationFactorUpdate,
+			Watcher: svcs.executionEngine.OnMarketLiquidityV2StakeToCCYVolumeUpdate,
 		},
 		// End of liquidity version 2.
 		{
@@ -801,20 +787,8 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.vesting.OnRewardVestingBaseRateUpdate,
 		},
 		{
-			Param:   netparams.ReferralProgramMaxBenefitTiers,
-			Watcher: svcs.teamsEngine.OnReferralProgramMaxBenefitTiersUpdate,
-		},
-		{
-			Param:   netparams.ReferralProgramMaxReferralRewardFactor,
-			Watcher: svcs.teamsEngine.OnReferralProgramMaxReferralRewardFactorUpdate,
-		},
-		{
-			Param:   netparams.ReferralProgramMaxReferralDiscountFactor,
-			Watcher: svcs.teamsEngine.OnReferralProgramMaxReferralDiscountFactorUpdate,
-		},
-		{
 			Param:   netparams.ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch,
-			Watcher: svcs.teamsEngine.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate,
+			Watcher: svcs.referralProgram.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate,
 		},
 		{
 			Param:   netparams.ReferralProgramMinStakedVegaTokens,

@@ -22,7 +22,7 @@ import (
 func DebugTransfers(broker *stubs.BrokerStub, log *logging.Logger) {
 	log.Info("DUMPING TRANSFERS")
 	s := fmt.Sprintf("\n\t|%37s |%89s |%89s |%12s |\n", "Type", "From", "To", "Amount")
-	transferEvents := broker.GetLedgerMovements(true)
+	transferEvents := broker.GetLedgerMovements(false)
 	for _, e := range transferEvents {
 		for _, t := range e.LedgerMovements() {
 			for _, v := range t.GetEntries() {

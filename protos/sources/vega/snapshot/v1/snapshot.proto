@@ -134,6 +134,8 @@ message Payload {
     Teams teams = 70;
     TeamSwitches team_switches = 71;
     Vesting vesting = 72;
+    CurrentReferralProgram current_referral_program = 73;
+    NewReferralProgram new_referral_program = 74;
   }
 }
 
@@ -921,6 +923,7 @@ message LiquidityV2Scores {
 
   int32 running_average_counter = 2;
   repeated LiquidityScore scores = 3;
+  int64 last_fee_distribution_time = 4;
 }
 
 message LiquidityV2Supplied {
@@ -1056,6 +1059,7 @@ message Team {
 message Membership {
   string party_id = 1;
   int64 joined_at = 2;
+  uint64 number_of_epoch = 3;
 }
 
 message TeamSwitches {
@@ -1076,6 +1080,14 @@ message PartyReward {
   string party = 1;
   repeated AssetLocked asset_locked = 2;
   repeated InVesting in_vesting = 3;
+}
+
+message CurrentReferralProgram {
+  vega.ReferralProgram referral_program = 1;
+}
+
+message NewReferralProgram {
+  vega.ReferralProgram referral_program = 1;
 }
 
 message AssetLocked {

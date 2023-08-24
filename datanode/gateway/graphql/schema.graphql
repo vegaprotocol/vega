@@ -256,6 +256,8 @@ type MarketData {
   marketGrowth: String!
   "The last traded price (an unsigned integer)"
   lastTradedPrice: String!
+  "The current funding rate. This applies only to a perpetual market"
+  fundingRate: String
 }
 
 "Live data of a Market"
@@ -320,6 +322,8 @@ type ObservableMarketData {
   marketGrowth: String!
   "The last traded price (an unsigned integer)"
   lastTradedPrice: String!
+  "The current funding rate. This applies only to a perpetual market"
+  fundingRate: String
 }
 
 "Timestamps for when the market changes state"
@@ -2005,9 +2009,6 @@ type Market {
 
   "Risk factors for the market"
   riskFactors: RiskFactor
-
-  "Liquidity Provision order price range"
-  lpPriceRange: String!
 
   "Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume"
   linearSlippageFactor: String!
@@ -3790,8 +3791,6 @@ type NewMarket {
   liquidityMonitoringParameters: LiquidityMonitoringParameters!
   "Decimal places for order sizes, sets what size the smallest order / position on the market can be"
   positionDecimalPlaces: Int!
-  "Liquidity Provision order price range"
-  lpPriceRange: String!
   "Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume"
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume"
@@ -4802,6 +4801,8 @@ input StopOrderFilter {
   expiryStrategy: [StopOrderExpiryStrategy!]
   "Date range to retrieve order from/to. Start and end time should be expressed as an integer value of Unix nanoseconds"
   dateRange: DateRange
+  "Filter for live stop orders only"
+  liveOnly: Boolean
 }
 
 input OrderByPartyIdsFilter {

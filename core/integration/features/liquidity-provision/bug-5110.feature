@@ -8,12 +8,14 @@ Feature: Test LP orders
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.001         | 0.00011407711613050422 | 0  | 0.016 | 1.5   |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees         | price monitoring | data source config     | position decimal places | decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 5                       | 5              | 5e-2                   | 0                       |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees         | price monitoring | data source config     | position decimal places | decimal places | linear slippage factor | quadratic slippage factor | sla params      | 
+      | ETH/DEC19 | ETH        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 5                       | 5              | 5e-2                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | validators.epoch.length                 | 1s    |
+    And the average block duration is "1"
 
   Scenario: create liquidity provisions
     Given the parties deposit on asset's general account the following amount:
@@ -34,9 +36,9 @@ Feature: Test LP orders
       | aux2      | ETH/DEC19 | buy  | 100    | 100000000 | 0                | TYPE_LIMIT | TIF_GTC | oa-b-2    |
       | auxiliary | ETH/DEC19 | sell | 100    | 100000000 | 0                | TYPE_LIMIT | TIF_GTC | oa-s-2    |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 9000000           | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 9000000           | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 9000000           | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 9000000           | 0.1 | submission |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
@@ -50,15 +52,16 @@ Feature: Test LP orders
       | party3 | ETH/DEC19 | sell | 100000 | 10000000000 | 0                | TYPE_LIMIT | TIF_GTC | s3        |
 
     Then the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | party1 | ETH/DEC19 | 390500000000      | 0.3 | buy  | BID              | 2          | 100000 | submission |
-      | lp2 | party1 | ETH/DEC19 | 390500000000      | 0.3 | sell | ASK              | 13         | 100000 | amendment  |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp2 | party1 | ETH/DEC19 | 390500000000      | 0.3 | submission |
+      | lp2 | party1 | ETH/DEC19 | 390500000000      | 0.3 |            |
 
+    Then the liquidity provisions should have the following states:
+      | id  | party  | market    | commitment amount | status         |
+      | lp2 | party1 | ETH/DEC19 | 390500000000      | STATUS_PENDING |
+
+    # TODO (WG 31/07/23): why 3?
+    When the network moves ahead "3" blocks
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status        |
       | lp2 | party1 | ETH/DEC19 | 390500000000      | STATUS_ACTIVE |
-
-    Then the orders should have the following states:
-      | party  | market id | side | volume    | price     | status        | reference |
-      | party1 | ETH/DEC19 | buy  | 434371524 | 89900000  | STATUS_ACTIVE | lp2       |
-      | party1 | ETH/DEC19 | sell | 325145712 | 120100000 | STATUS_ACTIVE | lp2       |

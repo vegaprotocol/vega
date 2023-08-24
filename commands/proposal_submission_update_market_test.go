@@ -97,11 +97,6 @@ func TestCheckProposalSubmissionForUpdateMarket(t *testing.T) {
 	t.Run("Submitting a update market with a too long reference fails", testUpdateMarketSubmissionWithTooLongReferenceFails)
 	t.Run("Submitting a market with market ID succeeds", testUpdateMarketWithMarketIDSucceeds)
 	t.Run("Submitting a market without market ID fails", testUpdateMarketWithoutMarketIDFails)
-	t.Run("Submitting an LP price range change with 'banana' value fails", testUpdateMarketWithLpRangeBananaFails)
-	t.Run("Submitting an LP price range change with negative value fails", testUpdateMarketWithLpRangeNegativeFails)
-	t.Run("Submitting an LP price range change with zero value fails", testUpdateMarketWithLpRangeZeroFails)
-	t.Run("Submitting an LP price range change with value above 100 fails", testUpdateMarketWithLpRangeGreterThan100Fails)
-	t.Run("Submitting an LP price range change with value in [0,100] range succeeds", testUpdateMarketWithLpRangePositiveSucceeds)
 	t.Run("Submitting a slippage fraction change with 'banana' value fails", tesUpdateMarketChangeSubmissionWithSlippageFactorBananaFails)
 	t.Run("Submitting a slippage fraction change with a negative value fails", testUpdateMarketChangeSubmissionWithSlippageFactorNegativeFails)
 	t.Run("Submitting a slippage fraction change with a too large value fails", testUpdateMarketChangeSubmissionWithSlippageFactorTooLargeFails)
@@ -2775,120 +2770,6 @@ func testUpdateMarketWithoutMarketIDFails(t *testing.T) {
 	})
 
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.market_id"), commands.ErrIsRequired)
-}
-
-func testUpdateMarketWithLpRangeBananaFails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_UpdateMarket{
-				UpdateMarket: &protoTypes.UpdateMarket{
-					Changes: &protoTypes.UpdateMarketConfiguration{
-						LpPriceRange: "banana",
-					},
-				},
-			},
-		},
-	})
-
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.lp_price_range"), commands.ErrIsNotValidNumber)
-}
-
-func testUpdateMarketWithLpRangeNegativeFails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_UpdateMarket{
-				UpdateMarket: &protoTypes.UpdateMarket{
-					Changes: &protoTypes.UpdateMarketConfiguration{
-						LpPriceRange: "-1e-17",
-					},
-				},
-			},
-		},
-	})
-
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.lp_price_range"), commands.ErrMustBePositive)
-}
-
-func testUpdateMarketWithLpRangeZeroFails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_UpdateMarket{
-				UpdateMarket: &protoTypes.UpdateMarket{
-					Changes: &protoTypes.UpdateMarketConfiguration{
-						LpPriceRange: "0",
-					},
-				},
-			},
-		},
-	})
-
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.lp_price_range"), commands.ErrMustBePositive)
-}
-
-func testUpdateMarketWithLpRangeGreterThan100Fails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_UpdateMarket{
-				UpdateMarket: &protoTypes.UpdateMarket{
-					Changes: &protoTypes.UpdateMarketConfiguration{
-						LpPriceRange: "100.00000000000001",
-					},
-				},
-			},
-		},
-	})
-
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.lp_price_range"), commands.ErrMustBeAtMost100)
-}
-
-func testUpdateMarketWithLpRangePositiveSucceeds(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_UpdateMarket{
-				UpdateMarket: &protoTypes.UpdateMarket{
-					Changes: &protoTypes.UpdateMarketConfiguration{
-						LpPriceRange: "1e-17",
-					},
-				},
-			},
-		},
-	})
-
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.lp_price_range"), commands.ErrIsNotValidNumber)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.lp_price_range"), commands.ErrMustBePositive)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.lp_price_range"), commands.ErrMustBeAtMost100)
-
-	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_UpdateMarket{
-				UpdateMarket: &protoTypes.UpdateMarket{
-					Changes: &protoTypes.UpdateMarketConfiguration{
-						LpPriceRange: "0.95",
-					},
-				},
-			},
-		},
-	})
-
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.lp_price_range"), commands.ErrIsNotValidNumber)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.lp_price_range"), commands.ErrMustBePositive)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.lp_price_range"), commands.ErrMustBeAtMost100)
-
-	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_UpdateMarket{
-				UpdateMarket: &protoTypes.UpdateMarket{
-					Changes: &protoTypes.UpdateMarketConfiguration{
-						LpPriceRange: "100",
-					},
-				},
-			},
-		},
-	})
-
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.lp_price_range"), commands.ErrIsNotValidNumber)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.lp_price_range"), commands.ErrMustBePositive)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.lp_price_range"), commands.ErrMustBeAtMost100)
 }
 
 func tesUpdateMarketChangeSubmissionWithSlippageFactorBananaFails(t *testing.T) {

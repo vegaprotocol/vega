@@ -30,6 +30,13 @@ import (
 
 var ErrCommitmentAmountTooLow = errors.New("commitment amount is too low")
 
+type marketType int
+
+const (
+	FutureMarketType marketType = iota
+	SpotMarketType
+)
+
 type MarketLiquidity struct {
 	log   *logging.Logger
 	idGen IDGenerator
@@ -42,17 +49,18 @@ type MarketLiquidity struct {
 	marketActivityTracker *MarketActivityTracker
 	fee                   *fee.Engine
 
-	marketID string
-	asset    string
+	marketType marketType
+	marketID   string
+	asset      string
 
 	priceFactor *num.Uint
 
 	priceRange                num.Decimal
 	earlyExitPenalty          num.Decimal
 	minLPStakeQuantumMultiple num.Decimal
-	feeDistributionTimeStep   time.Duration
+	feeCalculationTimeStep    time.Duration
 
-	lastFeeDistribution time.Time
+	bondPenaltyFactor num.Decimal
 }
 
 func NewMarketLiquidity(
@@ -64,6 +72,7 @@ func NewMarketLiquidity(
 	equityShares EquityLikeShares,
 	marketActivityTracker *MarketActivityTracker,
 	fee *fee.Engine,
+	marketType marketType,
 	marketID string,
 	asset string,
 	priceFactor *num.Uint,
@@ -71,29 +80,48 @@ func NewMarketLiquidity(
 	feeDistributionTimeStep time.Duration,
 ) *MarketLiquidity {
 	ml := &MarketLiquidity{
-		log:                     log,
-		liquidityEngine:         liquidityEngine,
-		collateral:              collateral,
-		broker:                  broker,
-		orderBook:               orderBook,
-		equityShares:            equityShares,
-		marketActivityTracker:   marketActivityTracker,
-		fee:                     fee,
-		marketID:                marketID,
-		asset:                   asset,
-		priceFactor:             priceFactor,
-		priceRange:              priceRange,
-		feeDistributionTimeStep: feeDistributionTimeStep,
+		log:                    log,
+		liquidityEngine:        liquidityEngine,
+		collateral:             collateral,
+		broker:                 broker,
+		orderBook:              orderBook,
+		equityShares:           equityShares,
+		marketActivityTracker:  marketActivityTracker,
+		fee:                    fee,
+		marketType:             marketType,
+		marketID:               marketID,
+		asset:                  asset,
+		priceFactor:            priceFactor,
+		priceRange:             priceRange,
+		feeCalculationTimeStep: feeDistributionTimeStep,
 	}
 
 	return ml
+}
+
+func (m *MarketLiquidity) bondUpdate(ctx context.Context, transfer *types.Transfer) (*types.LedgerMovement, error) {
+	switch m.marketType {
+	case SpotMarketType:
+		return m.collateral.BondSpotUpdate(ctx, m.marketID, transfer)
+	default:
+		return m.collateral.BondUpdate(ctx, m.marketID, transfer)
+	}
+}
+
+func (m *MarketLiquidity) transferFees(ctx context.Context, ft events.FeesTransfer) ([]*types.LedgerMovement, error) {
+	switch m.marketType {
+	case SpotMarketType:
+		return m.collateral.TransferSpotFees(ctx, m.marketID, m.asset, ft)
+	default:
+		return m.collateral.TransferFees(ctx, m.marketID, m.asset, ft)
+	}
 }
 
 func (m *MarketLiquidity) applyPendingProvisions(
 	ctx context.Context,
 	now time.Time,
 	targetStake *num.Uint,
-) map[string]*types.LiquidityProvision {
+) liquidity.Provisions {
 	provisions := m.liquidityEngine.ProvisionsPerParty()
 	pendingProvisions := m.liquidityEngine.PendingProvision()
 
@@ -113,16 +141,16 @@ func (m *MarketLiquidity) applyPendingProvisions(
 			m.log.Panic("can not get LP party bond account", logging.Error(err))
 		}
 
-		amendment, ok := pendingProvisions[partyID]
-		if !ok {
+		amendment, foundIdx := pendingProvisions.Get(partyID)
+		if foundIdx < 0 {
 			continue
 		}
 
-		// originalCommitment - amendedCommitment
-		proposedCommitmentVariation := provision.CommitmentAmount.ToDecimal().Sub(amendment.CommitmentAmount.ToDecimal())
+		// amendedCommitment- originalCommitment
+		proposedCommitmentVariation := amendment.CommitmentAmount.ToDecimal().Sub(provision.CommitmentAmount.ToDecimal())
 
 		// if commitment is increased, there is not penalty applied
-		if !proposedCommitmentVariation.IsPositive() {
+		if proposedCommitmentVariation.IsPositive() {
 			continue
 		}
 
@@ -145,13 +173,13 @@ func (m *MarketLiquidity) applyPendingProvisions(
 
 		// transfer entire decreased commitment to their general account, no penalty will be applied
 		if commitmentVariation.LessThanOrEqual(partyMaxPenaltyFreeReductionAmount) {
-			commitmentVariationU, _ := num.UintFromDecimal(commitmentVariation.Neg())
+			commitmentVariationU, _ := num.UintFromDecimal(commitmentVariation)
 			if commitmentVariationU.IsZero() {
 				continue
 			}
 
 			transfer := m.NewTransfer(partyID, types.TransferTypeBondHigh, commitmentVariationU)
-			bondLedgerMovement, err := m.collateral.BondSpotUpdate(ctx, m.marketID, transfer)
+			bondLedgerMovement, err := m.bondUpdate(ctx, transfer)
 			if err != nil {
 				m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
 			}
@@ -163,7 +191,7 @@ func (m *MarketLiquidity) applyPendingProvisions(
 		partyMaxPenaltyFreeReductionAmountU, _ := num.UintFromDecimal(partyMaxPenaltyFreeReductionAmount)
 
 		transfer := m.NewTransfer(partyID, types.TransferTypeBondHigh, partyMaxPenaltyFreeReductionAmountU)
-		bondLedgerMovement, err := m.collateral.BondSpotUpdate(ctx, m.marketID, transfer)
+		bondLedgerMovement, err := m.bondUpdate(ctx, transfer)
 		if err != nil {
 			m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
 		}
@@ -177,7 +205,7 @@ func (m *MarketLiquidity) applyPendingProvisions(
 		freeAmountU, _ := num.UintFromDecimal(freeAmount)
 
 		transfer = m.NewTransfer(partyID, types.TransferTypeBondHigh, freeAmountU)
-		bondLedgerMovement, err = m.collateral.BondSpotUpdate(ctx, m.marketID, transfer)
+		bondLedgerMovement, err = m.bondUpdate(ctx, transfer)
 		if err != nil {
 			m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
 		}
@@ -188,7 +216,7 @@ func (m *MarketLiquidity) applyPendingProvisions(
 		slashingAmountU, _ := num.UintFromDecimal(slashingAmount)
 
 		transfer = m.NewTransfer(partyID, types.TransferTypeBondSlashing, slashingAmountU)
-		bondLedgerMovement, err = m.collateral.BondSpotUpdate(ctx, m.marketID, transfer)
+		bondLedgerMovement, err = m.bondUpdate(ctx, transfer)
 		if err != nil {
 			m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
 		}
@@ -203,16 +231,22 @@ func (m *MarketLiquidity) applyPendingProvisions(
 	return m.liquidityEngine.ApplyPendingProvisions(ctx, now)
 }
 
-func (m *MarketLiquidity) syncPartyCommitmentWithBondAccount(appliedLiquidityProvisions map[string]*types.LiquidityProvision) {
+func (m *MarketLiquidity) syncPartyCommitmentWithBondAccount(
+	ctx context.Context,
+	appliedLiquidityProvisions liquidity.Provisions,
+) {
 	if len(appliedLiquidityProvisions) == 0 {
-		appliedLiquidityProvisions = map[string]*types.LiquidityProvision{}
+		appliedLiquidityProvisions = liquidity.Provisions{}
 	}
 
 	for partyID, provision := range m.liquidityEngine.ProvisionsPerParty() {
 		acc, err := m.collateral.GetPartyBondAccount(m.marketID, partyID, m.asset)
 		if err != nil {
 			// the bond account should be definitely there at this point
-			m.log.Panic("can not get LP party bond account", logging.Error(err))
+			m.log.Panic("can not get LP party bond account",
+				logging.Error(err),
+				logging.PartyID(partyID),
+			)
 		}
 
 		// lp provision and bond account are in sync, no need to change
@@ -220,26 +254,44 @@ func (m *MarketLiquidity) syncPartyCommitmentWithBondAccount(appliedLiquidityPro
 			continue
 		}
 
+		if acc.Balance.IsZero() {
+			if err := m.liquidityEngine.CancelLiquidityProvision(ctx, partyID); err != nil {
+				// the commitment should exists
+				m.log.Panic("can not cancel liquidity provision commitment",
+					logging.Error(err),
+					logging.PartyID(partyID),
+				)
+			}
+
+			provision.CommitmentAmount = acc.Balance.Clone()
+			appliedLiquidityProvisions.Set(provision)
+			continue
+		}
+
 		updatedProvision, err := m.liquidityEngine.UpdatePartyCommitment(partyID, acc.Balance)
 		if err != nil {
 			m.log.Panic("failed to update party commitment", logging.Error(err))
 		}
-		appliedLiquidityProvisions[partyID] = updatedProvision
+		appliedLiquidityProvisions.Set(updatedProvision)
 	}
 
-	for party, provision := range appliedLiquidityProvisions {
+	for _, provision := range appliedLiquidityProvisions {
 		// now we can setup our party stake to calculate equities
-		m.equityShares.SetPartyStake(party, provision.CommitmentAmount.Clone())
+		m.equityShares.SetPartyStake(provision.Party, provision.CommitmentAmount.Clone())
 		// force update of shares so they are updated for all
 		_ = m.equityShares.AllShares()
 	}
 }
 
-func (m *MarketLiquidity) OnEpochStart(ctx context.Context, now time.Time, markPrice, midPrice, targetStake *num.Uint, positionFactor num.Decimal) {
+func (m *MarketLiquidity) OnEpochStart(
+	ctx context.Context, now time.Time,
+	markPrice, midPrice, targetStake *num.Uint,
+	positionFactor num.Decimal,
+) {
 	m.liquidityEngine.ResetSLAEpoch(now, markPrice, midPrice, positionFactor)
 
 	appliedProvisions := m.applyPendingProvisions(ctx, now, targetStake)
-	m.syncPartyCommitmentWithBondAccount(appliedProvisions)
+	m.syncPartyCommitmentWithBondAccount(ctx, appliedProvisions)
 }
 
 func (m *MarketLiquidity) OnEpochEnd(ctx context.Context, t time.Time) {
@@ -255,17 +307,16 @@ func (m *MarketLiquidity) calculateAndDistribute(ctx context.Context, t time.Tim
 	m.distributeFeesBonusesAndApplyPenalties(ctx, penalties)
 }
 
-// lp -> general per market fee account.
 func (m *MarketLiquidity) OnTick(ctx context.Context, t time.Time) {
 	// distribute liquidity fees each feeDistributionTimeStep
 	if m.readyForFeesAllocation(t) {
-		if err := m.allocateFees(ctx); err != nil {
+		if err := m.AllocateFees(ctx); err != nil {
 			m.log.Panic("liquidity fee distribution error", logging.Error(err))
 		}
 
 		// reset next distribution period
 		m.liquidityEngine.ResetAverageLiquidityScores()
-		m.lastFeeDistribution = t
+		m.liquidityEngine.SetLastFeeDistributionTime(t)
 		return
 	}
 
@@ -398,11 +449,6 @@ func (m *MarketLiquidity) makePerPartyAccountsAndTransfers(ctx context.Context, 
 		return err
 	}
 
-	// _, err = m.collateral.CreatePartyMarginAccount(ctx, party, m.marketID, m.asset)
-	// if err != nil {
-	// 	return err
-	// }
-
 	_, err = m.collateral.GetOrCreatePartyLiquidityFeeAccount(ctx, party, m.marketID, m.asset)
 	if err != nil {
 		return err
@@ -424,7 +470,7 @@ func (m *MarketLiquidity) makePerPartyAccountsAndTransfers(ctx context.Context, 
 		MinAmount: amount.Clone(),
 	}
 
-	tresp, err := m.collateral.BondSpotUpdate(ctx, m.marketID, transfer)
+	tresp, err := m.bondUpdate(ctx, transfer)
 	if err != nil {
 		m.log.Debug("bond update error", logging.Error(err))
 		return err
@@ -463,32 +509,42 @@ func (m *MarketLiquidity) AmendLiquidityProvision(
 		return ErrPartyNotLiquidityProvider
 	}
 
-	lp := m.liquidityEngine.LiquidityProvisionByPartyID(party)
-	if lp == nil {
-		return fmt.Errorf("cannot edit liquidity provision from a non liquidity provider party (%v)", party)
+	pendingAmendment := m.liquidityEngine.PendingProvisionByPartyID(party)
+	currentProvision := m.liquidityEngine.LiquidityProvisionByPartyID(party)
+
+	provisionToCopy := currentProvision
+	if currentProvision == nil {
+		if pendingAmendment == nil {
+			m.log.Panic(
+				"cannot edit liquidity provision from a non liquidity provider party",
+				logging.PartyID(party),
+			)
+		}
+
+		provisionToCopy = pendingAmendment
 	}
 
 	// If commitment amount is not provided we keep the same
 	if lpa.CommitmentAmount == nil || lpa.CommitmentAmount.IsZero() {
-		lpa.CommitmentAmount = lp.CommitmentAmount
+		lpa.CommitmentAmount = provisionToCopy.CommitmentAmount
 	}
 
 	// If commitment amount is not provided we keep the same
 	if lpa.Fee.IsZero() {
-		lpa.Fee = lp.Fee
+		lpa.Fee = provisionToCopy.Fee
 	}
 
 	// If commitment amount is not provided we keep the same
 	if lpa.Reference == "" {
-		lpa.Reference = lp.Reference
+		lpa.Reference = provisionToCopy.Reference
 	}
 
+	var proposedCommitmentVariation num.Decimal
+
 	// if pending commitment is being decreased then release the bond collateral
-	existingAmendment := m.liquidityEngine.PendingProvisionByPartyID(party)
-	if existingAmendment != nil && !lpa.CommitmentAmount.IsZero() && lpa.CommitmentAmount.LT(existingAmendment.CommitmentAmount) {
-		amountToRelease := num.UintZero().Sub(existingAmendment.CommitmentAmount, lpa.CommitmentAmount)
-		_, err := m.releasePendingBondCollateral(ctx, amountToRelease, party)
-		if err != nil {
+	if pendingAmendment != nil && !lpa.CommitmentAmount.IsZero() && lpa.CommitmentAmount.LT(pendingAmendment.CommitmentAmount) {
+		amountToRelease := num.UintZero().Sub(pendingAmendment.CommitmentAmount, lpa.CommitmentAmount)
+		if err := m.releasePendingBondCollateral(ctx, amountToRelease, party); err != nil {
 			m.log.Debug("could not submit update bond for lp amendment",
 				logging.PartyID(party),
 				logging.MarketID(m.marketID),
@@ -496,9 +552,15 @@ func (m *MarketLiquidity) AmendLiquidityProvision(
 
 			return err
 		}
-	}
 
-	proposedCommitmentVariation := lp.CommitmentAmount.ToDecimal().Sub(lpa.CommitmentAmount.ToDecimal())
+		proposedCommitmentVariation = pendingAmendment.CommitmentAmount.ToDecimal().Sub(lpa.CommitmentAmount.ToDecimal())
+	} else {
+		if currentProvision != nil {
+			proposedCommitmentVariation = currentProvision.CommitmentAmount.ToDecimal().Sub(lpa.CommitmentAmount.ToDecimal())
+		} else {
+			proposedCommitmentVariation = pendingAmendment.CommitmentAmount.ToDecimal().Sub(lpa.CommitmentAmount.ToDecimal())
+		}
+	}
 
 	// if increase commitment transfer funds to bond account
 	if proposedCommitmentVariation.IsNegative() {
@@ -513,17 +575,64 @@ func (m *MarketLiquidity) AmendLiquidityProvision(
 		}
 	}
 
-	err := m.liquidityEngine.AmendLiquidityProvision(ctx, lpa, party)
+	applied, err := m.liquidityEngine.AmendLiquidityProvision(ctx, lpa, party, false)
+	if err != nil {
+		m.log.Panic("error while amending liquidity provision, this should not happen at this point, the LP was validated earlier",
+			logging.Error(err))
+	}
+
+	if currentProvision != nil && applied && proposedCommitmentVariation.IsPositive() && !lpa.CommitmentAmount.IsZero() {
+		amountToRelease := num.UintZero().Sub(currentProvision.CommitmentAmount, lpa.CommitmentAmount)
+		if err := m.releasePendingBondCollateral(ctx, amountToRelease, party); err != nil {
+			m.log.Debug("could not submit update bond for lp amendment",
+				logging.PartyID(party),
+				logging.MarketID(m.marketID),
+				logging.Error(err))
+
+			// rollback the amendment - TODO karel
+			lpa.CommitmentAmount = currentProvision.CommitmentAmount
+			m.liquidityEngine.AmendLiquidityProvision(ctx, lpa, party, false)
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+// CancelLiquidityProvision amends liquidity provision to 0.
+func (m *MarketLiquidity) CancelLiquidityProvision(ctx context.Context, party string) error {
+	currentProvision := m.liquidityEngine.LiquidityProvisionByPartyID(party)
+	pendingAmendment := m.liquidityEngine.PendingProvisionByPartyID(party)
+
+	if currentProvision == nil && pendingAmendment == nil {
+		return ErrPartyHasNoExistingLiquidityProvision
+	}
+
+	if pendingAmendment != nil && !pendingAmendment.CommitmentAmount.IsZero() {
+		if err := m.releasePendingBondCollateral(ctx, pendingAmendment.CommitmentAmount.Clone(), party); err != nil {
+			m.log.Debug("could release bond collateral for pending amendment",
+				logging.PartyID(party),
+				logging.MarketID(m.marketID),
+				logging.Error(err))
+
+			return err
+		}
+	}
+
+	amendment := &types.LiquidityProvisionAmendment{
+		MarketID:         m.marketID,
+		CommitmentAmount: num.UintZero(),
+		Fee:              num.DecimalZero(),
+	}
+
+	_, err := m.liquidityEngine.AmendLiquidityProvision(ctx, amendment, party, true)
 	if err != nil {
 		m.log.Panic("error while amending liquidity provision, this should not happen at this point, the LP was validated earlier",
 			logging.Error(err))
 	}
 
 	return nil
-}
-
-func (m *MarketLiquidity) CancelLiquidityProvision(ctx context.Context, party string) error {
-	return m.liquidityEngine.CancelLiquidityProvision(ctx, party)
 }
 
 func (m *MarketLiquidity) StopAllLiquidityProvision(ctx context.Context) {
@@ -565,7 +674,7 @@ func (m *MarketLiquidity) ensureAndTransferCollateral(
 	}
 
 	// move our bond
-	tresp, err := m.collateral.BondSpotUpdate(ctx, m.marketID, transfer)
+	tresp, err := m.bondUpdate(ctx, transfer)
 	if err != nil {
 		return nil, err
 	}
@@ -586,7 +695,7 @@ func (m *MarketLiquidity) ensureAndTransferCollateral(
 // releasePendingCollateral releases pending amount collateral from bond to general account.
 func (m *MarketLiquidity) releasePendingBondCollateral(
 	ctx context.Context, releaseAmount *num.Uint, party string,
-) (*types.Transfer, error) {
+) error {
 	transfer := &types.Transfer{
 		Owner: party,
 		Amount: &types.FinancialAmount{
@@ -597,17 +706,14 @@ func (m *MarketLiquidity) releasePendingBondCollateral(
 		MinAmount: releaseAmount.Clone(),
 	}
 
-	ledgerMovement, err := m.collateral.BondSpotUpdate(ctx, m.marketID, transfer)
+	ledgerMovement, err := m.bondUpdate(ctx, transfer)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	m.broker.Send(events.NewLedgerMovements(
 		ctx, []*types.LedgerMovement{ledgerMovement}))
 
-	// now we will use the actual transfer as a rollback later on eventually
-	transfer.Type = types.TransferTypeBondLow
-
-	return transfer, nil
+	return nil
 }
 
 func (m *MarketLiquidity) ensureMinCommitmentAmount(amount *num.Uint) error {
@@ -688,12 +794,8 @@ func (m *MarketLiquidity) validOrdersPriceRange() (*num.Uint, *num.Uint, error) 
 
 func (m *MarketLiquidity) UpdateMarketConfig(risk liquidity.RiskModel, monitor liquidity.PriceMonitor, slaParams *types.LiquiditySLAParams) {
 	m.priceRange = slaParams.PriceRange
-	m.feeDistributionTimeStep = slaParams.ProvidersFeeCalculationTimeStep
+	m.feeCalculationTimeStep = slaParams.ProvidersFeeCalculationTimeStep
 	m.liquidityEngine.UpdateMarketConfig(risk, monitor, slaParams)
-}
-
-func (m *MarketLiquidity) OnEarlyExitPenalty(earlyExitPenalty num.Decimal) {
-	m.earlyExitPenalty = earlyExitPenalty
 }
 
 func (m *MarketLiquidity) OnMinLPStakeQuantumMultiple(minLPStakeQuantumMultiple num.Decimal) {
@@ -708,12 +810,8 @@ func (m *MarketLiquidity) OnProbabilityOfTradingTauScalingUpdate(v num.Decimal) 
 	m.liquidityEngine.OnProbabilityOfTradingTauScalingUpdate(v)
 }
 
-func (m *MarketLiquidity) OnMaximumLiquidityFeeFactorLevelUpdate(f num.Decimal) {
-	m.liquidityEngine.OnMaximumLiquidityFeeFactorLevelUpdate(f)
-}
-
-func (m *MarketLiquidity) OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal) {
-	m.liquidityEngine.OnStakeToCcyVolumeUpdate(stakeToCcyVolume)
+func (m *MarketLiquidity) OnBondPenaltyFactorUpdate(bondPenaltyFactor num.Decimal) {
+	m.bondPenaltyFactor = bondPenaltyFactor
 }
 
 func (m *MarketLiquidity) OnNonPerformanceBondPenaltySlopeUpdate(nonPerformanceBondPenaltySlope num.Decimal) {
@@ -722,6 +820,18 @@ func (m *MarketLiquidity) OnNonPerformanceBondPenaltySlopeUpdate(nonPerformanceB
 
 func (m *MarketLiquidity) OnNonPerformanceBondPenaltyMaxUpdate(nonPerformanceBondPenaltyMax num.Decimal) {
 	m.liquidityEngine.OnNonPerformanceBondPenaltyMaxUpdate(nonPerformanceBondPenaltyMax)
+}
+
+func (m *MarketLiquidity) OnMaximumLiquidityFeeFactorLevelUpdate(liquidityFeeFactorLevelUpdate num.Decimal) {
+	m.liquidityEngine.OnMaximumLiquidityFeeFactorLevelUpdate(liquidityFeeFactorLevelUpdate)
+}
+
+func (m *MarketLiquidity) OnEarlyExitPenalty(earlyExitPenalty num.Decimal) {
+	m.earlyExitPenalty = earlyExitPenalty
+}
+
+func (m *MarketLiquidity) OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal) {
+	m.liquidityEngine.OnStakeToCcyVolumeUpdate(stakeToCcyVolume)
 }
 
 func (m *MarketLiquidity) IsProbabilityOfTradingInitialised() bool {

@@ -51,8 +51,9 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 		{
 			ID: teamID1,
 			Referrer: &types.Membership{
-				PartyID:  referrer1,
-				JoinedAt: team1CreationDate,
+				PartyID:       referrer1,
+				JoinedAt:      team1CreationDate,
+				NumberOfEpoch: 0,
 			},
 			Name:      name,
 			TeamURL:   teamURL,
@@ -78,8 +79,9 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 		{
 			ID: teamID1,
 			Referrer: &types.Membership{
-				PartyID:  referrer1,
-				JoinedAt: team1CreationDate,
+				PartyID:       referrer1,
+				JoinedAt:      team1CreationDate,
+				NumberOfEpoch: 0,
 			},
 			Name:      name,
 			TeamURL:   teamURL,
@@ -88,8 +90,9 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 		}, {
 			ID: teamID2,
 			Referrer: &types.Membership{
-				PartyID:  referrer2,
-				JoinedAt: team2CreationDate,
+				PartyID:       referrer2,
+				JoinedAt:      team2CreationDate,
+				NumberOfEpoch: 0,
 			},
 			Name:      name,
 			TeamURL:   teamURL,
@@ -110,8 +113,9 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 		{
 			ID: teamID1,
 			Referrer: &types.Membership{
-				PartyID:  referrer1,
-				JoinedAt: team1CreationDate,
+				PartyID:       referrer1,
+				JoinedAt:      team1CreationDate,
+				NumberOfEpoch: 0,
 			},
 			Name:      name,
 			TeamURL:   teamURL,
@@ -120,8 +124,9 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 		}, {
 			ID: teamID2,
 			Referrer: &types.Membership{
-				PartyID:  referrer2,
-				JoinedAt: team2CreationDate,
+				PartyID:       referrer2,
+				JoinedAt:      team2CreationDate,
+				NumberOfEpoch: 0,
 			},
 			Name:      name,
 			TeamURL:   teamURL,
@@ -148,8 +153,9 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 		{
 			ID: teamID1,
 			Referrer: &types.Membership{
-				PartyID:  referrer1,
-				JoinedAt: team1CreationDate,
+				PartyID:       referrer1,
+				JoinedAt:      team1CreationDate,
+				NumberOfEpoch: 0,
 			},
 			Name:      name,
 			TeamURL:   teamURL,
@@ -158,8 +164,9 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 		}, {
 			ID: teamID2,
 			Referrer: &types.Membership{
-				PartyID:  referrer2,
-				JoinedAt: team2CreationDate,
+				PartyID:       referrer2,
+				JoinedAt:      team2CreationDate,
+				NumberOfEpoch: 0,
 			},
 			Name:      name,
 			TeamURL:   teamURL,
@@ -168,8 +175,9 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 		}, {
 			ID: teamID4,
 			Referrer: &types.Membership{
-				PartyID:  referrer3,
-				JoinedAt: team4CreationDate,
+				PartyID:       referrer3,
+				JoinedAt:      team4CreationDate,
+				NumberOfEpoch: 0,
 			},
 			Referees:  nil,
 			Name:      "",
@@ -192,8 +200,9 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 		{
 			ID: teamID1,
 			Referrer: &types.Membership{
-				PartyID:  referrer1,
-				JoinedAt: team1CreationDate,
+				PartyID:       referrer1,
+				JoinedAt:      team1CreationDate,
+				NumberOfEpoch: 0,
 			},
 			Name:      updatedName,
 			TeamURL:   updatedTeamURL,
@@ -202,8 +211,9 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 		}, {
 			ID: teamID2,
 			Referrer: &types.Membership{
-				PartyID:  referrer2,
-				JoinedAt: team2CreationDate,
+				PartyID:       referrer2,
+				JoinedAt:      team2CreationDate,
+				NumberOfEpoch: 0,
 			},
 			Name:      name,
 			TeamURL:   teamURL,
@@ -212,8 +222,9 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 		}, {
 			ID: teamID4,
 			Referrer: &types.Membership{
-				PartyID:  referrer3,
-				JoinedAt: team4CreationDate,
+				PartyID:       referrer3,
+				JoinedAt:      team4CreationDate,
+				NumberOfEpoch: 0,
 			},
 			Name:      "",
 			TeamURL:   "",
@@ -284,60 +295,67 @@ func testJoiningTeamSucceeds(t *testing.T) {
 		{
 			ID: teamID1,
 			Referrer: &types.Membership{
-				PartyID:  referrer1,
-				JoinedAt: team1CreationDate,
+				PartyID:       referrer1,
+				JoinedAt:      team1CreationDate,
+				NumberOfEpoch: 0,
 			},
 			Referees: []*types.Membership{
 				{
-					PartyID:  referee1,
-					JoinedAt: referee1JoiningDate,
+					PartyID:       referee1,
+					JoinedAt:      referee1JoiningDate,
+					NumberOfEpoch: 0,
 				}, {
-					PartyID:  referee2,
-					JoinedAt: referee2JoiningDate,
+					PartyID:       referee2,
+					JoinedAt:      referee2JoiningDate,
+					NumberOfEpoch: 0,
 				},
 			},
 			CreatedAt: team1CreationDate,
 		}, {
 			ID: teamID2,
 			Referrer: &types.Membership{
-				PartyID:  referrer2,
-				JoinedAt: team2CreationDate,
+				PartyID:       referrer2,
+				JoinedAt:      team2CreationDate,
+				NumberOfEpoch: 0,
 			},
 			CreatedAt: team2CreationDate,
 		},
 	}, te.engine.ListTeams())
 
-	// Simulating end of epoch.
+	// Simulating moving to next epoch.
 	expectRefereeSwitchedTeamEvent(t, te)
 	referee2JoiningDate2 := time.Now()
-	te.timeService.EXPECT().GetTimeNow().Return(referee2JoiningDate2).Times(1)
-	endEpoch(t, ctx, te)
+	nextEpoch(t, ctx, te, referee2JoiningDate2)
 
 	// This shows the referee2 moved from team 1 to team 2.
 	assertEqualTeams(t, []types.Team{
 		{
 			ID: teamID1,
 			Referrer: &types.Membership{
-				PartyID:  referrer1,
-				JoinedAt: team1CreationDate,
+				PartyID:       referrer1,
+				JoinedAt:      team1CreationDate,
+				NumberOfEpoch: 1,
 			},
 			Referees: []*types.Membership{
 				{
-					PartyID:  referee1,
-					JoinedAt: referee1JoiningDate,
+					PartyID:       referee1,
+					JoinedAt:      referee1JoiningDate,
+					NumberOfEpoch: 1,
 				},
 			},
 			CreatedAt: team1CreationDate,
 		}, {
 			ID: teamID2,
 			Referrer: &types.Membership{
-				PartyID:  referrer2,
-				JoinedAt: team2CreationDate,
+				PartyID:       referrer2,
+				JoinedAt:      team2CreationDate,
+				NumberOfEpoch: 1,
 			},
 			Referees: []*types.Membership{
 				{
-					PartyID:  referee2,
-					JoinedAt: referee2JoiningDate2,
+					PartyID:       referee2,
+					JoinedAt:      referee2JoiningDate2,
+					NumberOfEpoch: 0,
 				},
 			},
 			CreatedAt: team2CreationDate,
@@ -346,37 +364,40 @@ func testJoiningTeamSucceeds(t *testing.T) {
 
 	// referee2 just re-joins team 1.
 	referee2JoiningDate3 := time.Now()
-	te.timeService.EXPECT().GetTimeNow().Return(referee2JoiningDate3).Times(1)
 	require.NoError(t, te.engine.JoinTeam(ctx, referee2, joinTeamCmd(t, teamID1)))
 	require.True(t, te.engine.IsTeamMember(referee2))
 
-	// Simulating end of epoch.
+	// Simulating moving to next epoch.
 	expectRefereeSwitchedTeamEvent(t, te)
-	endEpoch(t, ctx, te)
+	nextEpoch(t, ctx, te, referee2JoiningDate3)
 
 	// This shows the referee2 moved from team 1 to team 2.
 	assertEqualTeams(t, []types.Team{
 		{
 			ID: teamID1,
 			Referrer: &types.Membership{
-				PartyID:  referrer1,
-				JoinedAt: team1CreationDate,
+				PartyID:       referrer1,
+				JoinedAt:      team1CreationDate,
+				NumberOfEpoch: 2,
 			},
 			Referees: []*types.Membership{
 				{
-					PartyID:  referee1,
-					JoinedAt: referee1JoiningDate,
+					PartyID:       referee1,
+					JoinedAt:      referee1JoiningDate,
+					NumberOfEpoch: 2,
 				}, {
-					PartyID:  referee2,
-					JoinedAt: referee2JoiningDate3,
+					PartyID:       referee2,
+					JoinedAt:      referee2JoiningDate3,
+					NumberOfEpoch: 0,
 				},
 			},
 			CreatedAt: team1CreationDate,
 		}, {
 			ID: teamID2,
 			Referrer: &types.Membership{
-				PartyID:  referrer2,
-				JoinedAt: team2CreationDate,
+				PartyID:       referrer2,
+				JoinedAt:      team2CreationDate,
+				NumberOfEpoch: 2,
 			},
 			Referees:  []*types.Membership{},
 			CreatedAt: team2CreationDate,

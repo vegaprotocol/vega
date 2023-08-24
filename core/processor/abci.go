@@ -126,7 +126,7 @@ type TeamsEngine interface {
 }
 
 type ReferralProgram interface {
-	Update(program *types.ReferralProgram)
+	UpdateProgram(program *types.ReferralProgram)
 }
 
 type BlockchainClient interface {
@@ -1905,7 +1905,7 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 		case toEnact.IsMarketStateUpdate():
 			app.enactMarketStateUpdate(ctx, prop)
 		case toEnact.IsReferralProgramUpdate():
-			app.referralProgram.Update(toEnact.ReferralProgramUpdate())
+			app.referralProgram.UpdateProgram(toEnact.ReferralProgramUpdate())
 		default:
 			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
 			prop.FailUnexpectedly(fmt.Errorf("unknown proposal \"%s\" cannot be enacted", prop.ID))
