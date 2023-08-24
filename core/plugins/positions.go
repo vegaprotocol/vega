@@ -223,8 +223,6 @@ func (p *Positions) handleSettleMarket(e SME) {
 	market := e.MarketID()
 	posFactor := e.PositionFactor()
 	markPriceDec := num.DecimalFromUint(e.SettledPrice())
-	p.mu.RLock()
-	defer p.mu.RUnlock()
 	mp, ok := p.data[market]
 	if !ok {
 		panic(ErrMarketNotFound)
