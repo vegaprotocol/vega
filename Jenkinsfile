@@ -69,6 +69,8 @@ pipeline {
                 sh 'printenv'
                 echo "params=${params}"
                 echo "isPRBuild=${isPRBuild()}"
+                echo "env.CHANGE_URL=${env.CHANGE_URL}"
+                echo "123-4"
                 script {
                     params = pr.injectPRParams()
                     originRepo = pr.getOriginRepo('vegaprotocol/vega')
