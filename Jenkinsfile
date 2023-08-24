@@ -21,7 +21,7 @@ pipeline {
     options {
         skipDefaultCheckout true
         timestamps()
-        timeout(time: isPRBuild() ? 60 : 120, unit: 'MINUTES')
+        timeout(time: isPRBuild() ? 50 : 120, unit: 'MINUTES')
         disableConcurrentBuilds(abortPrevious: true)
     }
     parameters {
@@ -54,6 +54,7 @@ pipeline {
     stages {
     	stage('CI Config') {
                 steps {
+                    echo "${env.JENKINS_URL}"
                     sh "printenv"
                     echo "params=${params.inspect()}"
                     script {
@@ -69,8 +70,6 @@ pipeline {
                 sh 'printenv'
                 echo "params=${params}"
                 echo "isPRBuild=${isPRBuild()}"
-                echo "env.CHANGE_URL=${env.CHANGE_URL}"
-                echo "123-4"
                 script {
                     params = pr.injectPRParams()
                     originRepo = pr.getOriginRepo('vegaprotocol/vega')
@@ -284,7 +283,7 @@ pipeline {
                     steps {
                         script {
                             systemTestsCapsule ignoreFailure: !isPRBuild(),
-                                timeout: 45,
+                                timeout: 30,
                                 originRepo: originRepo,
                                 vegaVersion: commitHash,
                                 systemTests: params.SYSTEM_TESTS_BRANCH,
