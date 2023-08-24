@@ -77,6 +77,7 @@ var defaultRetentionPolicies = map[RetentionPeriod][]RetentionPolicy{
 		{HypertableOrCaggName: "blocks", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "rewards", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "stop_orders", DataRetentionPeriod: "1 month"},
+		{HypertableOrCaggName: "funding_period_data_points", DataRetentionPeriod: "1 year"},
 	},
 	RetentionPeriodArchive: {
 		{HypertableOrCaggName: "*", DataRetentionPeriod: string(RetentionPeriodArchive)},
