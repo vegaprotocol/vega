@@ -4801,6 +4801,8 @@ input StopOrderFilter {
   expiryStrategy: [StopOrderExpiryStrategy!]
   "Date range to retrieve order from/to. Start and end time should be expressed as an integer value of Unix nanoseconds"
   dateRange: DateRange
+  "Filter for live stop orders only"
+  liveOnly: Boolean
 }
 
 input OrderByPartyIdsFilter {
