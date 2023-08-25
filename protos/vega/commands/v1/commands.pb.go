@@ -1728,8 +1728,7 @@ func (x *IssueSignatures) GetValidatorNodeId() string {
 //
 // Creates a referral set. The creator automatically becomes
 // the leader, called a referrer. This cannot be changed.
-// A referrer cannot already be or become a liquidity provider,
-// nor can they be part of an existing set as referrer or referee.
+// A referrer cannot be part of an existing set as referrer or referee.
 type CreateReferralSet struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1853,7 +1852,7 @@ func (x *UpdateReferralSet) GetTeam() *UpdateReferralSet_Team {
 // Request to apply a referral code
 //
 // A party that joins a referral team is called a referee. A referee cannot
-// be a liquidity provider, nor can they create a referral set or join multiple sets.
+// create a referral set or join multiple sets.
 // To switch, the referee can ask to join another set, and the switch will
 // be effective at the end of the epoch.
 type ApplyReferralCode struct {
