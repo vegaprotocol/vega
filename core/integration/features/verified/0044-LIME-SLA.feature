@@ -59,7 +59,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee   | lp type    |
       | lp_1 | lp1   | ETH/MAR22 | 3000              | 0.002 | submission |
-      | lp_2 | lp2   | ETH/MAR22 | 1000              | 0.001 | submission |
+      | lp_2 | lp2 | ETH/MAR22 | 7000 | 0.001 | submission |
 
     When the network moves ahead "2" blocks
     And the parties place the following pegged iceberg orders:
@@ -88,26 +88,23 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
 
     And the liquidity fee factor should be "0.002" for the market "ETH/MAR22"
 
-# Then the order book should have the following volumes for market "ETH/MAR22":
-#   | side | price | volume |
-#   | buy  | 880   | 114    |
-#   | buy  | 900   | 10     |
-#   | sell | 1100  | 10     |
-#   | sell | 1120  | 93     |
+    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+      | party | equity like share | average entry valuation |
+      | lp1   | 1                 | 3000                    |
 
-# And the liquidity provider fee shares for the market "ETH/MAR22" should be:
-#   | party | equity like share  | average entry valuation |
-#   | lp1   | 0.0000099899101907 | 10000                   |
-#   | lp2   | 0.0009989910190707 | 1010000                 |
-#   | lp3   | 0.9989910190707386 | 1001010000              |
+    And the parties should have the following account balances:
+      | party | asset | market id | margin | general | bond |
+      | lp1   | USD   | ETH/MAR22 | 0      | 7000    | 3000 |
+      | lp2   | USD   | ETH/MAR22 | 10000  | 0       | 0    |
+    #margin lp2: 2*1120*3.5569036=7967
+    #initial margin lp2:7967*1.5=11951
 
-# And the parties should have the following account balances:
-#   | party  | asset | market id | margin     | general       | bond       |
-#   | lp1    | USD   | ETH/MAR22 | 1653960171 | 9998346029829 | 10000      |
-#   | lp2    | USD   | ETH/MAR22 | 1653960171 | 9998345039829 | 1000000    |
-#   | lp3    | USD   | ETH/MAR22 | 1653960171 | 9997346039829 | 1000000000 |
-#   | party1 | USD   | ETH/MAR22 | 228207540  | 999771792460  |            |
-#   | party2 | USD   | ETH/MAR22 | 1120424632 | 98879575368   |            |
+    Then the parties should have the following profit and loss:
+      | party | volume | unrealised pnl | realised pnl |
+      | lp1   | 0      | 0              | 0            |
+      | lp2   | 0      | 0              | 0            |
+
+    Then debug detailed orderbook volumes for market "ETH/MAR22"
 
 # Then the network moves ahead "1" blocks
 
