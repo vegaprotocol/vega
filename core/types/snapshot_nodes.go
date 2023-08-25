@@ -25,6 +25,7 @@ import (
 	checkpointpb "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+	"google.golang.org/protobuf/proto"
 )
 
 type Snapshot struct {
@@ -3185,11 +3186,42 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		ret.ExpiringOrders = append(ret.ExpiringOrders, or)
 	}
 
+	// first copy stop orders
+
 	if em.StopOrders != nil {
+		so := []*eventspb.StopOrderEvent{}
+
 		for _, o := range em.StopOrders.StopOrders {
 			if o.StopOrder.ExpiresAt != nil {
-				ret.ExpiringStopOrders = append(ret.ExpiringStopOrders, &Order{ID: o.StopOrder.Id, ExpiresAt: *o.StopOrder.ExpiresAt})
+				so = append(so, proto.Clone(o).(*eventspb.StopOrderEvent))
 			}
+		}
+
+		sort.Slice(so, func(i, j int) bool {
+			// are they in the same bucket??
+			if *so[i].StopOrder.ExpiresAt < *so[j].StopOrder.ExpiresAt {
+				return true
+			} else if *so[i].StopOrder.ExpiresAt > *so[j].StopOrder.ExpiresAt {
+				return false
+			}
+
+			// are they create at the same time?
+			if so[i].StopOrder.CreatedAt < so[j].StopOrder.CreatedAt {
+				return true
+			} else if so[i].StopOrder.CreatedAt > so[j].StopOrder.CreatedAt {
+				return false
+			}
+
+			// finally rise above > falls below
+			if so[i].StopOrder.TriggerDirection == StopOrderTriggerDirectionFallsBelow {
+				return true
+			}
+
+			return false
+		})
+
+		for _, o := range so {
+			ret.ExpiringStopOrders = append(ret.ExpiringStopOrders, &Order{ID: o.StopOrder.Id, ExpiresAt: *o.StopOrder.ExpiresAt})
 		}
 	}
 
