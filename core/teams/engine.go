@@ -83,6 +83,7 @@ func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, determi
 		TeamURL:   ptr.UnBox(params.Team.TeamUrl),
 		AvatarURL: ptr.UnBox(params.Team.AvatarUrl),
 		CreatedAt: now,
+		Closed:    params.Team.Closed,
 	}
 
 	e.teams[deterministicTeamID] = teamToAdd
@@ -106,12 +107,24 @@ func (e *Engine) UpdateTeam(ctx context.Context, referrer types.PartyID, params 
 		return ErrOnlyReferrerCanUpdateTeam
 	}
 
+	// can't update if empty and nil as it's a mandatory field
 	if params.Team.Name != nil && len(*params.Team.Name) > 0 {
 		teamsToUpdate.Name = ptr.UnBox(params.Team.Name)
 	}
 
-	teamsToUpdate.TeamURL = ptr.UnBox(params.Team.TeamUrl)
-	teamsToUpdate.AvatarURL = ptr.UnBox(params.Team.AvatarUrl)
+	// those apply change if not nil only?
+	// to be sure to not erase things by mistake?
+	if params.Team.TeamUrl != nil {
+		teamsToUpdate.TeamURL = ptr.UnBox(params.Team.TeamUrl)
+	}
+
+	if params.Team.AvatarUrl != nil {
+		teamsToUpdate.AvatarURL = ptr.UnBox(params.Team.AvatarUrl)
+	}
+
+	if params.Team.Closed != nil {
+		teamsToUpdate.Closed = ptr.UnBox(params.Team.Closed)
+	}
 
 	e.notifyTeamUpdated(ctx, teamsToUpdate)
 
@@ -120,6 +133,7 @@ func (e *Engine) UpdateTeam(ctx context.Context, referrer types.PartyID, params 
 
 func (e *Engine) JoinTeam(ctx context.Context, referee types.PartyID, params *commandspb.ApplyReferralCode) error {
 	for _, team := range e.teams {
+		// TODO: is that still true???
 		if team.Referrer.PartyID == referee {
 			return ErrReferrerCannotJoinAnotherTeam
 		}
@@ -130,6 +144,10 @@ func (e *Engine) JoinTeam(ctx context.Context, referee types.PartyID, params *co
 	teamToJoin, exists := e.teams[teamID]
 	if !exists {
 		return ErrNoTeamMatchesID(teamID)
+	}
+
+	if teamToJoin.Closed {
+		return ErrTeamIsClosed(teamID)
 	}
 
 	teamJoined, alreadyMember := e.allTeamMembers[referee]

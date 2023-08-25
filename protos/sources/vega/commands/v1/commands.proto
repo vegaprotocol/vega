@@ -321,6 +321,8 @@ message CreateReferralSet {
     optional string team_url = 11;
     // Optional link to an image to be used as the team avatar.
     optional string avatar_url = 12;
+    // Is this team closed for external other users
+    bool closed = 13;
   }
 }
 
@@ -338,6 +340,8 @@ message UpdateReferralSet {
     optional string team_url = 11;
     // Optional link to an image to be used as the team avatar.
     optional string avatar_url = 12;
+    // Is this team closed for external other users
+    optional bool closed = 13;
   }
 }
 
