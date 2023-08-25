@@ -138,5 +138,4 @@ func setReferralSetsState(t *testing.T, e *testEngine) {
 	assert.NoError(t, e.engine.CreateReferralSet(ctx, "referee7", &commandspb.CreateReferralSet{}, "id1"))
 	assert.NoError(t, e.engine.CreateReferralSet(ctx, "referee8", &commandspb.CreateReferralSet{}, "id4"))
 	assert.NoError(t, e.engine.CreateReferralSet(ctx, "referee9", &commandspb.CreateReferralSet{}, "id3"))
-
 }
