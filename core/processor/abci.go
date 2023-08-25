@@ -129,7 +129,7 @@ type TeamsEngine interface {
 
 type ReferralProgram interface {
 	UpdateProgram(program *types.ReferralProgram)
-	Exists(setID string) bool
+	SetExists(setID string) bool
 	CreateReferralSet(ctx context.Context, party string, set *commandspb.CreateReferralSet, deterministicID string) error
 	ApplyReferralCode(ctx context.Context, party string, cset *commandspb.ApplyReferralCode) error
 }
@@ -2212,7 +2212,7 @@ func (app *App) UpdateReferralSet(ctx context.Context, tx abci.Tx) error {
 		return fmt.Errorf("could not deserialize UpdateReferralSet command: %w", err)
 	}
 
-	if !app.referralProgram.Exists(params.Id) {
+	if !app.referralProgram.SetExists(params.Id) {
 		return fmt.Errorf("no referral set for ID %q", params.Id)
 	}
 

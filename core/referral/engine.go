@@ -83,7 +83,7 @@ type Engine struct {
 	referees map[string]string
 }
 
-func (e *Engine) Exists(setID string) bool {
+func (e *Engine) SetExists(setID string) bool {
 	_, ok := e.sets[setID]
 	return ok
 }
@@ -117,7 +117,7 @@ func (e *Engine) CreateReferralSet(ctx context.Context, party string, set *comma
 
 func (e *Engine) ApplyReferralCode(ctx context.Context, party string, cset *commandspb.ApplyReferralCode) error {
 	if _, ok := e.referees[party]; ok {
-		return ErrIsAlreadyAReferree(party)
+		return ErrIsAlreadyAReferee(party)
 	}
 
 	if _, ok := e.referrers[party]; ok {
