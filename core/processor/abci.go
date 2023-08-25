@@ -121,6 +121,7 @@ type StateVarEngine interface {
 }
 
 type TeamsEngine interface {
+	Exists(team string) bool
 	CreateTeam(context.Context, types.PartyID, types.TeamID, *commandspb.CreateReferralSet) error
 	UpdateTeam(context.Context, types.PartyID, *commandspb.UpdateReferralSet) error
 	JoinTeam(context.Context, types.PartyID, *commandspb.ApplyReferralCode) error
@@ -2216,7 +2217,19 @@ func (app *App) UpdateReferralSet(ctx context.Context, tx abci.Tx) error {
 	}
 
 	if params.IsTeam {
-		return app.teamsEngine.UpdateTeam(ctx, types.PartyID(tx.Party()), params)
+		if app.teamsEngine.Exists(params.Id) {
+			return app.teamsEngine.UpdateTeam(ctx, types.PartyID(tx.Party()), params)
+		}
+
+		return app.teamsEngine.CreateTeam(ctx, types.PartyID(tx.Party()), types.TeamID(params.Id), &commandspb.CreateReferralSet{
+			IsTeam: true,
+			Team: &commandspb.CreateReferralSet_Team{
+				Name:      ptr.UnBox(params.Team.Name),
+				AvatarUrl: params.Team.AvatarUrl,
+				TeamUrl:   params.Team.TeamUrl,
+				Closed:    ptr.UnBox(params.Team.Closed),
+			},
+		})
 	}
 
 	return nil

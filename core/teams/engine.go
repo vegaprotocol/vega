@@ -53,6 +53,11 @@ func (e *Engine) OnReferralProgramMinStakedVegaTokensUpdate(_ context.Context, v
 	return nil
 }
 
+func (e *Engine) Exists(team string) bool {
+	_, ok := e.teams[types.TeamID(team)]
+	return ok
+}
+
 func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, deterministicTeamID types.TeamID, params *commandspb.CreateReferralSet) error {
 	if err := e.ensureUniqueTeamID(deterministicTeamID); err != nil {
 		return err
