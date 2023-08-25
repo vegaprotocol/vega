@@ -306,8 +306,7 @@ func (e *Engine) findTierByEpochCount(epochCount uint64) *types.BenefitTier {
 	return nil
 }
 
-// TODO: inject time service
-func NewEngine(epochEngine EpochEngine, broker Broker, teamsEngine TeamsEngine) *Engine {
+func NewEngine(epochEngine EpochEngine, broker Broker, teamsEngine TeamsEngine, timeSvc TimeService) *Engine {
 	engine := &Engine{
 		broker:      broker,
 		teamsEngine: teamsEngine,
@@ -319,6 +318,8 @@ func NewEngine(epochEngine EpochEngine, broker Broker, teamsEngine TeamsEngine) 
 		sets:      map[string]*types.ReferralSet{},
 		referrers: map[string]string{},
 		referees:  map[string]string{},
+
+		timeSvc: timeSvc,
 	}
 
 	epochEngine.NotifyOnEpoch(engine.OnEpoch, engine.OnEpochRestore)

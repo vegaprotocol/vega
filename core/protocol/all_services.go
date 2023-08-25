@@ -390,7 +390,7 @@ func newServices(
 	// the end of epoch. Since the engine will reject computations when the program
 	// is marked as ended, it needs to be one of the last service to register on
 	// epoch update, so the computation can happen for this epoch.
-	svcs.referralProgram = referral.NewSnapshottedEngine(svcs.epochService, svcs.broker, svcs.teamsEngine)
+	svcs.referralProgram = referral.NewSnapshottedEngine(svcs.epochService, svcs.broker, svcs.teamsEngine, svcs.timeService)
 	svcs.snapshotEngine.AddProviders(svcs.referralProgram)
 
 	// setup config reloads for all engines / services /etc
