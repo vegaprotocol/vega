@@ -14,17 +14,34 @@ package referral
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
+
+var (
+	ErrIsAlreadyAReferree = func(party string) error {
+		return fmt.Errorf("party %v has already been referred", party)
+	}
+	ErrIsAlreadyAReferrer = func(party string) error {
+		return fmt.Errorf("party %v is already a referrer", party)
+	}
+)
+
+type TimeService interface {
+	GetTimeNow() time.Time
+}
 
 type Engine struct {
 	broker      Broker
 	teamsEngine TeamsEngine
+
+	timeSvc TimeService
 
 	// maxPartyNotionalVolumeByQuantumPerEpoch limits the volume in quantum units
 	// which is eligible each epoch for referral program mechanisms.
@@ -49,6 +66,77 @@ type Engine struct {
 	// proposal to apply at the start of the next epoch.
 	// It's `nil` is there is none.
 	newProgram *types.ReferralProgram
+
+	// TODO: snapshot this
+	// keep track of all referral sets
+	// referral set ID -> Referral set
+	sets map[string]*types.ReferralSet
+
+	// NO need for snapshot, dynamically computed
+	// map of referrer to set ID
+	referrers map[string]string
+
+	// NO need for snapshot, dynamically computed
+	// map of referrees to set ID
+	referrees map[string]string
+}
+
+func (e *Engine) Exists(setID string) bool {
+	_, ok := e.sets[setID]
+	return ok
+}
+
+func (e *Engine) CreateReferralSet(ctx context.Context, party string, set *commandspb.CreateReferralSet, deterministicID string) error {
+	if _, ok := e.referrers[party]; ok {
+		return ErrIsAlreadyAReferrer(party)
+	}
+
+	now := e.timeSvc.GetTimeNow()
+
+	e.sets[deterministicID] = &types.ReferralSet{
+		ID:        deterministicID,
+		CreatedAt: now,
+		UpdatedAt: now,
+		Referrer: &types.Membership{
+			PartyID:  types.PartyID(party),
+			JoinedAt: now,
+			// TODO:
+			// not sure we need number of epoch
+		},
+	}
+
+	e.referrers[party] = deterministicID
+
+	// send some events
+
+	return nil
+}
+
+func (e *Engine) ApplyReferralCode(ctx context.Context, party string, cset *commandspb.ApplyReferralCode) error {
+	if _, ok := e.referrees[party]; ok {
+		return ErrIsAlreadyAReferree(party)
+	}
+
+	if _, ok := e.referrers[party]; ok {
+		return ErrIsAlreadyAReferrer(party)
+	}
+
+	set, ok := e.sets[cset.TeamId]
+	if !ok {
+		return fmt.Errorf("invalid referral code %v", cset.TeamId)
+	}
+
+	now := e.timeSvc.GetTimeNow()
+
+	set.UpdatedAt = now
+	set.Referrees = append(set.Referrees, &types.Membership{
+		PartyID:  types.PartyID(party),
+		JoinedAt: now,
+	})
+
+	// send some events now???
+
+	return nil
 }
 
 func (e *Engine) UpdateProgram(newProgram *types.ReferralProgram) {
@@ -180,6 +268,7 @@ func (e *Engine) findTierByEpochCount(epochCount uint64) *types.BenefitTier {
 	return nil
 }
 
+// TODO: inject time service
 func NewEngine(epochEngine EpochEngine, broker Broker, teamsEngine TeamsEngine) *Engine {
 	engine := &Engine{
 		broker:      broker,
