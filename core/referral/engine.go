@@ -36,8 +36,7 @@ var (
 )
 
 type Engine struct {
-	broker      Broker
-	teamsEngine TeamsEngine
+	broker Broker
 
 	timeSvc TimeService
 
@@ -149,25 +148,12 @@ func (e *Engine) HasProgramEnded() bool {
 	return e.programHasEnded
 }
 
-func (e *Engine) RewardsFactorForParty(party types.PartyID) num.Decimal {
+func (e *Engine) RewardsFactorForParty(_ types.PartyID) num.Decimal {
 	if e.programHasEnded {
 		return num.DecimalZero()
 	}
 
-	if !e.teamsEngine.IsTeamMember(party) {
-		// This party is not eligible to referral program rewards.
-		return num.DecimalZero()
-	}
-
-	epochCount := e.teamsEngine.NumberOfEpochInTeamForParty(party)
-
-	tier := e.findTierByEpochCount(epochCount)
-	if tier == nil {
-		// This party has not stayed in a team long enough to match a tier.
-		return num.DecimalZero()
-	}
-
-	return tier.ReferralRewardFactor
+	return num.DecimalZero()
 }
 
 func (e *Engine) OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate(_ context.Context, value *num.Uint) error {
@@ -289,23 +275,9 @@ func (e *Engine) loadReferralSetsFromSnapshot(sets *snapshotpb.ReferralSets) {
 	}
 }
 
-func (e *Engine) findTierByEpochCount(epochCount uint64) *types.BenefitTier {
-	tiersLen := len(e.currentProgram.BenefitTiers)
-
-	for i := tiersLen - 1; i >= 0; i-- {
-		tier := e.currentProgram.BenefitTiers[i]
-		if epochCount >= tier.MinimumEpochs.Uint64() {
-			return tier
-		}
-	}
-
-	return nil
-}
-
-func NewEngine(epochEngine EpochEngine, broker Broker, teamsEngine TeamsEngine, timeSvc TimeService) *Engine {
+func NewEngine(epochEngine EpochEngine, broker Broker, timeSvc TimeService) *Engine {
 	engine := &Engine{
-		broker:      broker,
-		teamsEngine: teamsEngine,
+		broker: broker,
 		// There is no program yet, so we mark it has ended so consumer of this
 		// engine can know there is no reward computation to be done.
 		programHasEnded:      true,

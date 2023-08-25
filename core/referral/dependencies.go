@@ -20,7 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/referral EpochEngine,Broker,TeamsEngine,TimeService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/referral EpochEngine,Broker,TimeService
 
 type TimeService interface {
 	GetTimeNow() time.Time
@@ -34,11 +34,4 @@ type EpochEngine interface {
 // Broker is used to notify administrative actions on teams and members.
 type Broker interface {
 	Send(event events.Event)
-}
-
-// TeamsEngine is used to retrieve statistics about a team member to compute
-// referral program related data.
-type TeamsEngine interface {
-	IsTeamMember(party types.PartyID) bool
-	NumberOfEpochInTeamForParty(party types.PartyID) uint64
 }
