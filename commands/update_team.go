@@ -14,11 +14,19 @@ func checkUpdateReferralSet(cmd *commandspb.UpdateReferralSet) Errors {
 	}
 
 	if !IsVegaID(cmd.Id) {
-		errs.AddForProperty("update_team.team_id", ErrShouldBeAValidVegaID)
+		errs.AddForProperty("update_referral_set.id", ErrShouldBeAValidVegaID)
 	}
 
 	if cmd.IsTeam {
-		// TODO: validate team
+		if cmd.Team == nil {
+			return errs.FinalAddForProperty("update_referral_set.team", ErrIsRequired)
+		}
+
+		// now the only one which needs validation again is the name, as it's not allowed to be set to ""
+		if cmd.Team.Name != nil && len(*cmd.Team.Name) <= 0 {
+			return errs.FinalAddForProperty("update_referral_set.team.name", ErrIsRequired)
+		}
+
 	}
 
 	return errs

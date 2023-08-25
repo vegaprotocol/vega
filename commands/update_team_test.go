@@ -14,8 +14,9 @@ import (
 )
 
 func TestUpdateReferralSet(t *testing.T) {
-	t.Run("Updating team succeeds", testUpdatingTeamSucceeds)
-	t.Run("Updating team with team ID fails", testUpdateReferralSetWithoutTeamIDFails)
+	t.Run("Updating referral set succeeds", testUpdatingTeamSucceeds)
+	t.Run("Updating referral set with team ID fails", testUpdateReferralSetWithoutTeamIDFails)
+	t.Run("Updating referral set fails", testUpdateReferralSetFails)
 }
 
 func testUpdatingTeamSucceeds(t *testing.T) {
@@ -26,47 +27,61 @@ func testUpdatingTeamSucceeds(t *testing.T) {
 		{
 			name: "with empty values",
 			cmd: &commandspb.UpdateReferralSet{
-				TeamId: vgtest.RandomVegaID(),
+				Id: vgtest.RandomVegaID(),
 			},
 		}, {
 			name: "with just enabled rewards",
 			cmd: &commandspb.UpdateReferralSet{
-				TeamId:    vgtest.RandomVegaID(),
-				Name:      nil,
-				TeamUrl:   nil,
-				AvatarUrl: nil,
+				Id:     vgtest.RandomVegaID(),
+				IsTeam: false,
 			},
 		}, {
 			name: "with just name",
 			cmd: &commandspb.UpdateReferralSet{
-				TeamId:    vgtest.RandomVegaID(),
-				Name:      ptr.From(vgrand.RandomStr(5)),
-				TeamUrl:   nil,
-				AvatarUrl: nil,
+				Id:     vgtest.RandomVegaID(),
+				IsTeam: true,
+				Team: &commandspb.UpdateReferralSet_Team{
+					Name:      ptr.From(vgrand.RandomStr(5)),
+					TeamUrl:   nil,
+					AvatarUrl: nil,
+					Closed:    nil,
+				},
 			},
 		}, {
 			name: "with just team URL",
 			cmd: &commandspb.UpdateReferralSet{
-				TeamId:    vgtest.RandomVegaID(),
-				Name:      nil,
-				TeamUrl:   ptr.From(vgrand.RandomStr(5)),
-				AvatarUrl: nil,
+				Id:     vgtest.RandomVegaID(),
+				IsTeam: true,
+				Team: &commandspb.UpdateReferralSet_Team{
+					Name:      nil,
+					TeamUrl:   ptr.From(vgrand.RandomStr(5)),
+					AvatarUrl: nil,
+					Closed:    nil,
+				},
 			},
 		}, {
 			name: "with just avatar URL",
 			cmd: &commandspb.UpdateReferralSet{
-				TeamId:    vgtest.RandomVegaID(),
-				Name:      nil,
-				TeamUrl:   nil,
-				AvatarUrl: ptr.From(vgrand.RandomStr(5)),
+				Id:     vgtest.RandomVegaID(),
+				IsTeam: true,
+				Team: &commandspb.UpdateReferralSet_Team{
+					Name:      nil,
+					TeamUrl:   nil,
+					AvatarUrl: ptr.From(vgrand.RandomStr(5)),
+					Closed:    nil,
+				},
 			},
 		}, {
 			name: "with all at once",
 			cmd: &commandspb.UpdateReferralSet{
-				TeamId:    vgtest.RandomVegaID(),
-				Name:      ptr.From(vgrand.RandomStr(5)),
-				TeamUrl:   ptr.From(vgrand.RandomStr(5)),
-				AvatarUrl: ptr.From(vgrand.RandomStr(5)),
+				Id:     vgtest.RandomVegaID(),
+				IsTeam: true,
+				Team: &commandspb.UpdateReferralSet_Team{
+					Name:      ptr.From(vgrand.RandomStr(5)),
+					TeamUrl:   ptr.From(vgrand.RandomStr(5)),
+					AvatarUrl: ptr.From(vgrand.RandomStr(5)),
+					Closed:    ptr.From(true),
+				},
 			},
 		},
 	}
@@ -80,10 +95,30 @@ func testUpdatingTeamSucceeds(t *testing.T) {
 
 func testUpdateReferralSetWithoutTeamIDFails(t *testing.T) {
 	err := checkUpdateReferralSet(t, &commandspb.UpdateReferralSet{
-		TeamId: "",
+		Id: "",
 	})
 
-	assert.Contains(t, err.Get("update_team.team_id"), commands.ErrShouldBeAValidVegaID)
+	assert.Contains(t, err.Get("update_referral_set.id"), commands.ErrShouldBeAValidVegaID)
+}
+
+func testUpdateReferralSetFails(t *testing.T) {
+	err := checkUpdateReferralSet(t, &commandspb.UpdateReferralSet{
+		Id:     "someid",
+		IsTeam: true,
+		Team:   nil,
+	})
+
+	assert.Contains(t, err.Get("update_referral_set.team"), commands.ErrIsRequired)
+
+	err = checkUpdateReferralSet(t, &commandspb.UpdateReferralSet{
+		Id:     "someid",
+		IsTeam: true,
+		Team: &commandspb.UpdateReferralSet_Team{
+			Name: ptr.From(""),
+		},
+	})
+
+	assert.Contains(t, err.Get("update_referral_set.team.name"), commands.ErrIsRequired)
 }
 
 func checkUpdateReferralSet(t *testing.T, cmd *commandspb.UpdateReferralSet) commands.Errors {

@@ -17,7 +17,7 @@ func TestApplyReferralCode(t *testing.T) {
 
 func testJoiningTeamSucceeds(t *testing.T) {
 	err := checkApplyReferralCode(t, &commandspb.ApplyReferralCode{
-		TeamId: vgtest.RandomVegaID(),
+		Id: vgtest.RandomVegaID(),
 	})
 
 	assert.Empty(t, err)
@@ -25,7 +25,7 @@ func testJoiningTeamSucceeds(t *testing.T) {
 
 func testApplyReferralCodeWithoutTeamIDFails(t *testing.T) {
 	err := checkApplyReferralCode(t, &commandspb.ApplyReferralCode{
-		TeamId: "",
+		Id: "",
 	})
 
 	assert.Contains(t, err.Get("join_team.team_id"), commands.ErrShouldBeAValidVegaID)
