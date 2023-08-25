@@ -13,24 +13,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUpdateTeam(t *testing.T) {
+func TestUpdateReferralSet(t *testing.T) {
 	t.Run("Updating team succeeds", testUpdatingTeamSucceeds)
-	t.Run("Updating team with team ID fails", testUpdateTeamWithoutTeamIDFails)
+	t.Run("Updating team with team ID fails", testUpdateReferralSetWithoutTeamIDFails)
 }
 
 func testUpdatingTeamSucceeds(t *testing.T) {
 	tcs := []struct {
 		name string
-		cmd  *commandspb.UpdateTeam
+		cmd  *commandspb.UpdateReferralSet
 	}{
 		{
 			name: "with empty values",
-			cmd: &commandspb.UpdateTeam{
+			cmd: &commandspb.UpdateReferralSet{
 				TeamId: vgtest.RandomVegaID(),
 			},
 		}, {
 			name: "with just enabled rewards",
-			cmd: &commandspb.UpdateTeam{
+			cmd: &commandspb.UpdateReferralSet{
 				TeamId:    vgtest.RandomVegaID(),
 				Name:      nil,
 				TeamUrl:   nil,
@@ -38,7 +38,7 @@ func testUpdatingTeamSucceeds(t *testing.T) {
 			},
 		}, {
 			name: "with just name",
-			cmd: &commandspb.UpdateTeam{
+			cmd: &commandspb.UpdateReferralSet{
 				TeamId:    vgtest.RandomVegaID(),
 				Name:      ptr.From(vgrand.RandomStr(5)),
 				TeamUrl:   nil,
@@ -46,7 +46,7 @@ func testUpdatingTeamSucceeds(t *testing.T) {
 			},
 		}, {
 			name: "with just team URL",
-			cmd: &commandspb.UpdateTeam{
+			cmd: &commandspb.UpdateReferralSet{
 				TeamId:    vgtest.RandomVegaID(),
 				Name:      nil,
 				TeamUrl:   ptr.From(vgrand.RandomStr(5)),
@@ -54,7 +54,7 @@ func testUpdatingTeamSucceeds(t *testing.T) {
 			},
 		}, {
 			name: "with just avatar URL",
-			cmd: &commandspb.UpdateTeam{
+			cmd: &commandspb.UpdateReferralSet{
 				TeamId:    vgtest.RandomVegaID(),
 				Name:      nil,
 				TeamUrl:   nil,
@@ -62,7 +62,7 @@ func testUpdatingTeamSucceeds(t *testing.T) {
 			},
 		}, {
 			name: "with all at once",
-			cmd: &commandspb.UpdateTeam{
+			cmd: &commandspb.UpdateReferralSet{
 				TeamId:    vgtest.RandomVegaID(),
 				Name:      ptr.From(vgrand.RandomStr(5)),
 				TeamUrl:   ptr.From(vgrand.RandomStr(5)),
@@ -73,23 +73,23 @@ func testUpdatingTeamSucceeds(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
-			require.Empty(tt, checkUpdateTeam(tt, tc.cmd))
+			require.Empty(tt, checkUpdateReferralSet(tt, tc.cmd))
 		})
 	}
 }
 
-func testUpdateTeamWithoutTeamIDFails(t *testing.T) {
-	err := checkUpdateTeam(t, &commandspb.UpdateTeam{
+func testUpdateReferralSetWithoutTeamIDFails(t *testing.T) {
+	err := checkUpdateReferralSet(t, &commandspb.UpdateReferralSet{
 		TeamId: "",
 	})
 
 	assert.Contains(t, err.Get("update_team.team_id"), commands.ErrShouldBeAValidVegaID)
 }
 
-func checkUpdateTeam(t *testing.T, cmd *commandspb.UpdateTeam) commands.Errors {
+func checkUpdateReferralSet(t *testing.T, cmd *commandspb.UpdateReferralSet) commands.Errors {
 	t.Helper()
 
-	err := commands.CheckUpdateTeam(cmd)
+	err := commands.CheckUpdateReferralSet(cmd)
 
 	var e commands.Errors
 	if ok := errors.As(err, &e); !ok {

@@ -52,7 +52,7 @@ func (e *Engine) OnReferralProgramMinStakedVegaTokensUpdate(_ context.Context, v
 	return nil
 }
 
-func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, deterministicTeamID types.TeamID, params *commandspb.CreateTeam) error {
+func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, deterministicTeamID types.TeamID, params *commandspb.CreateReferralSet) error {
 	if err := e.ensureUniqueTeamID(deterministicTeamID); err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, determi
 	return nil
 }
 
-func (e *Engine) UpdateTeam(ctx context.Context, referrer types.PartyID, params *commandspb.UpdateTeam) error {
+func (e *Engine) UpdateTeam(ctx context.Context, referrer types.PartyID, params *commandspb.UpdateReferralSet) error {
 	teamID := types.TeamID(params.TeamId)
 
 	teamsToUpdate, exists := e.teams[teamID]
@@ -106,7 +106,7 @@ func (e *Engine) UpdateTeam(ctx context.Context, referrer types.PartyID, params 
 	return nil
 }
 
-func (e *Engine) JoinTeam(ctx context.Context, referee types.PartyID, params *commandspb.JoinTeam) error {
+func (e *Engine) JoinTeam(ctx context.Context, referee types.PartyID, params *commandspb.ApplyReferralCode) error {
 	for _, team := range e.teams {
 		if team.Referrer.PartyID == referee {
 			return ErrReferrerCannotJoinAnotherTeam

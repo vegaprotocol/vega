@@ -10,31 +10,31 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestJoinTeam(t *testing.T) {
+func TestApplyReferralCode(t *testing.T) {
 	t.Run("Joining team succeeds", testJoiningTeamSucceeds)
-	t.Run("Joining team with team ID fails", testJoinTeamWithoutTeamIDFails)
+	t.Run("Joining team with team ID fails", testApplyReferralCodeWithoutTeamIDFails)
 }
 
 func testJoiningTeamSucceeds(t *testing.T) {
-	err := checkJoinTeam(t, &commandspb.JoinTeam{
+	err := checkApplyReferralCode(t, &commandspb.ApplyReferralCode{
 		TeamId: vgtest.RandomVegaID(),
 	})
 
 	assert.Empty(t, err)
 }
 
-func testJoinTeamWithoutTeamIDFails(t *testing.T) {
-	err := checkJoinTeam(t, &commandspb.JoinTeam{
+func testApplyReferralCodeWithoutTeamIDFails(t *testing.T) {
+	err := checkApplyReferralCode(t, &commandspb.ApplyReferralCode{
 		TeamId: "",
 	})
 
 	assert.Contains(t, err.Get("join_team.team_id"), commands.ErrShouldBeAValidVegaID)
 }
 
-func checkJoinTeam(t *testing.T, cmd *commandspb.JoinTeam) commands.Errors {
+func checkApplyReferralCode(t *testing.T, cmd *commandspb.ApplyReferralCode) commands.Errors {
 	t.Helper()
 
-	err := commands.CheckJoinTeam(cmd)
+	err := commands.CheckApplyReferralCode(cmd)
 
 	var e commands.Errors
 	if ok := errors.As(err, &e); !ok {

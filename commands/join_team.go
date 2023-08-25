@@ -2,11 +2,11 @@ package commands
 
 import commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
-func CheckJoinTeam(cmd *commandspb.JoinTeam) error {
-	return checkJoinTeam(cmd).ErrorOrNil()
+func CheckApplyReferralCode(cmd *commandspb.ApplyReferralCode) error {
+	return checkApplyReferralCode(cmd).ErrorOrNil()
 }
 
-func checkJoinTeam(cmd *commandspb.JoinTeam) Errors {
+func checkApplyReferralCode(cmd *commandspb.ApplyReferralCode) Errors {
 	errs := NewErrors()
 
 	if cmd == nil {

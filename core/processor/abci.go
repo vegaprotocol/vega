@@ -120,9 +120,9 @@ type StateVarEngine interface {
 }
 
 type TeamsEngine interface {
-	CreateTeam(context.Context, types.PartyID, types.TeamID, *commandspb.CreateTeam) error
-	UpdateTeam(context.Context, types.PartyID, *commandspb.UpdateTeam) error
-	JoinTeam(context.Context, types.PartyID, *commandspb.JoinTeam) error
+	CreateTeam(context.Context, types.PartyID, types.TeamID, *commandspb.CreateReferralSet) error
+	UpdateTeam(context.Context, types.PartyID, *commandspb.UpdateReferralSet) error
+	JoinTeam(context.Context, types.PartyID, *commandspb.ApplyReferralCode) error
 }
 
 type ReferralProgram interface {
@@ -425,13 +425,13 @@ func NewApp(
 				),
 			),
 		).
-		HandleDeliverTx(txn.CreateTeamCommand,
+		HandleDeliverTx(txn.CreateReferralSetCommand,
 			app.SendTransactionResult(addDeterministicID(app.CreateTeam)),
 		).
-		HandleDeliverTx(txn.UpdateTeamCommand,
+		HandleDeliverTx(txn.UpdateReferralSetCommand,
 			app.SendTransactionResult(app.UpdateTeam),
 		).
-		HandleDeliverTx(txn.JoinTeamCommand,
+		HandleDeliverTx(txn.ApplyReferralCodeCommand,
 			app.SendTransactionResult(app.JoinTeam),
 		)
 
@@ -2183,7 +2183,7 @@ func (app *App) DeliverEthereumKeyRotateSubmission(ctx context.Context, tx abci.
 }
 
 func (app *App) CreateTeam(ctx context.Context, tx abci.Tx, deterministicID string) error {
-	params := &commandspb.CreateTeam{}
+	params := &commandspb.CreateReferralSet{}
 	if err := tx.Unmarshal(params); err != nil {
 		return fmt.Errorf("could not deserialize CreateTeam command: %w", err)
 	}
@@ -2192,7 +2192,7 @@ func (app *App) CreateTeam(ctx context.Context, tx abci.Tx, deterministicID stri
 }
 
 func (app *App) UpdateTeam(ctx context.Context, tx abci.Tx) error {
-	params := &commandspb.UpdateTeam{}
+	params := &commandspb.UpdateReferralSet{}
 	if err := tx.Unmarshal(params); err != nil {
 		return fmt.Errorf("could not deserialize UpdateTeam command: %w", err)
 	}
@@ -2201,7 +2201,7 @@ func (app *App) UpdateTeam(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) JoinTeam(ctx context.Context, tx abci.Tx) error {
-	params := &commandspb.JoinTeam{}
+	params := &commandspb.ApplyReferralCode{}
 	if err := tx.Unmarshal(params); err != nil {
 		return fmt.Errorf("could not deserialize JoinTeam command: %w", err)
 	}

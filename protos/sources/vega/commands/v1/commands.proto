@@ -304,13 +304,13 @@ message IssueSignatures {
   string validator_node_id = 3; // the node for which to emit the signatures.
 }
 
-// Request for creating a referral team
+// Request for creating a referral set
 //
 // Creates a referral team. The team creator automatically becomes
 // the team leader, called a referrer. This cannot be changed.
 // A referrer cannot already be or become a liquidity provider,
 // nor can they be on an existing team as referrer or referee.
-message CreateTeam {
+message CreateReferralSet {
   // Optional team name to be added to the referral banner.
   optional string name = 1;
   // Optional link to a team forum, discord, etc.
@@ -320,7 +320,7 @@ message CreateTeam {
 }
 
 // Request for updating a team's properties
-message UpdateTeam {
+message UpdateReferralSet {
   // Team ID of the team to update.
   string team_id = 1;
   // Optional team name to be added to the referral banner.
@@ -337,7 +337,7 @@ message UpdateTeam {
 // be a liquidity provider, nor can they create a team or join multiple teams.
 // To switch teams, the referee can ask to join another team, and the switch will
 // be effective at the end of the epoch.
-message JoinTeam {
+message ApplyReferralCode {
   // Team ID of the team to join.
   string team_id = 1;
 }

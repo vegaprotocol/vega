@@ -11,49 +11,49 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCreateTeam(t *testing.T) {
+func TestCreateReferralSet(t *testing.T) {
 	t.Run("Creating team succeeds", testCreatingTeamSucceeds)
 }
 
 func testCreatingTeamSucceeds(t *testing.T) {
 	tcs := []struct {
 		name string
-		cmd  *commandspb.CreateTeam
+		cmd  *commandspb.CreateReferralSet
 	}{
 		{
 			name: "with empty values",
-			cmd:  &commandspb.CreateTeam{},
+			cmd:  &commandspb.CreateReferralSet{},
 		}, {
 			name: "with just enabled rewards",
-			cmd: &commandspb.CreateTeam{
+			cmd: &commandspb.CreateReferralSet{
 				Name:      nil,
 				TeamUrl:   nil,
 				AvatarUrl: nil,
 			},
 		}, {
 			name: "with just name",
-			cmd: &commandspb.CreateTeam{
+			cmd: &commandspb.CreateReferralSet{
 				Name:      ptr.From(vgrand.RandomStr(5)),
 				TeamUrl:   nil,
 				AvatarUrl: nil,
 			},
 		}, {
 			name: "with just team URL",
-			cmd: &commandspb.CreateTeam{
+			cmd: &commandspb.CreateReferralSet{
 				Name:      nil,
 				TeamUrl:   ptr.From(vgrand.RandomStr(5)),
 				AvatarUrl: nil,
 			},
 		}, {
 			name: "with just avatar URL",
-			cmd: &commandspb.CreateTeam{
+			cmd: &commandspb.CreateReferralSet{
 				Name:      nil,
 				TeamUrl:   nil,
 				AvatarUrl: ptr.From(vgrand.RandomStr(5)),
 			},
 		}, {
 			name: "with all at once",
-			cmd: &commandspb.CreateTeam{
+			cmd: &commandspb.CreateReferralSet{
 				Name:      ptr.From(vgrand.RandomStr(5)),
 				TeamUrl:   ptr.From(vgrand.RandomStr(5)),
 				AvatarUrl: ptr.From(vgrand.RandomStr(5)),
@@ -63,15 +63,15 @@ func testCreatingTeamSucceeds(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
-			require.Empty(tt, checkCreateTeam(tt, tc.cmd))
+			require.Empty(tt, checkCreateReferralSet(tt, tc.cmd))
 		})
 	}
 }
 
-func checkCreateTeam(t *testing.T, cmd *commandspb.CreateTeam) commands.Errors {
+func checkCreateReferralSet(t *testing.T, cmd *commandspb.CreateReferralSet) commands.Errors {
 	t.Helper()
 
-	err := commands.CheckCreateTeam(cmd)
+	err := commands.CheckCreateReferralSet(cmd)
 
 	var e commands.Errors
 	if ok := errors.As(err, &e); !ok {

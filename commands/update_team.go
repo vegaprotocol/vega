@@ -2,11 +2,11 @@ package commands
 
 import commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
-func CheckUpdateTeam(cmd *commandspb.UpdateTeam) error {
-	return checkUpdateTeam(cmd).ErrorOrNil()
+func CheckUpdateReferralSet(cmd *commandspb.UpdateReferralSet) error {
+	return checkUpdateReferralSet(cmd).ErrorOrNil()
 }
 
-func checkUpdateTeam(cmd *commandspb.UpdateTeam) Errors {
+func checkUpdateReferralSet(cmd *commandspb.UpdateReferralSet) Errors {
 	errs := NewErrors()
 
 	if cmd == nil {
