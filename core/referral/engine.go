@@ -29,7 +29,6 @@ var (
 	ErrIsAlreadyAReferee = func(party string) error {
 		return fmt.Errorf("party %v has already been referred", party)
 	}
-	// FIXME: This is not possible
 	ErrIsAlreadyAReferrer = func(party string) error {
 		return fmt.Errorf("party %v is already a referrer", party)
 	}
@@ -115,7 +114,7 @@ func (e *Engine) CreateReferralSet(ctx context.Context, party string, set *comma
 	return nil
 }
 
-func (e *Engine) ApplyReferralCode(ctx context.Context, party string, cset *commandspb.ApplyReferralCode) error {
+func (e *Engine) ApplyReferralCode(ctx context.Context, party string, params *commandspb.ApplyReferralCode) error {
 	if _, ok := e.referees[party]; ok {
 		return ErrIsAlreadyAReferee(party)
 	}
@@ -124,9 +123,9 @@ func (e *Engine) ApplyReferralCode(ctx context.Context, party string, cset *comm
 		return ErrIsAlreadyAReferrer(party)
 	}
 
-	set, ok := e.sets[cset.Id]
+	set, ok := e.sets[params.Id]
 	if !ok {
-		return fmt.Errorf("invalid referral code %v", cset.Id)
+		return fmt.Errorf("no referral set for referral code %q", params.Id)
 	}
 
 	now := e.timeSvc.GetTimeNow()
@@ -138,7 +137,7 @@ func (e *Engine) ApplyReferralCode(ctx context.Context, party string, cset *comm
 		NumberOfEpoch: 0,
 	})
 
-	e.broker.Send(events.NewRefereeJoinedReferralSetEvent(ctx, cset.Id, party, now))
+	e.broker.Send(events.NewRefereeJoinedReferralSetEvent(ctx, params.Id, party, now))
 
 	return nil
 }
@@ -203,7 +202,7 @@ func (e *Engine) applyUpdate(ctx context.Context, epochEnd time.Time) {
 	// This handles a edge case where the new program ends before the next
 	// epoch starts. It can happen when the proposal updating the referral
 	// program doesn't specify an end date that is to close to the enactment
-	// time. That is believed to happen
+	// time.
 	if e.currentProgram != nil && !e.currentProgram.EndOfProgramTimestamp.After(epochEnd) {
 		e.notifyReferralProgramEnded(ctx)
 		e.endCurrentProgram()
