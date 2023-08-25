@@ -122,8 +122,8 @@ type StateVarEngine interface {
 
 type TeamsEngine interface {
 	Exists(team string) bool
-	CreateTeam(context.Context, types.PartyID, types.TeamID, *commandspb.CreateReferralSet) error
-	UpdateTeam(context.Context, types.PartyID, *commandspb.UpdateReferralSet) error
+	CreateTeam(context.Context, types.PartyID, types.TeamID, *commandspb.CreateReferralSet_Team) error
+	UpdateTeam(context.Context, types.PartyID, types.TeamID, *commandspb.UpdateReferralSet_Team) error
 	JoinTeam(context.Context, types.PartyID, *commandspb.ApplyReferralCode) error
 }
 
@@ -2190,7 +2190,7 @@ func (app *App) DeliverEthereumKeyRotateSubmission(ctx context.Context, tx abci.
 func (app *App) CreateReferralSet(ctx context.Context, tx abci.Tx, deterministicID string) error {
 	params := &commandspb.CreateReferralSet{}
 	if err := tx.Unmarshal(params); err != nil {
-		return fmt.Errorf("could not deserialize CreateTeam command: %w", err)
+		return fmt.Errorf("could not deserialize CreateReferralSet command: %w", err)
 	}
 
 	if err := app.referralProgram.CreateReferralSet(ctx, tx.Party(), params, deterministicID); err != nil {
@@ -2198,7 +2198,7 @@ func (app *App) CreateReferralSet(ctx context.Context, tx abci.Tx, deterministic
 	}
 
 	if params.IsTeam {
-		return app.teamsEngine.CreateTeam(ctx, types.PartyID(tx.Party()), types.TeamID(deterministicID), params)
+		return app.teamsEngine.CreateTeam(ctx, types.PartyID(tx.Party()), types.TeamID(deterministicID), params.Team)
 	}
 
 	return nil
@@ -2209,26 +2209,23 @@ func (app *App) CreateReferralSet(ctx context.Context, tx abci.Tx, deterministic
 func (app *App) UpdateReferralSet(ctx context.Context, tx abci.Tx) error {
 	params := &commandspb.UpdateReferralSet{}
 	if err := tx.Unmarshal(params); err != nil {
-		return fmt.Errorf("could not deserialize UpdateTeam command: %w", err)
+		return fmt.Errorf("could not deserialize UpdateReferralSet command: %w", err)
 	}
 
 	if !app.referralProgram.Exists(params.Id) {
-		return errors.New("invalid referral code")
+		return fmt.Errorf("no referral set for ID %q", params.Id)
 	}
 
 	if params.IsTeam {
 		if app.teamsEngine.Exists(params.Id) {
-			return app.teamsEngine.UpdateTeam(ctx, types.PartyID(tx.Party()), params)
+			return app.teamsEngine.UpdateTeam(ctx, types.PartyID(tx.Party()), types.TeamID(params.Id), params.Team)
 		}
 
-		return app.teamsEngine.CreateTeam(ctx, types.PartyID(tx.Party()), types.TeamID(params.Id), &commandspb.CreateReferralSet{
-			IsTeam: true,
-			Team: &commandspb.CreateReferralSet_Team{
-				Name:      ptr.UnBox(params.Team.Name),
-				AvatarUrl: params.Team.AvatarUrl,
-				TeamUrl:   params.Team.TeamUrl,
-				Closed:    ptr.UnBox(params.Team.Closed),
-			},
+		return app.teamsEngine.CreateTeam(ctx, types.PartyID(tx.Party()), types.TeamID(params.Id), &commandspb.CreateReferralSet_Team{
+			Name:      ptr.UnBox(params.Team.Name),
+			AvatarUrl: params.Team.AvatarUrl,
+			TeamUrl:   params.Team.TeamUrl,
+			Closed:    ptr.UnBox(params.Team.Closed),
 		})
 	}
 
@@ -2238,12 +2235,13 @@ func (app *App) UpdateReferralSet(ctx context.Context, tx abci.Tx) error {
 func (app *App) ApplyReferralCode(ctx context.Context, tx abci.Tx) error {
 	params := &commandspb.ApplyReferralCode{}
 	if err := tx.Unmarshal(params); err != nil {
-		return fmt.Errorf("could not deserialize JoinTeam command: %w", err)
+		return fmt.Errorf("could not deserialize ApplyReferralCode command: %w", err)
 	}
 
 	err := app.referralProgram.ApplyReferralCode(ctx, tx.Party(), params)
-	// it's OK to switch team if the party was already a referrer / referree
-	if !errors.Is(err, referral.ErrIsAlreadyAReferree(tx.Party())) &&
+
+	// it's OK to switch team if the party was already a referrer / referee
+	if !errors.Is(err, referral.ErrIsAlreadyAReferee(tx.Party())) &&
 		!errors.Is(err, referral.ErrIsAlreadyAReferrer(tx.Party())) {
 		return err
 	}

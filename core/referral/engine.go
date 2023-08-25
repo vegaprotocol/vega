@@ -26,9 +26,10 @@ import (
 )
 
 var (
-	ErrIsAlreadyAReferree = func(party string) error {
+	ErrIsAlreadyAReferee = func(party string) error {
 		return fmt.Errorf("party %v has already been referred", party)
 	}
+	// FIXME: This is not possible
 	ErrIsAlreadyAReferrer = func(party string) error {
 		return fmt.Errorf("party %v is already a referrer", party)
 	}
@@ -115,7 +116,7 @@ func (e *Engine) CreateReferralSet(ctx context.Context, party string, set *comma
 
 func (e *Engine) ApplyReferralCode(ctx context.Context, party string, cset *commandspb.ApplyReferralCode) error {
 	if _, ok := e.referrees[party]; ok {
-		return ErrIsAlreadyAReferree(party)
+		return ErrIsAlreadyAReferee(party)
 	}
 
 	if _, ok := e.referrers[party]; ok {

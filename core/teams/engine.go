@@ -58,7 +58,7 @@ func (e *Engine) Exists(team string) bool {
 	return ok
 }
 
-func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, deterministicTeamID types.TeamID, params *commandspb.CreateReferralSet) error {
+func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, deterministicTeamID types.TeamID, params *commandspb.CreateReferralSet_Team) error {
 	if err := e.ensureUniqueTeamID(deterministicTeamID); err != nil {
 		return err
 	}
@@ -67,11 +67,7 @@ func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, determi
 		return ErrPartyAlreadyBelongsToTeam(referrer)
 	}
 
-	if params.Team == nil {
-		return errors.New("missing team details")
-	}
-
-	if len(params.Team.Name) <= 0 {
+	if len(params.Name) <= 0 {
 		return errors.New("missing required team name parameter")
 	}
 
@@ -84,11 +80,11 @@ func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, determi
 			JoinedAt:      now,
 			NumberOfEpoch: 0,
 		},
-		Name:      params.Team.Name,
-		TeamURL:   ptr.UnBox(params.Team.TeamUrl),
-		AvatarURL: ptr.UnBox(params.Team.AvatarUrl),
+		Name:      params.Name,
+		TeamURL:   ptr.UnBox(params.TeamUrl),
+		AvatarURL: ptr.UnBox(params.AvatarUrl),
 		CreatedAt: now,
-		Closed:    params.Team.Closed,
+		Closed:    params.Closed,
 	}
 
 	e.teams[deterministicTeamID] = teamToAdd
@@ -100,9 +96,7 @@ func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, determi
 	return nil
 }
 
-func (e *Engine) UpdateTeam(ctx context.Context, referrer types.PartyID, params *commandspb.UpdateReferralSet) error {
-	teamID := types.TeamID(params.Id)
-
+func (e *Engine) UpdateTeam(ctx context.Context, referrer types.PartyID, teamID types.TeamID, params *commandspb.UpdateReferralSet_Team) error {
 	teamsToUpdate, exists := e.teams[teamID]
 	if !exists {
 		return ErrNoTeamMatchesID(teamID)
@@ -113,22 +107,22 @@ func (e *Engine) UpdateTeam(ctx context.Context, referrer types.PartyID, params 
 	}
 
 	// can't update if empty and nil as it's a mandatory field
-	if params.Team.Name != nil && len(*params.Team.Name) > 0 {
-		teamsToUpdate.Name = ptr.UnBox(params.Team.Name)
+	if params.Name != nil && len(*params.Name) > 0 {
+		teamsToUpdate.Name = ptr.UnBox(params.Name)
 	}
 
 	// those apply change if not nil only?
 	// to be sure to not erase things by mistake?
-	if params.Team.TeamUrl != nil {
-		teamsToUpdate.TeamURL = ptr.UnBox(params.Team.TeamUrl)
+	if params.TeamUrl != nil {
+		teamsToUpdate.TeamURL = ptr.UnBox(params.TeamUrl)
 	}
 
-	if params.Team.AvatarUrl != nil {
-		teamsToUpdate.AvatarURL = ptr.UnBox(params.Team.AvatarUrl)
+	if params.AvatarUrl != nil {
+		teamsToUpdate.AvatarURL = ptr.UnBox(params.AvatarUrl)
 	}
 
-	if params.Team.Closed != nil {
-		teamsToUpdate.Closed = ptr.UnBox(params.Team.Closed)
+	if params.Closed != nil {
+		teamsToUpdate.Closed = ptr.UnBox(params.Closed)
 	}
 
 	e.notifyTeamUpdated(ctx, teamsToUpdate)
@@ -138,7 +132,6 @@ func (e *Engine) UpdateTeam(ctx context.Context, referrer types.PartyID, params 
 
 func (e *Engine) JoinTeam(ctx context.Context, referee types.PartyID, params *commandspb.ApplyReferralCode) error {
 	for _, team := range e.teams {
-		// TODO: is that still true???
 		if team.Referrer.PartyID == referee {
 			return ErrReferrerCannotJoinAnotherTeam
 		}

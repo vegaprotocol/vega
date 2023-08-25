@@ -143,8 +143,9 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 	team4CreationDate := time.Now()
 	te.timeService.EXPECT().GetTimeNow().Return(team4CreationDate).Times(1)
 
-	// Name, team URL and avatar URL are optional.
-	require.NoError(t, te.engine.CreateTeam(ctx, referrer3, teamID4, createTeamCmd(t, "", "", "")))
+	// Team URL and avatar URL are optional.
+	team4Name := vgrand.RandomStr(5)
+	require.NoError(t, te.engine.CreateTeam(ctx, referrer3, teamID4, createTeamCmd(t, team4Name, "", "")))
 
 	assert.NotEqual(t, teamID1, teamID4, "Creating a team should generate an unique ID")
 	assert.NotEqual(t, teamID2, teamID4, "Creating a team should generate an unique ID")
@@ -180,7 +181,7 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 				NumberOfEpoch: 0,
 			},
 			Referees:  nil,
-			Name:      "",
+			Name:      team4Name,
 			TeamURL:   "",
 			AvatarURL: "",
 			CreatedAt: team4CreationDate,
@@ -194,7 +195,7 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 
 	expectTeamUpdatedEvent(t, te)
 
-	require.NoError(t, te.engine.UpdateTeam(ctx, referrer1, updateTeamCmd(t, teamID1, updatedName, updatedTeamURL, updatedAvatarURL)))
+	require.NoError(t, te.engine.UpdateTeam(ctx, referrer1, teamID1, updateTeamCmd(t, updatedName, updatedTeamURL, updatedAvatarURL)))
 
 	assertEqualTeams(t, []types.Team{
 		{
@@ -226,7 +227,7 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 				JoinedAt:      team4CreationDate,
 				NumberOfEpoch: 0,
 			},
-			Name:      "",
+			Name:      team4Name,
 			TeamURL:   "",
 			AvatarURL: "",
 			CreatedAt: team4CreationDate,
@@ -235,13 +236,13 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 
 	unknownTeamID := types.NewTeamID()
 	require.EqualError(t,
-		te.engine.UpdateTeam(ctx, referrer1, updateTeamCmd(t, unknownTeamID, updatedName, updatedTeamURL, updatedAvatarURL)),
+		te.engine.UpdateTeam(ctx, referrer1, unknownTeamID, updateTeamCmd(t, updatedName, updatedTeamURL, updatedAvatarURL)),
 		teams.ErrNoTeamMatchesID(unknownTeamID).Error(),
 	)
 
 	require.ErrorIs(t,
 		teams.ErrOnlyReferrerCanUpdateTeam,
-		te.engine.UpdateTeam(ctx, referrer2, updateTeamCmd(t, teamID1, updatedName, updatedTeamURL, updatedAvatarURL)),
+		te.engine.UpdateTeam(ctx, referrer2, teamID1, updateTeamCmd(t, updatedName, updatedTeamURL, updatedAvatarURL)),
 	)
 }
 
@@ -252,11 +253,11 @@ func testJoiningTeamSucceeds(t *testing.T) {
 
 	team1CreationDate := time.Now()
 	te.timeService.EXPECT().GetTimeNow().Return(team1CreationDate).Times(1)
-	teamID1, referrer1 := newTeam(t, ctx, te)
+	teamID1, referrer1, team1Name := newTeam(t, ctx, te)
 
 	team2CreationDate := time.Now()
 	te.timeService.EXPECT().GetTimeNow().Return(team2CreationDate).Times(1)
-	teamID2, referrer2 := newTeam(t, ctx, te)
+	teamID2, referrer2, team2Name := newTeam(t, ctx, te)
 
 	require.ErrorIs(t, te.engine.JoinTeam(ctx, referrer1, joinTeamCmd(t, teamID1)), teams.ErrReferrerCannotJoinAnotherTeam)
 	require.ErrorIs(t, te.engine.JoinTeam(ctx, referrer2, joinTeamCmd(t, teamID1)), teams.ErrReferrerCannotJoinAnotherTeam)
@@ -310,6 +311,7 @@ func testJoiningTeamSucceeds(t *testing.T) {
 					NumberOfEpoch: 0,
 				},
 			},
+			Name:      team1Name,
 			CreatedAt: team1CreationDate,
 		}, {
 			ID: teamID2,
@@ -318,6 +320,7 @@ func testJoiningTeamSucceeds(t *testing.T) {
 				JoinedAt:      team2CreationDate,
 				NumberOfEpoch: 0,
 			},
+			Name:      team2Name,
 			CreatedAt: team2CreationDate,
 		},
 	}, te.engine.ListTeams())
@@ -343,6 +346,7 @@ func testJoiningTeamSucceeds(t *testing.T) {
 					NumberOfEpoch: 1,
 				},
 			},
+			Name:      team1Name,
 			CreatedAt: team1CreationDate,
 		}, {
 			ID: teamID2,
@@ -358,6 +362,7 @@ func testJoiningTeamSucceeds(t *testing.T) {
 					NumberOfEpoch: 0,
 				},
 			},
+			Name:      team2Name,
 			CreatedAt: team2CreationDate,
 		},
 	}, te.engine.ListTeams())
@@ -391,6 +396,7 @@ func testJoiningTeamSucceeds(t *testing.T) {
 					NumberOfEpoch: 0,
 				},
 			},
+			Name:      team1Name,
 			CreatedAt: team1CreationDate,
 		}, {
 			ID: teamID2,
@@ -400,6 +406,7 @@ func testJoiningTeamSucceeds(t *testing.T) {
 				NumberOfEpoch: 2,
 			},
 			Referees:  []*types.Membership{},
+			Name:      team2Name,
 			CreatedAt: team2CreationDate,
 		},
 	}, te.engine.ListTeams())

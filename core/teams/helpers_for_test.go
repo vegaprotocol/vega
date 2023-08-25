@@ -178,47 +178,47 @@ func newPartyID(t *testing.T) types.PartyID {
 	return types.PartyID(vgrand.RandomStr(5))
 }
 
-func newTeam(t *testing.T, ctx context.Context, te *testEngine) (types.TeamID, types.PartyID) {
+func newTeam(t *testing.T, ctx context.Context, te *testEngine) (types.TeamID, types.PartyID, string) {
 	t.Helper()
 
 	teamID := newTeamID(t)
 	referrer := newPartyID(t)
+	teamName := vgrand.RandomStr(5)
 
 	expectTeamCreatedEvent(t, te)
 
-	err := te.engine.CreateTeam(ctx, referrer, teamID, createTeamCmd(t, "", "", ""))
+	err := te.engine.CreateTeam(ctx, referrer, teamID, createTeamCmd(t, teamName, "", ""))
 	require.NoError(t, err)
 	require.NotEmpty(t, teamID)
 	require.True(t, te.engine.IsTeamMember(referrer))
 
-	return teamID, referrer
+	return teamID, referrer, teamName
 }
 
-func createTeamCmd(t *testing.T, name, teamURL, avatarURL string) *commandspb.CreateTeam {
+func createTeamCmd(t *testing.T, name, teamURL, avatarURL string) *commandspb.CreateReferralSet_Team {
 	t.Helper()
 
-	return &commandspb.CreateTeam{
+	return &commandspb.CreateReferralSet_Team{
+		Name:      name,
+		TeamUrl:   ptr.From(teamURL),
+		AvatarUrl: ptr.From(avatarURL),
+	}
+}
+
+func updateTeamCmd(t *testing.T, name, teamURL, avatarURL string) *commandspb.UpdateReferralSet_Team {
+	t.Helper()
+
+	return &commandspb.UpdateReferralSet_Team{
 		Name:      ptr.From(name),
 		TeamUrl:   ptr.From(teamURL),
 		AvatarUrl: ptr.From(avatarURL),
 	}
 }
 
-func updateTeamCmd(t *testing.T, teamID types.TeamID, name, teamURL, avatarURL string) *commandspb.UpdateTeam {
+func joinTeamCmd(t *testing.T, teamID types.TeamID) *commandspb.ApplyReferralCode {
 	t.Helper()
 
-	return &commandspb.UpdateTeam{
-		TeamId:    string(teamID),
-		Name:      ptr.From(name),
-		TeamUrl:   ptr.From(teamURL),
-		AvatarUrl: ptr.From(avatarURL),
-	}
-}
-
-func joinTeamCmd(t *testing.T, teamID types.TeamID) *commandspb.JoinTeam {
-	t.Helper()
-
-	return &commandspb.JoinTeam{
-		TeamId: string(teamID),
+	return &commandspb.ApplyReferralCode{
+		Id: string(teamID),
 	}
 }
