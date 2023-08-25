@@ -492,12 +492,12 @@ type InputData_CreateReferralSet struct {
 }
 
 type InputData_UpdateReferralSet struct {
-	// Command to update a team.
+	// Command to update a referral set.
 	UpdateReferralSet *UpdateReferralSet `protobuf:"bytes,1019,opt,name=update_referral_set,json=updateReferralSet,proto3,oneof"`
 }
 
 type InputData_ApplyReferralCode struct {
-	// Command to join a team.
+	// Command to apply a referral code.
 	ApplyReferralCode *ApplyReferralCode `protobuf:"bytes,1020,opt,name=apply_referral_code,json=applyReferralCode,proto3,oneof"`
 }
 

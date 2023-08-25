@@ -5465,13 +5465,13 @@ type ReferralSetCreated struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The unique identifier of the created set.
+	// Unique ID of the created set.
 	SetId string `protobuf:"bytes,1,opt,name=set_id,json=setId,proto3" json:"set_id,omitempty"`
-	// The party that created the set.
+	// Party that created the set.
 	Referrer string `protobuf:"bytes,2,opt,name=referrer,proto3" json:"referrer,omitempty"`
-	// Time in Unix nanoseconds when the set is created.
+	// Time in Unix nanoseconds when the set was created.
 	CreatedAt int64 `protobuf:"varint,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	// Time in Unix nanoseconds when the set is created.
+	// Time in Unix nanoseconds when the set was updated.
 	UpdatedAt int64 `protobuf:"varint,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 }
 
@@ -5540,9 +5540,9 @@ type RefereeJoinedReferralSet struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The unique identifier of the referral set the referee joined.
+	// Unique ID of the referral set the referee joined.
 	SetId string `protobuf:"bytes,1,opt,name=set_id,json=setId,proto3" json:"set_id,omitempty"`
-	// The party that joined the set.
+	// Party that joined the set.
 	Referee string `protobuf:"bytes,2,opt,name=referee,proto3" json:"referee,omitempty"`
 	// Time in Unix nanoseconds when the party joined a set.
 	JoinedAt int64 `protobuf:"varint,3,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty"`
@@ -6756,7 +6756,7 @@ type BusEvent_ReferralSetCreated struct {
 }
 
 type BusEvent_RefereeJoinedReferralSet struct {
-	// Event notifying a referree has joined a referral set.
+	// Event notifying a referee has joined a referral set.
 	RefereeJoinedReferralSet *RefereeJoinedReferralSet `protobuf:"bytes,169,opt,name=referee_joined_referral_set,json=refereeJoinedReferralSet,proto3,oneof"`
 }
 

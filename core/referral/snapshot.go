@@ -116,7 +116,7 @@ func (e *SnapshottedEngine) serialiseReferralSets() ([]byte, error) {
 		}
 
 		for _, r := range set.Referees {
-			pset.Referrees = append(pset.Referrees,
+			pset.Referees = append(pset.Referees,
 				&snapshotpb.Membership{
 					PartyId:       string(r.PartyID),
 					JoinedAt:      r.JoinedAt.UnixNano(),

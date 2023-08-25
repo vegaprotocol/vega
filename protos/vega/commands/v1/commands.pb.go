@@ -1726,10 +1726,10 @@ func (x *IssueSignatures) GetValidatorNodeId() string {
 
 // Request for creating a referral set
 //
-// Creates a referral team. The team creator automatically becomes
-// the team leader, called a referrer. This cannot be changed.
+// Creates a referral set. The creator automatically becomes
+// the leader, called a referrer. This cannot be changed.
 // A referrer cannot already be or become a liquidity provider,
-// nor can they be on an existing team as referrer or referee.
+// nor can they be part of an existing set as referrer or referee.
 type CreateReferralSet struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1785,13 +1785,13 @@ func (x *CreateReferralSet) GetTeam() *CreateReferralSet_Team {
 	return nil
 }
 
-// Request for updating a team's properties
+// Request for updating a referral set's properties
 type UpdateReferralSet struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Team ID of the team to update.
+	// ID of the referral set to update.
 	Id     string                  `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	IsTeam bool                    `protobuf:"varint,2,opt,name=is_team,json=isTeam,proto3" json:"is_team,omitempty"`
 	Team   *UpdateReferralSet_Team `protobuf:"bytes,3,opt,name=team,proto3,oneof" json:"team,omitempty"`
@@ -1850,18 +1850,18 @@ func (x *UpdateReferralSet) GetTeam() *UpdateReferralSet_Team {
 	return nil
 }
 
-// Request to join a team
+// Request to apply a referral code
 //
 // A party that joins a referral team is called a referee. A referee cannot
-// be a liquidity provider, nor can they create a team or join multiple teams.
-// To switch teams, the referee can ask to join another team, and the switch will
+// be a liquidity provider, nor can they create a referral set or join multiple sets.
+// To switch, the referee can ask to join another set, and the switch will
 // be effective at the end of the epoch.
 type ApplyReferralCode struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Team ID of the team to join.
+	// Referral code for the set to join.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 }
 

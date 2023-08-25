@@ -268,7 +268,7 @@ func (e *Engine) loadReferralSetsFromSnapshot(sets *snapshotpb.ReferralSets) {
 
 		e.referrers[set.Referrer.PartyId] = set.Id
 
-		for _, r := range set.Referrees {
+		for _, r := range set.Referees {
 			e.referees[r.PartyId] = set.Id
 			newSet.Referees = append(newSet.Referees,
 				&types.Membership{
