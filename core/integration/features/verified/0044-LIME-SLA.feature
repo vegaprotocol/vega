@@ -34,40 +34,40 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | validators.epoch.length                               | 5s    |
       | market.liquidityV2.stakeToCcyVolume                   | 1     |
       | market.liquidity.successorLaunchWindowLength          | 1h    |
-      | market.liquidityV2.sla.nonPerformanceBondPenaltySlope | 0.19  |
+      | market.liquidityV2.sla.nonPerformanceBondPenaltySlope | 0.5 |
       | market.liquidityV2.sla.nonPerformanceBondPenaltyMax   | 1     |
-      | validators.epoch.length                               | 2s    |
+      | validators.epoch.length | 10s |
 
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+      | 0.00001 | 0.5 | 10 | 1 | 1.0 |
     And the markets:
       | id        | quote name | asset | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/MAR22 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e2                    | 1e2                       | SLA        |
+      | ETH/MAR22 | USD | USD | log-normal-risk-model | margin-calculator-1 | 2 | fees-config-1 | price-monitoring | default-eth-for-future | 1e0 | 0 | SLA |
 
     Given the average block duration is "2"
   @Now
-  Scenario: 001: All liquidity providers in the market receive a greater than zero amount of liquidity fee
+  Scenario: 001: lp1 under supplies liquidity (and expects to get penalty for not meeting the SLA) while lp2 over supplies liquidity
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
-      | lp1    | USD   | 10000  |
-      | lp2    | USD   | 10000  |
+      | lp1 | USD | 20000 |
+      | lp2 | USD | 15000 |
       | party1 | USD   | 100000 |
       | party2 | USD   | 100000 |
       | party3 | USD   | 100000 |
 
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee   | lp type    |
-      | lp_1 | lp1   | ETH/MAR22 | 3000              | 0.002 | submission |
-      | lp_2 | lp2 | ETH/MAR22 | 7000 | 0.001 | submission |
+      | lp_1 | lp1 | ETH/MAR22 | 8000 | 0.02 | submission |
+      | lp_2 | lp2 | ETH/MAR22 | 500  | 0.01 | submission |
 
     When the network moves ahead "2" blocks
     And the parties place the following pegged iceberg orders:
       | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lp1   | ETH/MAR22 | 5         | 1                    | buy  | BID              | 5      | 20     |
-      | lp1   | ETH/MAR22 | 5         | 1                    | sell | ASK              | 5      | 20     |
-      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 2      | 20     |
-      | lp2   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 2      | 20     |
+      | lp1 | ETH/MAR22 | 2 | 1 | buy  | BID | 2 | 200 |
+      | lp1 | ETH/MAR22 | 2 | 1 | sell | ASK | 2 | 200 |
+      | lp2 | ETH/MAR22 | 2 | 1 | buy  | BID | 2 | 200 |
+      | lp2 | ETH/MAR22 | 2 | 1 | sell | ASK | 2 | 200 |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -83,29 +83,34 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 3556         | 3000           | 1             |
+      | 1000 | TRADING_MODE_CONTINUOUS | 3600 | 973 | 1027 | 3556 | 8500 | 1 |
     # # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569036*10000
 
-    And the liquidity fee factor should be "0.002" for the market "ETH/MAR22"
-
-    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share | average entry valuation |
-      | lp1   | 1                 | 3000                    |
+    And the liquidity fee factor should be "0.02" for the market "ETH/MAR22"
 
     And the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 0      | 7000    | 3000 |
-      | lp2   | USD   | ETH/MAR22 | 10000  | 0       | 0    |
-    #margin lp2: 2*1120*3.5569036=7967
-    #initial margin lp2:7967*1.5=11951
+      | lp1   | USD   | ETH/MAR22 | 10671  | 1329    | 8000 |
+      | lp2   | USD   | ETH/MAR22 | 10671  | 3829    | 500  |
+    #margin_intial lp2: 2*1000*3.5569036*1.5=10671
+    #lp1: 10671+1329+8000=20000; lp2: 10671+3829+500=15000
 
-    Then the parties should have the following profit and loss:
-      | party | volume | unrealised pnl | realised pnl |
-      | lp1   | 0      | 0              | 0            |
-      | lp2   | 0      | 0              | 0            |
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
-    Then debug detailed orderbook volumes for market "ETH/MAR22"
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 7113         | 8500           | 2             |
 
-# Then the network moves ahead "1" blocks
+    Then the network moves ahead "10" blocks
+    And the parties should have the following account balances:
+      | party | asset | market id | margin | general | bond |
+      | lp1 | USD | ETH/MAR22 | 10671 | 1347 | 8000 |
+      | lp2 | USD | ETH/MAR22 | 10671 | 3830 | 500  |
+    #liquidity fee: 1000*0.02 = 20; lp1 get 18, lp2 get 1
+    Then debug transfers
+    And the insurance pool balance should be "0" for the market "ETH/MAR22"
 
-# And the liquidity fee factor should be "0.003" for the market "ETH/MAR22"
+
