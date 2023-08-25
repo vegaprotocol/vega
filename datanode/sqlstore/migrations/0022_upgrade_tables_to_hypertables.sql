@@ -4,7 +4,7 @@
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT * FROM timescaledb_information.hypertables WHERE hypertable_name = 'stop_orders') THEN
-        PERFORM create_hypertable('stop_orders', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+        PERFORM create_hypertable('stop_orders', 'vega_time', chunk_time_interval => INTERVAL '1 day', migrate_data => true);
     END IF;
 END $$;
 -- +goose StatementEnd
