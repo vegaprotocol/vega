@@ -17,10 +17,9 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
-	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	"code.vegaprotocol.io/vega/libs/num"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/paths"
-	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,6 +30,7 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 
 	vegaPath := paths.New(t.TempDir())
 	now := time.Now()
+	maxVolumeParams := num.UintFromUint64(100)
 
 	te1 := newEngine(t)
 	snapshotEngine1 := newSnapshotEngine(t, vegaPath, now, te1.engine)
@@ -39,10 +39,42 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 
 	require.NoError(t, snapshotEngine1.Start(ctx))
 
-	setReferralSetsState(t, te1)
+	// Cap the notional volume.
+	require.NoError(t, te1.engine.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate(ctx, maxVolumeParams))
+
+	referrer1 := newPartyID(t)
+	referrer2 := newPartyID(t)
+	referrer3 := newPartyID(t)
+	referrer4 := newPartyID(t)
+	referee1 := newPartyID(t)
+	referee2 := newPartyID(t)
+	referee3 := newPartyID(t)
+	referee4 := newPartyID(t)
+	referee5 := newPartyID(t)
+	referee6 := newPartyID(t)
+	referee7 := newPartyID(t)
+	referee8 := newPartyID(t)
+	referee9 := newPartyID(t)
+
+	te1.broker.EXPECT().Send(gomock.Any()).Times(13)
+	te1.timeSvc.EXPECT().GetTimeNow().Return(now).Times(13)
+
+	assert.NoError(t, te1.engine.CreateReferralSet(ctx, referrer1, "id1"))
+	assert.NoError(t, te1.engine.CreateReferralSet(ctx, referrer2, "id2"))
+	assert.NoError(t, te1.engine.CreateReferralSet(ctx, referrer3, "id3"))
+	assert.NoError(t, te1.engine.CreateReferralSet(ctx, referrer4, "id4"))
+	assert.NoError(t, te1.engine.ApplyReferralCode(ctx, referee1, "id1"))
+	assert.NoError(t, te1.engine.ApplyReferralCode(ctx, referee2, "id4"))
+	assert.NoError(t, te1.engine.ApplyReferralCode(ctx, referee3, "id3"))
+	assert.NoError(t, te1.engine.ApplyReferralCode(ctx, referee4, "id2"))
+	assert.NoError(t, te1.engine.ApplyReferralCode(ctx, referee5, "id2"))
+	assert.NoError(t, te1.engine.ApplyReferralCode(ctx, referee6, "id2"))
+	assert.NoError(t, te1.engine.ApplyReferralCode(ctx, referee7, "id1"))
+	assert.NoError(t, te1.engine.ApplyReferralCode(ctx, referee8, "id4"))
+	assert.NoError(t, te1.engine.ApplyReferralCode(ctx, referee9, "id3"))
 
 	program1 := &types.ReferralProgram{
-		EndOfProgramTimestamp: time.Now().Add(24 * time.Hour),
+		EndOfProgramTimestamp: now.Add(24 * time.Hour),
 		WindowLength:          10,
 		BenefitTiers:          []*types.BenefitTier{},
 	}
@@ -51,6 +83,20 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 
 	// Simulating end of epoch.
 	// The program should be applied.
+	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer1)).Return(num.UintFromUint64(0)).Times(1)
+	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer2)).Return(num.UintFromUint64(0)).Times(1)
+	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer3)).Return(num.UintFromUint64(0)).Times(1)
+	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer4)).Return(num.UintFromUint64(0)).Times(1)
+	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee1)).Return(num.UintFromUint64(0)).Times(1)
+	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee2)).Return(num.UintFromUint64(0)).Times(1)
+	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee3)).Return(num.UintFromUint64(0)).Times(1)
+	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee4)).Return(num.UintFromUint64(0)).Times(1)
+	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee5)).Return(num.UintFromUint64(0)).Times(1)
+	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee6)).Return(num.UintFromUint64(0)).Times(1)
+	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee7)).Return(num.UintFromUint64(0)).Times(1)
+	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee8)).Return(num.UintFromUint64(0)).Times(1)
+	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee9)).Return(num.UintFromUint64(0)).Times(1)
+
 	expectReferralProgramStartedEvent(t, te1)
 	lastEpochStartTime := program1.EndOfProgramTimestamp.Add(-2 * time.Hour)
 	nextEpoch(t, ctx, te1, lastEpochStartTime)
@@ -70,6 +116,7 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 
 	// Simulating end of epoch.
 	// The program should be updated with the new one.
+	te1.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(gomock.Any()).Return(num.UintFromUint64(0)).Times(13)
 	expectReferralProgramUpdatedEvent(t, te1)
 	lastEpochStartTime = program2.EndOfProgramTimestamp.Add(-2 * time.Hour)
 	nextEpoch(t, ctx, te1, lastEpochStartTime)
@@ -97,8 +144,25 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 	hash2, _, _ := snapshotEngine2.Info()
 	require.Equal(t, hash1, hash2)
 
+	// Cap the notional volume.
+	require.NoError(t, te2.engine.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate(ctx, maxVolumeParams))
+
 	// Simulating end of epoch.
 	// The program should be updated with the new one.
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer1)).Return(num.UintFromUint64(0)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer2)).Return(num.UintFromUint64(0)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer3)).Return(num.UintFromUint64(0)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer4)).Return(num.UintFromUint64(0)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee1)).Return(num.UintFromUint64(0)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee2)).Return(num.UintFromUint64(0)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee3)).Return(num.UintFromUint64(0)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee4)).Return(num.UintFromUint64(0)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee5)).Return(num.UintFromUint64(0)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee6)).Return(num.UintFromUint64(0)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee7)).Return(num.UintFromUint64(0)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee8)).Return(num.UintFromUint64(0)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee9)).Return(num.UintFromUint64(0)).Times(1)
+
 	expectReferralProgramUpdatedEvent(t, te2)
 	lastEpochStartTime = program2.EndOfProgramTimestamp.Add(-2 * time.Hour)
 	nextEpoch(t, ctx, te2, lastEpochStartTime)
@@ -114,28 +178,4 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 	for key := range state1 {
 		assert.Equalf(t, state1[key], state2[key], "Key %q does not have the same data", key)
 	}
-}
-
-func setReferralSetsState(t *testing.T, e *testEngine) {
-	t.Helper()
-
-	e.broker.EXPECT().Send(gomock.Any()).Times(13)
-	e.timeSvc.EXPECT().GetTimeNow().AnyTimes()
-
-	ctx := vgtest.VegaContext(vgrand.RandomStr(5), vgtest.RandomI64())
-
-	assert.NoError(t, e.engine.CreateReferralSet(ctx, "referrer1", &commandspb.CreateReferralSet{}, "id1"))
-	assert.NoError(t, e.engine.CreateReferralSet(ctx, "referrer2", &commandspb.CreateReferralSet{}, "id2"))
-	assert.NoError(t, e.engine.CreateReferralSet(ctx, "referrer3", &commandspb.CreateReferralSet{}, "id3"))
-	assert.NoError(t, e.engine.CreateReferralSet(ctx, "referrer4", &commandspb.CreateReferralSet{}, "id4"))
-
-	assert.NoError(t, e.engine.CreateReferralSet(ctx, "referee1", &commandspb.CreateReferralSet{}, "id1"))
-	assert.NoError(t, e.engine.CreateReferralSet(ctx, "referee2", &commandspb.CreateReferralSet{}, "id4"))
-	assert.NoError(t, e.engine.CreateReferralSet(ctx, "referee3", &commandspb.CreateReferralSet{}, "id3"))
-	assert.NoError(t, e.engine.CreateReferralSet(ctx, "referee4", &commandspb.CreateReferralSet{}, "id2"))
-	assert.NoError(t, e.engine.CreateReferralSet(ctx, "referee5", &commandspb.CreateReferralSet{}, "id2"))
-	assert.NoError(t, e.engine.CreateReferralSet(ctx, "referee6", &commandspb.CreateReferralSet{}, "id2"))
-	assert.NoError(t, e.engine.CreateReferralSet(ctx, "referee7", &commandspb.CreateReferralSet{}, "id1"))
-	assert.NoError(t, e.engine.CreateReferralSet(ctx, "referee8", &commandspb.CreateReferralSet{}, "id4"))
-	assert.NoError(t, e.engine.CreateReferralSet(ctx, "referee9", &commandspb.CreateReferralSet{}, "id3"))
 }

@@ -1062,7 +1062,7 @@ message Team {
 message Membership {
   string party_id = 1;
   int64 joined_at = 2;
-  uint64 number_of_epoch = 3;
+  uint64 started_at_epoch = 3;
 }
 
 message TeamSwitches {

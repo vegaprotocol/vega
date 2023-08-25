@@ -45,7 +45,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 // LiquidityMonitor.
@@ -335,10 +335,14 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	if m.closed {
 		return
 	}
-	if epoch.Action == vega.EpochAction_EPOCH_ACTION_START {
+
+	switch epoch.Action {
+	case vegapb.EpochAction_EPOCH_ACTION_START:
 		m.liquidity.OnEpochStart(ctx, m.timeService.GetTimeNow(), m.markPrice, m.midPrice(), m.getTargetStake(), m.positionFactor)
-	} else if epoch.Action == vega.EpochAction_EPOCH_ACTION_END && !m.finalFeesDistributed {
-		m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow())
+	case vegapb.EpochAction_EPOCH_ACTION_END:
+		if !m.finalFeesDistributed {
+			m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow())
+		}
 	}
 
 	m.updateLiquidityFee(ctx)
@@ -2051,7 +2055,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		aggressor := conf.Order.Party
 		if quantum, err := m.collateral.GetAssetQuantum(m.settlementAsset); err == nil && !quantum.IsZero() {
 			n, _ := num.UintFromDecimal(tradedValue.ToDecimal().Div(quantum))
-			m.marketActivityTracker.RecordNotionalTakerVolume(m.mkt.ID, aggressor, n)
+			m.marketActivityTracker.RecordNotionalTakerVolume(aggressor, n)
 		}
 	}
 	m.feeSplitter.AddTradeValue(tradedValue)

@@ -129,9 +129,9 @@ type TeamsEngine interface {
 
 type ReferralProgram interface {
 	UpdateProgram(program *types.ReferralProgram)
-	SetExists(setID string) bool
-	CreateReferralSet(ctx context.Context, party string, set *commandspb.CreateReferralSet, deterministicID string) error
-	ApplyReferralCode(ctx context.Context, party string, cset *commandspb.ApplyReferralCode) error
+	SetExists(types.ReferralSetID) bool
+	CreateReferralSet(context.Context, types.PartyID, types.ReferralSetID) error
+	ApplyReferralCode(context.Context, types.PartyID, types.ReferralSetID) error
 }
 
 type BlockchainClient interface {
@@ -2193,7 +2193,7 @@ func (app *App) CreateReferralSet(ctx context.Context, tx abci.Tx, deterministic
 		return fmt.Errorf("could not deserialize CreateReferralSet command: %w", err)
 	}
 
-	if err := app.referralProgram.CreateReferralSet(ctx, tx.Party(), params, deterministicID); err != nil {
+	if err := app.referralProgram.CreateReferralSet(ctx, types.PartyID(tx.Party()), types.ReferralSetID(deterministicID)); err != nil {
 		return err
 	}
 
@@ -2212,7 +2212,7 @@ func (app *App) UpdateReferralSet(ctx context.Context, tx abci.Tx) error {
 		return fmt.Errorf("could not deserialize UpdateReferralSet command: %w", err)
 	}
 
-	if !app.referralProgram.SetExists(params.Id) {
+	if !app.referralProgram.SetExists(types.ReferralSetID(params.Id)) {
 		return fmt.Errorf("no referral set for ID %q", params.Id)
 	}
 
@@ -2239,13 +2239,14 @@ func (app *App) ApplyReferralCode(ctx context.Context, tx abci.Tx) error {
 		return fmt.Errorf("could not deserialize ApplyReferralCode command: %w", err)
 	}
 
-	err := app.referralProgram.ApplyReferralCode(ctx, tx.Party(), params)
+	partyID := types.PartyID(tx.Party())
+	err := app.referralProgram.ApplyReferralCode(ctx, partyID, types.ReferralSetID(params.Id))
 
 	// it's OK to switch team if the party was already a referrer / referee
-	if !errors.Is(err, referral.ErrIsAlreadyAReferee(tx.Party())) &&
-		!errors.Is(err, referral.ErrIsAlreadyAReferrer(tx.Party())) {
-		return err
+	if !errors.Is(err, referral.ErrIsAlreadyAReferee(partyID)) &&
+		!errors.Is(err, referral.ErrIsAlreadyAReferrer(partyID)) {
+		return fmt.Errorf("could not apply the referral code: %w", err)
 	}
 
-	return app.teamsEngine.JoinTeam(ctx, types.PartyID(tx.Party()), params)
+	return app.teamsEngine.JoinTeam(ctx, partyID, params)
 }
