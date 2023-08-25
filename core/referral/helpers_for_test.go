@@ -70,10 +70,12 @@ func newEngine(t *testing.T) *testEngine {
 	epochEngine := mocks.NewMockEpochEngine(ctrl)
 	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any())
 
+	timeSvc := mocks.NewMockTimeService(ctrl)
+
 	broker := mocks.NewMockBroker(ctrl)
 	teamsEngine := mocks.NewMockTeamsEngine(ctrl)
 
-	engine := referral.NewSnapshottedEngine(epochEngine, broker, teamsEngine, nil)
+	engine := referral.NewSnapshottedEngine(epochEngine, broker, teamsEngine, timeSvc)
 
 	return &testEngine{
 		engine:      engine,
