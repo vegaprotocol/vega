@@ -55,6 +55,7 @@ values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) on conflict (market_id, funding
 
 func (fp *FundingPeriods) AddDataPoint(ctx context.Context, dataPoint *entities.FundingPeriodDataPoint) error {
 	defer metrics.StartSQLQuery("FundingPeriodDataPoint", "AddDataPoint")()
+
 	_, err := fp.Connection.Exec(ctx,
 		`insert into funding_period_data_points(market_id, funding_period_seq, data_point_type, price, timestamp, twap, vega_time, tx_hash)
 values ($1, $2, $3, $4, $5, $6, $7, $8) on conflict (market_id, funding_period_seq, data_point_type, vega_time) do update

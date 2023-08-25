@@ -3391,6 +3391,20 @@ func (m *Market) removeExpiredStopOrders(
 	toExpire := m.expiringStopOrders.Expire(timestamp)
 	stopOrders := m.stopOrders.RemoveExpired(toExpire)
 
+	//  ensure any OCO orders are also expire
+	toExpireSet := map[string]struct{}{}
+	for _, v := range toExpire {
+		toExpireSet[v] = struct{}{}
+	}
+
+	for _, so := range stopOrders {
+		if _, ok := toExpireSet[so.ID]; !ok {
+			if so.Expiry.Expires() {
+				m.expiringStopOrders.RemoveOrder(so.Expiry.ExpiresAt.UnixNano(), so.ID)
+			}
+		}
+	}
+
 	updatedAt := m.timeService.GetTimeNow()
 
 	if m.as.InAuction() {
