@@ -205,13 +205,14 @@ func createTeamCmd(t *testing.T, name, teamURL, avatarURL string) *commandspb.Cr
 	}
 }
 
-func updateTeamCmd(t *testing.T, name, teamURL, avatarURL string) *commandspb.UpdateReferralSet_Team {
+func updateTeamCmd(t *testing.T, name, teamURL, avatarURL string, closed bool) *commandspb.UpdateReferralSet_Team {
 	t.Helper()
 
 	return &commandspb.UpdateReferralSet_Team{
 		Name:      ptr.From(name),
 		TeamUrl:   ptr.From(teamURL),
 		AvatarUrl: ptr.From(avatarURL),
+		Closed:    ptr.From(closed),
 	}
 }
 

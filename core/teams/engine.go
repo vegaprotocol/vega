@@ -53,8 +53,8 @@ func (e *Engine) OnReferralProgramMinStakedVegaTokensUpdate(_ context.Context, v
 	return nil
 }
 
-func (e *Engine) Exists(team string) bool {
-	_, ok := e.teams[types.TeamID(team)]
+func (e *Engine) TeamExists(team types.TeamID) bool {
+	_, ok := e.teams[team]
 	return ok
 }
 
