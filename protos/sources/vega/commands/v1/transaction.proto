@@ -74,9 +74,9 @@ message InputData {
     StopOrdersCancellation stop_orders_cancellation = 1017;
     // Command to create a team.
     CreateReferralSet create_referral_set = 1018;
-    // Command to update a team.
+    // Command to update a referral set.
     UpdateReferralSet update_referral_set = 1019;
-    // Command to join a team.
+    // Command to apply a referral code.
     ApplyReferralCode apply_referral_code = 1020;
 
     // Validator commands

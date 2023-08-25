@@ -728,20 +728,20 @@ message RefereeJoinedTeam {
 }
 
 message ReferralSetCreated {
-  // The unique identifier of the created set.
+  // Unique ID of the created set.
   string set_id = 1;
-  // The party that created the set.
+  // Party that created the set.
   string referrer = 2;
-  // Time in Unix nanoseconds when the set is created.
+  // Time in Unix nanoseconds when the set was created.
   int64 created_at = 3;
-  // Time in Unix nanoseconds when the set is created.
+  // Time in Unix nanoseconds when the set was updated.
   int64 updated_at = 4;
 }
 
 message RefereeJoinedReferralSet {
-  // The unique identifier of the referral set the referee joined.
+  // Unique ID of the referral set the referee joined.
   string set_id = 1;
-  // The party that joined the set.
+  // Party that joined the set.
   string referee = 2;
   // Time in Unix nanoseconds when the party joined a set.
   int64 joined_at = 3;
@@ -1078,7 +1078,7 @@ message BusEvent {
     ReferralProgramEnded referral_program_ended = 167;
     // Event notifying a referral set has been created.
     ReferralSetCreated referral_set_created = 168;
-    // Event notifying a referree has joined a referral set.
+    // Event notifying a referee has joined a referral set.
     RefereeJoinedReferralSet referee_joined_referral_set = 169;
 
     // Market tick events
