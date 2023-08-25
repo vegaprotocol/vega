@@ -13,8 +13,12 @@ func checkUpdateReferralSet(cmd *commandspb.UpdateReferralSet) Errors {
 		return errs.FinalAddForProperty("update_team", ErrIsRequired)
 	}
 
-	if !IsVegaID(cmd.TeamId) {
+	if !IsVegaID(cmd.Id) {
 		errs.AddForProperty("update_team.team_id", ErrShouldBeAValidVegaID)
+	}
+
+	if cmd.IsTeam {
+		// TODO: validate team
 	}
 
 	return errs

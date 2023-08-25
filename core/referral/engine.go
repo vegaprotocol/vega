@@ -121,9 +121,9 @@ func (e *Engine) ApplyReferralCode(ctx context.Context, party string, cset *comm
 		return ErrIsAlreadyAReferrer(party)
 	}
 
-	set, ok := e.sets[cset.TeamId]
+	set, ok := e.sets[cset.Id]
 	if !ok {
-		return fmt.Errorf("invalid referral code %v", cset.TeamId)
+		return fmt.Errorf("invalid referral code %v", cset.Id)
 	}
 
 	now := e.timeSvc.GetTimeNow()

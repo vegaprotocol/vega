@@ -13,7 +13,7 @@ func checkApplyReferralCode(cmd *commandspb.ApplyReferralCode) Errors {
 		return errs.FinalAddForProperty("join_team", ErrIsRequired)
 	}
 
-	if !IsVegaID(cmd.TeamId) {
+	if !IsVegaID(cmd.Id) {
 		errs.AddForProperty("join_team.team_id", ErrShouldBeAValidVegaID)
 	}
 

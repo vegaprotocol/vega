@@ -2196,7 +2196,11 @@ func (app *App) CreateReferralSet(ctx context.Context, tx abci.Tx, deterministic
 		return err
 	}
 
-	return app.teamsEngine.CreateTeam(ctx, types.PartyID(tx.Party()), types.TeamID(deterministicID), params)
+	if params.IsTeam {
+		return app.teamsEngine.CreateTeam(ctx, types.PartyID(tx.Party()), types.TeamID(deterministicID), params)
+	}
+
+	return nil
 }
 
 // UpdateReferralSet this is effectively Update team, but also served to create
@@ -2207,11 +2211,15 @@ func (app *App) UpdateReferralSet(ctx context.Context, tx abci.Tx) error {
 		return fmt.Errorf("could not deserialize UpdateTeam command: %w", err)
 	}
 
-	if !app.referralProgram.Exists(params.TeamId) {
+	if !app.referralProgram.Exists(params.Id) {
 		return errors.New("invalid referral code")
 	}
 
-	return app.teamsEngine.UpdateTeam(ctx, types.PartyID(tx.Party()), params)
+	if params.IsTeam {
+		return app.teamsEngine.UpdateTeam(ctx, types.PartyID(tx.Party()), params)
+	}
+
+	return nil
 }
 
 func (app *App) ApplyReferralCode(ctx context.Context, tx abci.Tx) error {

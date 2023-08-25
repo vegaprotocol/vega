@@ -13,5 +13,9 @@ func checkCreateReferralSet(cmd *commandspb.CreateReferralSet) Errors {
 		return errs.FinalAddForProperty("create_team", ErrIsRequired)
 	}
 
+	if cmd.IsTeam {
+		// TODO: validate team fields
+	}
+
 	return errs
 }

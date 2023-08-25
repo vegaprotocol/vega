@@ -311,24 +311,34 @@ message IssueSignatures {
 // A referrer cannot already be or become a liquidity provider,
 // nor can they be on an existing team as referrer or referee.
 message CreateReferralSet {
-  // Optional team name to be added to the referral banner.
-  optional string name = 1;
-  // Optional link to a team forum, discord, etc.
-  optional string team_url = 2;
-  // Optional link to an image to be used as the team avatar.
-  optional string avatar_url = 3;
+  bool is_team = 1;
+  optional Team team = 2;
+
+  message Team {
+    // Team name to be added to the referral banner.
+    string name = 10;
+    // Optional link to a team forum, discord, etc.
+    optional string team_url = 11;
+    // Optional link to an image to be used as the team avatar.
+    optional string avatar_url = 12;
+  }
 }
 
 // Request for updating a team's properties
 message UpdateReferralSet {
   // Team ID of the team to update.
-  string team_id = 1;
-  // Optional team name to be added to the referral banner.
-  optional string name = 2;
-  // Optional link to a team forum, discord, etc.
-  optional string team_url = 3;
-  // Optional link to an image to be used as the team avatar.
-  optional string avatar_url = 4;
+  string id = 1;
+  bool is_team = 2;
+  optional Team team = 3;
+
+  message Team {
+    // Optional team name to be added to the referral banner.
+    optional string name = 10;
+    // Optional link to a team forum, discord, etc.
+    optional string team_url = 11;
+    // Optional link to an image to be used as the team avatar.
+    optional string avatar_url = 12;
+  }
 }
 
 // Request to join a team
@@ -339,5 +349,5 @@ message UpdateReferralSet {
 // be effective at the end of the epoch.
 message ApplyReferralCode {
   // Team ID of the team to join.
-  string team_id = 1;
+  string id = 1;
 }

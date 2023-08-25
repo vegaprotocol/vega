@@ -14,6 +14,7 @@ package teams
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -61,6 +62,14 @@ func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, determi
 		return ErrPartyAlreadyBelongsToTeam(referrer)
 	}
 
+	if params.Team == nil {
+		return errors.New("missing team details")
+	}
+
+	if len(params.Team.Name) <= 0 {
+		return errors.New("missing required team name parameter")
+	}
+
 	now := e.timeService.GetTimeNow()
 
 	teamToAdd := &types.Team{
@@ -70,9 +79,9 @@ func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, determi
 			JoinedAt:      now,
 			NumberOfEpoch: 0,
 		},
-		Name:      ptr.UnBox(params.Name),
-		TeamURL:   ptr.UnBox(params.TeamUrl),
-		AvatarURL: ptr.UnBox(params.AvatarUrl),
+		Name:      params.Team.Name,
+		TeamURL:   ptr.UnBox(params.Team.TeamUrl),
+		AvatarURL: ptr.UnBox(params.Team.AvatarUrl),
 		CreatedAt: now,
 	}
 
@@ -86,7 +95,7 @@ func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, determi
 }
 
 func (e *Engine) UpdateTeam(ctx context.Context, referrer types.PartyID, params *commandspb.UpdateReferralSet) error {
-	teamID := types.TeamID(params.TeamId)
+	teamID := types.TeamID(params.Id)
 
 	teamsToUpdate, exists := e.teams[teamID]
 	if !exists {
@@ -97,9 +106,12 @@ func (e *Engine) UpdateTeam(ctx context.Context, referrer types.PartyID, params 
 		return ErrOnlyReferrerCanUpdateTeam
 	}
 
-	teamsToUpdate.Name = ptr.UnBox(params.Name)
-	teamsToUpdate.TeamURL = ptr.UnBox(params.TeamUrl)
-	teamsToUpdate.AvatarURL = ptr.UnBox(params.AvatarUrl)
+	if params.Team.Name != nil && len(*params.Team.Name) > 0 {
+		teamsToUpdate.Name = ptr.UnBox(params.Team.Name)
+	}
+
+	teamsToUpdate.TeamURL = ptr.UnBox(params.Team.TeamUrl)
+	teamsToUpdate.AvatarURL = ptr.UnBox(params.Team.AvatarUrl)
 
 	e.notifyTeamUpdated(ctx, teamsToUpdate)
 
@@ -113,7 +125,7 @@ func (e *Engine) JoinTeam(ctx context.Context, referee types.PartyID, params *co
 		}
 	}
 
-	teamID := types.TeamID(params.TeamId)
+	teamID := types.TeamID(params.Id)
 
 	teamToJoin, exists := e.teams[teamID]
 	if !exists {
