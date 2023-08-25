@@ -18,6 +18,13 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
+## 0.72.12
+
+### 🐛 Fixes
+
+- Remove temporary fix from 72.11 to allow proper state generation and use in snapshot.
+
+
 ## 0.72.11
 
 ### 🐛 Fixes
