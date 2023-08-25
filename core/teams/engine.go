@@ -298,6 +298,7 @@ func (e *Engine) loadTeamsFromSnapshot(teamsSnapshot []*snapshotpb.Team) {
 			TeamURL:   teamSnapshot.TeamUrl,
 			AvatarURL: teamSnapshot.AvatarUrl,
 			CreatedAt: time.Unix(0, teamSnapshot.CreatedAt),
+			Closed:    teamSnapshot.Closed,
 		}
 	}
 }

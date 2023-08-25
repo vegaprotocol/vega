@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
 var (
@@ -255,6 +256,40 @@ func (e *Engine) loadNewReferralProgramFromSnapshot(program *vegapb.ReferralProg
 	}
 }
 
+func (e *Engine) loadReferralSetsFromSnapshot(sets *snapshotpb.ReferralSets) {
+	if sets == nil {
+		return
+	}
+
+	for _, set := range sets.Sets {
+		newSet := &types.ReferralSet{
+			ID:        set.Id,
+			CreatedAt: time.Unix(0, set.CreatedAt),
+			UpdatedAt: time.Unix(0, set.CreatedAt),
+			Referrer: &types.Membership{
+				PartyID:       types.PartyID(set.Referrer.PartyId),
+				JoinedAt:      time.Unix(0, set.Referrer.JoinedAt),
+				NumberOfEpoch: set.Referrer.NumberOfEpoch,
+			},
+		}
+
+		e.referrers[set.Referrer.PartyId] = set.Id
+
+		for _, r := range set.Referrees {
+			e.referrees[r.PartyId] = set.Id
+			newSet.Referrees = append(newSet.Referrees,
+				&types.Membership{
+					PartyID:       types.PartyID(r.PartyId),
+					JoinedAt:      time.Unix(0, r.JoinedAt),
+					NumberOfEpoch: r.NumberOfEpoch,
+				},
+			)
+		}
+
+		e.sets[set.Id] = newSet
+	}
+}
+
 func (e *Engine) findTierByEpochCount(epochCount uint64) *types.BenefitTier {
 	tiersLen := len(e.currentProgram.BenefitTiers)
 
@@ -273,12 +308,14 @@ func NewEngine(epochEngine EpochEngine, broker Broker, teamsEngine TeamsEngine) 
 	engine := &Engine{
 		broker:      broker,
 		teamsEngine: teamsEngine,
-
 		// There is no program yet, so we mark it has ended so consumer of this
 		// engine can know there is no reward computation to be done.
-		programHasEnded: true,
-
+		programHasEnded:      true,
 		latestProgramVersion: 0,
+
+		sets:      map[string]*types.ReferralSet{},
+		referrers: map[string]string{},
+		referrees: map[string]string{},
 	}
 
 	epochEngine.NotifyOnEpoch(engine.OnEpoch, engine.OnEpochRestore)
