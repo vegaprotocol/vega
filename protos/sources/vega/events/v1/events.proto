@@ -738,7 +738,7 @@ message ReferralSetCreated {
   int64 updated_at = 4;
 }
 
-message RefereeJoinedReferralSet{
+message RefereeJoinedReferralSet {
   // The unique identifier of the referral set the referee joined.
   string set_id = 1;
   // The party that joined the set.
@@ -929,7 +929,6 @@ enum BusEventType {
   // Event indicating a referee joined a set.
   BUS_EVENT_TYPE_REFEREE_JOINED_REFERRAL_SET = 71;
 
-
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1081,7 +1080,6 @@ message BusEvent {
     ReferralSetCreated referral_set_created = 168;
     // Event notifying a referree has joined a referral set.
     RefereeJoinedReferralSet referee_joined_referral_set = 169;
-
 
     // Market tick events
     MarketEvent market = 1001;
