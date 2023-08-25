@@ -8,6 +8,6 @@ type ReferralSet struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
-	Referrer  *Membership
-	Referrees []*Membership
+	Referrer *Membership
+	Referees []*Membership
 }

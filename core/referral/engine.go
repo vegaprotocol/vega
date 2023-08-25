@@ -79,8 +79,8 @@ type Engine struct {
 	referrers map[string]string
 
 	// NO need for snapshot, dynamically computed
-	// map of referrees to set ID
-	referrees map[string]string
+	// map of referees to set ID
+	referees map[string]string
 }
 
 func (e *Engine) Exists(setID string) bool {
@@ -95,28 +95,29 @@ func (e *Engine) CreateReferralSet(ctx context.Context, party string, set *comma
 
 	now := e.timeSvc.GetTimeNow()
 
-	e.sets[deterministicID] = &types.ReferralSet{
+	newSet := types.ReferralSet{
 		ID:        deterministicID,
 		CreatedAt: now,
 		UpdatedAt: now,
 		Referrer: &types.Membership{
-			PartyID:  types.PartyID(party),
-			JoinedAt: now,
-			// TODO:
-			// not sure we need number of epoch
+			PartyID:       types.PartyID(party),
+			JoinedAt:      now,
+			NumberOfEpoch: 0,
 		},
 	}
 
+	e.sets[deterministicID] = &newSet
+
 	e.referrers[party] = deterministicID
 
-	// send some events
+	e.broker.Send(events.NewReferralSetCreatedEvent(ctx, &newSet))
 
 	return nil
 }
 
 func (e *Engine) ApplyReferralCode(ctx context.Context, party string, cset *commandspb.ApplyReferralCode) error {
-	if _, ok := e.referrees[party]; ok {
-		return ErrIsAlreadyAReferee(party)
+	if _, ok := e.referees[party]; ok {
+		return ErrIsAlreadyAReferree(party)
 	}
 
 	if _, ok := e.referrers[party]; ok {
@@ -131,12 +132,13 @@ func (e *Engine) ApplyReferralCode(ctx context.Context, party string, cset *comm
 	now := e.timeSvc.GetTimeNow()
 
 	set.UpdatedAt = now
-	set.Referrees = append(set.Referrees, &types.Membership{
-		PartyID:  types.PartyID(party),
-		JoinedAt: now,
+	set.Referees = append(set.Referees, &types.Membership{
+		PartyID:       types.PartyID(party),
+		JoinedAt:      now,
+		NumberOfEpoch: 0,
 	})
 
-	// send some events now???
+	e.broker.Send(events.NewRefereeJoinedReferralSetEvent(ctx, cset.Id, party, now))
 
 	return nil
 }
@@ -277,8 +279,8 @@ func (e *Engine) loadReferralSetsFromSnapshot(sets *snapshotpb.ReferralSets) {
 		e.referrers[set.Referrer.PartyId] = set.Id
 
 		for _, r := range set.Referrees {
-			e.referrees[r.PartyId] = set.Id
-			newSet.Referrees = append(newSet.Referrees,
+			e.referees[r.PartyId] = set.Id
+			newSet.Referees = append(newSet.Referees,
 				&types.Membership{
 					PartyID:       types.PartyID(r.PartyId),
 					JoinedAt:      time.Unix(0, r.JoinedAt),
@@ -316,7 +318,7 @@ func NewEngine(epochEngine EpochEngine, broker Broker, teamsEngine TeamsEngine) 
 
 		sets:      map[string]*types.ReferralSet{},
 		referrers: map[string]string{},
-		referrees: map[string]string{},
+		referees:  map[string]string{},
 	}
 
 	epochEngine.NotifyOnEpoch(engine.OnEpoch, engine.OnEpochRestore)
