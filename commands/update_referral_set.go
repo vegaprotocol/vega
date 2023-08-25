@@ -26,7 +26,6 @@ func checkUpdateReferralSet(cmd *commandspb.UpdateReferralSet) Errors {
 		if cmd.Team.Name != nil && len(*cmd.Team.Name) <= 0 {
 			return errs.FinalAddForProperty("update_referral_set.team.name", ErrIsRequired)
 		}
-
 	}
 
 	return errs

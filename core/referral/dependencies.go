@@ -14,12 +14,17 @@ package referral
 
 import (
 	"context"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/referral EpochEngine,Broker,TeamsEngine
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/referral EpochEngine,Broker,TeamsEngine,TimeService
+
+type TimeService interface {
+	GetTimeNow() time.Time
+}
 
 // EpochEngine is used to know when to apply the team switches.
 type EpochEngine interface {

@@ -73,7 +73,7 @@ func newEngine(t *testing.T) *testEngine {
 	broker := mocks.NewMockBroker(ctrl)
 	teamsEngine := mocks.NewMockTeamsEngine(ctrl)
 
-	engine := referral.NewSnapshottedEngine(epochEngine, broker, teamsEngine)
+	engine := referral.NewSnapshottedEngine(epochEngine, broker, teamsEngine, nil)
 
 	return &testEngine{
 		engine:      engine,

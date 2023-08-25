@@ -29,14 +29,11 @@ var (
 	ErrIsAlreadyAReferee = func(party string) error {
 		return fmt.Errorf("party %v has already been referred", party)
 	}
+
 	ErrIsAlreadyAReferrer = func(party string) error {
 		return fmt.Errorf("party %v is already a referrer", party)
 	}
 )
-
-type TimeService interface {
-	GetTimeNow() time.Time
-}
 
 type Engine struct {
 	broker      Broker

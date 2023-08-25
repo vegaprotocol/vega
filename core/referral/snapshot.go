@@ -97,7 +97,7 @@ func (e *SnapshottedEngine) serialise(k string) ([]byte, error) {
 }
 
 func (e *SnapshottedEngine) serialiseReferralSets() ([]byte, error) {
-	var sets []*snapshotpb.ReferralSet
+	sets := make([]*snapshotpb.ReferralSet, 0, len(e.sets))
 
 	setIDs := maps.Keys(e.sets)
 	sort.Strings(setIDs)
