@@ -33,6 +33,10 @@ var (
 	ErrIsAlreadyAReferrer = func(party string) error {
 		return fmt.Errorf("party %v is already a referrer", party)
 	}
+
+	ErrInvalidReferralCode = func(code string) error {
+		return fmt.Errorf("invalid referral code %q", code)
+	}
 )
 
 type Engine struct {
@@ -87,6 +91,9 @@ func (e *Engine) CreateReferralSet(ctx context.Context, party string, set *comma
 	if _, ok := e.referrers[party]; ok {
 		return ErrIsAlreadyAReferrer(party)
 	}
+	if _, ok := e.referees[party]; ok {
+		return ErrIsAlreadyAReferee(party)
+	}
 
 	now := e.timeSvc.GetTimeNow()
 
@@ -102,7 +109,6 @@ func (e *Engine) CreateReferralSet(ctx context.Context, party string, set *comma
 	}
 
 	e.sets[deterministicID] = &newSet
-
 	e.referrers[party] = deterministicID
 
 	e.broker.Send(events.NewReferralSetCreatedEvent(ctx, &newSet))
@@ -121,7 +127,7 @@ func (e *Engine) ApplyReferralCode(ctx context.Context, party string, params *co
 
 	set, ok := e.sets[params.Id]
 	if !ok {
-		return fmt.Errorf("no referral set for referral code %q", params.Id)
+		return ErrInvalidReferralCode(params.Id)
 	}
 
 	now := e.timeSvc.GetTimeNow()
@@ -132,6 +138,8 @@ func (e *Engine) ApplyReferralCode(ctx context.Context, party string, params *co
 		JoinedAt:      now,
 		NumberOfEpoch: 0,
 	})
+
+	e.referees[party] = set.ID
 
 	e.broker.Send(events.NewRefereeJoinedReferralSetEvent(ctx, params.Id, party, now))
 

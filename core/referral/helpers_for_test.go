@@ -34,8 +34,9 @@ import (
 )
 
 type testEngine struct {
-	engine *referral.SnapshottedEngine
-	broker *mocks.MockBroker
+	engine  *referral.SnapshottedEngine
+	broker  *mocks.MockBroker
+	timeSvc *mocks.MockTimeService
 }
 
 func newPartyID(t *testing.T) types.PartyID {
@@ -76,8 +77,9 @@ func newEngine(t *testing.T) *testEngine {
 	engine := referral.NewSnapshottedEngine(epochEngine, broker, timeSvc)
 
 	return &testEngine{
-		engine: engine,
-		broker: broker,
+		engine:  engine,
+		broker:  broker,
+		timeSvc: timeSvc,
 	}
 }
 
