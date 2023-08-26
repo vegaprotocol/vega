@@ -63,6 +63,10 @@ func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, determi
 		return err
 	}
 
+	if err := e.ensureUniqueTeamName(params.Name); err != nil {
+		return err
+	}
+
 	if _, alreadyMember := e.allTeamMembers[referrer]; alreadyMember {
 		return ErrPartyAlreadyBelongsToTeam(referrer)
 	}
@@ -258,6 +262,16 @@ func (e *Engine) ensureUniqueTeamID(deterministicTeamID types.TeamID) error {
 	if _, exists := e.teams[deterministicTeamID]; exists {
 		return ErrComputedTeamIDIsAlreadyInUse
 	}
+	return nil
+}
+
+func (e *Engine) ensureUniqueTeamName(name string) error {
+	for _, team := range e.teams {
+		if team.Name == name {
+			return ErrTeamNameIsAlreadyInUse
+		}
+	}
+
 	return nil
 }
 

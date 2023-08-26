@@ -27,6 +27,35 @@ import (
 func TestEngine(t *testing.T) {
 	t.Run("Administrate a team succeeds", testAdministrateTeamSucceeds)
 	t.Run("Joining team succeeds", testJoiningTeamSucceeds)
+	t.Run("unique team names", testUniqueTeamNames)
+}
+
+func testUniqueTeamNames(t *testing.T) {
+	ctx := vgtest.VegaContext(vgrand.RandomStr(5), vgtest.RandomI64())
+
+	te := newEngine(t)
+
+	require.False(t, te.engine.TeamExists(newTeamID(t)))
+
+	referrer1 := newPartyID(t)
+	referrer2 := newPartyID(t)
+	teamID1 := newTeamID(t)
+	teamID2 := newTeamID(t)
+	name := vgrand.RandomStr(5)
+	teamURL := "https://" + name + ".io"
+	avatarURL := "https://avatar." + name + ".io"
+
+	expectTeamCreatedEvent(t, te)
+
+	team1CreationDate := time.Now()
+	te.timeService.EXPECT().GetTimeNow().Return(team1CreationDate).Times(1)
+
+	require.NoError(t, te.engine.CreateTeam(ctx, referrer1, teamID1, createTeamCmd(t, name, teamURL, avatarURL)))
+	require.True(t, te.engine.TeamExists(teamID1))
+
+	require.EqualError(t, te.engine.CreateTeam(ctx, referrer2, teamID2, createTeamCmd(t, name, teamURL, avatarURL)),
+		teams.ErrTeamNameIsAlreadyInUse.Error(),
+	)
 }
 
 func testAdministrateTeamSucceeds(t *testing.T) {
@@ -39,6 +68,8 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 	referrer1 := newPartyID(t)
 	teamID1 := newTeamID(t)
 	name := vgrand.RandomStr(5)
+	name2 := vgrand.RandomStr(5)
+	name3 := vgrand.RandomStr(5)
 	teamURL := "https://" + name + ".io"
 	avatarURL := "https://avatar." + name + ".io"
 
@@ -73,8 +104,8 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 	team2CreationDate := time.Now()
 	te.timeService.EXPECT().GetTimeNow().Return(team2CreationDate).Times(1)
 
-	// Using same name, team URL and avatar URL as the first team is permitted.
-	require.NoError(t, te.engine.CreateTeam(ctx, referrer2, teamID2, createTeamCmd(t, name, teamURL, avatarURL)))
+	// Using same team URL and avatar URL as the first team is permitted.
+	require.NoError(t, te.engine.CreateTeam(ctx, referrer2, teamID2, createTeamCmd(t, name2, teamURL, avatarURL)))
 	require.True(t, te.engine.TeamExists(teamID2))
 	assert.NotEqual(t, teamID1, teamID2, "Creating a team should generate an unique ID")
 
@@ -97,7 +128,7 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 				JoinedAt:      team2CreationDate,
 				NumberOfEpoch: 0,
 			},
-			Name:      name,
+			Name:      name2,
 			TeamURL:   teamURL,
 			AvatarURL: avatarURL,
 			CreatedAt: team2CreationDate,
@@ -108,7 +139,7 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 
 	// A party can only create one team.
 	require.EqualError(t,
-		te.engine.CreateTeam(ctx, referrer2, teamID3, createTeamCmd(t, name, teamURL, avatarURL)),
+		te.engine.CreateTeam(ctx, referrer2, teamID3, createTeamCmd(t, name3, teamURL, avatarURL)),
 		teams.ErrPartyAlreadyBelongsToTeam(referrer2).Error(),
 	)
 
@@ -131,7 +162,7 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 				JoinedAt:      team2CreationDate,
 				NumberOfEpoch: 0,
 			},
-			Name:      name,
+			Name:      name2,
 			TeamURL:   teamURL,
 			AvatarURL: avatarURL,
 			CreatedAt: team2CreationDate,
@@ -172,7 +203,7 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 				JoinedAt:      team2CreationDate,
 				NumberOfEpoch: 0,
 			},
-			Name:      name,
+			Name:      name2,
 			TeamURL:   teamURL,
 			AvatarURL: avatarURL,
 			CreatedAt: team2CreationDate,
@@ -219,7 +250,7 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 				JoinedAt:      team2CreationDate,
 				NumberOfEpoch: 0,
 			},
-			Name:      name,
+			Name:      name2,
 			TeamURL:   teamURL,
 			AvatarURL: avatarURL,
 			CreatedAt: team2CreationDate,

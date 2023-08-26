@@ -19,7 +19,17 @@ func checkCreateReferralSet(cmd *commandspb.CreateReferralSet) Errors {
 		}
 
 		if len(cmd.Team.Name) <= 0 {
-			return errs.FinalAddForProperty("create_referral_set.team.name", ErrIsRequired)
+			errs.AddForProperty("create_referral_set.team.name", ErrIsRequired)
+		} else if len(cmd.Team.Name) > 100 {
+			errs.AddForProperty("create_referral_set.team.name", ErrMustBeLessThan100Chars)
+		}
+
+		if cmd.Team.AvatarUrl != nil && len(*cmd.Team.AvatarUrl) > 200 {
+			errs.AddForProperty("create_referral_set.team.avatar_url", ErrMustBeLessThan200Chars)
+		}
+
+		if cmd.Team.TeamUrl != nil && len(*cmd.Team.TeamUrl) > 200 {
+			errs.AddForProperty("create_referral_set.team.team_url", ErrMustBeLessThan200Chars)
 		}
 	}
 
