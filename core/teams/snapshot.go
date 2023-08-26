@@ -113,6 +113,7 @@ func (e *SnapshottedEngine) serialiseTeams() ([]byte, error) {
 			TeamUrl:   team.TeamURL,
 			AvatarUrl: team.AvatarURL,
 			CreatedAt: team.CreatedAt.UnixNano(),
+			Closed:    team.Closed,
 		}
 		teamsSnapshot = append(teamsSnapshot, teamSnapshot)
 	}
