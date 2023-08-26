@@ -95,6 +95,33 @@ func testCreateReferralSetFails(t *testing.T) {
 	})
 
 	assert.Contains(t, err.Get("create_referral_set.team.name"), commands.ErrIsRequired)
+
+	err = checkCreateReferralSet(t, &commandspb.CreateReferralSet{
+		IsTeam: true,
+		Team: &commandspb.CreateReferralSet_Team{
+			Name: vgrand.RandomStr(101),
+		},
+	})
+
+	assert.Contains(t, err.Get("create_referral_set.team.name"), commands.ErrMustBeLessThan100Chars)
+
+	err = checkCreateReferralSet(t, &commandspb.CreateReferralSet{
+		IsTeam: true,
+		Team: &commandspb.CreateReferralSet_Team{
+			AvatarUrl: ptr.From(vgrand.RandomStr(201)),
+		},
+	})
+
+	assert.Contains(t, err.Get("create_referral_set.team.avatar_url"), commands.ErrMustBeLessThan200Chars)
+
+	err = checkCreateReferralSet(t, &commandspb.CreateReferralSet{
+		IsTeam: true,
+		Team: &commandspb.CreateReferralSet_Team{
+			TeamUrl: ptr.From(vgrand.RandomStr(201)),
+		},
+	})
+
+	assert.Contains(t, err.Get("create_referral_set.team.team_url"), commands.ErrMustBeLessThan200Chars)
 }
 
 func checkCreateReferralSet(t *testing.T, cmd *commandspb.CreateReferralSet) commands.Errors {
