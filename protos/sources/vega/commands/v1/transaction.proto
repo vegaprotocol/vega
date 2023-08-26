@@ -73,11 +73,11 @@ message InputData {
     // Command to cancel stop orders.
     StopOrdersCancellation stop_orders_cancellation = 1017;
     // Command to create a team.
-    CreateTeam create_team = 1018;
-    // Command to update a team.
-    UpdateTeam update_team = 1019;
-    // Command to join a team.
-    JoinTeam join_team = 1020;
+    CreateReferralSet create_referral_set = 1018;
+    // Command to update a referral set.
+    UpdateReferralSet update_referral_set = 1019;
+    // Command to apply a referral code.
+    ApplyReferralCode apply_referral_code = 1020;
 
     // Validator commands
 

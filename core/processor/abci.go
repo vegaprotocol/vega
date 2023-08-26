@@ -27,6 +27,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/referral"
 	"code.vegaprotocol.io/vega/core/snapshot"
 	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	"go.uber.org/zap"
@@ -120,13 +121,17 @@ type StateVarEngine interface {
 }
 
 type TeamsEngine interface {
-	CreateTeam(context.Context, types.PartyID, types.TeamID, *commandspb.CreateTeam) error
-	UpdateTeam(context.Context, types.PartyID, *commandspb.UpdateTeam) error
-	JoinTeam(context.Context, types.PartyID, *commandspb.JoinTeam) error
+	TeamExists(team types.TeamID) bool
+	CreateTeam(context.Context, types.PartyID, types.TeamID, *commandspb.CreateReferralSet_Team) error
+	UpdateTeam(context.Context, types.PartyID, types.TeamID, *commandspb.UpdateReferralSet_Team) error
+	JoinTeam(context.Context, types.PartyID, *commandspb.ApplyReferralCode) error
 }
 
 type ReferralProgram interface {
 	UpdateProgram(program *types.ReferralProgram)
+	SetExists(setID string) bool
+	CreateReferralSet(ctx context.Context, party string, set *commandspb.CreateReferralSet, deterministicID string) error
+	ApplyReferralCode(ctx context.Context, party string, cset *commandspb.ApplyReferralCode) error
 }
 
 type BlockchainClient interface {
@@ -425,14 +430,14 @@ func NewApp(
 				),
 			),
 		).
-		HandleDeliverTx(txn.CreateTeamCommand,
-			app.SendTransactionResult(addDeterministicID(app.CreateTeam)),
+		HandleDeliverTx(txn.CreateReferralSetCommand,
+			app.SendTransactionResult(addDeterministicID(app.CreateReferralSet)),
 		).
-		HandleDeliverTx(txn.UpdateTeamCommand,
-			app.SendTransactionResult(app.UpdateTeam),
+		HandleDeliverTx(txn.UpdateReferralSetCommand,
+			app.SendTransactionResult(app.UpdateReferralSet),
 		).
-		HandleDeliverTx(txn.JoinTeamCommand,
-			app.SendTransactionResult(app.JoinTeam),
+		HandleDeliverTx(txn.ApplyReferralCodeCommand,
+			app.SendTransactionResult(app.ApplyReferralCode),
 		)
 
 	app.time.NotifyOnTick(app.onTick)
@@ -2182,28 +2187,64 @@ func (app *App) DeliverEthereumKeyRotateSubmission(ctx context.Context, tx abci.
 	)
 }
 
-func (app *App) CreateTeam(ctx context.Context, tx abci.Tx, deterministicID string) error {
-	params := &commandspb.CreateTeam{}
+func (app *App) CreateReferralSet(ctx context.Context, tx abci.Tx, deterministicID string) error {
+	params := &commandspb.CreateReferralSet{}
 	if err := tx.Unmarshal(params); err != nil {
-		return fmt.Errorf("could not deserialize CreateTeam command: %w", err)
+		return fmt.Errorf("could not deserialize CreateReferralSet command: %w", err)
 	}
 
-	return app.teamsEngine.CreateTeam(ctx, types.PartyID(tx.Party()), types.TeamID(deterministicID), params)
-}
-
-func (app *App) UpdateTeam(ctx context.Context, tx abci.Tx) error {
-	params := &commandspb.UpdateTeam{}
-	if err := tx.Unmarshal(params); err != nil {
-		return fmt.Errorf("could not deserialize UpdateTeam command: %w", err)
+	if err := app.referralProgram.CreateReferralSet(ctx, tx.Party(), params, deterministicID); err != nil {
+		return err
 	}
 
-	return app.teamsEngine.UpdateTeam(ctx, types.PartyID(tx.Party()), params)
+	if params.IsTeam {
+		return app.teamsEngine.CreateTeam(ctx, types.PartyID(tx.Party()), types.TeamID(deterministicID), params.Team)
+	}
+
+	return nil
 }
 
-func (app *App) JoinTeam(ctx context.Context, tx abci.Tx) error {
-	params := &commandspb.JoinTeam{}
+// UpdateReferralSet this is effectively Update team, but also served to create
+// a team for an existing referral set...
+func (app *App) UpdateReferralSet(ctx context.Context, tx abci.Tx) error {
+	params := &commandspb.UpdateReferralSet{}
 	if err := tx.Unmarshal(params); err != nil {
-		return fmt.Errorf("could not deserialize JoinTeam command: %w", err)
+		return fmt.Errorf("could not deserialize UpdateReferralSet command: %w", err)
+	}
+
+	if !app.referralProgram.SetExists(params.Id) {
+		return fmt.Errorf("no referral set for ID %q", params.Id)
+	}
+
+	if params.IsTeam {
+		teamID := types.TeamID(params.Id)
+		if app.teamsEngine.TeamExists(teamID) {
+			return app.teamsEngine.UpdateTeam(ctx, types.PartyID(tx.Party()), teamID, params.Team)
+		}
+
+		return app.teamsEngine.CreateTeam(ctx, types.PartyID(tx.Party()), teamID, &commandspb.CreateReferralSet_Team{
+			Name:      ptr.UnBox(params.Team.Name),
+			AvatarUrl: params.Team.AvatarUrl,
+			TeamUrl:   params.Team.TeamUrl,
+			Closed:    ptr.UnBox(params.Team.Closed),
+		})
+	}
+
+	return nil
+}
+
+func (app *App) ApplyReferralCode(ctx context.Context, tx abci.Tx) error {
+	params := &commandspb.ApplyReferralCode{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize ApplyReferralCode command: %w", err)
+	}
+
+	err := app.referralProgram.ApplyReferralCode(ctx, tx.Party(), params)
+
+	// it's OK to switch team if the party was already a referrer / referee
+	if !errors.Is(err, referral.ErrIsAlreadyAReferee(tx.Party())) &&
+		!errors.Is(err, referral.ErrIsAlreadyAReferrer(tx.Party())) {
+		return err
 	}
 
 	return app.teamsEngine.JoinTeam(ctx, types.PartyID(tx.Party()), params)

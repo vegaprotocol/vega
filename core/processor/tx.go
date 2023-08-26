@@ -128,12 +128,12 @@ func (t Tx) Command() txn.Command {
 		return txn.StopOrdersSubmissionCommand
 	case *commandspb.InputData_StopOrdersCancellation:
 		return txn.StopOrdersCancellationCommand
-	case *commandspb.InputData_CreateTeam:
-		return txn.CreateTeamCommand
-	case *commandspb.InputData_UpdateTeam:
-		return txn.UpdateTeamCommand
-	case *commandspb.InputData_JoinTeam:
-		return txn.JoinTeamCommand
+	case *commandspb.InputData_CreateReferralSet:
+		return txn.CreateReferralSetCommand
+	case *commandspb.InputData_UpdateReferralSet:
+		return txn.UpdateReferralSetCommand
+	case *commandspb.InputData_ApplyReferralCode:
+		return txn.ApplyReferralCodeCommand
 	default:
 		panic(fmt.Sprintf("command %T is not supported", cmd))
 	}
@@ -215,12 +215,12 @@ func (t Tx) GetCmd() interface{} {
 		return cmd.StopOrdersSubmission
 	case *commandspb.InputData_StopOrdersCancellation:
 		return cmd.StopOrdersCancellation
-	case *commandspb.InputData_CreateTeam:
-		return cmd.CreateTeam
-	case *commandspb.InputData_UpdateTeam:
-		return cmd.UpdateTeam
-	case *commandspb.InputData_JoinTeam:
-		return cmd.JoinTeam
+	case *commandspb.InputData_CreateReferralSet:
+		return cmd.CreateReferralSet
+	case *commandspb.InputData_UpdateReferralSet:
+		return cmd.UpdateReferralSet
+	case *commandspb.InputData_ApplyReferralCode:
+		return cmd.ApplyReferralCode
 	default:
 		return fmt.Errorf("command %T is not supported", cmd)
 	}
@@ -390,24 +390,24 @@ func (t Tx) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshall to StopOrdersCancellation")
 		}
 		*underlyingCmd = *cmd.StopOrdersCancellation
-	case *commandspb.InputData_CreateTeam:
-		underlyingCmd, ok := i.(*commandspb.CreateTeam)
+	case *commandspb.InputData_CreateReferralSet:
+		underlyingCmd, ok := i.(*commandspb.CreateReferralSet)
 		if !ok {
 			return errors.New("failed to unmarshall to CreateTeam")
 		}
-		*underlyingCmd = *cmd.CreateTeam
-	case *commandspb.InputData_UpdateTeam:
-		underlyingCmd, ok := i.(*commandspb.UpdateTeam)
+		*underlyingCmd = *cmd.CreateReferralSet
+	case *commandspb.InputData_UpdateReferralSet:
+		underlyingCmd, ok := i.(*commandspb.UpdateReferralSet)
 		if !ok {
 			return errors.New("failed to unmarshall to UpdateTeam")
 		}
-		*underlyingCmd = *cmd.UpdateTeam
-	case *commandspb.InputData_JoinTeam:
-		underlyingCmd, ok := i.(*commandspb.JoinTeam)
+		*underlyingCmd = *cmd.UpdateReferralSet
+	case *commandspb.InputData_ApplyReferralCode:
+		underlyingCmd, ok := i.(*commandspb.ApplyReferralCode)
 		if !ok {
 			return errors.New("failed to unmarshall to JoinTeam")
 		}
-		*underlyingCmd = *cmd.JoinTeam
+		*underlyingCmd = *cmd.ApplyReferralCode
 	default:
 		return fmt.Errorf("command %T is not supported", cmd)
 	}
