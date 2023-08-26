@@ -39,6 +39,7 @@ type testEngine struct {
 	broker                *mocks.MockBroker
 	timeSvc               *mocks.MockTimeService
 	marketActivityTracker *mocks.MockMarketActivityTracker
+	staking               *mocks.MockStakingBalances
 	currentEpoch          uint64
 }
 
@@ -79,8 +80,9 @@ func newEngine(t *testing.T) *testEngine {
 	broker := mocks.NewMockBroker(ctrl)
 	timeSvc := mocks.NewMockTimeService(ctrl)
 	mat := mocks.NewMockMarketActivityTracker(ctrl)
+	staking := mocks.NewMockStakingBalances(ctrl)
 
-	engine := referral.NewSnapshottedEngine(broker, timeSvc, mat)
+	engine := referral.NewSnapshottedEngine(broker, timeSvc, mat, staking)
 
 	engine.OnEpochRestore(context.Background(), types.Epoch{
 		Seq:    10,
@@ -93,6 +95,7 @@ func newEngine(t *testing.T) *testEngine {
 		timeSvc:               timeSvc,
 		marketActivityTracker: mat,
 		currentEpoch:          10,
+		staking:               staking,
 	}
 }
 
