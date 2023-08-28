@@ -22,6 +22,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 	icore "github.com/ipfs/boxo/coreiface"
+	"github.com/ipfs/boxo/coreiface/options"
 	"github.com/ipfs/go-cid"
 	files "github.com/ipfs/go-ipfs-files"
 	ipfslogging "github.com/ipfs/go-log"
@@ -652,7 +653,7 @@ func (p *Store) FetchHistorySegment(ctx context.Context, historySegmentID string
 		HistorySegmentID: historySegmentID,
 	}
 
-	err = p.ipfsAPI.Pin().Add(ctx, path.IpfsPath(contentID))
+	err = p.ipfsAPI.Pin().Add(ctx, path.IpfsPath(contentID), options.Pin.Recursive(false))
 	if err != nil {
 		return segment.Full{}, fmt.Errorf("failed to pin fetched segment: %w", err)
 	}
