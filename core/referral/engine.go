@@ -24,6 +24,8 @@ import (
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
+const MaximumWindowLength uint64 = 100
+
 var (
 	ErrIsAlreadyAReferee = func(party types.PartyID) error {
 		return fmt.Errorf("party %q has already been referred", party)
@@ -301,28 +303,28 @@ func (e *Engine) loadNewReferralProgramFromSnapshot(program *vegapb.ReferralProg
 	}
 }
 
-func (e *Engine) loadReferralSetsFromSnapshot(sets *snapshotpb.ReferralSets) {
-	if sets == nil {
+func (e *Engine) loadReferralSetsFromSnapshot(setsProto *snapshotpb.ReferralSets) {
+	if setsProto == nil {
 		return
 	}
 
-	for _, set := range sets.Sets {
-		setID := types.ReferralSetID(set.Id)
+	for _, setProto := range setsProto.Sets {
+		setID := types.ReferralSetID(setProto.Id)
 
 		newSet := &types.ReferralSet{
 			ID:        setID,
-			CreatedAt: time.Unix(0, set.CreatedAt),
-			UpdatedAt: time.Unix(0, set.CreatedAt),
+			CreatedAt: time.Unix(0, setProto.CreatedAt),
+			UpdatedAt: time.Unix(0, setProto.CreatedAt),
 			Referrer: &types.Membership{
-				PartyID:        types.PartyID(set.Referrer.PartyId),
-				JoinedAt:       time.Unix(0, set.Referrer.JoinedAt),
-				StartedAtEpoch: set.Referrer.StartedAtEpoch,
+				PartyID:        types.PartyID(setProto.Referrer.PartyId),
+				JoinedAt:       time.Unix(0, setProto.Referrer.JoinedAt),
+				StartedAtEpoch: setProto.Referrer.StartedAtEpoch,
 			},
 		}
 
-		e.referrers[types.PartyID(set.Referrer.PartyId)] = setID
+		e.referrers[types.PartyID(setProto.Referrer.PartyId)] = setID
 
-		for _, r := range set.Referees {
+		for _, r := range setProto.Referees {
 			partyID := types.PartyID(r.PartyId)
 			e.referees[partyID] = setID
 			newSet.Referees = append(newSet.Referees,
@@ -334,11 +336,27 @@ func (e *Engine) loadReferralSetsFromSnapshot(sets *snapshotpb.ReferralSets) {
 			)
 		}
 
+		runningVolumes := make([]*notionalVolume, 0, len(setProto.RunningVolumes))
+		for _, volume := range setProto.RunningVolumes {
+			volumeNum, _ := num.UintFromString(volume.Volume, 10)
+			runningVolumes = append(runningVolumes, &notionalVolume{
+				epoch: volume.Epoch,
+				value: volumeNum,
+			})
+		}
+		e.referralSetsNotionalVolumes.runningVolumesBySet[setID] = runningVolumes
+
 		e.sets[setID] = newSet
 	}
 }
 
 func (e *Engine) computeReferralSetsNotionalRunningVolume(epoch types.Epoch) {
+	priorEpoch := uint64(0)
+	if epoch.Seq > MaximumWindowLength {
+		priorEpoch = epoch.Seq - MaximumWindowLength
+	}
+	e.referralSetsNotionalVolumes.RemovePriorEpoch(priorEpoch)
+
 	for partyID, setID := range e.referrers {
 		volumeForEpoch := e.marketActivityTracker.NotionalTakerVolumeForParty(string(partyID))
 		e.referralSetsNotionalVolumes.Add(epoch.Seq, setID, volumeForEpoch)
@@ -350,7 +368,7 @@ func (e *Engine) computeReferralSetsNotionalRunningVolume(epoch types.Epoch) {
 	}
 }
 
-func NewEngine(epochEngine EpochEngine, broker Broker, timeSvc TimeService, mat MarketActivityTracker) *Engine {
+func NewEngine(broker Broker, timeSvc TimeService, mat MarketActivityTracker) *Engine {
 	engine := &Engine{
 		broker:                broker,
 		timeSvc:               timeSvc,
@@ -366,8 +384,6 @@ func NewEngine(epochEngine EpochEngine, broker Broker, timeSvc TimeService, mat 
 		referrers: map[types.PartyID]types.ReferralSetID{},
 		referees:  map[types.PartyID]types.ReferralSetID{},
 	}
-
-	epochEngine.NotifyOnEpoch(engine.OnEpoch, engine.OnEpochRestore)
 
 	return engine
 }
