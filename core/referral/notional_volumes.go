@@ -48,14 +48,13 @@ func (vs *runningVolumes) Add(epoch uint64, setID types.ReferralSetID, volume *n
 		return
 	}
 
-	for _, notionalVolume := range runningVolumeForSet {
-		if notionalVolume.epoch == epoch {
-			notionalVolume.value.AddSum(volumeToAdd)
-			return
-		}
+	notionalVolumeForEpoch := runningVolumeForSet[len(runningVolumeForSet)-1]
+	if notionalVolumeForEpoch.epoch == epoch {
+		notionalVolumeForEpoch.value.AddSum(volumeToAdd)
+		return
 	}
 
-	// If we end up here, it means the set is tracked but the epoch is not.
+	// If we end up here, it means this set is tracked but this epoch is not.
 	vs.runningVolumesBySet[setID] = append(runningVolumeForSet, &notionalVolume{
 		epoch: epoch,
 		value: volumeToAdd.Clone(),
@@ -80,6 +79,24 @@ func (vs *runningVolumes) RunningSetVolumeForWindow(setID types.ReferralSetID, w
 	}
 
 	return runningVolumeForWindow
+}
+
+func (vs *runningVolumes) RemovePriorEpoch(epoch uint64) {
+	for setID, volumes := range vs.runningVolumesBySet {
+		removeBeforeIndex := len(volumes) - 1
+		for i := len(volumes) - 1; i >= 0; i-- {
+			if volumes[i].epoch < epoch {
+				break
+			}
+			removeBeforeIndex -= 1
+		}
+
+		if removeBeforeIndex == len(volumes)-1 {
+			vs.runningVolumesBySet[setID] = []*notionalVolume{}
+		} else if removeBeforeIndex >= 0 {
+			vs.runningVolumesBySet[setID] = volumes[removeBeforeIndex:]
+		}
+	}
 }
 
 func newRunningVolumes() *runningVolumes {

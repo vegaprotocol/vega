@@ -721,7 +721,22 @@ func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Marke
 		)
 		return err
 	}
-	mkt, err := spot.NewMarket(e.log, e.Matching, e.Fee, e.Liquidity, e.collateral, marketConfig, e.timeService, e.broker, mas, e.stateVarEngine, e.marketActivityTracker, bad, qad, e.peggedOrderCountUpdated)
+	mkt, err := spot.NewMarket(
+		e.log,
+		e.Matching,
+		e.Fee,
+		e.Liquidity,
+		e.collateral,
+		marketConfig,
+		e.timeService,
+		e.broker,
+		mas,
+		e.stateVarEngine,
+		e.marketActivityTracker,
+		bad,
+		qad,
+		e.peggedOrderCountUpdated,
+	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
 			logging.MarketID(marketConfig.ID),

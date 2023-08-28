@@ -158,6 +158,7 @@ func TestUpdatingReferralProgramSucceeds(t *testing.T) {
 		EndOfProgramTimestamp: lastEpochStartTime.Add(10 * time.Hour),
 		WindowLength:          10,
 		BenefitTiers:          []*types.BenefitTier{},
+		StakingTiers:          []*types.StakingTier{},
 	}
 
 	// Update with new program.
@@ -214,6 +215,7 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 				ReferralDiscountFactor:            num.DecimalFromFloat(0.2),
 			},
 		},
+		StakingTiers: []*types.StakingTier{},
 	}
 
 	// Set the first program.

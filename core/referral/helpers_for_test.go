@@ -76,14 +76,11 @@ func newEngine(t *testing.T) *testEngine {
 
 	ctrl := gomock.NewController(t)
 
-	epochEngine := mocks.NewMockEpochEngine(ctrl)
-	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any())
-
 	broker := mocks.NewMockBroker(ctrl)
 	timeSvc := mocks.NewMockTimeService(ctrl)
 	mat := mocks.NewMockMarketActivityTracker(ctrl)
 
-	engine := referral.NewSnapshottedEngine(epochEngine, broker, timeSvc, mat)
+	engine := referral.NewSnapshottedEngine(broker, timeSvc, mat)
 
 	engine.OnEpochRestore(context.Background(), types.Epoch{
 		Seq:    10,

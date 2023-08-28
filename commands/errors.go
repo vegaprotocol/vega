@@ -49,6 +49,7 @@ var (
 	ErrMustBeWithinRange01                             = errors.New("must be between 0 and 1")
 	ErrMustBeWithinRange11                             = errors.New("must be between -1 and 1")
 	ErrMustBeLTE1                                      = errors.New("must be less than or equal to 1")
+	ErrMustBeGTE1                                      = errors.New("must be greater than or equal to 1")
 	ErrMustBeReduceOnly                                = errors.New("must be reduce only")
 	ErrExpiryStrategyRequiredWhenExpiresAtSet          = errors.New("expiry strategy required when expires_at set")
 	ErrMustHaveAtLeastOneOfRisesAboveOrFallsBelow      = errors.New("must have at least one of rises above or falls below")

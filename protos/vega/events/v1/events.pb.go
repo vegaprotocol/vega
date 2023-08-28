@@ -5332,7 +5332,7 @@ type RefereeSwitchedTeam struct {
 	// Time in Unix nanoseconds when the party switched team. This time acts as
 	// the joining time.
 	SwitchedAt int64 `protobuf:"varint,4,opt,name=switched_at,json=switchedAt,proto3" json:"switched_at,omitempty"`
-	// Epoch at which the party joined the set.
+	// Epoch at which the party switched the team.
 	AtEpoch uint64 `protobuf:"varint,5,opt,name=at_epoch,json=atEpoch,proto3" json:"at_epoch,omitempty"`
 }
 
@@ -5414,7 +5414,7 @@ type RefereeJoinedTeam struct {
 	Referee string `protobuf:"bytes,2,opt,name=referee,proto3" json:"referee,omitempty"`
 	// Time in Unix nanoseconds when the party joined a team.
 	JoinedAt int64 `protobuf:"varint,3,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty"`
-	// Epoch at which the party joined the set.
+	// Epoch at which the party joined the team.
 	AtEpoch uint64 `protobuf:"varint,4,opt,name=at_epoch,json=atEpoch,proto3" json:"at_epoch,omitempty"`
 }
 
