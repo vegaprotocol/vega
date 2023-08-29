@@ -183,8 +183,11 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, n
 		return nil, fmt.Errorf("failed to setup metrics:%w", err)
 	}
 
-	// this can error if there are no existing segments so don't check the result.
-	p.CollectGarbage(ctx)
+	err = p.CollectGarbage(ctx)
+	// ErrIndexEntryNotFound is fine, it just means we don't have any segments yet.
+	if err != nil && !errors.Is(err, ErrIndexEntryNotFound) {
+		return nil, fmt.Errorf("failed to perform initial ipfs garbage collection:%w", err)
+	}
 
 	return p, nil
 }
@@ -362,7 +365,7 @@ func (p *Store) CollectGarbage(ctx context.Context) (err error) {
 	p.log.Debug("AddSnapshotData: removing old history segments")
 	segments, err := p.garbageCollectOldHistorySegments(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to remove old history segments:%s", err)
+		return fmt.Errorf("failed to remove old history segments:%w", err)
 	}
 	p.log.Infof("removed %d old history segments", len(segments))
 	return nil
