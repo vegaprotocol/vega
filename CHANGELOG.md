@@ -18,6 +18,13 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
+## 0.72.13
+
+### 🐛 Fixes
+
+- [9219](https://github.com/vegaprotocol/vega/issues/9219) - Don't do `IPFS` garbage collection every segment
+
+
 ## 0.72.12
 
 ### 🐛 Fixes
