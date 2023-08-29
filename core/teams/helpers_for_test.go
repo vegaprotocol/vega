@@ -47,6 +47,7 @@ func assertEqualTeams(t *testing.T, expected, actual []types.Team) {
 	t.Helper()
 
 	teams.SortByTeamID(expected)
+	teams.SortByTeamID(actual)
 
 	if len(expected) != len(actual) {
 		assert.Fail(t, fmt.Sprintf("Expected len of %d but got %d", len(expected), len(actual)))

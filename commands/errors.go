@@ -31,6 +31,7 @@ var (
 	ErrNotAValidInteger                                = errors.New("not a valid integer")
 	ErrNotAValidFloat                                  = errors.New("not a valid float")
 	ErrMustBeLessThan100Chars                          = errors.New("must be less than 100 characters")
+	ErrMustBeLessThan200Chars                          = errors.New("must be less than 200 characters")
 	ErrMustNotExceed20000Chars                         = errors.New("must not exceed 20000 characters")
 	ErrShouldBeHexEncoded                              = errors.New("should be hex encoded")
 	ErrSignatureNotVerifiable                          = errors.New("signature is not verifiable")

@@ -119,6 +119,33 @@ func testUpdateReferralSetFails(t *testing.T) {
 	})
 
 	assert.Contains(t, err.Get("update_referral_set.team.name"), commands.ErrIsRequired)
+
+	err = checkUpdateReferralSet(t, &commandspb.UpdateReferralSet{
+		IsTeam: true,
+		Team: &commandspb.UpdateReferralSet_Team{
+			Name: ptr.From(vgrand.RandomStr(101)),
+		},
+	})
+
+	assert.Contains(t, err.Get("update_referral_set.team.name"), commands.ErrMustBeLessThan100Chars)
+
+	err = checkUpdateReferralSet(t, &commandspb.UpdateReferralSet{
+		IsTeam: true,
+		Team: &commandspb.UpdateReferralSet_Team{
+			AvatarUrl: ptr.From(vgrand.RandomStr(201)),
+		},
+	})
+
+	assert.Contains(t, err.Get("update_referral_set.team.avatar_url"), commands.ErrMustBeLessThan200Chars)
+
+	err = checkUpdateReferralSet(t, &commandspb.UpdateReferralSet{
+		IsTeam: true,
+		Team: &commandspb.UpdateReferralSet_Team{
+			TeamUrl: ptr.From(vgrand.RandomStr(201)),
+		},
+	})
+
+	assert.Contains(t, err.Get("update_referral_set.team.team_url"), commands.ErrMustBeLessThan200Chars)
 }
 
 func checkUpdateReferralSet(t *testing.T, cmd *commandspb.UpdateReferralSet) commands.Errors {

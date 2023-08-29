@@ -23,8 +23,20 @@ func checkUpdateReferralSet(cmd *commandspb.UpdateReferralSet) Errors {
 		}
 
 		// now the only one which needs validation again is the name, as it's not allowed to be set to ""
-		if cmd.Team.Name != nil && len(*cmd.Team.Name) <= 0 {
-			return errs.FinalAddForProperty("update_referral_set.team.name", ErrIsRequired)
+		if cmd.Team.Name != nil {
+			if len(*cmd.Team.Name) <= 0 {
+				errs.AddForProperty("update_referral_set.team.name", ErrIsRequired)
+			} else if len(*cmd.Team.Name) > 100 {
+				errs.AddForProperty("update_referral_set.team.name", ErrMustBeLessThan100Chars)
+			}
+		}
+
+		if cmd.Team.AvatarUrl != nil && len(*cmd.Team.AvatarUrl) > 200 {
+			errs.AddForProperty("update_referral_set.team.avatar_url", ErrMustBeLessThan200Chars)
+		}
+
+		if cmd.Team.TeamUrl != nil && len(*cmd.Team.TeamUrl) > 200 {
+			errs.AddForProperty("update_referral_set.team.team_url", ErrMustBeLessThan200Chars)
 		}
 	}
 
