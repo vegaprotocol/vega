@@ -65,6 +65,8 @@
 - [9045](https://github.com/vegaprotocol/vega/issues/9045) - Snapshot the referral engine.
 - [9136](https://github.com/vegaprotocol/vega/issues/9136) - Referral engine returns reward factor for a given party
 - [9076](https://github.com/vegaprotocol/vega/issues/9076) - Add current funding rate to market data.
+- [9219](https://github.com/vegaprotocol/vega/issues/9219) - Don't do `IPFS` garbage collection every segment
+
 - [9208](https://github.com/vegaprotocol/vega/issues/9208) - Refactor referral set and teams state
 - [9204](https://github.com/vegaprotocol/vega/issues/9204) - Ensure teams names are not duplicates
 
