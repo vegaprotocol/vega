@@ -49,7 +49,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
 
     Given the average block duration is "2"
   @Now
-  Scenario: 001: lp1 under supplies liquidity (and expects to get penalty for not meeting the SLA) while lp2 over supplies liquidity
+  Scenario: 001: lp1 and lp2 under supplies liquidity (and expects to get penalty for not meeting the SLA) since both have orders outside price range
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | lp1    | USD   | 200000  |
@@ -65,12 +65,11 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
 
     When the network moves ahead "2" blocks
     And the parties place the following pegged iceberg orders:
-      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 2      | 200    |
-      | lp1   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 2      | 200    |
-      | lp1   | ETH/MAR22 | 1         | 1                    | sell | ASK              | 2      | 200    |
-      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 2      | 200    |
-      | lp2   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 2      | 200    |
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset | reference |
+      | lp1   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 2      | 200    | lp-b-1    |
+      | lp1   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 2      | 200    | lp-s-1    |
+      | lp2   | ETH/MAR22 | 2         | 1                    | buy  | BID              | 2      | 200    | lp-b-2    |
+      | lp2   | ETH/MAR22 | 2         | 1                    | sell | ASK              | 2      | 200    | lp-s-2    |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -93,7 +92,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
 
     And the parties should have the following account balances:
       | party | asset | market id | margin | general | bond  |
-      | lp1   | USD   | ETH/MAR22 | 21342  | 98658   | 80000 |
+      | lp1 | USD | ETH/MAR22 | 10671 | 109329 | 80000 |
       | lp2   | USD   | ETH/MAR22 | 10671  | 3829    | 500   |
     #margin_intial lp2: 2*1000*3.5569036*1.5=10671
 #lp1: 21342+98658+80000=200000; lp2: 10671+3829+500=15000
@@ -107,13 +106,13 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 71138         | 80500           | 2             |
 
-    Then the network moves ahead "10" blocks
+    Then the network moves ahead "6" blocks
 
     And the parties should have the following account balances:
       | party | asset | market id | margin | general | bond  |
-      | lp1   | USD   | ETH/MAR22 | 21342  | 98658   | 40000 |
+      | lp1 | USD | ETH/MAR22 | 10671 | 109329 | 40000 |
       | lp2   | USD   | ETH/MAR22 | 10671  | 3829    | 250   |
-    #liquidity fee: 1000*0.02 = 20; lp1 get 18, lp2 get 1
+#liquidity fee: 1000*0.02 = 20; lp1 get 19, lp2 get 0
 
     Then the following transfers should happen:
       | from   | to     | from account                   | to account                     | market id | amount | asset |
@@ -125,6 +124,19 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | lp2    | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 0      | USD   |
 
     And the insurance pool balance should be "40269" for the market "ETH/MAR22"
+
+    Then the network moves ahead "6" blocks
+
+    And the parties should have the following account balances:
+      | party | asset | market id | margin | general | bond  |
+      | lp1   | USD   | ETH/MAR22 | 10671  | 109329  | 20000 |
+      | lp2   | USD   | ETH/MAR22 | 10671  | 3829    | 125   |
+
+    And the insurance pool balance should be "60394" for the market "ETH/MAR22"
+# #increament in insurancepool: 60394-40269=20125 which is coming from SLA penalty on lp1 and lp2
+
+
+
 
 
 
