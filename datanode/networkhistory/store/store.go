@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
@@ -85,6 +86,7 @@ type Store struct {
 	index        index
 	swarmKeySeed string
 	swarmKey     string
+	lastGC       time.Time
 
 	indexPath  string
 	stagingDir string
@@ -180,6 +182,9 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, n
 	if err = setupMetrics(p.ipfsNode); err != nil {
 		return nil, fmt.Errorf("failed to setup metrics:%w", err)
 	}
+
+	// this can error if there are no existing segments so don't check the result.
+	p.CollectGarbage(ctx)
 
 	return p, nil
 }
@@ -337,13 +342,11 @@ func (p *Store) AddSnapshotData(ctx context.Context, s segment.Unpublished) (err
 		logging.String("previous history segment id", previousHistorySegmentID),
 	)
 
-	p.log.Debug("AddSnapshotData: removing old history segments")
-
-	segments, err := p.garbageCollectOldHistorySegments(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to remove old history segments:%s", err)
+	if time.Now().After(p.lastGC.Add(p.cfg.GarbageCollectionInterval.Duration)) {
+		if err := p.CollectGarbage(ctx); err != nil {
+			return err
+		}
 	}
-	p.log.Infof("removed %d old history segments", len(segments))
 
 	ipfsSize, err := p.ipfsRepo.GetStorageUsage(ctx)
 	if err != nil {
@@ -351,6 +354,17 @@ func (p *Store) AddSnapshotData(ctx context.Context, s segment.Unpublished) (err
 	}
 	metrics.SetNetworkHistoryIpfsStoreBytes(float64(ipfsSize))
 
+	return nil
+}
+
+func (p *Store) CollectGarbage(ctx context.Context) (err error) {
+	p.lastGC = time.Now()
+	p.log.Debug("AddSnapshotData: removing old history segments")
+	segments, err := p.garbageCollectOldHistorySegments(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to remove old history segments:%s", err)
+	}
+	p.log.Infof("removed %d old history segments", len(segments))
 	return nil
 }
 

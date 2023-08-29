@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"code.vegaprotocol.io/vega/datanode/config/encoding"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/logging"
@@ -136,6 +137,7 @@ func createStore(t *testing.T, historyRetentionBlockSpan int64, chainID string, 
 	log := logging.NewTestLogger()
 	cfg := store.NewDefaultConfig()
 	cfg.HistoryRetentionBlockSpan = historyRetentionBlockSpan
+	cfg.GarbageCollectionInterval = encoding.Duration{Duration: 0}
 	snapshotsDir := t.TempDir()
 
 	s, err := store.New(context.Background(), log, chainID, cfg, networkhistoryHome, 33)
