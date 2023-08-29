@@ -109,17 +109,6 @@ type AuctionDuration struct {
 	Volume int `json:"volume"`
 }
 
-type BenefitTier struct {
-	// The minimum number of epochs the party needs to be in the referral set to be eligible for the benefit
-	MinimumEpochs int `json:"minimumEpochs"`
-	// The minimum running notional for the given benefit tier
-	MinimumRunningNotionalTakerVolume string `json:"minimumRunningNotionalTakerVolume"`
-	// The proportion of the referee's taker fees to be discounted
-	ReferralDiscountFactor string `json:"referralDiscountFactor"`
-	// The proportion of the referee's taker fees to be rewarded to the referrer
-	ReferralRewardFactor string `json:"referralRewardFactor"`
-}
-
 // A Vega builtin asset, mostly for testing purpose
 type BuiltinAsset struct {
 	// Maximum amount that can be requested by a party through the built-in asset faucet at a time
@@ -818,7 +807,7 @@ type UpdateReferralProgram struct {
 	// ID of the proposal that created the referral program
 	ID string `json:"id"`
 	// Benefit tiers for the program
-	BenefitTiers []*BenefitTier `json:"benefitTiers"`
+	BenefitTiers []*vega.BenefitTier `json:"benefitTiers"`
 	// Determines the level of benefit a party can expect based on their staking
 	StakingTiers []*StakingTier `json:"stakingTiers"`
 	// The end time of the program

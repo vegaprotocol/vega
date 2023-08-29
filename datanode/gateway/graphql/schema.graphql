@@ -5722,3 +5722,19 @@ type FundingPeriodConnection {
   "The pagination information"
   pageInfo: PageInfo!
 }
+
+"Referral program information"
+type ReferralProgram {
+  "Unique ID generated from the proposal that created this program."
+  id: ID!
+  "Incremental version of the program. It is incremented after each program update."
+  version: Int!
+  "Defined tiers in increasing order. First element will give Tier 1, second element will give Tier 2, etc."
+  benefit_tiers: [BenefitTier!]!
+  "Timestamp as RFC3339Nano, after which when the current epoch ends, the programs status will become STATE_CLOSED and benefits will be disabled."
+  endOfProgramTimestamp: Timestamp!
+  "Number of epochs over which to evaluate a referral set's running volume."
+  windowLength: Int!
+  "Timestamp as RFC3339Nano when the program ended. If present, the current program has ended and no program is currently running."
+  endedAt: Timestamp
+}

@@ -622,3 +622,7 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPeriodConnection
   PartyActivityStreak:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.PartyActivityStreak
+  BenefitTier:
+    model: code.vegaprotocol.io/vega/protos/vega.BenefitTier
+  ReferralProgram:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralProgram

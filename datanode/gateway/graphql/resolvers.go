@@ -491,6 +491,10 @@ func (r *VegaResolverRoot) PartyActivityStreak() PartyActivityStreakResolver {
 	return (*partyActivityStreakResolver)(r)
 }
 
+func (r *VegaResolverRoot) ReferralProgram() ReferralProgramResolver {
+	return (*referralProgramResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {

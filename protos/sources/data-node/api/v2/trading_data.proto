@@ -3498,6 +3498,9 @@ message GetCurrentReferralProgramResponse {
   ReferralProgram current_referral_program = 1;
 }
 
+// Referral program for reporting purposes differs slightly from the referral program
+// message in the ReferralProgramCreated and ReferralProgramUpdated events, as it includes
+// an optional timestamp that is set when the referral program has ended.
 message ReferralProgram {
   // Incremental version of the program. It is incremented after each program
   // update.
@@ -3506,23 +3509,12 @@ message ReferralProgram {
   string id = 2;
   // Defined tiers in increasing order. First element will give Tier 1, second
   // element will give Tier 2, and so on.
-  repeated BenefitTier benefit_tiers = 3;
-  // Timestamp as Unix time in seconds after which when the current epoch ends, the
+  repeated vega.BenefitTier benefit_tiers = 3;
+  // Timestamp as Unix time in seconds, after which when the current epoch ends, the
   // programs status will become STATE_CLOSED and benefits will be disabled.
   int64 end_of_program_timestamp = 4;
   // Number of epochs over which to evaluate a referral set's running volume.
   uint64 window_length = 5;
-}
-
-message BenefitTier {
-  // Required running notional taker volume in quantum units for parties
-  // to access this tier.
-  string minimum_running_notional_taker_volume = 1;
-  // Required number of epochs a party must have been in a referral set to
-  // access this tier.
-  string minimum_epochs = 2;
-  // Proportion of the referee's taker fees to be rewarded to the referrer
-  string referral_reward_factor = 3;
-  // Proportion of the referee's taker fees to be discounted
-  string referral_discount_factor = 4;
+  // Timestamp as Unix time in nanoseconds at which the program ended.
+  optional int64 ended_at = 6;
 }

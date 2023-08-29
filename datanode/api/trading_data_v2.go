@@ -110,24 +110,7 @@ type TradingDataServiceV2 struct {
 	stopOrderService           *service.StopOrders
 	fundingPeriodService       *service.FundingPeriods
 	partyActivityStreak        *service.PartyActivityStreak
-}
-
-func (t *TradingDataServiceV2) GetPartyActivityStreak(ctx context.Context, req *v2.GetPartyActivityStreakRequest) (*v2.GetPartyActivityStreakResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("GetPartyActivityStreak")()
-
-	if !crypto.IsValidVegaPubKey(req.PartyId) {
-		return nil, formatE(ErrInvalidPartyID)
-	}
-
-	activityStreak, err := t.partyActivityStreak.Get(
-		ctx, entities.PartyID(req.PartyId), req.Epoch)
-	if err != nil {
-		return nil, formatE(err)
-	}
-
-	return &v2.GetPartyActivityStreakResponse{
-		ActivityStreak: activityStreak.ToProto(),
-	}, nil
+	referralProgramService     *service.ReferralPrograms
 }
 
 // ListAccounts lists accounts matching the request.
@@ -4022,5 +4005,19 @@ func (t *TradingDataServiceV2) ListFundingPeriodDataPoints(ctx context.Context, 
 
 	return &v2.ListFundingPeriodDataPointsResponse{
 		FundingPeriodDataPoints: connection,
+	}, nil
+}
+
+func (t *TradingDataServiceV2) GetCurrentReferralProgram(ctx context.Context, _ *v2.GetCurrentReferralProgramRequest) (
+	*v2.GetCurrentReferralProgramResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetCurrentReferralProgram")()
+	referralProgram, err := t.referralProgramService.GetCurrentReferralProgram(ctx)
+	if err != nil {
+		return nil, formatE(ErrGetCurrentReferralProgram, err)
+	}
+
+	return &v2.GetCurrentReferralProgramResponse{
+		CurrentReferralProgram: referralProgram.ToProto(),
 	}, nil
 }

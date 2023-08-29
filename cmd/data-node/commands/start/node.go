@@ -224,6 +224,7 @@ func (l *NodeCommand) createGRPCServer(config api.Config) *api.GRPCServer {
 		l.stopOrderService,
 		l.fundingPeriodService,
 		l.partyActivityStreakService,
+		l.referralProgramService,
 	)
 	return grpcServer
 }
