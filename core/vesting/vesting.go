@@ -292,3 +292,8 @@ func (e *Engine) clearup() {
 		}
 	}
 }
+
+// TODO implement me. if there's no multiplier return 1.
+func (e *Engine) GetRewardBonusMultiplier(party string) num.Decimal {
+	return num.DecimalOne()
+}

@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -39,8 +40,7 @@ type Engine struct {
 	// teams tracks all teams by team ID.
 	teams map[types.TeamID]*types.Team
 
-	// allTeamMembers tracks all the parties that belongs to a team, referrers and
-	// referees, by their current team ID.
+	// allTeamMembers maps a party to the team they are members of.
 	allTeamMembers map[types.PartyID]types.TeamID
 
 	// teamSwitches tracks all the parties that switch teams. The switch only
@@ -194,6 +194,34 @@ func (e *Engine) NumberOfEpochInTeamForParty(party types.PartyID) uint64 {
 	// fields `allTeamMembers` and `teams`. If it happens, this is a severe
 	// programming error.
 	panic(fmt.Sprintf("party %q is registered as a member of the team %q but the team does not reference his membership", party, teamID))
+}
+
+func (e *Engine) GetAllPartiesInTeams(minEpochsInTeam uint64) []string {
+	parties := make([]string, 0, len(e.allTeamMembers))
+
+	for t := range e.teams {
+		members := e.GetTeamMembers(string(t), minEpochsInTeam)
+		if len(members) > 0 {
+			parties = append(parties, members...)
+		}
+	}
+	sort.Strings(parties)
+	return parties
+}
+
+func (e *Engine) GetTeamMembers(team string, minEpochsInTeam uint64) []string {
+	t := e.teams[(types.TeamID(team))]
+	teamMembers := make([]string, 0, len(t.Referees)+1)
+	for _, m := range t.Referees {
+		if m.NumberOfEpoch >= minEpochsInTeam {
+			teamMembers = append(teamMembers, string(m.PartyID))
+		}
+	}
+	if t.Referrer.NumberOfEpoch >= minEpochsInTeam {
+		teamMembers = append(teamMembers, string(t.Referrer.PartyID))
+	}
+	sort.Strings(teamMembers)
+	return teamMembers
 }
 
 func (e *Engine) IsTeamMember(party types.PartyID) bool {

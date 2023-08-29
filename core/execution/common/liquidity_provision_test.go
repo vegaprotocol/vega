@@ -75,7 +75,9 @@ func newMarketLiquidity(t *testing.T) *marketLiquidityTest {
 
 	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).AnyTimes()
 
-	marketTracker := common.NewMarketActivityTracker(log, epochEngine)
+	teams := mocks.NewMockTeams(ctrl)
+	bc := mocks.NewMockAccountBalanceChecker(ctrl)
+	marketTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine, teams, bc)
 
 	marketLiquidity := common.NewMarketLiquidity(
 		log,

@@ -80,7 +80,10 @@ func getMockedEngine(t *testing.T) *engineFake {
 	epochEngine := mocks.NewMockEpochEngine(ctrl)
 	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
 	asset := mocks.NewMockAssets(ctrl)
-	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine), asset)
+
+	teams := mocks.NewMockTeams(ctrl)
+	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
+	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine, teams, balanceChecker), asset)
 	return &engineFake{
 		Engine:     exec,
 		ctrl:       ctrl,
@@ -131,7 +134,10 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 		as := NewAssetStub(a, 0)
 		return as, nil
 	})
-	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine), asset), ctrl
+	teams := mocks.NewMockTeams(ctrl)
+	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
+
+	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine, teams, balanceChecker), asset), ctrl
 }
 
 func TestEmptyMarkets(t *testing.T) {

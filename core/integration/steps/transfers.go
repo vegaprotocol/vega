@@ -151,9 +151,14 @@ func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {
 			mkts = []string{}
 		}
 		dispatchStrategy = &proto.DispatchStrategy{
-			AssetForMetric: r.MustStr("metric_asset"),
-			Markets:        mkts,
-			Metric:         proto.DispatchMetric(proto.DispatchMetric_value[r.MustStr("metric")]),
+			AssetForMetric:       r.MustStr("metric_asset"),
+			Markets:              mkts,
+			Metric:               proto.DispatchMetric(proto.DispatchMetric_value[r.MustStr("metric")]),
+			DistributionStrategy: proto.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA,
+			LockPeriod:           1,
+			EntityScope:          proto.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+			IndividualScope:      proto.IndividualScope_INDIVIDUAL_SCOPE_ALL,
+			WindowLength:         1,
 		}
 	}
 

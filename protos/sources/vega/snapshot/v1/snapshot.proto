@@ -964,6 +964,7 @@ message NextTimeTrigger {
 
 message MarketTracker {
   repeated checkpoint.v1.MarketActivityTracker market_activity = 1;
+  repeated checkpoint.v1.TakerNotionalVolume taker_notional_volume = 2;
 }
 
 message SignerEventsPerAddress {

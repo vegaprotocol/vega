@@ -470,18 +470,33 @@ func (m *MockMarketActivityTracker) EXPECT() *MockMarketActivityTrackerMockRecor
 	return m.recorder
 }
 
-// GetMarketScores mocks base method.
-func (m *MockMarketActivityTracker) GetMarketScores(arg0 string, arg1 []string, arg2 vega.DispatchMetric) []*types.MarketContributionScore {
+// CalculateMetricForIndividuals mocks base method.
+func (m *MockMarketActivityTracker) CalculateMetricForIndividuals(arg0 *vega.DispatchStrategy) []*types.PartyContibutionScore {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMarketScores", arg0, arg1, arg2)
-	ret0, _ := ret[0].([]*types.MarketContributionScore)
+	ret := m.ctrl.Call(m, "CalculateMetricForIndividuals", arg0)
+	ret0, _ := ret[0].([]*types.PartyContibutionScore)
 	return ret0
 }
 
-// GetMarketScores indicates an expected call of GetMarketScores.
-func (mr *MockMarketActivityTrackerMockRecorder) GetMarketScores(arg0, arg1, arg2 interface{}) *gomock.Call {
+// CalculateMetricForIndividuals indicates an expected call of CalculateMetricForIndividuals.
+func (mr *MockMarketActivityTrackerMockRecorder) CalculateMetricForIndividuals(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketScores", reflect.TypeOf((*MockMarketActivityTracker)(nil).GetMarketScores), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CalculateMetricForIndividuals", reflect.TypeOf((*MockMarketActivityTracker)(nil).CalculateMetricForIndividuals), arg0)
+}
+
+// CalculateMetricForTeams mocks base method.
+func (m *MockMarketActivityTracker) CalculateMetricForTeams(arg0 *vega.DispatchStrategy) ([]*types.PartyContibutionScore, map[string][]*types.PartyContibutionScore) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CalculateMetricForTeams", arg0)
+	ret0, _ := ret[0].([]*types.PartyContibutionScore)
+	ret1, _ := ret[1].(map[string][]*types.PartyContibutionScore)
+	return ret0, ret1
+}
+
+// CalculateMetricForTeams indicates an expected call of CalculateMetricForTeams.
+func (mr *MockMarketActivityTrackerMockRecorder) CalculateMetricForTeams(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CalculateMetricForTeams", reflect.TypeOf((*MockMarketActivityTracker)(nil).CalculateMetricForTeams), arg0)
 }
 
 // GetMarketsWithEligibleProposer mocks base method.
@@ -499,15 +514,15 @@ func (mr *MockMarketActivityTrackerMockRecorder) GetMarketsWithEligibleProposer(
 }
 
 // MarkPaidProposer mocks base method.
-func (m *MockMarketActivityTracker) MarkPaidProposer(arg0, arg1 string, arg2 []string, arg3 string) {
+func (m *MockMarketActivityTracker) MarkPaidProposer(arg0, arg1, arg2 string, arg3 []string, arg4 string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "MarkPaidProposer", arg0, arg1, arg2, arg3)
+	m.ctrl.Call(m, "MarkPaidProposer", arg0, arg1, arg2, arg3, arg4)
 }
 
 // MarkPaidProposer indicates an expected call of MarkPaidProposer.
-func (mr *MockMarketActivityTrackerMockRecorder) MarkPaidProposer(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockMarketActivityTrackerMockRecorder) MarkPaidProposer(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkPaidProposer", reflect.TypeOf((*MockMarketActivityTracker)(nil).MarkPaidProposer), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkPaidProposer", reflect.TypeOf((*MockMarketActivityTracker)(nil).MarkPaidProposer), arg0, arg1, arg2, arg3, arg4)
 }
 
 // MockERC20BridgeView is a mock of ERC20BridgeView interface.

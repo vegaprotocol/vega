@@ -188,6 +188,26 @@ type DispatchStrategy struct {
 	DispatchMetricAssetID string `json:"dispatchMetricAssetId"`
 	// Scope the dispatch to this market only under the metric asset
 	MarketIdsInScope []string `json:"marketIdsInScope"`
+	// The type of entities eligible for this strategy
+	EntityScope EntityScope `json:"entityScope"`
+	// If entity scope is individuals then this defines the scope for individuals
+	IndividualScope *IndividualScope `json:"individualScope"`
+	// The teams in scope for the reward, if the entity is teams
+	TeamScope []*string `json:"teamScope"`
+	// The proportion of the top performers in the team for a given metric to be averaged for the metric calculation if scope is team
+	NTopPerformers *string `json:"nTopPerformers"`
+	// Minimum number of governance tokens, e.g. VEGA, staked for a party to be considered eligible
+	StakingRequirement string `json:"stakingRequirement"`
+	// Minimum notional time-weighted averaged position required for a party to be considered eligible
+	NotionalTimeWeightedAveragePositionRequirement string `json:"notionalTimeWeightedAveragePositionRequirement"`
+	// Number of epochs to evaluate the metric on
+	WindowLength int `json:"windowLength"`
+	// Number of epochs after distribution to delay vesting of rewards by
+	LockPeriod int `json:"lockPeriod"`
+	// Controls how the reward is distributed between qualifying parties
+	DistributionStrategy DistributionStrategy `json:"distributionStrategy"`
+	// Ascending order list of start rank and corresponding share ratio
+	RankTable *RankTable `json:"rankTable"`
 }
 
 // An asset originated from an Ethereum ERC20 Token
@@ -579,6 +599,11 @@ type PubKey struct {
 
 func (PubKey) IsSignerKind() {}
 
+type RankTable struct {
+	StartRank  int `json:"startRank"`
+	ShareRatio int `json:"shareRatio"`
+}
+
 // Connection type for retrieving cursor-based paginated reward summary information
 type RewardSummaryConnection struct {
 	// List of reward summaries available for the connection
@@ -848,6 +873,92 @@ func (e DataSourceSpecStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type DistributionStrategy string
+
+const (
+	// Rewards funded using the pro-rata strategy should be distributed pro-rata by each entity's reward metric scaled by any active multipliers that party has
+	DistributionStrategyDistributionStrategyProRata DistributionStrategy = "DISTRIBUTION_STRATEGY_PRO_RATA"
+	// Rewards funded using the rank strategy
+	DistributionStrategyDistributionStrategyRank DistributionStrategy = "DISTRIBUTION_STRATEGY_RANK"
+)
+
+var AllDistributionStrategy = []DistributionStrategy{
+	DistributionStrategyDistributionStrategyProRata,
+	DistributionStrategyDistributionStrategyRank,
+}
+
+func (e DistributionStrategy) IsValid() bool {
+	switch e {
+	case DistributionStrategyDistributionStrategyProRata, DistributionStrategyDistributionStrategyRank:
+		return true
+	}
+	return false
+}
+
+func (e DistributionStrategy) String() string {
+	return string(e)
+}
+
+func (e *DistributionStrategy) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DistributionStrategy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DistributionStrategy", str)
+	}
+	return nil
+}
+
+func (e DistributionStrategy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type EntityScope string
+
+const (
+	// Rewards must be distributed directly to eligible parties
+	EntityScopeEntityScopeIndividuals EntityScope = "ENTITY_SCOPE_INDIVIDUALS"
+	// Rewards must be distributed directly to eligible teams, and then amongst team members
+	EntityScopeEntityScopeTeams EntityScope = "ENTITY_SCOPE_TEAMS"
+)
+
+var AllEntityScope = []EntityScope{
+	EntityScopeEntityScopeIndividuals,
+	EntityScopeEntityScopeTeams,
+}
+
+func (e EntityScope) IsValid() bool {
+	switch e {
+	case EntityScopeEntityScopeIndividuals, EntityScopeEntityScopeTeams:
+		return true
+	}
+	return false
+}
+
+func (e EntityScope) String() string {
+	return string(e)
+}
+
+func (e *EntityScope) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = EntityScope(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid EntityScope", str)
+	}
+	return nil
+}
+
+func (e EntityScope) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type GovernanceTransferType string
 
 const (
@@ -891,6 +1002,52 @@ func (e *GovernanceTransferType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e GovernanceTransferType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type IndividualScope string
+
+const (
+	// All parties on the network are within the scope of this reward
+	IndividualScopeIndividualScopeAll IndividualScope = "INDIVIDUAL_SCOPE_ALL"
+	// All parties that are part of a team are within the scope of this reward
+	IndividualScopeIndividualScopeInTeam IndividualScope = "INDIVIDUAL_SCOPE_IN_TEAM"
+	// All parties that are not part of a team are within the scope of this reward
+	IndividualScopeIndividualScopeNotInTeam IndividualScope = "INDIVIDUAL_SCOPE_NOT_IN_TEAM"
+)
+
+var AllIndividualScope = []IndividualScope{
+	IndividualScopeIndividualScopeAll,
+	IndividualScopeIndividualScopeInTeam,
+	IndividualScopeIndividualScopeNotInTeam,
+}
+
+func (e IndividualScope) IsValid() bool {
+	switch e {
+	case IndividualScopeIndividualScopeAll, IndividualScopeIndividualScopeInTeam, IndividualScopeIndividualScopeNotInTeam:
+		return true
+	}
+	return false
+}
+
+func (e IndividualScope) String() string {
+	return string(e)
+}
+
+func (e *IndividualScope) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = IndividualScope(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid IndividualScope", str)
+	}
+	return nil
+}
+
+func (e IndividualScope) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

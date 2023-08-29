@@ -146,7 +146,8 @@ const (
 	StakingAndDelegationRewardsMinValidators          = "reward.staking.delegation.minValidators"
 	StakingAndDelegationRewardOptimalStakeMultiplier  = "reward.staking.delegation.optimalStakeMultiplier"
 
-	RewardMarketCreationQuantumMultiple = "rewards.marketCreationQuantumMultiple"
+	RewardMarketCreationQuantumMultiple       = "rewards.marketCreationQuantumMultiple"
+	MinEpochsInTeamForMetricRewardEligibility = "rewards.team.minEpochsInTeam"
 
 	// spam policies params.
 	SpamProtectionMaxVotes                         = "spam.protection.max.votes"
@@ -231,6 +232,7 @@ var Deprecated = map[string]struct{}{
 }
 
 var AllKeys = map[string]struct{}{
+	MinEpochsInTeamForMetricRewardEligibility:                {},
 	RewardVestingMinimumTransfer:                             {},
 	RewardsVestingBaseRate:                                   {},
 	SpotMarketTradingEnabled:                                 {},
