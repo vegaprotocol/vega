@@ -30,7 +30,7 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
-	typespb "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -38,9 +38,10 @@ import (
 )
 
 type testEngine struct {
-	engine      *teams.SnapshottedEngine
-	broker      *mocks.MockBroker
-	timeService *mocks.MockTimeService
+	engine       *teams.SnapshottedEngine
+	broker       *mocks.MockBroker
+	timeService  *mocks.MockTimeService
+	currentEpoch uint64
 }
 
 func assertEqualTeams(t *testing.T, expected, actual []types.Team) {
@@ -78,7 +79,7 @@ func assertEqualMembership(t *testing.T, expected, actual *types.Membership) {
 
 	assert.Equal(t, expected.PartyID, actual.PartyID)
 	assert.Equal(t, expected.JoinedAt.UnixNano(), actual.JoinedAt.UnixNano())
-	assert.Equal(t, expected.NumberOfEpoch, actual.NumberOfEpoch)
+	assert.Equal(t, expected.StartedAtEpoch, actual.StartedAtEpoch)
 }
 
 func expectTeamCreatedEvent(t *testing.T, engine *testEngine) {
@@ -121,11 +122,15 @@ func nextEpoch(t *testing.T, ctx context.Context, te *testEngine, startEpochTime
 	t.Helper()
 
 	te.engine.OnEpoch(ctx, types.Epoch{
-		Action:  typespb.EpochAction_EPOCH_ACTION_END,
+		Seq:     te.currentEpoch,
+		Action:  vegapb.EpochAction_EPOCH_ACTION_END,
 		EndTime: startEpochTime.Add(-1 * time.Second),
 	})
+
+	te.currentEpoch += 1
 	te.engine.OnEpoch(ctx, types.Epoch{
-		Action:    typespb.EpochAction_EPOCH_ACTION_START,
+		Seq:       te.currentEpoch,
+		Action:    vegapb.EpochAction_EPOCH_ACTION_START,
 		StartTime: startEpochTime,
 	})
 }
@@ -160,10 +165,16 @@ func newEngine(t *testing.T) *testEngine {
 
 	engine := teams.NewSnapshottedEngine(epochEngine, broker, timeService)
 
+	engine.OnEpochRestore(context.Background(), types.Epoch{
+		Seq:    10,
+		Action: vegapb.EpochAction_EPOCH_ACTION_START,
+	})
+
 	return &testEngine{
-		engine:      engine,
-		broker:      broker,
-		timeService: timeService,
+		engine:       engine,
+		broker:       broker,
+		timeService:  timeService,
+		currentEpoch: 10,
 	}
 }
 

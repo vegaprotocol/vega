@@ -328,13 +328,13 @@ type ObservableMarketData {
 
 "Timestamps for when the market changes state"
 type MarketTimestamps {
-  "Time when the market is first proposed"
+  "RFC3339Nano time when the market is first proposed"
   proposed: Timestamp
-  "Time when the market has been voted in and waiting to be created"
+  "RFC3339Nano time when the market has been voted in and waiting to be created"
   pending: Timestamp!
-  "Time when the market is open and ready to accept trades"
+  "RFC3339Nano time when the market is open and ready to accept trades"
   open: Timestamp!
-  "Time when the market is closed"
+  "RFC3339Nano time when the market is closed"
   close: Timestamp!
 }
 
@@ -498,7 +498,7 @@ type Query {
     side: Side!
     "TimeInForce of the order"
     timeInForce: OrderTimeInForce!
-    "Expiration of the the order"
+    "RFC3339Nano expiration time of the order"
     expiration: Timestamp
     "Type of the order"
     type: OrderType!
@@ -519,7 +519,7 @@ type Query {
     side: Side!
     "Time in force of the order"
     timeInForce: OrderTimeInForce!
-    "Expiration of the order"
+    "RFC3339Nano expiration time of the order"
     expiration: Timestamp
     "Type of the order"
     type: OrderType!
@@ -578,13 +578,13 @@ type Query {
   getMarketDataHistoryConnectionByID(
     id: ID!
     """
-    Optional start date time for the historic data query.
+    Optional RFC3339Nano start date time for the historic data query.
     If both the start and end date is not provided, only the latest snapshot will be returned.
     If only the start date is provided, all market data for the market from the start date forward will be returned.
     """
     start: Timestamp
     """
-    Optional end date time for the historic data query.
+    Optional RFC3339Nano end date time for the historic data query.
     If both the start and end date is not provided, only the latest snapshot will be returned.
     If only the end date is provided, all market data for the market up to and including the end date will be returned.
     """
@@ -851,7 +851,7 @@ type Transfer {
   "The status of this transfer"
   status: TransferStatus!
 
-  "The time at which the transfer was submitted"
+  "The RFC3339Nano time at which the transfer was submitted"
   timestamp: Timestamp!
 
   "The type of transfer being made, i.e. a one-off or recurring transfer"
@@ -869,7 +869,7 @@ union TransferKind =
 
 "The specific details for a one-off governance transfer"
 type OneOffGovernanceTransfer {
-  "An optional time when the transfer should be delivered"
+  "An optional RFC3339Nano time when the transfer should be delivered"
   deliverOn: Timestamp
 }
 
@@ -885,7 +885,7 @@ type RecurringGovernanceTransfer {
 
 "The specific details for a one-off transfer"
 type OneOffTransfer {
-  "An optional time when the transfer should be delivered"
+  "An optional RFC3339Nano time when the transfer should be delivered"
   deliverOn: Timestamp
 }
 
@@ -2413,7 +2413,7 @@ type StakeLinking {
   id: ID!
   "Type of linking: link|unlink"
   type: StakeLinkingType!
-  "The time at which the request happened on ethereum"
+  "The RFC3339Nano time at which the request happened on ethereum"
   timestamp: Timestamp!
   "The party initiating the stake linking"
   party: Party!
@@ -2421,7 +2421,7 @@ type StakeLinking {
   amount: String!
   "The status of the linking"
   status: StakeLinkingStatus!
-  "The time at which the stake linking was fully processed by the Vega network, null until defined"
+  "The RFC3339Nano time at which the stake linking was fully processed by the Vega network, null until defined"
   finalizedAt: Timestamp
   "The transaction hash (ethereum) which initiated the link/unlink"
   txHash: String!
@@ -2555,7 +2555,7 @@ type Order {
   "RFC3339Nano formatted date and time for when the order was created (timestamp)"
   createdAt: Timestamp!
 
-  "Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)"
+  "RFC3339Nano expiration time of this order"
   expiresAt: Timestamp
 
   "The status of an order, for example 'Active'"
@@ -2636,7 +2636,7 @@ type StopOrder {
   id: ID!
   "If OCO (one-cancels-other) order, the ID of the associated order."
   ocoLinkId: ID
-  "Time at which the order will expire if an expiry time is set."
+  "RFC3339Nano time at which the order will expire if an expiry time is set."
   expiresAt: Timestamp
   "If an expiry is set, what should the stop order do when it expires."
   expiryStrategy: StopOrderExpiryStrategy
@@ -2644,9 +2644,9 @@ type StopOrder {
   triggerDirection: StopOrderTriggerDirection!
   "Status of the stop order"
   status: StopOrderStatus!
-  "Time the stop order was created."
+  "RFC3339Nano time the stop order was created."
   createdAt: Timestamp!
-  "Time the stop order was last updated."
+  "RFC3339Nano time the stop order was last updated."
   updatedAt: Timestamp
   "Party that submitted the stop order."
   partyId: ID!
@@ -2674,7 +2674,7 @@ type OrderSubmission {
   side: Side!
   "The timeInForce of order (determines how and if it executes, and whether it persists on the book)"
   timeInForce: OrderTimeInForce!
-  "Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)"
+  "RFC3339Nano expiration time of this order"
   expiresAt: Timestamp!
   "The order type"
   type: OrderType!
@@ -2719,7 +2719,7 @@ type OrderUpdate {
   "RFC3339Nano formatted date and time for when the order was created (timestamp)"
   createdAt: Timestamp!
 
-  "Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)"
+  "RFC3339Nano expiration time of this order"
   expiresAt: Timestamp
 
   "The status of an order, for example 'Active'"
@@ -2994,7 +2994,7 @@ type Erc20WithdrawalApproval {
   signatures: String!
   "The target address that will receive the funds"
   targetAddress: String!
-  "Timestamp at which the withdrawal was created"
+  "RFC3339Nano timestamp at which the withdrawal was created"
   creation: String!
 }
 
@@ -4543,7 +4543,7 @@ type LiquidityProvision {
   id: ID!
   "The party making this commitment"
   party: Party!
-  "When the liquidity provision was initially created (formatted RFC3339)"
+  "RFC3339Nano time when the liquidity provision was initially created"
   createdAt: Timestamp!
   "RFC3339Nano time of when the liquidity provision was updated"
   updatedAt: Timestamp
@@ -4571,9 +4571,9 @@ type LiquidityProvisionUpdate {
   id: ID!
   "The party making this commitment"
   partyID: ID!
-  "When the liquidity provision was initially created (formatted RFC3339)"
+  "RFC3339Nano time when the liquidity provision was initially created"
   createdAt: Timestamp!
-  "RFC3339Nano time of when the liquidity provision was updated"
+  "RFC3339Nano time when the liquidity provision was updated"
   updatedAt: Timestamp
   "Market for the order"
   marketID: ID!
@@ -4609,7 +4609,7 @@ type Reward {
   amount: String!
   "Percentage out of the total distributed reward"
   percentageOfTotal: String!
-  "Time at which the rewards was received"
+  "RFC3339Nano time when the rewards were received"
   receivedAt: Timestamp!
 }
 
@@ -5541,7 +5541,7 @@ type FundingPeriodDataPoint {
   price: String!
   "Time-weighted average price calculated from data points for this period from the data source."
   twap: String
-  "Timestamp when the data point was received."
+  "RFC3339Nano timestamp when the data point was received."
   timestamp: Timestamp!
 }
 

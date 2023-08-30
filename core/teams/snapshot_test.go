@@ -90,15 +90,15 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 		{
 			ID: teamID1,
 			Referrer: &types.Membership{
-				PartyID:       referrer1,
-				JoinedAt:      team1CreationDate,
-				NumberOfEpoch: 1,
+				PartyID:        referrer1,
+				JoinedAt:       team1CreationDate,
+				StartedAtEpoch: te1.currentEpoch - 1,
 			},
 			Referees: []*types.Membership{
 				{
-					PartyID:       referee1,
-					JoinedAt:      referee1JoiningDate,
-					NumberOfEpoch: 1,
+					PartyID:        referee1,
+					JoinedAt:       referee1JoiningDate,
+					StartedAtEpoch: te1.currentEpoch - 1,
 				},
 			},
 			Name:      name1,
@@ -108,18 +108,18 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 		}, {
 			ID: teamID2,
 			Referrer: &types.Membership{
-				PartyID:       referrer2,
-				JoinedAt:      team2CreationDate,
-				NumberOfEpoch: 1,
+				PartyID:        referrer2,
+				JoinedAt:       team2CreationDate,
+				StartedAtEpoch: te1.currentEpoch - 1,
 			},
 			Name:      name2,
 			TeamURL:   teamURL2,
 			AvatarURL: avatarURL2,
 			Referees: []*types.Membership{
 				{
-					PartyID:       referee2,
-					JoinedAt:      referee2JoiningDate2,
-					NumberOfEpoch: 0,
+					PartyID:        referee2,
+					JoinedAt:       referee2JoiningDate2,
+					StartedAtEpoch: te1.currentEpoch - 0,
 				},
 			},
 			CreatedAt: team2CreationDate,
@@ -156,15 +156,15 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 		{
 			ID: teamID1,
 			Referrer: &types.Membership{
-				PartyID:       referrer1,
-				JoinedAt:      team1CreationDate,
-				NumberOfEpoch: 1,
+				PartyID:        referrer1,
+				JoinedAt:       team1CreationDate,
+				StartedAtEpoch: te2.currentEpoch - 1,
 			},
 			Referees: []*types.Membership{
 				{
-					PartyID:       referee1,
-					JoinedAt:      referee1JoiningDate,
-					NumberOfEpoch: 1,
+					PartyID:        referee1,
+					JoinedAt:       referee1JoiningDate,
+					StartedAtEpoch: te2.currentEpoch - 1,
 				},
 			},
 			Name:      name1,
@@ -174,18 +174,18 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 		}, {
 			ID: teamID2,
 			Referrer: &types.Membership{
-				PartyID:       referrer2,
-				JoinedAt:      team2CreationDate,
-				NumberOfEpoch: 1,
+				PartyID:        referrer2,
+				JoinedAt:       team2CreationDate,
+				StartedAtEpoch: te2.currentEpoch - 1,
 			},
 			Name:      name2,
 			TeamURL:   teamURL2,
 			AvatarURL: avatarURL2,
 			Referees: []*types.Membership{
 				{
-					PartyID:       referee2,
-					JoinedAt:      referee2JoiningDate2,
-					NumberOfEpoch: 0,
+					PartyID:        referee2,
+					JoinedAt:       referee2JoiningDate2,
+					StartedAtEpoch: te2.currentEpoch - 0,
 				},
 			},
 			CreatedAt: team2CreationDate,

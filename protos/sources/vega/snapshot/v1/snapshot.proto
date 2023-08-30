@@ -1062,7 +1062,7 @@ message Team {
 message Membership {
   string party_id = 1;
   int64 joined_at = 2;
-  uint64 number_of_epoch = 3;
+  uint64 started_at_epoch = 3;
 }
 
 message TeamSwitches {
@@ -1103,6 +1103,12 @@ message ReferralSet {
   int64 updated_at = 3;
   Membership referrer = 4;
   repeated Membership referees = 5;
+  repeated RunningVolume running_volumes = 6;
+}
+
+message RunningVolume {
+  uint64 epoch = 1;
+  string volume = 2;
 }
 
 message AssetLocked {

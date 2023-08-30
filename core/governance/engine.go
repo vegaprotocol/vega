@@ -45,7 +45,6 @@ var (
 	ErrUnsupportedAssetSourceType                = errors.New("unsupported asset source type")
 	ErrExpectedERC20Asset                        = errors.New("expected an ERC20 asset but was not")
 	ErrErc20AddressAlreadyInUse                  = errors.New("erc20 address already in use")
-	ErrSpotsNotEnabled                           = errors.New("spot trading not enabled")
 	ErrParentMarketDoesNotExist                  = errors.New("market to succeed does not exist")
 	ErrParentMarketAlreadySucceeded              = errors.New("the parent market was already succeeded by a prior proposal")
 	ErrParentMarketSucceededByCompeting          = errors.New("the parent market has been succeeded by a competing propsal")
@@ -971,7 +970,13 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		return validateNewMarketChange(newMarket, e.assets, true, e.netp, enactTime.Sub(closeTime), enct, parent, e.timeService.GetTimeNow(), false)
 	case types.ProposalTermsTypeUpdateMarket:
 		enct.shouldNotVerify = true
-		return validateUpdateMarketChange(terms.GetUpdateMarket(), enct, e.timeService.GetTimeNow())
+		marketUpdate := terms.GetUpdateMarket()
+		mkt, ok := e.markets.GetMarket(marketUpdate.MarketID, false)
+		if !ok {
+			return types.ProposalErrorInvalidMarket, ErrParentMarketDoesNotExist
+		}
+
+		return validateUpdateMarketChange(marketUpdate, mkt, enct, e.timeService.GetTimeNow())
 	case types.ProposalTermsTypeNewAsset:
 		return e.validateNewAssetProposal(terms.GetNewAsset())
 	case types.ProposalTermsTypeUpdateAsset:
@@ -1206,11 +1211,26 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 				DataSourceSpecBinding:               product.Future.DataSourceSpecBinding,
 			},
 		}
+	case *types.UpdateInstrumentConfigurationPerps:
+		assets, _ := existingMarket.GetAssets()
+		newMarket.Changes.Instrument.Product = &types.InstrumentConfigurationPerps{
+			Perps: &types.PerpsProduct{
+				SettlementAsset:                     assets[0],
+				QuoteName:                           product.Perps.QuoteName,
+				MarginFundingFactor:                 product.Perps.MarginFundingFactor,
+				InterestRate:                        product.Perps.InterestRate,
+				ClampLowerBound:                     product.Perps.ClampLowerBound,
+				ClampUpperBound:                     product.Perps.ClampUpperBound,
+				DataSourceSpecForSettlementData:     product.Perps.DataSourceSpecForSettlementData,
+				DataSourceSpecForSettlementSchedule: product.Perps.DataSourceSpecForSettlementSchedule,
+				DataSourceSpecBinding:               product.Perps.DataSourceSpecBinding,
+			},
+		}
 	default:
 		return nil, types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
 
-	if perr, err := validateUpdateMarketChange(terms, &enactmentTime{current: p.Terms.EnactmentTimestamp, shouldNotVerify: true}, e.timeService.GetTimeNow()); err != nil {
+	if perr, err := validateUpdateMarketChange(terms, existingMarket, &enactmentTime{current: p.Terms.EnactmentTimestamp, shouldNotVerify: true}, e.timeService.GetTimeNow()); err != nil {
 		return nil, perr, err
 	}
 

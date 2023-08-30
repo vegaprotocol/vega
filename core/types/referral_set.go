@@ -2,8 +2,10 @@ package types
 
 import "time"
 
+type ReferralSetID string
+
 type ReferralSet struct {
-	ID string
+	ID ReferralSetID
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

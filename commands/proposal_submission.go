@@ -285,9 +285,14 @@ func checkReferralProgram(terms *vegapb.ProposalTerms, change *vegapb.ProposalTe
 	}
 	if changes.WindowLength == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.window_length", ErrIsRequired)
+	} else if changes.WindowLength > 100 {
+		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.window_length", ErrMustBeAtMost100)
 	}
 	for i, tier := range changes.BenefitTiers {
 		errs.Merge(checkBenefitTier(i, tier))
+	}
+	for i, tier := range changes.StakingTiers {
+		errs.Merge(checkStakingTier(i, tier))
 	}
 	return errs
 }
@@ -338,6 +343,36 @@ func checkBenefitTier(index int, tier *vegapb.BenefitTier) Errors {
 			errs.AddForProperty(propertyPath+".referral_discount_factor", ErrIsNotValidNumber)
 		} else if rdf.IsNegative() {
 			errs.AddForProperty(propertyPath+".referral_discount_factor", ErrMustBePositiveOrZero)
+		}
+	}
+
+	return errs
+}
+
+func checkStakingTier(index int, tier *vegapb.StakingTier) Errors {
+	errs := NewErrors()
+
+	propertyPath := fmt.Sprintf("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.%d", index)
+
+	if len(tier.MinimumStakedTokens) == 0 {
+		errs.AddForProperty(propertyPath+".minimum_staked_tokens", ErrIsRequired)
+	} else {
+		stakedTokens, overflow := num.UintFromString(tier.MinimumStakedTokens, 10)
+		if overflow {
+			errs.AddForProperty(propertyPath+".minimum_staked_tokens", ErrIsNotValidNumber)
+		} else if stakedTokens.IsNegative() || stakedTokens.IsZero() {
+			errs.AddForProperty(propertyPath+".minimum_staked_tokens", ErrMustBePositive)
+		}
+	}
+
+	if len(tier.ReferralRewardMultiplier) == 0 {
+		errs.AddForProperty(propertyPath+".referral_reward_multiplier", ErrIsRequired)
+	} else {
+		rrm, err := num.DecimalFromString(tier.ReferralRewardMultiplier)
+		if err != nil {
+			errs.AddForProperty(propertyPath+".referral_reward_multiplier", ErrIsNotValidNumber)
+		} else if !rrm.GreaterThanOrEqual(num.DecimalOne()) {
+			errs.AddForProperty(propertyPath+".referral_reward_multiplier", ErrMustBeGTE1)
 		}
 	}
 

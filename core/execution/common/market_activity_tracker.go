@@ -96,7 +96,7 @@ type MarketActivityTracker struct {
 	partyTakerNotionalVolume            map[string]*num.Uint
 }
 
-// NewFeesTracker instantiates the fees tracker.
+// NewMarketActivityTracker instantiates the fees tracker.
 func NewMarketActivityTracker(log *logging.Logger, epochEngine EpochEngine, teams Teams, balanceChecker AccountBalanceChecker) *MarketActivityTracker {
 	mat := &MarketActivityTracker{
 		assetToMarketTrackers:    map[string]map[string]*marketTracker{},
@@ -678,7 +678,7 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 	return num.DecimalZero()
 }
 
-func (mat *MarketActivityTracker) RecordNotionalTakerVolume(market, party string, volumeToAdd *num.Uint) {
+func (mat *MarketActivityTracker) RecordNotionalTakerVolume(party string, volumeToAdd *num.Uint) {
 	if _, ok := mat.partyTakerNotionalVolume[party]; !ok {
 		mat.partyTakerNotionalVolume[party] = volumeToAdd
 		return
@@ -790,7 +790,7 @@ func (mt *marketTracker) processPositionEndOfEpoch(epochStartTime time.Time, end
 	}
 }
 
-////// return metric //////
+// //// return metric //////
 
 // recordM2M records the amount corresponding to mark to market (profit or loss).
 func (mt *marketTracker) recordM2M(party string, amount num.Decimal) {
