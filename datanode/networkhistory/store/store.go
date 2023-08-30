@@ -183,12 +183,6 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, n
 		return nil, fmt.Errorf("failed to setup metrics:%w", err)
 	}
 
-	err = p.CollectGarbage(ctx)
-	// ErrIndexEntryNotFound is fine, it just means we don't have any segments yet.
-	if err != nil && !errors.Is(err, ErrIndexEntryNotFound) {
-		return nil, fmt.Errorf("failed to perform initial ipfs garbage collection:%w", err)
-	}
-
 	return p, nil
 }
 
