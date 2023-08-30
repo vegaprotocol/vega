@@ -1580,12 +1580,13 @@ func (e *Engine) OnMarketLiquidityV2StakeToCCYVolumeUpdate(_ context.Context, d 
 }
 
 func (e *Engine) OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(_ context.Context, t time.Duration) error {
+	fmt.Println("execution.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep", t)
 	if e.log.IsDebug() {
 		e.log.Debug("update market SLA providers fee calculation time step (liquidity v2)",
 			logging.Duration("providersFeeCalculationTimeStep", t),
 		)
 	}
-
+	fmt.Println("e.allMarketsCpy: ", e.allMarketsCpy)
 	for _, m := range e.allMarketsCpy {
 		m.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(t)
 	}

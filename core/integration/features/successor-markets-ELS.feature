@@ -46,8 +46,8 @@ Feature: Simple example of successor markets
       | market.liquidityV2.stakeToCcyVolume                 | 0.2   |
       | market.liquidity.successorLaunchWindowLength        | 1h    |
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 20                                  | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
     And the average block duration is "1"
 # All parties have 1,000,000.000,000,000,000,000,000
     # Add as many parties as needed here
@@ -70,6 +70,9 @@ Feature: Simple example of successor markets
       | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1       | 1                | default-none | default-none     | ethDec19Oracle         | 0.1                    | 0                         | 0              | 0                       |                  |                         |                   | SLA        |
       | ETH/DEC20 | ETH        | USD   | default-st-risk-model     | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 0              | 0                       | ETH/DEC19        | 0.6                     | 10                | SLA        |
       | ETH/DEC21 | ETH        | USD   | default-st-risk-model     | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 0              | 0                       | ETH/DEC19        | 0.6                     | 10                | SLA        |
+    And the following network parameters are set:
+      | name                                                | value |
+      | market.liquidityV2.providersFeeCalculationTimeStep  | 20s   |
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov1 | ETH/DEC19 | 9000              | 0.1 | submission |
@@ -230,6 +233,9 @@ Feature: Simple example of successor markets
       | id        | quote name | asset | risk model                | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params |
       | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1       | 1                | default-none | default-none     | ethDec19Oracle         | 0.1                    | 0                         | 0              | 0                       |                  |                         |                   | SLA        |
       | ETH/DEC20 | ETH        | USD   | default-st-risk-model     | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 0              | 0                       | ETH/DEC19        | 0.6                     | 10                | SLA        |
+    And the following network parameters are set:
+      | name                                                | value |
+      | market.liquidityV2.providersFeeCalculationTimeStep  | 20s   |
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov1 | ETH/DEC19 | 9000              | 0.1 | submission |
@@ -348,6 +354,9 @@ Feature: Simple example of successor markets
       | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1       | 1                | default-none | default-none     | ethDec19Oracle         | 0.1                    | 0                         | 0              | 0                       |                  |                         |                   | SLA        |
       | ETH/DEC20 | ETH        | USD   | default-st-risk-model     | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 0              | 0                       | ETH/DEC19        | 0.6                     | 10                | SLA        |
       | ETH/DEC21 | ETH        | USD   | default-st-risk-model     | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 0              | 0                       | ETH/DEC19        | 0.1                     | 10                | SLA        |
+    And the following network parameters are set:
+      | name                                                | value |
+      | market.liquidityV2.providersFeeCalculationTimeStep  | 20s   |
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov1 | ETH/DEC19 | 9000              | 0.1 | submission |
@@ -485,6 +494,9 @@ Feature: Simple example of successor markets
       | id        | quote name | asset | risk model                | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params |
       | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1       | 1                | default-none | default-none     | ethDec19Oracle         | 0.1                    | 0                         | 0              | 0                       |                  |                         |                   | SLA        |
       | ETH/DEC20 | ETH | USD | default-st-risk-model | default-margin-calculator | 1 | default-none | default-none | default-eth-for-future | 0.1 | 0 | 0 | 0 | ETH/DEC19 | 0.8 | 10 | SLA |
+    And the following network parameters are set:
+      | name                                                | value |
+      | market.liquidityV2.providersFeeCalculationTimeStep  | 20s   |
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov1 | ETH/DEC19 | 9000              | 0.1 | submission |

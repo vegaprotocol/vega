@@ -24,7 +24,6 @@ func parseSLAParamsTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"price range",
 		"commitment min time fraction",
-		"providers fee calculation time step",
 		"performance hysteresis epochs",
 		"sla competition factor",
 	}, []string{})
@@ -40,10 +39,6 @@ func (r slaParamRow) priceRange() string {
 
 func (r slaParamRow) commitmentMinTimeFraction() string {
 	return r.row.MustStr("commitment min time fraction")
-}
-
-func (r slaParamRow) providersFeeCalculationTimeStep() int64 {
-	return r.row.MustI64("providers fee calculation time step")
 }
 
 func (r slaParamRow) performanceHysteresisEpochs() int64 {

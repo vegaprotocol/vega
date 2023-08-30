@@ -24,24 +24,25 @@ Feature: Test liquidity provider reward distribution
     And the oracle spec for trading termination filtering data from "0xCAFECAFE" named "ethDec21Oracle":
       | property           | type         | binding             |
       | trading.terminated | TYPE_BOOLEAN | trading termination |
-    And the following network parameters are set:
-      | name                                          | value |
-      | market.value.windowLength                     | 1h    |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.targetstake.triggering.ratio | 0     |
-      | network.markPriceUpdateMaximumFrequency       | 1s    |
-      | network.markPriceUpdateMaximumFrequency       | 0s    |
-      | limits.markets.maxPeggedOrders                | 612   |
 
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | risk model             | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1    | default-margin-calculator | 2                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e0                    | 1e0                       | SLA        |
       | ETH/DEC22 | ETH        | ETH   | lognormal-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-2 | ethDec21Oracle     | 1e0                    | 1e0                       | SLA        |
+    And the following network parameters are set:
+      | name                                               | value |
+      | market.value.windowLength                          | 1h    |
+      | market.stake.target.timeWindow                     | 24h   |
+      | market.stake.target.scalingFactor                  | 1     |
+      | market.liquidity.targetstake.triggering.ratio      | 0     |
+      | network.markPriceUpdateMaximumFrequency            | 1s    |
+      | network.markPriceUpdateMaximumFrequency            | 0s    |
+      | limits.markets.maxPeggedOrders                     | 612   |
+      | market.liquidityV2.providersFeeCalculationTimeStep | 600s   |
     And the average block duration is "1"
 
 #   Scenario: 001, 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades

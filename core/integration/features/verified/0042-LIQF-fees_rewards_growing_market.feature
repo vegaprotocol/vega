@@ -12,17 +12,18 @@ Feature:
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
     And the following network parameters are set:
-      | name                                          | value |
-      | market.value.windowLength                     | 5m    |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 2.5   |
-      | market.liquidity.targetstake.triggering.ratio | 0     |
-      | network.markPriceUpdateMaximumFrequency       | 0s    |
-      | limits.markets.maxPeggedOrders                | 8     |
-      | validators.epoch.length                       | 10s   |
+      | name                                               | value |
+      | market.value.windowLength                          | 5m    |
+      | market.stake.target.timeWindow                     | 24h   |
+      | market.stake.target.scalingFactor                  | 2.5   |
+      | market.liquidity.targetstake.triggering.ratio      | 0     |
+      | network.markPriceUpdateMaximumFrequency            | 0s    |
+      | limits.markets.maxPeggedOrders                     | 8     |
+      | validators.epoch.length                            | 10s   |
+      | market.liquidityV2.providersFeeCalculationTimeStep | 1s    |
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 0                                   | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring | default-eth-for-future | 0.5                    | 0                         | SLA        |
@@ -126,7 +127,7 @@ Feature:
 
     And the accumulated liquidity fees should be "43" for the market "ETH/MAR22"
 
-    When the network moves ahead "1" blocks:
+    When the network moves ahead "6" blocks:
 
     Then the following transfers should happen:
       | from   | to  | from account                | to account                     | market id | amount | asset |
@@ -178,7 +179,7 @@ Feature:
 
     And the accumulated liquidity fees should be "46" for the market "ETH/MAR22"
 
-    When the network moves ahead "1" blocks
+    When the network moves ahead "6" blocks
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -238,7 +239,7 @@ Feature:
 
     And the accumulated liquidity fees should be "48" for the market "ETH/MAR22"
 
-    When the network moves ahead "1" blocks
+    When the network moves ahead "6" blocks
 
     Then the following transfers should happen:
       | from   | to  | from account                | to account                     | market id | amount | asset |
@@ -294,7 +295,7 @@ Feature:
 
     And the accumulated liquidity fees should be "50" for the market "ETH/MAR22"
 
-    When the network moves ahead "1" blocks
+    When the network moves ahead "6" blocks
 
     Then the following transfers should happen:
       | from   | to  | from account                | to account                     | market id | amount | asset |
@@ -350,7 +351,7 @@ Feature:
 
     And the accumulated liquidity fees should be "52" for the market "ETH/MAR22"
 
-    When the network moves ahead "1" blocks
+    When the network moves ahead "6" blocks
 
     Then the following transfers should happen:
       | from   | to  | from account                | to account                     | market id | amount | asset |

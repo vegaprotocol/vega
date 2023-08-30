@@ -297,20 +297,18 @@ type LiquidityMonitoringParameters struct {
 }
 
 type LiquiditySLAParameters struct {
-	PriceRange                      num.Decimal   `json:"priceRange,omitempty"`
-	CommitmentMinTimeFraction       num.Decimal   `json:"commitmentMinTimeFraction,omitempty"`
-	ProvidersFeeCalculationTimeStep time.Duration `json:"providersFeeCalculationTimeStep,omitempty"`
-	PerformanceHysteresisEpochs     uint64        `json:"performanceHysteresisEpochs,omitempty"`
-	SlaCompetitionFactor            num.Decimal   `json:"slaCompetitionFactor,omitempty"`
+	PriceRange                  num.Decimal `json:"priceRange,omitempty"`
+	CommitmentMinTimeFraction   num.Decimal `json:"commitmentMinTimeFraction,omitempty"`
+	PerformanceHysteresisEpochs uint64      `json:"performanceHysteresisEpochs,omitempty"`
+	SlaCompetitionFactor        num.Decimal `json:"slaCompetitionFactor,omitempty"`
 }
 
 func (lsp LiquiditySLAParameters) IntoProto() *vega.LiquiditySLAParameters {
 	return &vega.LiquiditySLAParameters{
-		PriceRange:                      lsp.PriceRange.String(),
-		CommitmentMinTimeFraction:       lsp.CommitmentMinTimeFraction.String(),
-		SlaCompetitionFactor:            lsp.SlaCompetitionFactor.String(),
-		PerformanceHysteresisEpochs:     lsp.PerformanceHysteresisEpochs,
-		ProvidersFeeCalculationTimeStep: int64(lsp.ProvidersFeeCalculationTimeStep),
+		PriceRange:                  lsp.PriceRange.String(),
+		CommitmentMinTimeFraction:   lsp.CommitmentMinTimeFraction.String(),
+		SlaCompetitionFactor:        lsp.SlaCompetitionFactor.String(),
+		PerformanceHysteresisEpochs: lsp.PerformanceHysteresisEpochs,
 	}
 }
 
@@ -332,11 +330,10 @@ func LiquiditySLAParametersFromProto(sla *vega.LiquiditySLAParameters) (Liquidit
 		return LiquiditySLAParameters{}, errors.New("invalid commitment sla competition factor in liquidity sla parameters")
 	}
 	return LiquiditySLAParameters{
-		PriceRange:                      priceRange,
-		CommitmentMinTimeFraction:       commitmentMinTimeFraction,
-		SlaCompetitionFactor:            slaCompetitionFactor,
-		ProvidersFeeCalculationTimeStep: time.Duration(sla.ProvidersFeeCalculationTimeStep),
-		PerformanceHysteresisEpochs:     sla.PerformanceHysteresisEpochs,
+		PriceRange:                  priceRange,
+		CommitmentMinTimeFraction:   commitmentMinTimeFraction,
+		SlaCompetitionFactor:        slaCompetitionFactor,
+		PerformanceHysteresisEpochs: sla.PerformanceHysteresisEpochs,
 	}, nil
 }
 

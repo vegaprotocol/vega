@@ -7,15 +7,16 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
   Background:
     Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.targetstake.triggering.ratio | 0     |
-      | network.floatingPointUpdates.delay            | 10s   |
-      | market.auction.minimumDuration                | 10    |
-      | network.markPriceUpdateMaximumFrequency       | 0s    |
-      | market.liquidity.successorLaunchWindowLength  | 1s    |
-      | limits.markets.maxPeggedOrders                | 4     |
+      | name                                               | value |
+      | market.stake.target.timeWindow                     | 24h   |
+      | market.stake.target.scalingFactor                  | 1     |
+      | market.liquidity.targetstake.triggering.ratio      | 0     |
+      | network.floatingPointUpdates.delay                 | 10s   |
+      | market.auction.minimumDuration                     | 10    |
+      | network.markPriceUpdateMaximumFrequency            | 0s    |
+      | market.liquidity.successorLaunchWindowLength       | 1s    |
+      | limits.markets.maxPeggedOrders                     | 4     |
+      | market.liquidityV2.providersFeeCalculationTimeStep | 1s    |
     And the average block duration is "1"
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
@@ -287,7 +288,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | AuctionEvent       |
       | MarketUpdatedEvent |
     # LP repricing, checking, and cancelling emits a ton of events
-    And a total of "83" events should be emitted
+    And a total of "80" events should be emitted
 
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | lp type   |
