@@ -897,7 +897,7 @@ func (e *Engine) removeMarket(mktID string) {
 				copy(e.futureMarketsCpy[i:], e.futureMarketsCpy[i+1:])
 				e.futureMarketsCpy[len(e.futureMarketsCpy)-1] = nil
 				e.futureMarketsCpy = e.futureMarketsCpy[:len(e.futureMarketsCpy)-1]
-				e.marketActivityTracker.RemoveMarket(mktID)
+				e.marketActivityTracker.RemoveMarket(mkt.GetSettlementAsset(), mktID)
 				e.log.Debug("removed in total", logging.String("id", mktID))
 				return
 			}
@@ -912,7 +912,7 @@ func (e *Engine) removeMarket(mktID string) {
 				copy(e.spotMarketsCpy[i:], e.spotMarketsCpy[i+1:])
 				e.spotMarketsCpy[len(e.spotMarketsCpy)-1] = nil
 				e.spotMarketsCpy = e.spotMarketsCpy[:len(e.spotMarketsCpy)-1]
-				e.marketActivityTracker.RemoveMarket(mktID)
+				e.marketActivityTracker.RemoveMarket(mkt.GetAssetForProposerBonus(), mktID)
 				e.log.Debug("removed in total", logging.String("id", mktID))
 				return
 			}

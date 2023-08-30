@@ -928,6 +928,12 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time, finalState types.
 		return err
 	}
 
+	for _, t := range positions {
+		if t.Type == types.TransferTypeMTMWin {
+			m.marketActivityTracker.RecordM2M(m.settlementAsset, t.Owner, t.Market, t.Amount.Amount.ToDecimal())
+		}
+	}
+
 	transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions, round)
 	if err != nil {
 		m.log.Error("Failed to get ledger movements after settling closed market",
@@ -1957,7 +1963,7 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 		m.broker.Send(events.NewLedgerMovements(ctx, transfers))
 	}
 
-	m.marketActivityTracker.UpdateFeesFromTransfers(m.GetID(), fees.Transfers())
+	m.marketActivityTracker.UpdateFeesFromTransfers(m.settlementAsset, m.GetID(), fees.Transfers())
 
 	return nil
 }
@@ -2028,7 +2034,9 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 
 		tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
 
-		m.position.Update(ctx, trade, conf.PassiveOrdersAffected[idx], conf.Order)
+		for _, mp := range m.position.Update(ctx, trade, conf.PassiveOrdersAffected[idx], conf.Order) {
+			m.marketActivityTracker.RecordPosition(m.settlementAsset, mp.Party(), m.mkt.ID, num.DecimalFromInt64(mp.Size()).Div(m.positionFactor), mp.Price(), m.timeService.GetTimeNow())
+		}
 
 		// Record open interest change
 		if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.timeService.GetTimeNow()); err != nil {
@@ -2039,8 +2047,15 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		// add trade to settlement engine for correct MTM settlement of individual trades
 		m.settlement.AddTrade(trade)
 	}
+	if !m.as.InAuction() {
+		aggressor := conf.Order.Party
+		if quantum, err := m.collateral.GetAssetQuantum(m.settlementAsset); err == nil && !quantum.IsZero() {
+			n, _ := num.UintFromDecimal(tradedValue.ToDecimal().Div(quantum))
+			m.marketActivityTracker.RecordNotionalTakerVolume(m.mkt.ID, aggressor, n)
+		}
+	}
 	m.feeSplitter.AddTradeValue(tradedValue)
-	m.marketActivityTracker.AddValueTraded(m.mkt.ID, tradedValue)
+	m.marketActivityTracker.AddValueTraded(m.settlementAsset, m.mkt.ID, tradedValue)
 	m.broker.SendBatch(tradeEvts)
 
 	// check reference moves if we have order updates, and we are not in an auction (or leaving an auction)
@@ -2058,6 +2073,15 @@ func (m *Market) confirmMTM(ctx context.Context, skipMargin bool) {
 	mp := m.getCurrentMarkPrice()
 	evts := m.position.UpdateMarkPrice(mp)
 	settle := m.settlement.SettleMTM(ctx, mp, evts)
+
+	for _, t := range settle {
+		if t.Transfer() != nil && (t.Transfer().Type == types.TransferTypeMTMWin ||
+			t.Transfer().Type == types.TransferTypeMTMLoss ||
+			t.Transfer().Type == types.TransferTypePerpFundingWin ||
+			t.Transfer().Type == types.TransferTypePerpFundingLoss) {
+			m.marketActivityTracker.RecordM2M(m.settlementAsset, t.Party(), t.Transfer().Market, t.Transfer().Amount.Amount.ToDecimal())
+		}
+	}
 
 	// let the product know about the mark-price, incase its the sort of product that cares
 	if m.perp && m.markPrice != nil {
@@ -2402,7 +2426,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 			m.settlement.AddTrade(trade)
 		}
 		m.feeSplitter.AddTradeValue(tradedValue)
-		m.marketActivityTracker.AddValueTraded(m.mkt.ID, tradedValue)
+		m.marketActivityTracker.AddValueTraded(m.settlementAsset, m.mkt.ID, tradedValue)
 		m.broker.SendBatch(tradeEvts)
 	}
 
@@ -3768,6 +3792,12 @@ func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Num
 	if len(transfers) == 0 {
 		m.log.Debug("Failed to get settle positions for funding period")
 		return
+	}
+
+	for _, t := range transfers {
+		if t.Transfer() != nil && t.Transfer().Type == types.TransferTypeMTMWin {
+			m.marketActivityTracker.RecordM2M(m.settlementAsset, t.Party(), t.Transfer().Market, t.Transfer().Amount.Amount.ToDecimal())
+		}
 	}
 
 	margins, ledgerMovements, err := m.collateral.PerpsFundingSettlement(ctx, m.GetID(), transfers, m.settlementAsset, round)

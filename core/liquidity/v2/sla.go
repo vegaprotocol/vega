@@ -189,14 +189,6 @@ func (e *Engine) calculateBondPenalty(timeBookFraction num.Decimal) num.Decimal 
 		e.nonPerformanceBondPenaltySlope.Mul(num.DecimalOne().Sub(timeBookFraction.Div(e.slaParams.CommitmentMinTimeFraction))),
 	)
 
-	println("timeBookFraction", timeBookFraction.String())
-	println("e.nonPerformanceBondPenaltyMax", e.nonPerformanceBondPenaltyMax.String())
-	println("e.nonPerformanceBondPenaltySlope", e.nonPerformanceBondPenaltySlope.String())
-	println("e.slaParams.CommitmentMinTimeFraction", e.slaParams.CommitmentMinTimeFraction.String())
-	println("timeBookFraction.Div(e.slaParams.CommitmentMinTimeFraction)", timeBookFraction.Div(e.slaParams.CommitmentMinTimeFraction).String())
-	println("num.DecimalOne().Sub(timeBookFraction.Div(e.slaParams.CommitmentMinTimeFraction))", num.DecimalOne().Sub(timeBookFraction.Div(e.slaParams.CommitmentMinTimeFraction)).String())
-	println("min", min.String())
-
 	// max(0, min)
 	return num.MaxD(num.DecimalZero(), min)
 }

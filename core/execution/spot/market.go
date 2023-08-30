@@ -1404,7 +1404,7 @@ func (m *Market) applyFees(ctx context.Context, fees events.FeesTransfer) error 
 		m.broker.Send(events.NewLedgerMovements(ctx, transfers))
 	}
 
-	m.marketActivityTracker.UpdateFeesFromTransfers(m.GetID(), fees.Transfers())
+	m.marketActivityTracker.UpdateFeesFromTransfers(m.quoteAsset, m.GetID(), fees.Transfers())
 	return err
 }
 
@@ -1492,7 +1492,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		m.broker.Send(events.NewLedgerMovements(ctx, transfers))
 	}
 	m.feeSplitter.AddTradeValue(tradedValue)
-	m.marketActivityTracker.AddValueTraded(m.mkt.ID, tradedValue)
+	m.marketActivityTracker.AddValueTraded(m.quoteAsset, m.mkt.ID, tradedValue)
 	m.broker.SendBatch(tradeEvts)
 	// check reference moves if we have order updates, and we are not in an auction (or leaving an auction)
 	// we handle reference moves in confirmMTM when leaving an auction already

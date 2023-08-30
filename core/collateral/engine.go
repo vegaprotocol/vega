@@ -657,22 +657,14 @@ func (e *Engine) getRewardTransferRequests(ctx context.Context, rewardAccountID 
 
 	rewardTRs := make([]*types.TransferRequest, 0, len(transfers))
 	for _, t := range transfers {
-		general, err := e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
-		if err != nil {
-			_, err = e.CreatePartyGeneralAccount(ctx, t.Owner, t.Amount.Asset)
-			if err != nil {
-				continue
-			}
-			general, _ = e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
-		}
-
+		vesting := e.GetOrCreatePartyVestingRewardAccount(ctx, t.Owner, t.Amount.Asset)
 		rewardTRs = append(rewardTRs, &types.TransferRequest{
 			Amount:      t.Amount.Amount.Clone(),
 			MinAmount:   t.Amount.Amount.Clone(),
 			Asset:       t.Amount.Asset,
 			Type:        types.TransferTypeRewardPayout,
 			FromAccount: []*types.Account{rewardAccount},
-			ToAccount:   []*types.Account{general},
+			ToAccount:   []*types.Account{vesting},
 		})
 	}
 	return rewardTRs, nil
@@ -2254,7 +2246,9 @@ func (e *Engine) getGovernanceTransferFundsTransferRequest(ctx context.Context, 
 			}
 
 			// this could not exists as well, let's just create in this case
-		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward, types.AccountTypeMarketProposerReward:
+		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward,
+			types.AccountTypeMakerPaidFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeAveragePositionReward,
+			types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeValidatorRankingReward:
 			market := noMarket
 			if len(t.Market) > 0 {
 				market = t.Market
@@ -2354,7 +2348,9 @@ func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.T
 			}
 
 		// this could not exists as well, let's just create in this case
-		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward, types.AccountTypeMarketProposerReward:
+		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward,
+			types.AccountTypeMakerPaidFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeAveragePositionReward,
+			types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeValidatorRankingReward:
 			market := noMarket
 			if len(t.Market) > 0 {
 				market = t.Market
@@ -3286,7 +3282,7 @@ func (e *Engine) GetOrCreatePartyVestingRewardAccount(ctx context.Context, party
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 
-	return acc
+	return acc.Clone()
 }
 
 // GetOrCreatePartyVestedAccount create the general account for a party.
@@ -3314,7 +3310,7 @@ func (e *Engine) GetOrCreatePartyVestedRewardAccount(ctx context.Context, partyI
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 
-	return acc
+	return acc.Clone()
 }
 
 // RemoveDistressed will remove all distressed party in the event positions

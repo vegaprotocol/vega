@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"github.com/emirpasic/gods/sets/treeset"
@@ -225,9 +226,24 @@ func (e *Engine) loadRecurringTransfers(
 		transfer := types.RecurringTransferFromEvent(v)
 		e.recurringTransfers = append(e.recurringTransfers, transfer)
 		e.recurringTransfersMap[transfer.ID] = transfer
+		// reload the dispatch strategy to the hash cache
+		if transfer.DispatchStrategy != nil {
+			e.registerDispatchStrategy(transfer.DispatchStrategy)
+			// reset defaults for new dispatch strategy params:
+			if transfer.DispatchStrategy.EntityScope == vega.EntityScope_ENTITY_SCOPE_UNSPECIFIED {
+				e.applyMigrationDefaults(transfer.DispatchStrategy)
+			}
+		}
 		evts = append(evts, events.NewRecurringTransferFundsEvent(ctx, transfer))
 	}
 	return evts
+}
+
+func (e *Engine) applyMigrationDefaults(ds *vega.DispatchStrategy) {
+	ds.EntityScope = vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS
+	ds.LockPeriod = 0
+	ds.WindowLength = 1
+	ds.DistributionStrategy = vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA
 }
 
 func (e *Engine) loadRecurringGovernanceTransfers(ctx context.Context, transfers []*checkpoint.GovernanceTransfer) []events.Event {
@@ -236,6 +252,9 @@ func (e *Engine) loadRecurringGovernanceTransfers(ctx context.Context, transfers
 		transfer := types.GovernanceTransferFromProto(v)
 		e.recurringGovernanceTransfers = append(e.recurringGovernanceTransfers, transfer)
 		e.recurringGovernanceTransfersMap[transfer.ID] = transfer
+		if transfer.Config.RecurringTransferConfig.DispatchStrategy != nil {
+			e.registerDispatchStrategy(transfer.Config.RecurringTransferConfig.DispatchStrategy)
+		}
 		evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, num.UintZero()))
 	}
 	return evts

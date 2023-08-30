@@ -201,6 +201,9 @@ func defaultNetParams() map[string]value {
 		StakingAndDelegationRewardsMinValidators:          NewInt(gteI1, lteI500).Mutable(true).MustUpdate("5"),
 		StakingAndDelegationRewardOptimalStakeMultiplier:  NewDecimal(gteD1).Mutable(true).MustUpdate("3.0"),
 
+		// team rewards - //TODO review the constraint and defaults
+		MinEpochsInTeamForMetricRewardEligibility: NewInt(gteI1, lteI500).Mutable(true).MustUpdate("5"),
+
 		// spam protection policies
 		SpamProtectionMaxVotes:                         NewInt(gteI1).Mutable(true).MustUpdate("3"),
 		SpamProtectionMinTokensForVoting:               NewDecimal(gteD1).Mutable(true).MustUpdate("100000000000000000000"),

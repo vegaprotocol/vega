@@ -77,7 +77,7 @@ type Account struct {
 	Owner    string
 	Balance  *num.Uint
 	Asset    string
-	MarketID string
+	MarketID string // NB: this market may not always refer to a valid market id. instead in the case of transfers it just represents a hash corresponding to a dispatch metric.
 	Type     AccountType
 }
 
@@ -299,4 +299,12 @@ const (
 	AccountTypeLiquidityFeesBonusDistribution AccountType = proto.AccountType_ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION
 	AccountTypeVestingRewards                 AccountType = proto.AccountType_ACCOUNT_TYPE_VESTING_REWARDS
 	AccountTypeVestedRewards                  AccountType = proto.AccountType_ACCOUNT_TYPE_VESTED_REWARDS
+	// Reward account for average position metric.
+	AccountTypeAveragePositionReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION
+	// Reward account for relative return metric.
+	AccountTypeRelativeReturnReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN
+	// Reward account for return volatility metric.
+	AccountTypeReturnVolatilityReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY
+	// Reward account for validator ranking metric.
+	AccountTypeValidatorRankingReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING
 )

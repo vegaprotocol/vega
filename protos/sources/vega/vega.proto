@@ -817,6 +817,18 @@ enum AccountType {
   // Account holding user's rewards after the vesting period
   ACCOUNT_TYPE_VESTED_REWARDS = 23;
 
+  // Per asset market reward account given for average position
+  ACCOUNT_TYPE_REWARD_AVERAGE_POSITION = 24;
+
+  // Per asset market reward account given for relative return
+  ACCOUNT_TYPE_REWARD_RELATIVE_RETURN = 25;
+
+  // Per asset market reward account given for return volatility
+  ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY = 26;
+
+  // Per asset market reward account given to validators by their ranking
+  ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING = 27;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
@@ -944,14 +956,48 @@ message Transfer {
 
 enum DispatchMetric {
   DISPATCH_METRIC_UNSPECIFIED = 0;
-  // Dispatch metric that is using the total maker fees paid in the market
+  // Dispatch metric that uses the total maker fees paid in the market
   DISPATCH_METRIC_MAKER_FEES_PAID = 1;
-  // Dispatch metric that is using the total maker fees received in the market
+  // Dispatch metric that uses the total maker fees received in the market
   DISPATCH_METRIC_MAKER_FEES_RECEIVED = 2;
-  // Dispatch metric that is using the total LP fees received in the market
+  // Dispatch metric that uses the total LP fees received in the market
   DISPATCH_METRIC_LP_FEES_RECEIVED = 3;
-  // Dispatch metric that is using total value of the market if above the required threshold and not paid given proposer bonus yet
+  // Dispatch metric that uses total value of the market if above the required threshold and not paid given proposer bonus yet
   DISPATCH_METRIC_MARKET_VALUE = 4;
+  // Dispatch metric that uses the time weighted average position
+  DISPATCH_METRIC_AVERAGE_POSITION = 5;
+  // Dispatch metric that uses the relative PNL of the party in the market
+  DISPATCH_METRIC_RELATIVE_RETURN = 6;
+  // Dispatch metric that uses return volatility of the party in the market
+  DISPATCH_METRIC_RETURN_VOLATILITY = 7;
+  // Dispatch metric that uses the validator ranking of the validator as metric
+  DISPATCH_METRIC_VALIDATOR_RANKING = 8;
+}
+
+enum EntityScope {
+  ENTITY_SCOPE_UNSPECIFIED = 0;
+  // Rewards must be distributed directly to eligible parties.
+  ENTITY_SCOPE_INDIVIDUALS = 1;
+  // Rewards must be distributed to directly eligible teams, and then amongst team members
+  ENTITY_SCOPE_TEAMS = 2;
+}
+
+enum IndividualScope {
+  INDIVIDUAL_SCOPE_UNSPECIFIED = 0;
+  // All parties on the network are within the scope of this reward.
+  INDIVIDUAL_SCOPE_ALL = 1;
+  // All parties that are part of a team are within the scope of this reward.
+  INDIVIDUAL_SCOPE_IN_TEAM = 2;
+  // All parties that are not part of a team are within the scope of this reward.
+  INDIVIDUAL_SCOPE_NOT_IN_TEAM = 3;
+}
+
+enum DistributionStrategy {
+  DISTRIBUTION_STRATEGY_UNSPECIFIED = 0;
+  // Rewards funded using the pro-rata strategy should be distributed pro-rata by each entity's reward metric, scaled by any active multipliers that party has.
+  DISTRIBUTION_STRATEGY_PRO_RATA = 1;
+  // Rewards funded using the party rank.
+  DISTRIBUTION_STRATEGY_RANK = 2;
 }
 
 message DispatchStrategy {
@@ -961,6 +1007,31 @@ message DispatchStrategy {
   DispatchMetric metric = 2;
   // Optional markets in scope.
   repeated string markets = 3;
+  // Mandatory enum that defines the entities within scope.
+  EntityScope entity_scope = 4;
+  // Optional enum if the entity scope defined is for individuals, which determines the subset of individuals that are eligible to be rewarded.
+  IndividualScope individual_scope = 5;
+  // Optional list applicable if the reward type has a scope of teams, which allows the funder to define a list of team IDs that are eligible to be rewarded from this transfer
+  repeated string team_scope = 6;
+  // The proportion of the top performers in the team for a given metric to be averaged for the metric calculation if the scope is team
+  string n_top_performers = 7;
+  // Minimum number of governance (e.g. VEGA) tokens staked for a party to be considered eligible. Defaults to 0
+  string staking_requirement = 8;
+  // Minimum notional time-weighted averaged position required for a party to be considered eligible. Defaults to 0
+  string notional_time_weighted_average_position_requirement = 9;
+  // Number of epochs to evaluate the metric on
+  uint64 window_length = 10;
+  // Number of epochs after distribution to delay vesting of rewards by
+  uint64 lock_period = 11;
+  // Controls how the reward is distributed between qualifying parties
+  DistributionStrategy distribution_strategy = 12;
+  // Ordered list, using start rank, defining the rank bands and share ratio for each band. Mandatory for the rank distribution strategy.
+  repeated Rank rank_table = 13;
+}
+
+message Rank {
+  uint32 start_rank = 1;
+  uint32 share_ratio = 2;
 }
 
 // Represents a request to transfer from one set of accounts to another
