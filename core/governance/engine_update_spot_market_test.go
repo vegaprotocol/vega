@@ -54,6 +54,7 @@ func testSubmittingProposalForSpotMarketUpdateSucceeds(t *testing.T) {
 	eng.ensureTokenBalanceForParty(t, proposer, 1000)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 
 	// expect
 	eng.expectOpenProposalEvent(t, proposer, proposal.ID)
@@ -166,6 +167,7 @@ func testPreEnactmentOfSpotMarketUpdateSucceeds(t *testing.T) {
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -280,6 +282,7 @@ func testRejectingProposalForSpotMarketUpdateSucceeds(t *testing.T) {
 	// setup
 	eng.ensureAllAssetEnabled(t)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, party, 0.7)
 	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketMinProposerEquityLikeShare, "0.1")
 	eng.ensureTokenBalanceForParty(t, party, 10000)
@@ -325,6 +328,7 @@ func testVotingWithoutMinimumTokenHoldersAndEquityLikeShareMakesSpotMarketUpdate
 	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipationLP, "0.5")
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -403,6 +407,7 @@ func testVotingWithMajorityOfYesFromTokenHoldersMakesSpotMarketUpdateProposalPas
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -515,6 +520,7 @@ func testVotingWithMajorityOfNoFromTokenHoldersMakesSpotMarketUpdateProposalDecl
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -629,6 +635,7 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesSpotMa
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -729,6 +736,7 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesSpotMar
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
