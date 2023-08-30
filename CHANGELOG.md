@@ -141,6 +141,7 @@
 - [9053](https://github.com/vegaprotocol/vega/issues/9053) - Handle settle market events in core positions plug-in.
 - [9189](https://github.com/vegaprotocol/vega/issues/9189) - Fix stop orders snapshots
 - [9198](https://github.com/vegaprotocol/vega/issues/9198) - Fix panic during LP amendment applications
+- [9196](https://github.com/vegaprotocol/vega/issues/9196) - `API` documentation should specify the time format.
 - [9203](https://github.com/vegaprotocol/vega/issues/9203) - Do not remove LPs from the parties map if they are an LP without an open position
 
 ## 0.72.1
