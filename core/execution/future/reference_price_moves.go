@@ -67,7 +67,7 @@ func (m *Market) checkForReferenceMoves(
 	// now we had new orderUpdates while processing those,
 	// that would means someone got distressed, so some order
 	// got uncrossed, so we need to check all these again.
-	// we do not use the forceUpdate ffield here as it's
+	// we do not use the forceUpdate field here as it's
 	// not required that prices moved though
 	if len(orderUpdates) > 0 {
 		m.checkForReferenceMoves(ctx, orderUpdates, false)

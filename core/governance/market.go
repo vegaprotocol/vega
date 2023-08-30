@@ -62,6 +62,7 @@ var (
 	ErrInvalidRiskParameter = errors.New("invalid risk parameter")
 	// ErrInvalidInsurancePoolFraction is returned if the insurance pool fraction parameter is outside of the 0-1 range.
 	ErrInvalidInsurancePoolFraction = errors.New("insurnace pool fraction invalid")
+	ErrUpdateMarketDifferentProduct = errors.New("cannot update a market to a different product type")
 )
 
 func assignProduct(
@@ -823,8 +824,8 @@ func validateUpdateSpotMarketChange(terms *types.UpdateSpotMarket) (types.Propos
 }
 
 // validateUpdateMarketChange checks market update proposal terms.
-func validateUpdateMarketChange(terms *types.UpdateMarket, etu *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
-	if perr, err := validateUpdateInstrument(terms.Changes.Instrument, etu, currentTime); err != nil {
+func validateUpdateMarketChange(terms *types.UpdateMarket, mkt types.Market, etu *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
+	if perr, err := validateUpdateInstrument(terms.Changes.Instrument, mkt, etu, currentTime); err != nil {
 		return perr, err
 	}
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
@@ -842,20 +843,24 @@ func validateUpdateMarketChange(terms *types.UpdateMarket, etu *enactmentTime, c
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateUpdateInstrument(instrument *types.UpdateInstrumentConfiguration, et *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
+func validateUpdateInstrument(instrument *types.UpdateInstrumentConfiguration, mkt types.Market, et *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
 	switch product := instrument.Product.(type) {
 	case nil:
 		return types.ProposalErrorNoProduct, ErrMissingProduct
 	case *types.UpdateInstrumentConfigurationFuture:
-		return validateUpdateFuture(product.Future, et)
+		return validateUpdateFuture(product.Future, mkt, et)
 	case *types.UpdateInstrumentConfigurationPerps:
-		return validateUpdatePerps(product.Perps, et, currentTime)
+		return validateUpdatePerps(product.Perps, mkt, et, currentTime)
 	default:
 		return types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
 }
 
-func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) (types.ProposalError, error) {
+func validateUpdateFuture(future *types.UpdateFutureProduct, mkt types.Market, et *enactmentTime) (types.ProposalError, error) {
+	if mkt.GetFuture() == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrUpdateMarketDifferentProduct
+	}
+
 	settlData := &future.DataSourceSpecForSettlementData
 	if settlData == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
@@ -953,7 +958,10 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) 
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateUpdatePerps(perps *types.UpdatePerpsProduct, et *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
+func validateUpdatePerps(perps *types.UpdatePerpsProduct, mkt types.Market, et *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
+	if mkt.GetPerps() == nil {
+		return types.ProposalErrorInvalidPerpsProduct, ErrUpdateMarketDifferentProduct
+	}
 	settlData := &perps.DataSourceSpecForSettlementData
 	if settlData == nil {
 		return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecForSettlementData
@@ -1025,8 +1033,8 @@ func validateUpdatePerps(perps *types.UpdatePerpsProduct, et *enactmentTime, cur
 		}
 		tt.SetNextTrigger(currentTime)
 
-		// can't have the first trigger in the past
-		if tt.Triggers[0].Initial.Before(currentTime) {
+		// can't have the first trigger in the past, don't recheck if we've come in from preEnact
+		if !et.shouldNotVerify && tt.Triggers[0].Initial.Before(currentTime) {
 			return types.ProposalErrorInvalidPerpsProduct, fmt.Errorf("time trigger starts in the past")
 		}
 

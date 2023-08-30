@@ -341,6 +341,7 @@ func TestCheckpointWithMarketUpdateProposals(t *testing.T) {
 	proposalID := proposal.ID
 
 	eng.markets.EXPECT().MarketExists(proposalID).AnyTimes().Return(true)
+	eng.ensureGetMarketFuture(t, proposalID)
 
 	expectedMarket := types.Market{
 		ID: proposalID,
