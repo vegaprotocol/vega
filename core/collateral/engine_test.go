@@ -185,7 +185,6 @@ func TestGetAllVestingQuantumBalance(t *testing.T) {
 
 	balance = eng.GetAllVestingQuantumBalance(party)
 	assert.Equal(t, int(balance.Uint64()), 103)
-
 }
 
 func testClearFeeAccounts(t *testing.T) {

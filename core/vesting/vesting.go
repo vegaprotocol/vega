@@ -158,7 +158,7 @@ func (e *Engine) AddReward(
 	)
 }
 
-func (e *Engine) GetRewardsBonusMultiplier(party string) num.Decimal {
+func (e *Engine) GetRewardBonusMultiplier(party string) num.Decimal {
 	quantumBalance := e.c.GetAllVestingQuantumBalance(party)
 
 	multiplier := num.DecimalOne()
@@ -325,9 +325,4 @@ func (e *Engine) clearup() {
 			delete(e.state, party)
 		}
 	}
-}
-
-// TODO implement me. if there's no multiplier return 1.
-func (e *Engine) GetRewardBonusMultiplier(party string) num.Decimal {
-	return num.DecimalOne()
 }

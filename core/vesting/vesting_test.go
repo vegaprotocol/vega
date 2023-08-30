@@ -83,16 +83,16 @@ func TestRewardMultiplier(t *testing.T) {
 	assert.NoError(t, err)
 
 	v.col.EXPECT().GetAllVestingQuantumBalance("party1").Times(1).Return(num.UintZero())
-	assert.Equal(t, num.DecimalOne(), v.GetRewardsBonusMultiplier("party1"))
+	assert.Equal(t, num.DecimalOne(), v.GetRewardBonusMultiplier("party1"))
 
 	v.col.EXPECT().GetAllVestingQuantumBalance("party1").Times(1).Return(num.NewUint(10001))
-	assert.Equal(t, num.MustDecimalFromString("1.5"), v.GetRewardsBonusMultiplier("party1"))
+	assert.Equal(t, num.MustDecimalFromString("1.5"), v.GetRewardBonusMultiplier("party1"))
 
 	v.col.EXPECT().GetAllVestingQuantumBalance("party1").Times(1).Return(num.NewUint(100001))
-	assert.Equal(t, num.MustDecimalFromString("2"), v.GetRewardsBonusMultiplier("party1"))
+	assert.Equal(t, num.MustDecimalFromString("2"), v.GetRewardBonusMultiplier("party1"))
 
 	v.col.EXPECT().GetAllVestingQuantumBalance("party1").Times(1).Return(num.NewUint(500001))
-	assert.Equal(t, num.MustDecimalFromString("2.5"), v.GetRewardsBonusMultiplier("party1"))
+	assert.Equal(t, num.MustDecimalFromString("2.5"), v.GetRewardBonusMultiplier("party1"))
 }
 
 func TestDistributeAfterDelay(t *testing.T) {
