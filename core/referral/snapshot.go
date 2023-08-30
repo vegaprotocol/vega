@@ -97,41 +97,56 @@ func (e *SnapshottedEngine) serialise(k string) ([]byte, error) {
 }
 
 func (e *SnapshottedEngine) serialiseReferralSets() ([]byte, error) {
-	sets := make([]*snapshotpb.ReferralSet, 0, len(e.sets))
+	setsProto := make([]*snapshotpb.ReferralSet, 0, len(e.sets))
 
 	setIDs := maps.Keys(e.sets)
-	sort.Strings(setIDs)
+
+	sort.SliceStable(setIDs, func(i, j int) bool {
+		return setIDs[i] < setIDs[j]
+	})
 
 	for _, setID := range setIDs {
 		set := e.sets[setID]
-		pset := &snapshotpb.ReferralSet{
-			Id:        set.ID,
+		setProto := &snapshotpb.ReferralSet{
+			Id:        string(set.ID),
 			CreatedAt: set.CreatedAt.UnixNano(),
 			UpdatedAt: set.UpdatedAt.UnixNano(),
 			Referrer: &snapshotpb.Membership{
-				PartyId:       string(set.Referrer.PartyID),
-				JoinedAt:      set.Referrer.JoinedAt.UnixNano(),
-				NumberOfEpoch: set.Referrer.NumberOfEpoch,
+				PartyId:        string(set.Referrer.PartyID),
+				JoinedAt:       set.Referrer.JoinedAt.UnixNano(),
+				StartedAtEpoch: set.Referrer.StartedAtEpoch,
 			},
 		}
 
 		for _, r := range set.Referees {
-			pset.Referees = append(pset.Referees,
+			setProto.Referees = append(setProto.Referees,
 				&snapshotpb.Membership{
-					PartyId:       string(r.PartyID),
-					JoinedAt:      r.JoinedAt.UnixNano(),
-					NumberOfEpoch: r.NumberOfEpoch,
+					PartyId:        string(r.PartyID),
+					JoinedAt:       r.JoinedAt.UnixNano(),
+					StartedAtEpoch: r.StartedAtEpoch,
 				},
 			)
 		}
 
-		sets = append(sets, pset)
+		runningVolumes, isTracked := e.referralSetsNotionalVolumes.runningVolumesBySet[set.ID]
+		if isTracked {
+			runningVolumesProto := make([]*snapshotpb.RunningVolume, 0, len(runningVolumes))
+			for _, volume := range runningVolumes {
+				runningVolumesProto = append(runningVolumesProto, &snapshotpb.RunningVolume{
+					Epoch:  volume.epoch,
+					Volume: volume.value.String(),
+				})
+			}
+			setProto.RunningVolumes = runningVolumesProto
+		}
+
+		setsProto = append(setsProto, setProto)
 	}
 
 	payload := &snapshotpb.Payload{
 		Data: &snapshotpb.Payload_ReferralSets{
 			ReferralSets: &snapshotpb.ReferralSets{
-				Sets: sets,
+				Sets: setsProto,
 			},
 		},
 	}
@@ -196,9 +211,9 @@ func (e *SnapshottedEngine) buildHashKeys() {
 	e.hashKeys = append([]string{}, e.currentProgramKey, e.newProgramKey, e.referralSetsKey)
 }
 
-func NewSnapshottedEngine(epochEngine EpochEngine, broker Broker, timeSvc TimeService) *SnapshottedEngine {
+func NewSnapshottedEngine(broker Broker, timeSvc TimeService, mat MarketActivityTracker) *SnapshottedEngine {
 	se := &SnapshottedEngine{
-		Engine:  NewEngine(epochEngine, broker, timeSvc),
+		Engine:  NewEngine(broker, timeSvc, mat),
 		pl:      types.Payload{},
 		stopped: false,
 	}

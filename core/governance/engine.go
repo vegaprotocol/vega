@@ -45,7 +45,6 @@ var (
 	ErrUnsupportedAssetSourceType                = errors.New("unsupported asset source type")
 	ErrExpectedERC20Asset                        = errors.New("expected an ERC20 asset but was not")
 	ErrErc20AddressAlreadyInUse                  = errors.New("erc20 address already in use")
-	ErrSpotsNotEnabled                           = errors.New("spot trading not enabled")
 	ErrParentMarketDoesNotExist                  = errors.New("market to succeed does not exist")
 	ErrParentMarketAlreadySucceeded              = errors.New("the parent market was already succeeded by a prior proposal")
 	ErrParentMarketSucceededByCompeting          = errors.New("the parent market has been succeeded by a competing propsal")

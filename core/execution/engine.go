@@ -722,7 +722,6 @@ func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Marke
 		return err
 	}
 	mkt, err := spot.NewMarket(
-		ctx,
 		e.log,
 		e.Matching,
 		e.Fee,

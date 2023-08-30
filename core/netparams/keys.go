@@ -219,7 +219,7 @@ const (
 	RewardsVestingBonusMultiplier = "rewards.vesting.benefitTiers"
 
 	// Referral program.
-	ReferralProgramMaxBenefitTiers                         = "referralProgram.maxBenefitTiers"
+	ReferralProgramMaxReferralTiers                        = "referralProgram.maxReferralTiers"
 	ReferralProgramMaxReferralRewardFactor                 = "referralProgram.maxReferralRewardFactor"
 	ReferralProgramMaxReferralDiscountFactor               = "referralProgram.maxReferralDiscountFactor"
 	ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch = "referralProgram.maxPartyNotionalVolumeByQuantumPerEpoch"
@@ -382,7 +382,7 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionMinMultisigUpdates:                         {},
 	MarketSuccessorLaunchWindow:                              {},
 	SpamProtectionMaxStopOrdersPerMarket:                     {},
-	ReferralProgramMaxBenefitTiers:                           {},
+	ReferralProgramMaxReferralTiers:                          {},
 	ReferralProgramMaxReferralRewardFactor:                   {},
 	ReferralProgramMaxReferralDiscountFactor:                 {},
 	ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch:   {},

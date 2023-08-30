@@ -27,7 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/core/fee"
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	liquiditytarget "code.vegaprotocol.io/vega/core/liquidity/target/spot"
-	liquidity "code.vegaprotocol.io/vega/core/liquidity/v2"
+	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/monitor"
@@ -134,7 +134,6 @@ type Market struct {
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
 func NewMarket(
-	ctx context.Context,
 	log *logging.Logger,
 	matchingConfig matching.Config,
 	feeConfig fee.Config,
@@ -596,7 +595,7 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 }
 
 // BlockEnd notifies the market of the end of the block.
-func (m *Market) BlockEnd(ctx context.Context) {
+func (m *Market) BlockEnd(_ context.Context) {
 	// simplified version of updating mark price every MTM interval
 	mp := m.getLastTradedPrice()
 	if !m.hasTraded && m.markPrice != nil {
@@ -1491,6 +1490,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	if len(transfers) > 0 {
 		m.broker.Send(events.NewLedgerMovements(ctx, transfers))
 	}
+
 	m.feeSplitter.AddTradeValue(tradedValue)
 	m.marketActivityTracker.AddValueTraded(m.quoteAsset, m.mkt.ID, tradedValue)
 	m.broker.SendBatch(tradeEvts)

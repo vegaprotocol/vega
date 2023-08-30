@@ -15,7 +15,6 @@ package teams
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sort"
 	"time"
 
@@ -23,7 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
-	proto "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"golang.org/x/exp/slices"
@@ -32,6 +31,8 @@ import (
 type Engine struct {
 	broker      Broker
 	timeService TimeService
+
+	currentEpoch uint64
 
 	// minStakedVegaTokens limits referral code generation to parties staking at
 	// least this number of tokens.
@@ -80,9 +81,9 @@ func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, determi
 	teamToAdd := &types.Team{
 		ID: deterministicTeamID,
 		Referrer: &types.Membership{
-			PartyID:       referrer,
-			JoinedAt:      now,
-			NumberOfEpoch: 0,
+			PartyID:        referrer,
+			JoinedAt:       now,
+			StartedAtEpoch: e.currentEpoch,
 		},
 		Name:      params.Name,
 		TeamURL:   ptr.UnBox(params.TeamUrl),
@@ -164,36 +165,18 @@ func (e *Engine) JoinTeam(ctx context.Context, referee types.PartyID, params *co
 	}
 
 	// The party does not belong to a team, so he joins right away.
-	teamToJoin.AddReferee(referee, e.timeService.GetTimeNow())
+	membership := &types.Membership{
+		PartyID:        referee,
+		JoinedAt:       e.timeService.GetTimeNow(),
+		StartedAtEpoch: e.currentEpoch,
+	}
+	teamToJoin.Referees = append(teamToJoin.Referees, membership)
 
 	e.allTeamMembers[referee] = teamToJoin.ID
 
-	e.notifyRefereeJoinedTeam(ctx, teamToJoin, referee, time.Now())
+	e.notifyRefereeJoinedTeam(ctx, teamToJoin, membership)
 
 	return nil
-}
-
-func (e *Engine) NumberOfEpochInTeamForParty(party types.PartyID) uint64 {
-	teamID, isMember := e.allTeamMembers[party]
-	if !isMember {
-		return 0
-	}
-
-	team := e.teams[teamID]
-	if team.Referrer.PartyID == party {
-		return team.Referrer.NumberOfEpoch
-	}
-
-	for _, referee := range team.Referees {
-		if referee.PartyID == party {
-			return referee.NumberOfEpoch
-		}
-	}
-
-	// This should never happen if the state is kept consistent in the engine between
-	// fields `allTeamMembers` and `teams`. If it happens, this is a severe
-	// programming error.
-	panic(fmt.Sprintf("party %q is registered as a member of the team %q but the team does not reference his membership", party, teamID))
 }
 
 func (e *Engine) GetAllPartiesInTeams(minEpochsInTeam uint64) []string {
@@ -213,11 +196,11 @@ func (e *Engine) GetTeamMembers(team string, minEpochsInTeam uint64) []string {
 	t := e.teams[(types.TeamID(team))]
 	teamMembers := make([]string, 0, len(t.Referees)+1)
 	for _, m := range t.Referees {
-		if m.NumberOfEpoch >= minEpochsInTeam {
+		if m.StartedAtEpoch-e.currentEpoch >= minEpochsInTeam {
 			teamMembers = append(teamMembers, string(m.PartyID))
 		}
 	}
-	if t.Referrer.NumberOfEpoch >= minEpochsInTeam {
+	if t.Referrer.StartedAtEpoch-e.currentEpoch >= minEpochsInTeam {
 		teamMembers = append(teamMembers, string(t.Referrer.PartyID))
 	}
 	sort.Strings(teamMembers)
@@ -230,18 +213,20 @@ func (e *Engine) IsTeamMember(party types.PartyID) bool {
 }
 
 func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
-	switch ep.Action {
-	case proto.EpochAction_EPOCH_ACTION_START:
-		e.moveMembers(ctx, ep.StartTime)
-	case proto.EpochAction_EPOCH_ACTION_END:
-		e.updateMembershipStats()
+	if ep.Action == vegapb.EpochAction_EPOCH_ACTION_START {
+		e.currentEpoch = ep.Seq
+		e.moveMembers(ctx, ep.StartTime, ep.Seq)
 	}
 }
 
-func (e *Engine) OnEpochRestore(_ context.Context, _ types.Epoch) {}
+func (e *Engine) OnEpochRestore(_ context.Context, ep types.Epoch) {
+	if ep.Action == vegapb.EpochAction_EPOCH_ACTION_START {
+		e.currentEpoch = ep.Seq
+	}
+}
 
 // moveMembers ensures members are moved in a deterministic order.
-func (e *Engine) moveMembers(ctx context.Context, startEpochTime time.Time) {
+func (e *Engine) moveMembers(ctx context.Context, startEpochTime time.Time, epoch uint64) {
 	sortedPartyID := make([]types.PartyID, 0, len(e.teamSwitches))
 	for partyID := range e.teamSwitches {
 		sortedPartyID = append(sortedPartyID, partyID)
@@ -253,21 +238,19 @@ func (e *Engine) moveMembers(ctx context.Context, startEpochTime time.Time) {
 	for _, partyID := range sortedPartyID {
 		move := e.teamSwitches[partyID]
 		e.teams[move.fromTeam].RemoveReferee(partyID)
-		e.teams[move.toTeam].AddReferee(partyID, startEpochTime)
-		e.allTeamMembers[partyID] = move.toTeam
-		e.notifyRefereeSwitchedTeam(ctx, move, partyID, startEpochTime)
+		membership := &types.Membership{
+			PartyID:        partyID,
+			JoinedAt:       startEpochTime,
+			StartedAtEpoch: epoch,
+		}
+		toTeam := e.teams[move.toTeam]
+		toTeam.Referees = append(toTeam.Referees, membership)
+
+		e.allTeamMembers[partyID] = toTeam.ID
+		e.notifyRefereeSwitchedTeam(ctx, move, membership)
 	}
 
 	e.teamSwitches = map[types.PartyID]teamSwitch{}
-}
-
-func (e *Engine) updateMembershipStats() {
-	for _, team := range e.teams {
-		team.Referrer.NumberOfEpoch += 1
-		for _, referee := range team.Referees {
-			referee.NumberOfEpoch += 1
-		}
-	}
 }
 
 func (e *Engine) notifyTeamCreated(ctx context.Context, teamToAdd *types.Team) {
@@ -278,12 +261,12 @@ func (e *Engine) notifyTeamUpdated(ctx context.Context, teamsToUpdate *types.Tea
 	e.broker.Send(events.NewTeamUpdatedEvent(ctx, teamsToUpdate))
 }
 
-func (e *Engine) notifyRefereeSwitchedTeam(ctx context.Context, move teamSwitch, party types.PartyID, switchedAt time.Time) {
-	e.broker.Send(events.NewRefereeSwitchedTeamEvent(ctx, move.fromTeam, move.toTeam, party, switchedAt))
+func (e *Engine) notifyRefereeSwitchedTeam(ctx context.Context, move teamSwitch, membership *types.Membership) {
+	e.broker.Send(events.NewRefereeSwitchedTeamEvent(ctx, move.fromTeam, move.toTeam, membership))
 }
 
-func (e *Engine) notifyRefereeJoinedTeam(ctx context.Context, teamID *types.Team, party types.PartyID, joinedAt time.Time) {
-	e.broker.Send(events.NewRefereeJoinedTeamEvent(ctx, teamID.ID, party, joinedAt))
+func (e *Engine) notifyRefereeJoinedTeam(ctx context.Context, teamID *types.Team, membership *types.Membership) {
+	e.broker.Send(events.NewRefereeJoinedTeamEvent(ctx, teamID.ID, membership))
 }
 
 func (e *Engine) ensureUniqueTeamID(deterministicTeamID types.TeamID) error {
@@ -315,18 +298,18 @@ func (e *Engine) loadTeamsFromSnapshot(teamsSnapshot []*snapshotpb.Team) {
 			refereeID := types.PartyID(refereeSnapshot.PartyId)
 			e.allTeamMembers[refereeID] = teamID
 			referees = append(referees, &types.Membership{
-				PartyID:       refereeID,
-				JoinedAt:      time.Unix(0, refereeSnapshot.JoinedAt),
-				NumberOfEpoch: refereeSnapshot.NumberOfEpoch,
+				PartyID:        refereeID,
+				JoinedAt:       time.Unix(0, refereeSnapshot.JoinedAt),
+				StartedAtEpoch: refereeSnapshot.StartedAtEpoch,
 			})
 		}
 
 		e.teams[teamID] = &types.Team{
 			ID: teamID,
 			Referrer: &types.Membership{
-				PartyID:       referrerID,
-				JoinedAt:      time.Unix(0, teamSnapshot.Referrer.JoinedAt),
-				NumberOfEpoch: teamSnapshot.Referrer.NumberOfEpoch,
+				PartyID:        referrerID,
+				JoinedAt:       time.Unix(0, teamSnapshot.Referrer.JoinedAt),
+				StartedAtEpoch: teamSnapshot.Referrer.StartedAtEpoch,
 			},
 			Referees:  referees,
 			Name:      teamSnapshot.Name,
