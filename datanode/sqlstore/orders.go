@@ -40,6 +40,8 @@ const (
 	OrdersTableName = "orders"
 )
 
+var ErrLastPaginationNotSupported = errors.New("'last' pagination is not supported")
+
 type Orders struct {
 	*ConnectionSource
 	batcher MapBatcher[entities.OrderKey, entities.Order]
@@ -195,7 +197,7 @@ func (os *Orders) queryOrdersWithCursorPagination(ctx context.Context, query str
 	// We don't have views and indexes for iterating backwards for now so we can't use 'last'
 	// as it requires us to order in reverse
 	if pagination.HasBackward() {
-		return nil, entities.PageInfo{}, fmt.Errorf("'last' pagination for orders not currently supported")
+		return nil, entities.PageInfo{}, ErrLastPaginationNotSupported
 	}
 
 	query, args, err = paginateQuery(query, args, ordering, pagination)
