@@ -72,12 +72,12 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 		cmdErr = commands.CheckStopOrdersSubmission(cmd.StopOrdersSubmission)
 	case *walletpb.SubmitTransactionRequest_StopOrdersCancellation:
 		cmdErr = commands.CheckStopOrdersCancellation(cmd.StopOrdersCancellation)
-	case *walletpb.SubmitTransactionRequest_CreateTeam:
-		cmdErr = commands.CheckCreateTeam(cmd.CreateTeam)
-	case *walletpb.SubmitTransactionRequest_UpdateTeam:
-		cmdErr = commands.CheckUpdateTeam(cmd.UpdateTeam)
-	case *walletpb.SubmitTransactionRequest_JoinTeam:
-		cmdErr = commands.CheckJoinTeam(cmd.JoinTeam)
+	case *walletpb.SubmitTransactionRequest_CreateReferralSet:
+		cmdErr = commands.CheckCreateReferralSet(cmd.CreateReferralSet)
+	case *walletpb.SubmitTransactionRequest_UpdateReferralSet:
+		cmdErr = commands.CheckUpdateReferralSet(cmd.UpdateReferralSet)
+	case *walletpb.SubmitTransactionRequest_ApplyReferralCode:
+		cmdErr = commands.CheckApplyReferralCode(cmd.ApplyReferralCode)
 	default:
 		errs.AddForProperty("input_data.command", commands.ErrIsNotSupported)
 	}
@@ -201,17 +201,17 @@ func WrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.S
 		data.Command = &commandspb.InputData_StopOrdersCancellation{
 			StopOrdersCancellation: req.GetStopOrdersCancellation(),
 		}
-	case *walletpb.SubmitTransactionRequest_CreateTeam:
-		data.Command = &commandspb.InputData_CreateTeam{
-			CreateTeam: req.GetCreateTeam(),
+	case *walletpb.SubmitTransactionRequest_CreateReferralSet:
+		data.Command = &commandspb.InputData_CreateReferralSet{
+			CreateReferralSet: req.GetCreateReferralSet(),
 		}
-	case *walletpb.SubmitTransactionRequest_UpdateTeam:
-		data.Command = &commandspb.InputData_UpdateTeam{
-			UpdateTeam: req.GetUpdateTeam(),
+	case *walletpb.SubmitTransactionRequest_UpdateReferralSet:
+		data.Command = &commandspb.InputData_UpdateReferralSet{
+			UpdateReferralSet: req.GetUpdateReferralSet(),
 		}
-	case *walletpb.SubmitTransactionRequest_JoinTeam:
-		data.Command = &commandspb.InputData_JoinTeam{
-			JoinTeam: req.GetJoinTeam(),
+	case *walletpb.SubmitTransactionRequest_ApplyReferralCode:
+		data.Command = &commandspb.InputData_ApplyReferralCode{
+			ApplyReferralCode: req.GetApplyReferralCode(),
 		}
 	default:
 		panic(fmt.Sprintf("command %T is not supported", cmd))

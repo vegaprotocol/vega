@@ -545,7 +545,7 @@ func (e *Engine) UpdateSpotMarket(ctx context.Context, marketConfig *types.Marke
 func (e *Engine) VerifyUpdateMarketState(changes *types.MarketStateUpdateConfiguration) error {
 	// futures or perps market
 	if market, ok := e.futureMarkets[changes.MarketID]; ok {
-		if changes.SettlementPrice == nil && changes.UpdateType == types.MarketStateUpdateTypeTerminate && !market.IsPerp() {
+		if changes.SettlementPrice == nil && changes.UpdateType == types.MarketStateUpdateTypeTerminate {
 			return fmt.Errorf("missing settlement price for governance initiated futures market termination")
 		}
 		state := market.GetMarketState()
@@ -897,7 +897,7 @@ func (e *Engine) removeMarket(mktID string) {
 				copy(e.futureMarketsCpy[i:], e.futureMarketsCpy[i+1:])
 				e.futureMarketsCpy[len(e.futureMarketsCpy)-1] = nil
 				e.futureMarketsCpy = e.futureMarketsCpy[:len(e.futureMarketsCpy)-1]
-				e.marketActivityTracker.RemoveMarket(mktID)
+				e.marketActivityTracker.RemoveMarket(mkt.GetSettlementAsset(), mktID)
 				e.log.Debug("removed in total", logging.String("id", mktID))
 				return
 			}
@@ -912,7 +912,7 @@ func (e *Engine) removeMarket(mktID string) {
 				copy(e.spotMarketsCpy[i:], e.spotMarketsCpy[i+1:])
 				e.spotMarketsCpy[len(e.spotMarketsCpy)-1] = nil
 				e.spotMarketsCpy = e.spotMarketsCpy[:len(e.spotMarketsCpy)-1]
-				e.marketActivityTracker.RemoveMarket(mktID)
+				e.marketActivityTracker.RemoveMarket(mkt.GetAssetForProposerBonus(), mktID)
 				e.log.Debug("removed in total", logging.String("id", mktID))
 				return
 			}

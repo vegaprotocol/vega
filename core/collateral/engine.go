@@ -131,6 +131,26 @@ func New(log *logging.Logger, conf Config, ts TimeService, broker Broker) *Engin
 	}
 }
 
+func (e *Engine) GetAllVestingQuantumBalance(party string) *num.Uint {
+	balance := num.UintZero()
+
+	for asset, details := range e.enabledAssets {
+		// vesting balance
+		if acc, ok := e.accs[e.accountID(noMarket, party, asset, types.AccountTypeVestingRewards)]; ok {
+			quantumBalance, _ := num.UintFromDecimal(acc.Balance.ToDecimal().Div(details.Details.Quantum))
+			balance.AddSum(quantumBalance)
+		}
+
+		// vested balance
+		if acc, ok := e.accs[e.accountID(noMarket, party, asset, types.AccountTypeVestedRewards)]; ok {
+			quantumBalance, _ := num.UintFromDecimal(acc.Balance.ToDecimal().Div(details.Details.Quantum))
+			balance.AddSum(quantumBalance)
+		}
+	}
+
+	return balance
+}
+
 func (e *Engine) GetVestingRecovery() map[string]map[string]*num.Uint {
 	out := e.vesting
 	e.vesting = map[string]map[string]*num.Uint{}
@@ -657,22 +677,14 @@ func (e *Engine) getRewardTransferRequests(ctx context.Context, rewardAccountID 
 
 	rewardTRs := make([]*types.TransferRequest, 0, len(transfers))
 	for _, t := range transfers {
-		general, err := e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
-		if err != nil {
-			_, err = e.CreatePartyGeneralAccount(ctx, t.Owner, t.Amount.Asset)
-			if err != nil {
-				continue
-			}
-			general, _ = e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
-		}
-
+		vesting := e.GetOrCreatePartyVestingRewardAccount(ctx, t.Owner, t.Amount.Asset)
 		rewardTRs = append(rewardTRs, &types.TransferRequest{
 			Amount:      t.Amount.Amount.Clone(),
 			MinAmount:   t.Amount.Amount.Clone(),
 			Asset:       t.Amount.Asset,
 			Type:        types.TransferTypeRewardPayout,
 			FromAccount: []*types.Account{rewardAccount},
-			ToAccount:   []*types.Account{general},
+			ToAccount:   []*types.Account{vesting},
 		})
 	}
 	return rewardTRs, nil
@@ -1653,7 +1665,7 @@ func (e *Engine) TransferFunds(
 		transfer, accType := allTransfers[i], allAccountTypes[i]
 		switch allTransfers[i].Type {
 		case types.TransferTypeInfrastructureFeePay:
-			req, err = e.getTransferFundsFeesTransferRequest(transfer, accType)
+			req, err = e.getTransferFundsFeesTransferRequest(ctx, transfer, accType)
 
 		case types.TransferTypeTransferFundsDistribute,
 			types.TransferTypeTransferFundsSend:
@@ -2254,7 +2266,9 @@ func (e *Engine) getGovernanceTransferFundsTransferRequest(ctx context.Context, 
 			}
 
 			// this could not exists as well, let's just create in this case
-		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward, types.AccountTypeMarketProposerReward:
+		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward,
+			types.AccountTypeMakerPaidFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeAveragePositionReward,
+			types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeValidatorRankingReward:
 			market := noMarket
 			if len(t.Market) > 0 {
 				market = t.Market
@@ -2315,8 +2329,6 @@ func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.T
 	)
 	switch t.Type {
 	case types.TransferTypeTransferFundsSend:
-		// as of now only general account are supported.
-		// soon we'll have some kind of staking account lock as well.
 		switch accountType {
 		case types.AccountTypeGeneral:
 			fromAcc, err = e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
@@ -2326,6 +2338,11 @@ func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.T
 				)
 			}
 
+			// we always pay onto the pending transfers accounts
+			toAcc = e.GetPendingTransfersAccount(t.Amount.Asset)
+
+		case types.AccountTypeVestedRewards:
+			fromAcc = e.GetOrCreatePartyVestedRewardAccount(ctx, t.Owner, t.Amount.Asset)
 			// we always pay onto the pending transfers accounts
 			toAcc = e.GetPendingTransfersAccount(t.Amount.Asset)
 
@@ -2354,7 +2371,9 @@ func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.T
 			}
 
 		// this could not exists as well, let's just create in this case
-		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward, types.AccountTypeMarketProposerReward:
+		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward,
+			types.AccountTypeMakerPaidFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeAveragePositionReward,
+			types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeValidatorRankingReward:
 			market := noMarket
 			if len(t.Market) > 0 {
 				market = t.Market
@@ -2388,7 +2407,7 @@ func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.T
 	}, nil
 }
 
-func (e *Engine) getTransferFundsFeesTransferRequest(t *types.Transfer, accountType types.AccountType) (*types.TransferRequest, error) {
+func (e *Engine) getTransferFundsFeesTransferRequest(ctx context.Context, t *types.Transfer, accountType types.AccountType) (*types.TransferRequest, error) {
 	// only type supported here
 	if t.Type != types.TransferTypeInfrastructureFeePay {
 		return nil, errors.New("only infrastructure fee distribute type supported")
@@ -2401,14 +2420,14 @@ func (e *Engine) getTransferFundsFeesTransferRequest(t *types.Transfer, accountT
 
 	switch accountType {
 	case types.AccountTypeGeneral:
-		// as of now only general account are supported.
-		// soon we'll have some kind of staking account lock as well.
 		fromAcc, err = e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
 		if err != nil {
 			return nil, fmt.Errorf("account does not exists: %v, %v, %v",
 				accountType, t.Owner, t.Amount.Asset,
 			)
 		}
+	case types.AccountTypeVestedRewards:
+		fromAcc = e.GetOrCreatePartyVestedRewardAccount(ctx, t.Owner, t.Amount.Asset)
 
 	default:
 		return nil, fmt.Errorf("unsupported from account for TransferFunds: %v", accountType.String())
@@ -3286,7 +3305,7 @@ func (e *Engine) GetOrCreatePartyVestingRewardAccount(ctx context.Context, party
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 
-	return acc
+	return acc.Clone()
 }
 
 // GetOrCreatePartyVestedAccount create the general account for a party.
@@ -3314,7 +3333,7 @@ func (e *Engine) GetOrCreatePartyVestedRewardAccount(ctx context.Context, partyI
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 
-	return acc
+	return acc.Clone()
 }
 
 // RemoveDistressed will remove all distressed party in the event positions

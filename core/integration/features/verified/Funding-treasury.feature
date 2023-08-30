@@ -250,8 +250,8 @@ Feature: check the insurance pool getting shared equally between all markets wit
 
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
-      | sellSideProvider | -291   | 8720           | 0            |
-      | buySideProvider  | 291    | -20            | 0            |
+      | sellSideProvider | -291   | 0              | 20360        |
+      | buySideProvider  | 291    | 0              | -11660       |
       | designatedLooser | 0      | 0              | -17631       |
 
     Then the parties should have the following account balances:

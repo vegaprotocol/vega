@@ -183,9 +183,11 @@ func newTestMarket(
 
 	as := monitor.NewAuctionState(&mkt, now)
 	epoch := mocks.NewMockEpochEngine(ctrl)
-	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
+	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).AnyTimes()
 
-	mat := common.NewMarketActivityTracker(log, epoch)
+	teams := mocks.NewMockTeams(ctrl)
+	bc := mocks.NewMockAccountBalanceChecker(ctrl)
+	mat := common.NewMarketActivityTracker(log, epoch, teams, bc)
 
 	baseAsset := NewAssetStub(base, baseDP)
 	quoteAsset := NewAssetStub(quote, quoteDP)

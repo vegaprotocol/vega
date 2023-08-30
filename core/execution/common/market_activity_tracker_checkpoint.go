@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/types"
 
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 )
 
@@ -28,18 +29,29 @@ func (mat *MarketActivityTracker) Name() types.CheckpointName {
 }
 
 func (mat *MarketActivityTracker) Checkpoint() ([]byte, error) {
-	markets := make([]string, 0, len(mat.marketToTracker))
-	for k := range mat.marketToTracker {
-		markets = append(markets, k)
+	assets := make([]string, 0, len(mat.assetToMarketTrackers))
+	for k := range mat.assetToMarketTrackers {
+		assets = append(assets, k)
 	}
-	sort.Strings(markets)
+	sort.Strings(assets)
 
-	marketTracker := make([]*checkpoint.MarketActivityTracker, 0, len(markets))
-	for _, market := range markets {
-		marketTracker = append(marketTracker, mat.marketToTracker[market].IntoProto(market))
+	marketTracker := []*checkpoint.MarketActivityTracker{}
+	for _, asset := range assets {
+		assetTrackers := mat.assetToMarketTrackers[asset]
+		markets := make([]string, 0, len(assetTrackers))
+		for k := range assetTrackers {
+			markets = append(markets, k)
+		}
+		sort.Strings(markets)
+		for _, market := range markets {
+			mt := assetTrackers[market]
+			marketTracker = append(marketTracker, mt.IntoProto(market))
+		}
 	}
+
 	msg := &checkpoint.MarketTracker{
-		MarketActivity: marketTracker,
+		MarketActivity:      marketTracker,
+		TakerNotionalVolume: takerNotionalToProto(mat.partyTakerNotionalVolume),
 	}
 	ret, err := proto.Marshal(msg)
 	if err != nil {
@@ -55,7 +67,14 @@ func (mat *MarketActivityTracker) Load(ctx context.Context, data []byte) error {
 	}
 
 	for _, data := range b.MarketActivity {
-		mat.marketToTracker[data.Market] = marketTrackerFromProto(data)
+		if _, ok := mat.assetToMarketTrackers[data.Asset]; !ok {
+			mat.assetToMarketTrackers[data.Asset] = map[string]*marketTracker{}
+		}
+		mat.assetToMarketTrackers[data.Asset][data.Market] = marketTrackerFromProto(data)
+	}
+	for _, tnv := range b.TakerNotionalVolume {
+		volume, _ := num.UintFromString(tnv.Volume, 10)
+		mat.partyTakerNotionalVolume[tnv.Party] = volume
 	}
 	return nil
 }

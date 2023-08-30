@@ -39,6 +39,20 @@ func (m *MockCollateral) EXPECT() *MockCollateralMockRecorder {
 	return m.recorder
 }
 
+// GetAllVestingQuantumBalance mocks base method.
+func (m *MockCollateral) GetAllVestingQuantumBalance(arg0 string) *num.Uint {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllVestingQuantumBalance", arg0)
+	ret0, _ := ret[0].(*num.Uint)
+	return ret0
+}
+
+// GetAllVestingQuantumBalance indicates an expected call of GetAllVestingQuantumBalance.
+func (mr *MockCollateralMockRecorder) GetAllVestingQuantumBalance(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllVestingQuantumBalance", reflect.TypeOf((*MockCollateral)(nil).GetAllVestingQuantumBalance), arg0)
+}
+
 // GetVestingRecovery mocks base method.
 func (m *MockCollateral) GetVestingRecovery() map[string]map[string]*num.Uint {
 	m.ctrl.T.Helper()

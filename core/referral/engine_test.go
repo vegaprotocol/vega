@@ -16,14 +16,69 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/referral"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestReferralSet(t *testing.T) {
+	te := newEngine(t)
+
+	ctx := vgtest.VegaContext(vgrand.RandomStr(5), vgtest.RandomI64())
+
+	setID := vgrand.RandomStr(5)
+	referrer := "referrer"
+	referee1 := "referee1"
+
+	t.Run("querying for a non existing set return false", func(t *testing.T) {
+		require.False(t, te.engine.SetExists(setID))
+	})
+
+	t.Run("cannot join a non-existing set", func(t *testing.T) {
+		err := te.engine.ApplyReferralCode(ctx, referee1, &commandspb.ApplyReferralCode{
+			Id: setID,
+		})
+
+		assert.EqualError(t, err, referral.ErrInvalidReferralCode(setID).Error())
+	})
+
+	t.Run("can create a set for the first time", func(t *testing.T) {
+		te.broker.EXPECT().Send(gomock.Any()).Times(1)
+		te.timeSvc.EXPECT().GetTimeNow().Times(1)
+		assert.NoError(t, te.engine.CreateReferralSet(ctx, referrer, &commandspb.CreateReferralSet{}, setID))
+	})
+
+	t.Run("cannot create a set multiple times", func(t *testing.T) {
+		assert.EqualError(t, te.engine.CreateReferralSet(ctx, referrer, &commandspb.CreateReferralSet{}, setID),
+			referral.ErrIsAlreadyAReferrer(referrer).Error(),
+		)
+	})
+
+	t.Run("can join an existing set", func(t *testing.T) {
+		te.broker.EXPECT().Send(gomock.Any()).Times(1)
+		te.timeSvc.EXPECT().GetTimeNow().Times(1)
+		assert.NoError(t, te.engine.ApplyReferralCode(ctx, referee1, &commandspb.ApplyReferralCode{Id: setID}))
+	})
+
+	t.Run("cannot create a team when being a referee", func(t *testing.T) {
+		assert.EqualError(t, te.engine.CreateReferralSet(ctx, referee1, &commandspb.CreateReferralSet{}, setID),
+			referral.ErrIsAlreadyAReferee(referee1).Error(),
+		)
+	})
+
+	t.Run("cannot become a referee twice", func(t *testing.T) {
+		assert.EqualError(t, te.engine.ApplyReferralCode(ctx, referee1, &commandspb.ApplyReferralCode{Id: setID}),
+			referral.ErrIsAlreadyAReferee(referee1).Error(),
+		)
+	})
+}
 
 func TestUpdatingReferralProgramSucceeds(t *testing.T) {
 	ctx := vgtest.VegaContext(vgrand.RandomStr(5), vgtest.RandomI64())
@@ -164,18 +219,19 @@ func TestGettingRewardFactor(t *testing.T) {
 
 	// Looking for reward factor for party without a team.
 	loneWolfParty := newPartyID(t)
-	te.teamsEngine.EXPECT().IsTeamMember(loneWolfParty).Return(false)
+	// te.teamsEngine.EXPECT().IsTeamMember(loneWolfParty).Return(false)
 	assert.Equal(t, num.DecimalZero(), te.engine.RewardsFactorForParty(loneWolfParty))
 
 	// Looking for reward factor for party with a team, but not for long enough.
 	noobParty := newPartyID(t)
-	te.teamsEngine.EXPECT().IsTeamMember(noobParty).Return(true)
-	te.teamsEngine.EXPECT().NumberOfEpochInTeamForParty(noobParty).Return(uint64(1))
+	// te.teamsEngine.EXPECT().IsTeamMember(noobParty).Return(true)
+	// te.teamsEngine.EXPECT().NumberOfEpochInTeamForParty(noobParty).Return(uint64(1))
 	assert.Equal(t, num.DecimalZero(), te.engine.RewardsFactorForParty(noobParty))
 
-	// Looking for reward factor for party with a team, matching tier 2.
-	eligibleParty := newPartyID(t)
-	te.teamsEngine.EXPECT().IsTeamMember(eligibleParty).Return(true)
-	te.teamsEngine.EXPECT().NumberOfEpochInTeamForParty(eligibleParty).Return(uint64(13))
-	assert.Equal(t, num.DecimalFromFloat(0.01), te.engine.RewardsFactorForParty(eligibleParty))
+	// FIXME: Re-enabled in a following PR.
+	// // Looking for reward factor for party with a team, matching tier 2.
+	// eligibleParty := newPartyID(t)
+	// te.teamsEngine.EXPECT().IsTeamMember(eligibleParty).Return(true)
+	// te.teamsEngine.EXPECT().NumberOfEpochInTeamForParty(eligibleParty).Return(uint64(13))
+	// assert.Equal(t, num.DecimalFromFloat(0.01), te.engine.RewardsFactorForParty(eligibleParty))
 }

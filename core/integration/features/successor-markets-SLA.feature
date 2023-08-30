@@ -68,6 +68,7 @@ Feature: Simple example of successor markets
       | trader3 | USD   | 2000000     |
       | trader4 | USD   | 2000000     |
       | trader5 | USD   | 22000       |
+
   @SuccessorMarketActive
   Scenario: 001 Enact a successor market when the parent market is still active; Two proposals that name the same parent can be submitted; 0081-SUCM-005, 0081-SUCM-006, 0081-SUCM-020, 0081-SUCM-021, 0081-SUCM-022
     Given the markets:
@@ -181,10 +182,10 @@ Feature: Simple example of successor markets
 
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
-      | trader1 | 1      | -10            | 0            |
-      | trader2 | -1     | 10             | 0            |
-      | trader3 | 291    | 5800           | 0            |
-      | trader4 | -291   | 2900           | 0            |
+      | trader1 | 1      | 0              | -10          |
+      | trader2 | -1     | 0              | 10           |
+      | trader3 | 291    | 0              | 5800         |
+      | trader4 | -291   | 0              | 2900         |
       | trader5 | 0      | 0              | -17432       |
 
     Then the parties should have the following account balances:

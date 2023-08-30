@@ -20,6 +20,8 @@ type Team struct {
 	TeamURL   string
 	AvatarURL string
 	CreatedAt time.Time
+
+	Closed bool
 }
 
 type Membership struct {

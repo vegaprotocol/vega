@@ -149,8 +149,8 @@ func (m *MarketLiquidity) applyPendingProvisions(
 		// amendedCommitment- originalCommitment
 		proposedCommitmentVariation := amendment.CommitmentAmount.ToDecimal().Sub(provision.CommitmentAmount.ToDecimal())
 
-		// if commitment is increased, there is not penalty applied
-		if proposedCommitmentVariation.IsPositive() {
+		// if commitment is increased or not changed, there is not penalty applied
+		if !proposedCommitmentVariation.IsNegative() {
 			continue
 		}
 
@@ -190,13 +190,15 @@ func (m *MarketLiquidity) applyPendingProvisions(
 
 		partyMaxPenaltyFreeReductionAmountU, _ := num.UintFromDecimal(partyMaxPenaltyFreeReductionAmount)
 
-		transfer := m.NewTransfer(partyID, types.TransferTypeBondHigh, partyMaxPenaltyFreeReductionAmountU)
-		bondLedgerMovement, err := m.bondUpdate(ctx, transfer)
-		if err != nil {
-			m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
-		}
+		if !partyMaxPenaltyFreeReductionAmountU.IsZero() {
+			transfer := m.NewTransfer(partyID, types.TransferTypeBondHigh, partyMaxPenaltyFreeReductionAmountU)
+			bondLedgerMovement, err := m.bondUpdate(ctx, transfer)
+			if err != nil {
+				m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
+			}
 
-		ledgerMovements = append(ledgerMovements, bondLedgerMovement)
+			ledgerMovements = append(ledgerMovements, bondLedgerMovement)
+		}
 
 		penaltyIncurringReductionAmount := commitmentVariation.Sub(partyMaxPenaltyFreeReductionAmount)
 
@@ -204,24 +206,28 @@ func (m *MarketLiquidity) applyPendingProvisions(
 		freeAmount := one.Sub(m.earlyExitPenalty).Mul(penaltyIncurringReductionAmount)
 		freeAmountU, _ := num.UintFromDecimal(freeAmount)
 
-		transfer = m.NewTransfer(partyID, types.TransferTypeBondHigh, freeAmountU)
-		bondLedgerMovement, err = m.bondUpdate(ctx, transfer)
-		if err != nil {
-			m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
-		}
+		if !freeAmountU.IsZero() {
+			transfer := m.NewTransfer(partyID, types.TransferTypeBondHigh, freeAmountU)
+			bondLedgerMovement, err := m.bondUpdate(ctx, transfer)
+			if err != nil {
+				m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
+			}
 
-		ledgerMovements = append(ledgerMovements, bondLedgerMovement)
+			ledgerMovements = append(ledgerMovements, bondLedgerMovement)
+		}
 
 		slashingAmount := m.earlyExitPenalty.Mul(penaltyIncurringReductionAmount)
 		slashingAmountU, _ := num.UintFromDecimal(slashingAmount)
 
-		transfer = m.NewTransfer(partyID, types.TransferTypeBondSlashing, slashingAmountU)
-		bondLedgerMovement, err = m.bondUpdate(ctx, transfer)
-		if err != nil {
-			m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
-		}
+		if !slashingAmountU.IsZero() {
+			transfer := m.NewTransfer(partyID, types.TransferTypeBondSlashing, slashingAmountU)
+			bondLedgerMovement, err := m.bondUpdate(ctx, transfer)
+			if err != nil {
+				m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
+			}
 
-		ledgerMovements = append(ledgerMovements, bondLedgerMovement)
+			ledgerMovements = append(ledgerMovements, bondLedgerMovement)
+		}
 	}
 
 	if len(ledgerMovements) > 0 {
@@ -505,29 +511,38 @@ func (m *MarketLiquidity) AmendLiquidityProvision(
 		}
 	}
 
-	pendingAmendment := m.liquidityEngine.PendingProvisionByPartyID(party)
-	if !m.liquidityEngine.IsLiquidityProvider(party) && pendingAmendment == nil {
+	if !m.liquidityEngine.IsLiquidityProvider(party) {
 		return ErrPartyNotLiquidityProvider
 	}
 
-	lp := m.liquidityEngine.LiquidityProvisionByPartyID(party)
-	if lp == nil && pendingAmendment == nil {
-		return fmt.Errorf("cannot edit liquidity provision from a non liquidity provider party (%v)", party)
+	pendingAmendment := m.liquidityEngine.PendingProvisionByPartyID(party)
+	currentProvision := m.liquidityEngine.LiquidityProvisionByPartyID(party)
+
+	provisionToCopy := currentProvision
+	if currentProvision == nil {
+		if pendingAmendment == nil {
+			m.log.Panic(
+				"cannot edit liquidity provision from a non liquidity provider party",
+				logging.PartyID(party),
+			)
+		}
+
+		provisionToCopy = pendingAmendment
 	}
 
 	// If commitment amount is not provided we keep the same
 	if lpa.CommitmentAmount == nil || lpa.CommitmentAmount.IsZero() {
-		lpa.CommitmentAmount = lp.CommitmentAmount
+		lpa.CommitmentAmount = provisionToCopy.CommitmentAmount
 	}
 
 	// If commitment amount is not provided we keep the same
 	if lpa.Fee.IsZero() {
-		lpa.Fee = lp.Fee
+		lpa.Fee = provisionToCopy.Fee
 	}
 
 	// If commitment amount is not provided we keep the same
 	if lpa.Reference == "" {
-		lpa.Reference = lp.Reference
+		lpa.Reference = provisionToCopy.Reference
 	}
 
 	var proposedCommitmentVariation num.Decimal
@@ -546,8 +561,8 @@ func (m *MarketLiquidity) AmendLiquidityProvision(
 
 		proposedCommitmentVariation = pendingAmendment.CommitmentAmount.ToDecimal().Sub(lpa.CommitmentAmount.ToDecimal())
 	} else {
-		if lp != nil {
-			proposedCommitmentVariation = lp.CommitmentAmount.ToDecimal().Sub(lpa.CommitmentAmount.ToDecimal())
+		if currentProvision != nil {
+			proposedCommitmentVariation = currentProvision.CommitmentAmount.ToDecimal().Sub(lpa.CommitmentAmount.ToDecimal())
 		} else {
 			proposedCommitmentVariation = pendingAmendment.CommitmentAmount.ToDecimal().Sub(lpa.CommitmentAmount.ToDecimal())
 		}
@@ -572,8 +587,8 @@ func (m *MarketLiquidity) AmendLiquidityProvision(
 			logging.Error(err))
 	}
 
-	if lp != nil && applied && proposedCommitmentVariation.IsPositive() && !lpa.CommitmentAmount.IsZero() {
-		amountToRelease := num.UintZero().Sub(lp.CommitmentAmount, lpa.CommitmentAmount)
+	if currentProvision != nil && applied && proposedCommitmentVariation.IsPositive() && !lpa.CommitmentAmount.IsZero() {
+		amountToRelease := num.UintZero().Sub(currentProvision.CommitmentAmount, lpa.CommitmentAmount)
 		if err := m.releasePendingBondCollateral(ctx, amountToRelease, party); err != nil {
 			m.log.Debug("could not submit update bond for lp amendment",
 				logging.PartyID(party),
@@ -581,7 +596,7 @@ func (m *MarketLiquidity) AmendLiquidityProvision(
 				logging.Error(err))
 
 			// rollback the amendment - TODO karel
-			lpa.CommitmentAmount = lp.CommitmentAmount
+			lpa.CommitmentAmount = currentProvision.CommitmentAmount
 			m.liquidityEngine.AmendLiquidityProvision(ctx, lpa, party, false)
 
 			return err

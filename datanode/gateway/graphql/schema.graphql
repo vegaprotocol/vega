@@ -911,6 +911,37 @@ enum DispatchMetric {
   DISPATCH_METRIC_LP_FEES_RECEIVED
   "Dispatch metric that uses the total value of the market if above the required threshold and not paid given proposer bonus yet"
   DISPATCH_METRIC_MARKET_VALUE
+  "Dispatch metric that uses the time weighted position of the party in the market"
+  DISPATCH_METRIC_AVERAGE_POSITION
+  "Dispatch metric that uses the relative PNL of the party in the market"
+  DISPATCH_METRIC_RELATIVE_RETURN
+  "Dispatch metric that uses return volatility of the party in the market"
+  DISPATCH_METRIC_RETURN_VOLATILITY
+  "Dispatch metric that uses the validator ranking of the validator as metric"
+  DISPATCH_METRIC_VALIDATOR_RANKING
+}
+
+enum EntityScope {
+  "Rewards must be distributed directly to eligible parties"
+  ENTITY_SCOPE_INDIVIDUALS
+  "Rewards must be distributed directly to eligible teams, and then amongst team members"
+  ENTITY_SCOPE_TEAMS
+}
+
+enum IndividualScope {
+  "All parties on the network are within the scope of this reward"
+  INDIVIDUAL_SCOPE_ALL
+  "All parties that are part of a team are within the scope of this reward"
+  INDIVIDUAL_SCOPE_IN_TEAM
+  "All parties that are not part of a team are within the scope of this reward"
+  INDIVIDUAL_SCOPE_NOT_IN_TEAM
+}
+
+enum DistributionStrategy {
+  "Rewards funded using the pro-rata strategy should be distributed pro-rata by each entity's reward metric scaled by any active multipliers that party has"
+  DISTRIBUTION_STRATEGY_PRO_RATA
+  "Rewards funded using the rank strategy"
+  DISTRIBUTION_STRATEGY_RANK
 }
 
 "Dispatch strategy for a recurring transfer"
@@ -923,6 +954,41 @@ type DispatchStrategy {
 
   "Scope the dispatch to this market only under the metric asset"
   marketIdsInScope: [ID!]
+
+  "The type of entities eligible for this strategy"
+  entityScope: EntityScope!
+
+  "If entity scope is individuals then this defines the scope for individuals"
+  individualScope: IndividualScope
+
+  "The teams in scope for the reward, if the entity is teams"
+  teamScope: [ID]
+
+  "The proportion of the top performers in the team for a given metric to be averaged for the metric calculation if scope is team"
+  nTopPerformers: String
+
+  "Minimum number of governance tokens, e.g. VEGA, staked for a party to be considered eligible"
+  stakingRequirement: String!
+
+  "Minimum notional time-weighted averaged position required for a party to be considered eligible"
+  notionalTimeWeightedAveragePositionRequirement: String!
+
+  "Number of epochs to evaluate the metric on"
+  windowLength: Int!
+
+  "Number of epochs after distribution to delay vesting of rewards by"
+  lockPeriod: Int!
+
+  "Controls how the reward is distributed between qualifying parties"
+  distributionStrategy: DistributionStrategy!
+
+  "Ascending order list of start rank and corresponding share ratio"
+  rankTable: RankTable
+}
+
+type RankTable {
+  startRank: Int!
+  shareRatio: Int!
 }
 
 "Validating status of a node, i.e. validator or non-validator"
@@ -3589,6 +3655,18 @@ enum AccountType {
   ACCOUNT_TYPE_LP_LIQUIDITY_FEES
   "Network treasury, per-asset treasury controlled by the network"
   ACCOUNT_TYPE_NETWORK_TREASURY
+  "Vesting reward account is a per party per asset account for locked reward funds waiting to be vested"
+  ACCOUNT_TYPE_VESTING_REWARDS
+  "Vested reward account is a per party per asset account for vested reward funds"
+  ACCOUNT_TYPE_VESTED_REWARDS
+  "Average position reward account is a per asset per market account for average position reward funds"
+  ACCOUNT_TYPE_REWARD_AVERAGE_POSITION
+  "Relative return reward account is a per asset per market account for relative return reward funds"
+  ACCOUNT_TYPE_REWARD_RELATIVE_RETURN
+  "Return volatility reward account is a per asset per market account for return volatility reward funds"
+  ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY
+  "Validator ranking reward account is a per asset account for validator ranking reward funds"
+  ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING
 }
 
 "Types that describe why a transfer has been made"
@@ -3662,7 +3740,7 @@ enum TransferType {
   "Distributes performance bonus from market bonus to liquidity provider's general account."
   TRANSFER_TYPE_SLA_PERFORMANCE_BONUS_DISTRIBUTE
   "Funds deducted from margin account after a perpetuals funding loss."
-  TRANSFER_TYPE_PERPPETUALS_FUNDING_LOSS
+  TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS
   "Funds added to margin account after a perpetuals funding gain."
   TRANSFER_TYPE_PERPETUALS_FUNDING_WIN
   "Funds moved from the vesting account to the vested account once the vesting period is reached."
@@ -4801,6 +4879,8 @@ input StopOrderFilter {
   expiryStrategy: [StopOrderExpiryStrategy!]
   "Date range to retrieve order from/to. Start and end time should be expressed as an integer value of Unix nanoseconds"
   dateRange: DateRange
+  "Filter for live stop orders only"
+  liveOnly: Boolean
 }
 
 input OrderByPartyIdsFilter {

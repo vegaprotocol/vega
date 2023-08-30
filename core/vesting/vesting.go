@@ -14,6 +14,7 @@ package vesting
 
 import (
 	"context"
+	"sort"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
@@ -31,6 +32,7 @@ type Collateral interface {
 		ctx context.Context, transfers []*types.Transfer,
 	) ([]*types.LedgerMovement, error)
 	GetVestingRecovery() map[string]map[string]*num.Uint
+	GetAllVestingQuantumBalance(party string) *num.Uint
 }
 
 type ActivityStreakVestingMultiplier interface {
@@ -64,8 +66,9 @@ type Engine struct {
 	broker Broker
 	assets Assets
 
-	minTransfer num.Decimal
-	baseRate    num.Decimal
+	minTransfer  num.Decimal
+	baseRate     num.Decimal
+	benefitTiers []*types.VestingBenefitTier
 
 	state map[string]*PartyRewards
 }
@@ -96,6 +99,21 @@ func (e *Engine) OnCheckpointLoaded() {
 			e.increaseVestingBalance(party, asset, balance.Clone())
 		}
 	}
+}
+
+func (e *Engine) OnBenefitTiersUpdate(
+	_ context.Context, v interface{},
+) error {
+	tiers, err := types.VestingBenefitTiersFromUntypedProto(v)
+	if err != nil {
+		return err
+	}
+
+	e.benefitTiers = tiers.Clone().Tiers
+	sort.Slice(e.benefitTiers, func(i, j int) bool {
+		return e.benefitTiers[i].MinimumQuantumBalance.LT(e.benefitTiers[j].MinimumQuantumBalance)
+	})
+	return nil
 }
 
 func (e *Engine) OnRewardVestingBaseRateUpdate(
@@ -138,6 +156,22 @@ func (e *Engine) AddReward(
 	e.increaseLockedForAsset(
 		party, asset, amount, lockedForEpochs,
 	)
+}
+
+func (e *Engine) GetRewardBonusMultiplier(party string) num.Decimal {
+	quantumBalance := e.c.GetAllVestingQuantumBalance(party)
+
+	multiplier := num.DecimalOne()
+
+	for _, b := range e.benefitTiers {
+		if quantumBalance.LT(b.MinimumQuantumBalance) {
+			break
+		}
+
+		multiplier = b.RewardMultiplier
+	}
+
+	return multiplier
 }
 
 func (e *Engine) getPartyRewards(party string) *PartyRewards {

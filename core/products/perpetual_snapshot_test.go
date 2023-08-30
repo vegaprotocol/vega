@@ -67,7 +67,7 @@ func TestPerpetualSnapshot(t *testing.T) {
 	assert.NoError(t, err)
 
 	restoreTime := time.Unix(1000000, 100)
-	perps2, _, scheduleSrc := testPerpetualSnapshot(t, perps.ctrl, state2, restoreTime)
+	perps2, scheduleSrc := testPerpetualSnapshot(t, perps.ctrl, state2, restoreTime)
 
 	// now we serialize again, and check the payload are same
 
@@ -86,7 +86,31 @@ func TestPerpetualSnapshot(t *testing.T) {
 	assert.True(t, cfg.IsTriggered(restoreTime.Add(time.Second)))
 }
 
-func testPerpetualSnapshot(t *testing.T, ctrl *gomock.Controller, state *snapshotpb.Product, tm time.Time) (*tstPerp, *datasource.Spec, *datasource.Spec) {
+func TestPerpetualSnapshotNotStarted(t *testing.T) {
+	perps := testPerpetual(t)
+
+	// get fresh state before we've started the first period
+	state1 := perps.perpetual.Serialize()
+
+	serialized1, err := proto.Marshal(state1)
+	assert.NoError(t, err)
+
+	state2 := &snapshotpb.Product{}
+	err = proto.Unmarshal(serialized1, state2)
+	assert.NoError(t, err)
+
+	restoreTime := time.Unix(1000000, 100)
+	perps2, _ := testPerpetualSnapshot(t, perps.ctrl, state2, restoreTime)
+
+	// now we serialize again, and check the payload are same
+
+	state3 := perps2.perpetual.Serialize()
+	serialized2, err := proto.Marshal(state3)
+	assert.NoError(t, err)
+	assert.Equal(t, serialized1, serialized2)
+}
+
+func testPerpetualSnapshot(t *testing.T, ctrl *gomock.Controller, state *snapshotpb.Product, tm time.Time) (*tstPerp, *datasource.Spec) {
 	t.Helper()
 
 	log := logging.NewTestLogger()
@@ -158,5 +182,5 @@ func testPerpetualSnapshot(t *testing.T, ctrl *gomock.Controller, state *snapsho
 		oe:        oe,
 		broker:    broker,
 		ctrl:      ctrl,
-	}, settlementSrc, scheduleSrc
+	}, scheduleSrc
 }

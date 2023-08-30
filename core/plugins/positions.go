@@ -75,6 +75,14 @@ type DPE interface {
 	SafeParties() []string
 }
 
+// SME SettleMarketEvent.
+type SME interface {
+	MarketID() string
+	SettledPrice() *num.Uint
+	PositionFactor() num.Decimal
+	TxHash() string
+}
+
 // Positions plugin taking settlement data to build positions API data.
 type Positions struct {
 	*subscribers.Base
@@ -108,6 +116,8 @@ func (p *Positions) Push(evts ...events.Event) {
 			p.applyDistressedOrders(te)
 		case DPE:
 			p.applyDistressedPositions(te)
+		case SME:
+			p.handleSettleMarket(te)
 		}
 	}
 	p.mu.Unlock()
@@ -207,6 +217,24 @@ func (p *Positions) updateSettleDestressed(e SDE) {
 	calc.Position.UpdatedAt = e.Timestamp()
 	calc.state = vega.PositionStatus_POSITION_STATUS_CLOSED_OUT
 	p.data[mID][tID] = calc
+}
+
+func (p *Positions) handleSettleMarket(e SME) {
+	market := e.MarketID()
+	posFactor := e.PositionFactor()
+	markPriceDec := num.DecimalFromUint(e.SettledPrice())
+	mp, ok := p.data[market]
+	if !ok {
+		panic(ErrMarketNotFound)
+	}
+	for pid, pos := range mp {
+		openVolumeDec := num.DecimalFromInt64(pos.OpenVolume)
+
+		unrealisedPnl := openVolumeDec.Mul(markPriceDec.Sub(pos.AverageEntryPriceFP)).Div(posFactor).Round(0)
+		pos.RealisedPnl = pos.RealisedPnl.Add(unrealisedPnl)
+		pos.UnrealisedPnl = num.DecimalZero()
+		p.data[market][pid] = pos
+	}
 }
 
 // GetPositionsByMarketAndParty get the position of a single party in a given market.
@@ -411,5 +439,6 @@ func (p *Positions) Types() []events.Type {
 		events.LossSocializationEvent,
 		events.DistressedOrdersClosedEvent,
 		events.DistressedPositionsEvent,
+		events.SettleMarketEvent,
 	}
 }

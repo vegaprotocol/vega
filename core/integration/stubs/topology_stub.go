@@ -76,6 +76,10 @@ func (ts *TopologyStub) IsValidatorNodeID(nodeID string) bool {
 	return ok
 }
 
+func (ts *TopologyStub) RecalcValidatorSet(ctx context.Context, epochSeq string, delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams) []*types.PartyContibutionScore {
+	return []*types.PartyContibutionScore{}
+}
+
 func (ts *TopologyStub) AllNodeIDs() []string {
 	nodes := make([]string, 0, len(ts.validators))
 	for n := range ts.validators {
@@ -174,9 +178,6 @@ func (ts *TopologyStub) normaliseScores(scores map[string]num.Decimal) map[strin
 		}
 	}
 	return normScores
-}
-
-func (*TopologyStub) RecalcValidatorSet(ctx context.Context, epochSeq string, delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams) {
 }
 
 func (*TopologyStub) GetVotingPower(pubkey string) int64 {

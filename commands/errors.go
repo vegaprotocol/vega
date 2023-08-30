@@ -31,6 +31,7 @@ var (
 	ErrNotAValidInteger                                = errors.New("not a valid integer")
 	ErrNotAValidFloat                                  = errors.New("not a valid float")
 	ErrMustBeLessThan100Chars                          = errors.New("must be less than 100 characters")
+	ErrMustBeLessThan200Chars                          = errors.New("must be less than 200 characters")
 	ErrMustNotExceed20000Chars                         = errors.New("must not exceed 20000 characters")
 	ErrShouldBeHexEncoded                              = errors.New("should be hex encoded")
 	ErrSignatureNotVerifiable                          = errors.New("signature is not verifiable")
@@ -57,8 +58,10 @@ var (
 	ErrMustBeEmpty                                     = errors.New("must be empty")
 	ErrMustBeGTEClampLowerBound                        = errors.New("must be greater than or equal to clamp lower bound")
 	ErrOneTimeTriggerAllowedMax                        = errors.New("maximum one time trigger allowed")
+	ErrMustBeBetween01                                 = errors.New("must be between 0 (excluded) and 1 (included)")
 	ErrMustBeGreaterThanEnactmentTimestamp             = errors.New("must be greater than proposal_submission.terms.enactment_timestamp")
 	ErrMustBeWithinRange1366                           = errors.New("must be between 1 and 366")
+	ErrMustBeAtMost500                                 = errors.New("must be at most 500")
 )
 
 type Errors map[string][]error

@@ -114,10 +114,13 @@ func (t *Topology) AddForwarder(pubKey string) {
 
 // RecalcValidatorSet is called at the before a new epoch is started to update the validator sets.
 // the delegation state corresponds to the epoch about to begin.
-func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams) {
+func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams) []*types.PartyContibutionScore {
 	// This can actually change the validators structure so no reads should be allowed in parallel to this.
 	t.mu.Lock()
 	defer t.mu.Unlock()
+
+	consensusValidatorsRankingScores := []*types.PartyContibutionScore{}
+
 	// first we record the current status of validators before the promotion/demotion so we can capture in an event.
 	currentState := make(map[string]StatusAddress, len(t.validators))
 	for k, vs := range t.validators {
@@ -178,6 +181,9 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 				Status:           statusToProtoStatus(status),
 				VotingPower:      uint32(vp),
 			}
+			if vd.rankingScore.Status == proto.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_TENDERMINT {
+				consensusValidatorsRankingScores = append(consensusValidatorsRankingScores, &types.PartyContibutionScore{Party: vd.data.VegaPubKey, Score: rankingScore[nodeID]})
+			}
 		}
 
 		evts = append(evts, events.NewValidatorRanking(ctx, epochSeq, nodeID, stakeScore[nodeID].String(), perfScore[nodeID].String(), rankingScore[nodeID].String(), ValidatorStatusToName[currentState[nodeID].Status], status, int(vp)))
@@ -218,6 +224,7 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 			delete(t.validators, k)
 		}
 	}
+	return consensusValidatorsRankingScores
 }
 
 func protoStatusToString(status proto.ValidatorNodeStatus) string {

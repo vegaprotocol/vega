@@ -136,7 +136,7 @@ Feature: Fees reward calculations for a single asset, single market
       | trader3 | ETH | ETH/DEC21 | 1114 | 8902 |
       | trader4 | ETH | ETH/DEC21 | 480  | 9196 |
 
-    Then "trader3" should have general account balance of "10000" for asset "VEGA"
+    Then "trader3" should have vesting account balance of "10000" for asset "VEGA"
 
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks
@@ -146,7 +146,7 @@ Feature: Fees reward calculations for a single asset, single market
       | trader3 | ETH | ETH/DEC21 | 1114 | 8902 |
       | trader4 | ETH | ETH/DEC21 | 480  | 9196 |
 
-    Then "trader3" should have general account balance of "10000" for asset "VEGA"
+    Then "trader3" should have vesting account balance of "10000" for asset "VEGA"
 
   Scenario: Testing fees in continuous trading with two trades and no liquidity providers - testing maker fee received and maker fee paid
 
@@ -276,9 +276,9 @@ Feature: Fees reward calculations for a single asset, single market
       | trader3b | ETH   | ETH/DEC21 | 363    | 9643    |
       | trader4 | ETH | ETH/DEC21 | 480 | 9193 |
 
-    Then "trader3a" should have general account balance of "6470" for asset "VEGA"
-    And "trader3b" should have general account balance of "3529" for asset "VEGA"
-    And "trader4" should have general account balance of "1234" for asset "VEGA"
+    Then "trader3a" should have vesting account balance of "6470" for asset "VEGA"
+    And "trader3b" should have vesting account balance of "3529" for asset "VEGA"
+    And "trader4" should have vesting account balance of "1234" for asset "VEGA"
 
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks
@@ -430,11 +430,11 @@ Feature: Fees reward calculations for a single asset, single market
       | aux1 | ETH | ETH/DEC21 | 2978 | 99987024 |
 
     # 11/17 x 10000 -> maker fee received reward
-    Then "trader3a" should have general account balance of "6470" for asset "VEGA"
+    Then "trader3a" should have vesting account balance of "6470" for asset "VEGA"
     # 6/17 x 10000 -> maker fee recevied reward
-    And "trader3b" should have general account balance of "3529" for asset "VEGA"
+    And "trader3b" should have vesting account balance of "3529" for asset "VEGA"
     # 1234 = taker fee paid reward reward
-    And "trader4" should have general account balance of "1234" for asset "VEGA"
+    And "trader4" should have vesting account balance of "1234" for asset "VEGA"
 
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks

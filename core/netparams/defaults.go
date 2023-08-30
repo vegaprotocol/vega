@@ -201,6 +201,9 @@ func defaultNetParams() map[string]value {
 		StakingAndDelegationRewardsMinValidators:          NewInt(gteI1, lteI500).Mutable(true).MustUpdate("5"),
 		StakingAndDelegationRewardOptimalStakeMultiplier:  NewDecimal(gteD1).Mutable(true).MustUpdate("3.0"),
 
+		// team rewards - //TODO review the constraint and defaults
+		MinEpochsInTeamForMetricRewardEligibility: NewInt(gteI1, lteI500).Mutable(true).MustUpdate("5"),
+
 		// spam protection policies
 		SpamProtectionMaxVotes:                         NewInt(gteI1).Mutable(true).MustUpdate("3"),
 		SpamProtectionMinTokensForVoting:               NewDecimal(gteD1).Mutable(true).MustUpdate("100000000000000000000"),
@@ -265,8 +268,9 @@ func defaultNetParams() map[string]value {
 		MarketSuccessorLaunchWindow:          NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate("168h"), // 168h == 7 days
 		SpamProtectionMaxStopOrdersPerMarket: NewUint(UintGTE(num.UintZero()), UintLTE(num.NewUint(100))).Mutable(true).MustUpdate("4"),
 
-		RewardsVestingBaseRate:       NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("0.01"),
-		RewardVestingMinimumTransfer: NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("0.01"),
+		RewardsVestingBaseRate:        NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("0.01"),
+		RewardsVestingMinimumTransfer: NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("0.01"),
+		RewardsVestingBonusMultiplier: NewJSON(&proto.VestingBenefitTiers{}, types.CheckUntypedVestingBenefitTier).Mutable(true).MustUpdate(`{"tiers": [{"minimum_quantum_balance": "1000", "reward_multiplier": "1.05"}]}`),
 
 		// Referral program
 		ReferralProgramMaxBenefitTiers:                         NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10))).Mutable(true).MustUpdate("0"),

@@ -80,3 +80,33 @@ func PayloadNewReferralProgramFromProto(teamsPayload *snapshotpb.Payload_NewRefe
 		NewReferralProgram: teamsPayload.NewReferralProgram.GetReferralProgram(),
 	}
 }
+
+type PayloadReferralSets struct {
+	Sets *snapshotpb.ReferralSets
+}
+
+func (p *PayloadReferralSets) Key() string {
+	return "referralSets"
+}
+
+func (*PayloadReferralSets) Namespace() SnapshotNamespace {
+	return ReferralProgramSnapshot
+}
+
+func (p *PayloadReferralSets) IntoProto() *snapshotpb.Payload_ReferralSets {
+	return &snapshotpb.Payload_ReferralSets{
+		ReferralSets: p.Sets,
+	}
+}
+
+func (*PayloadReferralSets) isPayload() {}
+
+func (p *PayloadReferralSets) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func PayloadReferralSetsFromProto(p *snapshotpb.Payload_ReferralSets) *PayloadReferralSets {
+	return &PayloadReferralSets{
+		Sets: p.ReferralSets,
+	}
+}
