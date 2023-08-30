@@ -12,6 +12,6 @@ func (r liquiditySLAParametersResolver) PerformanceHysteresisEpochs(ctx context.
 	return int(obj.PerformanceHysteresisEpochs), nil
 }
 
-func (r liquiditySLAParametersResolver) SLACompletionFactor(ctx context.Context, obj *vega.LiquiditySLAParameters) (string, error) {
+func (r liquiditySLAParametersResolver) SLACompetitionFactor(ctx context.Context, obj *vega.LiquiditySLAParameters) (string, error) {
 	return obj.SlaCompetitionFactor, nil
 }
