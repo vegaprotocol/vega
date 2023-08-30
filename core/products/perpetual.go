@@ -80,7 +80,7 @@ func (c *cachedTWAP) unwind(t int64) (*num.Uint, int) {
 		prev := c.points[i-1]
 
 		// now we need to remove the contribution from this interval
-		delta := point.t - prev.t
+		delta := point.t - num.MaxV(prev.t, c.start)
 		sub := num.UintZero().Mul(prev.price, num.NewUint(uint64(delta)))
 
 		// before we subtract, lets sanity check some things
@@ -180,11 +180,12 @@ func (c *cachedTWAP) insertPoint(point *dataPoint) (*num.Uint, error) {
 // addPoint takes the given point and works out where it fits against what we already have, updates the
 // running sum-product and returns the TWAP at point.t.
 func (c *cachedTWAP) addPoint(point *dataPoint) (*num.Uint, error) {
-	// first point, easy
-	if len(c.points) == 0 {
-		c.points = append(c.points, point)
+	if len(c.points) == 0 || point.t < c.start {
+		// first point, or new point is before the start of the funding period
+		c.points = []*dataPoint{point}
 		c.start = num.MaxV(c.start, point.t)
 		c.end = c.start
+		c.sumProduct = num.UintZero()
 		return num.UintZero(), nil
 	}
 
