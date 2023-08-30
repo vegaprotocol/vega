@@ -73,7 +73,6 @@ func (e *Engine) CalculateSLAPenalties(now time.Time) SlaPenalties {
 			commitment.s += now.Sub(commitment.start)
 		}
 
-		println(commitment.s.Nanoseconds())
 		timeBookFraction := num.DecimalZero()
 		lNano := observedEpochLength.Nanoseconds()
 		if lNano > 0 {
