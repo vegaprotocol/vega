@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"sort"
 	"testing"
 	"time"
@@ -51,6 +52,7 @@ func TestPeriodicSettlement(t *testing.T) {
 	t.Run("funding payments with interest rate clamped", testFundingPaymentsWithInterestRateClamped)
 	t.Run("terminate perps market test", testTerminateTrading)
 	t.Run("margin increase", testGetMarginIncrease)
+	t.Run("test pathological case with out of order points", testOutOfOrderPointsBeforePeriodStart)
 }
 
 func TestExternalDataPointTWAPInSequence(t *testing.T) {
@@ -62,10 +64,19 @@ func TestExternalDataPointTWAPInSequence(t *testing.T) {
 	require.NoError(t, err)
 	data := tstData.GetDataPoints()
 	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
-	// leave opening auction
-	perp.perpetual.OnLeaveOpeningAuction(ctx, data[0].t-1)
 
-	seq := data[0].seq
+	// want to start the period from before the point with the smallest time
+	seq := math.MaxInt
+	st := data[0].t
+	for i := 0; i < len(data); i++ {
+		if data[i].t < st {
+			st = data[i].t
+		}
+		seq = num.MinV(seq, data[i].seq)
+	}
+	// leave opening auction
+	perp.perpetual.OnLeaveOpeningAuction(ctx, st-1)
+
 	// set the first internal data-point
 	// perp.broker.EXPECT().Send(gomock.Any()).Times(1)
 	// perp.perpetual.SubmitDataPoint(ctx, data[0].price.Clone(), data[0].t)
@@ -320,6 +331,44 @@ func testDataPointsNotOnBoundary(t *testing.T) {
 	assert.NotNil(t, fundingPayment)
 	assert.True(t, fundingPayment.IsInt())
 	assert.Equal(t, "10", fundingPayment.String())
+}
+
+func testOutOfOrderPointsBeforePeriodStart(t *testing.T) {
+	perp := testPerpetual(t)
+	defer perp.ctrl.Finish()
+	ctx := context.Background()
+
+	// start time will be after the *second* data point
+	perp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	perp.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	perp.perpetual.OnLeaveOpeningAuction(ctx, 1693398617000000000)
+
+	price := num.NewUint(100000000)
+	timestamps := []int64{
+		1693398614000000000,
+		1693398615000000000,
+		1693398616000000000,
+		1693398618000000000,
+		1693398617000000000,
+	}
+
+	for _, tt := range timestamps {
+		perp.perpetual.AddTestExternalPoint(ctx, price, tt)
+		perp.perpetual.SubmitDataPoint(ctx, num.UintZero().Add(price, num.NewUint(100000000)), tt)
+	}
+
+	// ask for the funding payment
+	var fundingPayment *num.Numeric
+	fn := func(_ context.Context, fp *num.Numeric) {
+		fundingPayment = fp
+	}
+	perp.perpetual.SetSettlementListener(fn)
+
+	// period end is *after* our last point
+	perp.perpetual.PromptSettlementCue(ctx, 1693398617000000000+int64(time.Hour))
+	assert.NotNil(t, fundingPayment)
+	assert.True(t, fundingPayment.IsInt())
+	assert.Equal(t, "100027778", fundingPayment.String())
 }
 
 func testRegisteredCallbacks(t *testing.T) {

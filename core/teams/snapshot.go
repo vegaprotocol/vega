@@ -95,24 +95,25 @@ func (e *SnapshottedEngine) serialiseTeams() ([]byte, error) {
 		refereesSnapshot := make([]*snapshotpb.Membership, 0, len(team.Referees))
 		for _, referee := range team.Referees {
 			refereesSnapshot = append(refereesSnapshot, &snapshotpb.Membership{
-				PartyId:       string(referee.PartyID),
-				JoinedAt:      referee.JoinedAt.UnixNano(),
-				NumberOfEpoch: referee.NumberOfEpoch,
+				PartyId:        string(referee.PartyID),
+				JoinedAt:       referee.JoinedAt.UnixNano(),
+				StartedAtEpoch: referee.StartedAtEpoch,
 			})
 		}
 
 		teamSnapshot := &snapshotpb.Team{
 			Id: string(team.ID),
 			Referrer: &snapshotpb.Membership{
-				PartyId:       string(team.Referrer.PartyID),
-				JoinedAt:      team.Referrer.JoinedAt.UnixNano(),
-				NumberOfEpoch: team.Referrer.NumberOfEpoch,
+				PartyId:        string(team.Referrer.PartyID),
+				JoinedAt:       team.Referrer.JoinedAt.UnixNano(),
+				StartedAtEpoch: team.Referrer.StartedAtEpoch,
 			},
 			Referees:  refereesSnapshot,
 			Name:      team.Name,
 			TeamUrl:   team.TeamURL,
 			AvatarUrl: team.AvatarURL,
 			CreatedAt: team.CreatedAt.UnixNano(),
+			Closed:    team.Closed,
 		}
 		teamsSnapshot = append(teamsSnapshot, teamSnapshot)
 	}

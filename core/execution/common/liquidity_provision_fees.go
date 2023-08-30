@@ -91,7 +91,7 @@ func (m *MarketLiquidity) AllocateFees(ctx context.Context) error {
 		return nil
 	}
 
-	m.marketActivityTracker.UpdateFeesFromTransfers(m.marketID, feeTransfer.Transfers())
+	m.marketActivityTracker.UpdateFeesFromTransfers(m.asset, m.marketID, feeTransfer.Transfers())
 	ledgerMovements, err := m.transferFees(ctx, feeTransfer)
 	if err != nil {
 		return fmt.Errorf("failed to transfer fees: %w", err)

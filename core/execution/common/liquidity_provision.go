@@ -149,8 +149,8 @@ func (m *MarketLiquidity) applyPendingProvisions(
 		// amendedCommitment- originalCommitment
 		proposedCommitmentVariation := amendment.CommitmentAmount.ToDecimal().Sub(provision.CommitmentAmount.ToDecimal())
 
-		// if commitment is increased, there is not penalty applied
-		if proposedCommitmentVariation.IsPositive() {
+		// if commitment is increased or not changed, there is not penalty applied
+		if !proposedCommitmentVariation.IsNegative() {
 			continue
 		}
 
@@ -190,13 +190,15 @@ func (m *MarketLiquidity) applyPendingProvisions(
 
 		partyMaxPenaltyFreeReductionAmountU, _ := num.UintFromDecimal(partyMaxPenaltyFreeReductionAmount)
 
-		transfer := m.NewTransfer(partyID, types.TransferTypeBondHigh, partyMaxPenaltyFreeReductionAmountU)
-		bondLedgerMovement, err := m.bondUpdate(ctx, transfer)
-		if err != nil {
-			m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
-		}
+		if !partyMaxPenaltyFreeReductionAmountU.IsZero() {
+			transfer := m.NewTransfer(partyID, types.TransferTypeBondHigh, partyMaxPenaltyFreeReductionAmountU)
+			bondLedgerMovement, err := m.bondUpdate(ctx, transfer)
+			if err != nil {
+				m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
+			}
 
-		ledgerMovements = append(ledgerMovements, bondLedgerMovement)
+			ledgerMovements = append(ledgerMovements, bondLedgerMovement)
+		}
 
 		penaltyIncurringReductionAmount := commitmentVariation.Sub(partyMaxPenaltyFreeReductionAmount)
 
@@ -204,24 +206,28 @@ func (m *MarketLiquidity) applyPendingProvisions(
 		freeAmount := one.Sub(m.earlyExitPenalty).Mul(penaltyIncurringReductionAmount)
 		freeAmountU, _ := num.UintFromDecimal(freeAmount)
 
-		transfer = m.NewTransfer(partyID, types.TransferTypeBondHigh, freeAmountU)
-		bondLedgerMovement, err = m.bondUpdate(ctx, transfer)
-		if err != nil {
-			m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
-		}
+		if !freeAmountU.IsZero() {
+			transfer := m.NewTransfer(partyID, types.TransferTypeBondHigh, freeAmountU)
+			bondLedgerMovement, err := m.bondUpdate(ctx, transfer)
+			if err != nil {
+				m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
+			}
 
-		ledgerMovements = append(ledgerMovements, bondLedgerMovement)
+			ledgerMovements = append(ledgerMovements, bondLedgerMovement)
+		}
 
 		slashingAmount := m.earlyExitPenalty.Mul(penaltyIncurringReductionAmount)
 		slashingAmountU, _ := num.UintFromDecimal(slashingAmount)
 
-		transfer = m.NewTransfer(partyID, types.TransferTypeBondSlashing, slashingAmountU)
-		bondLedgerMovement, err = m.bondUpdate(ctx, transfer)
-		if err != nil {
-			m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
-		}
+		if !slashingAmountU.IsZero() {
+			transfer := m.NewTransfer(partyID, types.TransferTypeBondSlashing, slashingAmountU)
+			bondLedgerMovement, err := m.bondUpdate(ctx, transfer)
+			if err != nil {
+				m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
+			}
 
-		ledgerMovements = append(ledgerMovements, bondLedgerMovement)
+			ledgerMovements = append(ledgerMovements, bondLedgerMovement)
+		}
 	}
 
 	if len(ledgerMovements) > 0 {

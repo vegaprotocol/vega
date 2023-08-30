@@ -71,12 +71,12 @@ const (
 	StopOrdersSubmissionCommand Command = 0x5B
 	// StopOrdersCancellationCommand ...
 	StopOrdersCancellationCommand Command = 0x5C
-	// CreateTeamCommand ...
-	CreateTeamCommand Command = 0x5D
-	// UpdateTeamCommand ...
-	UpdateTeamCommand Command = 0x5E
-	// JoinTeamCommand ...
-	JoinTeamCommand Command = 0x5F
+	// CreateReferralSetCommand ...
+	CreateReferralSetCommand Command = 0x5D
+	// UpdateReferralSetCommand ...
+	UpdateReferralSetCommand Command = 0x5E
+	// ApplyReferralCodeCommand ...
+	ApplyReferralCodeCommand Command = 0x5F
 )
 
 var commandName = map[Command]string{
@@ -107,9 +107,9 @@ var commandName = map[Command]string{
 	BatchMarketInstructions:            "Batch Market Instructions",
 	StopOrdersSubmissionCommand:        "Stop Orders Submission",
 	StopOrdersCancellationCommand:      "Stop Orders Cancellation",
-	CreateTeamCommand:                  "Create Team",
-	UpdateTeamCommand:                  "Update Team",
-	JoinTeamCommand:                    "Join Team",
+	CreateReferralSetCommand:           "Create Referral Set",
+	UpdateReferralSetCommand:           "Update Referral Set",
+	ApplyReferralCodeCommand:           "Apply Referral Code",
 }
 
 func (cmd Command) IsValidatorCommand() bool {

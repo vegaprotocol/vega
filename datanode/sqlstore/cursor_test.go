@@ -181,7 +181,7 @@ func TestCursors_Where(t *testing.T) {
 		{
 			name: "One cursor",
 			cursors: sqlstore.CursorQueryParameters{
-				sqlstore.CursorQueryParameter{
+				{
 					ColumnName: "vega_time",
 					Sort:       sqlstore.ASC,
 					Cmp:        sqlstore.EQ,
@@ -194,7 +194,7 @@ func TestCursors_Where(t *testing.T) {
 		{
 			name: "Two cursors",
 			cursors: sqlstore.CursorQueryParameters{
-				sqlstore.CursorQueryParameter{
+				{
 					ColumnName: "vega_time",
 					Sort:       sqlstore.ASC,
 					Cmp:        sqlstore.EQ,

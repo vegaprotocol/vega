@@ -56,6 +56,10 @@ var partyOverrides = map[string]types.AccountType{
 	systemOwner + types.AccountTypeMakerReceivedFeeReward.String(): types.AccountTypeMakerReceivedFeeReward,
 	systemOwner + types.AccountTypeMakerPaidFeeReward.String():     types.AccountTypeMakerPaidFeeReward,
 	systemOwner + types.AccountTypeLPFeeReward.String():            types.AccountTypeLPFeeReward,
+	systemOwner + types.AccountTypeAveragePositionReward.String():  types.AccountTypeAveragePositionReward,
+	systemOwner + types.AccountTypeRelativeReturnReward.String():   types.AccountTypeRelativeReturnReward,
+	systemOwner + types.AccountTypeReturnVolatilityReward.String(): types.AccountTypeReturnVolatilityReward,
+	systemOwner + types.AccountTypeValidatorRankingReward.String(): types.AccountTypeValidatorRankingReward,
 	systemOwner + types.AccountTypeMarketProposerReward.String():   types.AccountTypeMarketProposerReward,
 	systemOwner + types.AccountTypeFeesInfrastructure.String():     types.AccountTypeFeesInfrastructure,
 	systemOwner + types.AccountTypePendingTransfers.String():       types.AccountTypePendingTransfers,
@@ -66,6 +70,10 @@ var tradingRewardAccountTypes = map[types.AccountType]struct{}{
 	types.AccountTypeMakerPaidFeeReward:     {},
 	types.AccountTypeLPFeeReward:            {},
 	types.AccountTypeMarketProposerReward:   {},
+	types.AccountTypeAveragePositionReward:  {},
+	types.AccountTypeRelativeReturnReward:   {},
+	types.AccountTypeReturnVolatilityReward: {},
+	types.AccountTypeValidatorRankingReward: {},
 }
 
 func (e *Engine) Load(ctx context.Context, data []byte) error {
@@ -182,7 +190,8 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 			types.AccountTypeInsurance, types.AccountTypeGlobalReward, types.AccountTypeLiquidityFeesBonusDistribution, types.AccountTypeLPLiquidityFees,
 			types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward,
 			types.AccountTypeMarketProposerReward, types.AccountTypeFeesInfrastructure, types.AccountTypePendingTransfers,
-			types.AccountTypeNetworkTreasury, types.AccountTypeGlobalInsurance, types.AccountTypeVestedRewards:
+			types.AccountTypeNetworkTreasury, types.AccountTypeGlobalInsurance, types.AccountTypeVestedRewards,
+			types.AccountTypeAveragePositionReward, types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeValidatorRankingReward:
 			owner := acc.Owner
 			// NB: market insurance accounts funds will flow implicitly using this logic into the network treasury for the asset
 			// similarly LP Fee bonus distribution bonus account would fall over into the network treasury of the asset.
@@ -199,7 +208,14 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 			}
 
 			// NB: for market based reward accounts we don't want to move the funds to the network treasury but rather keep them
-			if acc.Type == types.AccountTypeLPFeeReward || acc.Type == types.AccountTypeMakerReceivedFeeReward || acc.Type == types.AccountTypeMakerPaidFeeReward || acc.Type == types.AccountTypeMarketProposerReward {
+			if acc.Type == types.AccountTypeLPFeeReward ||
+				acc.Type == types.AccountTypeMakerReceivedFeeReward ||
+				acc.Type == types.AccountTypeMakerPaidFeeReward ||
+				acc.Type == types.AccountTypeMarketProposerReward ||
+				acc.Type == types.AccountTypeAveragePositionReward ||
+				acc.Type == types.AccountTypeRelativeReturnReward ||
+				acc.Type == types.AccountTypeReturnVolatilityReward ||
+				acc.Type == types.AccountTypeValidatorRankingReward {
 				owner += separator + acc.MarketID
 			}
 

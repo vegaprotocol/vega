@@ -13,6 +13,7 @@
 package num
 
 import (
+	"errors"
 	"math/big"
 
 	"github.com/shopspring/decimal"
@@ -23,7 +24,9 @@ type Decimal = decimal.Decimal
 var (
 	dzero      = decimal.Zero
 	d1         = decimal.NewFromFloat(1)
+	d2         = decimal.NewFromFloat(2)
 	maxDecimal = decimal.NewFromBigInt(maxU256, 0)
+	e          = MustDecimalFromString("2.7182818285")
 )
 
 func MustDecimalFromString(f string) Decimal {
@@ -38,8 +41,16 @@ func DecimalOne() Decimal {
 	return d1
 }
 
+func DecimalTwo() Decimal {
+	return d2
+}
+
 func DecimalZero() Decimal {
 	return dzero
+}
+
+func DecimalE() Decimal {
+	return e
 }
 
 func MaxDecimal() Decimal {
@@ -94,4 +105,29 @@ func MinD(a, b Decimal) Decimal {
 		return a
 	}
 	return b
+}
+
+// calculates the mean of a given slice.
+func Mean(numbers []Decimal) (Decimal, error) {
+	if len(numbers) == 0 {
+		return DecimalZero(), errors.New("cannot calculate the mean of an empty list")
+	}
+	total := DecimalZero()
+	for _, num := range numbers {
+		total = total.Add(num)
+	}
+	return total.Div(DecimalFromInt64(int64(len(numbers)))), nil
+}
+
+// calculates the variance of a decimal slice.
+func Variance(numbers []Decimal) (Decimal, error) {
+	if len(numbers) == 0 {
+		return DecimalZero(), errors.New("cannot calculate the variance of an empty list")
+	}
+	m, _ := Mean(numbers)
+	total := DecimalZero()
+	for _, num := range numbers {
+		total = total.Add(num.Sub(m).Pow(d2))
+	}
+	return total.Div(DecimalFromInt64(int64(len(numbers)))), nil
 }

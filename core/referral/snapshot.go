@@ -15,11 +15,13 @@ package referral
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+	"golang.org/x/exp/maps"
 )
 
 type SnapshottedEngine struct {
@@ -33,6 +35,7 @@ type SnapshottedEngine struct {
 	hashKeys          []string
 	currentProgramKey string
 	newProgramKey     string
+	referralSetsKey   string
 }
 
 func (e *SnapshottedEngine) Namespace() types.SnapshotNamespace {
@@ -55,10 +58,13 @@ func (e *SnapshottedEngine) LoadState(_ context.Context, p *types.Payload) ([]ty
 
 	switch data := p.Data.(type) {
 	case *types.PayloadCurrentReferralProgram:
-		e.Engine.loadCurrentReferralProgramFromSnapshot(data.CurrentReferralProgram)
+		e.loadCurrentReferralProgramFromSnapshot(data.CurrentReferralProgram)
 		return nil, nil
 	case *types.PayloadNewReferralProgram:
-		e.Engine.loadNewReferralProgramFromSnapshot(data.NewReferralProgram)
+		e.loadNewReferralProgramFromSnapshot(data.NewReferralProgram)
+		return nil, nil
+	case *types.PayloadReferralSets:
+		e.loadReferralSetsFromSnapshot(data.Sets)
 		return nil, nil
 	default:
 		return nil, types.ErrUnknownSnapshotType
@@ -83,15 +89,80 @@ func (e *SnapshottedEngine) serialise(k string) ([]byte, error) {
 		return e.serialiseCurrentReferralProgram()
 	case e.newProgramKey:
 		return e.serialiseNewReferralProgram()
+	case e.referralSetsKey:
+		return e.serialiseReferralSets()
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 }
 
+func (e *SnapshottedEngine) serialiseReferralSets() ([]byte, error) {
+	setsProto := make([]*snapshotpb.ReferralSet, 0, len(e.sets))
+
+	setIDs := maps.Keys(e.sets)
+
+	sort.SliceStable(setIDs, func(i, j int) bool {
+		return setIDs[i] < setIDs[j]
+	})
+
+	for _, setID := range setIDs {
+		set := e.sets[setID]
+		setProto := &snapshotpb.ReferralSet{
+			Id:        string(set.ID),
+			CreatedAt: set.CreatedAt.UnixNano(),
+			UpdatedAt: set.UpdatedAt.UnixNano(),
+			Referrer: &snapshotpb.Membership{
+				PartyId:        string(set.Referrer.PartyID),
+				JoinedAt:       set.Referrer.JoinedAt.UnixNano(),
+				StartedAtEpoch: set.Referrer.StartedAtEpoch,
+			},
+		}
+
+		for _, r := range set.Referees {
+			setProto.Referees = append(setProto.Referees,
+				&snapshotpb.Membership{
+					PartyId:        string(r.PartyID),
+					JoinedAt:       r.JoinedAt.UnixNano(),
+					StartedAtEpoch: r.StartedAtEpoch,
+				},
+			)
+		}
+
+		runningVolumes, isTracked := e.referralSetsNotionalVolumes.runningVolumesBySet[set.ID]
+		if isTracked {
+			runningVolumesProto := make([]*snapshotpb.RunningVolume, 0, len(runningVolumes))
+			for _, volume := range runningVolumes {
+				runningVolumesProto = append(runningVolumesProto, &snapshotpb.RunningVolume{
+					Epoch:  volume.epoch,
+					Volume: volume.value.String(),
+				})
+			}
+			setProto.RunningVolumes = runningVolumesProto
+		}
+
+		setsProto = append(setsProto, setProto)
+	}
+
+	payload := &snapshotpb.Payload{
+		Data: &snapshotpb.Payload_ReferralSets{
+			ReferralSets: &snapshotpb.ReferralSets{
+				Sets: setsProto,
+			},
+		},
+	}
+
+	serialisedSets, err := proto.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("could not serialize referral sets payload: %w", err)
+	}
+
+	return serialisedSets, nil
+}
+
 func (e *SnapshottedEngine) serialiseCurrentReferralProgram() ([]byte, error) {
 	var programSnapshot *vegapb.ReferralProgram
-	if e.Engine.currentProgram != nil {
-		programSnapshot = e.Engine.currentProgram.IntoProto()
+	if e.currentProgram != nil {
+		programSnapshot = e.currentProgram.IntoProto()
 	}
 
 	payload := &snapshotpb.Payload{
@@ -112,8 +183,8 @@ func (e *SnapshottedEngine) serialiseCurrentReferralProgram() ([]byte, error) {
 
 func (e *SnapshottedEngine) serialiseNewReferralProgram() ([]byte, error) {
 	var programSnapshot *vegapb.ReferralProgram
-	if e.Engine.newProgram != nil {
-		programSnapshot = e.Engine.newProgram.IntoProto()
+	if e.newProgram != nil {
+		programSnapshot = e.newProgram.IntoProto()
 	}
 
 	payload := &snapshotpb.Payload{
@@ -135,13 +206,14 @@ func (e *SnapshottedEngine) serialiseNewReferralProgram() ([]byte, error) {
 func (e *SnapshottedEngine) buildHashKeys() {
 	e.currentProgramKey = (&types.PayloadCurrentReferralProgram{}).Key()
 	e.newProgramKey = (&types.PayloadNewReferralProgram{}).Key()
+	e.referralSetsKey = (&types.PayloadReferralSets{}).Key()
 
-	e.hashKeys = append([]string{}, e.currentProgramKey, e.newProgramKey)
+	e.hashKeys = append([]string{}, e.currentProgramKey, e.newProgramKey, e.referralSetsKey)
 }
 
-func NewSnapshottedEngine(epochEngine EpochEngine, broker Broker, teamsEngine TeamsEngine) *SnapshottedEngine {
+func NewSnapshottedEngine(broker Broker, timeSvc TimeService, mat MarketActivityTracker) *SnapshottedEngine {
 	se := &SnapshottedEngine{
-		Engine:  NewEngine(epochEngine, broker, teamsEngine),
+		Engine:  NewEngine(broker, timeSvc, mat),
 		pl:      types.Payload{},
 		stopped: false,
 	}

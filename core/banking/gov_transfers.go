@@ -2,12 +2,15 @@ package banking
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
@@ -29,6 +32,10 @@ var (
 		types.AccountTypeMakerReceivedFeeReward: {},
 		types.AccountTypeMarketProposerReward:   {},
 		types.AccountTypeLPFeeReward:            {},
+		types.AccountTypeAveragePositionReward:  {},
+		types.AccountTypeRelativeReturnReward:   {},
+		types.AccountTypeReturnVolatilityReward: {},
+		types.AccountTypeValidatorRankingReward: {},
 	}
 )
 
@@ -107,6 +114,7 @@ func (e *Engine) deleteGovTransfer(ID string) {
 	for i, rt := range e.recurringGovernanceTransfers {
 		if rt.ID == ID {
 			index = i
+			e.unregisterDispatchStrategy(rt.Config.RecurringTransferConfig.DispatchStrategy)
 			break
 		}
 	}
@@ -160,6 +168,7 @@ func (e *Engine) NewGovernanceTransfer(ctx context.Context, ID, reference string
 	amount = num.UintZero()
 	e.recurringGovernanceTransfers = append(e.recurringGovernanceTransfers, gTransfer)
 	e.recurringGovernanceTransfersMap[ID] = gTransfer
+	e.registerDispatchStrategy(gTransfer.Config.RecurringTransferConfig.DispatchStrategy)
 	return nil
 }
 
@@ -188,14 +197,37 @@ func (e *Engine) processGovernanceTransfer(
 
 	if gTransfer.Config.RecurringTransferConfig != nil && gTransfer.Config.RecurringTransferConfig.DispatchStrategy != nil {
 		var resps []*types.LedgerMovement
-		marketScores := e.getMarketScores(gTransfer.Config.RecurringTransferConfig.DispatchStrategy, gTransfer.Config.Asset, from)
-		for _, fms := range marketScores {
-			amt, _ := num.UintFromDecimal(transferAmount.ToDecimal().Mul(fms.Score))
-			if amt.IsZero() {
-				continue
-			}
+		ds := gTransfer.Config.RecurringTransferConfig.DispatchStrategy
+		// if the metric is market value we make the transfer to the market account (as opposed to the metric's hash account)
+		if ds.Metric == vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE {
+			marketProposersScore := e.marketActivityTracker.GetMarketsWithEligibleProposer(ds.AssetForMetric, ds.Markets, gTransfer.Config.Asset, gTransfer.Config.Source)
+			for _, fms := range marketProposersScore {
+				amt, _ := num.UintFromDecimal(transferAmount.ToDecimal().Mul(fms.Score))
+				if amt.IsZero() {
+					continue
+				}
+				fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, fms.Market, amt)
+				transfers := []*types.Transfer{fromTransfer, toTransfer}
+				accountTypes := []types.AccountType{gTransfer.Config.SourceType, gTransfer.Config.DestinationType}
+				references := []string{gTransfer.Reference, gTransfer.Reference}
+				tresps, err := e.col.GovernanceTransferFunds(ctx, transfers, accountTypes, references)
+				if err != nil {
+					e.log.Error("error transferring governance transfer funds", logging.Error(err))
+					return num.UintZero(), err
+				}
 
-			fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, fms.Market, transferAmount)
+				if fms.Score.IsPositive() {
+					e.marketActivityTracker.MarkPaidProposer(ds.AssetForMetric, fms.Market, gTransfer.Config.Asset, gTransfer.Config.RecurringTransferConfig.DispatchStrategy.Markets, from)
+				}
+				resps = append(resps, tresps...)
+			}
+		}
+		// here we transfer the governance transfer amount into the account: transfer_asset/dispatch_hash/reward_account_type
+		if e.dispatchRequired(gTransfer.Config.RecurringTransferConfig.DispatchStrategy) {
+			p, _ := proto.Marshal(gTransfer.Config.RecurringTransferConfig.DispatchStrategy)
+			hash := hex.EncodeToString(crypto.Hash(p))
+
+			fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, hash, transferAmount)
 			transfers := []*types.Transfer{fromTransfer, toTransfer}
 			accountTypes := []types.AccountType{gTransfer.Config.SourceType, gTransfer.Config.DestinationType}
 			references := []string{gTransfer.Reference, gTransfer.Reference}
@@ -205,9 +237,6 @@ func (e *Engine) processGovernanceTransfer(
 				return num.UintZero(), err
 			}
 
-			if gTransfer.Config.RecurringTransferConfig.DispatchStrategy.Metric == vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE && fms.Score.IsPositive() {
-				e.marketActivityTracker.MarkPaidProposer(fms.Market, gTransfer.Config.Asset, gTransfer.Config.RecurringTransferConfig.DispatchStrategy.Markets, from)
-			}
 			resps = append(resps, tresps...)
 		}
 		e.broker.Send(events.NewLedgerMovements(ctx, resps))

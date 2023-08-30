@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/pkg/errors"
+	"golang.org/x/exp/slices"
 
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -44,6 +45,185 @@ const (
 	dataPointSourceExternal dataPointSource = eventspb.FundingPeriodDataPoint_SOURCE_EXTERNAL
 	dataPointSourceInternal dataPointSource = eventspb.FundingPeriodDataPoint_SOURCE_INTERNAL
 )
+
+type cachedTWAP struct {
+	log *logging.Logger
+
+	periodStart int64        // the start of the funding period
+	start       int64        // start of the TWAP period, which will be > periodStart if the first data-point comes after it
+	end         int64        // time of the last calculated sub-product that was >= the last added data-point
+	sumProduct  *num.Uint    // the sum-product of all the intervals between the data-points from `start` -> `end`
+	points      []*dataPoint // the data-points used to calculate the twap
+}
+
+func NewCachedTWAP(log *logging.Logger, t int64) *cachedTWAP {
+	return &cachedTWAP{
+		log:         log,
+		start:       t,
+		periodStart: t,
+		end:         t,
+		sumProduct:  num.UintZero(),
+	}
+}
+
+// unwind returns the sum-product at the given time `t` where `t` is a time before the last
+// data-point. We have to subtract each interval until we get to the first point where p.t < t,
+// the index of `p` is also returned.
+func (c *cachedTWAP) unwind(t int64) (*num.Uint, int) {
+	if t < c.start {
+		return num.UintZero(), 0
+	}
+
+	sumProduct := c.sumProduct.Clone()
+	for i := len(c.points) - 1; i >= 0; i-- {
+		point := c.points[i]
+		prev := c.points[i-1]
+
+		// now we need to remove the contribution from this interval
+		delta := point.t - num.MaxV(prev.t, c.start)
+		sub := num.UintZero().Mul(prev.price, num.NewUint(uint64(delta)))
+
+		// before we subtract, lets sanity check some things
+		if delta < 0 {
+			c.log.Panic("twap data-points are out of order creating retrograde segment")
+		}
+		if sumProduct.LT(sub) {
+			c.log.Panic("twap unwind is subtracting too much")
+		}
+
+		sumProduct.Sub(sumProduct, sub)
+
+		if prev.t <= t {
+			return sumProduct, i - 1
+		}
+	}
+
+	c.log.Panic("have unwound to before initial data-point -- we shouldn't be here")
+	return nil, 0
+}
+
+// calculate returns the TWAP at time `t` given the existing set of data-points. `t` can be
+// any value and we will extend off the last-data-point if necessary, and also unwind intervals
+// if the TWAP at a more historic time is required.
+func (c *cachedTWAP) calculate(t int64) *num.Uint {
+	if t < c.start || len(c.points) == 0 {
+		return num.UintZero()
+	}
+
+	if t == c.end {
+		// already have the sum product here, just twap-it
+		return num.UintZero().Div(c.sumProduct, num.NewUint(uint64(c.end-c.start)))
+	}
+
+	// if the time we want the twap from is before the last data-point we need to unwind the intervals
+	point := c.points[len(c.points)-1]
+	if t < point.t {
+		sumProduct, idx := c.unwind(t)
+		p := c.points[idx]
+		delta := t - p.t
+		sumProduct.Add(sumProduct, num.UintZero().Mul(p.price, num.NewUint(uint64(delta))))
+		return num.UintZero().Div(sumProduct, num.NewUint(uint64(t-c.start)))
+	}
+
+	// the twap we want is after the final data-point so we can just extend the calculation (or shortern if we've already extended)
+	delta := t - c.end
+	sumProduct := c.sumProduct.Clone()
+	newPeriod := num.NewUint(uint64(t - c.start))
+	lastPrice := point.price.Clone()
+
+	// add or subtract from the sum-product based on if we are extending/shortening the interval
+	switch {
+	case delta < 0:
+		sumProduct.Sub(sumProduct, lastPrice.Mul(lastPrice, num.NewUint(uint64(-delta))))
+	case delta > 0:
+		sumProduct.Add(sumProduct, lastPrice.Mul(lastPrice, num.NewUint(uint64(delta))))
+	}
+	// store these as the last calculated as its likely to be asked again
+	c.end = t
+	c.sumProduct = sumProduct
+
+	// now divide by the period to return the TWAP
+	return num.UintZero().Div(sumProduct, newPeriod)
+}
+
+// insertPoint adds the given point (which is known to have arrived out of order) to
+// the slice of points. The running sum-product is wound back to where we need to add
+// the new point and then recalculated forwards to the point with the lastest timestamp.
+func (c *cachedTWAP) insertPoint(point *dataPoint) (*num.Uint, error) {
+	// unwind the intervals and set the end and sum-product to the unwound values
+	sumProduct, idx := c.unwind(point.t)
+	if c.points[idx].t == point.t {
+		return nil, ErrDataPointAlreadyExistsAtTime
+	}
+
+	c.end = c.points[idx].t
+	c.sumProduct = sumProduct.Clone()
+
+	// grab the data-points after the one we are inserting so that we can add them back in again
+	subsequent := slices.Clone(c.points[idx+1:])
+	c.points = c.points[:idx+1]
+
+	// add the new point and calculate the TWAP
+	twap := c.calculate(point.t)
+	c.points = append(c.points, point)
+
+	// now add the points that we unwound so that the running sum-product is amended
+	// now that we've inserted the new point
+	for _, p := range subsequent {
+		c.calculate(p.t)
+		c.points = append(c.points, p)
+	}
+
+	return twap, nil
+}
+
+// addPoint takes the given point and works out where it fits against what we already have, updates the
+// running sum-product and returns the TWAP at point.t.
+func (c *cachedTWAP) addPoint(point *dataPoint) (*num.Uint, error) {
+	if len(c.points) == 0 || point.t < c.start {
+		// first point, or new point is before the start of the funding period
+		c.points = []*dataPoint{point}
+		c.start = num.MaxV(c.start, point.t)
+		c.end = c.start
+		c.sumProduct = num.UintZero()
+		return num.UintZero(), nil
+	}
+
+	// point to add is before the very first point we added, a little weird but ok
+	if point.t <= c.points[0].t {
+		points := c.points[:]
+		c.points = []*dataPoint{point}
+		c.start = num.MaxV(c.periodStart, point.t)
+		c.end = point.t
+		c.sumProduct = num.UintZero()
+		for _, p := range points {
+			c.calculate(p.t)
+			c.points = append(c.points, p)
+		}
+		return num.UintZero(), nil
+	}
+
+	// new point is after the last point, just calculate the TWAP at point.t and append
+	// the new point to the slice
+	lastPoint := c.points[len(c.points)-1]
+	if point.t > lastPoint.t {
+		twap := c.calculate(point.t)
+		c.points = append(c.points, point)
+		return twap, nil
+	}
+
+	if point.t == lastPoint.t {
+		// already have a point for this time
+		return nil, ErrDataPointAlreadyExistsAtTime
+	}
+
+	// we need to undo any extension past the last point we've done, we can do this by recalculating to the last point
+	// which will remove the extension
+	c.calculate(num.MaxV(c.start, lastPoint.t))
+
+	// new point is before the last point, we need to unwind all the intervals and insert it into the correct place
+	return c.insertPoint(point)
+}
 
 // A data-point that will be used to calculate periodic settlement in a perps market.
 type dataPoint struct {
@@ -64,10 +244,6 @@ type Perpetual struct {
 
 	// id should be the same as the market id
 	id string
-	// data-points created externally such as spot prices received from external data-sources
-	external []*dataPoint
-	// data-points created internally such as MTM mark prices
-	internal []*dataPoint
 	// enumeration of the settlement period so that we can track which points landed in each interval
 	seq uint64
 	// the time that this period interval started (in nanoseconds)
@@ -75,6 +251,10 @@ type Perpetual struct {
 	// asset decimal places
 	assetDP    uint32
 	terminated bool
+
+	// twap calculators
+	internalTWAP *cachedTWAP
+	externalTWAP *cachedTWAP
 }
 
 func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, marketID string, oe OracleEngine, broker Broker, assetDP uint32) (*Perpetual, error) {
@@ -89,11 +269,13 @@ func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, mark
 
 	// check decimal places for settlement data
 	perp := &Perpetual{
-		p:       p,
-		id:      marketID,
-		log:     log,
-		broker:  broker,
-		assetDP: assetDP,
+		p:            p,
+		id:           marketID,
+		log:          log,
+		broker:       broker,
+		assetDP:      assetDP,
+		externalTWAP: NewCachedTWAP(log, 0),
+		internalTWAP: NewCachedTWAP(log, 0),
 	}
 	// create specs from source
 	osForSettle, err := spec.New(*datasource.SpecFromDefinition(*p.DataSourceSpecForSettlementData.Data))
@@ -188,6 +370,8 @@ func (p *Perpetual) UnsubscribeSettlementData(ctx context.Context) {
 
 func (p *Perpetual) OnLeaveOpeningAuction(ctx context.Context, t int64) {
 	p.startedAt = t
+	p.internalTWAP = NewCachedTWAP(p.log, t)
+	p.externalTWAP = NewCachedTWAP(p.log, t)
 	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil, nil, nil))
 }
 
@@ -197,12 +381,10 @@ func (p *Perpetual) SubmitDataPoint(ctx context.Context, price *num.Uint, t int6
 		return ErrInitialPeriodNotStarted
 	}
 
-	point := &dataPoint{price: price.Clone(), t: t}
-	if err := p.addInternal(point); err != nil {
-		p.log.Error("unable to add internal data-point", logging.Error(err))
+	twap, err := p.internalTWAP.addPoint(&dataPoint{price: price.Clone(), t: t})
+	if err != nil {
 		return err
 	}
-	twap := twap(p.internal, p.startedAt, t)
 	p.broker.Send(events.NewFundingPeriodDataPointEvent(ctx, p.id, price.String(), t, p.seq, dataPointSourceInternal, twap))
 	return nil
 }
@@ -282,13 +464,15 @@ func (p *Perpetual) addExternalDataPoint(ctx context.Context, price *num.Uint, t
 		p.log.Error("external data point for perpetual received before initial period", logging.String("id", p.id), logging.Int64("t", t))
 		return
 	}
-
-	point := &dataPoint{price: price.Clone(), t: t}
-	if err := p.addExternal(point); err != nil {
-		p.log.Error("unable to add external data-point", logging.Error(err))
+	twap, err := p.externalTWAP.addPoint(&dataPoint{price: price.Clone(), t: t})
+	if err != nil {
+		p.log.Error("unable to add external data point",
+			logging.String("id", p.id),
+			logging.Error(err),
+			logging.String("price", price.String()),
+			logging.Int64("t", t))
 		return
 	}
-	twap := twap(p.external, p.startedAt, t)
 	p.broker.Send(events.NewFundingPeriodDataPointEvent(ctx, p.id, price.String(), t, p.seq, dataPointSourceExternal, twap))
 }
 
@@ -313,14 +497,10 @@ func (p *Perpetual) receiveSettlementCue(ctx context.Context, data dscommon.Data
 }
 
 func (p *Perpetual) sendFinalSettlementCue(ctx context.Context) {
-	// get the max time to include all data-points in the final settlement
-	max := int64(0)
-	if i := len(p.internal); i > 0 {
-		max = p.internal[i-1].t
+	if !p.readyForData() {
+		return
 	}
-	if i := len(p.external); i > 0 && max < p.external[i-1].t {
-		max = p.external[i-1].t
-	}
+	max := num.MaxV(p.internalTWAP.end, p.externalTWAP.end)
 	p.handleSettlementCue(ctx, max)
 }
 
@@ -340,27 +520,16 @@ func (p *Perpetual) handleSettlementCue(ctx context.Context, t int64) {
 		return
 	}
 
-	internalTWAP := twap(p.internal, p.startedAt, t)
-	// and calculate the same using the external oracle data-points over the same period
-	externalTWAP := twap(p.external, p.startedAt, t)
-
 	// do the calculation
-	fundingPayment, fundingRate := p.calculateFundingPayment(internalTWAP, externalTWAP)
-
-	// apply interest-rates if necessary
-	if !p.p.InterestRate.IsZero() {
-		delta := t - p.internal[0].t
-		if p.log.GetLevel() == logging.DebugLevel {
-			p.log.Debug("applying interest-rate with clamping", logging.String("funding-payment", fundingPayment.String()), logging.Int64("delta", delta))
-		}
-		fundingPayment.Add(p.calculateInterestTerm(externalTWAP, internalTWAP, delta))
-	}
+	fundingPayment, fundingRate := p.calculateFundingPayment(t)
 
 	// send it away!
 	fp := &num.Numeric{}
 	p.settlementDataListener(ctx, fp.SetInt(fundingPayment))
 
 	// now restart the interval
+	internalTWAP := p.internalTWAP.calculate(t)
+	externalTWAP := p.internalTWAP.calculate(t)
 	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t), ptr.From(fundingPayment.String()), ptr.From(fundingRate.String()), ptr.From(internalTWAP.String()), ptr.From(externalTWAP.String())))
 	p.startNewFundingPeriod(ctx, t)
 }
@@ -370,11 +539,7 @@ func (p *Perpetual) GetFundingRate(t int64) *num.Decimal {
 		return ptr.From(num.DecimalZero())
 	}
 
-	internalTWAP := twap(p.internal, p.startedAt, t)
-	// and calculate the same using the external oracle data-points over the same period
-	externalTWAP := twap(p.external, p.startedAt, t)
-	_, fundingRate := p.calculateFundingPayment(internalTWAP, externalTWAP)
-
+	_, fundingRate := p.calculateFundingPayment(t)
 	return fundingRate
 }
 
@@ -400,18 +565,22 @@ func (p *Perpetual) startNewFundingPeriod(ctx context.Context, endAt int64) {
 	}
 
 	// carry over data-points at times > endAt and the first data-points that is <= endAt
-	p.external = carryOver(p.external)
-	p.internal = carryOver(p.internal)
+	external := carryOver(p.externalTWAP.points)
+	internal := carryOver(p.internalTWAP.points)
+
+	// new period new life
+	p.externalTWAP = NewCachedTWAP(p.log, endAt)
+	p.internalTWAP = NewCachedTWAP(p.log, endAt)
 
 	// send events for all the data-points that were carried over
-	evts := make([]events.Event, 0, len(p.external)+len(p.internal))
+	evts := make([]events.Event, 0, len(external)+len(internal))
 	iTWAP, eTWAP := num.UintZero(), num.UintZero()
-	for _, dp := range p.external {
-		eTWAP = twap(p.external, p.startedAt, dp.t)
+	for _, dp := range external {
+		eTWAP, _ := p.externalTWAP.addPoint(dp)
 		evts = append(evts, events.NewFundingPeriodDataPointEvent(ctx, p.id, dp.price.String(), dp.t, p.seq, dataPointSourceExternal, eTWAP))
 	}
-	for _, dp := range p.internal {
-		iTWAP = twap(p.internal, p.startedAt, dp.t)
+	for _, dp := range internal {
+		iTWAP, _ := p.internalTWAP.addPoint(dp)
 		evts = append(evts, events.NewFundingPeriodDataPointEvent(ctx, p.id, dp.price.String(), dp.t, p.seq, dataPointSourceInternal, iTWAP))
 	}
 	// send event to say our new period has started
@@ -421,77 +590,22 @@ func (p *Perpetual) startNewFundingPeriod(ctx context.Context, endAt int64) {
 	}
 }
 
-// addInternal adds an price point to our internal slice which represents a price value as seen by core.
-func (p *Perpetual) addInternal(dp *dataPoint) error {
-	// if len(p.internal) > 0 && dp.t <= p.internal[len(p.internal)-1].t {
-	// should really be <= but that causes integration tests to fail when submitting orders "with ticks"
-	if len(p.internal) > 0 && dp.t < p.internal[len(p.internal)-1].t {
-		// should not happen because these comes from ourselves, and if they are out of order somethings gone terribly wrong.
-		p.log.Panic("internal settlement data-points received out of order")
-	}
-	p.internal = append(p.internal, dp)
-	return nil
-}
-
-// addExternal adds an price point to our external slice which represents a price value as seen by and external data source.
-func (p *Perpetual) addExternal(dp *dataPoint) error {
-	// since the external points come in from the outside world there is no guarantee they'll come in order so
-	// we put a little effort into making sure we insert it in the right place so that the data-points remain
-	// ordered in time.
-
-	// very first point, easy
-	if len(p.external) == 0 {
-		p.external = append(p.external, dp)
-		return nil
-	}
-
-	// new point is later then our last, also easy
-	last := p.external[len(p.external)-1]
-	if last.t < dp.t {
-		p.external = append(p.external, dp)
-		return nil
-	}
-
-	// its before the first one, easy as well
-	if dp.t < p.external[0].t {
-		p.external = append([]*dataPoint{dp}, p.external...)
-		return nil
-	}
-
-	// somewhere in the middle
-	for i := len(p.external) - 1; i >= 0; i-- {
-		data := p.external[i]
-
-		if dp.t < data.t {
-			// insert this point at position i - 1 then leave
-			ext := make([]*dataPoint, 0, len(p.external)+1)
-			ext = append(ext, p.external[:i-1]...)
-			ext = append(ext, dp)
-			ext = append(ext, p.external[i-1:]...)
-			p.external = ext
-			break
-		}
-
-		if dp.t == data.t {
-			return ErrDataPointAlreadyExistsAtTime
-		}
-	}
-
-	return nil
-}
-
 // readyForData returns whether not we are ready to start accepting data points.
 func (p *Perpetual) readyForData() bool {
 	return p.startedAt > 0
 }
 
-// haveData returns whether we have enough data to calculate a funding payment.
+// haveData returns whether we have any data points before the given time.
 func (p *Perpetual) haveData(endAt int64) bool {
-	if len(p.internal) == 0 || len(p.external) == 0 {
+	if !p.readyForData() {
 		return false
 	}
 
-	if p.internal[0].t > endAt || p.external[0].t > endAt {
+	if len(p.internalTWAP.points) == 0 || len(p.externalTWAP.points) == 0 {
+		return false
+	}
+
+	if p.internalTWAP.points[0].t > endAt || p.externalTWAP.points[0].t > endAt {
 		return false
 	}
 
@@ -500,25 +614,41 @@ func (p *Perpetual) haveData(endAt int64) bool {
 
 // calculateFundingPayment returns the funding payment and funding rate for the interval between when the current funding period
 // started and the given time. Used on settlement-cues and for margin calculations.
-func (p *Perpetual) calculateFundingPayment(internalTWAP, externalTWAP *num.Uint) (*num.Int, *num.Decimal) {
-	p.log.Info("twap-calculations",
-		logging.MarketID(p.id),
-		logging.String("internal", internalTWAP.String()),
-		logging.String("external", externalTWAP.String()),
-	)
+func (p *Perpetual) calculateFundingPayment(t int64) (*num.Int, *num.Decimal) {
+	internalTWAP := p.internalTWAP.calculate(t)
+	externalTWAP := p.externalTWAP.calculate(t)
+
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("twap-calculations",
+			logging.MarketID(p.id),
+			logging.String("internal", internalTWAP.String()),
+			logging.String("external", externalTWAP.String()),
+		)
+	}
 
 	// the funding payment is the difference between the two, the sign representing the direction of cash flow
 	fundingPayment := num.IntFromUint(internalTWAP, true).Sub(num.IntFromUint(externalTWAP, true))
+
+	// apply interest-rates if necessary
+	if !p.p.InterestRate.IsZero() {
+		delta := t - p.startedAt
+		if p.log.GetLevel() == logging.DebugLevel {
+			p.log.Debug("applying interest-rate with clamping", logging.String("funding-payment", fundingPayment.String()), logging.Int64("delta", delta))
+		}
+		fundingPayment.Add(p.calculateInterestTerm(externalTWAP, internalTWAP, delta))
+	}
+
 	fundingRate := num.DecimalZero()
 	if !externalTWAP.IsZero() {
 		fundingRate = num.DecimalFromInt(fundingPayment).Div(num.DecimalFromUint(externalTWAP))
 	}
-	p.log.Info("funding payment calculated",
-		logging.MarketID(p.id),
-		logging.Uint64("seq", p.seq),
-		logging.String("funding-payment", fundingPayment.String()),
-		logging.String("funding-rate", fundingRate.String()))
-
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug("funding payment calculated",
+			logging.MarketID(p.id),
+			logging.Uint64("seq", p.seq),
+			logging.String("funding-payment", fundingPayment.String()),
+			logging.String("funding-rate", fundingRate.String()))
+	}
 	return fundingPayment, &fundingRate
 }
 
@@ -558,61 +688,14 @@ func (p *Perpetual) GetMarginIncrease(t int64) *num.Uint {
 	if !p.haveData(t) || p.p.MarginFundingFactor.IsZero() {
 		return num.UintZero()
 	}
-	// internal and external TWAP
-	internalTWAP := twap(p.internal, p.startedAt, t)
-	externalTWAP := twap(p.external, p.startedAt, t)
-	fp, neg := internalTWAP.Delta(internalTWAP, externalTWAP)
-	// if internal and external TWAP cancel eachother out, the margin increase will be zero
-	// if internal TWAP > external TWAP, the margin increase would be a decrease, and has to be ignored
-	if neg || fp.IsZero() {
+
+	fundingPayment, _ := p.calculateFundingPayment(t)
+
+	if !fundingPayment.IsPositive() {
 		return num.UintZero()
 	}
 	// apply factor
-	fpD := num.DecimalFromUint(fp).Mul(p.p.MarginFundingFactor)
-	fp, _ = num.UintFromDecimal(fpD)
+	fpD := num.DecimalFromInt(fundingPayment).Mul(p.p.MarginFundingFactor)
+	fp, _ := num.UintFromDecimal(fpD)
 	return fp
-}
-
-// Calculates the twap of the given settlement data points over the given interval.
-// The given set of points can extend beyond the interval [start, end] and any point
-// lying outside that interval will be ignored.
-func twap(points []*dataPoint, start, end int64) *num.Uint {
-	if len(points) == 0 {
-		return num.UintZero()
-	}
-	sum := num.UintZero()
-	var prev *dataPoint
-	for _, p := range points {
-		// find the first point that is before or equal to the start of the interval
-		if p.t <= start {
-			prev = p
-			continue
-		}
-
-		if p.t >= end {
-			// this point is past the end time so we can stop now
-			break
-		}
-
-		if prev != nil {
-			tdiff := num.NewUint(uint64(p.t - num.MaxV(start, prev.t)))
-			sum.Add(sum, num.UintZero().Mul(prev.price, tdiff))
-		}
-		prev = p
-	}
-	if prev == nil {
-		return num.UintZero()
-	}
-
-	// process the final interval
-	tdiff := num.NewUint(uint64(end - num.MaxV(start, prev.t)))
-	sum.Add(sum, num.UintZero().Mul(prev.price, tdiff))
-
-	denom := end - num.MaxV(start, points[0].t)
-
-	if denom == 0 {
-		return num.UintZero()
-	}
-
-	return sum.Div(sum, num.NewUint(uint64(end-num.MaxV(start, points[0].t))))
 }

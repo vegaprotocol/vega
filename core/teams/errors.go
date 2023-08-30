@@ -23,10 +23,15 @@ var (
 	ErrOnlyReferrerCanUpdateTeam     = errors.New("only the referrer can update the team properties")
 	ErrReferrerCannotJoinAnotherTeam = errors.New("a referrer cannot join another team")
 	ErrComputedTeamIDIsAlreadyInUse  = errors.New("the computed team ID is already in use")
+	ErrTeamNameIsAlreadyInUse        = errors.New("the team name is already in use")
 )
 
 func ErrNoTeamMatchesID(id types.TeamID) error {
 	return fmt.Errorf("no team matches ID %q", id)
+}
+
+func ErrTeamIsClosed(id types.TeamID) error {
+	return fmt.Errorf("team ID %q is closed", id)
 }
 
 func ErrPartyAlreadyBelongsToTeam(referrer types.PartyID) error {

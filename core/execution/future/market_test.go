@@ -226,7 +226,11 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	statevarEngine := stubs.NewStateVar()
 	epochEngine := mocks.NewMockEpochEngine(tm.ctrl)
 	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
-	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
+
+	teams := mocks.NewMockTeams(tm.ctrl)
+	bc := mocks.NewMockAccountBalanceChecker(tm.ctrl)
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine, teams, bc)
+
 	mktEngine, err := future.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.timeService, tm.broker, mas, statevarEngine, marketActivityTracker, cfgAsset,
@@ -620,7 +624,9 @@ func getTestMarket2WithDP(
 
 	epoch := mocks.NewMockEpochEngine(ctrl)
 	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
-	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epoch)
+	teams := mocks.NewMockTeams(tm.ctrl)
+	bc := mocks.NewMockAccountBalanceChecker(tm.ctrl)
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epoch, teams, bc)
 
 	mktEngine, err := future.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,

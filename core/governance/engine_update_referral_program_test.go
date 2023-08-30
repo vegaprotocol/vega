@@ -26,8 +26,8 @@ func testSubmittingProposalForReferralProgramUpdateSucceeds(t *testing.T) {
 	eng := getTestEngine(t, now)
 
 	// setup
-	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxBenefitTiers, "2")).Times(1)
-	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxBenefitTiers, "2"))
+	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxReferralTiers, "2")).Times(1)
+	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxReferralTiers, "2"))
 
 	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxReferralRewardFactor, "0.010")).Times(1)
 	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxReferralRewardFactor, "0.010"))
@@ -75,8 +75,8 @@ func testSubmittingProposalForReferralProgramUpdateWithTooManyTiersFails(t *test
 	eng := getTestEngine(t, now)
 
 	// setup
-	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxBenefitTiers, "1")).Times(1)
-	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxBenefitTiers, "1"))
+	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxReferralTiers, "1")).Times(1)
+	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxReferralTiers, "1"))
 
 	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxReferralRewardFactor, "0.010")).Times(1)
 	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxReferralRewardFactor, "0.010"))
@@ -124,8 +124,8 @@ func testSubmittingProposalForReferralProgramUpdateWithTooHighRewardFactorFails(
 	eng := getTestEngine(t, now)
 
 	// setup
-	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxBenefitTiers, "2")).Times(1)
-	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxBenefitTiers, "2"))
+	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxReferralTiers, "2")).Times(1)
+	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxReferralTiers, "2"))
 
 	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxReferralRewardFactor, "0.010")).Times(1)
 	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxReferralRewardFactor, "0.010"))
@@ -176,8 +176,8 @@ func testSubmittingProposalForReferralProgramUpdateWithTooHighDiscountFactorFail
 	eng := getTestEngine(t, now)
 
 	// setup
-	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxBenefitTiers, "2")).Times(1)
-	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxBenefitTiers, "2"))
+	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxReferralTiers, "2")).Times(1)
+	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxReferralTiers, "2"))
 
 	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxReferralRewardFactor, "0.010")).Times(1)
 	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxReferralRewardFactor, "0.010"))

@@ -136,6 +136,7 @@ message Payload {
     Vesting vesting = 72;
     CurrentReferralProgram current_referral_program = 73;
     NewReferralProgram new_referral_program = 74;
+    ReferralSets referral_sets = 75;
   }
 }
 
@@ -963,6 +964,7 @@ message NextTimeTrigger {
 
 message MarketTracker {
   repeated checkpoint.v1.MarketActivityTracker market_activity = 1;
+  repeated checkpoint.v1.TakerNotionalVolume taker_notional_volume = 2;
 }
 
 message SignerEventsPerAddress {
@@ -1054,12 +1056,13 @@ message Team {
   string team_url = 5;
   string avatar_url = 6;
   int64 created_at = 7;
+  bool closed = 8;
 }
 
 message Membership {
   string party_id = 1;
   int64 joined_at = 2;
-  uint64 number_of_epoch = 3;
+  uint64 started_at_epoch = 3;
 }
 
 message TeamSwitches {
@@ -1088,6 +1091,24 @@ message CurrentReferralProgram {
 
 message NewReferralProgram {
   vega.ReferralProgram referral_program = 1;
+}
+
+message ReferralSets {
+  repeated ReferralSet sets = 1;
+}
+
+message ReferralSet {
+  string id = 1;
+  int64 created_at = 2;
+  int64 updated_at = 3;
+  Membership referrer = 4;
+  repeated Membership referees = 5;
+  repeated RunningVolume running_volumes = 6;
+}
+
+message RunningVolume {
+  uint64 epoch = 1;
+  string volume = 2;
 }
 
 message AssetLocked {

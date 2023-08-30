@@ -298,15 +298,18 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 				Amount:          num.NewUint(100),
 				Reference:       "someref",
 			},
-			DispatchStrategy: &vega.DispatchStrategy{Metric: vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED},
-			StartEpoch:       10,
-			EndEpoch:         nil, // forever
-			Factor:           num.MustDecimalFromString("0.9"),
+			DispatchStrategy: &vega.DispatchStrategy{
+				Metric:      vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
+				EntityScope: vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+			},
+			StartEpoch: 10,
+			EndEpoch:   nil, // forever
+			Factor:     num.MustDecimalFromString("0.9"),
 		},
 	}
 
-	e.marketActivityTracker.EXPECT().GetMarketScores(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return([]*types.MarketContributionScore{
-		{Asset: "asset1", Market: "market1", Metric: vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, Score: num.DecimalFromFloat(1)},
+	e.marketActivityTracker.EXPECT().CalculateMetricForIndividuals(gomock.Any()).AnyTimes().Return([]*types.PartyContibutionScore{
+		{Party: "", Score: num.DecimalFromFloat(1)},
 	})
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
 	e.tsvc.EXPECT().GetTimeNow().Times(2)
