@@ -59,6 +59,42 @@ func getTestEngine(t *testing.T) *testEngine {
 	}
 }
 
+func TestRewardMultiplier(t *testing.T) {
+	v := getTestEngine(t)
+
+	// set benefits tiers
+	err := v.OnBenefitTiersUpdate(context.Background(), &vegapb.VestingBenefitTiers{
+		Tiers: []*vegapb.VestingBenefitTier{
+			{
+				MinimumQuantumBalance: "10000",
+				RewardMultiplier:      "1.5",
+			},
+			{
+				MinimumQuantumBalance: "100000",
+				RewardMultiplier:      "2",
+			},
+			{
+				MinimumQuantumBalance: "500000",
+				RewardMultiplier:      "2.5",
+			},
+		},
+	})
+
+	assert.NoError(t, err)
+
+	v.col.EXPECT().GetAllVestingQuantumBalance("party1").Times(1).Return(num.UintZero())
+	assert.Equal(t, num.DecimalOne(), v.GetRewardsBonusMultiplier("party1"))
+
+	v.col.EXPECT().GetAllVestingQuantumBalance("party1").Times(1).Return(num.NewUint(10001))
+	assert.Equal(t, num.MustDecimalFromString("1.5"), v.GetRewardsBonusMultiplier("party1"))
+
+	v.col.EXPECT().GetAllVestingQuantumBalance("party1").Times(1).Return(num.NewUint(100001))
+	assert.Equal(t, num.MustDecimalFromString("2"), v.GetRewardsBonusMultiplier("party1"))
+
+	v.col.EXPECT().GetAllVestingQuantumBalance("party1").Times(1).Return(num.NewUint(500001))
+	assert.Equal(t, num.MustDecimalFromString("2.5"), v.GetRewardsBonusMultiplier("party1"))
+}
+
 func TestDistributeAfterDelay(t *testing.T) {
 	v := getTestEngine(t)
 

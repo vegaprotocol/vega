@@ -158,10 +158,10 @@ func (e *Engine) AddReward(
 	)
 }
 
-func (e *Engine) GetRewardsBonusMultiplier(party string) (num.Decimal, bool) {
+func (e *Engine) GetRewardsBonusMultiplier(party string) num.Decimal {
 	quantumBalance := e.c.GetAllVestingQuantumBalance(party)
 
-	multiplier := num.DecimalZero()
+	multiplier := num.DecimalOne()
 
 	for _, b := range e.benefitTiers {
 		if quantumBalance.LT(b.MinimumQuantumBalance) {
@@ -171,7 +171,7 @@ func (e *Engine) GetRewardsBonusMultiplier(party string) (num.Decimal, bool) {
 		multiplier = b.RewardMultiplier
 	}
 
-	return multiplier, multiplier.IsPositive()
+	return multiplier
 }
 
 func (e *Engine) getPartyRewards(party string) *PartyRewards {
