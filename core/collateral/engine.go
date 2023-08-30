@@ -2343,12 +2343,6 @@ func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.T
 
 		case types.AccountTypeVestedRewards:
 			fromAcc = e.GetOrCreatePartyVestedRewardAccount(ctx, t.Owner, t.Amount.Asset)
-			if err != nil {
-				return nil, fmt.Errorf("account does not exists: %v, %v, %v",
-					accountType, t.Owner, t.Amount.Asset,
-				)
-			}
-
 			// we always pay onto the pending transfers accounts
 			toAcc = e.GetPendingTransfersAccount(t.Amount.Asset)
 
