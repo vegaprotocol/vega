@@ -255,7 +255,7 @@ func newServices(
 	svcs.epochService.NotifyOnEpoch(stats.OnEpochEvent, stats.OnEpochRestore)
 
 	svcs.statevar = statevar.New(svcs.log, svcs.conf.StateVar, svcs.broker, svcs.topology, svcs.commander)
-	svcs.marketActivityTracker = common.NewMarketActivityTracker(svcs.log, svcs.epochService)
+	svcs.marketActivityTracker = common.NewMarketActivityTracker(svcs.log, svcs.epochService, svcs.teamsEngine, svcs.stakingAccounts)
 
 	svcs.notary = notary.NewWithSnapshot(svcs.log, svcs.conf.Notary, svcs.topology, svcs.broker, svcs.commander)
 
@@ -295,7 +295,8 @@ func newServices(
 	}
 
 	svcs.vesting = vesting.NewSnapshotEngine(svcs.log, svcs.collateral, DummyASVM{}, svcs.broker, svcs.assets)
-	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology)
+	// TODO set acitivity streak
+	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology, svcs.vesting, svcs.banking, nil)
 	// register this after the rewards engine is created to make sure the on epoch is called in the right order.
 	svcs.epochService.NotifyOnEpoch(svcs.vesting.OnEpochEvent, svcs.vesting.OnEpochRestore)
 
@@ -513,6 +514,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 	}
 
 	watchers := []netparams.WatchParam{
+		{
+			Param:   netparams.MinEpochsInTeamForMetricRewardEligibility,
+			Watcher: svcs.marketActivityTracker.OnMinEpochsInTeamForRewardEligibilityUpdated,
+		},
 		{
 			Param:   netparams.MinBlockCapacity,
 			Watcher: svcs.gastimator.OnMinBlockCapacityUpdate,

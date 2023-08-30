@@ -300,16 +300,13 @@ Feature: Fees rewards with multiple markets and assets
 #     #complete the epoch for rewards to take place
 #     Then the network moves ahead "7" blocks
 
-#     Then "party1" should have general account balance of "7979" for asset "VEGA"
-#     Then "party2" should have general account balance of "312" for asset "VEGA"
-#     Then "lp1" should have general account balance of "1063" for asset "VEGA"
-#     Then "lp2" should have general account balance of "1063" for asset "VEGA"
+#     Then "party1" should have vesting account balance of "7979" for asset "VEGA"
+#     Then "party2" should have vesting account balance of "312" for asset "VEGA"
+#     Then "lp1" should have vesting account balance of "1063" for asset "VEGA"
+#     Then "lp2" should have vesting account balance of "1063" for asset "VEGA"
 
-#     Then "party1" should have general account balance of "1424" for asset "USDT"
-#     Then "party2" should have general account balance of "20431" for asset "USDT"
+#     Then "party1" should have vesting account balance of "1424" for asset "USDT"
+#     Then "party2" should have vesting account balance of "20431" for asset "USDT"
 
-#     Then "lp1" should have general account balance of "3184" for asset "USDC"
-#     Then "lp2" should have general account balance of "693" for asset "USDC"
-
-
-
+#     Then "lp1" should have vesting account balance of "3184" for asset "USDC"
+#     Then "lp2" should have vesting account balance of "693" for asset "USDC"

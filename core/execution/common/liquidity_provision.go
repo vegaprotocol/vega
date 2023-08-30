@@ -227,7 +227,6 @@ func (m *MarketLiquidity) applyPendingProvisions(
 			}
 
 			ledgerMovements = append(ledgerMovements, bondLedgerMovement)
-
 		}
 	}
 
