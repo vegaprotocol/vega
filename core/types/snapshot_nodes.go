@@ -3488,19 +3488,9 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		ret.ExpiringOrders = append(ret.ExpiringOrders, or)
 	}
 
-	// TODO: remove this on the next minor
-	if em.StopOrders != nil {
-		for _, v := range em.StopOrders.StopOrders {
-			if v.StopOrder.ExpiresAt != nil {
-				ret.ExpiringStopOrders = append(ret.ExpiringStopOrders, &Order{ID: v.StopOrder.Id, ExpiresAt: *v.StopOrder.ExpiresAt})
-			}
-		}
+	for _, o := range em.ExpiringStopOrders {
+		ret.ExpiringStopOrders = append(ret.ExpiringStopOrders, &Order{ID: o.Id, ExpiresAt: o.ExpiresAt})
 	}
-
-	// TODO: enable this then
-	// for _, o := range em.ExpiringStopOrders {
-	//     ret.ExpiringStopOrders = append(ret.ExpiringStopOrders, &Order{ID: o.Id, ExpiresAt: o.ExpiresAt})
-	// }
 	return &ret
 }
 
