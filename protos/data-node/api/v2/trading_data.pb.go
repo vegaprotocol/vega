@@ -3957,7 +3957,7 @@ type AggregatedBalance struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Timestamp in nanseconds of the block in which the balance exists.
+	// Timestamp in Unix nanoseconds of the block in which the balance exists.
 	Timestamp int64 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// Balance of the set of requested accounts at the time above.
 	Balance string `protobuf:"bytes,2,opt,name=balance,proto3" json:"balance,omitempty"`
@@ -15731,7 +15731,7 @@ type GetVegaTimeResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Timestamp representation of current VegaTime as represented in nanoseconds, for example
+	// Timestamp representation of current VegaTime as represented in Unix nanoseconds, for example
 	// `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`.
 	Timestamp int64 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 }
