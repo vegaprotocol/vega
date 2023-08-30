@@ -34,7 +34,7 @@ Feature: Test margin for lp near price monitoring boundaries
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | SLA        |
     And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 600s  |
+      | market.liquidity.providersFeeCalculationTimeStep | 600s  |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | lp1    | ETH   | 100000000 |
@@ -113,7 +113,7 @@ Feature: Test margin for lp near price monitoring boundaries
       | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future | 1e6                    | 1e6                       | SLA        |
     And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 600s  |
+      | market.liquidity.providersFeeCalculationTimeStep | 600s  |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | lp1    | ETH2  | 100000000 |

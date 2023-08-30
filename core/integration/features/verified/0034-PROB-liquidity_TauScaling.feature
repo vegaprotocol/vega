@@ -10,7 +10,7 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | market.liquidity.probabilityOfTrading.tau.scaling   | 1     |
       | limits.markets.maxPeggedOrders                      | 4     |
-      | market.liquidityV2.providersFeeCalculationTimeStep  | 600s  |
+      | market.liquidity.providersFeeCalculationTimeStep  | 600s  |
 
     And the following assets are registered:
       | id  | decimal places |

@@ -29,7 +29,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 0.2                    | 0                         | SLA        |
     And the following network parameters are set:
       | name                                                | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep  | 600s  |
+      | market.liquidity.providersFeeCalculationTimeStep  | 600s  |
 
     # block duration of 2 seconds
     And the average block duration is "2"
