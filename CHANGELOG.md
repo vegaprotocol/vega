@@ -66,6 +66,7 @@
 - [9045](https://github.com/vegaprotocol/vega/issues/9045) - Snapshot the referral engine.
 - [9136](https://github.com/vegaprotocol/vega/issues/9136) - Referral engine returns reward factor for a given party
 - [9076](https://github.com/vegaprotocol/vega/issues/9076) - Add current funding rate to market data.
+- [1932](https://github.com/vegaprotocol/devops-infra/issues/1932) - Allow configuring an `SQL` statement timeout.
 - [9162](https://github.com/vegaprotocol/vega/issues/9162) - Refactor transfers to support new metric based rewards and distribution strategies
 - [9163](https://github.com/vegaprotocol/vega/issues/9163) - Refactor reward engine to support the new metric based reward distribution
 - [9164](https://github.com/vegaprotocol/vega/issues/9164) - Refactor market activity tracker to support more metrics and history
@@ -77,6 +78,7 @@
 - [9234](https://github.com/vegaprotocol/vega/issues/9234) - Add support for transfers out of the vested account
 - [9199](https://github.com/vegaprotocol/vega/issues/9199) - Consider running notional volume to determine referrers and referees tier
 - [9214](https://github.com/vegaprotocol/vega/issues/9214) - Add staking tier on referral program
+
 
 ### 🐛 Fixes
 
