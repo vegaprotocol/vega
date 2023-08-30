@@ -18,6 +18,12 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
+## 0.72.14
+
+### 🐛 Fixes
+
+ - Don't collect garbage `IPFS` on startup
+
 ## 0.72.13
 
 ### 🐛 Fixes
