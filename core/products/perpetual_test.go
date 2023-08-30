@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"sort"
 	"testing"
 	"time"
@@ -62,10 +63,19 @@ func TestExternalDataPointTWAPInSequence(t *testing.T) {
 	require.NoError(t, err)
 	data := tstData.GetDataPoints()
 	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
-	// leave opening auction
-	perp.perpetual.OnLeaveOpeningAuction(ctx, data[0].t-1)
 
-	seq := data[0].seq
+	// want to start the period from before the point with the smallest time
+	seq := math.MaxInt
+	st := data[0].t
+	for i := 0; i < len(data); i++ {
+		if data[i].t < st {
+			st = data[i].t
+		}
+		seq = num.MinV(seq, data[i].seq)
+	}
+	// leave opening auction
+	perp.perpetual.OnLeaveOpeningAuction(ctx, st-1)
+
 	// set the first internal data-point
 	// perp.broker.EXPECT().Send(gomock.Any()).Times(1)
 	// perp.perpetual.SubmitDataPoint(ctx, data[0].price.Clone(), data[0].t)
