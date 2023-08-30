@@ -75,7 +75,8 @@
 - [9080](https://github.com/vegaprotocol/vega/issues/9080) - Add support for vested and vesting account in GraphQL
 - [9147](https://github.com/vegaprotocol/vega/issues/9147) - Add reward multiplier to vesting engine
 - [9234](https://github.com/vegaprotocol/vega/issues/9234) - Add support for transfers out of the vested account
-
+- [9199](https://github.com/vegaprotocol/vega/issues/9199) - Consider running notional volume to determine referrers and referees tier
+- [9214](https://github.com/vegaprotocol/vega/issues/9214) - Add staking tier on referral program
 
 ### 🐛 Fixes
 
@@ -135,10 +136,12 @@
 - [9066](https://github.com/vegaprotocol/vega/issues/9066) - Ensure a party have a liquidity provision before trying to cancel
 - [9140](https://github.com/vegaprotocol/vega/issues/9140) - Stop orders table should be a `hypertable` with retention policy.
 - [9153](https://github.com/vegaprotocol/vega/issues/9153) - `MTM` win transfers can be less than one.
+- [9227](https://github.com/vegaprotocol/vega/issues/9227) - Do not allow market updates that change the product type.
 - [9178](https://github.com/vegaprotocol/vega/issues/9178) - Fix LP amendment panic
 - [9053](https://github.com/vegaprotocol/vega/issues/9053) - Handle settle market events in core positions plug-in.
 - [9189](https://github.com/vegaprotocol/vega/issues/9189) - Fix stop orders snapshots
 - [9198](https://github.com/vegaprotocol/vega/issues/9198) - Fix panic during LP amendment applications
+- [9196](https://github.com/vegaprotocol/vega/issues/9196) - `API` documentation should specify the time format.
 - [9203](https://github.com/vegaprotocol/vega/issues/9203) - Do not remove LPs from the parties map if they are an LP without an open position
 
 ## 0.72.1

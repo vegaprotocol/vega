@@ -24,25 +24,34 @@ import (
 	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
-	typespb "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 type testEngine struct {
-	engine  *referral.SnapshottedEngine
-	broker  *mocks.MockBroker
-	timeSvc *mocks.MockTimeService
+	engine                *referral.SnapshottedEngine
+	broker                *mocks.MockBroker
+	timeSvc               *mocks.MockTimeService
+	marketActivityTracker *mocks.MockMarketActivityTracker
+	currentEpoch          uint64
 }
 
 func newPartyID(t *testing.T) types.PartyID {
 	t.Helper()
 
 	return types.PartyID(vgrand.RandomStr(5))
+}
+
+func newSetID(t *testing.T) types.ReferralSetID {
+	t.Helper()
+
+	return types.ReferralSetID(vgcrypto.RandomHash())
 }
 
 func newSnapshotEngine(t *testing.T, vegaPath paths.Paths, now time.Time, engine *referral.SnapshottedEngine) *snapshot.Engine {
@@ -67,19 +76,23 @@ func newEngine(t *testing.T) *testEngine {
 
 	ctrl := gomock.NewController(t)
 
-	epochEngine := mocks.NewMockEpochEngine(ctrl)
-	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any())
-
-	timeSvc := mocks.NewMockTimeService(ctrl)
-
 	broker := mocks.NewMockBroker(ctrl)
+	timeSvc := mocks.NewMockTimeService(ctrl)
+	mat := mocks.NewMockMarketActivityTracker(ctrl)
 
-	engine := referral.NewSnapshottedEngine(epochEngine, broker, timeSvc)
+	engine := referral.NewSnapshottedEngine(broker, timeSvc, mat)
+
+	engine.OnEpochRestore(context.Background(), types.Epoch{
+		Seq:    10,
+		Action: vegapb.EpochAction_EPOCH_ACTION_START,
+	})
 
 	return &testEngine{
-		engine:  engine,
-		broker:  broker,
-		timeSvc: timeSvc,
+		engine:                engine,
+		broker:                broker,
+		timeSvc:               timeSvc,
+		marketActivityTracker: mat,
+		currentEpoch:          10,
 	}
 }
 
@@ -87,11 +100,16 @@ func nextEpoch(t *testing.T, ctx context.Context, te *testEngine, startEpochTime
 	t.Helper()
 
 	te.engine.OnEpoch(ctx, types.Epoch{
-		Action:  typespb.EpochAction_EPOCH_ACTION_END,
+		Seq:     te.currentEpoch,
+		Action:  vegapb.EpochAction_EPOCH_ACTION_END,
 		EndTime: startEpochTime.Add(-1 * time.Second),
 	})
+
+	te.currentEpoch += 1
+
 	te.engine.OnEpoch(ctx, types.Epoch{
-		Action:    typespb.EpochAction_EPOCH_ACTION_START,
+		Seq:       te.currentEpoch,
+		Action:    vegapb.EpochAction_EPOCH_ACTION_START,
 		StartTime: startEpochTime,
 	})
 }

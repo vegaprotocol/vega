@@ -15,13 +15,9 @@ package positions
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/core/events"
-
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/libs/num"
-	"code.vegaprotocol.io/vega/logging"
-
 	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 type SnapshotEngine struct {
@@ -46,34 +42,6 @@ func NewSnapshotEngine(
 func (e *SnapshotEngine) StopSnapshots() {
 	e.log.Debug("market has been cleared, stopping snapshot production", logging.String("marketid", e.marketID))
 	e.stopped = true
-}
-
-func (e *SnapshotEngine) RegisterOrder(ctx context.Context, order *types.Order) *MarketPosition {
-	return e.Engine.RegisterOrder(ctx, order)
-}
-
-func (e *SnapshotEngine) UnregisterOrder(ctx context.Context, order *types.Order) *MarketPosition {
-	return e.Engine.UnregisterOrder(ctx, order)
-}
-
-func (e *SnapshotEngine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.Order) *MarketPosition {
-	return e.Engine.AmendOrder(ctx, originalOrder, newOrder)
-}
-
-func (e *SnapshotEngine) UpdateNetwork(ctx context.Context, trade *types.Trade, passiveOrder *types.Order) []events.MarketPosition {
-	return e.Engine.UpdateNetwork(ctx, trade, passiveOrder)
-}
-
-func (e *SnapshotEngine) Update(ctx context.Context, trade *types.Trade, passiveOrder, aggressiveOrder *types.Order) []events.MarketPosition {
-	return e.Engine.Update(ctx, trade, passiveOrder, aggressiveOrder)
-}
-
-func (e *SnapshotEngine) RemoveDistressed(parties []events.MarketPosition) []events.MarketPosition {
-	return e.Engine.RemoveDistressed(parties)
-}
-
-func (e *SnapshotEngine) UpdateMarkPrice(markPrice *num.Uint) []events.MarketPosition {
-	return e.Engine.UpdateMarkPrice(markPrice)
 }
 
 func (e *SnapshotEngine) Namespace() types.SnapshotNamespace {
@@ -105,7 +73,6 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 	var err error
 	switch pl := payload.Data.(type) {
 	case *types.PayloadMarketPositions:
-
 		// Check the payload is for this market
 		if e.marketID != pl.MarketPositions.MarketID {
 			return nil, types.ErrUnknownSnapshotType
@@ -126,6 +93,7 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 				e.distressedPos[p.PartyID] = struct{}{}
 			}
 		}
+
 		e.data, err = proto.Marshal(payload.IntoProto())
 		return nil, err
 
@@ -141,7 +109,7 @@ func (e *SnapshotEngine) serialise() ([]byte, error) {
 		return nil, nil
 	}
 
-	e.log.Debug("serilaising snapshot", logging.Int("positions", len(e.positionsCpy)))
+	e.log.Debug("serialising snapshot", logging.Int("positions", len(e.positionsCpy)))
 	positions := make([]*types.MarketPosition, 0, len(e.positionsCpy))
 
 	for _, evt := range e.positionsCpy {
@@ -159,6 +127,7 @@ func (e *SnapshotEngine) serialise() ([]byte, error) {
 		}
 		positions = append(positions, pos)
 	}
+
 	e.pl.Data = &types.PayloadMarketPositions{
 		MarketPositions: &types.MarketPositions{
 			MarketID:  e.marketID,

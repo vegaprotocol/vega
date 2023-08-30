@@ -38,7 +38,6 @@ var (
 )
 
 const (
-	numberOfEpochsBan              uint64 = 4
 	numberOfBlocksForIncreaseCheck uint64 = 10
 	minBanDuration                        = time.Second * 30 // minimum ban duration
 )

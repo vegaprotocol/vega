@@ -2,7 +2,6 @@ package events
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/ptr"
@@ -92,14 +91,15 @@ func (t RefereeSwitchedTeam) StreamMessage() *eventspb.BusEvent {
 	return busEvent
 }
 
-func NewRefereeSwitchedTeamEvent(ctx context.Context, from, to types.TeamID, referee types.PartyID, switchedAt time.Time) *RefereeSwitchedTeam {
+func NewRefereeSwitchedTeamEvent(ctx context.Context, from, to types.TeamID, membership *types.Membership) *RefereeSwitchedTeam {
 	return &RefereeSwitchedTeam{
 		Base: newBase(ctx, RefereeSwitchedTeamEvent),
 		e: eventspb.RefereeSwitchedTeam{
 			FromTeamId: string(from),
 			ToTeamId:   string(to),
-			Referee:    string(referee),
-			SwitchedAt: switchedAt.UnixNano(),
+			Referee:    string(membership.PartyID),
+			SwitchedAt: membership.JoinedAt.UnixNano(),
+			AtEpoch:    membership.StartedAtEpoch,
 		},
 	}
 }
@@ -125,13 +125,14 @@ func (t RefereeJoinedTeam) StreamMessage() *eventspb.BusEvent {
 	return busEvent
 }
 
-func NewRefereeJoinedTeamEvent(ctx context.Context, teamID types.TeamID, referee types.PartyID, joinedAt time.Time) *RefereeJoinedTeam {
+func NewRefereeJoinedTeamEvent(ctx context.Context, teamID types.TeamID, membership *types.Membership) *RefereeJoinedTeam {
 	return &RefereeJoinedTeam{
 		Base: newBase(ctx, RefereeJoinedTeamEvent),
 		e: eventspb.RefereeJoinedTeam{
 			TeamId:   string(teamID),
-			Referee:  string(referee),
-			JoinedAt: joinedAt.UnixNano(),
+			Referee:  string(membership.PartyID),
+			JoinedAt: membership.JoinedAt.UnixNano(),
+			AtEpoch:  membership.StartedAtEpoch,
 		},
 	}
 }

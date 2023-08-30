@@ -309,7 +309,7 @@ type Erc20WithdrawalApproval struct {
 	Signatures string `json:"signatures"`
 	// The target address that will receive the funds
 	TargetAddress string `json:"targetAddress"`
-	// Timestamp at which the withdrawal was created
+	// RFC3339Nano timestamp at which the withdrawal was created
 	Creation string `json:"creation"`
 }
 
