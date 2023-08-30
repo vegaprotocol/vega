@@ -15,9 +15,12 @@ package banking_test
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"strconv"
 	"testing"
 	"time"
+
+	"code.vegaprotocol.io/vega/libs/crypto"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/assets/builtin"
@@ -511,8 +514,21 @@ func TestRecurringTransfersSnapshotRoundTrip(t *testing.T) {
 			StartEpoch: 10,
 			EndEpoch:   nil, // forever
 			Factor:     num.MustDecimalFromString("0.9"),
+			DispatchStrategy: &vega.DispatchStrategy{
+				AssetForMetric:       "zohar",
+				Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+				Markets:              []string{"mmm"},
+				EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+				IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
+				WindowLength:         1,
+				LockPeriod:           1,
+				DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK,
+			},
 		},
 	}
+
+	p, _ := proto.Marshal(recurring.Recurring.DispatchStrategy)
+	dsHash := hex.EncodeToString(crypto.Hash(p))
 
 	require.NoError(t, eng.TransferFunds(ctx, recurring))
 
@@ -530,6 +546,10 @@ func TestRecurringTransfersSnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 	statePostReload, _, _ := snap.GetState(key)
 	require.True(t, bytes.Equal(state2, statePostReload))
+
+	require.NotNil(t, eng.GetDispatchStrategy(dsHash))
+	require.NotNil(t, snap.GetDispatchStrategy(dsHash))
+	require.Equal(t, eng.GetDispatchStrategy(dsHash), snap.GetDispatchStrategy(dsHash))
 }
 
 func TestRecurringGovTransfersSnapshotRoundTrip(t *testing.T) {
@@ -547,18 +567,34 @@ func TestRecurringGovTransfersSnapshotRoundTrip(t *testing.T) {
 
 	endEpoch := uint64(2)
 	transfer := &types.NewTransferConfiguration{
-		SourceType:              types.AccountTypeGlobalReward,
-		DestinationType:         types.AccountTypeGeneral,
-		Asset:                   "eth",
-		Source:                  "",
-		Destination:             "zohar",
-		TransferType:            vega.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
-		MaxAmount:               num.NewUint(10),
-		FractionOfBalance:       num.DecimalFromFloat(0.1),
-		Kind:                    types.TransferKindRecurring,
-		OneOffTransferConfig:    nil,
-		RecurringTransferConfig: &vega.RecurringTransfer{StartEpoch: 1, EndEpoch: &endEpoch},
+		SourceType:           types.AccountTypeGlobalReward,
+		DestinationType:      types.AccountTypeGeneral,
+		Asset:                "eth",
+		Source:               "",
+		Destination:          "zohar",
+		TransferType:         vega.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
+		MaxAmount:            num.NewUint(10),
+		FractionOfBalance:    num.DecimalFromFloat(0.1),
+		Kind:                 types.TransferKindRecurring,
+		OneOffTransferConfig: nil,
+		RecurringTransferConfig: &vega.RecurringTransfer{
+			StartEpoch: 1,
+			EndEpoch:   &endEpoch,
+			DispatchStrategy: &vega.DispatchStrategy{
+				AssetForMetric:       "zohar",
+				Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+				Markets:              []string{"mmm"},
+				EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+				IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
+				WindowLength:         1,
+				LockPeriod:           1,
+				DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK,
+			},
+		},
 	}
+
+	p, _ := proto.Marshal(transfer.RecurringTransferConfig.DispatchStrategy)
+	dsHash := hex.EncodeToString(crypto.Hash(p))
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 	require.NoError(t, e.NewGovernanceTransfer(ctx, "1", "some reference", transfer))
@@ -576,6 +612,10 @@ func TestRecurringGovTransfersSnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 	statePostReload, _, _ := snap.GetState(key)
 	require.True(t, bytes.Equal(state, statePostReload))
+
+	require.NotNil(t, e.GetDispatchStrategy(dsHash))
+	require.NotNil(t, snap.GetDispatchStrategy(dsHash))
+	require.Equal(t, e.GetDispatchStrategy(dsHash), snap.GetDispatchStrategy(dsHash))
 }
 
 func TestScheduledgGovTransfersSnapshotRoundTrip(t *testing.T) {

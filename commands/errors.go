@@ -58,8 +58,10 @@ var (
 	ErrMustBeEmpty                                     = errors.New("must be empty")
 	ErrMustBeGTEClampLowerBound                        = errors.New("must be greater than or equal to clamp lower bound")
 	ErrOneTimeTriggerAllowedMax                        = errors.New("maximum one time trigger allowed")
+	ErrMustBeBetween01                                 = errors.New("must be between 0 (excluded) and 1 (included)")
 	ErrMustBeGreaterThanEnactmentTimestamp             = errors.New("must be greater than proposal_submission.terms.enactment_timestamp")
 	ErrMustBeWithinRange1366                           = errors.New("must be between 1 and 366")
+	ErrMustBeAtMost500                                 = errors.New("must be at most 500")
 )
 
 type Errors map[string][]error

@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -41,21 +42,73 @@ func testInvalidDestForMetric(t *testing.T) {
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
 			types.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+			types.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
+			types.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
+			types.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING,
 		},
 		types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES: {
 			types.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
 			types.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+			types.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
+			types.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
+			types.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING,
 		},
 		types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES: {
 			types.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 			types.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+			types.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
+			types.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
+			types.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING,
 		},
 		types.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS: {
 			types.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
+			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+			types.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
+			types.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
+			types.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING,
+		},
+		types.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION: {
+			types.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
+			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
+			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
+			types.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+			types.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
+			types.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
+			types.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING,
+		},
+		types.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN: {
+			types.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
+			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
+			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
+			types.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+			types.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
+			types.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING,
+		},
+		types.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY: {
+			types.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
+			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
+			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
+			types.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+			types.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
+			types.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING,
+		},
+		types.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING: {
+			types.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
+			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
+			types.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
+			types.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+			types.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+			types.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
+			types.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY,
 		},
 	}
 
@@ -86,8 +139,7 @@ func testInvalidDestForMetric(t *testing.T) {
 					},
 				},
 			})
-
-			require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.dispatch_metric"), commands.ErrIsNotValid)
+			require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.dispatch_metric"), errors.New("cannot set toAccountType to "+tp.String()+" when dispatch metric is set to "+metric.String()))
 		}
 	}
 }
@@ -97,6 +149,9 @@ func testInvalidAssetForMetric(t *testing.T) {
 		types.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES,
 		types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES,
 		types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES,
+		types.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+		types.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN,
+		types.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY,
 	}
 
 	for _, inv := range invalidTypes {
@@ -124,7 +179,7 @@ func testInvalidAssetForMetric(t *testing.T) {
 			},
 		})
 
-		require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.asset_for_metric"), commands.ErrUnknownAsset)
+		require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.asset_for_metric"), commands.ErrIsRequired)
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
@@ -165,6 +220,11 @@ func testRecurringWithDispatchInvalidTypes(t *testing.T) {
 	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES)
 	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES)
 	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS)
+	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING)
+	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY)
+	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN)
+	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION)
+
 	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
 
 	for inv := range invalidTypes {
@@ -254,6 +314,10 @@ func testOneOffWithInvalidDestinationType(t *testing.T) {
 		types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES,
 		types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES,
 		types.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS,
+		types.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+		types.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN,
+		types.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY,
+		types.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING,
 	}
 
 	for _, dest := range dests {
@@ -393,6 +457,11 @@ func testNewTransferChangeSubmissionInvalidDestinationTypeFails(t *testing.T) {
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS))
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION))
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN))
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY))
+	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING))
+
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_UNSPECIFIED))
 
 	for at := range allAccountTypes {

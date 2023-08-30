@@ -207,18 +207,68 @@ message MultisigControl {
 
 message MarketTracker {
   repeated MarketActivityTracker market_activity = 1;
+  repeated TakerNotionalVolume taker_notional_volume = 2;
 }
 
 message MarketActivityTracker {
   string market = 1;
   string asset = 2;
+  // To be deprecated
   repeated PartyFees maker_fees_received = 3;
   repeated PartyFees maker_fees_paid = 4;
   repeated PartyFees lp_fees = 5;
+  // end deprecation
   string proposer = 6;
   repeated string bonus_paid = 7;
   string value_traded = 8;
   bool ready_to_delete = 9;
+
+  repeated PartyFeeData maker_fees_received_history = 10;
+  repeated PartyFeeData maker_fees_paid_history = 11;
+  repeated PartyFeeData lp_fees_history = 12;
+  repeated TWPositionData time_weighted_position_history = 13;
+  repeated ReturnsData returns_data = 14;
+  repeated TWNotionalPosition time_weighted_notional_position = 15;
+
+  DataWithHistory total_maker_fees_received = 16;
+  DataWithHistory total_maker_fees_paid = 17;
+  DataWithHistory total_lp_fees = 18;
+}
+
+message TakerNotionalVolume {
+  string party = 1;
+  string volume = 2;
+}
+
+message ReturnsData {
+  string party = 1;
+  DataWithHistory data = 2;
+}
+
+message TWNotionalPosition {
+  string party = 1;
+  string position = 2;
+  int64 time = 3;
+  string price = 4;
+  string tw_notional_position = 5;
+}
+
+message TWPositionData {
+  string party = 1;
+  string position = 2;
+  int64 time = 3;
+  DataWithHistory data = 4;
+}
+
+message DataWithHistory {
+  string running_total = 2;
+  repeated string previous_epochs = 3;
+  uint64 previous_epochs_index = 4;
+}
+
+message PartyFeeData {
+  string party = 1;
+  DataWithHistory data = 2;
 }
 
 message PartyFees {
