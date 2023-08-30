@@ -1665,7 +1665,7 @@ func (e *Engine) TransferFunds(
 		transfer, accType := allTransfers[i], allAccountTypes[i]
 		switch allTransfers[i].Type {
 		case types.TransferTypeInfrastructureFeePay:
-			req, err = e.getTransferFundsFeesTransferRequest(transfer, accType)
+			req, err = e.getTransferFundsFeesTransferRequest(ctx, transfer, accType)
 
 		case types.TransferTypeTransferFundsDistribute,
 			types.TransferTypeTransferFundsSend:
@@ -2329,8 +2329,6 @@ func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.T
 	)
 	switch t.Type {
 	case types.TransferTypeTransferFundsSend:
-		// as of now only general account are supported.
-		// soon we'll have some kind of staking account lock as well.
 		switch accountType {
 		case types.AccountTypeGeneral:
 			fromAcc, err = e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
@@ -2340,6 +2338,11 @@ func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.T
 				)
 			}
 
+			// we always pay onto the pending transfers accounts
+			toAcc = e.GetPendingTransfersAccount(t.Amount.Asset)
+
+		case types.AccountTypeVestedRewards:
+			fromAcc = e.GetOrCreatePartyVestedRewardAccount(ctx, t.Owner, t.Amount.Asset)
 			// we always pay onto the pending transfers accounts
 			toAcc = e.GetPendingTransfersAccount(t.Amount.Asset)
 
@@ -2404,7 +2407,7 @@ func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.T
 	}, nil
 }
 
-func (e *Engine) getTransferFundsFeesTransferRequest(t *types.Transfer, accountType types.AccountType) (*types.TransferRequest, error) {
+func (e *Engine) getTransferFundsFeesTransferRequest(ctx context.Context, t *types.Transfer, accountType types.AccountType) (*types.TransferRequest, error) {
 	// only type supported here
 	if t.Type != types.TransferTypeInfrastructureFeePay {
 		return nil, errors.New("only infrastructure fee distribute type supported")
@@ -2417,14 +2420,14 @@ func (e *Engine) getTransferFundsFeesTransferRequest(t *types.Transfer, accountT
 
 	switch accountType {
 	case types.AccountTypeGeneral:
-		// as of now only general account are supported.
-		// soon we'll have some kind of staking account lock as well.
 		fromAcc, err = e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
 		if err != nil {
 			return nil, fmt.Errorf("account does not exists: %v, %v, %v",
 				accountType, t.Owner, t.Amount.Asset,
 			)
 		}
+	case types.AccountTypeVestedRewards:
+		fromAcc = e.GetOrCreatePartyVestedRewardAccount(ctx, t.Owner, t.Amount.Asset)
 
 	default:
 		return nil, fmt.Errorf("unsupported from account for TransferFunds: %v", accountType.String())
