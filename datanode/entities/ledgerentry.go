@@ -131,6 +131,7 @@ const (
 	LedgerMovementTypeClearAccount            = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_CLEAR_ACCOUNT)
 	LedgerMovementTypePerpFundingWin          = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_PERPETUALS_FUNDING_WIN)
 	LedgerMovementTypePerpFundingLoss         = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS)
+	LedgerMovementTypeRewardsVested           = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_REWARDS_VESTED)
 )
 
 func (l LedgerMovementType) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {

@@ -72,6 +72,7 @@
 - [9219](https://github.com/vegaprotocol/vega/issues/9219) - Don't do `IPFS` garbage collection every segment
 - [9208](https://github.com/vegaprotocol/vega/issues/9208) - Refactor referral set and teams state
 - [9204](https://github.com/vegaprotocol/vega/issues/9204) - Ensure teams names are not duplicates
+- [9080](https://github.com/vegaprotocol/vega/issues/9080) - Add support for vested and vesting account in GraphQL
 
 ### 🐛 Fixes
 
