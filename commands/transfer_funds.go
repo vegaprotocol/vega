@@ -116,6 +116,18 @@ func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 					errs.AddForProperty("transfer.kind.factor", ErrMustBePositive)
 				}
 			}
+			if cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING {
+				if k.Recurring.DispatchStrategy == nil {
+					errs.AddForProperty("transfer.kind.dispatch_strategy", ErrIsRequired)
+				}
+			}
 			// dispatch strategy only makes sense for reward pools
 			if k.Recurring.DispatchStrategy != nil {
 				validateDispatchStrategy(cmd.ToAccountType, k.Recurring.DispatchStrategy, errs, "transfer.kind.dispatch_strategy", "transfer.account.to")
