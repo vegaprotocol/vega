@@ -891,7 +891,7 @@ type ComplexityRoot struct {
 		PerformanceHysteresisEpochs     func(childComplexity int) int
 		PriceRange                      func(childComplexity int) int
 		ProvidersFeeCalculationTimeStep func(childComplexity int) int
-		SLACompletionFactor             func(childComplexity int) int
+		SLACompetitionFactor             func(childComplexity int) int
 	}
 
 	LogNormalModelParams struct {
@@ -2391,7 +2391,7 @@ type LiquidityProvisionUpdateResolver interface {
 }
 type LiquiditySLAParametersResolver interface {
 	PerformanceHysteresisEpochs(ctx context.Context, obj *vega.LiquiditySLAParameters) (int, error)
-	SLACompletionFactor(ctx context.Context, obj *vega.LiquiditySLAParameters) (string, error)
+	SLACompetitionFactor(ctx context.Context, obj *vega.LiquiditySLAParameters) (string, error)
 }
 type MarginLevelsResolver interface {
 	Market(ctx context.Context, obj *vega.MarginLevels) (*vega.Market, error)
@@ -5816,12 +5816,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LiquiditySLAParameters.ProvidersFeeCalculationTimeStep(childComplexity), true
 
-	case "LiquiditySLAParameters.slaCompletionFactor":
-		if e.complexity.LiquiditySLAParameters.SLACompletionFactor == nil {
+	case "LiquiditySLAParameters.slaCompetitionFactor":
+		if e.complexity.LiquiditySLAParameters.SLACompetitionFactor == nil {
 			break
 		}
 
-		return e.complexity.LiquiditySLAParameters.SLACompletionFactor(childComplexity), true
+		return e.complexity.LiquiditySLAParameters.SLACompetitionFactor(childComplexity), true
 
 	case "LogNormalModelParams.mu":
 		if e.complexity.LogNormalModelParams.Mu == nil {
@@ -34316,8 +34316,8 @@ func (ec *executionContext) fieldContext_LiquiditySLAParameters_performanceHyste
 	return fc, nil
 }
 
-func (ec *executionContext) _LiquiditySLAParameters_slaCompletionFactor(ctx context.Context, field graphql.CollectedField, obj *vega.LiquiditySLAParameters) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_LiquiditySLAParameters_slaCompletionFactor(ctx, field)
+func (ec *executionContext) _LiquiditySLAParameters_slaCompetitionFactor(ctx context.Context, field graphql.CollectedField, obj *vega.LiquiditySLAParameters) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquiditySLAParameters_slaCompetitionFactor(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -34330,7 +34330,7 @@ func (ec *executionContext) _LiquiditySLAParameters_slaCompletionFactor(ctx cont
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.LiquiditySLAParameters().SLACompletionFactor(rctx, obj)
+		return ec.resolvers.LiquiditySLAParameters().SLACompetitionFactor(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -34347,7 +34347,7 @@ func (ec *executionContext) _LiquiditySLAParameters_slaCompletionFactor(ctx cont
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_LiquiditySLAParameters_slaCompletionFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_LiquiditySLAParameters_slaCompetitionFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LiquiditySLAParameters",
 		Field:      field,
@@ -37328,8 +37328,8 @@ func (ec *executionContext) fieldContext_Market_liquiditySLAParameters(ctx conte
 				return ec.fieldContext_LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx, field)
 			case "performanceHysteresisEpochs":
 				return ec.fieldContext_LiquiditySLAParameters_performanceHysteresisEpochs(ctx, field)
-			case "slaCompletionFactor":
-				return ec.fieldContext_LiquiditySLAParameters_slaCompletionFactor(ctx, field)
+			case "slaCompetitionFactor":
+				return ec.fieldContext_LiquiditySLAParameters_slaCompetitionFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LiquiditySLAParameters", field.Name)
 		},
@@ -42159,8 +42159,8 @@ func (ec *executionContext) fieldContext_NewSpotMarket_liquiditySLAParams(ctx co
 				return ec.fieldContext_LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx, field)
 			case "performanceHysteresisEpochs":
 				return ec.fieldContext_LiquiditySLAParameters_performanceHysteresisEpochs(ctx, field)
-			case "slaCompletionFactor":
-				return ec.fieldContext_LiquiditySLAParameters_slaCompletionFactor(ctx, field)
+			case "slaCompetitionFactor":
+				return ec.fieldContext_LiquiditySLAParameters_slaCompetitionFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LiquiditySLAParameters", field.Name)
 		},
@@ -74692,8 +74692,8 @@ func (ec *executionContext) fieldContext_UpdateSpotMarketConfiguration_liquidity
 				return ec.fieldContext_LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx, field)
 			case "performanceHysteresisEpochs":
 				return ec.fieldContext_LiquiditySLAParameters_performanceHysteresisEpochs(ctx, field)
-			case "slaCompletionFactor":
-				return ec.fieldContext_LiquiditySLAParameters_slaCompletionFactor(ctx, field)
+			case "slaCompetitionFactor":
+				return ec.fieldContext_LiquiditySLAParameters_slaCompetitionFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LiquiditySLAParameters", field.Name)
 		},
@@ -84811,7 +84811,7 @@ func (ec *executionContext) _LiquiditySLAParameters(ctx context.Context, sel ast
 				return innerFunc(ctx)
 
 			})
-		case "slaCompletionFactor":
+		case "slaCompetitionFactor":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -84820,7 +84820,7 @@ func (ec *executionContext) _LiquiditySLAParameters(ctx context.Context, sel ast
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._LiquiditySLAParameters_slaCompletionFactor(ctx, field, obj)
+				res = ec._LiquiditySLAParameters_slaCompetitionFactor(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
