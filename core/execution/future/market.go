@@ -2075,7 +2075,10 @@ func (m *Market) confirmMTM(ctx context.Context, skipMargin bool) {
 	settle := m.settlement.SettleMTM(ctx, mp, evts)
 
 	for _, t := range settle {
-		if t.Transfer() != nil && t.Transfer().Type == types.TransferTypeMTMWin {
+		if t.Transfer() != nil && (t.Transfer().Type == types.TransferTypeMTMWin ||
+			t.Transfer().Type == types.TransferTypeMTMLoss ||
+			t.Transfer().Type == types.TransferTypePerpFundingWin ||
+			t.Transfer().Type == types.TransferTypePerpFundingLoss) {
 			m.marketActivityTracker.RecordM2M(m.settlementAsset, t.Party(), t.Transfer().Market, t.Transfer().Amount.Amount.ToDecimal())
 		}
 	}
