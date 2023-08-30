@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
+	"time"
 
+	"code.vegaprotocol.io/vega/datanode/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/ipfs/kubo/config"
@@ -25,7 +27,8 @@ type Config struct {
 	// Without this there would be no way to isolate an environment if needed and process a given chains data (e.g. for dev)
 	SwarmKeyOverride string `description:"optional swarm key override, the default behaviour is to use the datanode's chain id'" long:"swarm-key-override"`
 
-	HistoryRetentionBlockSpan int64 `description:"the block span of history, from the most recent history segment, that should be retained" long:"history-retention-block-span"`
+	HistoryRetentionBlockSpan int64             `description:"the block span of history, from the most recent history segment, that should be retained" long:"history-retention-block-span"`
+	GarbageCollectionInterval encoding.Duration `description:"the interval at which garbage collection should be run"                                   long:"garbage-collection-interval"`
 }
 
 func NewDefaultConfig() Config {
@@ -44,6 +47,7 @@ func NewDefaultConfig() Config {
 		SwarmPort: 4001,
 
 		HistoryRetentionBlockSpan: 604800, // One week of history at 1s per block
+		GarbageCollectionInterval: encoding.Duration{Duration: 24 * time.Hour},
 	}
 }
 
