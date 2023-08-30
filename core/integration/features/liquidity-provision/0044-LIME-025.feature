@@ -58,6 +58,8 @@ Feature: Check early exit liquidity penalty is working
       | mark price | trading mode            | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
       | 1000       | TRADING_MODE_CONTINUOUS | 1000         | 1140           | 10            | 900                   | 1000             | 1100                    |
     
+
+    # Check we have a valid market with 2 LPs with the right amount of commitment
     When the network moves ahead "5" blocks
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status           |
@@ -65,6 +67,7 @@ Feature: Check early exit liquidity penalty is working
       | lp2 | party2 | ETH/DEC21 | 540               | STATUS_ACTIVE |
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
+    # Reduce the commitment of the first LP and make sure no-one gets penalised.
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | lp type     |
       | lp1 | party1 | ETH/DEC21 | 500               | 0.001 | amendment  |
@@ -75,6 +78,7 @@ Feature: Check early exit liquidity penalty is working
       | lp2 | party2 | ETH/DEC21 | 540               | STATUS_ACTIVE |
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
+    # Reduce the commitment of the second LP and check the insurance pool receives the right amount of penalty
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | lp type     |
       | lp2 | party2 | ETH/DEC21 | 440               | 0.001 | amendment  |
