@@ -784,12 +784,16 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMarketPartiesMaximumStopOrdersUpdate,
 		},
 		{
-			Param:   netparams.RewardVestingMinimumTransfer,
+			Param:   netparams.RewardsVestingMinimumTransfer,
 			Watcher: svcs.vesting.OnRewardVestingMinimumTransferUpdate,
 		},
 		{
 			Param:   netparams.RewardsVestingBaseRate,
 			Watcher: svcs.vesting.OnRewardVestingBaseRateUpdate,
+		},
+		{
+			Param:   netparams.RewardsVestingBonusMultiplier,
+			Watcher: svcs.vesting.OnBenefitTiersUpdate,
 		},
 		{
 			Param:   netparams.ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch,

@@ -1692,3 +1692,12 @@ message BenefitTier {
   // Proportion of the referee's taker fees to be discounted
   string referral_discount_factor = 4;
 }
+
+message VestingBenefitTiers {
+  repeated VestingBenefitTier tiers = 1;
+}
+
+message VestingBenefitTier {
+  string minimum_quantum_balance = 1;
+  string reward_multiplier = 2;
+}

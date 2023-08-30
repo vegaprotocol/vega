@@ -73,6 +73,9 @@
 - [9208](https://github.com/vegaprotocol/vega/issues/9208) - Refactor referral set and teams state
 - [9204](https://github.com/vegaprotocol/vega/issues/9204) - Ensure teams names are not duplicates
 - [9080](https://github.com/vegaprotocol/vega/issues/9080) - Add support for vested and vesting account in GraphQL
+- [9147](https://github.com/vegaprotocol/vega/issues/9147) - Add reward multiplier to vesting engine
+- [9234](https://github.com/vegaprotocol/vega/issues/9234) - Add support for transfers out of the vested account
+
 
 ### 🐛 Fixes
 
@@ -136,6 +139,7 @@
 - [9053](https://github.com/vegaprotocol/vega/issues/9053) - Handle settle market events in core positions plug-in.
 - [9189](https://github.com/vegaprotocol/vega/issues/9189) - Fix stop orders snapshots
 - [9198](https://github.com/vegaprotocol/vega/issues/9198) - Fix panic during LP amendment applications
+- [9203](https://github.com/vegaprotocol/vega/issues/9203) - Do not remove LPs from the parties map if they are an LP without an open position
 
 ## 0.72.1
 

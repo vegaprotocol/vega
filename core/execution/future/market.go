@@ -1380,9 +1380,10 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.MarketPosition) {
 	evts := make([]events.Event, 0, len(positions))
 	for _, pos := range positions {
+		party := pos.Party()
 		// if the party still have a position in the settlement engine,
 		// do not remove them for now
-		if m.settlement.HasPosition(pos.Party()) {
+		if m.settlement.HasPosition(party) {
 			continue
 		}
 
@@ -1393,7 +1394,7 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 		}
 
 		transfers, err := m.collateral.ClearPartyMarginAccount(
-			ctx, pos.Party(), m.GetID(), m.settlementAsset)
+			ctx, party, m.GetID(), m.settlementAsset)
 		if err != nil {
 			m.log.Error("unable to clear party margin account", logging.Error(err))
 			return
@@ -1406,7 +1407,10 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 		}
 
 		// we can delete the party from the map here
-		delete(m.parties, pos.Party())
+		// unless the party is an LP
+		if !m.liquidityEngine.IsLiquidityProvider(party) {
+			delete(m.parties, party)
+		}
 	}
 	m.broker.SendBatch(evts)
 }
