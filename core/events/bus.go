@@ -149,6 +149,7 @@ const (
 	ReferralProgramUpdatedEvent
 	ReferralSetCreatedEvent
 	RefereeJoinedReferralSetEvent
+	PartyActivityStreakEvent
 )
 
 var (
@@ -232,6 +233,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_UPDATED:         ReferralProgramUpdatedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_SET_CREATED:             ReferralSetCreatedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_REFERRAL_SET:      RefereeJoinedReferralSetEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_ACTIVITY_STREAK:            PartyActivityStreakEvent,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -306,6 +308,7 @@ var (
 		ReferralProgramUpdatedEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_UPDATED,
 		ReferralSetCreatedEvent:           eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_REFERRAL_SET,
 		RefereeJoinedReferralSetEvent:     eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_REFERRAL_SET,
+		PartyActivityStreakEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_ACTIVITY_STREAK,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -381,6 +384,7 @@ var (
 		ReferralProgramUpdatedEvent:       "ReferralProgramUpdatedEvent",
 		ReferralSetCreatedEvent:           "RefferralSetCreatedEvent",
 		RefereeJoinedReferralSetEvent:     "ReffereeJoinReferralSetEvent",
+		PartyActivityStreakEvent:          "PartyActivityStreakEvent",
 	}
 )
 

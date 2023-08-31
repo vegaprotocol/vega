@@ -36,7 +36,7 @@ type Collateral interface {
 }
 
 type ActivityStreakVestingMultiplier interface {
-	Get(party string) num.Decimal
+	GetRewardsVestingMultiplier(party string) num.Decimal
 }
 
 type Broker interface {
@@ -302,7 +302,7 @@ func (e *Engine) makeTransfer(
 	}
 
 	expectTransfer, _ := num.UintFromDecimal(
-		balance.ToDecimal().Mul(e.baseRate).Mul(e.asvm.Get(party)),
+		balance.ToDecimal().Mul(e.baseRate).Mul(e.asvm.GetRewardsVestingMultiplier(party)),
 	)
 
 	// now we see which is the largest between the minimumTransfer

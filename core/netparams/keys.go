@@ -224,6 +224,10 @@ const (
 	ReferralProgramMaxReferralDiscountFactor               = "referralProgram.maxReferralDiscountFactor"
 	ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch = "referralProgram.maxPartyNotionalVolumeByQuantumPerEpoch"
 	ReferralProgramMinStakedVegaTokens                     = "referralProgram.minStakedVegaTokens"
+
+	RewardsActivityStreakBenefitTiers          = "rewards.activityStreak.benefitTiers"
+	RewardsActivityStreakMinQuantumOpenVolume  = "rewards.activityStreak.minQuantumOpenVolume"
+	RewardsActivityStreakMinQuantumTradeVolume = "rewards.activityStreak.minQuantumTradeVolume"
 )
 
 var Deprecated = map[string]struct{}{
@@ -236,6 +240,9 @@ var AllKeys = map[string]struct{}{
 	MinEpochsInTeamForMetricRewardEligibility:                {},
 	RewardsVestingBonusMultiplier:                            {},
 	RewardsVestingMinimumTransfer:                            {},
+	RewardsActivityStreakBenefitTiers:                        {},
+	RewardsActivityStreakMinQuantumOpenVolume:                {},
+	RewardsActivityStreakMinQuantumTradeVolume:               {},
 	RewardsVestingBaseRate:                                   {},
 	SpotMarketTradingEnabled:                                 {},
 	PerpsMarketTradingEnabled:                                {},

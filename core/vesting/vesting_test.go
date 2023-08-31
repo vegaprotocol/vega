@@ -106,7 +106,7 @@ func TestDistributeAfterDelay(t *testing.T) {
 	v.OnRewardVestingMinimumTransferUpdate(context.Background(), num.MustDecimalFromString("1"))
 
 	// set the asvm to return always 1
-	v.asvm.EXPECT().Get(gomock.Any()).AnyTimes().Return(num.MustDecimalFromString("1"))
+	v.asvm.EXPECT().GetRewardsVestingMultiplier(gomock.Any()).AnyTimes().Return(num.MustDecimalFromString("1"))
 
 	// set asset to return proper quantum
 	v.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(dummyAsset{quantum: 10}), nil)
@@ -184,7 +184,7 @@ func TestDistributeWithNoDelay(t *testing.T) {
 	v.OnRewardVestingMinimumTransferUpdate(context.Background(), num.MustDecimalFromString("1"))
 
 	// set the asvm to return always 1
-	v.asvm.EXPECT().Get(gomock.Any()).AnyTimes().Return(num.MustDecimalFromString("1"))
+	v.asvm.EXPECT().GetRewardsVestingMultiplier(gomock.Any()).AnyTimes().Return(num.MustDecimalFromString("1"))
 
 	// set asset to return proper quantum
 	v.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(dummyAsset{quantum: 10}), nil)
@@ -252,7 +252,7 @@ func TestDistributeWithStreakRate(t *testing.T) {
 	v.OnRewardVestingMinimumTransferUpdate(context.Background(), num.MustDecimalFromString("1"))
 
 	// set the asvm to return always 1
-	v.asvm.EXPECT().Get(gomock.Any()).AnyTimes().Return(num.MustDecimalFromString("1.1"))
+	v.asvm.EXPECT().GetRewardsVestingMultiplier(gomock.Any()).AnyTimes().Return(num.MustDecimalFromString("1.1"))
 
 	// set asset to return proper quantum
 	v.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(dummyAsset{quantum: 10}), nil)
@@ -322,7 +322,7 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 	v.OnRewardVestingMinimumTransferUpdate(context.Background(), num.MustDecimalFromString("1"))
 
 	// set the asvm to return always 1
-	v.asvm.EXPECT().Get(gomock.Any()).AnyTimes().Return(num.MustDecimalFromString("1"))
+	v.asvm.EXPECT().GetRewardsVestingMultiplier(gomock.Any()).AnyTimes().Return(num.MustDecimalFromString("1"))
 
 	// set asset to return proper quantum
 	v.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(dummyAsset{quantum: 10}), nil)

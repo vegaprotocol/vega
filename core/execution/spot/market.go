@@ -250,6 +250,10 @@ func NewMarket(
 	return market, nil
 }
 
+func (m *Market) GetPartiesStats() *types.MarketStats {
+	return &types.MarketStats{}
+}
+
 func (m *Market) Update(ctx context.Context, config *types.Market) error {
 	config.TradingMode = m.mkt.TradingMode
 	config.State = m.mkt.State
