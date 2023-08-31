@@ -33,7 +33,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | market.value.windowLength                             | 60s   |
       | market.stake.target.timeWindow                        | 20s   |
       | market.stake.target.scalingFactor                     | 1     |
-      | market.liquidity.targetstake.triggering.ratio | 1 |
+      | market.liquidity.targetstake.triggering.ratio         | 1     |
       | network.markPriceUpdateMaximumFrequency               | 0s    |
       | limits.markets.maxPeggedOrders                        | 6     |
       | market.auction.minimumDuration                        | 1     |
@@ -106,12 +106,12 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
 
   Scenario: 002: lp1 and lp2 amend LP commitment
     Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount |
-      | lp1 | USD | 1000000 |
-      | lp2 | USD | 1000000 |
-      | party1 | USD   | 100000 |
-      | party2 | USD   | 100000 |
-      | party3 | USD   | 100000 |
+      | party  | asset | amount  |
+      | lp1    | USD   | 1000000 |
+      | lp2    | USD   | 1000000 |
+      | party1 | USD   | 100000  |
+      | party2 | USD   | 100000  |
+      | party3 | USD   | 100000  |
 
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee  | lp type    |
@@ -128,7 +128,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     Then the network moves ahead "2" blocks
     And the orders should have the following status:
       | party | reference | status        |
-      | lp1 | lp-b-1 | STATUS_PARKED |
+      | lp1   | lp-b-1    | STATUS_PARKED |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -141,8 +141,8 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     Then the opening auction period ends for market "ETH/MAR22"
 
     And the orders should have the following status:
-      | party | reference | status           |
-      | lp1 | lp-b-1 | STATUS_ACTIVE |
+      | party | reference | status        |
+      | lp1   | lp-b-1    | STATUS_ACTIVE |
 
     And the following trades should be executed:
       | buyer  | price | size | seller |
