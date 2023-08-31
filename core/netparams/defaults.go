@@ -302,6 +302,10 @@ func defaultNetParams() map[string]value {
 	// could just do 24 * 3600 * time.Second, but this is easier to read
 	maxFreq, _ := time.ParseDuration("24h")
 	m[MarkPriceUpdateMaximumFrequency].AddRules(DurationGTE(time.Duration(0)), DurationLTE(maxFreq))
+
+	m[MarketLiquidityV2ProvidersFeeCalculationTimeStep].AddRules(
+		DurationDependentLTE(ValidatorsEpochLength, m[ValidatorsEpochLength].(*Duration)),
+	)
 	return m
 }
 

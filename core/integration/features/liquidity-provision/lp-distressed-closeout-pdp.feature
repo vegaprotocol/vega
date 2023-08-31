@@ -28,7 +28,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5                    | 0                         | SLA        | 2                       |
     And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 10s   |
+      | market.liquidityV2.providersFeeCalculationTimeStep | 5s    |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | party0 | ETH   | 1721       |
@@ -161,7 +161,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | 1061       | TRADING_MODE_CONTINUOUS  | AUCTION_TRIGGER_UNSPECIFIED | 1803         | 1000           | 1700          |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 0      | 0       | 0    |
+      | party0 | ETH   | ETH/DEC21 | 0      | 3       | 0    |
     And the parties should have the following margin levels:
       | party  | market id | maintenance |
       | party0 | ETH/DEC21 | 0           |

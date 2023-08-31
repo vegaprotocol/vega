@@ -29,7 +29,7 @@ Feature: Simple test creating a perpetual market.
       | market.liquidityV2.bondPenaltyParameter            | 0.1      |
       | validators.epoch.length                            | 5s       |
       | limits.markets.maxPeggedOrders                     | 2        |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 255h0m0s |
+      | market.liquidityV2.providersFeeCalculationTimeStep | 5s |
 
     And the average block duration is "1"
 
