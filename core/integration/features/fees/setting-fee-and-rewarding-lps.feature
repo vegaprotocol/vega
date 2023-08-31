@@ -6,6 +6,15 @@ Feature: Test liquidity provider reward distribution
     Given the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 500         | 500           | 0.1                    |
+    And the following network parameters are set:
+      | name                                               | value |
+      | market.value.windowLength                          | 1h    |
+      | market.stake.target.timeWindow                     | 24h   |
+      | market.stake.target.scalingFactor                  | 1     |
+      | market.liquidity.targetstake.triggering.ratio      | 0     |
+      | network.markPriceUpdateMaximumFrequency            | 1s    |
+      | network.markPriceUpdateMaximumFrequency            | 0s    |
+      | limits.markets.maxPeggedOrders                     | 612   |
     And the log normal risk model named "lognormal-risk-model-1":
       | risk aversion | tau  | mu | r   | sigma |
       | 0.001         | 0.01 | 0  | 0.0 | 1.2   |
@@ -35,14 +44,7 @@ Feature: Test liquidity provider reward distribution
       | ETH/DEC22 | ETH        | ETH   | lognormal-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-2 | ethDec21Oracle     | 1e0                    | 1e0                       | SLA        |
     And the following network parameters are set:
       | name                                               | value |
-      | market.value.windowLength                          | 1h    |
-      | market.stake.target.timeWindow                     | 24h   |
-      | market.stake.target.scalingFactor                  | 1     |
-      | market.liquidity.targetstake.triggering.ratio      | 0     |
-      | network.markPriceUpdateMaximumFrequency            | 1s    |
-      | network.markPriceUpdateMaximumFrequency            | 0s    |
-      | limits.markets.maxPeggedOrders                     | 612   |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 600s   |
+      | market.liquidityV2.providersFeeCalculationTimeStep | 600s  |
     And the average block duration is "1"
 
 #   Scenario: 001, 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades

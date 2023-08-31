@@ -2,6 +2,20 @@ Feature: Simple example of successor markets
 
   Background:
     Given time is updated to "2019-11-30T00:00:00Z"
+    And the following network parameters are set:
+      | name                                                | value |
+      | network.markPriceUpdateMaximumFrequency             | 0s    |
+      | market.liquidity.targetstake.triggering.ratio       | 0.01  |
+      | market.stake.target.timeWindow                      | 10s   |
+      | market.stake.target.scalingFactor                   | 10    |
+      | market.auction.minimumDuration                      | 1     |
+      | market.fee.factors.infrastructureFee                | 0.001 |
+      | market.fee.factors.makerFee                         | 0.004 |
+      | market.value.windowLength                           | 60s   |
+      | market.liquidityV2.bondPenaltyParameter             | 0.1   |
+      | validators.epoch.length                             | 5s    |
+      | market.liquidityV2.stakeToCcyVolume                 | 0.2   |
+      | market.liquidity.successorLaunchWindowLength        | 1h    |
     And the following assets are registered:
       | id  | decimal places |
       | ETH | 0              |
@@ -30,21 +44,6 @@ Feature: Simple example of successor markets
       | property           | type         | binding             |
       | trading.terminated | TYPE_BOOLEAN | trading termination |
     And the settlement data decimals for the oracle named "ethDec20Oracle" is given in "5" decimal places
-
-    And the following network parameters are set:
-      | name                                                | value |
-      | network.markPriceUpdateMaximumFrequency             | 0s    |
-      | market.liquidity.targetstake.triggering.ratio       | 0.01  |
-      | market.stake.target.timeWindow                      | 10s   |
-      | market.stake.target.scalingFactor                   | 10    |
-      | market.auction.minimumDuration                      | 1     |
-      | market.fee.factors.infrastructureFee                | 0.001 |
-      | market.fee.factors.makerFee                         | 0.004 |
-      | market.value.windowLength                           | 60s   |
-      | market.liquidityV2.bondPenaltyParameter             | 0.1   |
-      | validators.epoch.length                             | 5s    |
-      | market.liquidityV2.stakeToCcyVolume                 | 0.2   |
-      | market.liquidity.successorLaunchWindowLength        | 1h    |
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 1                             | 1.0                    |
@@ -493,7 +492,7 @@ Feature: Simple example of successor markets
     And the markets:
       | id        | quote name | asset | risk model                | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params |
       | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1       | 1                | default-none | default-none     | ethDec19Oracle         | 0.1                    | 0                         | 0              | 0                       |                  |                         |                   | SLA        |
-      | ETH/DEC20 | ETH | USD | default-st-risk-model | default-margin-calculator | 1 | default-none | default-none | default-eth-for-future | 0.1 | 0 | 0 | 0 | ETH/DEC19 | 0.8 | 10 | SLA |
+      | ETH/DEC20 | ETH        | USD   | default-st-risk-model     | default-margin-calculator | 1 | default-none | default-none | default-eth-for-future | 0.1 | 0 | 0 | 0 | ETH/DEC19 | 0.8 | 10 | SLA |
     And the following network parameters are set:
       | name                                                | value |
       | market.liquidityV2.providersFeeCalculationTimeStep  | 20s   |

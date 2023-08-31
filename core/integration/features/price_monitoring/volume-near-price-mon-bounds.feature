@@ -14,8 +14,8 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the average block duration is "1"
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
 
 
   Scenario: first scenario for volume at near price monitoring bounds and simple-risk-model
@@ -32,6 +32,9 @@ Feature: Test margin for lp near price monitoring boundaries
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | SLA        |
+    And the following network parameters are set:
+      | name                                               | value |
+      | market.liquidityV2.providersFeeCalculationTimeStep | 600s  |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | lp1    | ETH   | 100000000 |
@@ -108,6 +111,9 @@ Feature: Test margin for lp near price monitoring boundaries
     And the markets:
       | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
       | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future | 1e6                    | 1e6                       | SLA        |
+    And the following network parameters are set:
+      | name                                               | value |
+      | market.liquidityV2.providersFeeCalculationTimeStep | 600s  |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | lp1    | ETH2  | 100000000 |

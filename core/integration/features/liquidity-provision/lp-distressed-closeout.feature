@@ -21,11 +21,14 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | horizon | probability | auction extension |
       | 1       | 0.99        | 5                 |
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 0.01        | 0.5                          | 10                                  | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 0.01        | 0.5                          | 1                             | 1.0                    |
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5                    | 0                         | SLA        |
+    And the following network parameters are set:
+      | name                                               | value |
+      | market.liquidityV2.providersFeeCalculationTimeStep | 10s   |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | party0 | ETH   | 1721       |

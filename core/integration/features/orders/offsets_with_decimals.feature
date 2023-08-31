@@ -27,8 +27,11 @@ Feature: Test how offsets are applied with decimals
             | 100000  | 0.99        | 3                 |
 
         And the liquidity sla params named "SLA":
-            | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-            | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
+            | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+            | 1.0         | 0.5                          | 1                             | 1.0                    |
+        And the following network parameters are set:
+            | name                                               | value |
+            | market.liquidityV2.providersFeeCalculationTimeStep | 660s  |
 
         And the markets:
             | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees         | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
