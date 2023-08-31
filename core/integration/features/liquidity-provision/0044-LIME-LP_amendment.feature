@@ -49,7 +49,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
 
     Given the average block duration is "2"
   @Now
-  Scenario: 001: lp1 and lp2 under supplies liquidity (and expects to get penalty for not meeting the SLA) since both have orders outside price range
+  Scenario: 001: lp1 and lp2 under supplies liquidity
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | lp1    | USD   | 100000 |
