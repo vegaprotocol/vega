@@ -56,10 +56,10 @@ Feature: Check not penalty if time on book amount is high enough
     And the auction ends with a traded volume of "10" at a price of "1000"
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1000         | 1000           | 10            | 999                   | 1000             | 1001                     |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1000         | 1000           | 10            | 999                   | 1000             | 1001                    |
 
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general  | bond |
+      | party  | asset | market id | margin  | general  | bond |
       | party1 | ETH   | ETH/DEC21 | 2402400 | 97596600 | 1000 |    
 
     # Move forward an epoch and make sure the accounts do not change as we have 5/5 blocks covered
@@ -68,7 +68,7 @@ Feature: Check not penalty if time on book amount is high enough
       | id  | party  | market    | commitment amount | status           |
       | lp1 | party1 | ETH/DEC21 | 1000              | STATUS_ACTIVE    |
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general  | bond |
+      | party  | asset | market id | margin  | general  | bond |
       | party1 | ETH   | ETH/DEC21 | 2402400 | 97596600 | 1000 |    
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
@@ -91,9 +91,9 @@ Feature: Check not penalty if time on book amount is high enough
     When the network moves ahead "7" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1000         | 810           | 10            | 900                   | 1000             | 1100                    |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1000         | 810            | 10            | 900                   | 1000             | 1100                    |
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general | bond |
-      | party1 | ETH   | ETH/DEC21 | 0    | 99999000  | 810 |    
+      | party  | asset | market id | margin | general  | bond |
+      | party1 | ETH   | ETH/DEC21 | 0      | 99999000 | 810  |    
     And the insurance pool balance should be "190" for the market "ETH/DEC21"
 
