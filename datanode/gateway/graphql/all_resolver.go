@@ -33,7 +33,7 @@ func (r *allResolver) getEpochByID(ctx context.Context, id uint64) (*types.Epoch
 	return resp.Epoch, err
 }
 
-func (r *allResolver) getOrderByID(ctx context.Context, id string, version *int) (*types.Order, error) {
+func (r *allResolver) getOrderByID(ctx context.Context, id string, version *int) (*v2.Order, error) {
 	v, err := convertVersion(version)
 	if err != nil {
 		r.log.Error("tradingCore client", logging.Error(err))

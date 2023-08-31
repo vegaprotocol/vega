@@ -36,7 +36,7 @@ type MarketDepth struct {
 	// Which market is this for
 	MarketID string
 	// All of the orders in the order book
-	LiveOrders map[string]*types.Order
+	LiveOrders map[string]*Order
 	// Just the buy side of the book
 	BuySide []*PriceLevel
 	// Just the sell side of the book
@@ -88,7 +88,7 @@ func (md *MarketDepth) ToProto(limit uint64) *vega.MarketDepth {
 	}
 }
 
-func (md *MarketDepth) AddOrderUpdate(order *types.Order) {
+func (md *MarketDepth) AddOrderUpdate(order *Order) {
 	// Do we know about this order already?
 	originalOrder := md.orderExists(order.ID)
 	if originalOrder != nil {
@@ -111,30 +111,41 @@ func (md *MarketDepth) AddOrderUpdate(order *types.Order) {
 	}
 }
 
-func (md *MarketDepth) orderExists(orderID string) *types.Order {
-	return md.LiveOrders[orderID]
+func (md *MarketDepth) orderExists(orderID OrderID) *Order {
+	return md.LiveOrders[orderID.String()]
 }
 
-func (md *MarketDepth) addOrder(order *types.Order) {
+func (md *MarketDepth) addOrder(order *Order) error {
 	// Cache the orderID
-	orderCopy := order.Clone()
-	md.LiveOrders[order.ID] = orderCopy
+	orderCopy := *order
+	md.LiveOrders[order.ID.String()] = &orderCopy
 
+	price, overflow := num.UintFromDecimal(order.Price)
+	if overflow {
+		return errors.New("invalid price: numeric overflow")
+	}
 	// Update the price level
-	pl := md.GetPriceLevel(order.Side, order.Price)
+	pl := md.GetPriceLevel(order.Side, price)
 
 	if pl == nil {
-		pl = md.createNewPriceLevel(order)
+		pl = md.createNewPriceLevel(order, price)
 	} else {
 		pl.TotalOrders++
 		pl.TotalVolume += order.TrueRemaining()
 	}
+
 	md.Changes = append(md.Changes, pl)
+	return nil
 }
 
-func (md *MarketDepth) removeOrder(order *types.Order) error {
+func (md *MarketDepth) removeOrder(order *Order) error {
+	price, overflow := num.UintFromDecimal(order.Price)
+	if overflow {
+		return errors.New("invalid price: numeric overflow")
+	}
+
 	// Find the price level
-	pl := md.GetPriceLevel(order.Side, order.Price)
+	pl := md.GetPriceLevel(order.Side, price)
 
 	if pl == nil {
 		return errors.New("unknown pricelevel")
@@ -151,23 +162,33 @@ func (md *MarketDepth) removeOrder(order *types.Order) error {
 	md.Changes = append(md.Changes, pl)
 
 	// Remove the orderID from the list of live orders
-	delete(md.LiveOrders, order.ID)
+	delete(md.LiveOrders, order.ID.String())
 	return nil
 }
 
-func (md *MarketDepth) updateOrder(originalOrder, newOrder *types.Order) {
+func (md *MarketDepth) updateOrder(originalOrder, newOrder *Order) {
+	originalPrice, overflow := num.UintFromDecimal(originalOrder.Price)
+	if overflow {
+		return
+	}
+
+	newPrice, overflow := num.UintFromDecimal(newOrder.Price)
+	if overflow {
+		return
+	}
+
 	// If the price is the same, we can update the original order
-	if originalOrder.Price.EQ(newOrder.Price) {
+	if originalPrice.EQ(newPrice) {
 		if newOrder.TrueRemaining() == 0 {
 			md.removeOrder(newOrder)
 		} else {
 			// Update
-			pl := md.GetPriceLevel(originalOrder.Side, originalOrder.Price)
+			pl := md.GetPriceLevel(originalOrder.Side, originalPrice)
 			pl.TotalVolume += newOrder.TrueRemaining() - originalOrder.TrueRemaining()
 			originalOrder.Remaining = newOrder.Remaining
-			if originalOrder.IcebergOrder != nil {
-				originalOrder.IcebergOrder = newOrder.IcebergOrder.Clone()
-			}
+			originalOrder.ReservedRemaining = newOrder.ReservedRemaining
+			originalOrder.PeakSize = newOrder.PeakSize
+			originalOrder.MinimumVisibleSize = newOrder.MinimumVisibleSize
 			originalOrder.Size = newOrder.Size
 			md.Changes = append(md.Changes, pl)
 		}
@@ -179,16 +200,16 @@ func (md *MarketDepth) updateOrder(originalOrder, newOrder *types.Order) {
 	}
 }
 
-func (md *MarketDepth) createNewPriceLevel(order *types.Order) *PriceLevel {
+func (md *MarketDepth) createNewPriceLevel(order *Order, price *num.Uint) *PriceLevel {
 	pl := &PriceLevel{
-		Price:       order.Price.Clone(),
+		Price:       price,
 		TotalOrders: 1,
 		TotalVolume: order.TrueRemaining(),
 		Side:        order.Side,
 	}
 
 	if order.Side == types.SideBuy {
-		index := sort.Search(len(md.BuySide), func(i int) bool { return md.BuySide[i].Price.LTE(order.Price) })
+		index := sort.Search(len(md.BuySide), func(i int) bool { return md.BuySide[i].Price.LTE(price) })
 		if index < len(md.BuySide) {
 			// We need to go midslice
 			md.BuySide = append(md.BuySide, nil)
@@ -199,7 +220,7 @@ func (md *MarketDepth) createNewPriceLevel(order *types.Order) *PriceLevel {
 			md.BuySide = append(md.BuySide, pl)
 		}
 	} else {
-		index := sort.Search(len(md.SellSide), func(i int) bool { return md.SellSide[i].Price.GTE(order.Price) })
+		index := sort.Search(len(md.SellSide), func(i int) bool { return md.SellSide[i].Price.GTE(price) })
 		if index < len(md.SellSide) {
 			// We need to go midslice
 			md.SellSide = append(md.SellSide, nil)
@@ -231,21 +252,26 @@ func (md *MarketDepth) GetPriceLevel(side types.Side, price *num.Uint) *PriceLev
 	return nil
 }
 
-func (md *MarketDepth) removePriceLevel(order *types.Order) {
+func (md *MarketDepth) removePriceLevel(order *Order) {
+	price, overflow := num.UintFromDecimal(order.Price)
+	if overflow {
+		return
+	}
+
 	var i int
 	if order.Side == types.SideBuy {
 		// buy side levels should be ordered in descending
-		i = sort.Search(len(md.BuySide), func(i int) bool { return md.BuySide[i].Price.LTE(order.Price) })
-		if i < len(md.BuySide) && md.BuySide[i].Price.EQ(order.Price) {
+		i = sort.Search(len(md.BuySide), func(i int) bool { return md.BuySide[i].Price.LTE(price) })
+		if i < len(md.BuySide) && md.BuySide[i].Price.EQ(price) {
 			copy(md.BuySide[i:], md.BuySide[i+1:])
 			md.BuySide[len(md.BuySide)-1] = nil
 			md.BuySide = md.BuySide[:len(md.BuySide)-1]
 		}
 	} else {
 		// sell side levels should be ordered in ascending
-		i = sort.Search(len(md.SellSide), func(i int) bool { return md.SellSide[i].Price.GTE(order.Price) })
+		i = sort.Search(len(md.SellSide), func(i int) bool { return md.SellSide[i].Price.GTE(price) })
 		// we found the level just return it.
-		if i < len(md.SellSide) && md.SellSide[i].Price.EQ(order.Price) {
+		if i < len(md.SellSide) && md.SellSide[i].Price.EQ(price) {
 			copy(md.SellSide[i:], md.SellSide[i+1:])
 			md.SellSide[len(md.SellSide)-1] = nil
 			md.SellSide = md.SellSide[:len(md.SellSide)-1]

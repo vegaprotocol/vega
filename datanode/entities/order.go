@@ -63,7 +63,7 @@ type Order struct {
 	MinimumVisibleSize *int64
 }
 
-func (o Order) ToProto() *vega.Order {
+func (o Order) ToProto() *v2.Order {
 	var peggedOrder *vega.PeggedOrder
 	if o.PeggedReference != types.PeggedReferenceUnspecified {
 		peggedOrder = &vega.PeggedOrder{
@@ -86,7 +86,7 @@ func (o Order) ToProto() *vega.Order {
 		}
 	}
 
-	vo := vega.Order{
+	vo := v2.Order{
 		Id:                   o.ID.String(),
 		MarketId:             o.MarketID.String(),
 		PartyId:              o.PartyID.String(),
@@ -109,6 +109,7 @@ func (o Order) ToProto() *vega.Order {
 		PostOnly:             o.PostOnly,
 		ReduceOnly:           o.ReduceOnly,
 		IcebergOrder:         icebergOrder,
+		TxId:                 o.TxHash.String(),
 	}
 	return &vo
 }
@@ -277,4 +278,17 @@ func (o Order) Cursor() *Cursor {
 	}
 
 	return NewCursor(cursor.String())
+}
+
+// TrueRemaining is the full remaining size of an order. If this is an iceberg order
+// it will return the visible peak + the hidden volume.
+// WARNING: This has been refactored from the types.Order struct which maps the vega.Order protobuf struct
+// we need to do this as we publish more information on the API than is presented internally from core
+// and this has been mapped so as not to break existing functionality in the market depth entity.
+func (o Order) TrueRemaining() uint64 {
+	var reservedRemaining uint64
+	if o.ReservedRemaining != nil {
+		reservedRemaining = uint64(*o.ReservedRemaining)
+	}
+	return uint64(o.Remaining) + reservedRemaining
 }

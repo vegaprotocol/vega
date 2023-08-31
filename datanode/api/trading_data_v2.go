@@ -2273,7 +2273,7 @@ func (t *TradingDataServiceV2) ObserveOrders(req *v2.ObserveOrdersRequest, srv v
 	}
 
 	return observeBatch(ctx, t.log, "Order", ordersChan, ref, func(orders []entities.Order) error {
-		protos := make([]*vega.Order, 0, len(orders))
+		protos := make([]*v2.Order, 0, len(orders))
 		for _, v := range orders {
 			protos = append(protos, v.ToProto())
 		}
@@ -2307,7 +2307,7 @@ func (t *TradingDataServiceV2) sendOrdersSnapshot(ctx context.Context, req *v2.O
 		return errors.New("orders initial image spans multiple pages")
 	}
 
-	protos := make([]*vega.Order, len(orders))
+	protos := make([]*v2.Order, len(orders))
 	for i := 0; i < len(orders); i++ {
 		protos[i] = orders[i].ToProto()
 	}
@@ -3675,7 +3675,7 @@ func (t *TradingDataServiceV2) ListEntities(ctx context.Context, req *v2.ListEnt
 	accounts := queryProtoEntities[*vega.Account](ctx, eg, txHash,
 		t.accountService.GetByTxHash, ErrAccountServiceGetByTxHash)
 
-	orders := queryProtoEntities[*vega.Order](ctx, eg, txHash,
+	orders := queryProtoEntities[*v2.Order](ctx, eg, txHash,
 		t.orderService.GetByTxHash, ErrOrderServiceGetByTxHash)
 
 	positions := queryProtoEntities[*vega.Position](ctx, eg, txHash,

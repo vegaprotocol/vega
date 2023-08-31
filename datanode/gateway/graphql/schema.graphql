@@ -2600,6 +2600,9 @@ type Order {
 
   "Details of an iceberg order"
   icebergOrder: IcebergOrder
+
+  "Transaction ID the order is associated with"
+  txId: ID!
 }
 
 union StopOrderTrigger = StopOrderPrice | StopOrderTrailingPercentOffset

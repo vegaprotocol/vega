@@ -34,18 +34,17 @@ func getTestMDS(t *testing.T) *service.MarketDepth {
 	return service.NewMarketDepth(nil, logging.NewTestLogger())
 }
 
-func buildOrder(id string, side types.Side, orderType types.OrderType, price uint64, size uint64, remaining uint64) *types.Order {
-	order := &types.Order{
-		ID:            id,
-		Side:          side,
-		Type:          orderType,
-		Price:         num.NewUint(price),
-		OriginalPrice: num.NewUint(price),
-		Size:          size,
-		Remaining:     remaining,
-		TimeInForce:   types.OrderTimeInForceGTC,
-		Status:        types.OrderStatusActive,
-		MarketID:      "M",
+func buildOrder(id string, side types.Side, orderType types.OrderType, price uint64, size int64, remaining int64) entities.Order {
+	order := entities.Order{
+		ID:          entities.OrderID(id),
+		Side:        side,
+		Type:        orderType,
+		Price:       num.DecimalFromUint(num.NewUint(price)),
+		Size:        size,
+		Remaining:   remaining,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Status:      types.OrderStatusActive,
+		MarketID:    "M",
 	}
 	return order
 }
@@ -138,9 +137,9 @@ func TestCancelOrder(t *testing.T) {
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
 	mds.AddOrder(order, vegaTime, 1)
 
-	cancelorder := *order
+	cancelorder := order
 	cancelorder.Status = types.OrderStatusCancelled
-	mds.AddOrder(&cancelorder, vegaTime, 2)
+	mds.AddOrder(cancelorder, vegaTime, 2)
 
 	assert.Equal(t, 0, mds.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
@@ -157,9 +156,9 @@ func TestStoppedOrder(t *testing.T) {
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
 	mds.AddOrder(order, vegaTime, 1)
 
-	cancelorder := *order
+	cancelorder := order
 	cancelorder.Status = types.OrderStatusStopped
-	mds.AddOrder(&cancelorder, vegaTime, 2)
+	mds.AddOrder(cancelorder, vegaTime, 2)
 
 	assert.Equal(t, 0, mds.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
@@ -176,9 +175,9 @@ func TestExpiredOrder(t *testing.T) {
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
 	mds.AddOrder(order, vegaTime, 1)
 
-	cancelorder := *order
+	cancelorder := order
 	cancelorder.Status = types.OrderStatusExpired
-	mds.AddOrder(&cancelorder, vegaTime, 2)
+	mds.AddOrder(cancelorder, vegaTime, 2)
 
 	assert.Equal(t, 0, mds.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
@@ -199,10 +198,9 @@ func TestAmendOrderPrice(t *testing.T) {
 	mds.AddOrder(order2, vegaTime, 2)
 
 	// Amend the price to force a change in price level
-	amendorder := *order
-	amendorder.Price = num.NewUint(90)
-	amendorder.OriginalPrice = num.NewUint(90)
-	mds.AddOrder(&amendorder, vegaTime, 3)
+	amendorder := order
+	amendorder.Price = num.DecimalFromInt64(90)
+	mds.AddOrder(amendorder, vegaTime, 3)
 
 	assert.Equal(t, 2, mds.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
@@ -221,10 +219,10 @@ func TestAmendOrderVolumeUp(t *testing.T) {
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
 	mds.AddOrder(order, vegaTime, 1)
 
-	amendorder := *order
+	amendorder := order
 	amendorder.Size = 20
 	amendorder.Remaining = 20
-	mds.AddOrder(&amendorder, vegaTime, 2)
+	mds.AddOrder(amendorder, vegaTime, 2)
 
 	assert.Equal(t, 1, mds.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
@@ -241,10 +239,10 @@ func TestAmendOrderVolumeDown(t *testing.T) {
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
 	mds.AddOrder(order, vegaTime, 1)
 
-	amendorder := *order
+	amendorder := order
 	amendorder.Size = 5
 	amendorder.Remaining = 5
-	mds.AddOrder(&amendorder, vegaTime, 2)
+	mds.AddOrder(amendorder, vegaTime, 2)
 
 	assert.Equal(t, 1, mds.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
@@ -261,10 +259,10 @@ func TestAmendOrderVolumeDownToZero(t *testing.T) {
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
 	mds.AddOrder(order, vegaTime, 1)
 
-	amendorder := *order
+	amendorder := order
 	amendorder.Size = 0
 	amendorder.Remaining = 0
-	mds.AddOrder(&amendorder, vegaTime, 2)
+	mds.AddOrder(amendorder, vegaTime, 2)
 
 	assert.Equal(t, 0, mds.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
@@ -281,9 +279,9 @@ func TestPartialFill(t *testing.T) {
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
 	mds.AddOrder(order, vegaTime, 1)
 
-	pforder := *order
+	pforder := order
 	pforder.Remaining = 5
-	mds.AddOrder(&pforder, vegaTime, 2)
+	mds.AddOrder(pforder, vegaTime, 2)
 
 	assert.Equal(t, 1, mds.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
@@ -317,10 +315,10 @@ func TestFullyFill(t *testing.T) {
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
 	mds.AddOrder(order, vegaTime, 1)
 
-	fforder := *order
+	fforder := order
 	fforder.Remaining = 0
 	fforder.Status = types.OrderStatusFilled
-	mds.AddOrder(&fforder, vegaTime, 2)
+	mds.AddOrder(fforder, vegaTime, 2)
 
 	assert.Equal(t, 0, mds.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mds.GetSellPriceLevels("M"))
@@ -509,12 +507,14 @@ func TestParkingOrder(t *testing.T) {
 
 	// Create a valid and live pegged order
 	order1 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 101, 10, 10)
-	order1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: num.NewUint(1)}
+	order1.PeggedOffset = num.DecimalFromInt64(1)
+	order1.PeggedReference = types.PeggedReferenceBestBid
 	mds.AddOrder(order1, vegaTime, 1)
 
 	// Park it
 	order2 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 0, 10, 10)
-	order2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: num.NewUint(1)}
+	order2.PeggedOffset = num.DecimalFromInt64(1)
+	order2.PeggedReference = types.PeggedReferenceBestBid
 	order2.Status = types.OrderStatusParked
 	mds.AddOrder(order2, vegaTime, 2)
 
@@ -527,7 +527,8 @@ func TestParkingOrder(t *testing.T) {
 
 	// Unpark it
 	order3 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 101, 10, 10)
-	order3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: num.NewUint(1)}
+	order3.PeggedOffset = num.DecimalFromInt64(1)
+	order3.PeggedReference = types.PeggedReferenceBestBid
 	order3.Status = types.OrderStatusActive
 	mds.AddOrder(order3, vegaTime, 3)
 
@@ -545,7 +546,8 @@ func TestParkedOrder(t *testing.T) {
 
 	// Create a parked pegged order which should not go on the depth book
 	order1 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 101, 10, 10)
-	order1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: num.NewUint(1)}
+	order1.PeggedOffset = num.DecimalFromInt64(1)
+	order1.PeggedReference = types.PeggedReferenceBestBid
 	order1.Status = types.OrderStatusParked
 	mds.AddOrder(order1, vegaTime, 1)
 
@@ -563,7 +565,8 @@ func TestParkedOrder2(t *testing.T) {
 
 	// Create parked pegged order
 	order1 := buildOrder("Pegged1", types.SideBuy, types.OrderTypeLimit, 0, 10, 10)
-	order1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: num.NewUint(1)}
+	order1.PeggedOffset = num.DecimalFromInt64(1)
+	order1.PeggedReference = types.PeggedReferenceBestBid
 	order1.Status = types.OrderStatusParked
 	mds.AddOrder(order1, vegaTime, 1)
 
@@ -573,7 +576,8 @@ func TestParkedOrder2(t *testing.T) {
 
 	// Unpark pegged order
 	order3 := buildOrder("Pegged1", types.SideBuy, types.OrderTypeLimit, 99, 10, 10)
-	order3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: num.NewUint(1)}
+	order3.PeggedOffset = num.DecimalFromInt64(1)
+	order3.PeggedReference = types.PeggedReferenceBestBid
 	order3.Status = types.OrderStatusActive
 	mds.AddOrder(order3, vegaTime, 3)
 
@@ -584,7 +588,8 @@ func TestParkedOrder2(t *testing.T) {
 
 	// Park pegged order
 	order5 := buildOrder("Pegged1", types.SideBuy, types.OrderTypeLimit, 99, 10, 10)
-	order5.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: num.NewUint(1)}
+	order5.PeggedOffset = num.DecimalFromInt64(1)
+	order5.PeggedReference = types.PeggedReferenceBestBid
 	order5.Status = types.OrderStatusParked
 	mds.AddOrder(order5, vegaTime, 5)
 
@@ -594,7 +599,8 @@ func TestParkedOrder2(t *testing.T) {
 
 	// Unpark pegged order
 	order7 := buildOrder("Pegged1", types.SideBuy, types.OrderTypeLimit, 99, 10, 10)
-	order7.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: num.NewUint(1)}
+	order7.PeggedOffset = num.DecimalFromInt64(1)
+	order7.PeggedReference = types.PeggedReferenceBestBid
 	order7.Status = types.OrderStatusActive
 	mds.AddOrder(order7, vegaTime, 7)
 
@@ -610,7 +616,8 @@ func TestParkedOrder2(t *testing.T) {
 
 	// Park pegged order
 	order10 := buildOrder("Pegged1", types.SideBuy, types.OrderTypeLimit, 99, 10, 10)
-	order10.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: num.NewUint(1)}
+	order10.PeggedOffset = num.DecimalFromInt64(1)
+	order10.PeggedReference = types.PeggedReferenceBestBid
 	order10.Status = types.OrderStatusParked
 	mds.AddOrder(order10, vegaTime, 10)
 

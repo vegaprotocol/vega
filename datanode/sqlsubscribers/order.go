@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/protos/vega"
 
@@ -25,7 +24,7 @@ import (
 )
 
 type MarketDepthService interface {
-	AddOrder(order *types.Order, vegaTime time.Time, sequenceNumber uint64)
+	AddOrder(order entities.Order, vegaTime time.Time, sequenceNumber uint64)
 	PublishAtEndOfBlock()
 }
 
@@ -97,11 +96,10 @@ func (os *Order) expired(ctx context.Context, eo ExpiredOrdersEvent, seqNum uint
 		o.TxHash = txHash
 
 		// to the depth service
-		torder, err := types.OrderFromProto(o.ToProto())
 		if err != nil {
 			panic(err)
 		}
-		os.depthService.AddOrder(torder, os.vegaTime, seqNum)
+		os.depthService.AddOrder(o, os.vegaTime, seqNum)
 
 		if err := os.store.Add(o); err != nil {
 			return errors.Wrap(os.store.Add(o), "adding order to database")
@@ -122,11 +120,10 @@ func (os *Order) consume(oe OrderEvent, seqNum uint64) error {
 	order.VegaTime = os.vegaTime
 
 	// then publish to the market depthService
-	torder, err := types.OrderFromProto(oe.Order())
 	if err != nil {
 		panic(err)
 	}
-	os.depthService.AddOrder(torder, os.vegaTime, seqNum)
+	os.depthService.AddOrder(order, os.vegaTime, seqNum)
 
 	return errors.Wrap(os.store.Add(order), "adding order to database")
 }

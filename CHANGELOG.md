@@ -80,6 +80,7 @@
 - [9214](https://github.com/vegaprotocol/vega/issues/9214) - Add staking tier on referral program
 - [9205](https://github.com/vegaprotocol/vega/issues/9205) - Ensure staking requirement when creating / joining referral sets
 
+- [9221](https://github.com/vegaprotocol/vega/issues/9221) - Add transaction ID to orders returned by the `API`
 
 ### 🐛 Fixes
 

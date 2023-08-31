@@ -553,7 +553,7 @@ func (r *aggregatedLedgerEntriesResolver) VegaTime(_ context.Context, obj *v2.Ag
 
 type myLiquidityOrderReferenceResolver VegaResolverRoot
 
-func (r *myLiquidityOrderReferenceResolver) Order(ctx context.Context, obj *vegapb.LiquidityOrderReference) (*vegapb.Order, error) {
+func (r *myLiquidityOrderReferenceResolver) Order(ctx context.Context, obj *vegapb.LiquidityOrderReference) (*v2.Order, error) {
 	if len(obj.OrderId) <= 0 {
 		return nil, nil
 	}
@@ -1153,7 +1153,7 @@ func (r *myQueryResolver) Party(ctx context.Context, name string) (*vegapb.Party
 	return getParty(ctx, r.log, r.tradingDataClientV2, name)
 }
 
-func (r *myQueryResolver) OrderByID(ctx context.Context, orderID string, version *int) (*vegapb.Order, error) {
+func (r *myQueryResolver) OrderByID(ctx context.Context, orderID string, version *int) (*v2.Order, error) {
 	return r.r.getOrderByID(ctx, orderID, version)
 }
 
@@ -1174,7 +1174,7 @@ func (r *myQueryResolver) OrderVersionsConnection(ctx context.Context, orderID *
 	return resp.Orders, nil
 }
 
-func (r *myQueryResolver) OrderByReference(ctx context.Context, reference string) (*vegapb.Order, error) {
+func (r *myQueryResolver) OrderByReference(ctx context.Context, reference string) (*v2.Order, error) {
 	req := &v2.ListOrdersRequest{
 		Filter: &v2.OrderFilter{
 			Reference: &reference,
@@ -1901,23 +1901,23 @@ func (r *myMarginLevelsResolver) MaintenanceLevel(_ context.Context, m *vegapb.M
 
 type myOrderUpdateResolver VegaResolverRoot
 
-func (r *myOrderUpdateResolver) Price(_ context.Context, obj *vegapb.Order) (string, error) {
+func (r *myOrderUpdateResolver) Price(_ context.Context, obj *v2.Order) (string, error) {
 	return obj.Price, nil
 }
 
-func (r *myOrderUpdateResolver) Size(_ context.Context, obj *vegapb.Order) (string, error) {
+func (r *myOrderUpdateResolver) Size(_ context.Context, obj *v2.Order) (string, error) {
 	return strconv.FormatUint(obj.Size, 10), nil
 }
 
-func (r *myOrderUpdateResolver) Remaining(_ context.Context, obj *vegapb.Order) (string, error) {
+func (r *myOrderUpdateResolver) Remaining(_ context.Context, obj *v2.Order) (string, error) {
 	return strconv.FormatUint(obj.Remaining, 10), nil
 }
 
-func (r *myOrderUpdateResolver) CreatedAt(_ context.Context, obj *vegapb.Order) (int64, error) {
+func (r *myOrderUpdateResolver) CreatedAt(_ context.Context, obj *v2.Order) (int64, error) {
 	return obj.CreatedAt, nil
 }
 
-func (r *myOrderUpdateResolver) UpdatedAt(_ context.Context, obj *vegapb.Order) (*int64, error) {
+func (r *myOrderUpdateResolver) UpdatedAt(_ context.Context, obj *v2.Order) (*int64, error) {
 	var updatedAt *int64
 	if obj.UpdatedAt > 0 {
 		t := obj.UpdatedAt
@@ -1926,11 +1926,11 @@ func (r *myOrderUpdateResolver) UpdatedAt(_ context.Context, obj *vegapb.Order) 
 	return updatedAt, nil
 }
 
-func (r *myOrderUpdateResolver) Version(_ context.Context, obj *vegapb.Order) (string, error) {
+func (r *myOrderUpdateResolver) Version(_ context.Context, obj *v2.Order) (string, error) {
 	return strconv.FormatUint(obj.Version, 10), nil
 }
 
-func (r *myOrderUpdateResolver) ExpiresAt(_ context.Context, obj *vegapb.Order) (*string, error) {
+func (r *myOrderUpdateResolver) ExpiresAt(_ context.Context, obj *v2.Order) (*string, error) {
 	if obj.ExpiresAt <= 0 {
 		return nil, nil
 	}
@@ -1938,7 +1938,7 @@ func (r *myOrderUpdateResolver) ExpiresAt(_ context.Context, obj *vegapb.Order) 
 	return &expiresAt, nil
 }
 
-func (r *myOrderUpdateResolver) RejectionReason(_ context.Context, o *vegapb.Order) (*vega.OrderError, error) {
+func (r *myOrderUpdateResolver) RejectionReason(_ context.Context, o *v2.Order) (*vega.OrderError, error) {
 	return o.Reason, nil
 }
 
@@ -1946,31 +1946,31 @@ func (r *myOrderUpdateResolver) RejectionReason(_ context.Context, o *vegapb.Ord
 
 type myOrderResolver VegaResolverRoot
 
-func (r *myOrderResolver) RejectionReason(_ context.Context, o *vegapb.Order) (*vega.OrderError, error) {
+func (r *myOrderResolver) RejectionReason(_ context.Context, o *v2.Order) (*vega.OrderError, error) {
 	return o.Reason, nil
 }
 
-func (r *myOrderResolver) Price(_ context.Context, obj *vegapb.Order) (string, error) {
+func (r *myOrderResolver) Price(_ context.Context, obj *v2.Order) (string, error) {
 	return obj.Price, nil
 }
 
-func (r *myOrderResolver) Market(ctx context.Context, obj *vegapb.Order) (*vegapb.Market, error) {
+func (r *myOrderResolver) Market(ctx context.Context, obj *v2.Order) (*vegapb.Market, error) {
 	return r.r.getMarketByID(ctx, obj.MarketId)
 }
 
-func (r *myOrderResolver) Size(_ context.Context, obj *vegapb.Order) (string, error) {
+func (r *myOrderResolver) Size(_ context.Context, obj *v2.Order) (string, error) {
 	return strconv.FormatUint(obj.Size, 10), nil
 }
 
-func (r *myOrderResolver) Remaining(_ context.Context, obj *vegapb.Order) (string, error) {
+func (r *myOrderResolver) Remaining(_ context.Context, obj *v2.Order) (string, error) {
 	return strconv.FormatUint(obj.Remaining, 10), nil
 }
 
-func (r *myOrderResolver) CreatedAt(_ context.Context, obj *vegapb.Order) (int64, error) {
+func (r *myOrderResolver) CreatedAt(_ context.Context, obj *v2.Order) (int64, error) {
 	return obj.CreatedAt, nil
 }
 
-func (r *myOrderResolver) UpdatedAt(_ context.Context, obj *vegapb.Order) (*int64, error) {
+func (r *myOrderResolver) UpdatedAt(_ context.Context, obj *v2.Order) (*int64, error) {
 	var updatedAt *int64
 	if obj.UpdatedAt > 0 {
 		t := obj.UpdatedAt
@@ -1979,11 +1979,11 @@ func (r *myOrderResolver) UpdatedAt(_ context.Context, obj *vegapb.Order) (*int6
 	return updatedAt, nil
 }
 
-func (r *myOrderResolver) Version(_ context.Context, obj *vegapb.Order) (string, error) {
+func (r *myOrderResolver) Version(_ context.Context, obj *v2.Order) (string, error) {
 	return strconv.FormatUint(obj.Version, 10), nil
 }
 
-func (r *myOrderResolver) ExpiresAt(_ context.Context, obj *vegapb.Order) (*string, error) {
+func (r *myOrderResolver) ExpiresAt(_ context.Context, obj *v2.Order) (*string, error) {
 	if obj.ExpiresAt <= 0 {
 		return nil, nil
 	}
@@ -1991,7 +1991,7 @@ func (r *myOrderResolver) ExpiresAt(_ context.Context, obj *vegapb.Order) (*stri
 	return &expiresAt, nil
 }
 
-func (r *myOrderResolver) TradesConnection(ctx context.Context, ord *vegapb.Order, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error) {
+func (r *myOrderResolver) TradesConnection(ctx context.Context, ord *v2.Order, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error) {
 	if ord == nil {
 		return nil, errors.New("nil order")
 	}
@@ -2008,7 +2008,7 @@ func (r *myOrderResolver) TradesConnection(ctx context.Context, ord *vegapb.Orde
 	return res.Trades, nil
 }
 
-func (r *myOrderResolver) Party(_ context.Context, order *vegapb.Order) (*vegapb.Party, error) {
+func (r *myOrderResolver) Party(_ context.Context, order *v2.Order) (*vegapb.Party, error) {
 	if order == nil {
 		return nil, errors.New("nil order")
 	}
@@ -2018,15 +2018,15 @@ func (r *myOrderResolver) Party(_ context.Context, order *vegapb.Order) (*vegapb
 	return &vegapb.Party{Id: order.PartyId}, nil
 }
 
-func (r *myOrderResolver) PeggedOrder(_ context.Context, order *vegapb.Order) (*vegapb.PeggedOrder, error) {
+func (r *myOrderResolver) PeggedOrder(_ context.Context, order *v2.Order) (*vegapb.PeggedOrder, error) {
 	return order.PeggedOrder, nil
 }
 
-func (r *myOrderResolver) IcebergOrder(_ context.Context, order *vegapb.Order) IcebergOrderResolver {
+func (r *myOrderResolver) IcebergOrder(_ context.Context, order *v2.Order) IcebergOrderResolver {
 	return (*icebergOrderResolver)(r)
 }
 
-func (r *myOrderResolver) LiquidityProvision(ctx context.Context, obj *vegapb.Order) (*vegapb.LiquidityProvision, error) {
+func (r *myOrderResolver) LiquidityProvision(ctx context.Context, obj *v2.Order) (*vegapb.LiquidityProvision, error) {
 	if obj == nil || len(obj.LiquidityProvisionId) <= 0 {
 		return nil, nil
 	}
@@ -2444,7 +2444,7 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Orders(ctx context.Context, filter *OrderByMarketAndPartyIdsFilter) (<-chan []*vegapb.Order, error) {
+func (r *mySubscriptionResolver) Orders(ctx context.Context, filter *OrderByMarketAndPartyIdsFilter) (<-chan []*v2.Order, error) {
 	req := &v2.ObserveOrdersRequest{}
 	if filter != nil {
 		req.MarketIds = filter.MarketIds
@@ -2456,7 +2456,7 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, filter *OrderByMark
 		return nil, err
 	}
 
-	c := make(chan []*vegapb.Order)
+	c := make(chan []*v2.Order)
 	sCtx := stream.Context()
 	go func() {
 		defer func() {
@@ -2475,7 +2475,7 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, filter *OrderByMark
 				r.log.Error("orders: stream closed", logging.Error(err))
 				break
 			}
-			orders := []*vegapb.Order{}
+			orders := []*v2.Order{}
 			if snapshot := o.GetSnapshot(); snapshot != nil {
 				orders = append(orders, snapshot.Orders...)
 			}

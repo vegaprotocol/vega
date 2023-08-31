@@ -1344,6 +1344,7 @@ type ComplexityRoot struct {
 		Status             func(childComplexity int) int
 		TimeInForce        func(childComplexity int) int
 		TradesConnection   func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
+		TxId               func(childComplexity int) int
 		Type               func(childComplexity int) int
 		UpdatedAt          func(childComplexity int) int
 		Version            func(childComplexity int) int
@@ -2374,7 +2375,7 @@ type LedgerEntryResolver interface {
 	ToAccountID(ctx context.Context, obj *vega.LedgerEntry) (*vega.AccountDetails, error)
 }
 type LiquidityOrderReferenceResolver interface {
-	Order(ctx context.Context, obj *vega.LiquidityOrderReference) (*vega.Order, error)
+	Order(ctx context.Context, obj *vega.LiquidityOrderReference) (*v2.Order, error)
 }
 type LiquidityProviderResolver interface {
 	FeeShare(ctx context.Context, obj *v2.LiquidityProvider) (*LiquidityProviderFeeShare, error)
@@ -2554,17 +2555,17 @@ type OracleSpecResolver interface {
 	DataConnection(ctx context.Context, obj *vega.OracleSpec, pagination *v2.Pagination) (*v2.OracleDataConnection, error)
 }
 type OrderResolver interface {
-	Market(ctx context.Context, obj *vega.Order) (*vega.Market, error)
-	Size(ctx context.Context, obj *vega.Order) (string, error)
-	Remaining(ctx context.Context, obj *vega.Order) (string, error)
-	Party(ctx context.Context, obj *vega.Order) (*vega.Party, error)
+	Market(ctx context.Context, obj *v2.Order) (*vega.Market, error)
+	Size(ctx context.Context, obj *v2.Order) (string, error)
+	Remaining(ctx context.Context, obj *v2.Order) (string, error)
+	Party(ctx context.Context, obj *v2.Order) (*vega.Party, error)
 
-	TradesConnection(ctx context.Context, obj *vega.Order, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error)
+	TradesConnection(ctx context.Context, obj *v2.Order, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error)
 
-	RejectionReason(ctx context.Context, obj *vega.Order) (*vega.OrderError, error)
-	Version(ctx context.Context, obj *vega.Order) (string, error)
+	RejectionReason(ctx context.Context, obj *v2.Order) (*vega.OrderError, error)
+	Version(ctx context.Context, obj *v2.Order) (string, error)
 
-	LiquidityProvision(ctx context.Context, obj *vega.Order) (*vega.LiquidityProvision, error)
+	LiquidityProvision(ctx context.Context, obj *v2.Order) (*vega.LiquidityProvision, error)
 }
 type OrderSubmissionResolver interface {
 	Size(ctx context.Context, obj *v11.OrderSubmission) (string, error)
@@ -2572,11 +2573,11 @@ type OrderSubmissionResolver interface {
 	IcebergOrder(ctx context.Context, obj *v11.OrderSubmission) (*vega.IcebergOrder, error)
 }
 type OrderUpdateResolver interface {
-	Size(ctx context.Context, obj *vega.Order) (string, error)
-	Remaining(ctx context.Context, obj *vega.Order) (string, error)
+	Size(ctx context.Context, obj *v2.Order) (string, error)
+	Remaining(ctx context.Context, obj *v2.Order) (string, error)
 
-	RejectionReason(ctx context.Context, obj *vega.Order) (*vega.OrderError, error)
-	Version(ctx context.Context, obj *vega.Order) (string, error)
+	RejectionReason(ctx context.Context, obj *v2.Order) (*vega.OrderError, error)
+	Version(ctx context.Context, obj *v2.Order) (string, error)
 }
 type PartyResolver interface {
 	OrdersConnection(ctx context.Context, obj *vega.Party, pagination *v2.Pagination, filter *OrderByMarketIdsFilter) (*v2.OrderConnection, error)
@@ -2706,8 +2707,8 @@ type QueryResolver interface {
 	OracleDataConnection(ctx context.Context, pagination *v2.Pagination) (*v2.OracleDataConnection, error)
 	OracleSpec(ctx context.Context, oracleSpecID string) (*vega.OracleSpec, error)
 	OracleSpecsConnection(ctx context.Context, pagination *v2.Pagination) (*v2.OracleSpecsConnection, error)
-	OrderByID(ctx context.Context, id string, version *int) (*vega.Order, error)
-	OrderByReference(ctx context.Context, reference string) (*vega.Order, error)
+	OrderByID(ctx context.Context, id string, version *int) (*v2.Order, error)
+	OrderByReference(ctx context.Context, reference string) (*v2.Order, error)
 	OrderVersionsConnection(ctx context.Context, orderID *string, pagination *v2.Pagination) (*v2.OrderConnection, error)
 	PartiesConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.PartyConnection, error)
 	Party(ctx context.Context, id string) (*vega.Party, error)
@@ -2804,7 +2805,7 @@ type StopOrderResolver interface {
 	MarketID(ctx context.Context, obj *v1.StopOrderEvent) (string, error)
 	Trigger(ctx context.Context, obj *v1.StopOrderEvent) (StopOrderTrigger, error)
 
-	Order(ctx context.Context, obj *v1.StopOrderEvent) (*vega.Order, error)
+	Order(ctx context.Context, obj *v1.StopOrderEvent) (*v2.Order, error)
 	RejectionReason(ctx context.Context, obj *v1.StopOrderEvent) (*vega.StopOrder_RejectionReason, error)
 }
 type SubscriptionResolver interface {
@@ -2816,7 +2817,7 @@ type SubscriptionResolver interface {
 	MarketsData(ctx context.Context, marketIds []string) (<-chan []*vega.MarketData, error)
 	MarketsDepth(ctx context.Context, marketIds []string) (<-chan []*vega.MarketDepth, error)
 	MarketsDepthUpdate(ctx context.Context, marketIds []string) (<-chan []*vega.MarketDepthUpdate, error)
-	Orders(ctx context.Context, filter *OrderByMarketAndPartyIdsFilter) (<-chan []*vega.Order, error)
+	Orders(ctx context.Context, filter *OrderByMarketAndPartyIdsFilter) (<-chan []*v2.Order, error)
 	Positions(ctx context.Context, partyID *string, marketID *string) (<-chan []*vega.Position, error)
 	Proposals(ctx context.Context, partyID *string) (<-chan *vega.GovernanceData, error)
 	Trades(ctx context.Context, marketID *string, partyID *string) (<-chan []*vega.Trade, error)
@@ -7918,6 +7919,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Order.TradesConnection(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination)), true
+
+	case "Order.txId":
+		if e.complexity.Order.TxId == nil {
+			break
+		}
+
+		return e.complexity.Order.TxId(childComplexity), true
 
 	case "Order.type":
 		if e.complexity.Order.Type == nil {
@@ -23805,9 +23813,9 @@ func (ec *executionContext) _Entities_orders(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*vega.Order)
+	res := resTmp.([]*v2.Order)
 	fc.Result = res
-	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx, field.Selections, res)
+	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Entities_orders(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -23862,6 +23870,8 @@ func (ec *executionContext) fieldContext_Entities_orders(ctx context.Context, fi
 				return ec.fieldContext_Order_reduceOnly(ctx, field)
 			case "icebergOrder":
 				return ec.fieldContext_Order_icebergOrder(ctx, field)
+			case "txId":
+				return ec.fieldContext_Order_txId(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -32061,9 +32071,9 @@ func (ec *executionContext) _LiquidityOrderReference_order(ctx context.Context, 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*vega.Order)
+	res := resTmp.(*v2.Order)
 	fc.Result = res
-	return ec.marshalOOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx, field.Selections, res)
+	return ec.marshalOOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_LiquidityOrderReference_order(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -32118,6 +32128,8 @@ func (ec *executionContext) fieldContext_LiquidityOrderReference_order(ctx conte
 				return ec.fieldContext_Order_reduceOnly(ctx, field)
 			case "icebergOrder":
 				return ec.fieldContext_Order_icebergOrder(ctx, field)
+			case "txId":
+				return ec.fieldContext_Order_txId(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -47512,7 +47524,7 @@ func (ec *executionContext) fieldContext_OracleSpecsConnection_pageInfo(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_id(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_id(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -47556,7 +47568,7 @@ func (ec *executionContext) fieldContext_Order_id(ctx context.Context, field gra
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_price(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_price(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_price(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -47600,7 +47612,7 @@ func (ec *executionContext) fieldContext_Order_price(ctx context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_timeInForce(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_timeInForce(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_timeInForce(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -47644,7 +47656,7 @@ func (ec *executionContext) fieldContext_Order_timeInForce(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_side(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_side(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_side(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -47688,7 +47700,7 @@ func (ec *executionContext) fieldContext_Order_side(ctx context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_market(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_market(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_market(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -47786,7 +47798,7 @@ func (ec *executionContext) fieldContext_Order_market(ctx context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_size(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_size(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_size(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -47830,7 +47842,7 @@ func (ec *executionContext) fieldContext_Order_size(ctx context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_remaining(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_remaining(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_remaining(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -47874,7 +47886,7 @@ func (ec *executionContext) fieldContext_Order_remaining(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_party(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_party(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_party(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -47952,7 +47964,7 @@ func (ec *executionContext) fieldContext_Order_party(ctx context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_createdAt(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_createdAt(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_createdAt(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -47996,7 +48008,7 @@ func (ec *executionContext) fieldContext_Order_createdAt(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_expiresAt(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_expiresAt(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_expiresAt(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -48037,7 +48049,7 @@ func (ec *executionContext) fieldContext_Order_expiresAt(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_status(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_status(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_status(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -48081,7 +48093,7 @@ func (ec *executionContext) fieldContext_Order_status(ctx context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_reference(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_reference(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_reference(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -48125,7 +48137,7 @@ func (ec *executionContext) fieldContext_Order_reference(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_tradesConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_tradesConnection(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_tradesConnection(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -48183,7 +48195,7 @@ func (ec *executionContext) fieldContext_Order_tradesConnection(ctx context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_type(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_type(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_type(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -48224,7 +48236,7 @@ func (ec *executionContext) fieldContext_Order_type(ctx context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_rejectionReason(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_rejectionReason(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_rejectionReason(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -48265,7 +48277,7 @@ func (ec *executionContext) fieldContext_Order_rejectionReason(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_version(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_version(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_version(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -48309,7 +48321,7 @@ func (ec *executionContext) fieldContext_Order_version(ctx context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_updatedAt(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_updatedAt(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_updatedAt(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -48350,7 +48362,7 @@ func (ec *executionContext) fieldContext_Order_updatedAt(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_peggedOrder(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_peggedOrder(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_peggedOrder(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -48397,7 +48409,7 @@ func (ec *executionContext) fieldContext_Order_peggedOrder(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_liquidityProvision(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_liquidityProvision(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_liquidityProvision(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -48464,7 +48476,7 @@ func (ec *executionContext) fieldContext_Order_liquidityProvision(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_postOnly(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_postOnly(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_postOnly(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -48505,7 +48517,7 @@ func (ec *executionContext) fieldContext_Order_postOnly(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_reduceOnly(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_reduceOnly(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_reduceOnly(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -48546,7 +48558,7 @@ func (ec *executionContext) fieldContext_Order_reduceOnly(ctx context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_icebergOrder(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_icebergOrder(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_icebergOrder(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -48590,6 +48602,50 @@ func (ec *executionContext) fieldContext_Order_icebergOrder(ctx context.Context,
 				return ec.fieldContext_IcebergOrder_reservedRemaining(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type IcebergOrder", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Order_txId(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Order_txId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TxId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Order_txId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Order",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -48719,9 +48775,9 @@ func (ec *executionContext) _OrderEdge_node(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*vega.Order)
+	res := resTmp.(*v2.Order)
 	fc.Result = res
-	return ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx, field.Selections, res)
+	return ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_OrderEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -48776,6 +48832,8 @@ func (ec *executionContext) fieldContext_OrderEdge_node(ctx context.Context, fie
 				return ec.fieldContext_Order_reduceOnly(ctx, field)
 			case "icebergOrder":
 				return ec.fieldContext_Order_icebergOrder(ctx, field)
+			case "txId":
+				return ec.fieldContext_Order_txId(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -49509,7 +49567,7 @@ func (ec *executionContext) fieldContext_OrderSubmission_icebergOrder(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _OrderUpdate_id(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderUpdate_id(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderUpdate_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -49553,7 +49611,7 @@ func (ec *executionContext) fieldContext_OrderUpdate_id(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _OrderUpdate_price(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderUpdate_price(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderUpdate_price(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -49597,7 +49655,7 @@ func (ec *executionContext) fieldContext_OrderUpdate_price(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _OrderUpdate_timeInForce(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderUpdate_timeInForce(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderUpdate_timeInForce(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -49641,7 +49699,7 @@ func (ec *executionContext) fieldContext_OrderUpdate_timeInForce(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _OrderUpdate_side(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderUpdate_side(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderUpdate_side(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -49685,7 +49743,7 @@ func (ec *executionContext) fieldContext_OrderUpdate_side(ctx context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _OrderUpdate_marketId(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderUpdate_marketId(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderUpdate_marketId(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -49729,7 +49787,7 @@ func (ec *executionContext) fieldContext_OrderUpdate_marketId(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _OrderUpdate_size(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderUpdate_size(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderUpdate_size(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -49773,7 +49831,7 @@ func (ec *executionContext) fieldContext_OrderUpdate_size(ctx context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _OrderUpdate_remaining(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderUpdate_remaining(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderUpdate_remaining(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -49817,7 +49875,7 @@ func (ec *executionContext) fieldContext_OrderUpdate_remaining(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _OrderUpdate_partyId(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderUpdate_partyId(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderUpdate_partyId(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -49861,7 +49919,7 @@ func (ec *executionContext) fieldContext_OrderUpdate_partyId(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _OrderUpdate_createdAt(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderUpdate_createdAt(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderUpdate_createdAt(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -49905,7 +49963,7 @@ func (ec *executionContext) fieldContext_OrderUpdate_createdAt(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _OrderUpdate_expiresAt(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderUpdate_expiresAt(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderUpdate_expiresAt(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -49946,7 +50004,7 @@ func (ec *executionContext) fieldContext_OrderUpdate_expiresAt(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _OrderUpdate_status(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderUpdate_status(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderUpdate_status(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -49990,7 +50048,7 @@ func (ec *executionContext) fieldContext_OrderUpdate_status(ctx context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _OrderUpdate_reference(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderUpdate_reference(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderUpdate_reference(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -50034,7 +50092,7 @@ func (ec *executionContext) fieldContext_OrderUpdate_reference(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _OrderUpdate_type(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderUpdate_type(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderUpdate_type(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -50075,7 +50133,7 @@ func (ec *executionContext) fieldContext_OrderUpdate_type(ctx context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _OrderUpdate_rejectionReason(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderUpdate_rejectionReason(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderUpdate_rejectionReason(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -50116,7 +50174,7 @@ func (ec *executionContext) fieldContext_OrderUpdate_rejectionReason(ctx context
 	return fc, nil
 }
 
-func (ec *executionContext) _OrderUpdate_version(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderUpdate_version(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderUpdate_version(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -50160,7 +50218,7 @@ func (ec *executionContext) fieldContext_OrderUpdate_version(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _OrderUpdate_updatedAt(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderUpdate_updatedAt(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderUpdate_updatedAt(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -50201,7 +50259,7 @@ func (ec *executionContext) fieldContext_OrderUpdate_updatedAt(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _OrderUpdate_peggedOrder(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderUpdate_peggedOrder(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderUpdate_peggedOrder(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -50248,7 +50306,7 @@ func (ec *executionContext) fieldContext_OrderUpdate_peggedOrder(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _OrderUpdate_liquidityProvisionId(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderUpdate_liquidityProvisionId(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderUpdate_liquidityProvisionId(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -50289,7 +50347,7 @@ func (ec *executionContext) fieldContext_OrderUpdate_liquidityProvisionId(ctx co
 	return fc, nil
 }
 
-func (ec *executionContext) _OrderUpdate_icebergOrder(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderUpdate_icebergOrder(ctx context.Context, field graphql.CollectedField, obj *v2.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderUpdate_icebergOrder(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -60259,9 +60317,9 @@ func (ec *executionContext) _Query_orderByID(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*vega.Order)
+	res := resTmp.(*v2.Order)
 	fc.Result = res
-	return ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx, field.Selections, res)
+	return ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_orderByID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -60316,6 +60374,8 @@ func (ec *executionContext) fieldContext_Query_orderByID(ctx context.Context, fi
 				return ec.fieldContext_Order_reduceOnly(ctx, field)
 			case "icebergOrder":
 				return ec.fieldContext_Order_icebergOrder(ctx, field)
+			case "txId":
+				return ec.fieldContext_Order_txId(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -60360,9 +60420,9 @@ func (ec *executionContext) _Query_orderByReference(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*vega.Order)
+	res := resTmp.(*v2.Order)
 	fc.Result = res
-	return ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx, field.Selections, res)
+	return ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_orderByReference(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -60417,6 +60477,8 @@ func (ec *executionContext) fieldContext_Query_orderByReference(ctx context.Cont
 				return ec.fieldContext_Order_reduceOnly(ctx, field)
 			case "icebergOrder":
 				return ec.fieldContext_Order_icebergOrder(ctx, field)
+			case "txId":
+				return ec.fieldContext_Order_txId(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -67275,9 +67337,9 @@ func (ec *executionContext) _StopOrder_order(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*vega.Order)
+	res := resTmp.(*v2.Order)
 	fc.Result = res
-	return ec.marshalOOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx, field.Selections, res)
+	return ec.marshalOOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_StopOrder_order(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -67332,6 +67394,8 @@ func (ec *executionContext) fieldContext_StopOrder_order(ctx context.Context, fi
 				return ec.fieldContext_Order_reduceOnly(ctx, field)
 			case "icebergOrder":
 				return ec.fieldContext_Order_icebergOrder(ctx, field)
+			case "txId":
+				return ec.fieldContext_Order_txId(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -68421,7 +68485,7 @@ func (ec *executionContext) _Subscription_orders(ctx context.Context, field grap
 	}
 	return func(ctx context.Context) graphql.Marshaler {
 		select {
-		case res, ok := <-resTmp.(<-chan []*vega.Order):
+		case res, ok := <-resTmp.(<-chan []*v2.Order):
 			if !ok {
 				return nil
 			}
@@ -68429,7 +68493,7 @@ func (ec *executionContext) _Subscription_orders(ctx context.Context, field grap
 				w.Write([]byte{'{'})
 				graphql.MarshalString(field.Alias).MarshalGQL(w)
 				w.Write([]byte{':'})
-				ec.marshalOOrderUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrderᚄ(ctx, field.Selections, res).MarshalGQL(w)
+				ec.marshalOOrderUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderᚄ(ctx, field.Selections, res).MarshalGQL(w)
 				w.Write([]byte{'}'})
 			})
 		case <-ctx.Done():
@@ -88930,7 +88994,7 @@ func (ec *executionContext) _OracleSpecsConnection(ctx context.Context, sel ast.
 
 var orderImplementors = []string{"Order"}
 
-func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, obj *vega.Order) graphql.Marshaler {
+func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, obj *v2.Order) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, orderImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -89166,6 +89230,13 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 
 			out.Values[i] = ec._Order_icebergOrder(ctx, field, obj)
 
+		case "txId":
+
+			out.Values[i] = ec._Order_txId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -89398,7 +89469,7 @@ func (ec *executionContext) _OrderSubmission(ctx context.Context, sel ast.Select
 
 var orderUpdateImplementors = []string{"OrderUpdate"}
 
-func (ec *executionContext) _OrderUpdate(ctx context.Context, sel ast.SelectionSet, obj *vega.Order) graphql.Marshaler {
+func (ec *executionContext) _OrderUpdate(ctx context.Context, sel ast.SelectionSet, obj *v2.Order) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, orderUpdateImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -100283,11 +100354,11 @@ func (ec *executionContext) marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋveg
 	return ec._OracleSpec(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNOrder2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx context.Context, sel ast.SelectionSet, v vega.Order) graphql.Marshaler {
+func (ec *executionContext) marshalNOrder2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrder(ctx context.Context, sel ast.SelectionSet, v v2.Order) graphql.Marshaler {
 	return ec._Order(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx context.Context, sel ast.SelectionSet, v *vega.Order) graphql.Marshaler {
+func (ec *executionContext) marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrder(ctx context.Context, sel ast.SelectionSet, v *v2.Order) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -100381,7 +100452,7 @@ func (ec *executionContext) marshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋ
 	return res
 }
 
-func (ec *executionContext) marshalNOrderUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx context.Context, sel ast.SelectionSet, v *vega.Order) graphql.Marshaler {
+func (ec *executionContext) marshalNOrderUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrder(ctx context.Context, sel ast.SelectionSet, v *v2.Order) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -104490,7 +104561,7 @@ func (ec *executionContext) marshalOOracleSpecsConnection2ᚖcodeᚗvegaprotocol
 	return ec._OracleSpecsConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx context.Context, sel ast.SelectionSet, v []*vega.Order) graphql.Marshaler {
+func (ec *executionContext) marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrder(ctx context.Context, sel ast.SelectionSet, v []*v2.Order) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -104517,7 +104588,7 @@ func (ec *executionContext) marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvega�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx, sel, v[i])
+			ret[i] = ec.marshalOOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrder(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -104531,7 +104602,7 @@ func (ec *executionContext) marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvega�
 	return ret
 }
 
-func (ec *executionContext) marshalOOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx context.Context, sel ast.SelectionSet, v *vega.Order) graphql.Marshaler {
+func (ec *executionContext) marshalOOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrder(ctx context.Context, sel ast.SelectionSet, v *v2.Order) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -104871,7 +104942,7 @@ func (ec *executionContext) marshalOOrderType2ᚕcodeᚗvegaprotocolᚗioᚋvega
 	return ret
 }
 
-func (ec *executionContext) marshalOOrderUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrderᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Order) graphql.Marshaler {
+func (ec *executionContext) marshalOOrderUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.Order) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -104898,7 +104969,7 @@ func (ec *executionContext) marshalOOrderUpdate2ᚕᚖcodeᚗvegaprotocolᚗio�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNOrderUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx, sel, v[i])
+			ret[i] = ec.marshalNOrderUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrder(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

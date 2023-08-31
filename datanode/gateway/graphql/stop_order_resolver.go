@@ -100,7 +100,7 @@ func (s stopOrderResolver) Trigger(_ context.Context, obj *eventspb.StopOrderEve
 	}
 }
 
-func (s stopOrderResolver) Order(ctx context.Context, obj *eventspb.StopOrderEvent) (*vega.Order, error) {
+func (s stopOrderResolver) Order(ctx context.Context, obj *eventspb.StopOrderEvent) (*v2.Order, error) {
 	// no order triggeerd yet
 	if len(obj.StopOrder.OrderId) <= 0 {
 		return nil, nil

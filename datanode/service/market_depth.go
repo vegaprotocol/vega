@@ -55,11 +55,7 @@ func (m *MarketDepth) Initialise(ctx context.Context) error {
 
 	// process the live orders and initialize market depths from database data
 	for _, liveOrder := range liveOrders {
-		order, err := types.OrderFromProto(liveOrder.ToProto())
-		if err != nil {
-			panic(err)
-		}
-		m.AddOrder(order, liveOrder.VegaTime, liveOrder.SeqNum)
+		m.AddOrder(liveOrder, liveOrder.VegaTime, liveOrder.SeqNum)
 	}
 
 	return nil
@@ -115,7 +111,7 @@ func (m *MarketDepth) publishChanges() {
 	}
 }
 
-func (m *MarketDepth) AddOrder(order *types.Order, vegaTime time.Time, sequenceNumber uint64) {
+func (m *MarketDepth) AddOrder(order entities.Order, vegaTime time.Time, sequenceNumber uint64) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -143,20 +139,22 @@ func (m *MarketDepth) AddOrder(order *types.Order, vegaTime time.Time, sequenceN
 
 	m.sequenceNumber = seqNum
 
+	marketID := order.MarketID.String()
+
 	// See if we already have a MarketDepth item for this market
-	md := m.marketDepths[order.MarketID]
+	md := m.marketDepths[marketID]
 	if md == nil {
 		// First time we have an update for this market
 		// so we need to create a new MarketDepth
 		md = &entities.MarketDepth{
-			MarketID:   order.MarketID,
-			LiveOrders: map[string]*types.Order{},
+			MarketID:   marketID,
+			LiveOrders: map[string]*entities.Order{},
 		}
 		md.SequenceNumber = m.sequenceNumber
-		m.marketDepths[order.MarketID] = md
+		m.marketDepths[marketID] = md
 	}
 
-	md.AddOrderUpdate(order)
+	md.AddOrderUpdate(&order)
 
 	md.SequenceNumber = m.sequenceNumber
 }
@@ -207,7 +205,7 @@ func (m *MarketDepth) ObserveDepthUpdates(ctx context.Context, retries int, mark
 /*                 FUNCTIONS TO HELP WITH UNIT TESTING                       */
 /*****************************************************************************/
 
-func (m *MarketDepth) GetAllOrders(market string) map[string]*types.Order {
+func (m *MarketDepth) GetAllOrders(market string) map[string]*entities.Order {
 	md := m.marketDepths[market]
 	if md != nil {
 		return md.LiveOrders

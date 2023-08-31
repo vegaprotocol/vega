@@ -120,11 +120,11 @@ models:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.StopOrderTriggerDirection
   Order:
-    model: code.vegaprotocol.io/vega/protos/vega.Order
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.Order
   OrderUpdate:
-    model: code.vegaprotocol.io/vega/protos/vega.Order
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.Order
   PaginatedOrder:
-    model: code.vegaprotocol.io/vega/protos/vega.Order
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.Order
   TradeUpdate:
     model: code.vegaprotocol.io/vega/protos/vega.Trade
   Trade:

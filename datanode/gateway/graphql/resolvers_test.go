@@ -1273,7 +1273,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	root.tradingDataClient.EXPECT().ListOrders(gomock.Any(), gomock.Any()).Times(1).Return(&v2.ListOrdersResponse{Orders: &v2.OrderConnection{
 		Edges: []*v2.OrderEdge{
 			{
-				Node: &protoTypes.Order{
+				Node: &v2.Order{
 					Id:        "order-id-1",
 					Price:     "1000",
 					CreatedAt: 1,
@@ -1281,7 +1281,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 				Cursor: "1",
 			},
 			{
-				Node: &protoTypes.Order{
+				Node: &v2.Order{
 					Id:        "order-id-2",
 					Price:     "2000",
 					CreatedAt: 2,
