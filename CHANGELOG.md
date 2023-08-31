@@ -156,6 +156,7 @@
 - [9198](https://github.com/vegaprotocol/vega/issues/9198) - Fix panic during LP amendment applications
 - [9196](https://github.com/vegaprotocol/vega/issues/9196) - `API` documentation should specify the time format.
 - [9203](https://github.com/vegaprotocol/vega/issues/9203) - Do not remove LPs from the parties map if they are an LP without an open position
+- [9202](https://github.com/vegaprotocol/vega/issues/9202) - Fix `ELS` not calculated when leaving opening auction.
 
 ## 0.72.1
 
