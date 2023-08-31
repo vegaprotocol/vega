@@ -13,6 +13,7 @@
 package referral_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -32,8 +33,11 @@ func TestReferralSet(t *testing.T) {
 	ctx := vgtest.VegaContext(vgrand.RandomStr(5), vgtest.RandomI64())
 
 	setID := newSetID(t)
+	setID2 := newSetID(t)
 	referrer := newPartyID(t)
+	referrer2 := newPartyID(t)
 	referee1 := newPartyID(t)
+	te.engine.OnReferralProgramMinStakedVegaTokensUpdate(context.Background(), num.NewUint(100))
 
 	t.Run("querying for a non existing set return false", func(t *testing.T) {
 		require.False(t, te.engine.SetExists(setID))
@@ -44,7 +48,15 @@ func TestReferralSet(t *testing.T) {
 		assert.EqualError(t, err, referral.ErrUnknownReferralCode(setID).Error())
 	})
 
+	t.Run("cannot create a set for the first time without enough staking balance", func(t *testing.T) {
+		te.staking.EXPECT().GetAvailableBalance(string(referrer)).Times(1).Return(num.NewUint(99), nil)
+		assert.EqualError(t, te.engine.CreateReferralSet(ctx, referrer, setID),
+			referral.ErrNotEligibleForReferralRewards(string(referrer), num.NewUint(99), num.NewUint(100)).Error(),
+		)
+	})
+
 	t.Run("can create a set for the first time", func(t *testing.T) {
+		te.staking.EXPECT().GetAvailableBalance(string(referrer)).Times(1).Return(num.NewUint(100), nil)
 		te.broker.EXPECT().Send(gomock.Any()).Times(1)
 		te.timeSvc.EXPECT().GetTimeNow().Times(1)
 		assert.NoError(t, te.engine.CreateReferralSet(ctx, referrer, setID))
@@ -68,10 +80,31 @@ func TestReferralSet(t *testing.T) {
 		)
 	})
 
-	t.Run("cannot become a referee twice", func(t *testing.T) {
+	t.Run("cannot become a referee twice for the same set", func(t *testing.T) {
 		assert.EqualError(t, te.engine.ApplyReferralCode(ctx, referee1, setID),
 			referral.ErrIsAlreadyAReferee(referee1).Error(),
 		)
+	})
+
+	t.Run("can create a second referrer", func(t *testing.T) {
+		te.staking.EXPECT().GetAvailableBalance(string(referrer2)).Times(1).Return(num.NewUint(100), nil)
+		te.broker.EXPECT().Send(gomock.Any()).Times(1)
+		te.timeSvc.EXPECT().GetTimeNow().Times(1)
+		assert.NoError(t, te.engine.CreateReferralSet(ctx, referrer2, setID2))
+	})
+
+	t.Run("cannot switch set if initial set still have an OK staking balance", func(t *testing.T) {
+		te.staking.EXPECT().GetAvailableBalance(string(referrer)).Times(1).Return(num.NewUint(100), nil)
+		assert.EqualError(t, te.engine.ApplyReferralCode(ctx, referee1, setID2),
+			referral.ErrIsAlreadyAReferee(referee1).Error(),
+		)
+	})
+
+	t.Run("can switch set if initial set have an insufficient staking balance", func(t *testing.T) {
+		te.staking.EXPECT().GetAvailableBalance(string(referrer)).Times(1).Return(num.NewUint(99), nil)
+		te.broker.EXPECT().Send(gomock.Any()).Times(1)
+		te.timeSvc.EXPECT().GetTimeNow().Times(1)
+		assert.NoError(t, te.engine.ApplyReferralCode(ctx, referee1, setID2))
 	})
 }
 
@@ -182,6 +215,7 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	ctx := vgtest.VegaContext(vgrand.RandomStr(5), vgtest.RandomI64())
 
 	te := newEngine(t)
+	te.engine.OnReferralProgramMinStakedVegaTokensUpdate(context.Background(), num.NewUint(100))
 
 	setID1 := newSetID(t)
 	setID2 := newSetID(t)
@@ -223,6 +257,10 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 
 	te.broker.EXPECT().Send(gomock.Any()).Times(3)
 	te.timeSvc.EXPECT().GetTimeNow().Return(time.Now()).Times(3)
+
+	te.staking.EXPECT().GetAvailableBalance(string(referrer1)).AnyTimes().Return(num.NewUint(100), nil)
+	te.staking.EXPECT().GetAvailableBalance(string(referrer2)).AnyTimes().Return(num.NewUint(100), nil)
+
 	assert.NoError(t, te.engine.CreateReferralSet(ctx, referrer1, setID1))
 	assert.NoError(t, te.engine.CreateReferralSet(ctx, referrer2, setID2))
 	assert.NoError(t, te.engine.ApplyReferralCode(ctx, referee1, setID1))

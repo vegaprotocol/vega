@@ -211,9 +211,9 @@ func (e *SnapshottedEngine) buildHashKeys() {
 	e.hashKeys = append([]string{}, e.currentProgramKey, e.newProgramKey, e.referralSetsKey)
 }
 
-func NewSnapshottedEngine(broker Broker, timeSvc TimeService, mat MarketActivityTracker) *SnapshottedEngine {
+func NewSnapshottedEngine(broker Broker, timeSvc TimeService, mat MarketActivityTracker, staking StakingBalances) *SnapshottedEngine {
 	se := &SnapshottedEngine{
-		Engine:  NewEngine(broker, timeSvc, mat),
+		Engine:  NewEngine(broker, timeSvc, mat, staking),
 		pl:      types.Payload{},
 		stopped: false,
 	}

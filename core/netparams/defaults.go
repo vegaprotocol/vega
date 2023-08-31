@@ -277,7 +277,7 @@ func defaultNetParams() map[string]value {
 		ReferralProgramMaxReferralRewardFactor:                 NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
 		ReferralProgramMaxReferralDiscountFactor:               NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
 		ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch: NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("0"),
-		ReferralProgramMinStakedVegaTokens:                     NewDecimal(gteD1).Mutable(true).MustUpdate("1e18"),
+		ReferralProgramMinStakedVegaTokens:                     NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("1000000000000000000"),
 	}
 
 	// add additional cross net param rules

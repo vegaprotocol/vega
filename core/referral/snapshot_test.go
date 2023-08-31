@@ -42,6 +42,7 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 
 	// Cap the notional volume.
 	require.NoError(t, te1.engine.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate(ctx, maxVolumeParams))
+	require.NoError(t, te1.engine.OnReferralProgramMinStakedVegaTokensUpdate(ctx, num.NewUint(100)))
 
 	referrer1 := newPartyID(t)
 	referrer2 := newPartyID(t)
@@ -59,6 +60,7 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 
 	te1.broker.EXPECT().Send(gomock.Any()).Times(13)
 	te1.timeSvc.EXPECT().GetTimeNow().Return(now).Times(13)
+	te1.staking.EXPECT().GetAvailableBalance(gomock.Any()).AnyTimes().Return(num.NewUint(100), nil)
 
 	assert.NoError(t, te1.engine.CreateReferralSet(ctx, referrer1, "id1"))
 	assert.NoError(t, te1.engine.CreateReferralSet(ctx, referrer2, "id2"))

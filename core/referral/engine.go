@@ -14,6 +14,7 @@ package referral
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -38,6 +39,12 @@ var (
 	ErrUnknownReferralCode = func(code types.ReferralSetID) error {
 		return fmt.Errorf("no referral set for referral code %q", code)
 	}
+
+	ErrNotEligibleForReferralRewards = func(party string, balance, required *num.Uint) error {
+		return fmt.Errorf("%v not eligible for referral rewards, staking balance required of %s got %s", party, required.String(), balance.String())
+	}
+
+	ErrNotAValidSetID = errors.New("not a valid set ID")
 )
 
 type Engine struct {
@@ -46,10 +53,13 @@ type Engine struct {
 	timeSvc               TimeService
 
 	currentEpoch uint64
+	staking      StakingBalances
 
 	// referralSetsNotionalVolumes tracks the notional volumes per teams. Each
 	// element of the num.Uint array is an epoch.
 	referralSetsNotionalVolumes *runningVolumes
+
+	referralProgramMinStakedVegaTokens *num.Uint
 
 	// latestProgramVersion tracks the latest version of the program. It used to
 	// value any new program that comes in. It starts at 1.
@@ -89,6 +99,10 @@ func (e *Engine) CreateReferralSet(ctx context.Context, party types.PartyID, det
 		return ErrIsAlreadyAReferee(party)
 	}
 
+	if err := e.isPartyEligible(string(party)); err != nil {
+		return err
+	}
+
 	now := e.timeSvc.GetTimeNow()
 
 	newSet := types.ReferralSet{
@@ -111,12 +125,20 @@ func (e *Engine) CreateReferralSet(ctx context.Context, party types.PartyID, det
 }
 
 func (e *Engine) ApplyReferralCode(ctx context.Context, party types.PartyID, setID types.ReferralSetID) error {
-	if _, ok := e.referees[party]; ok {
-		return ErrIsAlreadyAReferee(party)
-	}
-
 	if _, ok := e.referrers[party]; ok {
 		return ErrIsAlreadyAReferrer(party)
+	}
+
+	var (
+		isSwitching bool
+		prevSet     types.ReferralSetID
+		ok          bool
+	)
+	if prevSet, ok = e.referees[party]; ok {
+		isSwitching = e.canSwitchReferralSet(party, setID)
+		if !isSwitching {
+			return ErrIsAlreadyAReferee(party)
+		}
 	}
 
 	set, ok := e.sets[setID]
@@ -139,7 +161,25 @@ func (e *Engine) ApplyReferralCode(ctx context.Context, party types.PartyID, set
 
 	e.broker.Send(events.NewRefereeJoinedReferralSetEvent(ctx, setID, membership))
 
+	if isSwitching {
+		e.removeFromSet(party, prevSet)
+	}
+
 	return nil
+}
+
+func (e *Engine) removeFromSet(party types.PartyID, prevSet types.ReferralSetID) {
+	set := e.sets[prevSet]
+
+	var idx int
+	for i, r := range set.Referees {
+		if r.PartyID == party {
+			idx = i
+			break
+		}
+	}
+
+	set.Referees = append(set.Referees[:idx], set.Referees[idx+1:]...)
 }
 
 func (e *Engine) UpdateProgram(newProgram *types.ReferralProgram) {
@@ -160,6 +200,10 @@ func (e *Engine) RewardsFactorForParty(party types.PartyID) num.Decimal {
 	setID, isReferrer := e.referrers[party]
 	if !isReferrer {
 		// This party is not eligible to referral program rewards.
+		return num.DecimalZero()
+	}
+
+	if e.isSetEligible(setID) != nil {
 		return num.DecimalZero()
 	}
 
@@ -209,6 +253,11 @@ func (e *Engine) DiscountFactorForParty(party types.PartyID) num.Decimal {
 	}
 
 	return num.DecimalZero()
+}
+
+func (e *Engine) OnReferralProgramMinStakedVegaTokensUpdate(_ context.Context, value *num.Uint) error {
+	e.referralProgramMinStakedVegaTokens = value
+	return nil
 }
 
 func (e *Engine) OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate(_ context.Context, value *num.Uint) error {
@@ -368,7 +417,43 @@ func (e *Engine) computeReferralSetsNotionalRunningVolume(epoch types.Epoch) {
 	}
 }
 
-func NewEngine(broker Broker, timeSvc TimeService, mat MarketActivityTracker) *Engine {
+func (e *Engine) isSetEligible(setID types.ReferralSetID) error {
+	set, ok := e.sets[setID]
+	if !ok {
+		return ErrNotAValidSetID
+	}
+
+	return e.isPartyEligible(string(set.Referrer.PartyID))
+}
+
+func (e *Engine) canSwitchReferralSet(party types.PartyID, newSet types.ReferralSetID) bool {
+	// first get the current set and check if it's the same
+	currentSet := e.referees[party]
+	if currentSet == newSet {
+		return false
+	}
+
+	// if the current set is not eligible for rewards,
+	// then we can switch
+	if e.isSetEligible(currentSet) != nil {
+		return true
+	}
+
+	return false
+}
+
+func (e *Engine) isPartyEligible(party string) error {
+	// ignore error, function returns zero balance anyway
+	balance, _ := e.staking.GetAvailableBalance(party)
+
+	if balance.GTE(e.referralProgramMinStakedVegaTokens) {
+		return nil
+	}
+
+	return ErrNotEligibleForReferralRewards(party, balance, e.referralProgramMinStakedVegaTokens)
+}
+
+func NewEngine(broker Broker, timeSvc TimeService, mat MarketActivityTracker, staking StakingBalances) *Engine {
 	engine := &Engine{
 		broker:                broker,
 		timeSvc:               timeSvc,
@@ -383,6 +468,7 @@ func NewEngine(broker Broker, timeSvc TimeService, mat MarketActivityTracker) *E
 		sets:      map[types.ReferralSetID]*types.ReferralSet{},
 		referrers: map[types.PartyID]types.ReferralSetID{},
 		referees:  map[types.PartyID]types.ReferralSetID{},
+		staking:   staking,
 	}
 
 	return engine
