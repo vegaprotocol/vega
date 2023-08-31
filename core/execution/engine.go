@@ -1555,18 +1555,17 @@ func (e *Engine) OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(_ cont
 	return nil
 }
 
-// SLA liquidity - currently only used in spots.
 func (e *Engine) OnMarketLiquidityV2StakeToCCYVolumeUpdate(_ context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
-		e.log.Debug("update market SLA non performance bond penalty max (liquidity v2)",
-			logging.Decimal("bond-penalty-max", d),
+		e.log.Debug("update market stake to CCYVolume (liquidity v2)",
+			logging.Decimal("stake-to-ccy-volume", d),
 		)
 	}
 
 	for _, m := range e.allMarketsCpy {
 		m.OnMarketLiquidityV2StakeToCCYVolume(d)
 	}
-	e.npv.suppliedStakeToObligationFactor = d
+	e.npv.liquidityV2StakeToCCYVolume = d
 	return nil
 }
 

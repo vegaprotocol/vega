@@ -221,8 +221,8 @@ Feature: Simple example of successor markets
       | lpprov2 | 0.7272727272727273 | 10000                   |
     When the network moves ahead "1" blocks
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "4062" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "1016" for the asset "USD"
+    And the insurance pool balance should be "7983" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "4938" for the asset "USD"
 
   @SuccessorMarketSimple
   Scenario: 002 Successor market enacted with parent market still active, ELS is copied over and both states can change independently. 0042-LIQF-031, 0042-LIQF-048, 0042-LIQF-033
@@ -472,8 +472,8 @@ Feature: Simple example of successor markets
       | lpprov2 | 0.1 | 10000 |
     When the network moves ahead "1" blocks
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "4062" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "1016" for the asset "USD"
+    And the insurance pool balance should be "7983" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "4938" for the asset "USD"
 
 
   @SuccessorMarketExpires2
