@@ -354,6 +354,7 @@ message MatchingBook {
   string last_traded_price = 4;
   bool auction = 5;
   uint64 batch_id = 6;
+  repeated string pegged_order_ids = 7;
 }
 
 message NetParams {

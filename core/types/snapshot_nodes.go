@@ -371,6 +371,7 @@ type MatchingBook struct {
 	LastTradedPrice *num.Uint
 	Auction         bool
 	BatchID         uint64
+	PeggedOrderIDs  []string
 }
 
 type Successors struct {
@@ -2927,6 +2928,7 @@ func MatchingBookFromProto(mb *snapshot.MatchingBook) *MatchingBook {
 		LastTradedPrice: lastTradedPrice,
 		Auction:         mb.Auction,
 		BatchID:         mb.BatchId,
+		PeggedOrderIDs:  mb.PeggedOrderIds,
 	}
 	for _, o := range mb.Buy {
 		or, _ := OrderFromProto(o)
@@ -2947,6 +2949,7 @@ func (m MatchingBook) IntoProto() *snapshot.MatchingBook {
 		LastTradedPrice: m.LastTradedPrice.String(),
 		Auction:         m.Auction,
 		BatchId:         m.BatchID,
+		PeggedOrderIds:  m.PeggedOrderIDs,
 	}
 	for _, o := range m.Buy {
 		ret.Buy = append(ret.Buy, o.IntoProto())

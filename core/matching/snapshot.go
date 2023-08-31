@@ -65,6 +65,7 @@ func (b *OrderBook) buildPayload() *types.Payload {
 				LastTradedPrice: b.lastTradedPrice,
 				Auction:         b.auction,
 				BatchID:         b.batchID,
+				PeggedOrderIDs:  b.GetActivePeggedOrderIDs(),
 			},
 		},
 	}
@@ -113,6 +114,17 @@ func (b *OrderBook) LoadState(_ context.Context, payload *types.Payload) ([]type
 	for _, o := range mb.Sell {
 		b.sell.addOrder(o)
 		b.add(o)
+	}
+
+	if len(mb.PeggedOrderIDs) != 0 {
+		// the pegged orders will be added in an arbitrary order during b.add() above
+		// which is all we can do if we've upgraded from older versions. If we have peggedOrder IDs
+		// in the snapshot then we clear them and re-add in the snapshot order
+		// (which will be the order they were added to the book)
+		b.peggedOrders.Clear()
+		for _, pid := range mb.PeggedOrderIDs {
+			b.peggedOrders.Add(pid)
+		}
 	}
 
 	// If we are in an auction we need to build the IP&V structure
