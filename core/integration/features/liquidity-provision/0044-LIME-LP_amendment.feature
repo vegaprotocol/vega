@@ -46,6 +46,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | market.liquidityV2.sla.nonPerformanceBondPenaltySlope | 0.5   |
       | market.liquidityV2.sla.nonPerformanceBondPenaltyMax   | 1     |
       | validators.epoch.length                               | 10s   |
+      | market.liquidityV2.earlyExitPenalty | 0.1 |
 
     Given the average block duration is "2"
   @Now
@@ -105,17 +106,19 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     #AC: 0044-LIME-018, lp reduces commitment
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee  | lp type   |
-      | lp_1 | lp1   | ETH/MAR22 | 5000              | 0.02 | amendment |
+      | lp_1 | lp1 | ETH/MAR22 | 15569 | 0.02 | amendment |
     And the supplied stake should be "60000" for the market "ETH/MAR22"
 
     Then the network moves ahead "8" blocks
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 35569        | 15000          | 1             |
-    And the insurance pool balance should be "0" for the market "ETH/MAR22"
+      | 1000 | TRADING_MODE_CONTINUOUS | 35569 | 25569 | 1 |
+    And the insurance pool balance should be "1000" for the market "ETH/MAR22"
     And the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 640243 | 354757  | 5000 |
+      | lp1 | USD | ETH/MAR22 | 640243 | 343188 | 15569 |
+
+
 
 
 
