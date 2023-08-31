@@ -33,7 +33,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | market.value.windowLength                             | 60s   |
       | market.stake.target.timeWindow                        | 20s   |
       | market.stake.target.scalingFactor                     | 1     |
-      | market.liquidity.targetstake.triggering.ratio         | 0.5   |
+      | market.liquidity.targetstake.triggering.ratio | 1 |
       | network.markPriceUpdateMaximumFrequency               | 0s    |
       | limits.markets.maxPeggedOrders                        | 6     |
       | market.auction.minimumDuration                        | 1     |
@@ -104,11 +104,11 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | lp1   | USD   | ETH/MAR22 | 64024  | 0       | 17988 |
       | lp2   | USD   | ETH/MAR22 | 32013  | 57987   | 5000  |
 
-  Scenario: 002: lp1 and lp2 over supplies liquidity
+  Scenario: 002: lp1 and lp2 amend LP commitment
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
-      | lp1    | USD   | 100000 |
-      | lp2    | USD   | 100000 |
+      | lp1 | USD | 1000000 |
+      | lp2 | USD | 1000000 |
       | party1 | USD   | 100000 |
       | party2 | USD   | 100000 |
       | party3 | USD   | 100000 |
@@ -128,7 +128,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     Then the network moves ahead "2" blocks
     And the orders should have the following status:
       | party | reference | status        |
-      | lp1   | lp-b-1    | STATUS_PARKED |
+      | lp1 | lp-b-1 | STATUS_PARKED |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -142,35 +142,62 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
 
     And the orders should have the following status:
       | party | reference | status           |
-      | lp1   | lp-b-1    | STATUS_CANCELLED |
-      | lp1   | lp-b-1    | STATUS_CANCELLED |
+      | lp1 | lp-b-1 | STATUS_ACTIVE |
 
     And the following trades should be executed:
       | buyer  | price | size | seller |
       | party1 | 1000  | 1    | party2 |
 
-# And the market data for the market "ETH/MAR22" should be:
-#   | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-#   | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 35569        | 60000          | 1             |
-# # # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569036
+    And the parties should have the following account balances:
+      | party | asset | market id | margin | general | bond  |
+      | lp1   | USD   | ETH/MAR22 | 640243 | 309757  | 50000 |
 
-# And the liquidity fee factor should be "0.02" for the market "ETH/MAR22"
-# `
-# # And the parties should have the following margin levels:
-# #   | party | market id | maintenance | search | initial | release |
-# #   | lp1   | ETH/MAR22 | 42683       | 51219  | 64024   | 72561   |
-# And the parties should have the following account balances:
-#   | party | asset | market id | margin | general | bond  |
-#   | lp1   | USD   | ETH/MAR22 | 0      | 50000   | 50000 |
-#   | lp2   | USD   | ETH/MAR22 | 0      | 90000   | 10000 |
-# #     #margin_intial lp1: 12*1000*3.5569036*1.5=64024
-# Then the network moves ahead "6" blocks
-# And the parties should have the following account balances:
-#   | party | asset | market id | margin | general | bond  |
-#   | lp1   | USD   | ETH/MAR22 | 0      | 50000   | 25000 |
-#   | lp2   | USD   | ETH/MAR22 | 0      | 90000   | 5000  |
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 35569        | 60000          | 1             |
 
-# And the market data for the market "ETH/MAR22" should be:
-#   | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-#   | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 35569        | 30000          | 1             |
-# Then debug detailed orderbook volumes for market "ETH/MAR22"
+    #AC: 0044-LIME-018, lp reduces commitment
+    And the parties submit the following liquidity provision:
+      | id   | party | market id | commitment amount | fee  | lp type   |
+      | lp_1 | lp1   | ETH/MAR22 | 30000             | 0.02 | amendment |
+    And the supplied stake should be "60000" for the market "ETH/MAR22"
+    Then the network moves ahead "1" blocks
+    And the supplied stake should be "40000" for the market "ETH/MAR22"
+
+    #AC: 0044-LIME-019, lp reduces commitment multi times
+    And the parties submit the following liquidity provision:
+      | id   | party | market id | commitment amount | fee  | lp type   |
+      | lp_1 | lp1   | ETH/MAR22 | 28000             | 0.02 | amendment |
+    And the parties submit the following liquidity provision:
+      | id   | party | market id | commitment amount | fee  | lp type   |
+      | lp_1 | lp1   | ETH/MAR22 | 27000             | 0.02 | amendment |
+    And the parties submit the following liquidity provision:
+      | id   | party | market id | commitment amount | fee  | lp type   |
+      | lp_1 | lp1   | ETH/MAR22 | 27000             | 0.02 | amendment |
+    And the supplied stake should be "40000" for the market "ETH/MAR22"
+    Then the network moves ahead "7" blocks
+    And the supplied stake should be "37000" for the market "ETH/MAR22"
+
+    #AC:0044-LIME-021, lp changes fee factor
+    And the parties submit the following liquidity provision:
+      | id   | party | market id | commitment amount | fee  | lp type   |
+      | lp_1 | lp1   | ETH/MAR22 | 50000             | 0.03 | amendment |
+    And the liquidity fee factor should be "0.02" for the market "ETH/MAR22"
+    Then the network moves ahead "10" blocks
+    And the liquidity fee factor should be "0.03" for the market "ETH/MAR22"
+
+    #AC: 0044-LIME-030, lp increases commitment and they do not have sufficient collateral in the settlement asset
+    And the parties submit the following liquidity provision:
+      | id   | party | market id | commitment amount | fee  | lp type   | error                             |
+      | lp_1 | lp1   | ETH/MAR22 | 600000            | 0.02 | amendment | commitment submission not allowed |
+    Then the network moves ahead "1" blocks
+    And the supplied stake should be "60000" for the market "ETH/MAR22"
+
+    #AC: 0044-LIME-031, lp increases commitment and they have sufficient collateral in the settlement asset
+    And the parties submit the following liquidity provision:
+      | id   | party | market id | commitment amount | fee  | lp type   |
+      | lp_1 | lp1   | ETH/MAR22 | 60000             | 0.02 | amendment |
+    And the supplied stake should be "70000" for the market "ETH/MAR22"
+
+
+
