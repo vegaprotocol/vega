@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/libs/test"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/stretchr/testify/assert"
 )
@@ -1097,6 +1098,26 @@ func testSpotNewSimpleRiskParametersChangeSubmissionWithNegativeMaxMoveUpFails(t
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.simple.max_move_up"), commands.ErrMustBePositiveOrZero)
 }
 
+func testNewSpotSimpleRiskParametersChangeSubmissionWithNegativeMaxMoveUpFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						RiskParameters: &vegapb.NewMarketConfiguration_Simple{
+							Simple: &vegapb.SimpleModelParams{
+								MaxMoveUp: -1,
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.simple.max_move_up"), commands.ErrMustBePositiveOrZero)
+}
+
 func testNewSpotSimpleRiskParametersChangeSubmissionWithNonNegativeMaxMoveUpSucceeds(t *testing.T) {
 	testCases := []struct {
 		msg   string
@@ -2107,14 +2128,14 @@ func testNewSpotMarketChangeSubmissionWithInvalidCalculationTimeStepFails(t *tes
 							Product: &protoTypes.InstrumentConfiguration_Spot{},
 						},
 						SlaParams: &protoTypes.LiquiditySLAParameters{
-							ProvidersFeeCalculationTimeStep: 0,
+							ProvidersFeeCalculationTimeStep: -1,
 						},
 					},
 				},
 			},
 		},
 	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.sla_params.providers.fee.calculation_time_step"), commands.ErrMustBePositive)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.sla_params.providers.fee.calculation_time_step"), commands.ErrMustBePositiveOrZero)
 }
 
 func testNewSpotMarketChangeSubmissionWithValidCalculationTimeStepSucceeds(t *testing.T) {
@@ -2127,7 +2148,7 @@ func testNewSpotMarketChangeSubmissionWithValidCalculationTimeStepSucceeds(t *te
 							Product: &protoTypes.InstrumentConfiguration_Spot{},
 						},
 						SlaParams: &protoTypes.LiquiditySLAParameters{
-							ProvidersFeeCalculationTimeStep: 1,
+							ProvidersFeeCalculationTimeStep: 0,
 						},
 					},
 				},
@@ -2207,7 +2228,25 @@ func testNewSpotMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFail
 			},
 		},
 	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBePositive)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBeWithinRange1366)
+
+	err = checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewSpotMarket{
+				NewSpotMarket: &protoTypes.NewSpotMarket{
+					Changes: &protoTypes.NewSpotMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Spot{},
+						},
+						SlaParams: &protoTypes.LiquiditySLAParameters{
+							PerformanceHysteresisEpochs: 367,
+						},
+					},
+				},
+			},
+		},
+	})
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBeWithinRange1366)
 }
 
 func testNewSpotMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds(t *testing.T) {

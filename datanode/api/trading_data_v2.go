@@ -25,6 +25,8 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+
 	"golang.org/x/sync/errgroup"
 
 	"code.vegaprotocol.io/vega/core/risk"
@@ -2177,7 +2179,11 @@ func (t *TradingDataServiceV2) ListOrders(ctx context.Context, req *v2.ListOrder
 
 	orders, pageInfo, err := t.orderService.ListOrders(ctx, pagination, filter)
 	if err != nil {
-		return nil, formatE(ErrOrderServiceGetOrders, err)
+		if errors.Is(err, sqlstore.ErrLastPaginationNotSupported) {
+			return nil, formatE(ErrLastPaginationNotSupported, err)
+		}
+
+		return nil, formatE(err)
 	}
 
 	edges, err := makeEdges[*v2.OrderEdge](orders)
@@ -3854,13 +3860,21 @@ func (t *TradingDataServiceV2) ListStopOrders(ctx context.Context, req *v2.ListS
 	var filter entities.StopOrderFilter
 	if req.Filter != nil {
 		dateRange := entities.DateRangeFromProto(req.Filter.DateRange)
+		liveOnly := false
+
+		if req.Filter.LiveOnly != nil {
+			liveOnly = *req.Filter.LiveOnly
+		}
+
 		filter = entities.StopOrderFilter{
 			Statuses:       stopOrderStatusesFromProto(req.Filter.Statuses),
 			ExpiryStrategy: stopOrderExpiryStrategyFromProto(req.Filter.ExpiryStrategies),
 			PartyIDs:       req.Filter.PartyIds,
 			MarketIDs:      req.Filter.MarketIds,
 			DateRange:      &entities.DateRange{Start: dateRange.Start, End: dateRange.End},
+			LiveOnly:       liveOnly,
 		}
+
 		if err := VegaIDsSlice(req.Filter.MarketIds).Ensure(); err != nil {
 			return nil, formatE(err, errors.New("one or more market id is invalid"))
 		}
@@ -3872,7 +3886,11 @@ func (t *TradingDataServiceV2) ListStopOrders(ctx context.Context, req *v2.ListS
 
 	orders, pageInfo, err := t.stopOrderService.ListStopOrders(ctx, filter, pagination)
 	if err != nil {
-		return nil, formatE(ErrOrderServiceGetOrders, err)
+		if errors.Is(err, sqlstore.ErrLastPaginationNotSupported) {
+			return nil, formatE(ErrLastPaginationNotSupported, err)
+		}
+
+		return nil, formatE(err)
 	}
 
 	edges, err := makeEdges[*v2.StopOrderEdge](orders)

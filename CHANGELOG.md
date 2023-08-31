@@ -41,9 +41,11 @@
 - [8969](https://github.com/vegaprotocol/vega/issues/8969) - Improve wiring of internal time triggers for perpetual markets.
 - [9001](https://github.com/vegaprotocol/vega/issues/9001) - Improve wiring of perpetual markets into the data node.
 - [8985](https://github.com/vegaprotocol/vega/issues/8985) - Improve snapshot restore of internal time triggers for perpetual markets.
+- [9146](https://github.com/vegaprotocol/vega/issues/9146) - Improve `TWAP` for perpetual markets to do calculations incrementally.
 - [8817](https://github.com/vegaprotocol/vega/issues/8817) - Add interest term to perpetual funding payment calculation.
 - [8755](https://github.com/vegaprotocol/vega/issues/8755) - Improve testing for perpetual settlement and collateral transfers.
 - [8756](https://github.com/vegaprotocol/vega/issues/8756) - Settlement and margin implementation for `PERPS`.
+- [8932](https://github.com/vegaprotocol/vega/issues/8932) - Fix range validation of `performanceHysteresisEpochs`
 - [8887](https://github.com/vegaprotocol/vega/pull/8887) - Remove differences for snapshot loading when the `nullchain` is used instead of `tendermint`
 - [8973](https://github.com/vegaprotocol/vega/issues/8973) - Do some more validation on Ethereum call specifications, add explicit error types to improve reporting
 - [8957](https://github.com/vegaprotocol/vega/issues/8957) - Oracle bindings for `PERPS`.
@@ -64,6 +66,20 @@
 - [9045](https://github.com/vegaprotocol/vega/issues/9045) - Snapshot the referral engine.
 - [9136](https://github.com/vegaprotocol/vega/issues/9136) - Referral engine returns reward factor for a given party
 - [9076](https://github.com/vegaprotocol/vega/issues/9076) - Add current funding rate to market data.
+- [1932](https://github.com/vegaprotocol/devops-infra/issues/1932) - Allow configuring an `SQL` statement timeout.
+- [9162](https://github.com/vegaprotocol/vega/issues/9162) - Refactor transfers to support new metric based rewards and distribution strategies
+- [9163](https://github.com/vegaprotocol/vega/issues/9163) - Refactor reward engine to support the new metric based reward distribution
+- [9164](https://github.com/vegaprotocol/vega/issues/9164) - Refactor market activity tracker to support more metrics and history
+- [9219](https://github.com/vegaprotocol/vega/issues/9219) - Don't do `IPFS` garbage collection every segment
+- [9208](https://github.com/vegaprotocol/vega/issues/9208) - Refactor referral set and teams state
+- [9204](https://github.com/vegaprotocol/vega/issues/9204) - Ensure teams names are not duplicates
+- [9080](https://github.com/vegaprotocol/vega/issues/9080) - Add support for vested and vesting account in GraphQL
+- [9147](https://github.com/vegaprotocol/vega/issues/9147) - Add reward multiplier to vesting engine
+- [9234](https://github.com/vegaprotocol/vega/issues/9234) - Add support for transfers out of the vested account
+- [9199](https://github.com/vegaprotocol/vega/issues/9199) - Consider running notional volume to determine referrers and referees tier
+- [9214](https://github.com/vegaprotocol/vega/issues/9214) - Add staking tier on referral program
+- [9205](https://github.com/vegaprotocol/vega/issues/9205) - Ensure staking requirement when creating / joining referral sets
+
 
 ### 🐛 Fixes
 
@@ -79,6 +95,7 @@
 - [8773](https://github.com/vegaprotocol/vega/issues/8773) - Fix panic with stop orders
 - [8792](https://github.com/vegaprotocol/vega/issues/8792) - Fix panic when starting null block chain node.
 - [8739](https://github.com/vegaprotocol/vega/issues/8739) - Cancel orders for rejected markets.
+- [9118](https://github.com/vegaprotocol/vega/issues/9118) - Improve list stop orders error message
 - [9105](https://github.com/vegaprotocol/vega/issues/9105) - Truncate virtual stake decimal places
 - [8800](https://github.com/vegaprotocol/vega/issues/8800) - `expiresAt` is always null in the Stop Orders `API`.
 - [8796](https://github.com/vegaprotocol/vega/issues/8796) - Avoid updating active proposals slice while iterating over it.
@@ -117,6 +134,21 @@
 - [9034](https://github.com/vegaprotocol/vega/issues/9034) - Add missing transfer types to `GraphQL` schema definition.
 - [9075](https://github.com/vegaprotocol/vega/issues/9075) - `Oracle Specs API` can fail when oracle data is null.
 - [8944](https://github.com/vegaprotocol/vega/issues/8944) - Fix ignoring of asset `ID` in ledger export, and make it optional.
+- [8971](https://github.com/vegaprotocol/vega/issues/8971) - Record the epoch start time even in opening auction
+- [8992](https://github.com/vegaprotocol/vega/issues/8992) - allow for 0 time step for `SLA` fee calculation
+- [8988](https://github.com/vegaprotocol/vega/issues/8988) - allow amend/cancel of pending liquidity provision
+- [8993](https://github.com/vegaprotocol/vega/issues/8993) - handle the case where commitment min time fraction is 1
+- [9252](https://github.com/vegaprotocol/vega/issues/9252) - Preserve the order of pegged orders in snapshots.
+- [9066](https://github.com/vegaprotocol/vega/issues/9066) - Ensure a party have a liquidity provision before trying to cancel
+- [9140](https://github.com/vegaprotocol/vega/issues/9140) - Stop orders table should be a `hypertable` with retention policy.
+- [9153](https://github.com/vegaprotocol/vega/issues/9153) - `MTM` win transfers can be less than one.
+- [9227](https://github.com/vegaprotocol/vega/issues/9227) - Do not allow market updates that change the product type.
+- [9178](https://github.com/vegaprotocol/vega/issues/9178) - Fix LP amendment panic
+- [9053](https://github.com/vegaprotocol/vega/issues/9053) - Handle settle market events in core positions plug-in.
+- [9189](https://github.com/vegaprotocol/vega/issues/9189) - Fix stop orders snapshots
+- [9198](https://github.com/vegaprotocol/vega/issues/9198) - Fix panic during LP amendment applications
+- [9196](https://github.com/vegaprotocol/vega/issues/9196) - `API` documentation should specify the time format.
+- [9203](https://github.com/vegaprotocol/vega/issues/9203) - Do not remove LPs from the parties map if they are an LP without an open position
 
 ## 0.72.1
 

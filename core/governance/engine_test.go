@@ -273,13 +273,14 @@ func testSubmitProposalMarketUpdate(t *testing.T) {
 
 	// given
 	party := vgrand.RandomStr(5)
+	marketID := vgrand.RandomStr(5)
 	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	tc := struct {
 		name     string
 		proposal types.Proposal
 	}{
 		name:     "For market update",
-		proposal: eng.newProposalForMarketUpdate("", party, now, nil, nil, true),
+		proposal: eng.newProposalForMarketUpdate(marketID, party, now, nil, nil, true),
 	}
 
 	// test that with no account but equity like share, a market update proposal goes through
@@ -291,6 +292,7 @@ func testSubmitProposalMarketUpdate(t *testing.T) {
 
 		eng.markets.EXPECT().MarketExists(gomock.Any()).Return(true)
 		eng.markets.EXPECT().GetEquityLikeShareForMarketAndParty(gomock.Any(), gomock.Any()).Return(num.DecimalOne(), true)
+		eng.ensureGetMarketFuture(t, marketID)
 		// when
 		_, err := eng.submitProposal(tt, tc.proposal)
 
@@ -1294,9 +1296,15 @@ func newMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.Spec
 						},
 					},
 				},
-				Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
-				DecimalPlaces:           0,
-				LpPriceRange:            num.DecimalFromFloat(0.95),
+				Metadata:      []string{"asset_class:fx/crypto", "product:futures"},
+				DecimalPlaces: 0,
+				LiquiditySLAParameters: &types.LiquiditySLAParams{
+					PriceRange:                      num.DecimalFromFloat(0.95),
+					CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0.5),
+					ProvidersFeeCalculationTimeStep: time.Second * 5,
+					PerformanceHysteresisEpochs:     4,
+					SlaCompetitionFactor:            num.NewDecimalFromFloat(0.5),
+				},
 				LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 				QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 				Successor:               successor,
@@ -1373,9 +1381,15 @@ func newPerpsMarketTerms(termFilter *dstypes.SpecFilter, binding *datasource.Spe
 						},
 					},
 				},
-				Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
-				DecimalPlaces:           0,
-				LpPriceRange:            num.DecimalFromFloat(0.95),
+				Metadata:      []string{"asset_class:fx/crypto", "product:futures"},
+				DecimalPlaces: 0,
+				LiquiditySLAParameters: &types.LiquiditySLAParams{
+					PriceRange:                      num.DecimalFromFloat(0.95),
+					CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0.5),
+					ProvidersFeeCalculationTimeStep: time.Second * 5,
+					PerformanceHysteresisEpochs:     4,
+					SlaCompetitionFactor:            num.NewDecimalFromFloat(0.5),
+				},
 				LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 				QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 			},
@@ -1517,8 +1531,14 @@ func updateMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.S
 						},
 					},
 				},
-				Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
-				LpPriceRange:            num.DecimalFromFloat(0.95),
+				Metadata: []string{"asset_class:fx/crypto", "product:futures"},
+				LiquiditySLAParameters: &types.LiquiditySLAParams{
+					PriceRange:                      num.DecimalFromFloat(0.95),
+					CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0.5),
+					ProvidersFeeCalculationTimeStep: time.Second * 5,
+					PerformanceHysteresisEpochs:     4,
+					SlaCompetitionFactor:            num.NewDecimalFromFloat(0.5),
+				},
 				LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 				QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 			},
@@ -1913,6 +1933,34 @@ func (e *tstEngine) ensureGetMarket(t *testing.T, marketID string, market types.
 		GetMarket(marketID, gomock.Any()).
 		Times(1).
 		Return(market, true)
+}
+
+func (e *tstEngine) ensureGetMarketFuture(t *testing.T, marketID string) {
+	t.Helper()
+	e.ensureGetMarket(t, marketID, types.Market{
+		TradableInstrument: &types.TradableInstrument{
+			Instrument: &types.Instrument{
+				Product: &types.InstrumentFuture{
+					Future: &types.Future{},
+				},
+			},
+		},
+	},
+	)
+}
+
+func (e *tstEngine) ensureGetMarketPerpetual(t *testing.T, marketID string) {
+	t.Helper()
+	e.ensureGetMarket(t, marketID, types.Market{
+		TradableInstrument: &types.TradableInstrument{
+			Instrument: &types.Instrument{
+				Product: &types.InstrumentPerps{
+					Perps: &types.Perps{},
+				},
+			},
+		},
+	},
+	)
 }
 
 func (e *tstEngine) expectGetMarketState(t *testing.T, marketID string) {

@@ -59,6 +59,7 @@ func TestProposalForMarketUpdate(t *testing.T) {
 	t.Run("Voting with a majority of 'no' from tokens makes the market update proposal declined", testVotingWithMajorityOfNoFromTokenHoldersMakesMarketUpdateProposalDeclined)
 	t.Run("Voting without reaching minimum of tokens and a majority of 'yes' from equity-like shares makes the market update proposal passed", testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarketUpdateProposalPassed)
 	t.Run("Voting without reaching minimum of tokens and a majority of 'no' from equity-like shares makes the market update proposal declined", testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketUpdateProposalDeclined)
+	t.Run("Submitting a proposal with inconsistent products fails", TestSubmitProposalWithInconsistentProductFails)
 }
 
 func testSubmittingProposalForMarketUpdateSucceeds(t *testing.T) {
@@ -73,6 +74,7 @@ func testSubmittingProposalForMarketUpdateSucceeds(t *testing.T) {
 	eng.ensureTokenBalanceForParty(t, proposer, 1000)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 
 	// expect
 	eng.expectOpenProposalEvent(t, proposer, proposal.ID)
@@ -97,6 +99,7 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationSucceeds(t 
 	eng.ensureTokenBalanceForParty(t, proposer, 1000)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 
 	// expect
 	eng.expectOpenProposalEvent(t, proposer, proposal.ID)
@@ -175,8 +178,14 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeSetllingFails(t *testi
 								},
 							},
 						},
-						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
-						LpPriceRange:            num.DecimalFromFloat(0.95),
+						Metadata: []string{"asset_class:fx/crypto", "product:futures"},
+						LiquiditySLAParameters: &types.LiquiditySLAParams{
+							PriceRange:                      num.DecimalFromFloat(0.95),
+							CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0.5),
+							ProvidersFeeCalculationTimeStep: time.Second * 5,
+							PerformanceHysteresisEpochs:     4,
+							SlaCompetitionFactor:            num.NewDecimalFromFloat(0.5),
+						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 					},
@@ -193,6 +202,7 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeSetllingFails(t *testi
 	eng.ensureTokenBalanceForParty(t, proposer, 1000)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 
 	// expect
 	eng.expectRejectedProposalEvent(t, proposer, proposal.ID, types.ProposalErrorInvalidFutureProduct)
@@ -281,9 +291,15 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationWithLessTha
 								},
 							},
 						},
-						RiskParameters:          &riskParameters,
-						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
-						LpPriceRange:            num.DecimalFromFloat(0.95),
+						RiskParameters: &riskParameters,
+						Metadata:       []string{"asset_class:fx/crypto", "product:futures"},
+						LiquiditySLAParameters: &types.LiquiditySLAParams{
+							PriceRange:                      num.DecimalFromFloat(0.95),
+							CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0.5),
+							ProvidersFeeCalculationTimeStep: time.Second * 5,
+							PerformanceHysteresisEpochs:     4,
+							SlaCompetitionFactor:            num.NewDecimalFromFloat(0.5),
+						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 					},
@@ -301,6 +317,7 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationWithLessTha
 	eng.ensureTokenBalanceForParty(t, proposer, 1000)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 
 	// expect
 	eng.expectRejectedProposalEvent(t, proposer, proposal.ID, types.ProposalErrorInvalidFutureProduct)
@@ -347,9 +364,15 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationWithLessTha
 								},
 							},
 						},
-						RiskParameters:          &riskParameters,
-						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
-						LpPriceRange:            num.DecimalFromFloat(0.95),
+						RiskParameters: &riskParameters,
+						Metadata:       []string{"asset_class:fx/crypto", "product:futures"},
+						LiquiditySLAParameters: &types.LiquiditySLAParams{
+							PriceRange:                      num.DecimalFromFloat(0.95),
+							CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0.5),
+							ProvidersFeeCalculationTimeStep: time.Second * 5,
+							PerformanceHysteresisEpochs:     4,
+							SlaCompetitionFactor:            num.NewDecimalFromFloat(0.5),
+						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 					},
@@ -367,6 +390,7 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationWithLessTha
 	eng.ensureTokenBalanceForParty(t, proposer, 1000)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 
 	// expect
 	eng.expectRejectedProposalEvent(t, proposer, proposal.ID, types.ProposalErrorInvalidFutureProduct)
@@ -393,6 +417,7 @@ func testSubmittingProposalForMarketUpdateWithExternalSourceUsingInternalKeyTime
 	eng.ensureTokenBalanceForParty(t, proposer, 1000)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 
 	// expect
 	eng.expectOpenProposalEvent(t, proposer, proposal.ID)
@@ -460,9 +485,15 @@ func testSubmittingProposalForMarketUpdateWithEmptySettlementDataFails(t *testin
 								},
 							},
 						},
-						RiskParameters:          &riskParameters,
-						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
-						LpPriceRange:            num.DecimalFromFloat(0.95),
+						RiskParameters: &riskParameters,
+						Metadata:       []string{"asset_class:fx/crypto", "product:futures"},
+						LiquiditySLAParameters: &types.LiquiditySLAParams{
+							PriceRange:                      num.DecimalFromFloat(0.95),
+							CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0.5),
+							ProvidersFeeCalculationTimeStep: time.Second * 5,
+							PerformanceHysteresisEpochs:     4,
+							SlaCompetitionFactor:            num.NewDecimalFromFloat(0.5),
+						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 					},
@@ -479,6 +510,7 @@ func testSubmittingProposalForMarketUpdateWithEmptySettlementDataFails(t *testin
 	eng.ensureTokenBalanceForParty(t, proposer, 1000)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 
 	// expect
 	eng.expectRejectedProposalEvent(t, proposer, proposal.ID, types.ProposalErrorInvalidFutureProduct)
@@ -551,9 +583,15 @@ func testSubmittingProposalForMarketUpdateWithEmptyTerminationDataFails(t *testi
 								},
 							},
 						},
-						RiskParameters:          &riskParameters,
-						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
-						LpPriceRange:            num.DecimalFromFloat(0.95),
+						RiskParameters: &riskParameters,
+						Metadata:       []string{"asset_class:fx/crypto", "product:futures"},
+						LiquiditySLAParameters: &types.LiquiditySLAParams{
+							PriceRange:                      num.DecimalFromFloat(0.95),
+							CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0.5),
+							ProvidersFeeCalculationTimeStep: time.Second * 5,
+							PerformanceHysteresisEpochs:     4,
+							SlaCompetitionFactor:            num.NewDecimalFromFloat(0.5),
+						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 					},
@@ -570,6 +608,7 @@ func testSubmittingProposalForMarketUpdateWithEmptyTerminationDataFails(t *testi
 	eng.ensureTokenBalanceForParty(t, proposer, 1000)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 
 	// expect
 	eng.expectRejectedProposalEvent(t, proposer, proposal.ID, types.ProposalErrorInvalidFutureProduct)
@@ -612,6 +651,7 @@ func testSubmittingProposalForMarketUpdateWithEarlyTerminationSucceeds(t *testin
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -821,7 +861,6 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTriggerTerminationFail
 						},
 						RiskParameters:          &riskParameters,
 						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
-						LpPriceRange:            num.DecimalFromFloat(0.95),
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 					},
@@ -838,6 +877,7 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTriggerTerminationFail
 	eng.ensureTokenBalanceForParty(t, proposer, 1000)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 
 	// expect
 	eng.expectRejectedProposalEvent(t, proposer, proposal.ID, types.ProposalErrorInvalidFutureProduct)
@@ -916,7 +956,6 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTriggerSettlementFails
 						},
 						RiskParameters:          &riskParameters,
 						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
-						LpPriceRange:            num.DecimalFromFloat(0.95),
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 					},
@@ -933,6 +972,7 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTriggerSettlementFails
 	eng.ensureTokenBalanceForParty(t, proposer, 1000)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 
 	// expect
 	eng.expectRejectedProposalEvent(t, proposer, proposal.ID, types.ProposalErrorInvalidFutureProduct)
@@ -1022,6 +1062,7 @@ func testPreEnactmentOfMarketUpdateSucceeds(t *testing.T) {
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -1137,6 +1178,7 @@ func testPreEnactmentOfMarketUpdateWithInternalTimeTerminationSucceeds(t *testin
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -1251,6 +1293,7 @@ func testRejectingProposalForMarketUpdateSucceeds(t *testing.T) {
 	// setup
 	eng.ensureAllAssetEnabled(t)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, party, 0.7)
 	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketMinProposerEquityLikeShare, "0.1")
 	eng.ensureTokenBalanceForParty(t, party, 10000)
@@ -1296,6 +1339,7 @@ func testVotingWithoutMinimumTokenHoldersAndEquityLikeShareMakesMarketUpdateProp
 	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipationLP, "0.5")
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -1374,6 +1418,7 @@ func testVotingWithMajorityOfYesFromTokenHoldersMakesMarketUpdateProposalPassed(
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -1486,6 +1531,7 @@ func testVotingWithMajorityOfNoFromTokenHoldersMakesMarketUpdateProposalDeclined
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -1600,6 +1646,7 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarket
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -1700,6 +1747,7 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketU
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -1786,4 +1834,31 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketU
 
 	// when
 	eng.OnTick(context.Background(), afterClosing)
+}
+
+func TestSubmitProposalWithInconsistentProductFails(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+
+	// given
+	proposer := vgrand.RandomStr(5)
+	proposal := eng.newProposalForMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
+	marketID := proposal.MarketUpdate().MarketID
+
+	// setup
+	eng.ensureTokenBalanceForParty(t, proposer, 1000)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
+
+	// setup market will be a perpetual being updated to a future
+	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketPerpetual(t, marketID)
+
+	// expect
+	eng.expectRejectedProposalEvent(t, proposer, proposal.ID, types.ProposalErrorInvalidFutureProduct)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.ErrorIs(t, err, governance.ErrUpdateMarketDifferentProduct)
+	require.Nil(t, toSubmit)
 }

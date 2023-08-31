@@ -22,4 +22,5 @@ type StopOrderFilter struct {
 	DateRange      *DateRange
 	PartyIDs       []string
 	MarketIDs      []string
+	LiveOnly       bool
 }

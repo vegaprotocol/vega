@@ -18,13 +18,15 @@ const (
 	EthereumOraclesEnabled    = "ethereum.oracles.enabled"
 
 	// market related parameters.
-	MarketMarginScalingFactors                      = "market.margin.scalingFactors"
-	MarketFeeFactorsMakerFee                        = "market.fee.factors.makerFee"
-	MarketFeeFactorsInfrastructureFee               = "market.fee.factors.infrastructureFee"
-	MarketAuctionMinimumDuration                    = "market.auction.minimumDuration"
-	MarketAuctionMaximumDuration                    = "market.auction.maximumDuration"
-	MarketLiquidityBondPenaltyParameter             = "market.liquidity.bondPenaltyParameter"
-	MarketLiquidityMaximumLiquidityFeeFactorLevel   = "market.liquidity.maximumLiquidityFeeFactorLevel"
+	MarketMarginScalingFactors                    = "market.margin.scalingFactors"
+	MarketFeeFactorsMakerFee                      = "market.fee.factors.makerFee"
+	MarketFeeFactorsInfrastructureFee             = "market.fee.factors.infrastructureFee"
+	MarketAuctionMinimumDuration                  = "market.auction.minimumDuration"
+	MarketAuctionMaximumDuration                  = "market.auction.maximumDuration"
+	MarketLiquidityBondPenaltyParameter           = "market.liquidity.bondPenaltyParameter"
+	MarketLiquidityMaximumLiquidityFeeFactorLevel = "market.liquidity.maximumLiquidityFeeFactorLevel"
+
+	// TODO karel - remove.
 	MarketLiquidityStakeToCCYVolume                 = "market.liquidity.stakeToCcyVolume"
 	MarketLiquidityProvidersFeeDistributionTimeStep = "market.liquidity.providers.fee.distributionTimeStep"
 	MarketLiquidityTargetStakeTriggeringRatio       = "market.liquidity.targetstake.triggering.ratio"
@@ -34,9 +36,11 @@ const (
 	MarketTargetStakeScalingFactor                  = "market.stake.target.scalingFactor"
 	MarketValueWindowLength                         = "market.value.windowLength"
 	MarketPriceMonitoringDefaultParameters          = "market.monitor.price.defaultParameters"
-	MarketLiquidityProvisionShapesMaxSize           = "market.liquidityProvision.shapes.maxSize"
-	MarketMinLpStakeQuantumMultiple                 = "market.liquidityProvision.minLpStakeQuantumMultiple"
-	MarketSuccessorLaunchWindow                     = "market.liquidity.successorLaunchWindowLength"
+
+	// TODO karel - remove.
+	MarketLiquidityProvisionShapesMaxSize = "market.liquidityProvision.shapes.maxSize"
+	MarketMinLpStakeQuantumMultiple       = "market.liquidityProvision.minLpStakeQuantumMultiple"
+	MarketSuccessorLaunchWindow           = "market.liquidity.successorLaunchWindowLength"
 
 	// Parameters for liquidity framework version 2.
 	MarketLiquidityV2BondPenaltyParameter              = "market.liquidityV2.bondPenaltyParameter"
@@ -142,7 +146,8 @@ const (
 	StakingAndDelegationRewardsMinValidators          = "reward.staking.delegation.minValidators"
 	StakingAndDelegationRewardOptimalStakeMultiplier  = "reward.staking.delegation.optimalStakeMultiplier"
 
-	RewardMarketCreationQuantumMultiple = "rewards.marketCreationQuantumMultiple"
+	RewardMarketCreationQuantumMultiple       = "rewards.marketCreationQuantumMultiple"
+	MinEpochsInTeamForMetricRewardEligibility = "rewards.team.minEpochsInTeam"
 
 	// spam policies params.
 	SpamProtectionMaxVotes                         = "spam.protection.max.votes"
@@ -209,11 +214,12 @@ const (
 	// how much to scale the number of proposed blocks used for performance calculation.
 	ValidatorPerformanceScalingFactor = "validator.performance.scaling.factor"
 
-	RewardsVestingBaseRate       = "rewards.vesting.baseRate"
-	RewardVestingMinimumTransfer = "rewards.vesting.minimumTransfer"
+	RewardsVestingBaseRate        = "rewards.vesting.baseRate"
+	RewardsVestingMinimumTransfer = "rewards.vesting.minimumTransfer"
+	RewardsVestingBonusMultiplier = "rewards.vesting.benefitTiers"
 
 	// Referral program.
-	ReferralProgramMaxBenefitTiers                         = "referralProgram.maxBenefitTiers"
+	ReferralProgramMaxReferralTiers                        = "referralProgram.maxReferralTiers"
 	ReferralProgramMaxReferralRewardFactor                 = "referralProgram.maxReferralRewardFactor"
 	ReferralProgramMaxReferralDiscountFactor               = "referralProgram.maxReferralDiscountFactor"
 	ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch = "referralProgram.maxPartyNotionalVolumeByQuantumPerEpoch"
@@ -227,7 +233,9 @@ var Deprecated = map[string]struct{}{
 }
 
 var AllKeys = map[string]struct{}{
-	RewardVestingMinimumTransfer:                             {},
+	MinEpochsInTeamForMetricRewardEligibility:                {},
+	RewardsVestingBonusMultiplier:                            {},
+	RewardsVestingMinimumTransfer:                            {},
 	RewardsVestingBaseRate:                                   {},
 	SpotMarketTradingEnabled:                                 {},
 	PerpsMarketTradingEnabled:                                {},
@@ -374,7 +382,7 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionMinMultisigUpdates:                         {},
 	MarketSuccessorLaunchWindow:                              {},
 	SpamProtectionMaxStopOrdersPerMarket:                     {},
-	ReferralProgramMaxBenefitTiers:                           {},
+	ReferralProgramMaxReferralTiers:                          {},
 	ReferralProgramMaxReferralRewardFactor:                   {},
 	ReferralProgramMaxReferralDiscountFactor:                 {},
 	ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch:   {},

@@ -62,6 +62,7 @@ var (
 	ErrInvalidRiskParameter = errors.New("invalid risk parameter")
 	// ErrInvalidInsurancePoolFraction is returned if the insurance pool fraction parameter is outside of the 0-1 range.
 	ErrInvalidInsurancePoolFraction = errors.New("insurnace pool fraction invalid")
+	ErrUpdateMarketDifferentProduct = errors.New("cannot update a market to a different product type")
 )
 
 func assignProduct(
@@ -270,7 +271,7 @@ func buildMarketFromProposal(
 			Parameters: definition.Changes.PriceMonitoringParameters,
 		},
 		LiquidityMonitoringParameters: definition.Changes.LiquidityMonitoringParameters,
-		LPPriceRange:                  definition.Changes.LpPriceRange,
+		LiquiditySLAParams:            definition.Changes.LiquiditySLAParameters,
 		LinearSlippageFactor:          definition.Changes.LinearSlippageFactor,
 		QuadraticSlippageFactor:       definition.Changes.QuadraticSlippageFactor,
 	}
@@ -660,8 +661,8 @@ func validateLPSLAParams(slaParams *types.LiquiditySLAParams) (types.ProposalErr
 	if slaParams.CommitmentMinTimeFraction.LessThan(num.DecimalZero()) || slaParams.CommitmentMinTimeFraction.GreaterThan(num.DecimalOne()) {
 		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("commitment min time fraction must be in range [0, 1]")
 	}
-	if slaParams.ProvidersFeeCalculationTimeStep.Seconds() < 1 {
-		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("provider fee calculation time step must be positive")
+	if slaParams.ProvidersFeeCalculationTimeStep.Seconds() < 0 {
+		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("provider fee calculation time step must be non negative")
 	}
 	if slaParams.SlaCompetitionFactor.LessThan(num.DecimalZero()) || slaParams.CommitmentMinTimeFraction.GreaterThan(num.DecimalOne()) {
 		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("sla competition factor must be in range [0, 1]")
@@ -698,13 +699,6 @@ func validateSlippageFactor(slippageFactor num.Decimal, isLinear bool) (types.Pr
 	}
 	if slippageFactor.GreaterThan(num.DecimalFromInt64(1000000)) {
 		return err, fmt.Errorf("proposal slippage factor has incorrect value, expected value in [0,1000000], got %s", slippageFactor.String())
-	}
-	return types.ProposalErrorUnspecified, nil
-}
-
-func validateLpPriceRange(lpPriceRange num.Decimal) (types.ProposalError, error) {
-	if lpPriceRange.IsZero() || lpPriceRange.IsNegative() || lpPriceRange.GreaterThan(num.DecimalFromInt64(100)) {
-		return types.ProposalErrorLpPriceRangeNonpositive, fmt.Errorf("proposal LP price range has incorrect value, expected value in (0,100], got %s", lpPriceRange.String())
 	}
 	return types.ProposalErrorUnspecified, nil
 }
@@ -767,7 +761,7 @@ func validateNewMarketChange(
 		return types.ProposalErrorTooManyPriceMonitoringTriggers,
 			fmt.Errorf("%v price monitoring triggers set, maximum allowed is 5", len(terms.Changes.PriceMonitoringParameters.Triggers) > 5)
 	}
-	if perr, err := validateLpPriceRange(terms.Changes.LpPriceRange); err != nil {
+	if perr, err := validateLPSLAParams(terms.Changes.LiquiditySLAParameters); err != nil {
 		return perr, err
 	}
 	if perr, err := validateSlippageFactor(terms.Changes.LinearSlippageFactor, true); err != nil {
@@ -830,14 +824,14 @@ func validateUpdateSpotMarketChange(terms *types.UpdateSpotMarket) (types.Propos
 }
 
 // validateUpdateMarketChange checks market update proposal terms.
-func validateUpdateMarketChange(terms *types.UpdateMarket, etu *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
-	if perr, err := validateUpdateInstrument(terms.Changes.Instrument, etu, currentTime); err != nil {
+func validateUpdateMarketChange(terms *types.UpdateMarket, mkt types.Market, etu *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
+	if perr, err := validateUpdateInstrument(terms.Changes.Instrument, mkt, etu, currentTime); err != nil {
 		return perr, err
 	}
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
 		return perr, err
 	}
-	if perr, err := validateLpPriceRange(terms.Changes.LpPriceRange); err != nil {
+	if perr, err := validateLPSLAParams(terms.Changes.LiquiditySLAParameters); err != nil {
 		return perr, err
 	}
 	if perr, err := validateSlippageFactor(terms.Changes.LinearSlippageFactor, true); err != nil {
@@ -849,20 +843,24 @@ func validateUpdateMarketChange(terms *types.UpdateMarket, etu *enactmentTime, c
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateUpdateInstrument(instrument *types.UpdateInstrumentConfiguration, et *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
+func validateUpdateInstrument(instrument *types.UpdateInstrumentConfiguration, mkt types.Market, et *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
 	switch product := instrument.Product.(type) {
 	case nil:
 		return types.ProposalErrorNoProduct, ErrMissingProduct
 	case *types.UpdateInstrumentConfigurationFuture:
-		return validateUpdateFuture(product.Future, et)
+		return validateUpdateFuture(product.Future, mkt, et)
 	case *types.UpdateInstrumentConfigurationPerps:
-		return validateUpdatePerps(product.Perps, et, currentTime)
+		return validateUpdatePerps(product.Perps, mkt, et, currentTime)
 	default:
 		return types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
 }
 
-func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) (types.ProposalError, error) {
+func validateUpdateFuture(future *types.UpdateFutureProduct, mkt types.Market, et *enactmentTime) (types.ProposalError, error) {
+	if mkt.GetFuture() == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrUpdateMarketDifferentProduct
+	}
+
 	settlData := &future.DataSourceSpecForSettlementData
 	if settlData == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
@@ -960,7 +958,10 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) 
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateUpdatePerps(perps *types.UpdatePerpsProduct, et *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
+func validateUpdatePerps(perps *types.UpdatePerpsProduct, mkt types.Market, et *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
+	if mkt.GetPerps() == nil {
+		return types.ProposalErrorInvalidPerpsProduct, ErrUpdateMarketDifferentProduct
+	}
 	settlData := &perps.DataSourceSpecForSettlementData
 	if settlData == nil {
 		return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecForSettlementData
@@ -1032,8 +1033,8 @@ func validateUpdatePerps(perps *types.UpdatePerpsProduct, et *enactmentTime, cur
 		}
 		tt.SetNextTrigger(currentTime)
 
-		// can't have the first trigger in the past
-		if tt.Triggers[0].Initial.Before(currentTime) {
+		// can't have the first trigger in the past, don't recheck if we've come in from preEnact
+		if !et.shouldNotVerify && tt.Triggers[0].Initial.Before(currentTime) {
 			return types.ProposalErrorInvalidPerpsProduct, fmt.Errorf("time trigger starts in the past")
 		}
 

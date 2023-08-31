@@ -26,7 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/core/execution/future"
 	"code.vegaprotocol.io/vega/core/fee"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
-	"code.vegaprotocol.io/vega/core/liquidity"
+	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/products"
@@ -183,7 +183,10 @@ func newMarketFromSnapshot(t *testing.T, ctrl *gomock.Controller, em *types.Exec
 
 	epochEngine := mocks.NewMockEpochEngine(ctrl)
 	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
-	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
+	teams := mocks.NewMockTeams(ctrl)
+	bc := mocks.NewMockAccountBalanceChecker(ctrl)
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine, teams, bc)
+
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	timeService := mocks.NewMockTimeService(ctrl)

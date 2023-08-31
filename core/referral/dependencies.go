@@ -14,12 +14,22 @@ package referral
 
 import (
 	"context"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/referral EpochEngine,Broker,TeamsEngine
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/referral EpochEngine,Broker,TimeService,MarketActivityTracker,StakingBalances
+
+type StakingBalances interface {
+	GetAvailableBalance(party string) (*num.Uint, error)
+}
+
+type TimeService interface {
+	GetTimeNow() time.Time
+}
 
 // EpochEngine is used to know when to apply the team switches.
 type EpochEngine interface {
@@ -28,12 +38,11 @@ type EpochEngine interface {
 
 // Broker is used to notify administrative actions on teams and members.
 type Broker interface {
-	Send(event events.Event)
+	Send(events.Event)
 }
 
-// TeamsEngine is used to retrieve statistics about a team member to compute
-// referral program related data.
-type TeamsEngine interface {
-	IsTeamMember(party types.PartyID) bool
-	NumberOfEpochInTeamForParty(party types.PartyID) uint64
+// MarketActivityTracker is used to retrieve the trading statistics about a party
+// to compute referral program related data.
+type MarketActivityTracker interface {
+	NotionalTakerVolumeForParty(string) *num.Uint
 }

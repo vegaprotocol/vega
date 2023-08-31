@@ -26,7 +26,9 @@ import (
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/notary"
 	"code.vegaprotocol.io/vega/core/rewards"
+	"code.vegaprotocol.io/vega/core/teams"
 	"code.vegaprotocol.io/vega/core/validators"
+	"code.vegaprotocol.io/vega/core/vesting"
 	"code.vegaprotocol.io/vega/libs/num"
 
 	"code.vegaprotocol.io/vega/core/datasource/spec"
@@ -58,6 +60,12 @@ func (t tstReporter) Errorf(format string, args ...interface{}) {
 func (t tstReporter) Fatalf(format string, args ...interface{}) {
 	fmt.Printf("%s FATAL: %s", t.scenario, fmt.Sprintf(format, args...))
 	os.Exit(1)
+}
+
+type DummyASVM struct{}
+
+func (DummyASVM) Get(_ string) num.Decimal {
+	return num.MustDecimalFromString("0.01")
 }
 
 var marketConfig = market.NewMarketConfig()
@@ -156,7 +164,8 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.stakingAccount = stubs.NewStakingAccountStub()
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.stakingAccount.OnEpochEvent, execsetup.stakingAccount.OnEpochRestore)
 
-	marketActivityTracker := common.NewMarketActivityTracker(execsetup.log, execsetup.epochEngine)
+	teams := teams.NewEngine(execsetup.epochEngine, execsetup.broker, execsetup.timeService)
+	marketActivityTracker := common.NewMarketActivityTracker(execsetup.log, execsetup.epochEngine, teams, execsetup.stakingAccount)
 	commander := stubs.NewCommanderStub()
 	execsetup.netDeposits = num.UintZero()
 	execsetup.witness = validators.NewWitness(context.Background(), execsetup.log, validators.NewDefaultConfig(), execsetup.topology, commander, execsetup.timeService)
@@ -167,7 +176,11 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.ntry, execsetup.broker, execsetup.topology, execsetup.epochEngine, marketActivityTracker, stubs.NewBridgeViewStub(), ethSourceNoop)
 
 	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine, execsetup.timeService)
-	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, marketActivityTracker, execsetup.topology)
+
+	vesting := vesting.New(execsetup.log, execsetup.collateralEngine, DummyASVM{}, execsetup.broker, execsetup.assetsEngine)
+	// TODO fix activity streak
+	activityStreak := &DummyActivityStreak{}
+	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, marketActivityTracker, execsetup.topology, vesting, execsetup.banking, activityStreak)
 
 	execsetup.oracleEngine = spec.NewEngine(
 		execsetup.log, spec.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
@@ -252,7 +265,7 @@ func newExecutionTestSetup() *executionTestSetup {
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
-			Watcher: execsetup.executionEngine.OnMarketLiquidityV2SuppliedStakeToObligationFactorUpdate,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2StakeToCCYVolumeUpdate,
 		},
 	)
 	return execsetup
@@ -290,28 +303,12 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Watcher: e.executionEngine.OnMarketFeeFactorsInfrastructureFeeUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityStakeToCCYVolume,
-			Watcher: e.executionEngine.OnSuppliedStakeToObligationFactorUpdate,
-		},
-		netparams.WatchParam{
 			Param:   netparams.MarketValueWindowLength,
 			Watcher: e.executionEngine.OnMarketValueWindowLengthUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityProvidersFeeDistributionTimeStep,
-			Watcher: e.executionEngine.OnMarketLiquidityProvidersFeeDistributionTimeStep,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityProvisionShapesMaxSize,
-			Watcher: e.executionEngine.OnMarketLiquidityProvisionShapesMaxSizeUpdate,
-		},
-		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
 			Watcher: e.executionEngine.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityBondPenaltyParameter,
-			Watcher: e.executionEngine.OnMarketLiquidityBondPenaltyUpdate,
 		},
 		// Liquidity version 2.
 		netparams.WatchParam{
@@ -336,7 +333,7 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
-			Watcher: e.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate,
+			Watcher: e.executionEngine.OnMarketLiquidityV2StakeToCCYVolumeUpdate,
 		},
 		// End of liquidity version 2.
 		netparams.WatchParam{
@@ -396,4 +393,10 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Watcher: execsetup.executionEngine.OnSuccessorMarketTimeWindowUpdate,
 		},
 	)
+}
+
+type DummyActivityStreak struct{}
+
+func (*DummyActivityStreak) GetRewardsDistributionMultiplier(party string) num.Decimal {
+	return num.DecimalOne()
 }

@@ -34,6 +34,6 @@ CREATE TABLE IF NOT EXISTS funding_period_data_points (
 
 -- +goose Down
 
-DROP TABLE IF EXISTS funding_period_data_points;
+DROP TABLE IF EXISTS funding_period_data_points cascade;
 DROP TYPE IF EXISTS funding_period_data_point_source;
-DROP TABLE IF EXISTS funding_period;
+DROP TABLE IF EXISTS funding_period cascade;

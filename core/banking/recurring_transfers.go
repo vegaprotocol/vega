@@ -14,12 +14,15 @@ package banking
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
@@ -88,7 +91,52 @@ func (e *Engine) recurringTransfer(
 	e.recurringTransfers = append(e.recurringTransfers, transfer)
 	e.recurringTransfersMap[transfer.ID] = transfer
 
+	if transfer.DispatchStrategy != nil {
+		hash := e.hashDispatchStrategy(transfer.DispatchStrategy)
+		if _, ok := e.hashToStrategy[hash]; !ok {
+			e.hashToStrategy[hash] = &dispatchStrategyCacheEntry{ds: transfer.DispatchStrategy, refCount: 1}
+		} else {
+			e.hashToStrategy[hash].refCount++
+		}
+	}
+
 	return nil
+}
+
+func (e *Engine) hashDispatchStrategy(ds *vegapb.DispatchStrategy) string {
+	p, err := proto.Marshal(ds)
+	if err != nil {
+		e.log.Panic("failed to marshal dispatch strategy", logging.String("dispatch-strategy", ds.String()))
+	}
+	return hex.EncodeToString(crypto.Hash(p))
+}
+
+func (e *Engine) registerDispatchStrategy(ds *vegapb.DispatchStrategy) {
+	if ds == nil {
+		return
+	}
+	hash := e.hashDispatchStrategy(ds)
+	if _, ok := e.hashToStrategy[hash]; !ok {
+		e.hashToStrategy[hash] = &dispatchStrategyCacheEntry{ds: ds, refCount: 1}
+	} else {
+		e.hashToStrategy[hash].refCount++
+	}
+}
+
+func (e *Engine) unregisterDispatchStrategy(ds *vegapb.DispatchStrategy) {
+	if ds == nil {
+		return
+	}
+	hash := e.hashDispatchStrategy(ds)
+	e.hashToStrategy[hash].refCount--
+}
+
+func (e *Engine) cleanupStaleDispatchStrategies() {
+	for hash, dsc := range e.hashToStrategy {
+		if dsc.refCount == 0 {
+			delete(e.hashToStrategy, hash)
+		}
+	}
 }
 
 func compareStringSlices(a, b []string) bool {
@@ -123,16 +171,28 @@ func (e *Engine) ensureNoRecurringTransferDuplicates(
 	return nil
 }
 
-func (e *Engine) getMarketScores(ds *vegapb.DispatchStrategy, payoutAsset, funder string) []*types.MarketContributionScore {
+// dispatchRequired returns true if the metric for any qualifying entity in scope none zero.
+// NB1: the check for market value metric should be done separately
+// NB2: for validator ranking this will always return true as it is assumed that for the network to resume there must always be
+// a validator with non zero ranking.
+func (e *Engine) dispatchRequired(ds *vegapb.DispatchStrategy) bool {
 	switch ds.Metric {
-	case vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, vegapb.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED:
-		return e.marketActivityTracker.GetMarketScores(ds.AssetForMetric, ds.Markets, ds.Metric)
-
-	case vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE:
-		// get a slice of markets for the metric asset that are eligible to be paid for proposer bonus and have not been paid for the specific markets in scope
-		return e.marketActivityTracker.GetMarketsWithEligibleProposer(ds.AssetForMetric, ds.Markets, payoutAsset, funder)
+	case vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
+		vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED,
+		vegapb.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
+		vegapb.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+		vegapb.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
+		vegapb.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY:
+		if ds.EntityScope == vegapb.EntityScope_ENTITY_SCOPE_INDIVIDUALS {
+			return len(e.marketActivityTracker.CalculateMetricForIndividuals(ds)) > 0
+		} else {
+			tcs, _ := e.marketActivityTracker.CalculateMetricForTeams(ds)
+			return len(tcs) > 0
+		}
+	case vegapb.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING:
+		return true
 	}
-	return nil
+	return false
 }
 
 func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint64) {
@@ -183,27 +243,53 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 		var r []*types.LedgerMovement
 		if v.DispatchStrategy == nil {
 			resps, err = e.processTransfer(
-				ctx, v.From, v.To, v.Asset, "", "", v.FromAccountType, v.ToAccountType, amount, v.Reference, nil, // last is eventual oneoff, which this is not
+				ctx, v.From, v.To, v.Asset, "", v.FromAccountType, v.ToAccountType, amount, v.Reference, nil, // last is eventual oneoff, which this is not
 			)
 		} else {
 			// check if the amount + fees can be covered by the party issuing the transfer
 			if _, err = e.ensureFeeForTransferFunds(amount, v.From, v.Asset, v.FromAccountType); err == nil {
-				marketScores := e.getMarketScores(v.DispatchStrategy, v.Asset, v.From)
-				// first we make sure that there's sufficient funds to cover the transfer
-				for _, fms := range marketScores {
-					amt, _ := num.UintFromDecimal(amount.ToDecimal().Mul(fms.Score))
-					if amt.IsZero() {
-						continue
+				// NB: if the metric is market value we're going to transfer the bonus if any directly
+				// to the market account of the asset/reward type - this is similar to previous behaviour and
+				// different to how all other metric based rewards behave. The reason is that we need the context of the funder
+				// and this context is lost when the transfer has already gone through
+				if v.DispatchStrategy.Metric == vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE {
+					marketProposersScore := e.marketActivityTracker.GetMarketsWithEligibleProposer(v.DispatchStrategy.AssetForMetric, v.DispatchStrategy.Markets, v.Asset, v.From)
+					for _, fms := range marketProposersScore {
+						amt, _ := num.UintFromDecimal(amount.ToDecimal().Mul(fms.Score))
+						if amt.IsZero() {
+							continue
+						}
+						r, err = e.processTransfer(
+							ctx, v.From, v.To, v.Asset, fms.Market, v.FromAccountType, v.ToAccountType, amt, v.Reference, nil, // last is eventual oneoff, which this is not
+						)
+						if err != nil {
+							e.log.Error("failed to process transfer",
+								logging.String("from", v.From),
+								logging.String("to", v.To),
+								logging.String("asset", v.Asset),
+								logging.String("market", fms.Market),
+								logging.String("from-account-type", v.FromAccountType.String()),
+								logging.String("to-account-type", v.ToAccountType.String()),
+								logging.String("amount", amt.String()),
+								logging.String("reference", v.Reference),
+								logging.Error(err))
+							break
+						}
+						if fms.Score.IsPositive() {
+							e.marketActivityTracker.MarkPaidProposer(v.DispatchStrategy.AssetForMetric, fms.Market, v.Asset, v.DispatchStrategy.Markets, v.From)
+						}
+						resps = append(resps, r...)
 					}
+				}
+				// for any other metric, we transfer the funds (full amount) to the reward account of the asset/reward_type/market=hash(dispatch_strategy)
+				if e.dispatchRequired(v.DispatchStrategy) {
+					p, _ := proto.Marshal(v.DispatchStrategy)
+					hash := hex.EncodeToString(crypto.Hash(p))
 					r, err = e.processTransfer(
-						ctx, v.From, v.To, v.Asset, "", fms.Market, v.FromAccountType, v.ToAccountType, amt, v.Reference, nil, // last is eventual oneoff, which this is not
+						ctx, v.From, v.To, v.Asset, hash, v.FromAccountType, v.ToAccountType, amount, v.Reference, nil, // last is eventual oneoff, which this is not
 					)
 					if err != nil {
 						e.log.Error("failed to process transfer", logging.Error(err))
-						break
-					}
-					if v.DispatchStrategy.Metric == vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE && fms.Score.IsPositive() {
-						e.marketActivityTracker.MarkPaidProposer(fms.Market, v.Asset, v.DispatchStrategy.Markets, v.From)
 					}
 					resps = append(resps, r...)
 				}
@@ -248,6 +334,7 @@ func (e *Engine) deleteTransfer(ID string) {
 	for i, rt := range e.recurringTransfers {
 		if rt.ID == ID {
 			index = i
+			e.unregisterDispatchStrategy(rt.DispatchStrategy)
 			break
 		}
 	}

@@ -320,9 +320,9 @@ message TransactionResult {
     commands.v1.EthereumKeyRotateSubmission ethereum_key_rotate_submission = 121;
     commands.v1.StopOrdersSubmission stop_order_submission = 122;
     commands.v1.StopOrdersCancellation stop_order_cancellation = 123;
-    commands.v1.CreateTeam create_team = 124;
-    commands.v1.UpdateTeam update_team = 125;
-    commands.v1.JoinTeam join_team = 126;
+    commands.v1.CreateReferralSet create_referral_set = 124;
+    commands.v1.UpdateReferralSet update_referral_set = 125;
+    commands.v1.ApplyReferralCode apply_referral_code = 126;
   }
 
   // extra details about the transaction processing
@@ -716,6 +716,8 @@ message RefereeSwitchedTeam {
   // Time in Unix nanoseconds when the party switched team. This time acts as
   // the joining time.
   int64 switched_at = 4;
+  // Epoch at which the party switched the team.
+  uint64 at_epoch = 5;
 }
 
 message RefereeJoinedTeam {
@@ -725,6 +727,30 @@ message RefereeJoinedTeam {
   string referee = 2;
   // Time in Unix nanoseconds when the party joined a team.
   int64 joined_at = 3;
+  // Epoch at which the party joined the team.
+  uint64 at_epoch = 4;
+}
+
+message ReferralSetCreated {
+  // Unique ID of the created set.
+  string set_id = 1;
+  // Party that created the set.
+  string referrer = 2;
+  // Time in Unix nanoseconds when the set was created.
+  int64 created_at = 3;
+  // Time in Unix nanoseconds when the set was updated.
+  int64 updated_at = 4;
+}
+
+message RefereeJoinedReferralSet {
+  // Unique ID of the referral set the referee joined.
+  string set_id = 1;
+  // Party that joined the set.
+  string referee = 2;
+  // Time in Unix nanoseconds when the party joined the set.
+  int64 joined_at = 3;
+  // Epoch at which the party joined the set.
+  uint64 at_epoch = 4;
 }
 
 message ReferralProgramStarted {
@@ -903,6 +929,12 @@ enum BusEventType {
   // Event indicating a referral program ended.
   BUS_EVENT_TYPE_REFERRAL_PROGRAM_ENDED = 69;
 
+  // Event indicating a set has been created.
+  BUS_EVENT_TYPE_REFERRAL_SET_CREATED = 70;
+
+  // Event indicating a referee joined a set.
+  BUS_EVENT_TYPE_REFEREE_JOINED_REFERRAL_SET = 71;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1050,6 +1082,10 @@ message BusEvent {
     ReferralProgramUpdated referral_program_updated = 166;
     // Event notifying that a referral program has ended.
     ReferralProgramEnded referral_program_ended = 167;
+    // Event notifying a referral set has been created.
+    ReferralSetCreated referral_set_created = 168;
+    // Event notifying a referee has joined a referral set.
+    RefereeJoinedReferralSet referee_joined_referral_set = 169;
 
     // Market tick events
     MarketEvent market = 1001;

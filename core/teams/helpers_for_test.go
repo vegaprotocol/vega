@@ -30,7 +30,7 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
-	typespb "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -38,15 +38,17 @@ import (
 )
 
 type testEngine struct {
-	engine      *teams.SnapshottedEngine
-	broker      *mocks.MockBroker
-	timeService *mocks.MockTimeService
+	engine       *teams.SnapshottedEngine
+	broker       *mocks.MockBroker
+	timeService  *mocks.MockTimeService
+	currentEpoch uint64
 }
 
 func assertEqualTeams(t *testing.T, expected, actual []types.Team) {
 	t.Helper()
 
 	teams.SortByTeamID(expected)
+	teams.SortByTeamID(actual)
 
 	if len(expected) != len(actual) {
 		assert.Fail(t, fmt.Sprintf("Expected len of %d but got %d", len(expected), len(actual)))
@@ -77,7 +79,7 @@ func assertEqualMembership(t *testing.T, expected, actual *types.Membership) {
 
 	assert.Equal(t, expected.PartyID, actual.PartyID)
 	assert.Equal(t, expected.JoinedAt.UnixNano(), actual.JoinedAt.UnixNano())
-	assert.Equal(t, expected.NumberOfEpoch, actual.NumberOfEpoch)
+	assert.Equal(t, expected.StartedAtEpoch, actual.StartedAtEpoch)
 }
 
 func expectTeamCreatedEvent(t *testing.T, engine *testEngine) {
@@ -120,11 +122,15 @@ func nextEpoch(t *testing.T, ctx context.Context, te *testEngine, startEpochTime
 	t.Helper()
 
 	te.engine.OnEpoch(ctx, types.Epoch{
-		Action:  typespb.EpochAction_EPOCH_ACTION_END,
+		Seq:     te.currentEpoch,
+		Action:  vegapb.EpochAction_EPOCH_ACTION_END,
 		EndTime: startEpochTime.Add(-1 * time.Second),
 	})
+
+	te.currentEpoch += 1
 	te.engine.OnEpoch(ctx, types.Epoch{
-		Action:    typespb.EpochAction_EPOCH_ACTION_START,
+		Seq:       te.currentEpoch,
+		Action:    vegapb.EpochAction_EPOCH_ACTION_START,
 		StartTime: startEpochTime,
 	})
 }
@@ -159,10 +165,16 @@ func newEngine(t *testing.T) *testEngine {
 
 	engine := teams.NewSnapshottedEngine(epochEngine, broker, timeService)
 
+	engine.OnEpochRestore(context.Background(), types.Epoch{
+		Seq:    10,
+		Action: vegapb.EpochAction_EPOCH_ACTION_START,
+	})
+
 	return &testEngine{
-		engine:      engine,
-		broker:      broker,
-		timeService: timeService,
+		engine:       engine,
+		broker:       broker,
+		timeService:  timeService,
+		currentEpoch: 10,
 	}
 }
 
@@ -178,47 +190,48 @@ func newPartyID(t *testing.T) types.PartyID {
 	return types.PartyID(vgrand.RandomStr(5))
 }
 
-func newTeam(t *testing.T, ctx context.Context, te *testEngine) (types.TeamID, types.PartyID) {
+func newTeam(t *testing.T, ctx context.Context, te *testEngine) (types.TeamID, types.PartyID, string) {
 	t.Helper()
 
 	teamID := newTeamID(t)
 	referrer := newPartyID(t)
+	teamName := vgrand.RandomStr(5)
 
 	expectTeamCreatedEvent(t, te)
 
-	err := te.engine.CreateTeam(ctx, referrer, teamID, createTeamCmd(t, "", "", ""))
+	err := te.engine.CreateTeam(ctx, referrer, teamID, createTeamCmd(t, teamName, "", ""))
 	require.NoError(t, err)
 	require.NotEmpty(t, teamID)
 	require.True(t, te.engine.IsTeamMember(referrer))
 
-	return teamID, referrer
+	return teamID, referrer, teamName
 }
 
-func createTeamCmd(t *testing.T, name, teamURL, avatarURL string) *commandspb.CreateTeam {
+func createTeamCmd(t *testing.T, name, teamURL, avatarURL string) *commandspb.CreateReferralSet_Team {
 	t.Helper()
 
-	return &commandspb.CreateTeam{
-		Name:      ptr.From(name),
+	return &commandspb.CreateReferralSet_Team{
+		Name:      name,
 		TeamUrl:   ptr.From(teamURL),
 		AvatarUrl: ptr.From(avatarURL),
 	}
 }
 
-func updateTeamCmd(t *testing.T, teamID types.TeamID, name, teamURL, avatarURL string) *commandspb.UpdateTeam {
+func updateTeamCmd(t *testing.T, name, teamURL, avatarURL string, closed bool) *commandspb.UpdateReferralSet_Team {
 	t.Helper()
 
-	return &commandspb.UpdateTeam{
-		TeamId:    string(teamID),
+	return &commandspb.UpdateReferralSet_Team{
 		Name:      ptr.From(name),
 		TeamUrl:   ptr.From(teamURL),
 		AvatarUrl: ptr.From(avatarURL),
+		Closed:    ptr.From(closed),
 	}
 }
 
-func joinTeamCmd(t *testing.T, teamID types.TeamID) *commandspb.JoinTeam {
+func joinTeamCmd(t *testing.T, teamID types.TeamID) *commandspb.ApplyReferralCode {
 	t.Helper()
 
-	return &commandspb.JoinTeam{
-		TeamId: string(teamID),
+	return &commandspb.ApplyReferralCode{
+		Id: string(teamID),
 	}
 }

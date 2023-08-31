@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/core/epochtime"
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/execution/common"
+	"code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	snp "code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
@@ -41,15 +42,17 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 type snapshotTestData struct {
-	engine         *execution.Engine
-	oracleEngine   *spec.Engine
-	snapshotEngine *snp.Engine
-	timeService    *stubs.TimeStub
+	engine           *execution.Engine
+	oracleEngine     *spec.Engine
+	snapshotEngine   *snp.Engine
+	timeService      *stubs.TimeStub
+	collateralEngine *collateral.Engine
 }
 
 type stubIDGen struct {
@@ -69,12 +72,20 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 	err := exec.engine.SubmitMarket(context.Background(), mkt, "", time.Now())
 	require.NoError(t, err)
 
-	state, _, _ := exec.engine.GetState("")
+	marketState, _, _ := exec.engine.GetState("")
 
 	exec2 := getEngine(t, paths.New(t.TempDir()), now)
-	snap := &snapshot.Payload{}
-	proto.Unmarshal(state, snap)
-	_, _ = exec2.engine.LoadState(context.Background(), types.PayloadFromProto(snap))
+	marketSnap := &snapshot.Payload{}
+	proto.Unmarshal(marketState, marketSnap)
+
+	_, _ = exec2.engine.LoadState(context.Background(), types.PayloadFromProto(marketSnap))
+
+	// restore collateral
+	accountsState, _, _ := exec.collateralEngine.GetState("accounts")
+	accountsSnap := &snapshot.Payload{}
+	proto.Unmarshal(accountsState, accountsSnap)
+
+	_, _ = exec2.collateralEngine.LoadState(context.Background(), types.PayloadFromProto(accountsSnap))
 
 	state2, _, _ := exec2.engine.GetState("")
 
@@ -127,7 +138,7 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 	require.Equal(t, types.MarketStateSettled, marketState1)
 	require.Equal(t, types.MarketStateSettled, marketState2)
 
-	require.True(t, bytes.Equal(state, state2))
+	require.True(t, bytes.Equal(marketState, state2))
 }
 
 // TestSnapshotOraclesTerminatingMarketSettleAfterSnapshot tests that market loaded from snapshot can be terminated with its oracle.
@@ -157,12 +168,6 @@ func TestSnapshotOraclesTerminatingMarketSettleAfterSnapshot(t *testing.T) {
 		CommitmentAmount: num.NewUint(1000000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "lp1",
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceMid, 10, 5),
-		},
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceMid, 10, 5),
-		},
 	}
 	// submit LP
 	vgctx := vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("0deadbeef")))
@@ -238,6 +243,13 @@ func TestSnapshotOraclesTerminatingMarketSettleAfterSnapshot(t *testing.T) {
 	// the states should match
 	require.True(t, bytes.Equal(state, state2))
 
+	// restore collateral
+	accountsState, _, _ := exec.collateralEngine.GetState("accounts")
+	accountsSnap := &snapshot.Payload{}
+	proto.Unmarshal(accountsState, accountsSnap)
+
+	_, _ = exec2.collateralEngine.LoadState(context.Background(), types.PayloadFromProto(accountsSnap))
+
 	vgctx = vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("3deadbeef")))
 	exec.oracleEngine.BroadcastData(vgctx, dstypes.Data{
 		Signers: pubKeys,
@@ -298,6 +310,13 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementData(t *test
 	// take a snapshot on the loaded engine
 	state2, _, _ := exec2.engine.GetState("")
 	require.True(t, bytes.Equal(state, state2))
+
+	// restore collateral
+	accountsState, _, _ := exec.collateralEngine.GetState("accounts")
+	accountsSnap := &snapshot.Payload{}
+	proto.Unmarshal(accountsState, accountsSnap)
+
+	_, _ = exec2.collateralEngine.LoadState(context.Background(), types.PayloadFromProto(accountsSnap))
 
 	// terminate the market to lead to settlement
 	exec.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
@@ -540,6 +559,13 @@ func newMarket(ID string, pubKey *dstypes.SignerPubKey) *types.Market {
 				},
 			},
 		},
+		LiquiditySLAParams: &types.LiquiditySLAParams{
+			PriceRange:                      num.DecimalFromFloat(0.95),
+			CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0.5),
+			ProvidersFeeCalculationTimeStep: time.Second * 5,
+			PerformanceHysteresisEpochs:     4,
+			SlaCompetitionFactor:            num.NewDecimalFromFloat(0.5),
+		},
 		State: types.MarketStateActive,
 	}
 }
@@ -555,7 +581,10 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 	oracleEngine := spec.NewEngine(log, spec.NewDefaultConfig(), timeService, broker)
 
 	epochEngine := epochtime.NewService(log, epochtime.NewDefaultConfig(), broker)
-	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
+	ctrl := gomock.NewController(t)
+	teams := mocks.NewMockTeams(ctrl)
+	bc := mocks.NewMockAccountBalanceChecker(ctrl)
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine, teams, bc)
 
 	ethAsset := types.Asset{
 		ID: "Ethereum/Ether",
@@ -583,12 +612,14 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 	snapshotEngine, err := snp.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
 	require.NoError(t, err)
 	snapshotEngine.AddProviders(eng)
+	snapshotEngine.AddProviders(collateralEngine)
 
 	return &snapshotTestData{
-		engine:         eng,
-		oracleEngine:   oracleEngine,
-		snapshotEngine: snapshotEngine,
-		timeService:    timeService,
+		engine:           eng,
+		oracleEngine:     oracleEngine,
+		snapshotEngine:   snapshotEngine,
+		timeService:      timeService,
+		collateralEngine: collateralEngine,
 	}
 }
 
@@ -604,7 +635,10 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 	oracleEngine := spec.NewEngine(log, spec.NewDefaultConfig(), timeService, broker)
 
 	epochEngine := epochtime.NewService(log, epochtime.NewDefaultConfig(), broker)
-	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
+	ctrl := gomock.NewController(t)
+	teams := mocks.NewMockTeams(ctrl)
+	bc := mocks.NewMockAccountBalanceChecker(ctrl)
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine, teams, bc)
 
 	ethAsset := types.Asset{
 		ID: "Ethereum/Ether",
@@ -637,22 +671,15 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 	snapshotEngine.AddProviders(eng)
 
 	return &snapshotTestData{
-		engine:         eng,
-		oracleEngine:   oracleEngine,
-		snapshotEngine: snapshotEngine,
-		timeService:    timeService,
+		engine:           eng,
+		oracleEngine:     oracleEngine,
+		snapshotEngine:   snapshotEngine,
+		timeService:      timeService,
+		collateralEngine: collateralEngine,
 	}
 }
 
 func (s *stubIDGen) NextID() string {
 	s.calls++
 	return hex.EncodeToString([]byte(fmt.Sprintf("deadb33f%d", s.calls)))
-}
-
-func newLiquidityOrder(reference types.PeggedReference, offset uint64, proportion uint32) *types.LiquidityOrder {
-	return &types.LiquidityOrder{
-		Reference:  reference,
-		Proportion: proportion,
-		Offset:     num.NewUint(offset),
-	}
 }

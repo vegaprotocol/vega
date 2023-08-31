@@ -52,11 +52,8 @@ func (m *Market) checkForReferenceMoves(
 
 	// now we can start all special order repricing...
 	if err == nil {
-		minLpPrice, maxLpPrice := m.computeValidLPVolumeRange(newBestBid, newBestAsk)
-		orderUpdates = m.repriceAllSpecialOrders(ctx, changes, orderUpdates, minLpPrice, maxLpPrice)
+		orderUpdates = m.repriceAllSpecialOrders(ctx, changes, orderUpdates)
 	} else {
-		// we won't be able to reprice here
-		m.stopAllSpecialOrders(ctx, orderUpdates)
 		orderUpdates = nil
 	}
 
@@ -70,7 +67,7 @@ func (m *Market) checkForReferenceMoves(
 	// now we had new orderUpdates while processing those,
 	// that would means someone got distressed, so some order
 	// got uncrossed, so we need to check all these again.
-	// we do not use the forceUpdate ffield here as it's
+	// we do not use the forceUpdate field here as it's
 	// not required that prices moved though
 	if len(orderUpdates) > 0 {
 		m.checkForReferenceMoves(ctx, orderUpdates, false)

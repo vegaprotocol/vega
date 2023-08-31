@@ -24,15 +24,16 @@ Feature: Position resolution case 5 lognormal risk model
       | trading.terminated | TYPE_BOOLEAN | trading termination |
 
     And the markets:
-      | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec20Oracle     | 0.74667                | 0                       |
+      | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec20Oracle     | 0.74667                | 0                         | default-futures |
 
     And the following network parameters are set:
       | name                                         | value |
       | market.auction.minimumDuration               | 1     |
       | network.markPriceUpdateMaximumFrequency      | 0s    |
       | market.liquidity.successorLaunchWindowLength | 1s    |
-
+      | limits.markets.maxPeggedOrders               | 2     |
+      
   Scenario: 001 using lognormal risk model, setup a scenario where designatedLoser gets closed out; 0012-POSR-002, 0012-POSR-005, 0013-ACCT-001, 0013-ACCT-022
 
     # setup accounts
@@ -40,23 +41,25 @@ Feature: Position resolution case 5 lognormal risk model
       | party            | asset | amount        |
       | sellSideProvider | USD   | 1000000000000 |
       | buySideProvider  | USD   | 1000000000000 |
-      | designatedLoser | USD   | 22000         |
+      | designatedLoser  | USD   | 22000         |
       | aux              | USD   | 1000000000000 |
       | aux2             | USD   | 1000000000000 |
       | lpprov           | USD   | 1000000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | sell | ASK              | 50         | 100    | amendment  |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | amendment  |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 10     | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 10     | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | buy  | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC19 | sell | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 10     | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 10     | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | buy  | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC19 | sell | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
+      | lpprov | ETH/DEC19 | buy  | 225    | 40    | 0                | TYPE_LIMIT | TIF_GTC |
+      | lpprov | ETH/DEC19 | sell | 36     | 250   | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "150" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -89,25 +92,25 @@ Feature: Position resolution case 5 lognormal risk model
     # insurance pool generation - trade
     When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | designatedLoser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | designatedLoser  | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
-      | designatedLoser | USD   | ETH/DEC19 | 17650  | 0       |
+      | designatedLoser  | USD   | ETH/DEC19 | 17650  | 0       |
 
     Then the parties should have the following margin levels:
       | party            | market id | maintenance | search | initial | release |
-      | designatedLoser | ETH/DEC19 | 47134       | 56560  | 70701   | 94268   |
+      | designatedLoser  | ETH/DEC19 | 47134       | 56560  | 70701   | 94268   |
 
     Then the order book should have the following volumes for market "ETH/DEC19":
-     | side | volume | price |
+      | side | volume | price |
       | buy  | 10     | 1     |
       | buy  | 225    | 40    |
       | buy  | 1      | 140   |
       | sell | 0      | 150   |
-      | sell | 0      | 250   |
+      | sell | 36     | 250   |
       | sell | 10     | 2000  |
-      | sell | 5      | 2100  |
+      | sell | 0      | 2100  |
 
     #designatedLoser has position of vol 290; price 150; calculated risk factor long: 0.336895684; risk factor short: 0.4878731
     #what's on the order book to cover the position is shown above, which makes the exit price 38.77118644 =(140*1+40*225+1*10)/236, slippage per unit is 150-38.77118644=111.2288136
@@ -155,7 +158,7 @@ Feature: Position resolution case 5 lognormal risk model
       | sellSideProvider | USD   | ETH/DEC19 | 83564  | 999999919336 |
       | buySideProvider  | USD   | ETH/DEC19 | 66216  | 999999939570 |
       | aux              | USD   | ETH/DEC19 | 1088   | 999999998902 |
-      | aux2             | USD   | ETH/DEC19 | 289      | 999999999721 |
+      | aux2             | USD   | ETH/DEC19 | 271    | 999999999739 |
 
     # check margin levels
     Then the parties should have the following margin levels:
@@ -248,15 +251,19 @@ Feature: Position resolution case 5 lognormal risk model
       | party            | asset | amount        |
       | sellSideProvider | USD   | 1000000000000 |
       | buySideProvider  | USD   | 1000000000000 |
-      | designatedLoser | USD   | 22000         |
+      | designatedLoser  | USD   | 22000         |
       | aux              | USD   | 1000000000000 |
       | aux2             | USD   | 1000000000000 |
       | lpprov           | USD   | 1000000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | sell | ASK              | 50         | 100    | amendment  |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 9000              | 0.1 | amendment  |
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | lpprov | ETH/DEC19 | buy  | 225    | 40    | 0                | TYPE_LIMIT | TIF_GTC |
+      | lpprov | ETH/DEC19 | sell | 36     | 250   | 0                | TYPE_LIMIT | TIF_GTC |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -277,7 +284,6 @@ Feature: Position resolution case 5 lognormal risk model
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest |
       | 150        | TRADING_MODE_CONTINUOUS | 731          | 9000           | 1             |
-    #target_stake = mark_price x max_oi x target_stake_scaling_factor x rf=150*10*1*0.4878731=731
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | volume | price |

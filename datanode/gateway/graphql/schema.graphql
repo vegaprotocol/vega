@@ -328,13 +328,13 @@ type ObservableMarketData {
 
 "Timestamps for when the market changes state"
 type MarketTimestamps {
-  "Time when the market is first proposed"
+  "RFC3339Nano time when the market is first proposed"
   proposed: Timestamp
-  "Time when the market has been voted in and waiting to be created"
+  "RFC3339Nano time when the market has been voted in and waiting to be created"
   pending: Timestamp!
-  "Time when the market is open and ready to accept trades"
+  "RFC3339Nano time when the market is open and ready to accept trades"
   open: Timestamp!
-  "Time when the market is closed"
+  "RFC3339Nano time when the market is closed"
   close: Timestamp!
 }
 
@@ -498,7 +498,7 @@ type Query {
     side: Side!
     "TimeInForce of the order"
     timeInForce: OrderTimeInForce!
-    "Expiration of the the order"
+    "RFC3339Nano expiration time of the order"
     expiration: Timestamp
     "Type of the order"
     type: OrderType!
@@ -519,7 +519,7 @@ type Query {
     side: Side!
     "Time in force of the order"
     timeInForce: OrderTimeInForce!
-    "Expiration of the order"
+    "RFC3339Nano expiration time of the order"
     expiration: Timestamp
     "Type of the order"
     type: OrderType!
@@ -578,13 +578,13 @@ type Query {
   getMarketDataHistoryConnectionByID(
     id: ID!
     """
-    Optional start date time for the historic data query.
+    Optional RFC3339Nano start date time for the historic data query.
     If both the start and end date is not provided, only the latest snapshot will be returned.
     If only the start date is provided, all market data for the market from the start date forward will be returned.
     """
     start: Timestamp
     """
-    Optional end date time for the historic data query.
+    Optional RFC3339Nano end date time for the historic data query.
     If both the start and end date is not provided, only the latest snapshot will be returned.
     If only the end date is provided, all market data for the market up to and including the end date will be returned.
     """
@@ -851,7 +851,7 @@ type Transfer {
   "The status of this transfer"
   status: TransferStatus!
 
-  "The time at which the transfer was submitted"
+  "The RFC3339Nano time at which the transfer was submitted"
   timestamp: Timestamp!
 
   "The type of transfer being made, i.e. a one-off or recurring transfer"
@@ -869,7 +869,7 @@ union TransferKind =
 
 "The specific details for a one-off governance transfer"
 type OneOffGovernanceTransfer {
-  "An optional time when the transfer should be delivered"
+  "An optional RFC3339Nano time when the transfer should be delivered"
   deliverOn: Timestamp
 }
 
@@ -885,7 +885,7 @@ type RecurringGovernanceTransfer {
 
 "The specific details for a one-off transfer"
 type OneOffTransfer {
-  "An optional time when the transfer should be delivered"
+  "An optional RFC3339Nano time when the transfer should be delivered"
   deliverOn: Timestamp
 }
 
@@ -911,6 +911,37 @@ enum DispatchMetric {
   DISPATCH_METRIC_LP_FEES_RECEIVED
   "Dispatch metric that uses the total value of the market if above the required threshold and not paid given proposer bonus yet"
   DISPATCH_METRIC_MARKET_VALUE
+  "Dispatch metric that uses the time weighted position of the party in the market"
+  DISPATCH_METRIC_AVERAGE_POSITION
+  "Dispatch metric that uses the relative PNL of the party in the market"
+  DISPATCH_METRIC_RELATIVE_RETURN
+  "Dispatch metric that uses return volatility of the party in the market"
+  DISPATCH_METRIC_RETURN_VOLATILITY
+  "Dispatch metric that uses the validator ranking of the validator as metric"
+  DISPATCH_METRIC_VALIDATOR_RANKING
+}
+
+enum EntityScope {
+  "Rewards must be distributed directly to eligible parties"
+  ENTITY_SCOPE_INDIVIDUALS
+  "Rewards must be distributed directly to eligible teams, and then amongst team members"
+  ENTITY_SCOPE_TEAMS
+}
+
+enum IndividualScope {
+  "All parties on the network are within the scope of this reward"
+  INDIVIDUAL_SCOPE_ALL
+  "All parties that are part of a team are within the scope of this reward"
+  INDIVIDUAL_SCOPE_IN_TEAM
+  "All parties that are not part of a team are within the scope of this reward"
+  INDIVIDUAL_SCOPE_NOT_IN_TEAM
+}
+
+enum DistributionStrategy {
+  "Rewards funded using the pro-rata strategy should be distributed pro-rata by each entity's reward metric scaled by any active multipliers that party has"
+  DISTRIBUTION_STRATEGY_PRO_RATA
+  "Rewards funded using the rank strategy"
+  DISTRIBUTION_STRATEGY_RANK
 }
 
 "Dispatch strategy for a recurring transfer"
@@ -923,6 +954,41 @@ type DispatchStrategy {
 
   "Scope the dispatch to this market only under the metric asset"
   marketIdsInScope: [ID!]
+
+  "The type of entities eligible for this strategy"
+  entityScope: EntityScope!
+
+  "If entity scope is individuals then this defines the scope for individuals"
+  individualScope: IndividualScope
+
+  "The teams in scope for the reward, if the entity is teams"
+  teamScope: [ID]
+
+  "The proportion of the top performers in the team for a given metric to be averaged for the metric calculation if scope is team"
+  nTopPerformers: String
+
+  "Minimum number of governance tokens, e.g. VEGA, staked for a party to be considered eligible"
+  stakingRequirement: String!
+
+  "Minimum notional time-weighted averaged position required for a party to be considered eligible"
+  notionalTimeWeightedAveragePositionRequirement: String!
+
+  "Number of epochs to evaluate the metric on"
+  windowLength: Int!
+
+  "Number of epochs after distribution to delay vesting of rewards by"
+  lockPeriod: Int!
+
+  "Controls how the reward is distributed between qualifying parties"
+  distributionStrategy: DistributionStrategy!
+
+  "Ascending order list of start rank and corresponding share ratio"
+  rankTable: RankTable
+}
+
+type RankTable {
+  startRank: Int!
+  shareRatio: Int!
 }
 
 "Validating status of a node, i.e. validator or non-validator"
@@ -2010,9 +2076,6 @@ type Market {
   "Risk factors for the market"
   riskFactors: RiskFactor
 
-  "Liquidity Provision order price range"
-  lpPriceRange: String!
-
   "Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume"
   linearSlippageFactor: String!
 
@@ -2350,7 +2413,7 @@ type StakeLinking {
   id: ID!
   "Type of linking: link|unlink"
   type: StakeLinkingType!
-  "The time at which the request happened on ethereum"
+  "The RFC3339Nano time at which the request happened on ethereum"
   timestamp: Timestamp!
   "The party initiating the stake linking"
   party: Party!
@@ -2358,7 +2421,7 @@ type StakeLinking {
   amount: String!
   "The status of the linking"
   status: StakeLinkingStatus!
-  "The time at which the stake linking was fully processed by the Vega network, null until defined"
+  "The RFC3339Nano time at which the stake linking was fully processed by the Vega network, null until defined"
   finalizedAt: Timestamp
   "The transaction hash (ethereum) which initiated the link/unlink"
   txHash: String!
@@ -2492,7 +2555,7 @@ type Order {
   "RFC3339Nano formatted date and time for when the order was created (timestamp)"
   createdAt: Timestamp!
 
-  "Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)"
+  "RFC3339Nano expiration time of this order"
   expiresAt: Timestamp
 
   "The status of an order, for example 'Active'"
@@ -2573,7 +2636,7 @@ type StopOrder {
   id: ID!
   "If OCO (one-cancels-other) order, the ID of the associated order."
   ocoLinkId: ID
-  "Time at which the order will expire if an expiry time is set."
+  "RFC3339Nano time at which the order will expire if an expiry time is set."
   expiresAt: Timestamp
   "If an expiry is set, what should the stop order do when it expires."
   expiryStrategy: StopOrderExpiryStrategy
@@ -2581,9 +2644,9 @@ type StopOrder {
   triggerDirection: StopOrderTriggerDirection!
   "Status of the stop order"
   status: StopOrderStatus!
-  "Time the stop order was created."
+  "RFC3339Nano time the stop order was created."
   createdAt: Timestamp!
-  "Time the stop order was last updated."
+  "RFC3339Nano time the stop order was last updated."
   updatedAt: Timestamp
   "Party that submitted the stop order."
   partyId: ID!
@@ -2611,7 +2674,7 @@ type OrderSubmission {
   side: Side!
   "The timeInForce of order (determines how and if it executes, and whether it persists on the book)"
   timeInForce: OrderTimeInForce!
-  "Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)"
+  "RFC3339Nano expiration time of this order"
   expiresAt: Timestamp!
   "The order type"
   type: OrderType!
@@ -2656,7 +2719,7 @@ type OrderUpdate {
   "RFC3339Nano formatted date and time for when the order was created (timestamp)"
   createdAt: Timestamp!
 
-  "Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)"
+  "RFC3339Nano expiration time of this order"
   expiresAt: Timestamp
 
   "The status of an order, for example 'Active'"
@@ -2931,7 +2994,7 @@ type Erc20WithdrawalApproval {
   signatures: String!
   "The target address that will receive the funds"
   targetAddress: String!
-  "Timestamp at which the withdrawal was created"
+  "RFC3339Nano timestamp at which the withdrawal was created"
   creation: String!
 }
 
@@ -3592,6 +3655,18 @@ enum AccountType {
   ACCOUNT_TYPE_LP_LIQUIDITY_FEES
   "Network treasury, per-asset treasury controlled by the network"
   ACCOUNT_TYPE_NETWORK_TREASURY
+  "Vesting reward account is a per party per asset account for locked reward funds waiting to be vested"
+  ACCOUNT_TYPE_VESTING_REWARDS
+  "Vested reward account is a per party per asset account for vested reward funds"
+  ACCOUNT_TYPE_VESTED_REWARDS
+  "Average position reward account is a per asset per market account for average position reward funds"
+  ACCOUNT_TYPE_REWARD_AVERAGE_POSITION
+  "Relative return reward account is a per asset per market account for relative return reward funds"
+  ACCOUNT_TYPE_REWARD_RELATIVE_RETURN
+  "Return volatility reward account is a per asset per market account for return volatility reward funds"
+  ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY
+  "Validator ranking reward account is a per asset account for validator ranking reward funds"
+  ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING
 }
 
 "Types that describe why a transfer has been made"
@@ -3665,7 +3740,7 @@ enum TransferType {
   "Distributes performance bonus from market bonus to liquidity provider's general account."
   TRANSFER_TYPE_SLA_PERFORMANCE_BONUS_DISTRIBUTE
   "Funds deducted from margin account after a perpetuals funding loss."
-  TRANSFER_TYPE_PERPPETUALS_FUNDING_LOSS
+  TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS
   "Funds added to margin account after a perpetuals funding gain."
   TRANSFER_TYPE_PERPETUALS_FUNDING_WIN
   "Funds moved from the vesting account to the vested account once the vesting period is reached."
@@ -3794,8 +3869,6 @@ type NewMarket {
   liquidityMonitoringParameters: LiquidityMonitoringParameters!
   "Decimal places for order sizes, sets what size the smallest order / position on the market can be"
   positionDecimalPlaces: Int!
-  "Liquidity Provision order price range"
-  lpPriceRange: String!
   "Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume"
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume"
@@ -4030,7 +4103,7 @@ type LiquiditySLAParameters {
   Specifies the maximum fraction of their accrued fees an LP that meets the SLA implied by market.liquidity.commitmentMinTimeFraction will
   lose to liquidity providers that achieved a higher SLA performance than them.
   """
-  slaCompletionFactor: String!
+  slaCompetitionFactor: String!
 }
 
 "Representation of a network parameter"
@@ -4470,7 +4543,7 @@ type LiquidityProvision {
   id: ID!
   "The party making this commitment"
   party: Party!
-  "When the liquidity provision was initially created (formatted RFC3339)"
+  "RFC3339Nano time when the liquidity provision was initially created"
   createdAt: Timestamp!
   "RFC3339Nano time of when the liquidity provision was updated"
   updatedAt: Timestamp
@@ -4498,9 +4571,9 @@ type LiquidityProvisionUpdate {
   id: ID!
   "The party making this commitment"
   partyID: ID!
-  "When the liquidity provision was initially created (formatted RFC3339)"
+  "RFC3339Nano time when the liquidity provision was initially created"
   createdAt: Timestamp!
-  "RFC3339Nano time of when the liquidity provision was updated"
+  "RFC3339Nano time when the liquidity provision was updated"
   updatedAt: Timestamp
   "Market for the order"
   marketID: ID!
@@ -4536,7 +4609,7 @@ type Reward {
   amount: String!
   "Percentage out of the total distributed reward"
   percentageOfTotal: String!
-  "Time at which the rewards was received"
+  "RFC3339Nano time when the rewards were received"
   receivedAt: Timestamp!
 }
 
@@ -4806,6 +4879,8 @@ input StopOrderFilter {
   expiryStrategy: [StopOrderExpiryStrategy!]
   "Date range to retrieve order from/to. Start and end time should be expressed as an integer value of Unix nanoseconds"
   dateRange: DateRange
+  "Filter for live stop orders only"
+  liveOnly: Boolean
 }
 
 input OrderByPartyIdsFilter {
@@ -5466,7 +5541,7 @@ type FundingPeriodDataPoint {
   price: String!
   "Time-weighted average price calculated from data points for this period from the data source."
   twap: String
-  "Timestamp when the data point was received."
+  "RFC3339Nano timestamp when the data point was received."
   timestamp: Timestamp!
 }
 

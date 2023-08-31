@@ -15,6 +15,7 @@ func (e *Engine) ResetSLAEpoch(
 	midPrice *num.Uint,
 	positionFactor num.Decimal,
 ) {
+	e.slaEpochStart = now
 	if e.auctionState.IsOpeningAuction() {
 		return
 	}
@@ -26,8 +27,6 @@ func (e *Engine) ResetSLAEpoch(
 
 		commitment.s = 0
 	}
-
-	e.slaEpochStart = now
 }
 
 func (e *Engine) EndBlock(markPrice *num.Uint, midPrice *num.Uint, positionFactor num.Decimal) {
@@ -54,20 +53,31 @@ func (e *Engine) EndBlock(markPrice *num.Uint, midPrice *num.Uint, positionFacto
 
 // CalculateSLAPenalties should be called at the and of epoch to calculate SLA penalties based on LP performance in the epoch.
 func (e *Engine) CalculateSLAPenalties(now time.Time) SlaPenalties {
+	penaltiesPerParty := map[string]*SlaPenalty{}
+
+	// Do not apply any penalties during opening auction
+	if e.auctionState.IsOpeningAuction() {
+		return SlaPenalties{
+			AllPartiesHaveFullFeePenalty: false,
+			PenaltiesPerParty:            penaltiesPerParty,
+		}
+	}
+
 	observedEpochLength := now.Sub(e.slaEpochStart)
 
 	one := num.DecimalOne()
 	partiesWithFullFeePenaltyCount := 0
 
-	penaltiesPerParty := map[string]*SlaPenalty{}
 	for party, commitment := range e.slaPerformance {
 		if !commitment.start.IsZero() {
 			commitment.s += now.Sub(commitment.start)
 		}
 
-		s := num.DecimalFromInt64(commitment.s.Nanoseconds())
-		observedEpochLengthD := num.DecimalFromInt64(observedEpochLength.Nanoseconds())
-		timeBookFraction := s.Div(observedEpochLengthD)
+		timeBookFraction := num.DecimalZero()
+		lNano := observedEpochLength.Nanoseconds()
+		if lNano > 0 {
+			timeBookFraction = num.DecimalFromInt64(commitment.s.Nanoseconds()).Div(num.DecimalFromInt64(lNano))
+		}
 
 		var feePenalty, bondPenalty num.Decimal
 
@@ -157,6 +167,14 @@ func (e *Engine) doesLPMeetsCommitment(
 
 func (e *Engine) calculateCurrentFeePenalty(timeBookFraction num.Decimal) num.Decimal {
 	one := num.DecimalOne()
+
+	if timeBookFraction.LessThan(e.slaParams.CommitmentMinTimeFraction) {
+		return one
+	}
+
+	if timeBookFraction.Equal(e.slaParams.CommitmentMinTimeFraction) && timeBookFraction.Equal(one) {
+		return num.DecimalZero()
+	}
 
 	// p = (1-[timeBookFraction-commitmentMinTimeFraction/1-commitmentMinTimeFraction]) * slaCompetitionFactor
 	return one.Sub(

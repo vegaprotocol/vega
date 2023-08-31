@@ -258,7 +258,7 @@ func testDistributePayout(t *testing.T) {
 	engine.distributePayout(context.Background(), payout)
 
 	rewardAccount, _ = engine.collateral.GetAccountByID(rewardAccount.ID)
-	partyAccount, err := testEngine.collateral.GetPartyGeneralAccount("party1", "VEGA")
+	partyAccount := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(context.Background(), "party1", "VEGA")
 	require.Nil(t, err)
 
 	require.Equal(t, num.NewUint(5000), partyAccount.Balance)
@@ -315,12 +315,13 @@ func testOnEpochEventNoPayoutDelay(t *testing.T) {
 	engine.OnEpochEvent(context.Background(), epoch)
 
 	// get party account balances
-	party1Acc, _ := testEngine.collateral.GetPartyGeneralAccount("party1", "VEGA")
-	party2Acc, _ := testEngine.collateral.GetPartyGeneralAccount("party2", "VEGA")
-	node1Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node1", "VEGA")
-	node2Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node2", "VEGA")
-	node3Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node3", "VEGA")
-	node4Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node4", "VEGA")
+	ctx := context.Background()
+	party1Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "party1", "VEGA")
+	party2Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "party2", "VEGA")
+	node1Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "node1", "VEGA")
+	node2Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "node2", "VEGA")
+	node3Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "node3", "VEGA")
+	node4Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "node4", "VEGA")
 
 	require.Equal(t, num.NewUint(172500), party1Acc.Balance)
 	require.Equal(t, num.NewUint(15000), party2Acc.Balance)
@@ -392,12 +393,13 @@ func TestErsatzTendermintRewardSplit(t *testing.T) {
 	// node 4 gets 25000
 
 	// get party account balances
-	party1Acc, _ := testEngine.collateral.GetPartyGeneralAccount("party1", "VEGA")
-	party2Acc, _ := testEngine.collateral.GetPartyGeneralAccount("party2", "VEGA")
-	node1Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node1", "VEGA")
-	node2Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node2", "VEGA")
-	node3Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node3", "VEGA")
-	node4Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node4", "VEGA")
+	ctx := context.Background()
+	party1Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "party1", "VEGA")
+	party2Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "party2", "VEGA")
+	node1Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "node1", "VEGA")
+	node2Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "node2", "VEGA")
+	node3Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "node3", "VEGA")
+	node4Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "node4", "VEGA")
 
 	require.Equal(t, num.NewUint(172500), party1Acc.Balance)
 	require.Equal(t, num.NewUint(15000), party2Acc.Balance)
@@ -446,7 +448,11 @@ func getEngine(t *testing.T) *testEngine {
 	collateral.EnableAsset(context.Background(), asset)
 	topology := mocks.NewMockTopology(ctrl)
 	marketActivityTracker := mocks.NewMockMarketActivityTracker(ctrl)
-	engine := New(logger, conf, broker, delegation, epochEngine, collateral, ts, marketActivityTracker, topology)
+	vesting := mocks.NewMockVesting(ctrl)
+	vesting.EXPECT().AddReward(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	transfers := mocks.NewMockTransfers(ctrl)
+	activityStreak := mocks.NewMockActivityStreak(ctrl)
+	engine := New(logger, conf, broker, delegation, epochEngine, collateral, ts, marketActivityTracker, topology, vesting, transfers, activityStreak)
 
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 

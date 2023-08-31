@@ -27,6 +27,7 @@ var (
 	defaultLiquiditySLAParams          embed.FS
 	defaultLiquiditySLAParamsFileNames = []string{
 		"defaults/liquidity-sla-params/default-basic.json",
+		"defaults/liquidity-sla-params/default-futures.json",
 	}
 )
 
@@ -43,7 +44,7 @@ func newLiquiditySLAParams(unmarshaler *defaults.Unmarshaler) *slaParams {
 	for name, contentReader := range contentReaders {
 		sla, err := unmarshaler.UnmarshalLliquiditySLAParams(contentReader)
 		if err != nil {
-			panic(fmt.Errorf("couldn't unmarshal default risk model %s: %v", name, err))
+			panic(fmt.Errorf("couldn't unmarshal default SLA params %s: %v", name, err))
 		}
 		if err := liquiditySLAParams.Add(name, sla); err != nil {
 			panic(fmt.Errorf("failed to add default liquidity SLA params %s: %v", name, err))

@@ -371,6 +371,7 @@ type MatchingBook struct {
 	LastTradedPrice *num.Uint
 	Auction         bool
 	BatchID         uint64
+	PeggedOrderIDs  []string
 }
 
 type Successors struct {
@@ -913,6 +914,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadCurrentReferralProgramFromProto(dt)
 	case *snapshot.Payload_NewReferralProgram:
 		ret.Data = PayloadNewReferralProgramFromProto(dt)
+	case *snapshot.Payload_ReferralSets:
+		ret.Data = PayloadReferralSetsFromProto(dt)
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}
@@ -1083,6 +1086,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_CurrentReferralProgram:
 		ret.Data = dt
 	case *snapshot.Payload_NewReferralProgram:
+		ret.Data = dt
+	case *snapshot.Payload_ReferralSets:
 		ret.Data = dt
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
@@ -2923,6 +2928,7 @@ func MatchingBookFromProto(mb *snapshot.MatchingBook) *MatchingBook {
 		LastTradedPrice: lastTradedPrice,
 		Auction:         mb.Auction,
 		BatchID:         mb.BatchId,
+		PeggedOrderIDs:  mb.PeggedOrderIds,
 	}
 	for _, o := range mb.Buy {
 		or, _ := OrderFromProto(o)
@@ -2943,6 +2949,7 @@ func (m MatchingBook) IntoProto() *snapshot.MatchingBook {
 		LastTradedPrice: m.LastTradedPrice.String(),
 		Auction:         m.Auction,
 		BatchId:         m.BatchID,
+		PeggedOrderIds:  m.PeggedOrderIDs,
 	}
 	for _, o := range m.Buy {
 		ret.Buy = append(ret.Buy, o.IntoProto())
@@ -3478,12 +3485,14 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		StopOrders:                 em.StopOrders,
 		Product:                    em.Product,
 	}
+
 	for _, o := range em.ExpiringOrders {
 		or, _ := OrderFromProto(o)
 		ret.ExpiringOrders = append(ret.ExpiringOrders, or)
 	}
+
 	for _, o := range em.ExpiringStopOrders {
-		ret.ExpiringStopOrders = append(ret.ExpiringOrders, &Order{ID: o.Id, ExpiresAt: o.ExpiresAt})
+		ret.ExpiringStopOrders = append(ret.ExpiringStopOrders, &Order{ID: o.Id, ExpiresAt: o.ExpiresAt})
 	}
 	return &ret
 }
@@ -3527,7 +3536,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		ret.ExpiringOrders = append(ret.ExpiringOrders, o.IntoProto())
 	}
 	for _, o := range e.ExpiringStopOrders {
-		ret.ExpiringStopOrders = append(ret.ExpiringOrders, &vega.Order{Id: o.ID, ExpiresAt: o.ExpiresAt})
+		ret.ExpiringStopOrders = append(ret.ExpiringStopOrders, &vega.Order{Id: o.ID, ExpiresAt: o.ExpiresAt})
 	}
 	return &ret
 }

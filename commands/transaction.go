@@ -229,12 +229,12 @@ func CheckInputData(rawInputData []byte) (*commandspb.InputData, Errors) {
 			errs.Merge(checkStopOrdersSubmission(cmd.StopOrdersSubmission))
 		case *commandspb.InputData_StopOrdersCancellation:
 			errs.Merge(checkStopOrdersCancellation(cmd.StopOrdersCancellation))
-		case *commandspb.InputData_CreateTeam:
-			errs.Merge(checkCreateTeam(cmd.CreateTeam))
-		case *commandspb.InputData_UpdateTeam:
-			errs.Merge(checkUpdateTeam(cmd.UpdateTeam))
-		case *commandspb.InputData_JoinTeam:
-			errs.Merge(checkJoinTeam(cmd.JoinTeam))
+		case *commandspb.InputData_CreateReferralSet:
+			errs.Merge(checkCreateReferralSet(cmd.CreateReferralSet))
+		case *commandspb.InputData_UpdateReferralSet:
+			errs.Merge(checkUpdateReferralSet(cmd.UpdateReferralSet))
+		case *commandspb.InputData_ApplyReferralCode:
+			errs.Merge(checkApplyReferralCode(cmd.ApplyReferralCode))
 		default:
 			errs.AddForProperty("tx.input_data.command", ErrIsNotSupported)
 		}

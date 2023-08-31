@@ -10,13 +10,14 @@ Feature: Closeout-cascades
       | search factor | initial factor | release factor |
       | 1.5           | 2              | 3              |
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator   | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model                  | margin calculator   | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
-
+      | limits.markets.maxPeggedOrders          | 2     |
+      
   @NetworkParty
   @CloseOutTrades
   Scenario: Distressed position gets taken over by another party whose margin level is insufficient to support it (however mark price doesn't get updated on closeout trade and hence no further closeouts are carried out) (0005-COLL-002)
@@ -35,9 +36,14 @@ Feature: Closeout-cascades
     Then the cumulated balance for all accounts should be worth "3000000002100"
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 100000            | 0.001 | sell | ASK              | 100        | 55     | submission |
-      | lp1 | lpprov | ETH/DEC19 | 100000            | 0.001 | buy  | BID              | 100        | 55     | amendment  |
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 100000            | 0.001 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 100000            | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 100 | 1 | sell | ASK | 100 | 55 |
+      | lpprov | ETH/DEC19 | 100 | 1 | buy  | BID | 100 | 55 |
+ 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     # trading happens at the end of the open auction period
     Then the parties place the following orders:
@@ -78,12 +84,12 @@ Feature: Closeout-cascades
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 1050  | 96     |
+      | sell | 1055 | 100 |
       | sell | 1000  | 10     |
       | buy  | 50    | 50     |
       | buy  | 10    | 50     |
       | buy  | 5     | 5      |
-      | buy  | 1     | 100000 |
+
     And the network moves ahead "1" blocks
     Then the mark price should be "100" for the market "ETH/DEC19"
 
@@ -100,13 +106,13 @@ Feature: Closeout-cascades
     And the cumulated balance for all accounts should be worth "3000000002100"
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 1005  | 100    |
+      | sell | 1055 | 100 |
       | sell | 1000  | 10     |
-      | buy  | 5     | 5      |
-      | buy  | 1     | 100000 |
+      | buy | 50 | 0 |
+      | buy | 10 | 0 |
+      | buy | 5  | 5 |
     Then the mark price should be "100" for the market "ETH/DEC19"
 
-    # check that trader3 is closed-out but trader2 is not
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
       | trader3 | ETH/DEC19 | 0           | 0      | 0       | 0       |
@@ -121,8 +127,8 @@ Feature: Closeout-cascades
       | party      | asset | market id | margin | general      |
       | trader2    | BTC   | ETH/DEC19 | 0      | 0            |
       | trader3    | BTC   | ETH/DEC19 | 0      | 0            |
-      | auxiliary1 | BTC   | ETH/DEC19 | 114320 | 999999884775 |
-      | auxiliary2 | BTC   | ETH/DEC19 | 13180  | 999999989816 |
+      | auxiliary1 | BTC | ETH/DEC19 | 114800       | 999999884295 |
+      | auxiliary2 | BTC | ETH/DEC19 | 732000001300 | 268000001696 |
 
     # setup new mark price, which is the same as when trader2 traded with network
     Then the parties place the following orders:
@@ -138,6 +144,8 @@ Feature: Closeout-cascades
     #trader2 and trader3 are still close-out
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
+      | auxiliary1 | -70 | 4500 | 0     |
+      | auxiliary2 | 70  | 0    | -2404 |
       | trader2 | 0      | 0              | -2000        |
       | trader3 | 0      | 0              | -100         |
 

@@ -24,30 +24,29 @@ import (
 )
 
 type Order struct {
-	ID                   string
-	MarketID             string
-	Party                string
-	Side                 Side
-	Price                *num.Uint
-	OriginalPrice        *num.Uint
-	Size                 uint64
-	Remaining            uint64
-	TimeInForce          OrderTimeInForce
-	Type                 OrderType
-	CreatedAt            int64
-	Status               OrderStatus
-	ExpiresAt            int64
-	Reference            string
-	Reason               OrderError
-	UpdatedAt            int64
-	Version              uint64
-	BatchID              uint64
-	PeggedOrder          *PeggedOrder
-	LiquidityProvisionID string
-	PostOnly             bool
-	ReduceOnly           bool
-	extraRemaining       uint64
-	IcebergOrder         *IcebergOrder
+	ID             string
+	MarketID       string
+	Party          string
+	Side           Side
+	Price          *num.Uint
+	OriginalPrice  *num.Uint
+	Size           uint64
+	Remaining      uint64
+	TimeInForce    OrderTimeInForce
+	Type           OrderType
+	CreatedAt      int64
+	Status         OrderStatus
+	ExpiresAt      int64
+	Reference      string
+	Reason         OrderError
+	UpdatedAt      int64
+	Version        uint64
+	BatchID        uint64
+	PeggedOrder    *PeggedOrder
+	PostOnly       bool
+	ReduceOnly     bool
+	extraRemaining uint64
+	IcebergOrder   *IcebergOrder
 }
 
 func (o *Order) ReduceOnlyAdjustRemaining(extraSize uint64) {
@@ -175,7 +174,7 @@ func (o Order) Clone() *Order {
 
 func (o Order) String() string {
 	return fmt.Sprintf(
-		"ID(%s) marketID(%s) party(%s) side(%s) price(%s) size(%v) remaining(%v) timeInForce(%s) type(%s) status(%s) reference(%s) reason(%s) version(%v) batchID(%v) liquidityProvisionID(%s) createdAt(%v) updatedAt(%v) expiresAt(%v) originalPrice(%s) peggedOrder(%s) postOnly(%v) reduceOnly(%v) iceberg(%s)",
+		"ID(%s) marketID(%s) party(%s) side(%s) price(%s) size(%v) remaining(%v) timeInForce(%s) type(%s) status(%s) reference(%s) reason(%s) version(%v) batchID(%v) createdAt(%v) updatedAt(%v) expiresAt(%v) originalPrice(%s) peggedOrder(%s) postOnly(%v) reduceOnly(%v) iceberg(%s)",
 		o.ID,
 		o.MarketID,
 		o.Party,
@@ -190,7 +189,6 @@ func (o Order) String() string {
 		o.Reason.String(),
 		o.Version,
 		o.BatchID,
-		o.LiquidityProvisionID,
 		o.CreatedAt,
 		o.UpdatedAt,
 		o.ExpiresAt,
@@ -212,10 +210,6 @@ func (o Orders) IntoProto() []*proto.Order {
 	return out
 }
 
-func (o *Order) IsLiquidityOrder() bool {
-	return len(o.LiquidityProvisionID) > 0
-}
-
 func (o *Order) IntoProto() *proto.Order {
 	var pegged *proto.PeggedOrder
 	if o.PeggedOrder != nil {
@@ -232,28 +226,27 @@ func (o *Order) IntoProto() *proto.Order {
 	}
 
 	return &proto.Order{
-		Id:                   o.ID,
-		MarketId:             o.MarketID,
-		PartyId:              o.Party,
-		Side:                 o.Side,
-		Price:                num.UintToString(o.Price),
-		Size:                 o.Size,
-		Remaining:            o.Remaining,
-		TimeInForce:          o.TimeInForce,
-		Type:                 o.Type,
-		CreatedAt:            o.CreatedAt,
-		Status:               o.Status,
-		ExpiresAt:            o.ExpiresAt,
-		Reference:            o.Reference,
-		Reason:               reason,
-		UpdatedAt:            o.UpdatedAt,
-		Version:              o.Version,
-		BatchId:              o.BatchID,
-		PeggedOrder:          pegged,
-		LiquidityProvisionId: o.LiquidityProvisionID,
-		PostOnly:             o.PostOnly,
-		ReduceOnly:           o.ReduceOnly,
-		IcebergOrder:         iceberg,
+		Id:           o.ID,
+		MarketId:     o.MarketID,
+		PartyId:      o.Party,
+		Side:         o.Side,
+		Price:        num.UintToString(o.Price),
+		Size:         o.Size,
+		Remaining:    o.Remaining,
+		TimeInForce:  o.TimeInForce,
+		Type:         o.Type,
+		CreatedAt:    o.CreatedAt,
+		Status:       o.Status,
+		ExpiresAt:    o.ExpiresAt,
+		Reference:    o.Reference,
+		Reason:       reason,
+		UpdatedAt:    o.UpdatedAt,
+		Version:      o.Version,
+		BatchId:      o.BatchID,
+		PeggedOrder:  pegged,
+		PostOnly:     o.PostOnly,
+		ReduceOnly:   o.ReduceOnly,
+		IcebergOrder: iceberg,
 	}
 }
 
@@ -287,28 +280,27 @@ func OrderFromProto(o *proto.Order) (*Order, error) {
 		reason = *o.Reason
 	}
 	return &Order{
-		ID:                   o.Id,
-		MarketID:             o.MarketId,
-		Party:                o.PartyId,
-		Side:                 o.Side,
-		Price:                price,
-		Size:                 o.Size,
-		Remaining:            o.Remaining,
-		TimeInForce:          o.TimeInForce,
-		Type:                 o.Type,
-		CreatedAt:            o.CreatedAt,
-		Status:               o.Status,
-		ExpiresAt:            o.ExpiresAt,
-		Reference:            o.Reference,
-		Reason:               reason,
-		UpdatedAt:            o.UpdatedAt,
-		Version:              o.Version,
-		BatchID:              o.BatchId,
-		PeggedOrder:          pegged,
-		LiquidityProvisionID: o.LiquidityProvisionId,
-		PostOnly:             o.PostOnly,
-		ReduceOnly:           o.ReduceOnly,
-		IcebergOrder:         iceberg,
+		ID:           o.Id,
+		MarketID:     o.MarketId,
+		Party:        o.PartyId,
+		Side:         o.Side,
+		Price:        price,
+		Size:         o.Size,
+		Remaining:    o.Remaining,
+		TimeInForce:  o.TimeInForce,
+		Type:         o.Type,
+		CreatedAt:    o.CreatedAt,
+		Status:       o.Status,
+		ExpiresAt:    o.ExpiresAt,
+		Reference:    o.Reference,
+		Reason:       reason,
+		UpdatedAt:    o.UpdatedAt,
+		Version:      o.Version,
+		BatchID:      o.BatchId,
+		PeggedOrder:  pegged,
+		PostOnly:     o.PostOnly,
+		ReduceOnly:   o.ReduceOnly,
+		IcebergOrder: iceberg,
 	}, nil
 }
 

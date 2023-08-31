@@ -106,7 +106,7 @@ func (so *StopOrders) queryWithPagination(ctx context.Context, query string, p e
 	// We don't have the necessary views and indexes for iterating backwards for now so we can't use 'last'
 	// as it requires us to order in reverse
 	if p.HasBackward() {
-		return nil, pageInfo, fmt.Errorf("'last' pagination for stop orders is not currently supported")
+		return nil, pageInfo, ErrLastPaginationNotSupported
 	}
 
 	query, args, err = paginateQuery(query, args, ordering, p)
@@ -126,6 +126,10 @@ func (so *StopOrders) queryWithPagination(ctx context.Context, query string, p e
 func stopOrderView(f entities.StopOrderFilter, p entities.CursorPagination) (string, bool, error) {
 	if !p.NewestFirst {
 		return "", false, fmt.Errorf("oldest first order query is not currently supported")
+	}
+
+	if f.LiveOnly {
+		return "stop_orders_live", false, nil
 	}
 
 	if len(f.PartyIDs) > 0 {

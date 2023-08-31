@@ -42,22 +42,23 @@ func NewPerpetualFromSnapshot(
 		return nil, err
 	}
 
-	perps.external = make([]*dataPoint, 0, len(state.ExternalDataPoint))
+	perps.externalTWAP = NewCachedTWAP(log, state.StartedAt)
+	perps.internalTWAP = NewCachedTWAP(log, state.StartedAt)
+
 	for _, v := range state.ExternalDataPoint {
 		price, overflow := num.UintFromString(v.Price, 10)
 		if overflow {
 			log.Panic("invalid snapshot state in external data point", logging.String("price", v.Price), logging.Bool("overflow", overflow))
 		}
-		perps.external = append(perps.external, &dataPoint{price: price, t: v.Timestamp})
+		perps.externalTWAP.addPoint(&dataPoint{price: price, t: v.Timestamp})
 	}
 
-	perps.internal = make([]*dataPoint, 0, len(state.InternalDataPoint))
 	for _, v := range state.InternalDataPoint {
 		price, overflow := num.UintFromString(v.Price, 10)
 		if overflow {
 			log.Panic("invalid snapshot state in internal data point", logging.String("price", v.Price), logging.Bool("overflow", overflow))
 		}
-		perps.internal = append(perps.internal, &dataPoint{price: price, t: v.Timestamp})
+		perps.internalTWAP.addPoint(&dataPoint{price: price, t: v.Timestamp})
 	}
 
 	perps.startedAt = state.StartedAt
@@ -71,18 +72,18 @@ func (p *Perpetual) Serialize() *snapshotpb.Product {
 		Id:                p.id,
 		Seq:               p.seq,
 		StartedAt:         p.startedAt,
-		ExternalDataPoint: make([]*snapshotpb.DataPoint, 0, len(p.external)),
-		InternalDataPoint: make([]*snapshotpb.DataPoint, 0, len(p.internal)),
+		ExternalDataPoint: make([]*snapshotpb.DataPoint, 0, len(p.internalTWAP.points)),
+		InternalDataPoint: make([]*snapshotpb.DataPoint, 0, len(p.externalTWAP.points)),
 	}
 
-	for _, v := range p.external {
+	for _, v := range p.externalTWAP.points {
 		perps.ExternalDataPoint = append(perps.ExternalDataPoint, &snapshotpb.DataPoint{
 			Price:     v.price.String(),
 			Timestamp: v.t,
 		})
 	}
 
-	for _, v := range p.internal {
+	for _, v := range p.internalTWAP.points {
 		perps.InternalDataPoint = append(perps.InternalDataPoint, &snapshotpb.DataPoint{
 			Price:     v.price.String(),
 			Timestamp: v.t,

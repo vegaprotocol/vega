@@ -10,8 +10,11 @@ Feature: Set up a market, with an opening auction, then uncross the book. Make s
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
     And the markets:
-      | id        | quote name | asset | risk model           | margin calculator         | auction duration | fees           | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC20 | ETH        | ETH   | my-simple-risk-model | default-margin-calculator | 1                | my-fees-config | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model           | margin calculator         | auction duration | fees           | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC20 | ETH        | ETH   | my-simple-risk-model | default-margin-calculator | 1                | my-fees-config | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+    And the following network parameters are set:
+      | name                                    | value |
+      | limits.markets.maxPeggedOrders          | 2     |
 
   Scenario: set up 2 parties with balance
     # setup accounts
@@ -23,9 +26,14 @@ Feature: Set up a market, with an opening auction, then uncross the book. Make s
       | lpprov | ETH   | 1000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC20 | 937000            | 0.1 | buy  | MID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC20 | 937000            | 0.1 | sell | MID              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 937000            | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC20 | 937000            | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC20 | 2         | 1                    | buy  | MID              | 50         | 100    |
+      | lpprov | ETH/DEC20 | 2         | 1                    | sell | MID              | 50         | 100    |
+
     # place orders and generate trades - slippage 100
     And the parties place the following orders:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |

@@ -80,7 +80,10 @@ func getMockedEngine(t *testing.T) *engineFake {
 	epochEngine := mocks.NewMockEpochEngine(ctrl)
 	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
 	asset := mocks.NewMockAssets(ctrl)
-	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine), asset)
+
+	teams := mocks.NewMockTeams(ctrl)
+	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
+	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine, teams, balanceChecker), asset)
 	return &engineFake{
 		Engine:     exec,
 		ctrl:       ctrl,
@@ -131,7 +134,10 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 		as := NewAssetStub(a, 0)
 		return as, nil
 	})
-	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine), asset), ctrl
+	teams := mocks.NewMockTeams(ctrl)
+	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
+
+	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine, teams, balanceChecker), asset), ctrl
 }
 
 func TestEmptyMarkets(t *testing.T) {
@@ -334,6 +340,13 @@ func getMarketConfig() *types.Market {
 				},
 			},
 		},
+		LiquiditySLAParams: &types.LiquiditySLAParams{
+			PriceRange:                      num.DecimalOne(),
+			CommitmentMinTimeFraction:       num.DecimalFromFloat(0.5),
+			SlaCompetitionFactor:            num.DecimalOne(),
+			ProvidersFeeCalculationTimeStep: time.Second * 1,
+			PerformanceHysteresisEpochs:     1,
+		},
 		State: types.MarketStateActive,
 	}
 }
@@ -533,9 +546,11 @@ func TestValidSettledMarketSnapshot(t *testing.T) {
 	engine.collateral.EXPECT().AssetExists(gomock.Any()).AnyTimes().Return(true)
 	engine.collateral.EXPECT().CreateMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	engine.collateral.EXPECT().GetMarketLiquidityFeeAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
+	engine.collateral.EXPECT().GetLiquidityFeesBonusDistributionAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
 	engine.collateral.EXPECT().GetInsurancePoolBalance(gomock.Any(), gomock.Any()).AnyTimes().Return(num.UintZero(), true)
 	engine.collateral.EXPECT().FinalSettlement(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	engine.collateral.EXPECT().ClearMarket(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).AnyTimes().Return(nil, nil)
+	engine.collateral.EXPECT().TransferFees(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	engine.timeSvc.EXPECT().GetTimeNow().AnyTimes()
 	engine.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	engine.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()

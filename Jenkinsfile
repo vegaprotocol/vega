@@ -21,7 +21,7 @@ pipeline {
     options {
         skipDefaultCheckout true
         timestamps()
-        timeout(time: isPRBuild() ? 50 : 120, unit: 'MINUTES')
+        timeout(time: isPRBuild() ? 60 : 120, unit: 'MINUTES')
         disableConcurrentBuilds(abortPrevious: true)
     }
     parameters {
@@ -282,7 +282,7 @@ pipeline {
                     steps {
                         script {
                             systemTestsCapsule ignoreFailure: !isPRBuild(),
-                                timeout: 30,
+                                timeout: 45,
                                 originRepo: originRepo,
                                 vegaVersion: commitHash,
                                 systemTests: params.SYSTEM_TESTS_BRANCH,

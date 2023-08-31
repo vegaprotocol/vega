@@ -101,6 +101,16 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		m.equityShares.OpeningAuctionEnded()
 		// start the market fee window
 		m.feeSplitter.TimeWindowStart(now)
+
+		// reset SLA epoch
+		m.liquidity.OnEpochStart(ctx,
+			m.timeService.GetTimeNow(),
+			m.getCurrentMarkPrice(),
+			m.midPrice(),
+			m.getTargetStake(),
+			m.positionFactor,
+		)
+
 		return
 	}
 	// price and liquidity auctions

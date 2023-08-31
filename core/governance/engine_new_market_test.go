@@ -457,9 +457,11 @@ func testSubmittingProposalWithInternalTimeSettlingForNewMarketFails(t *testing.
 								},
 							},
 						},
-						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
-						DecimalPlaces:           0,
-						LpPriceRange:            num.DecimalFromFloat(0.95),
+						Metadata:      []string{"asset_class:fx/crypto", "product:futures"},
+						DecimalPlaces: 0,
+						LiquiditySLAParameters: &types.LiquiditySLAParams{
+							PriceRange: num.DecimalFromFloat(0.95),
+						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 					},
@@ -529,9 +531,11 @@ func testSubmittingProposalWithEmptySettlingDataForNewMarketFails(t *testing.T) 
 								},
 							},
 						},
-						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
-						DecimalPlaces:           0,
-						LpPriceRange:            num.DecimalFromFloat(0.95),
+						Metadata:      []string{"asset_class:fx/crypto", "product:futures"},
+						DecimalPlaces: 0,
+						LiquiditySLAParameters: &types.LiquiditySLAParams{
+							PriceRange: num.DecimalFromFloat(0.95),
+						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 					},
@@ -610,9 +614,11 @@ func testSubmittingProposalWithEmptyTerminationDataForNewMarketFails(t *testing.
 								},
 							},
 						},
-						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
-						DecimalPlaces:           0,
-						LpPriceRange:            num.DecimalFromFloat(0.95),
+						Metadata:      []string{"asset_class:fx/crypto", "product:futures"},
+						DecimalPlaces: 0,
+						LiquiditySLAParameters: &types.LiquiditySLAParams{
+							PriceRange: num.DecimalFromFloat(0.95),
+						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 					},
@@ -715,10 +721,12 @@ func testSubmittingProposalWithInternalTimeTerminationWithLessThanEqualCondition
 								},
 							},
 						},
-						RiskParameters:          &riskParameters,
-						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
-						DecimalPlaces:           0,
-						LpPriceRange:            num.DecimalFromFloat(0.95),
+						RiskParameters: &riskParameters,
+						Metadata:       []string{"asset_class:fx/crypto", "product:futures"},
+						DecimalPlaces:  0,
+						LiquiditySLAParameters: &types.LiquiditySLAParams{
+							PriceRange: num.DecimalFromFloat(0.95),
+						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 					},
@@ -776,10 +784,12 @@ func testSubmittingProposalWithInternalTimeTerminationWithLessThanEqualCondition
 								},
 							},
 						},
-						RiskParameters:          &riskParameters,
-						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
-						DecimalPlaces:           0,
-						LpPriceRange:            num.DecimalFromFloat(0.95),
+						RiskParameters: &riskParameters,
+						Metadata:       []string{"asset_class:fx/crypto", "product:futures"},
+						DecimalPlaces:  0,
+						LiquiditySLAParameters: &types.LiquiditySLAParams{
+							PriceRange: num.DecimalFromFloat(0.95),
+						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 					},
@@ -908,7 +918,6 @@ func testSubmittingProposalWithInternalTimeTriggerTerminationFails(t *testing.T)
 						RiskParameters:          &riskParameters,
 						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
 						DecimalPlaces:           0,
-						LpPriceRange:            num.DecimalFromFloat(0.95),
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 					},
@@ -1003,7 +1012,6 @@ func testSubmittingProposalWithInternalTimeTriggerSettlementFails(t *testing.T) 
 						RiskParameters:          &riskParameters,
 						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
 						DecimalPlaces:           0,
-						LpPriceRange:            num.DecimalFromFloat(0.95),
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 					},
@@ -1545,6 +1553,7 @@ func testSubmittingProposalForNewPerpsMarketSucceeds(t *testing.T) {
 
 	// when
 	toSubmit, err := eng.submitProposal(t, proposal)
+	require.NoError(t, err)
 
 	// the proposal had a nil initial time for the time trigger.
 	// ensure it was set to the enactment time.
@@ -1583,6 +1592,7 @@ func testSubmittingProposalForNewPerpsMarketWithCustomInitialTimeSucceeds(t *tes
 
 	// when
 	toSubmit, err := eng.submitProposal(t, proposal)
+	require.NoError(t, err)
 
 	// the proposal had a nil initial time for the time trigger.
 	// ensure it was set to the enactment time.
@@ -1622,6 +1632,7 @@ func testSubmittingProposalForNewPerpsMarketWithPastInitialTimeFails(t *testing.
 	// when
 	toSubmit, err := eng.submitProposal(t, proposal)
 
+	// then
 	require.EqualError(t, err, "time trigger starts in the past")
 	require.Nil(t, toSubmit)
 }

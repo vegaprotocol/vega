@@ -131,6 +131,62 @@ func TestClearAccounts(t *testing.T) {
 	t.Run("clear fee accounts", testClearFeeAccounts)
 }
 
+func TestGetAllVestingQuantumBalance(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+	ctx := context.Background()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// try with no assets.
+	// unlikely this would happenm but eh
+	party := "party1"
+
+	balance := eng.GetAllVestingQuantumBalance(party)
+	assert.Equal(t, int(balance.Uint64()), 0)
+
+	assetT := types.Asset{
+		ID: "USDC",
+		Details: &types.AssetDetails{
+			Symbol:  "USDC",
+			Quantum: num.MustDecimalFromString("100"),
+		},
+	}
+
+	eng.EnableAsset(ctx, assetT)
+
+	assetT = types.Asset{
+		ID: "VEGA",
+		Details: &types.AssetDetails{
+			Symbol:  "VEGA",
+			Quantum: num.MustDecimalFromString("300"),
+		},
+	}
+
+	eng.EnableAsset(ctx, assetT)
+
+	// now add some balance to an asset
+	acc := eng.GetOrCreatePartyVestingRewardAccount(ctx, party, "USDC")
+	// in quantum == 100
+	assert.NoError(
+		t, eng.UpdateBalance(ctx, acc.ID, num.NewUint(10000)),
+	)
+
+	balance = eng.GetAllVestingQuantumBalance(party)
+	assert.Equal(t, int(balance.Uint64()), 100)
+
+	// add some more of the other account
+	// now add some balance to an asset
+	acc = eng.GetOrCreatePartyVestedRewardAccount(ctx, party, "VEGA")
+	// in quantum == 3.5, integer partused only
+	assert.NoError(
+		t, eng.UpdateBalance(ctx, acc.ID, num.NewUint(950)),
+	)
+
+	balance = eng.GetAllVestingQuantumBalance(party)
+	assert.Equal(t, int(balance.Uint64()), 103)
+}
+
 func testClearFeeAccounts(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.Finish()
@@ -188,7 +244,7 @@ func testClearFeeAccounts(t *testing.T) {
 func testTransferRewardsEmptySlice(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.Finish()
-
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	res, err := eng.TransferRewards(context.Background(), "reward", []*types.Transfer{})
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(res))
@@ -197,6 +253,7 @@ func testTransferRewardsEmptySlice(t *testing.T) {
 func testTransferRewardsNoRewardsAccount(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.Finish()
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	transfers := []*types.Transfer{
 		{
@@ -221,11 +278,10 @@ func testTransferRewardsSuccess(t *testing.T) {
 
 	rewardAcc, _ := eng.GetGlobalRewardAccount("ETH")
 
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.IncrementBalance(context.Background(), rewardAcc.ID, num.NewUint(1000))
 
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
-	partyAccountID, _ := eng.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")
+	partyAccountID := eng.GetOrCreatePartyVestingRewardAccount(context.Background(), "party1", "ETH").ID
 
 	transfers := []*types.Transfer{
 		{
@@ -239,7 +295,6 @@ func testTransferRewardsSuccess(t *testing.T) {
 		},
 	}
 
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	lm, err := eng.TransferRewards(context.Background(), rewardAcc.ID, transfers)
 	require.Nil(t, err)
 	partyAccount, _ := eng.GetAccountByID(partyAccountID)
@@ -2890,7 +2945,7 @@ func getTestEngine(t *testing.T) *testEngine {
 	broker := bmocks.NewMockBroker(ctrl)
 	conf := collateral.NewDefaultConfig()
 	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
-	broker.EXPECT().Send(gomock.Any()).Times(22)
+	broker.EXPECT().Send(gomock.Any()).Times(23)
 	// system accounts created
 
 	eng := collateral.New(logging.NewTestLogger(), conf, timeSvc, broker)
@@ -2904,7 +2959,7 @@ func getTestEngine(t *testing.T) *testEngine {
 			Symbol:   testMarketAsset,
 			Name:     testMarketAsset,
 			Decimals: 0,
-			Quantum:  num.DecimalZero(),
+			Quantum:  num.DecimalOne(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.UintZero(),
@@ -2921,7 +2976,7 @@ func getTestEngine(t *testing.T) *testEngine {
 			Symbol:   "ETH",
 			Name:     "ETH",
 			Decimals: 18,
-			Quantum:  num.DecimalZero(),
+			Quantum:  num.DecimalOne(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.UintZero(),
@@ -3126,7 +3181,7 @@ func TestHash(t *testing.T) {
 
 	hash := eng.Hash()
 	require.Equal(t,
-		"589c48274f3ab644f725d9abc4de9cb07b6ea9069dd3bd8f41f35dc55d062550",
+		"2f5433f3eedd29ebb54646dbeb7d4278a7e02791349d1a3462c18cdfd1c8f02a",
 		hex.EncodeToString(hash),
 		"It should match against the known hash",
 	)

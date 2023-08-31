@@ -183,30 +183,16 @@ func newTestMarket(
 
 	as := monitor.NewAuctionState(&mkt, now)
 	epoch := mocks.NewMockEpochEngine(ctrl)
-	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
+	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).AnyTimes()
 
-	mat := common.NewMarketActivityTracker(log, epoch)
+	teams := mocks.NewMockTeams(ctrl)
+	bc := mocks.NewMockAccountBalanceChecker(ctrl)
+	mat := common.NewMarketActivityTracker(log, epoch, teams, bc)
 
 	baseAsset := NewAssetStub(base, baseDP)
 	quoteAsset := NewAssetStub(quote, quoteDP)
 
-	market, _ := spot.NewMarket(
-		context.Background(),
-		log,
-		matching.NewDefaultConfig(),
-		fee.NewDefaultConfig(),
-		liquidity.NewDefaultConfig(),
-		collateral,
-		&mkt,
-		ts,
-		broker,
-		as,
-		statevarEngine,
-		mat,
-		baseAsset,
-		quoteAsset,
-		peggedOrderCounterForTest,
-	)
+	market, _ := spot.NewMarket(log, matching.NewDefaultConfig(), fee.NewDefaultConfig(), liquidity.NewDefaultConfig(), collateral, &mkt, ts, broker, as, statevarEngine, mat, baseAsset, quoteAsset, peggedOrderCounterForTest)
 
 	tm := &testMarket{
 		market:           market,

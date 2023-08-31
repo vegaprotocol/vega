@@ -39,6 +39,10 @@ var (
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES:    {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES: {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN:     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
 	}
 )
 
@@ -281,9 +285,14 @@ func checkReferralProgram(terms *vegapb.ProposalTerms, change *vegapb.ProposalTe
 	}
 	if changes.WindowLength == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.window_length", ErrIsRequired)
+	} else if changes.WindowLength > 100 {
+		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.window_length", ErrMustBeAtMost100)
 	}
 	for i, tier := range changes.BenefitTiers {
 		errs.Merge(checkBenefitTier(i, tier))
+	}
+	for i, tier := range changes.StakingTiers {
+		errs.Merge(checkStakingTier(i, tier))
 	}
 	return errs
 }
@@ -334,6 +343,36 @@ func checkBenefitTier(index int, tier *vegapb.BenefitTier) Errors {
 			errs.AddForProperty(propertyPath+".referral_discount_factor", ErrIsNotValidNumber)
 		} else if rdf.IsNegative() {
 			errs.AddForProperty(propertyPath+".referral_discount_factor", ErrMustBePositiveOrZero)
+		}
+	}
+
+	return errs
+}
+
+func checkStakingTier(index int, tier *vegapb.StakingTier) Errors {
+	errs := NewErrors()
+
+	propertyPath := fmt.Sprintf("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.%d", index)
+
+	if len(tier.MinimumStakedTokens) == 0 {
+		errs.AddForProperty(propertyPath+".minimum_staked_tokens", ErrIsRequired)
+	} else {
+		stakedTokens, overflow := num.UintFromString(tier.MinimumStakedTokens, 10)
+		if overflow {
+			errs.AddForProperty(propertyPath+".minimum_staked_tokens", ErrIsNotValidNumber)
+		} else if stakedTokens.IsNegative() || stakedTokens.IsZero() {
+			errs.AddForProperty(propertyPath+".minimum_staked_tokens", ErrMustBePositive)
+		}
+	}
+
+	if len(tier.ReferralRewardMultiplier) == 0 {
+		errs.AddForProperty(propertyPath+".referral_reward_multiplier", ErrIsRequired)
+	} else {
+		rrm, err := num.DecimalFromString(tier.ReferralRewardMultiplier)
+		if err != nil {
+			errs.AddForProperty(propertyPath+".referral_reward_multiplier", ErrIsNotValidNumber)
+		} else if !rrm.GreaterThanOrEqual(num.DecimalOne()) {
+			errs.AddForProperty(propertyPath+".referral_reward_multiplier", ErrMustBeGTE1)
 		}
 	}
 
@@ -462,7 +501,11 @@ func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Error
 		if changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES ||
 			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES ||
 			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES ||
-			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING {
 			errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
 		}
 		if oneoff.DeliverOn < 0 {
@@ -479,33 +522,8 @@ func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Error
 			if len(changes.Destination) > 0 {
 				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
 			}
-			// check account type is one of the relevant reward accounts
-			if changes.DestinationType != vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES &&
-				changes.DestinationType != vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES &&
-				changes.DestinationType != vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES &&
-				changes.DestinationType != vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
-				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
-			}
-			// check asset for metric is passed unless it's a market proposer reward
-			if len(recurring.DispatchStrategy.AssetForMetric) <= 0 && changes.DestinationType != vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
-				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.asset_for_metric", ErrUnknownAsset)
-			}
-			if len(recurring.DispatchStrategy.AssetForMetric) > 0 && !IsVegaID(recurring.DispatchStrategy.AssetForMetric) {
-				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.asset_for_metric", ErrShouldBeAValidVegaID)
-			}
-			// check that that the metric makes sense for the account type
-			if changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES && recurring.DispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED {
-				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.dispatch_metric", ErrIsNotValid)
-			}
-			if changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES && recurring.DispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED {
-				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.dispatch_metric", ErrIsNotValid)
-			}
-			if changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES && recurring.DispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID {
-				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.dispatch_metric", ErrIsNotValid)
-			}
-			if changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS && recurring.DispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE {
-				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.dispatch_metric", ErrIsNotValid)
-			}
+
+			validateDispatchStrategy(changes.DestinationType, recurring.DispatchStrategy, errs, "proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy", "proposal_submission.terms.change.new_transfer.changes.destination_type")
 		}
 	}
 
@@ -719,15 +737,6 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.position_decimal_places", ErrMustBeWithinRange7)
 	}
 
-	lppr, err := num.DecimalFromString(changes.LpPriceRange)
-	if err != nil {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.lp_price_range", ErrIsNotValidNumber)
-	} else if lppr.IsNegative() || lppr.IsZero() {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.lp_price_range", ErrMustBePositive)
-	} else if lppr.GreaterThan(num.DecimalFromInt64(100)) {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.lp_price_range", ErrMustBeAtMost100)
-	}
-
 	if len(changes.LinearSlippageFactor) > 0 {
 		linearSlippage, err := num.DecimalFromString(changes.LinearSlippageFactor)
 		if err != nil {
@@ -765,6 +774,7 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
 	errs.Merge(checkNewInstrument(changes.Instrument, "proposal_submission.terms.change.new_market.changes.instrument"))
 	errs.Merge(checkNewRiskParameters(changes))
+	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "proposal_submission.terms.change.new_market.changes.sla_params"))
 
 	return errs
 }
@@ -787,14 +797,6 @@ func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Err
 	}
 
 	changes := change.UpdateMarket.Changes
-	lppr, err := num.DecimalFromString(changes.LpPriceRange)
-	if err != nil {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.lp_price_range", ErrIsNotValidNumber)
-	} else if lppr.IsNegative() || lppr.IsZero() {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.lp_price_range", ErrMustBePositive)
-	} else if lppr.GreaterThan(num.DecimalFromInt64(100)) {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.lp_price_range", ErrMustBeAtMost100)
-	}
 
 	if len(changes.LinearSlippageFactor) > 0 {
 		linearSlippage, err := num.DecimalFromString(changes.LinearSlippageFactor)
@@ -1532,8 +1534,8 @@ func checkSLAParams(config *protoTypes.LiquiditySLAParameters, parent string) Er
 		errs.AddForProperty(fmt.Sprintf("%s.commitment_min_time_fraction", parent), ErrMustBeWithinRange01)
 	}
 
-	if config.ProvidersFeeCalculationTimeStep == 0 {
-		errs.AddForProperty(fmt.Sprintf("%s.providers.fee.calculation_time_step", parent), ErrMustBePositive)
+	if config.ProvidersFeeCalculationTimeStep < 0 {
+		errs.AddForProperty(fmt.Sprintf("%s.providers.fee.calculation_time_step", parent), ErrMustBePositiveOrZero)
 	}
 
 	slaCompetitionFactor, err := num.DecimalFromString(config.SlaCompetitionFactor)
@@ -1543,8 +1545,8 @@ func checkSLAParams(config *protoTypes.LiquiditySLAParameters, parent string) Er
 		errs.AddForProperty(fmt.Sprintf("%s.sla_competition_factor", parent), ErrMustBeWithinRange01)
 	}
 
-	if config.PerformanceHysteresisEpochs < 1 {
-		errs.AddForProperty(fmt.Sprintf("%s.performance_hysteresis_epochs", parent), ErrMustBePositive)
+	if config.PerformanceHysteresisEpochs < 1 || config.PerformanceHysteresisEpochs > 366 {
+		errs.AddForProperty(fmt.Sprintf("%s.performance_hysteresis_epochs", parent), ErrMustBeWithinRange1366)
 	}
 
 	return errs

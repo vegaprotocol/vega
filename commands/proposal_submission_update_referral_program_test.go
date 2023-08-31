@@ -16,6 +16,7 @@ func TestCheckProposalSubmissionForReferralProgramUpdate(t *testing.T) {
 	t.Run("Submitting a referral program update with negative end of program timestamp fails", testSubmissionForReferralProgramUpdateWithNegativeEndOfProgramFails)
 	t.Run("Submitting a referral program update with end of program before enactment timestamp fails", testSubmissionForReferralProgramUpdateWithEndOfProgramBeforeEnactmentFails)
 	t.Run("Submitting a referral program update without window length fails", testSubmissionForReferralProgramUpdateWithoutWindowLengthFails)
+	t.Run("Submitting a referral program update with window length over limit fails", testSubmissionForReferralProgramUpdateWithWindowLengthOverLimitFails)
 	t.Run("Submitting a referral program update without tier minimum running volume fails", testSubmissionForReferralProgramUpdateWithoutTierMinimumRunningNotionalTakerVolumeFails)
 	t.Run("Submitting a referral program update with bad format for tier minimum running volume fails", testSubmissionForReferralProgramUpdateWithBadFormatForTierMinimumRunningNotionalTakerVolumeFails)
 	t.Run("Submitting a referral program update with bad value for tier minimum running volume fails", testSubmissionForReferralProgramUpdateWithBadValueForTierMinimumRunningNotionalTakerVolumeFails)
@@ -28,6 +29,12 @@ func TestCheckProposalSubmissionForReferralProgramUpdate(t *testing.T) {
 	t.Run("Submitting a referral program update without tier referral discount factor fails", testSubmissionForReferralProgramUpdateWithoutTierReferralDiscountFactorFails)
 	t.Run("Submitting a referral program update with bad format for tier referral discount factor fails", testSubmissionForReferralProgramUpdateWithBadFormatForTierReferralDiscountFactorFails)
 	t.Run("Submitting a referral program update with bad value for tier referral discount factor fails", testSubmissionForReferralProgramUpdateWithBadValueForTierReferralDiscountFactorFails)
+	t.Run("Submitting a referral program update without staking tier minimum staked tokens fails", testSubmissionForReferralProgramUpdateWithoutStakingTierMinimumStakedTokensFails)
+	t.Run("Submitting a referral program update with bad format for staking tier minimum staked tokens fails", testSubmissionForReferralProgramUpdateWithBadFormatForStakingTierMinimumStakedTokensFails)
+	t.Run("Submitting a referral program update with bad value for staking tier minimum staked tokens fails", testSubmissionForReferralProgramUpdateWithBadValueForStakingTierMinimumStakedTokensFails)
+	t.Run("Submitting a referral program update without staking tier referral reward multiplier fails", testSubmissionForReferralProgramUpdateWithoutStakingTierReferralRewardMultiplierFails)
+	t.Run("Submitting a referral program update with bad format for staking tier referral reward multiplier fails", testSubmissionForReferralProgramUpdateWithBadFormatForStakingTierReferralRewardMultiplierFails)
+	t.Run("Submitting a referral program update with bad value for staking tier referral reward multiplier fails", testSubmissionForReferralProgramUpdateWithBadValueForStakingTierReferralRewardMultiplierFails)
 }
 
 func testSubmissionForReferralProgramUpdateWithoutUpdateFails(t *testing.T) {
@@ -114,7 +121,23 @@ func testSubmissionForReferralProgramUpdateWithoutWindowLengthFails(t *testing.T
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.end_of_program_timestamp"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.window_length"), commands.ErrIsRequired)
+}
+
+func testSubmissionForReferralProgramUpdateWithWindowLengthOverLimitFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateReferralProgram{
+				UpdateReferralProgram: &types.UpdateReferralProgram{
+					Changes: &types.ReferralProgram{
+						WindowLength: 101,
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.window_length"), commands.ErrMustBeAtMost100)
 }
 
 func testSubmissionForReferralProgramUpdateWithoutTierMinimumRunningNotionalTakerVolumeFails(t *testing.T) {
@@ -391,4 +414,145 @@ func testSubmissionForReferralProgramUpdateWithBadValueForTierReferralDiscountFa
 
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.referral_discount_factor"), commands.ErrMustBePositiveOrZero)
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.referral_discount_factor"), commands.ErrMustBePositiveOrZero)
+}
+
+func testSubmissionForReferralProgramUpdateWithoutStakingTierMinimumStakedTokensFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateReferralProgram{
+				UpdateReferralProgram: &types.UpdateReferralProgram{
+					Changes: &types.ReferralProgram{
+						StakingTiers: []*types.StakingTier{
+							{
+								MinimumStakedTokens: "",
+							}, {
+								MinimumStakedTokens: "",
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.0.minimum_staked_tokens"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.1.minimum_staked_tokens"), commands.ErrIsRequired)
+}
+
+func testSubmissionForReferralProgramUpdateWithBadFormatForStakingTierMinimumStakedTokensFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateReferralProgram{
+				UpdateReferralProgram: &types.UpdateReferralProgram{
+					Changes: &types.ReferralProgram{
+						StakingTiers: []*types.StakingTier{
+							{
+								MinimumStakedTokens: "qbc",
+							}, {
+								MinimumStakedTokens: "0x32",
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.0.minimum_staked_tokens"), commands.ErrIsNotValidNumber)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.1.minimum_staked_tokens"), commands.ErrIsNotValidNumber)
+}
+
+func testSubmissionForReferralProgramUpdateWithBadValueForStakingTierMinimumStakedTokensFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateReferralProgram{
+				UpdateReferralProgram: &types.UpdateReferralProgram{
+					Changes: &types.ReferralProgram{
+						StakingTiers: []*types.StakingTier{
+							{
+								MinimumStakedTokens: "-100",
+							}, {
+								MinimumStakedTokens: "-1",
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.0.minimum_staked_tokens"), commands.ErrMustBePositive)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.1.minimum_staked_tokens"), commands.ErrMustBePositive)
+}
+
+func testSubmissionForReferralProgramUpdateWithoutStakingTierReferralRewardMultiplierFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateReferralProgram{
+				UpdateReferralProgram: &types.UpdateReferralProgram{
+					Changes: &types.ReferralProgram{
+						StakingTiers: []*types.StakingTier{
+							{
+								ReferralRewardMultiplier: "",
+							}, {
+								ReferralRewardMultiplier: "",
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.0.referral_reward_multiplier"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.1.referral_reward_multiplier"), commands.ErrIsRequired)
+}
+
+func testSubmissionForReferralProgramUpdateWithBadFormatForStakingTierReferralRewardMultiplierFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateReferralProgram{
+				UpdateReferralProgram: &types.UpdateReferralProgram{
+					Changes: &types.ReferralProgram{
+						StakingTiers: []*types.StakingTier{
+							{
+								ReferralRewardMultiplier: "qbc",
+							}, {
+								ReferralRewardMultiplier: "0x32",
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.0.referral_reward_multiplier"), commands.ErrIsNotValidNumber)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.1.referral_reward_multiplier"), commands.ErrIsNotValidNumber)
+}
+
+func testSubmissionForReferralProgramUpdateWithBadValueForStakingTierReferralRewardMultiplierFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateReferralProgram{
+				UpdateReferralProgram: &types.UpdateReferralProgram{
+					Changes: &types.ReferralProgram{
+						StakingTiers: []*types.StakingTier{
+							{
+								ReferralRewardMultiplier: "-0.1",
+							}, {
+								ReferralRewardMultiplier: "0",
+							}, {
+								ReferralRewardMultiplier: "0.9",
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.0.referral_reward_multiplier"), commands.ErrMustBeGTE1)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.1.referral_reward_multiplier"), commands.ErrMustBeGTE1)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.2.referral_reward_multiplier"), commands.ErrMustBeGTE1)
 }

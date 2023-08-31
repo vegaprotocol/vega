@@ -59,8 +59,8 @@ type OrderBook struct {
 
 	// we keep track here of which type of orders are in the orderbook so we can quickly
 	// find an order of a certain type. These get updated when orders are added or removed from the book.
-	peggedOrders      map[string]struct{}
-	lpOrdersPerParty  map[string]map[string]struct{}
+	peggedOrders *peggedOrders
+
 	peggedOrdersCount uint64
 	peggedCountNotify func(int64)
 }
@@ -86,24 +86,23 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string, auction b
 	log.SetLevel(config.Level.Get())
 
 	return &OrderBook{
-		log:              log,
-		marketID:         marketID,
-		cfgMu:            &sync.Mutex{},
-		buy:              &OrderBookSide{log: log, side: types.SideBuy},
-		sell:             &OrderBookSide{log: log, side: types.SideSell},
-		Config:           config,
-		ordersByID:       map[string]*types.Order{},
-		auction:          auction,
-		batchID:          0,
-		ordersPerParty:   map[string]map[string]struct{}{},
-		lpOrdersPerParty: map[string]map[string]struct{}{},
-		lastTradedPrice:  num.UintZero(),
+		log:             log,
+		marketID:        marketID,
+		cfgMu:           &sync.Mutex{},
+		buy:             &OrderBookSide{log: log, side: types.SideBuy},
+		sell:            &OrderBookSide{log: log, side: types.SideSell},
+		Config:          config,
+		ordersByID:      map[string]*types.Order{},
+		auction:         auction,
+		batchID:         0,
+		ordersPerParty:  map[string]map[string]struct{}{},
+		lastTradedPrice: num.UintZero(),
 		snapshot: &types.PayloadMatchingBook{
 			MatchingBook: &types.MatchingBook{
 				MarketID: marketID,
 			},
 		},
-		peggedOrders:      map[string]struct{}{},
+		peggedOrders:      newPeggedOrders(),
 		peggedOrdersCount: 0,
 		peggedCountNotify: peggedCountNotify,
 	}
@@ -599,30 +598,6 @@ func (b *OrderBook) GetOrdersPerParty(party string) []*types.Order {
 	return orders
 }
 
-func (b *OrderBook) GetLiquidityOrders(party string) []*types.Order {
-	orderIDs := b.lpOrdersPerParty[party]
-	if len(orderIDs) <= 0 {
-		return []*types.Order{}
-	}
-
-	orders := make([]*types.Order, 0, len(orderIDs))
-	for oid := range orderIDs {
-		orders = append(orders, b.ordersByID[oid])
-	}
-	return orders
-}
-
-func (b *OrderBook) GetAllLiquidityOrders() []*types.Order {
-	orders := make([]*types.Order, 0)
-	for party := range b.lpOrdersPerParty {
-		orders = append(orders, b.GetLiquidityOrders(party)...)
-	}
-	sort.Slice(orders, func(i, j int) bool {
-		return orders[i].ID < orders[j].ID
-	})
-	return orders
-}
-
 // BestBidPriceAndVolume : Return the best bid and volume for the buy side of the book.
 func (b *OrderBook) BestBidPriceAndVolume() (*num.Uint, uint64, error) {
 	return b.buy.BestPriceAndVolume()
@@ -804,8 +779,8 @@ func (b *OrderBook) ReplaceOrder(rm, rpl *types.Order) (*types.OrderConfirmation
 
 func (b *OrderBook) ReSubmitSpecialOrders(order *types.Order) {
 	// not allowed to submit a normal order here
-	if len(order.LiquidityProvisionID) <= 0 && order.PeggedOrder == nil {
-		b.log.Panic("only pegged orders or liquidity orders allowed", logging.Order(order))
+	if order.PeggedOrder == nil {
+		b.log.Panic("only pegged orders allowed", logging.Order(order))
 	}
 
 	order.BatchID = b.batchID
@@ -1128,8 +1103,8 @@ func (b *OrderBook) Settled() []*types.Order {
 
 // GetActivePeggedOrderIDs returns the order identifiers of all pegged orders in the order book that are not parked.
 func (b *OrderBook) GetActivePeggedOrderIDs() []string {
-	pegged := make([]string, 0, len(b.peggedOrders))
-	for ID := range b.peggedOrders {
+	pegged := make([]string, 0, b.peggedOrders.Len())
+	for _, ID := range b.peggedOrders.Iter() {
 		if o, ok := b.ordersByID[ID]; ok {
 			if o.Status == vega.Order_STATUS_PARKED {
 				b.log.Panic("unexpected parked pegged order in order book",
@@ -1138,7 +1113,6 @@ func (b *OrderBook) GetActivePeggedOrderIDs() []string {
 			pegged = append(pegged, o.ID)
 		}
 	}
-	sort.Strings(pegged)
 	return pegged
 }
 
@@ -1166,14 +1140,13 @@ func (b *OrderBook) icebergRefresh(o *types.Order) {
 
 // remove removes the given order from all the lookup map.
 func (b *OrderBook) remove(o *types.Order) {
-	if _, ok := b.peggedOrders[o.ID]; ok && !b.ordersByID[o.ID].IsLiquidityOrder() {
+	if ok := b.peggedOrders.Exists(o.ID); ok {
 		b.peggedOrdersCount--
 		b.peggedCountNotify(-1)
+		b.peggedOrders.Delete(o.ID)
 	}
 	delete(b.ordersByID, o.ID)
 	delete(b.ordersPerParty[o.Party], o.ID)
-	delete(b.peggedOrders, o.ID)
-	delete(b.lpOrdersPerParty[o.Party], o.ID)
 }
 
 // add adds the given order too all the lookup maps.
@@ -1188,23 +1161,9 @@ func (b *OrderBook) add(o *types.Order) {
 	}
 
 	if o.PeggedOrder != nil {
-		b.peggedOrders[o.ID] = struct{}{}
-		if !o.IsLiquidityOrder() {
-			b.peggedOrdersCount++
-			b.peggedCountNotify(1)
-		}
-	}
-
-	if !o.IsLiquidityOrder() {
-		return
-	}
-
-	if orders, ok := b.lpOrdersPerParty[o.Party]; !ok {
-		b.lpOrdersPerParty[o.Party] = map[string]struct{}{
-			o.ID: {},
-		}
-	} else {
-		orders[o.ID] = struct{}{}
+		b.peggedOrders.Add(o.ID)
+		b.peggedOrdersCount++
+		b.peggedCountNotify(1)
 	}
 }
 
@@ -1212,9 +1171,8 @@ func (b *OrderBook) add(o *types.Order) {
 func (b *OrderBook) cleanup() {
 	b.ordersByID = map[string]*types.Order{}
 	b.ordersPerParty = map[string]map[string]struct{}{}
-	b.lpOrdersPerParty = map[string]map[string]struct{}{}
 	b.indicativePriceAndVolume = nil
-	b.peggedOrders = map[string]struct{}{}
+	b.peggedOrders.Clear()
 	b.peggedCountNotify(-int64(b.peggedOrdersCount))
 	b.peggedOrdersCount = 0
 }

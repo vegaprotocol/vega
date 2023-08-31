@@ -1,9 +1,6 @@
 Feature: Spot market
 
   Scenario: party submit liquidity, and amend/cancel it
-
-  Background:
-
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0         | 0                  |
@@ -30,13 +27,11 @@ Feature: Spot market
       | market.liquidityV2.earlyExitPenalty                   | 0.02  |
       | market.stake.target.timeWindow                        | 2s    |
       | market.liquidityV2.earlyExitPenalty                   | 0.5   |
-      | market.liquidity.providers.fee.distributionTimeStep   | 0     |
-      | market.liquidity.bondPenaltyParameter                 | 0     |
+      | market.liquidityV2.bondPenaltyParameter                 | 0     |
       | market.liquidityV2.sla.nonPerformanceBondPenaltySlope | 0.5   |
       | market.liquidityV2.sla.nonPerformanceBondPenaltyMax   | 0.2   |
       | market.liquidity.maximumLiquidityFeeFactorLevel       | 0.4   |
       | validators.epoch.length                               | 2s    |
-      | market.liquidity.providers.fee.distributionTimeStep   | 3s    |
 
     Given time is updated to "2023-07-20T00:00:00Z"
 
@@ -94,19 +89,19 @@ Feature: Spot market
     When the opening auction period ends for market "BTC/ETH"
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 360000  | 10        | 22        | 10           | 800            | 0             |
+      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 360000  | 10        | 22        | 10           | 1000            | 0             |
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type   |
       | lp1 | lpprov | BTC/ETH   | 2000              | 0.1 | amendment |
 
     Then the network moves ahead "2" blocks
-    And the network treasury balance should be "200" for the asset "ETH"
+    And the network treasury balance should be "0" for the asset "ETH"
     And the global insurance pool balance should be "0" for the asset "ETH"
     And the global insurance pool balance should be "0" for the asset "BTC"
     And the party "lpprov" lp liquidity fee account balance should be "0" for the market "BTC/ETH"
     Then "lpprov" should have holding account balance of "1200" for asset "ETH"
-    Then "lpprov" should have general account balance of "600" for asset "ETH"
+    Then "lpprov" should have general account balance of "800" for asset "ETH"
     Then "lpprov" should have holding account balance of "60" for asset "BTC"
     Then "lpprov" should have general account balance of "0" for asset "BTC"
     Then the party "lpprov" lp liquidity bond account balance should be "2000" for the market "BTC/ETH"
@@ -146,12 +141,12 @@ Feature: Spot market
       | party2 | BTC/ETH   | sell | 1      | 15    | 1                | TYPE_LIMIT | TIF_GTC |           |      |
 
     Then the network moves ahead "2" blocks
-    And the network treasury balance should be "200" for the asset "ETH"
+    And the network treasury balance should be "0" for the asset "ETH"
     And the global insurance pool balance should be "0" for the asset "ETH"
     And the global insurance pool balance should be "0" for the asset "BTC"
     And the party "lpprov" lp liquidity fee account balance should be "15" for the market "BTC/ETH"
     Then "lpprov" should have holding account balance of "1200" for asset "ETH"
-    Then "lpprov" should have general account balance of "2580" for asset "ETH"
+    Then "lpprov" should have general account balance of "2780" for asset "ETH"
     Then "lpprov" should have holding account balance of "60" for asset "BTC"
     Then "lpprov" should have general account balance of "0" for asset "BTC"
     Then the party "lpprov" lp liquidity bond account balance should be "20" for the market "BTC/ETH"
@@ -167,16 +162,16 @@ Feature: Spot market
     Then the network moves ahead "7" blocks
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake |
-      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 20           | 1              |
+      | 15 | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 20 | 2 |
 
-    And the network treasury balance should be "200" for the asset "ETH"
+    And the network treasury balance should be "9" for the asset "ETH"
     And the global insurance pool balance should be "0" for the asset "ETH"
     And the global insurance pool balance should be "0" for the asset "BTC"
     And the party "lpprov" lp liquidity fee account balance should be "0" for the market "BTC/ETH"
     Then "lpprov" should have holding account balance of "1200" for asset "ETH"
-    Then "lpprov" should have general account balance of "2614" for asset "ETH"
+    Then "lpprov" should have general account balance of "2804" for asset "ETH"
 
     Then "lpprov" should have holding account balance of "60" for asset "BTC"
     Then "lpprov" should have general account balance of "0" for asset "BTC"
-    Then the party "lpprov" lp liquidity bond account balance should be "1" for the market "BTC/ETH"
+    Then the party "lpprov" lp liquidity bond account balance should be "2" for the market "BTC/ETH"
 
