@@ -71,7 +71,7 @@ Feature: Simple example of successor markets
       | ETH/DEC21 | ETH        | USD   | default-st-risk-model     | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 0              | 0                       | ETH/DEC19        | 0.6                     | 10                | SLA        |
     And the following network parameters are set:
       | name                                                | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep  | 5s    |
+      | market.liquidityV2.providersFeeCalculationTimeStep  | 5s   |
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov1 | ETH/DEC19 | 9000              | 0.1 | submission |
@@ -223,8 +223,8 @@ Feature: Simple example of successor markets
       | lpprov2 | 0.7272727272727273 | 10000                   |
     When the network moves ahead "1" blocks
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "7983" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "4938" for the asset "USD"
+    And the insurance pool balance should be "4062" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "1016" for the asset "USD"
 
   @SuccessorMarketSimple
   Scenario: 002 Successor market enacted with parent market still active, ELS is copied over and both states can change independently. 0042-LIQF-031, 0042-LIQF-048, 0042-LIQF-033
@@ -480,8 +480,8 @@ Feature: Simple example of successor markets
       | lpprov2 | 0.1 | 10000 |
     When the network moves ahead "1" blocks
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "7983" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "4938" for the asset "USD"
+    And the insurance pool balance should be "4062" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "1016" for the asset "USD"
 
 
   @SuccessorMarketExpires2
@@ -560,9 +560,9 @@ Feature: Simple example of successor markets
     Then the market state should be "STATE_SETTLED" for the market "ETH/DEC19"
     And the successor market "ETH/DEC20" is enacted
     When the network moves ahead "5" blocks
-    Then the insurance pool balance should be "12921" for the market "ETH/DEC19"
-    Then the insurance pool balance should be "0" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "0" for the asset "USD"
+    Then the insurance pool balance should be "0" for the market "ETH/DEC19"
+    Then the insurance pool balance should be "6460" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "6461" for the asset "USD"
     Then debug transfers
 # make LP commitment while market is still pending
     Then the parties submit the following liquidity provision:
@@ -583,8 +583,8 @@ Feature: Simple example of successor markets
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 82           | 10000          | 1             |
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "11628" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "1293" for the asset "USD"
+    And the insurance pool balance should be "6460" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "6461" for the asset "USD"
 
     # this is from ETH/DEC19 market
     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
