@@ -290,10 +290,7 @@ func (t *TradingDataServiceV2) ExportLedgerEntries(req *v2.ExportLedgerEntriesRe
 		return formatE(ErrInvalidPartyID)
 	}
 
-	if len(req.AssetId) <= 0 {
-		return formatE(ErrMissingAssetID)
-	}
-	if !crypto.IsValidVegaID(req.AssetId) {
+	if req.AssetId != nil && !crypto.IsValidVegaID(*req.AssetId) {
 		return formatE(ErrInvalidAssetID)
 	}
 
@@ -308,10 +305,14 @@ func (t *TradingDataServiceV2) ExportLedgerEntries(req *v2.ExportLedgerEntriesRe
 		endDateStr = "-" + dateRange.End.Format(timeFormat)
 	}
 
+	assetStr := ""
+	if req.AssetId != nil {
+		assetStr = fmt.Sprintf("_%s", *req.AssetId)
+	}
 	header := metadata.Pairs(
 		"Content-Disposition",
-		fmt.Sprintf("attachment;filename=ledger_entries_%s_%s%s%s.csv",
-			req.PartyId, req.AssetId, startDateStr, endDateStr))
+		fmt.Sprintf("attachment;filename=ledger_entries_%s%s_%s%s.csv",
+			req.PartyId, assetStr, startDateStr, endDateStr))
 	if err := stream.SendHeader(header); err != nil {
 		return formatE(ErrSendingGRPCHeader, err)
 	}
@@ -319,7 +320,7 @@ func (t *TradingDataServiceV2) ExportLedgerEntries(req *v2.ExportLedgerEntriesRe
 	httpWriter := &httpBodyWriter{chunkSize: httpBodyChunkSize, contentType: "text/csv", buf: &bytes.Buffer{}, stream: stream}
 	defer httpWriter.Close()
 
-	if err := t.ledgerService.Export(stream.Context(), req.PartyId, &req.AssetId, dateRange, httpWriter); err != nil {
+	if err := t.ledgerService.Export(stream.Context(), req.PartyId, req.AssetId, dateRange, httpWriter); err != nil {
 		return formatE(ErrLedgerServiceExport, err)
 	}
 
