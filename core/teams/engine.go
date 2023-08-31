@@ -36,7 +36,7 @@ type Engine struct {
 
 	// minStakedVegaTokens limits referral code generation to parties staking at
 	// least this number of tokens.
-	minStakedVegaTokens num.Decimal
+	minStakedVegaTokens *num.Uint
 
 	// teams tracks all teams by team ID.
 	teams map[types.TeamID]*types.Team
@@ -49,7 +49,7 @@ type Engine struct {
 	teamSwitches map[types.PartyID]teamSwitch
 }
 
-func (e *Engine) OnReferralProgramMinStakedVegaTokensUpdate(_ context.Context, value num.Decimal) error {
+func (e *Engine) OnReferralProgramMinStakedVegaTokensUpdate(_ context.Context, value *num.Uint) error {
 	e.minStakedVegaTokens = value
 	return nil
 }

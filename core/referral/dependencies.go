@@ -21,7 +21,11 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/referral EpochEngine,Broker,TimeService,MarketActivityTracker
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/referral EpochEngine,Broker,TimeService,MarketActivityTracker,StakingBalances
+
+type StakingBalances interface {
+	GetAvailableBalance(party string) (*num.Uint, error)
+}
 
 type TimeService interface {
 	GetTimeNow() time.Time

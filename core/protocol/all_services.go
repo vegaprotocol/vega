@@ -391,7 +391,7 @@ func newServices(
 	// the end of epoch. Since the engine will reject computations when the program
 	// is marked as ended, it needs to be one of the last service to register on
 	// epoch update, so the computation can happen for this epoch.
-	svcs.referralProgram = referral.NewSnapshottedEngine(svcs.broker, svcs.timeService, svcs.marketActivityTracker)
+	svcs.referralProgram = referral.NewSnapshottedEngine(svcs.broker, svcs.timeService, svcs.marketActivityTracker, svcs.stakingAccounts)
 	svcs.snapshotEngine.AddProviders(svcs.referralProgram)
 	// The referral program engine must be notified of the epoch change *after* the
 	// market activity tracker, as it relies on computation that must happen, at
@@ -806,6 +806,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.ReferralProgramMinStakedVegaTokens,
 			Watcher: svcs.teamsEngine.OnReferralProgramMinStakedVegaTokensUpdate,
+		},
+		{
+			Param:   netparams.ReferralProgramMinStakedVegaTokens,
+			Watcher: svcs.referralProgram.OnReferralProgramMinStakedVegaTokensUpdate,
 		},
 	}
 

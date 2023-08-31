@@ -78,6 +78,7 @@
 - [9234](https://github.com/vegaprotocol/vega/issues/9234) - Add support for transfers out of the vested account
 - [9199](https://github.com/vegaprotocol/vega/issues/9199) - Consider running notional volume to determine referrers and referees tier
 - [9214](https://github.com/vegaprotocol/vega/issues/9214) - Add staking tier on referral program
+- [9205](https://github.com/vegaprotocol/vega/issues/9205) - Ensure staking requirement when creating / joining referral sets
 
 
 ### 🐛 Fixes
@@ -94,7 +95,7 @@
 - [8773](https://github.com/vegaprotocol/vega/issues/8773) - Fix panic with stop orders
 - [8792](https://github.com/vegaprotocol/vega/issues/8792) - Fix panic when starting null block chain node.
 - [8739](https://github.com/vegaprotocol/vega/issues/8739) - Cancel orders for rejected markets.
-- [9118](https://github.com/vegaprotocol/vega/issues/9118) - Improve list stop orders error message 
+- [9118](https://github.com/vegaprotocol/vega/issues/9118) - Improve list stop orders error message
 - [9105](https://github.com/vegaprotocol/vega/issues/9105) - Truncate virtual stake decimal places
 - [8800](https://github.com/vegaprotocol/vega/issues/8800) - `expiresAt` is always null in the Stop Orders `API`.
 - [8796](https://github.com/vegaprotocol/vega/issues/8796) - Avoid updating active proposals slice while iterating over it.
