@@ -15,7 +15,6 @@ package positions
 import (
 	"context"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"sort"
 	"sync"
@@ -26,12 +25,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"golang.org/x/exp/maps"
-)
-
-// Errors.
-var (
-	// ErrPositionNotFound signal that a position was not found for a given party.
-	ErrPositionNotFound = errors.New("position not found")
 )
 
 // Broker (no longer need to mock this, use the broker/mocks wrapper).
@@ -100,7 +93,7 @@ func (e *Engine) FlushPositionEvents(ctx context.Context) {
 	e.sendBufferedPosition(ctx)
 }
 
-func (e *Engine) bufferPosition(ctx context.Context, pos *MarketPosition) {
+func (e *Engine) bufferPosition(_ context.Context, pos *MarketPosition) {
 	e.updatedPositions[pos.partyID] = struct{}{}
 }
 
@@ -262,6 +255,7 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade, passiveO
 	pos.UpdateOnOrderChange(e.log, passiveOrder.Side, passiveOrder.Price, trade.Size, false)
 
 	e.positionUpdated(ctx, pos)
+
 	cpy := pos.Clone()
 	return []events.MarketPosition{*cpy}
 }
@@ -536,22 +530,4 @@ func (e *Engine) remove(p *MarketPosition) {
 			break
 		}
 	}
-}
-
-// I64MaxAbs - get max value based on absolute values of int64 vals
-// keep this function, perhaps we can reuse it in a numutil package
-// once we have to deal with decimals etc...
-func I64MaxAbs(vals ...int64) int64 {
-	var r, m int64
-	for _, v := range vals {
-		av := v
-		if av < 0 {
-			av *= -1
-		}
-		if av > m {
-			r = v
-			m = av // current max abs is av
-		}
-	}
-	return r
 }

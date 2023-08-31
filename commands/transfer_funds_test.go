@@ -1015,6 +1015,20 @@ func TestTransferFunds(t *testing.T) {
 				Reference: "testing",
 			},
 		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_VESTED_REWARDS,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_MARGIN,
+				Kind: &commandspb.Transfer_Recurring{
+					Recurring: &commandspb.RecurringTransfer{},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1000",
+				Reference: "testing",
+			},
+			errString: "transfer.from_account_type (account type is not valid for one recurring transfer",
+		},
 	}
 
 	invalidAccountTypesForOneOff := []vega.AccountType{

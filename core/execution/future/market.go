@@ -45,7 +45,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 // LiquidityMonitor.
@@ -335,10 +335,14 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	if m.closed {
 		return
 	}
-	if epoch.Action == vega.EpochAction_EPOCH_ACTION_START {
+
+	switch epoch.Action {
+	case vegapb.EpochAction_EPOCH_ACTION_START:
 		m.liquidity.OnEpochStart(ctx, m.timeService.GetTimeNow(), m.markPrice, m.midPrice(), m.getTargetStake(), m.positionFactor)
-	} else if epoch.Action == vega.EpochAction_EPOCH_ACTION_END && !m.finalFeesDistributed {
-		m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow())
+	case vegapb.EpochAction_EPOCH_ACTION_END:
+		if !m.finalFeesDistributed {
+			m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow())
+		}
 	}
 
 	m.updateLiquidityFee(ctx)
@@ -1380,9 +1384,10 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.MarketPosition) {
 	evts := make([]events.Event, 0, len(positions))
 	for _, pos := range positions {
+		party := pos.Party()
 		// if the party still have a position in the settlement engine,
 		// do not remove them for now
-		if m.settlement.HasPosition(pos.Party()) {
+		if m.settlement.HasPosition(party) {
 			continue
 		}
 
@@ -1393,7 +1398,7 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 		}
 
 		transfers, err := m.collateral.ClearPartyMarginAccount(
-			ctx, pos.Party(), m.GetID(), m.settlementAsset)
+			ctx, party, m.GetID(), m.settlementAsset)
 		if err != nil {
 			m.log.Error("unable to clear party margin account", logging.Error(err))
 			return
@@ -1406,7 +1411,10 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 		}
 
 		// we can delete the party from the map here
-		delete(m.parties, pos.Party())
+		// unless the party is an LP
+		if !m.liquidityEngine.IsLiquidityProvider(party) {
+			delete(m.parties, party)
+		}
 	}
 	m.broker.SendBatch(evts)
 }
@@ -2051,7 +2059,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		aggressor := conf.Order.Party
 		if quantum, err := m.collateral.GetAssetQuantum(m.settlementAsset); err == nil && !quantum.IsZero() {
 			n, _ := num.UintFromDecimal(tradedValue.ToDecimal().Div(quantum))
-			m.marketActivityTracker.RecordNotionalTakerVolume(m.mkt.ID, aggressor, n)
+			m.marketActivityTracker.RecordNotionalTakerVolume(aggressor, n)
 		}
 	}
 	m.feeSplitter.AddTradeValue(tradedValue)

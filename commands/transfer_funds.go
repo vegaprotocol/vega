@@ -44,7 +44,7 @@ func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 	if len(cmd.To) <= 0 {
 		errs.AddForProperty("transfer.to", ErrIsRequired)
 	} else if !IsVegaPublicKey(cmd.To) {
-		errs.AddForProperty("transfer_to", ErrShouldBeAValidVegaPublicKey)
+		errs.AddForProperty("transfer.to", ErrShouldBeAValidVegaPublicKey)
 	}
 
 	if cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
@@ -55,10 +55,11 @@ func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 
 	// if the transfer is to a reward account, it must have the to set to 0
 	if cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD && cmd.To != "0000000000000000000000000000000000000000000000000000000000000000" {
-		errs.AddForProperty("transfer_to", ErrIsNotValid)
+		errs.AddForProperty("transfer.to_account_type", ErrIsNotValid)
 	}
 
-	if cmd.FromAccountType != vega.AccountType_ACCOUNT_TYPE_GENERAL {
+	if cmd.FromAccountType != vega.AccountType_ACCOUNT_TYPE_GENERAL &&
+		cmd.FromAccountType != vega.AccountType_ACCOUNT_TYPE_VESTED_REWARDS {
 		errs.AddForProperty("transfer.from_account_type", ErrIsNotValid)
 	}
 
@@ -96,6 +97,9 @@ func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 				errs.AddForProperty("transfer.account.to", errors.New("transfers to metric-based reward accounts must be recurring transfers that specify a distribution metric"))
 			}
 		case *commandspb.Transfer_Recurring:
+			if cmd.FromAccountType == vega.AccountType_ACCOUNT_TYPE_VESTED_REWARDS {
+				errs.AddForProperty("transfer.from_account_type", errors.New("account type is not valid for one recurring transfer"))
+			}
 			if k.Recurring.EndEpoch != nil && *k.Recurring.EndEpoch <= 0 {
 				errs.AddForProperty("transfer.kind.end_epoch", ErrMustBePositive)
 			}
@@ -110,6 +114,18 @@ func checkTransfer(cmd *commandspb.Transfer) (e Errors) {
 			} else {
 				if f.Cmp(big.NewFloat(0)) <= 0 {
 					errs.AddForProperty("transfer.kind.factor", ErrMustBePositive)
+				}
+			}
+			if cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING {
+				if k.Recurring.DispatchStrategy == nil {
+					errs.AddForProperty("transfer.kind.dispatch_strategy", ErrIsRequired)
 				}
 			}
 			// dispatch strategy only makes sense for reward pools

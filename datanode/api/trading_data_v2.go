@@ -25,6 +25,8 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+
 	"golang.org/x/sync/errgroup"
 
 	"code.vegaprotocol.io/vega/core/risk"
@@ -2176,7 +2178,11 @@ func (t *TradingDataServiceV2) ListOrders(ctx context.Context, req *v2.ListOrder
 
 	orders, pageInfo, err := t.orderService.ListOrders(ctx, pagination, filter)
 	if err != nil {
-		return nil, formatE(ErrOrderServiceGetOrders, err)
+		if errors.Is(err, sqlstore.ErrLastPaginationNotSupported) {
+			return nil, formatE(ErrLastPaginationNotSupported, err)
+		}
+
+		return nil, formatE(err)
 	}
 
 	edges, err := makeEdges[*v2.OrderEdge](orders)
@@ -3879,7 +3885,11 @@ func (t *TradingDataServiceV2) ListStopOrders(ctx context.Context, req *v2.ListS
 
 	orders, pageInfo, err := t.stopOrderService.ListStopOrders(ctx, filter, pagination)
 	if err != nil {
-		return nil, formatE(ErrOrderServiceGetOrders, err)
+		if errors.Is(err, sqlstore.ErrLastPaginationNotSupported) {
+			return nil, formatE(ErrLastPaginationNotSupported, err)
+		}
+
+		return nil, formatE(err)
 	}
 
 	edges, err := makeEdges[*v2.StopOrderEdge](orders)

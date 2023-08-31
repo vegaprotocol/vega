@@ -391,8 +391,12 @@ func newServices(
 	// the end of epoch. Since the engine will reject computations when the program
 	// is marked as ended, it needs to be one of the last service to register on
 	// epoch update, so the computation can happen for this epoch.
-	svcs.referralProgram = referral.NewSnapshottedEngine(svcs.epochService, svcs.broker, svcs.timeService)
+	svcs.referralProgram = referral.NewSnapshottedEngine(svcs.broker, svcs.timeService, svcs.marketActivityTracker, svcs.stakingAccounts)
 	svcs.snapshotEngine.AddProviders(svcs.referralProgram)
+	// The referral program engine must be notified of the epoch change *after* the
+	// market activity tracker, as it relies on computation that must happen, at
+	// the end of the epoch, in market activity tracker.
+	svcs.epochService.NotifyOnEpoch(svcs.referralProgram.OnEpoch, svcs.referralProgram.OnEpochRestore)
 
 	// setup config reloads for all engines / services /etc
 	svcs.registerConfigWatchers()
@@ -784,12 +788,16 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMarketPartiesMaximumStopOrdersUpdate,
 		},
 		{
-			Param:   netparams.RewardVestingMinimumTransfer,
+			Param:   netparams.RewardsVestingMinimumTransfer,
 			Watcher: svcs.vesting.OnRewardVestingMinimumTransferUpdate,
 		},
 		{
 			Param:   netparams.RewardsVestingBaseRate,
 			Watcher: svcs.vesting.OnRewardVestingBaseRateUpdate,
+		},
+		{
+			Param:   netparams.RewardsVestingBonusMultiplier,
+			Watcher: svcs.vesting.OnBenefitTiersUpdate,
 		},
 		{
 			Param:   netparams.ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch,
@@ -798,6 +806,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.ReferralProgramMinStakedVegaTokens,
 			Watcher: svcs.teamsEngine.OnReferralProgramMinStakedVegaTokensUpdate,
+		},
+		{
+			Param:   netparams.ReferralProgramMinStakedVegaTokens,
+			Watcher: svcs.referralProgram.OnReferralProgramMinStakedVegaTokensUpdate,
 		},
 	}
 

@@ -131,6 +131,62 @@ func TestClearAccounts(t *testing.T) {
 	t.Run("clear fee accounts", testClearFeeAccounts)
 }
 
+func TestGetAllVestingQuantumBalance(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+	ctx := context.Background()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// try with no assets.
+	// unlikely this would happenm but eh
+	party := "party1"
+
+	balance := eng.GetAllVestingQuantumBalance(party)
+	assert.Equal(t, int(balance.Uint64()), 0)
+
+	assetT := types.Asset{
+		ID: "USDC",
+		Details: &types.AssetDetails{
+			Symbol:  "USDC",
+			Quantum: num.MustDecimalFromString("100"),
+		},
+	}
+
+	eng.EnableAsset(ctx, assetT)
+
+	assetT = types.Asset{
+		ID: "VEGA",
+		Details: &types.AssetDetails{
+			Symbol:  "VEGA",
+			Quantum: num.MustDecimalFromString("300"),
+		},
+	}
+
+	eng.EnableAsset(ctx, assetT)
+
+	// now add some balance to an asset
+	acc := eng.GetOrCreatePartyVestingRewardAccount(ctx, party, "USDC")
+	// in quantum == 100
+	assert.NoError(
+		t, eng.UpdateBalance(ctx, acc.ID, num.NewUint(10000)),
+	)
+
+	balance = eng.GetAllVestingQuantumBalance(party)
+	assert.Equal(t, int(balance.Uint64()), 100)
+
+	// add some more of the other account
+	// now add some balance to an asset
+	acc = eng.GetOrCreatePartyVestedRewardAccount(ctx, party, "VEGA")
+	// in quantum == 3.5, integer partused only
+	assert.NoError(
+		t, eng.UpdateBalance(ctx, acc.ID, num.NewUint(950)),
+	)
+
+	balance = eng.GetAllVestingQuantumBalance(party)
+	assert.Equal(t, int(balance.Uint64()), 103)
+}
+
 func testClearFeeAccounts(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.Finish()
@@ -2903,7 +2959,7 @@ func getTestEngine(t *testing.T) *testEngine {
 			Symbol:   testMarketAsset,
 			Name:     testMarketAsset,
 			Decimals: 0,
-			Quantum:  num.DecimalZero(),
+			Quantum:  num.DecimalOne(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.UintZero(),
@@ -2920,7 +2976,7 @@ func getTestEngine(t *testing.T) *testEngine {
 			Symbol:   "ETH",
 			Name:     "ETH",
 			Decimals: 18,
-			Quantum:  num.DecimalZero(),
+			Quantum:  num.DecimalOne(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.UintZero(),

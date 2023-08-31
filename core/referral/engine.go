@@ -14,6 +14,7 @@ package referral
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -21,32 +22,44 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
-	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
+const MaximumWindowLength uint64 = 100
+
 var (
-	ErrIsAlreadyAReferee = func(party string) error {
-		return fmt.Errorf("party %v has already been referred", party)
+	ErrIsAlreadyAReferee = func(party types.PartyID) error {
+		return fmt.Errorf("party %q has already been referred", party)
 	}
 
-	ErrIsAlreadyAReferrer = func(party string) error {
-		return fmt.Errorf("party %v is already a referrer", party)
+	ErrIsAlreadyAReferrer = func(party types.PartyID) error {
+		return fmt.Errorf("party %q is already a referrer", party)
 	}
 
-	ErrInvalidReferralCode = func(code string) error {
-		return fmt.Errorf("invalid referral code %q", code)
+	ErrUnknownReferralCode = func(code types.ReferralSetID) error {
+		return fmt.Errorf("no referral set for referral code %q", code)
 	}
+
+	ErrNotEligibleForReferralRewards = func(party string, balance, required *num.Uint) error {
+		return fmt.Errorf("%v not eligible for referral rewards, staking balance required of %s got %s", party, required.String(), balance.String())
+	}
+
+	ErrNotAValidSetID = errors.New("not a valid set ID")
 )
 
 type Engine struct {
-	broker Broker
+	broker                Broker
+	marketActivityTracker MarketActivityTracker
+	timeSvc               TimeService
 
-	timeSvc TimeService
+	currentEpoch uint64
+	staking      StakingBalances
 
-	// maxPartyNotionalVolumeByQuantumPerEpoch limits the volume in quantum units
-	// which is eligible each epoch for referral program mechanisms.
-	maxPartyNotionalVolumeByQuantumPerEpoch *num.Uint
+	// referralSetsNotionalVolumes tracks the notional volumes per teams. Each
+	// element of the num.Uint array is an epoch.
+	referralSetsNotionalVolumes *runningVolumes
+
+	referralProgramMinStakedVegaTokens *num.Uint
 
 	// latestProgramVersion tracks the latest version of the program. It used to
 	// value any new program that comes in. It starts at 1.
@@ -68,26 +81,17 @@ type Engine struct {
 	// It's `nil` is there is none.
 	newProgram *types.ReferralProgram
 
-	// TODO: snapshot this
-	// keep track of all referral sets
-	// referral set ID -> Referral set
-	sets map[string]*types.ReferralSet
-
-	// NO need for snapshot, dynamically computed
-	// map of referrer to set ID
-	referrers map[string]string
-
-	// NO need for snapshot, dynamically computed
-	// map of referees to set ID
-	referees map[string]string
+	sets      map[types.ReferralSetID]*types.ReferralSet
+	referrers map[types.PartyID]types.ReferralSetID
+	referees  map[types.PartyID]types.ReferralSetID
 }
 
-func (e *Engine) SetExists(setID string) bool {
+func (e *Engine) SetExists(setID types.ReferralSetID) bool {
 	_, ok := e.sets[setID]
 	return ok
 }
 
-func (e *Engine) CreateReferralSet(ctx context.Context, party string, set *commandspb.CreateReferralSet, deterministicID string) error {
+func (e *Engine) CreateReferralSet(ctx context.Context, party types.PartyID, deterministicSetID types.ReferralSetID) error {
 	if _, ok := e.referrers[party]; ok {
 		return ErrIsAlreadyAReferrer(party)
 	}
@@ -95,55 +99,87 @@ func (e *Engine) CreateReferralSet(ctx context.Context, party string, set *comma
 		return ErrIsAlreadyAReferee(party)
 	}
 
+	if err := e.isPartyEligible(string(party)); err != nil {
+		return err
+	}
+
 	now := e.timeSvc.GetTimeNow()
 
 	newSet := types.ReferralSet{
-		ID:        deterministicID,
+		ID:        deterministicSetID,
 		CreatedAt: now,
 		UpdatedAt: now,
 		Referrer: &types.Membership{
-			PartyID:       types.PartyID(party),
-			JoinedAt:      now,
-			NumberOfEpoch: 0,
+			PartyID:        party,
+			JoinedAt:       now,
+			StartedAtEpoch: e.currentEpoch,
 		},
 	}
 
-	e.sets[deterministicID] = &newSet
-	e.referrers[party] = deterministicID
+	e.sets[deterministicSetID] = &newSet
+	e.referrers[party] = deterministicSetID
 
 	e.broker.Send(events.NewReferralSetCreatedEvent(ctx, &newSet))
 
 	return nil
 }
 
-func (e *Engine) ApplyReferralCode(ctx context.Context, party string, params *commandspb.ApplyReferralCode) error {
-	if _, ok := e.referees[party]; ok {
-		return ErrIsAlreadyAReferee(party)
-	}
-
+func (e *Engine) ApplyReferralCode(ctx context.Context, party types.PartyID, setID types.ReferralSetID) error {
 	if _, ok := e.referrers[party]; ok {
 		return ErrIsAlreadyAReferrer(party)
 	}
 
-	set, ok := e.sets[params.Id]
+	var (
+		isSwitching bool
+		prevSet     types.ReferralSetID
+		ok          bool
+	)
+	if prevSet, ok = e.referees[party]; ok {
+		isSwitching = e.canSwitchReferralSet(party, setID)
+		if !isSwitching {
+			return ErrIsAlreadyAReferee(party)
+		}
+	}
+
+	set, ok := e.sets[setID]
 	if !ok {
-		return ErrInvalidReferralCode(params.Id)
+		return ErrUnknownReferralCode(setID)
 	}
 
 	now := e.timeSvc.GetTimeNow()
 
 	set.UpdatedAt = now
-	set.Referees = append(set.Referees, &types.Membership{
-		PartyID:       types.PartyID(party),
-		JoinedAt:      now,
-		NumberOfEpoch: 0,
-	})
+
+	membership := &types.Membership{
+		PartyID:        party,
+		JoinedAt:       now,
+		StartedAtEpoch: e.currentEpoch,
+	}
+	set.Referees = append(set.Referees, membership)
 
 	e.referees[party] = set.ID
 
-	e.broker.Send(events.NewRefereeJoinedReferralSetEvent(ctx, params.Id, party, now))
+	e.broker.Send(events.NewRefereeJoinedReferralSetEvent(ctx, setID, membership))
+
+	if isSwitching {
+		e.removeFromSet(party, prevSet)
+	}
 
 	return nil
+}
+
+func (e *Engine) removeFromSet(party types.PartyID, prevSet types.ReferralSetID) {
+	set := e.sets[prevSet]
+
+	var idx int
+	for i, r := range set.Referees {
+		if r.PartyID == party {
+			idx = i
+			break
+		}
+	}
+
+	set.Referees = append(set.Referees[:idx], set.Referees[idx+1:]...)
 }
 
 func (e *Engine) UpdateProgram(newProgram *types.ReferralProgram) {
@@ -156,29 +192,96 @@ func (e *Engine) HasProgramEnded() bool {
 	return e.programHasEnded
 }
 
-func (e *Engine) RewardsFactorForParty(_ types.PartyID) num.Decimal {
+func (e *Engine) RewardsFactorForParty(party types.PartyID) num.Decimal {
 	if e.programHasEnded {
 		return num.DecimalZero()
+	}
+
+	setID, isReferrer := e.referrers[party]
+	if !isReferrer {
+		// This party is not eligible to referral program rewards.
+		return num.DecimalZero()
+	}
+
+	if e.isSetEligible(setID) != nil {
+		return num.DecimalZero()
+	}
+
+	runningTeamVolume := e.referralSetsNotionalVolumes.RunningSetVolumeForWindow(setID, e.currentProgram.WindowLength)
+
+	tiersLen := len(e.currentProgram.BenefitTiers)
+
+	for i := tiersLen - 1; i >= 0; i-- {
+		tier := e.currentProgram.BenefitTiers[i]
+		if runningTeamVolume.GTE(tier.MinimumRunningNotionalTakerVolume) {
+			return tier.ReferralRewardFactor
+		}
 	}
 
 	return num.DecimalZero()
 }
 
+func (e *Engine) DiscountFactorForParty(party types.PartyID) num.Decimal {
+	if e.programHasEnded {
+		return num.DecimalZero()
+	}
+
+	setID, isReferee := e.referees[party]
+	if !isReferee {
+		// This party is not eligible to referral program discount.
+		return num.DecimalZero()
+	}
+
+	epochCount := uint64(0)
+	set := e.sets[setID]
+	for _, referee := range set.Referees {
+		if referee.PartyID == party {
+			epochCount = e.currentEpoch - referee.StartedAtEpoch
+			break
+		}
+	}
+
+	runningTeamVolume := e.referralSetsNotionalVolumes.RunningSetVolumeForWindow(setID, e.currentProgram.WindowLength)
+
+	tiersLen := len(e.currentProgram.BenefitTiers)
+
+	for i := tiersLen - 1; i >= 0; i-- {
+		tier := e.currentProgram.BenefitTiers[i]
+		if epochCount >= tier.MinimumEpochs.Uint64() && runningTeamVolume.GTE(tier.MinimumRunningNotionalTakerVolume) {
+			return tier.ReferralDiscountFactor
+		}
+	}
+
+	return num.DecimalZero()
+}
+
+func (e *Engine) OnReferralProgramMinStakedVegaTokensUpdate(_ context.Context, value *num.Uint) error {
+	e.referralProgramMinStakedVegaTokens = value
+	return nil
+}
+
 func (e *Engine) OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate(_ context.Context, value *num.Uint) error {
-	e.maxPartyNotionalVolumeByQuantumPerEpoch = value
+	e.referralSetsNotionalVolumes.maxPartyNotionalVolumeByQuantumPerEpoch = value
 	return nil
 }
 
 func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 	switch ep.Action {
+	case vegapb.EpochAction_EPOCH_ACTION_START:
+		e.currentEpoch = ep.Seq
+		e.applyProgramUpdate(ctx, ep.StartTime)
 	case vegapb.EpochAction_EPOCH_ACTION_END:
-		e.applyUpdate(ctx, ep.EndTime)
+		e.computeReferralSetsNotionalRunningVolume(ep)
 	}
 }
 
-func (e *Engine) OnEpochRestore(_ context.Context, _ types.Epoch) {}
+func (e *Engine) OnEpochRestore(_ context.Context, ep types.Epoch) {
+	if ep.Action == vegapb.EpochAction_EPOCH_ACTION_START {
+		e.currentEpoch = ep.Seq
+	}
+}
 
-func (e *Engine) applyUpdate(ctx context.Context, epochEnd time.Time) {
+func (e *Engine) applyProgramUpdate(ctx context.Context, startEpochTime time.Time) {
 	if e.newProgram != nil {
 		if e.currentProgram != nil {
 			e.endCurrentProgram()
@@ -194,7 +297,7 @@ func (e *Engine) applyUpdate(ctx context.Context, epochEnd time.Time) {
 	// epoch starts. It can happen when the proposal updating the referral
 	// program doesn't specify an end date that is to close to the enactment
 	// time.
-	if e.currentProgram != nil && !e.currentProgram.EndOfProgramTimestamp.After(epochEnd) {
+	if e.currentProgram != nil && !e.currentProgram.EndOfProgramTimestamp.After(startEpochTime) {
 		e.notifyReferralProgramEnded(ctx)
 		e.endCurrentProgram()
 	}
@@ -249,56 +352,124 @@ func (e *Engine) loadNewReferralProgramFromSnapshot(program *vegapb.ReferralProg
 	}
 }
 
-func (e *Engine) loadReferralSetsFromSnapshot(sets *snapshotpb.ReferralSets) {
-	if sets == nil {
+func (e *Engine) loadReferralSetsFromSnapshot(setsProto *snapshotpb.ReferralSets) {
+	if setsProto == nil {
 		return
 	}
 
-	for _, set := range sets.Sets {
+	for _, setProto := range setsProto.Sets {
+		setID := types.ReferralSetID(setProto.Id)
+
 		newSet := &types.ReferralSet{
-			ID:        set.Id,
-			CreatedAt: time.Unix(0, set.CreatedAt),
-			UpdatedAt: time.Unix(0, set.CreatedAt),
+			ID:        setID,
+			CreatedAt: time.Unix(0, setProto.CreatedAt),
+			UpdatedAt: time.Unix(0, setProto.CreatedAt),
 			Referrer: &types.Membership{
-				PartyID:       types.PartyID(set.Referrer.PartyId),
-				JoinedAt:      time.Unix(0, set.Referrer.JoinedAt),
-				NumberOfEpoch: set.Referrer.NumberOfEpoch,
+				PartyID:        types.PartyID(setProto.Referrer.PartyId),
+				JoinedAt:       time.Unix(0, setProto.Referrer.JoinedAt),
+				StartedAtEpoch: setProto.Referrer.StartedAtEpoch,
 			},
 		}
 
-		e.referrers[set.Referrer.PartyId] = set.Id
+		e.referrers[types.PartyID(setProto.Referrer.PartyId)] = setID
 
-		for _, r := range set.Referees {
-			e.referees[r.PartyId] = set.Id
+		for _, r := range setProto.Referees {
+			partyID := types.PartyID(r.PartyId)
+			e.referees[partyID] = setID
 			newSet.Referees = append(newSet.Referees,
 				&types.Membership{
-					PartyID:       types.PartyID(r.PartyId),
-					JoinedAt:      time.Unix(0, r.JoinedAt),
-					NumberOfEpoch: r.NumberOfEpoch,
+					PartyID:        partyID,
+					JoinedAt:       time.Unix(0, r.JoinedAt),
+					StartedAtEpoch: r.StartedAtEpoch,
 				},
 			)
 		}
 
-		e.sets[set.Id] = newSet
+		runningVolumes := make([]*notionalVolume, 0, len(setProto.RunningVolumes))
+		for _, volume := range setProto.RunningVolumes {
+			volumeNum, _ := num.UintFromString(volume.Volume, 10)
+			runningVolumes = append(runningVolumes, &notionalVolume{
+				epoch: volume.Epoch,
+				value: volumeNum,
+			})
+		}
+		e.referralSetsNotionalVolumes.runningVolumesBySet[setID] = runningVolumes
+
+		e.sets[setID] = newSet
 	}
 }
 
-func NewEngine(epochEngine EpochEngine, broker Broker, timeSvc TimeService) *Engine {
-	engine := &Engine{
-		broker: broker,
-		// There is no program yet, so we mark it has ended so consumer of this
-		// engine can know there is no reward computation to be done.
-		programHasEnded:      true,
-		latestProgramVersion: 0,
+func (e *Engine) computeReferralSetsNotionalRunningVolume(epoch types.Epoch) {
+	priorEpoch := uint64(0)
+	if epoch.Seq > MaximumWindowLength {
+		priorEpoch = epoch.Seq - MaximumWindowLength
+	}
+	e.referralSetsNotionalVolumes.RemovePriorEpoch(priorEpoch)
 
-		sets:      map[string]*types.ReferralSet{},
-		referrers: map[string]string{},
-		referees:  map[string]string{},
-
-		timeSvc: timeSvc,
+	for partyID, setID := range e.referrers {
+		volumeForEpoch := e.marketActivityTracker.NotionalTakerVolumeForParty(string(partyID))
+		e.referralSetsNotionalVolumes.Add(epoch.Seq, setID, volumeForEpoch)
 	}
 
-	epochEngine.NotifyOnEpoch(engine.OnEpoch, engine.OnEpochRestore)
+	for partyID, setID := range e.referees {
+		volumeForEpoch := e.marketActivityTracker.NotionalTakerVolumeForParty(string(partyID))
+		e.referralSetsNotionalVolumes.Add(epoch.Seq, setID, volumeForEpoch)
+	}
+}
+
+func (e *Engine) isSetEligible(setID types.ReferralSetID) error {
+	set, ok := e.sets[setID]
+	if !ok {
+		return ErrNotAValidSetID
+	}
+
+	return e.isPartyEligible(string(set.Referrer.PartyID))
+}
+
+func (e *Engine) canSwitchReferralSet(party types.PartyID, newSet types.ReferralSetID) bool {
+	// first get the current set and check if it's the same
+	currentSet := e.referees[party]
+	if currentSet == newSet {
+		return false
+	}
+
+	// if the current set is not eligible for rewards,
+	// then we can switch
+	if e.isSetEligible(currentSet) != nil {
+		return true
+	}
+
+	return false
+}
+
+func (e *Engine) isPartyEligible(party string) error {
+	// ignore error, function returns zero balance anyway
+	balance, _ := e.staking.GetAvailableBalance(party)
+
+	if balance.GTE(e.referralProgramMinStakedVegaTokens) {
+		return nil
+	}
+
+	return ErrNotEligibleForReferralRewards(party, balance, e.referralProgramMinStakedVegaTokens)
+}
+
+func NewEngine(broker Broker, timeSvc TimeService, mat MarketActivityTracker, staking StakingBalances) *Engine {
+	engine := &Engine{
+		broker:                broker,
+		timeSvc:               timeSvc,
+		marketActivityTracker: mat,
+
+		// There is no program yet, so we mark it has ended so consumer of this
+		// engine can know there is no reward computation to be done.
+		programHasEnded: true,
+
+		referralSetsNotionalVolumes: newRunningVolumes(),
+
+		sets:      map[types.ReferralSetID]*types.ReferralSet{},
+		referrers: map[types.PartyID]types.ReferralSetID{},
+		referees:  map[types.PartyID]types.ReferralSetID{},
+		staking:   staking,
+	}
 
 	return engine
 }

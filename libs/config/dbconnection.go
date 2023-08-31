@@ -14,18 +14,21 @@ package config
 
 import (
 	"fmt"
+	"strconv"
 
+	"code.vegaprotocol.io/vega/libs/config/encoding"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type PostgresConnection struct {
-	Host            string `description:"hostname of postgres server"                                               long:"host"`
-	Port            int    `description:"port postgres is running on"                                               long:"port"`
-	Username        string `description:"username to connect with"                                                  long:"username"`
-	Password        string `description:"password for user"                                                         long:"password"`
-	Database        string `description:"database name"                                                             long:"database"`
-	SocketDir       string `description:"location of postgres UNIX socket directory (used if host is empty string)" long:"socket-dir"`
-	ApplicationName string `description:"identify the application to the database using this name"                  long:"application-name"`
+	Host             string            `description:"hostname of postgres server"                                               long:"host"`
+	Port             int               `description:"port postgres is running on"                                               long:"port"`
+	Username         string            `description:"username to connect with"                                                  long:"username"`
+	Password         string            `description:"password for user"                                                         long:"password"`
+	Database         string            `description:"database name"                                                             long:"database"`
+	SocketDir        string            `description:"location of postgres UNIX socket directory (used if host is empty string)" long:"socket-dir"`
+	ApplicationName  string            `description:"identify the application to the database using this name"                  long:"application-name"`
+	StatementTimeout encoding.Duration `description:"Terminate any database connections that take longer than this"             long:"statement-timeout"`
 }
 
 func (conf PostgresConnection) ToConnectionString() string {
@@ -56,5 +59,10 @@ func (conf PostgresConnection) ToPgxPoolConfig() (*pgxpool.Config, error) {
 	if conf.ApplicationName != "" {
 		cfg.ConnConfig.RuntimeParams["application_name"] = "Vega Data Node"
 	}
+
+	if conf.StatementTimeout.Get() > 0 {
+		cfg.ConnConfig.RuntimeParams["statement_timeout"] = strconv.Itoa(int(conf.StatementTimeout.Get().Milliseconds()))
+	}
+
 	return cfg, nil
 }

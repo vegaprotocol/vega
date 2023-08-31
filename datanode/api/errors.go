@@ -99,6 +99,8 @@ var (
 	// ErrNegativeOrderVersion is returned when a request is made for an
 	// order with a negative version.
 	ErrNegativeOrderVersion = newInvalidArgumentError("negative order version")
+	// ErrLastPaginationNotSupported is returned when last pagination is not supported.
+	ErrLastPaginationNotSupported = newInvalidArgumentError("'last' pagination is not supported")
 
 	// ErrOracleServiceSpecID is returned when there was no data found for the given ID.
 	ErrOracleServiceGetSpec = errors.New("failed to retrieve data for oracle spec")

@@ -2,7 +2,6 @@ package events
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -22,14 +21,14 @@ func (t ReferralSetCreated) StreamMessage() *eventspb.BusEvent {
 	return busEvent
 }
 
-func NewReferralSetCreatedEvent(ctx context.Context, t *types.ReferralSet) *ReferralSetCreated {
+func NewReferralSetCreatedEvent(ctx context.Context, set *types.ReferralSet) *ReferralSetCreated {
 	return &ReferralSetCreated{
 		Base: newBase(ctx, ReferralSetCreatedEvent),
 		e: eventspb.ReferralSetCreated{
-			SetId:     t.ID,
-			Referrer:  string(t.Referrer.PartyID),
-			CreatedAt: t.CreatedAt.UnixNano(),
-			UpdatedAt: t.CreatedAt.UnixNano(),
+			SetId:     string(set.ID),
+			Referrer:  string(set.Referrer.PartyID),
+			CreatedAt: set.CreatedAt.UnixNano(),
+			UpdatedAt: set.CreatedAt.UnixNano(),
 		},
 	}
 }
@@ -55,13 +54,14 @@ func (t RefereeJoinedReferralSet) StreamMessage() *eventspb.BusEvent {
 	return busEvent
 }
 
-func NewRefereeJoinedReferralSetEvent(ctx context.Context, setID string, referee string, joinedAt time.Time) *RefereeJoinedReferralSet {
+func NewRefereeJoinedReferralSetEvent(ctx context.Context, setID types.ReferralSetID, membership *types.Membership) *RefereeJoinedReferralSet {
 	return &RefereeJoinedReferralSet{
 		Base: newBase(ctx, RefereeJoinedReferralSetEvent),
 		e: eventspb.RefereeJoinedReferralSet{
-			SetId:    setID,
-			Referee:  referee,
-			JoinedAt: joinedAt.UnixNano(),
+			SetId:    string(setID),
+			Referee:  string(membership.PartyID),
+			JoinedAt: membership.JoinedAt.UnixNano(),
+			AtEpoch:  membership.StartedAtEpoch,
 		},
 	}
 }

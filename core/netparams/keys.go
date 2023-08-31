@@ -214,11 +214,12 @@ const (
 	// how much to scale the number of proposed blocks used for performance calculation.
 	ValidatorPerformanceScalingFactor = "validator.performance.scaling.factor"
 
-	RewardsVestingBaseRate       = "rewards.vesting.baseRate"
-	RewardVestingMinimumTransfer = "rewards.vesting.minimumTransfer"
+	RewardsVestingBaseRate        = "rewards.vesting.baseRate"
+	RewardsVestingMinimumTransfer = "rewards.vesting.minimumTransfer"
+	RewardsVestingBonusMultiplier = "rewards.vesting.benefitTiers"
 
 	// Referral program.
-	ReferralProgramMaxBenefitTiers                         = "referralProgram.maxBenefitTiers"
+	ReferralProgramMaxReferralTiers                        = "referralProgram.maxReferralTiers"
 	ReferralProgramMaxReferralRewardFactor                 = "referralProgram.maxReferralRewardFactor"
 	ReferralProgramMaxReferralDiscountFactor               = "referralProgram.maxReferralDiscountFactor"
 	ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch = "referralProgram.maxPartyNotionalVolumeByQuantumPerEpoch"
@@ -233,7 +234,8 @@ var Deprecated = map[string]struct{}{
 
 var AllKeys = map[string]struct{}{
 	MinEpochsInTeamForMetricRewardEligibility:                {},
-	RewardVestingMinimumTransfer:                             {},
+	RewardsVestingBonusMultiplier:                            {},
+	RewardsVestingMinimumTransfer:                            {},
 	RewardsVestingBaseRate:                                   {},
 	SpotMarketTradingEnabled:                                 {},
 	PerpsMarketTradingEnabled:                                {},
@@ -380,7 +382,7 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionMinMultisigUpdates:                         {},
 	MarketSuccessorLaunchWindow:                              {},
 	SpamProtectionMaxStopOrdersPerMarket:                     {},
-	ReferralProgramMaxBenefitTiers:                           {},
+	ReferralProgramMaxReferralTiers:                          {},
 	ReferralProgramMaxReferralRewardFactor:                   {},
 	ReferralProgramMaxReferralDiscountFactor:                 {},
 	ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch:   {},
