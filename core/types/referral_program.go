@@ -14,6 +14,7 @@ type ReferralProgram struct {
 	EndOfProgramTimestamp time.Time
 	WindowLength          uint64
 	BenefitTiers          []*BenefitTier
+	StakingTiers          []*StakingTier
 }
 
 type BenefitTier struct {
@@ -21,6 +22,11 @@ type BenefitTier struct {
 	MinimumRunningNotionalTakerVolume *num.Uint
 	ReferralRewardFactor              num.Decimal
 	ReferralDiscountFactor            num.Decimal
+}
+
+type StakingTier struct {
+	MinimumStakedTokens      *num.Uint
+	ReferralRewardMultiplier num.Decimal
 }
 
 func (c ReferralProgram) String() string {
@@ -38,11 +44,24 @@ func (c ReferralProgram) String() string {
 		)
 	}
 
+	stakingTierStr := ""
+	for i, tier := range c.StakingTiers {
+		if i > 1 {
+			stakingTierStr += ", "
+		}
+		stakingTierStr += fmt.Sprintf("%d(minimumStakedTokens(%s), referralRewardMultiplier(%s))",
+			i,
+			tier.MinimumStakedTokens.String(),
+			tier.ReferralRewardMultiplier.String(),
+		)
+	}
+
 	return fmt.Sprintf(
-		"endOfProgramTimestamp(%d), windowLength(%d), benefitTiers(%s)",
+		"endOfProgramTimestamp(%d), windowLength(%d), benefitTiers(%s), stakingTiers(%s)",
 		c.EndOfProgramTimestamp.Unix(),
 		c.WindowLength,
 		benefitTierStr,
+		stakingTierStr,
 	)
 }
 
@@ -57,10 +76,19 @@ func (c ReferralProgram) IntoProto() *vegapb.ReferralProgram {
 		})
 	}
 
+	stakingTiers := make([]*vegapb.StakingTier, 0, len(c.StakingTiers))
+	for _, tier := range c.StakingTiers {
+		stakingTiers = append(stakingTiers, &vegapb.StakingTier{
+			MinimumStakedTokens:      tier.MinimumStakedTokens.String(),
+			ReferralRewardMultiplier: tier.ReferralRewardMultiplier.String(),
+		})
+	}
+
 	return &vegapb.ReferralProgram{
 		Version:               c.Version,
 		Id:                    c.ID,
 		BenefitTiers:          benefitTiers,
+		StakingTiers:          stakingTiers,
 		EndOfProgramTimestamp: c.EndOfProgramTimestamp.Unix(),
 		WindowLength:          c.WindowLength,
 	}
@@ -77,12 +105,21 @@ func (c ReferralProgram) DeepClone() *ReferralProgram {
 		})
 	}
 
+	stakingTiers := make([]*StakingTier, 0, len(c.StakingTiers))
+	for _, tier := range c.StakingTiers {
+		stakingTiers = append(stakingTiers, &StakingTier{
+			MinimumStakedTokens:      tier.MinimumStakedTokens.Clone(),
+			ReferralRewardMultiplier: tier.ReferralRewardMultiplier,
+		})
+	}
+
 	cpy := ReferralProgram{
 		ID:                    c.ID,
 		Version:               c.Version,
 		EndOfProgramTimestamp: c.EndOfProgramTimestamp,
 		WindowLength:          c.WindowLength,
 		BenefitTiers:          benefitTiers,
+		StakingTiers:          stakingTiers,
 	}
 	return &cpy
 }
@@ -107,11 +144,23 @@ func NewReferralProgramFromProto(c *vegapb.ReferralProgram) *ReferralProgram {
 		})
 	}
 
+	stakingTiers := make([]*StakingTier, 0, len(c.StakingTiers))
+	for _, tier := range c.StakingTiers {
+		minimumStakedTokens, _ := num.UintFromString(tier.MinimumStakedTokens, 10)
+		referralRewardMultiplier, _ := num.DecimalFromString(tier.ReferralRewardMultiplier)
+
+		stakingTiers = append(stakingTiers, &StakingTier{
+			MinimumStakedTokens:      minimumStakedTokens,
+			ReferralRewardMultiplier: referralRewardMultiplier,
+		})
+	}
+
 	return &ReferralProgram{
 		ID:                    c.Id,
 		Version:               c.Version,
 		EndOfProgramTimestamp: time.Unix(c.EndOfProgramTimestamp, 0),
 		WindowLength:          c.WindowLength,
 		BenefitTiers:          benefitTiers,
+		StakingTiers:          stakingTiers,
 	}
 }

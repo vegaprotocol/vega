@@ -716,6 +716,8 @@ message RefereeSwitchedTeam {
   // Time in Unix nanoseconds when the party switched team. This time acts as
   // the joining time.
   int64 switched_at = 4;
+  // Epoch at which the party switched the team.
+  uint64 at_epoch = 5;
 }
 
 message RefereeJoinedTeam {
@@ -725,6 +727,8 @@ message RefereeJoinedTeam {
   string referee = 2;
   // Time in Unix nanoseconds when the party joined a team.
   int64 joined_at = 3;
+  // Epoch at which the party joined the team.
+  uint64 at_epoch = 4;
 }
 
 message ReferralSetCreated {
@@ -743,8 +747,10 @@ message RefereeJoinedReferralSet {
   string set_id = 1;
   // Party that joined the set.
   string referee = 2;
-  // Time in Unix nanoseconds when the party joined a set.
+  // Time in Unix nanoseconds when the party joined the set.
   int64 joined_at = 3;
+  // Epoch at which the party joined the set.
+  uint64 at_epoch = 4;
 }
 
 message ReferralProgramStarted {

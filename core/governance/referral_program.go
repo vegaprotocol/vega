@@ -8,9 +8,13 @@ import (
 )
 
 func validateUpdateReferralProgram(netp NetParams, p *types.UpdateReferralProgram) (types.ProposalError, error) {
-	maxBenefitTiers, _ := netp.GetUint(netparams.ReferralProgramMaxBenefitTiers)
-	if len(p.Changes.BenefitTiers) > int(maxBenefitTiers.Uint64()) {
-		return types.ProposalErrorInvalidReferralProgram, fmt.Errorf("the number of tiers in the proposal is higher than the maximum allowed by the network parameter %q: maximum is %s, but got %d", netparams.ReferralProgramMaxBenefitTiers, maxBenefitTiers.String(), len(p.Changes.BenefitTiers))
+	maxReferralTiers, _ := netp.GetUint(netparams.ReferralProgramMaxReferralTiers)
+	if len(p.Changes.BenefitTiers) > int(maxReferralTiers.Uint64()) {
+		return types.ProposalErrorInvalidReferralProgram, fmt.Errorf("the number of tiers in the proposal is higher than the maximum allowed by the network parameter %q: maximum is %s, but got %d", netparams.ReferralProgramMaxReferralTiers, maxReferralTiers.String(), len(p.Changes.BenefitTiers))
+	}
+
+	if len(p.Changes.StakingTiers) > int(maxReferralTiers.Uint64()) {
+		return types.ProposalErrorInvalidReferralProgram, fmt.Errorf("the number of tiers in the proposal is higher than the maximum allowed by the network parameter %q: maximum is %s, but got %d", netparams.ReferralProgramMaxReferralTiers, maxReferralTiers.String(), len(p.Changes.BenefitTiers))
 	}
 
 	maxRewardFactor, _ := netp.GetDecimal(netparams.ReferralProgramMaxReferralRewardFactor)
@@ -34,5 +38,6 @@ func updatedReferralProgramFromProposal(p *proposal) *types.ReferralProgram {
 		EndOfProgramTimestamp: terms.Changes.EndOfProgramTimestamp,
 		WindowLength:          terms.Changes.WindowLength,
 		BenefitTiers:          terms.Changes.BenefitTiers,
+		StakingTiers:          terms.Changes.StakingTiers,
 	}
 }
