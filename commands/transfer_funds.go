@@ -249,6 +249,9 @@ func validateDispatchStrategy(toAccountType vega.AccountType, dispatchStrategy *
 	if dispatchStrategy.WindowLength > 0 && toAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
 		errs.AddForProperty(prefix+".window_length", errors.New("should not be set for "+vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS.String()))
 	}
+	if dispatchStrategy.WindowLength == 0 && toAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
+		errs.AddForProperty(prefix+".window_length", errors.New("must bet between 1 and 100"))
+	}
 	if dispatchStrategy.WindowLength > 100 {
 		errs.AddForProperty(prefix+".window_length", ErrMustBeAtMost100)
 	}
