@@ -121,6 +121,7 @@
 - [9086](https://github.com/vegaprotocol/vega/issues/9086) - Set identifier generator during perpetual settlement for closed out orders.
 - [8884](https://github.com/vegaprotocol/vega/issues/8884) - Do not assume `\n` is present on the first read chunk of the input
 - [8477](https://github.com/vegaprotocol/vega/issues/8477) - Do not allow opening auction duration of 0
+- [9272](https://github.com/vegaprotocol/vega/issues/9272) - Fix dead-lock when terminating a perpetual market.
 - [8891](https://github.com/vegaprotocol/vega/issues/8891) - Emit market update event when resuming via governance
 - [8874](https://github.com/vegaprotocol/vega/issues/8874) - Database migration can fail when rolling back and migrating up again.
 - [8855](https://github.com/vegaprotocol/vega/issues/8855) - Preserve reference to parent market when restoring checkpoint data
