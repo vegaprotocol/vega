@@ -8,6 +8,17 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     Given the log normal risk model named "log-normal-risk-model":
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | 0  | 0 | 1.0   |
+    And the following network parameters are set:
+      | name                                                  | value |
+      | market.value.windowLength                             | 60s   |
+      | market.stake.target.timeWindow                        | 20s   |
+      | market.stake.target.scalingFactor                     | 1     |
+      | market.liquidity.targetstake.triggering.ratio         | 1     |
+      | network.markPriceUpdateMaximumFrequency               | 0s    |
+      | limits.markets.maxPeggedOrders                        | 6     |
+      | market.auction.minimumDuration                        | 1     |
+      | market.fee.factors.infrastructureFee                  | 0.001 |
+      | market.fee.factors.makerFee                           | 0.004 |
     #risk factor short:3.5569036
     #risk factor long:0.801225765
     And the following assets are registered:
@@ -30,15 +41,6 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
 
     And the following network parameters are set:
       | name                                                  | value |
-      | market.value.windowLength                             | 60s   |
-      | market.stake.target.timeWindow                        | 20s   |
-      | market.stake.target.scalingFactor                     | 1     |
-      | market.liquidity.targetstake.triggering.ratio         | 1     |
-      | network.markPriceUpdateMaximumFrequency               | 0s    |
-      | limits.markets.maxPeggedOrders                        | 6     |
-      | market.auction.minimumDuration                        | 1     |
-      | market.fee.factors.infrastructureFee                  | 0.001 |
-      | market.fee.factors.makerFee                           | 0.004 |
       | market.liquidityV2.bondPenaltyParameter               | 0.2   |
       | validators.epoch.length                               | 5s    |
       | market.liquidityV2.stakeToCcyVolume                   | 1     |
@@ -46,8 +48,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | market.liquidityV2.sla.nonPerformanceBondPenaltySlope | 0.5   |
       | market.liquidityV2.sla.nonPerformanceBondPenaltyMax   | 1     |
       | validators.epoch.length                               | 10s   |
-      | market.liquidityV2.earlyExitPenalty | 0.25 |
-
+      | market.liquidityV2.earlyExitPenalty                   | 0.25  |
 
     Given the average block duration is "2"
   @Now
@@ -87,7 +88,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 35569        | 45976          | 1             |
+      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 3556        | 45976          | 1             |
     # # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569036
 
     And the liquidity fee factor should be "0.02" for the market "ETH/MAR22"
@@ -156,7 +157,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 35569        | 60000          | 1             |
+      | 1000       | TRADING_MODE_CONTINUOUS | 3556         | 60000          | 1             |
 
     #AC: 0044-LIME-018, lp reduces commitment
     And the parties submit the following liquidity provision:
