@@ -486,16 +486,15 @@ Feature: Simple example of successor markets
 
   @SuccessorMarketExpires2
   Scenario: 004 Enact a successor market while the parent is still active. Pending successors get rejected
-    Given the following network parameters are set:
-      | name                                         | value |
-      | market.liquidity.successorLaunchWindowLength | 1s    |
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | risk model                | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params |
       | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1       | 1                | default-none | default-none     | ethDec19Oracle         | 0.1                    | 0                         | 0              | 0                       |                  |                         |                   | SLA        |
-      | ETH/DEC20 | ETH        | USD   | default-st-risk-model     | default-margin-calculator | 1 | default-none | default-none | default-eth-for-future | 0.1 | 0 | 0 | 0 | ETH/DEC19 | 0.8 | 10 | SLA |
+      | ETH/DEC20 | ETH        | USD   | default-st-risk-model     | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 0              | 0                       | ETH/DEC19        | 0.8                     | 10                | SLA        |
     And the following network parameters are set:
-      | name                                                | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep  | 5s   |
+      | name                                               | value |
+      | market.liquidityV2.providersFeeCalculationTimeStep | 5s    |
+      | market.liquidity.successorLaunchWindowLength       | 1s    |
+
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov1 | ETH/DEC19 | 9000              | 0.1 | submission |
@@ -503,7 +502,7 @@ Feature: Simple example of successor markets
       | lp2 | lpprov2 | ETH/DEC19 | 1000              | 0.1 | submission |
       | lp2 | lpprov2 | ETH/DEC19 | 1000              | 0.1 | submission |
     And the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type | tif |
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC19 | buy  | 10     | 1     | 0                | TYPE_LIMIT | TIF_GTC |
       | trader1 | ETH/DEC19 | sell | 10     | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader1 | ETH/DEC19 | buy  | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -556,7 +555,7 @@ Feature: Simple example of successor markets
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |
       | trading.terminated | true  |
-      | prices.ETH.value | 140 |
+      | prices.ETH.value   | 140   |
     Then the market state should be "STATE_SETTLED" for the market "ETH/DEC19"
     And the successor market "ETH/DEC20" is enacted
     When the network moves ahead "5" blocks
