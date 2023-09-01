@@ -90,7 +90,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 3556        | 45976          | 1             |
-    # # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569036
+# target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 1 x 1 x 3.5569036
 
     And the liquidity fee factor should be "0.015" for the market "ETH/MAR22"
 
@@ -101,7 +101,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | party | asset | market id | margin | general | bond  |
       | lp1   | USD   | ETH/MAR22 | 64024  | 0       | 35976 |
       | lp2   | USD   | ETH/MAR22 | 32013  | 57987   | 10000 |
-    #     #margin_intial lp1: 12*1000*3.5569036*1.5=64024
+#margin_intial lp1: 12*1000*3.5569036*1.5=64024
     Then the network moves ahead "6" blocks
     And the parties should have the following account balances:
       | party | asset | market id | margin | general | bond  |
