@@ -44,6 +44,10 @@ var (
 		return fmt.Errorf("%v not eligible for referral rewards, staking balance required of %s got %s", party, required.String(), balance.String())
 	}
 
+	ErrNotPartOfAReferralSet = func(party types.PartyID) error {
+		return fmt.Errorf("%v is not part of a referral set", party)
+	}
+
 	ErrNotAValidSetID = errors.New("not a valid set ID")
 )
 
@@ -86,6 +90,15 @@ type Engine struct {
 	sets      map[types.ReferralSetID]*types.ReferralSet
 	referrers map[types.PartyID]types.ReferralSetID
 	referees  map[types.PartyID]types.ReferralSetID
+}
+
+func (e *Engine) GetReferrer(referee types.PartyID) (types.PartyID, error) {
+	setID, ok := e.referees[referee]
+	if !ok {
+		return "", ErrNotPartOfAReferralSet(referee)
+	}
+
+	return e.sets[setID].Referrer.PartyID, nil
 }
 
 func (e *Engine) SetExists(setID types.ReferralSetID) bool {
@@ -249,7 +262,7 @@ func (e *Engine) RewardsMultiplierForParty(party types.PartyID) num.Decimal {
 		string(e.sets[setID].Referrer.PartyID),
 	)
 
-	var multiplier = num.DecimalOne()
+	multiplier := num.DecimalOne()
 	for _, v := range e.currentProgram.StakingTiers {
 		if balance.LTE(v.MinimumStakedTokens) {
 			break
