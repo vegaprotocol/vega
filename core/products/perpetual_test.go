@@ -368,7 +368,7 @@ func testOutOfOrderPointsBeforePeriodStart(t *testing.T) {
 	perp.perpetual.PromptSettlementCue(ctx, 1693398617000000000+int64(time.Hour))
 	assert.NotNil(t, fundingPayment)
 	assert.True(t, fundingPayment.IsInt())
-	assert.Equal(t, "100027778", fundingPayment.String())
+	assert.Equal(t, "100000000", fundingPayment.String())
 }
 
 func testRegisteredCallbacks(t *testing.T) {

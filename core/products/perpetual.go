@@ -66,6 +66,18 @@ func NewCachedTWAP(log *logging.Logger, t int64) *cachedTWAP {
 	}
 }
 
+// setPeriod assigns the start and end of the calculated TWAP periods based on the time of incoming data-points.
+// If the first data-point is before the true-period start it is still added but we ignore the contribution between
+// data-point.t -> periodStart. So here we snap all values, then sanity check we've not set anything backwards.
+func (c *cachedTWAP) setPeriod(start, end int64) {
+	c.start = num.MaxV(c.periodStart, start)
+	c.end = num.MaxV(c.periodStart, end)
+
+	if c.end < c.start {
+		c.log.Panic("twap interval has become backwards")
+	}
+}
+
 // unwind returns the sum-product at the given time `t` where `t` is a time before the last
 // data-point. We have to subtract each interval until we get to the first point where p.t < t,
 // the index of `p` is also returned.
@@ -139,7 +151,7 @@ func (c *cachedTWAP) calculate(t int64) *num.Uint {
 		sumProduct.Add(sumProduct, lastPrice.Mul(lastPrice, num.NewUint(uint64(delta))))
 	}
 	// store these as the last calculated as its likely to be asked again
-	c.end = t
+	c.setPeriod(c.start, t)
 	c.sumProduct = sumProduct
 
 	// now divide by the period to return the TWAP
@@ -156,7 +168,7 @@ func (c *cachedTWAP) insertPoint(point *dataPoint) (*num.Uint, error) {
 		return nil, ErrDataPointAlreadyExistsAtTime
 	}
 
-	c.end = c.points[idx].t
+	c.setPeriod(c.start, c.points[idx].t)
 	c.sumProduct = sumProduct.Clone()
 
 	// grab the data-points after the one we are inserting so that we can add them back in again
@@ -183,8 +195,7 @@ func (c *cachedTWAP) addPoint(point *dataPoint) (*num.Uint, error) {
 	if len(c.points) == 0 || point.t < c.start {
 		// first point, or new point is before the start of the funding period
 		c.points = []*dataPoint{point}
-		c.start = num.MaxV(c.start, point.t)
-		c.end = c.start
+		c.setPeriod(point.t, point.t)
 		c.sumProduct = num.UintZero()
 		return num.UintZero(), nil
 	}
@@ -193,8 +204,7 @@ func (c *cachedTWAP) addPoint(point *dataPoint) (*num.Uint, error) {
 	if point.t <= c.points[0].t {
 		points := c.points[:]
 		c.points = []*dataPoint{point}
-		c.start = num.MaxV(c.periodStart, point.t)
-		c.end = point.t
+		c.setPeriod(point.t, point.t)
 		c.sumProduct = num.UintZero()
 		for _, p := range points {
 			c.calculate(p.t)
@@ -529,7 +539,7 @@ func (p *Perpetual) handleSettlementCue(ctx context.Context, t int64) {
 
 	// now restart the interval
 	internalTWAP := p.internalTWAP.calculate(t)
-	externalTWAP := p.internalTWAP.calculate(t)
+	externalTWAP := p.externalTWAP.calculate(t)
 	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t), ptr.From(fundingPayment.String()), ptr.From(fundingRate.String()), ptr.From(internalTWAP.String()), ptr.From(externalTWAP.String())))
 	p.startNewFundingPeriod(ctx, t)
 }
