@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -200,6 +201,15 @@ func (e *Engine) removeFromSet(party types.PartyID, prevSet types.ReferralSetID)
 func (e *Engine) UpdateProgram(newProgram *types.ReferralProgram) {
 	e.latestProgramVersion += 1
 	e.newProgram = newProgram
+
+	sort.Slice(e.newProgram.BenefitTiers, func(i, j int) bool {
+		return e.newProgram.BenefitTiers[i].MinimumRunningNotionalTakerVolume.LT(e.newProgram.BenefitTiers[j].MinimumRunningNotionalTakerVolume)
+	})
+
+	sort.Slice(e.newProgram.StakingTiers, func(i, j int) bool {
+		return e.newProgram.StakingTiers[i].MinimumStakedTokens.LT(e.newProgram.StakingTiers[j].MinimumStakedTokens)
+	})
+
 	e.newProgram.Version = e.latestProgramVersion
 }
 
