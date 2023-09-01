@@ -6,7 +6,7 @@
 
 - [8679](https://github.com/vegaprotocol/vega/issues/8679) - Snapshot configuration `load-from-block-height` no longer accept `-1` as value. To reload from the latest snapshot, it should be valued `0`.
 - [8679](https://github.com/vegaprotocol/vega/issues/8679) - Snapshot configuration `snapshot-keep-recent` only accept values from `1` (included) to `10` (included) .
-
+- [8944](https://github.com/vegaprotocol/vega/issues/8944) - Asset ID field on the `ExportLedgerEntriesRequest gRPC API` for exporting ledger entries has changed type to make it optional.
 ### 🗑️ Deprecation
 
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -79,6 +79,7 @@
 - [9199](https://github.com/vegaprotocol/vega/issues/9199) - Consider running notional volume to determine referrers and referees tier
 - [9214](https://github.com/vegaprotocol/vega/issues/9214) - Add staking tier on referral program
 - [9205](https://github.com/vegaprotocol/vega/issues/9205) - Ensure staking requirement when creating / joining referral sets
+- [9032](https://github.com/vegaprotocol/vega/issues/9032) - Implement activity streaks.
 
 
 ### 🐛 Fixes
@@ -133,10 +134,12 @@
 - [8945](https://github.com/vegaprotocol/vega/issues/8945) - Expose missing order from the stop order `GraphQL` endpoint.
 - [9034](https://github.com/vegaprotocol/vega/issues/9034) - Add missing transfer types to `GraphQL` schema definition.
 - [9075](https://github.com/vegaprotocol/vega/issues/9075) - `Oracle Specs API` can fail when oracle data is null.
+- [8944](https://github.com/vegaprotocol/vega/issues/8944) - Fix ignoring of asset `ID` in ledger export, and make it optional.
 - [8971](https://github.com/vegaprotocol/vega/issues/8971) - Record the epoch start time even in opening auction
 - [8992](https://github.com/vegaprotocol/vega/issues/8992) - allow for 0 time step for `SLA` fee calculation
 - [8988](https://github.com/vegaprotocol/vega/issues/8988) - allow amend/cancel of pending liquidity provision
 - [8993](https://github.com/vegaprotocol/vega/issues/8993) - handle the case where commitment min time fraction is 1
+- [9252](https://github.com/vegaprotocol/vega/issues/9252) - Preserve the order of pegged orders in snapshots.
 - [9066](https://github.com/vegaprotocol/vega/issues/9066) - Ensure a party have a liquidity provision before trying to cancel
 - [9140](https://github.com/vegaprotocol/vega/issues/9140) - Stop orders table should be a `hypertable` with retention policy.
 - [9153](https://github.com/vegaprotocol/vega/issues/9153) - `MTM` win transfers can be less than one.

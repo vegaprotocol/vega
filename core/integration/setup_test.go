@@ -64,7 +64,7 @@ func (t tstReporter) Fatalf(format string, args ...interface{}) {
 
 type DummyASVM struct{}
 
-func (DummyASVM) Get(_ string) num.Decimal {
+func (DummyASVM) GetRewardsVestingMultiplier(_ string) num.Decimal {
 	return num.MustDecimalFromString("0.01")
 }
 
@@ -132,8 +132,9 @@ func newExecutionTestSetup() *executionTestSetup {
 	vegaAsset := types.Asset{
 		ID: "VEGA",
 		Details: &types.AssetDetails{
-			Name:   "VEGA",
-			Symbol: "VEGA",
+			Name:    "VEGA",
+			Symbol:  "VEGA",
+			Quantum: num.MustDecimalFromString("1"),
 		},
 	}
 	execsetup.collateralEngine.EnableAsset(context.Background(), vegaAsset)
@@ -141,8 +142,9 @@ func newExecutionTestSetup() *executionTestSetup {
 	usdt := types.Asset{
 		ID: "USDT",
 		Details: &types.AssetDetails{
-			Name:   "USDT",
-			Symbol: "USDT",
+			Name:    "USDT",
+			Symbol:  "USDT",
+			Quantum: num.MustDecimalFromString("1"),
 		},
 	}
 	execsetup.collateralEngine.EnableAsset(context.Background(), usdt)
@@ -150,11 +152,11 @@ func newExecutionTestSetup() *executionTestSetup {
 	usdc := types.Asset{
 		ID: "USDC",
 		Details: &types.AssetDetails{
-			Name:   "USDC",
-			Symbol: "USDC",
+			Name:    "USDC",
+			Symbol:  "USDC",
+			Quantum: num.MustDecimalFromString("1"),
 		},
 	}
-
 	execsetup.collateralEngine.EnableAsset(context.Background(), usdc)
 
 	execsetup.epochEngine = epochtime.NewService(execsetup.log, epochtime.NewDefaultConfig(), execsetup.broker)

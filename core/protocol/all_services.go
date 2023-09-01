@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/activitystreak"
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/banking"
 	"code.vegaprotocol.io/vega/core/blockchain"
@@ -62,7 +63,6 @@ import (
 	"code.vegaprotocol.io/vega/core/validators/erc20multisig"
 	"code.vegaprotocol.io/vega/core/vegatime"
 	"code.vegaprotocol.io/vega/core/vesting"
-	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
@@ -145,7 +145,8 @@ type allServices struct {
 	commander  *nodewallets.Commander
 	gastimator *processor.Gastimator
 
-	vesting *vesting.SnapshotEngine
+	activityStreak *activitystreak.SnapshotEngine
+	vesting        *vesting.SnapshotEngine
 }
 
 func newServices(
@@ -294,9 +295,15 @@ func newServices(
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, svcs.stakingAccounts, svcs.epochService, svcs.timeService)
 	}
 
-	svcs.vesting = vesting.NewSnapshotEngine(svcs.log, svcs.collateral, DummyASVM{}, svcs.broker, svcs.assets)
-	// TODO set acitivity streak
-	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology, svcs.vesting, svcs.banking, nil)
+	svcs.activityStreak = activitystreak.NewSnapshotEngine(svcs.log, svcs.executionEngine, svcs.broker)
+	svcs.epochService.NotifyOnEpoch(
+		svcs.activityStreak.OnEpochEvent,
+		svcs.activityStreak.OnEpochRestore,
+	)
+
+	svcs.vesting = vesting.NewSnapshotEngine(svcs.log, svcs.collateral, svcs.activityStreak, svcs.broker, svcs.assets)
+	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology, svcs.vesting, svcs.banking, svcs.activityStreak)
+
 	// register this after the rewards engine is created to make sure the on epoch is called in the right order.
 	svcs.epochService.NotifyOnEpoch(svcs.vesting.OnEpochEvent, svcs.vesting.OnEpochRestore)
 
@@ -342,7 +349,7 @@ func newServices(
 
 	svcs.snapshotEngine.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
 		svcs.notary, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar,
-		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier, svcs.vesting)
+		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier, svcs.vesting, svcs.activityStreak)
 
 	svcs.snapshotEngine.AddProviders(svcs.spam)
 
@@ -811,6 +818,18 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Param:   netparams.ReferralProgramMinStakedVegaTokens,
 			Watcher: svcs.referralProgram.OnReferralProgramMinStakedVegaTokensUpdate,
 		},
+		{
+			Param:   netparams.RewardsActivityStreakBenefitTiers,
+			Watcher: svcs.activityStreak.OnBenefitTiersUpdate,
+		},
+		{
+			Param:   netparams.RewardsActivityStreakMinQuantumOpenVolume,
+			Watcher: svcs.activityStreak.OnMinQuantumOpenNationalVolumeUpdate,
+		},
+		{
+			Param:   netparams.RewardsActivityStreakMinQuantumTradeVolume,
+			Watcher: svcs.activityStreak.OnMinQuantumTradeVolumeUpdate,
+		},
 	}
 
 	watchers = append(watchers, powWatchers...)
@@ -818,10 +837,4 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 
 	// now add some watcher for our netparams
 	return svcs.netParams.Watch(watchers...)
-}
-
-type DummyASVM struct{}
-
-func (DummyASVM) Get(_ string) num.Decimal {
-	return num.MustDecimalFromString("0.01")
 }

@@ -371,6 +371,7 @@ type MatchingBook struct {
 	LastTradedPrice *num.Uint
 	Auction         bool
 	BatchID         uint64
+	PeggedOrderIDs  []string
 }
 
 type Successors struct {
@@ -663,8 +664,9 @@ type ProposalData struct {
 }
 
 type MarketPositions struct {
-	MarketID  string
-	Positions []*MarketPosition
+	MarketID      string
+	Positions     []*MarketPosition
+	PartieRecords []*snapshot.PartyPositionStats
 }
 
 type MarketPosition struct {
@@ -915,6 +917,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadNewReferralProgramFromProto(dt)
 	case *snapshot.Payload_ReferralSets:
 		ret.Data = PayloadReferralSetsFromProto(dt)
+	case *snapshot.Payload_ActivityStreak:
+		ret.Data = PayloadActivityStreakFromProto(dt)
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}
@@ -1087,6 +1091,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_NewReferralProgram:
 		ret.Data = dt
 	case *snapshot.Payload_ReferralSets:
+		ret.Data = dt
+	case *snapshot.Payload_ActivityStreak:
 		ret.Data = dt
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
@@ -2898,8 +2904,9 @@ func (p MarketPosition) IntoProto() *snapshot.Position {
 
 func MarketPositionsFromProto(mp *snapshot.MarketPositions) *MarketPositions {
 	ret := MarketPositions{
-		MarketID:  mp.MarketId,
-		Positions: make([]*MarketPosition, 0, len(mp.Positions)),
+		MarketID:      mp.MarketId,
+		Positions:     make([]*MarketPosition, 0, len(mp.Positions)),
+		PartieRecords: mp.PartiesRecords,
 	}
 	for _, p := range mp.Positions {
 		ret.Positions = append(ret.Positions, MarketPositionFromProto(p))
@@ -2909,8 +2916,9 @@ func MarketPositionsFromProto(mp *snapshot.MarketPositions) *MarketPositions {
 
 func (m MarketPositions) IntoProto() *snapshot.MarketPositions {
 	ret := snapshot.MarketPositions{
-		MarketId:  m.MarketID,
-		Positions: make([]*snapshot.Position, 0, len(m.Positions)),
+		MarketId:       m.MarketID,
+		Positions:      make([]*snapshot.Position, 0, len(m.Positions)),
+		PartiesRecords: m.PartieRecords,
 	}
 	for _, p := range m.Positions {
 		ret.Positions = append(ret.Positions, p.IntoProto())
@@ -2927,6 +2935,7 @@ func MatchingBookFromProto(mb *snapshot.MatchingBook) *MatchingBook {
 		LastTradedPrice: lastTradedPrice,
 		Auction:         mb.Auction,
 		BatchID:         mb.BatchId,
+		PeggedOrderIDs:  mb.PeggedOrderIds,
 	}
 	for _, o := range mb.Buy {
 		or, _ := OrderFromProto(o)
@@ -2947,6 +2956,7 @@ func (m MatchingBook) IntoProto() *snapshot.MatchingBook {
 		LastTradedPrice: m.LastTradedPrice.String(),
 		Auction:         m.Auction,
 		BatchId:         m.BatchID,
+		PeggedOrderIds:  m.PeggedOrderIDs,
 	}
 	for _, o := range m.Buy {
 		ret.Buy = append(ret.Buy, o.IntoProto())

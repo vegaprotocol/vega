@@ -1,15 +1,12 @@
 package types
 
 import (
-	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
 	vgreflect "code.vegaprotocol.io/vega/libs/reflect"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
-
-var ErrNoTierSet = errors.New("no tier set")
 
 type VestingBenefitTiers struct {
 	Tiers []*VestingBenefitTier

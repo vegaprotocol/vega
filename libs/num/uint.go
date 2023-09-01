@@ -96,6 +96,17 @@ func UintFromBig(b *big.Int) (*Uint, bool) {
 	return &Uint{*u}, false
 }
 
+// UintFromBig construct a new Uint with a big.Int
+// panics if overflow happened.
+func MustUintFromBig(b *big.Int) *Uint {
+	u, ok := uint256.FromBig(b)
+	// ok means an overflow happened
+	if ok {
+		panic("uint underflow")
+	}
+	return &Uint{*u}
+}
+
 // UintFromBytes allows for the conversion from Uint.Bytes() back to a Uint.
 func UintFromBytes(b []byte) *Uint {
 	u := &Uint{
@@ -144,6 +155,19 @@ func UintFromString(str string, base int) (*Uint, bool) {
 		return NewUint(0), true
 	}
 	return UintFromBig(b)
+}
+
+// MustUintFromString creates a new Uint from a string
+// interpreted using the given base.
+// A big.Int is used to read the string, so
+// all errors related to big.Int parsing are applied here.
+// The core will panic if an error/overflow happens.
+func MustUintFromString(str string, base int) *Uint {
+	b, ok := big.NewInt(0).SetString(str, base)
+	if !ok {
+		panic("uint underflow")
+	}
+	return MustUintFromBig(b)
 }
 
 // Sum just removes the need to write num.NewUint(0).Sum(x, y, z)

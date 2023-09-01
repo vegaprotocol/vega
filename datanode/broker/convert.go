@@ -157,6 +157,8 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.ReferralSetCreatedEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_REFERRAL_SET:
 		return events.RefereeJoinedReferralSetEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_ACTIVITY_STREAK:
+		return events.PartyActivityStreakEventFromStream(ctx, be)
 	}
 
 	return nil

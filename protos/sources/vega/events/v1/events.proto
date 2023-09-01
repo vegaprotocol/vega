@@ -13,6 +13,24 @@ import "vega/vega.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega/events/v1";
 
+// The updated activity streak of a party at end of epoch
+message PartyActivityStreak {
+  // The party.
+  string party = 1;
+  // How many epoch this party has been active for.
+  uint64 active_for = 2;
+  // how many epoch this party has been inactive for.
+  uint64 inactive_for = 3;
+  // Is this party considered active or not.
+  bool is_active = 4;
+  // The current rewards distribution multiplier for this party.
+  string reward_distribution_activity_multiplier = 5;
+  // The vesting multiplier for this party.
+  string reward_vesting_activity_multiplier = 6;
+  // The epoch when these informations were accurate.
+  uint64 epoch = 7;
+}
+
 // Event notifying on the details of a funding interval for a perpetuals market.
 message FundingPeriod {
   // ID of the market for which this funding period relates to.
@@ -935,6 +953,9 @@ enum BusEventType {
   // Event indicating a referee joined a set.
   BUS_EVENT_TYPE_REFEREE_JOINED_REFERRAL_SET = 71;
 
+  // Event indicating the updated activity streak for a party
+  BUS_EVENT_TYPE_PARTY_ACTIVITY_STREAK = 72;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1086,6 +1107,8 @@ message BusEvent {
     ReferralSetCreated referral_set_created = 168;
     // Event notifying a referee has joined a referral set.
     RefereeJoinedReferralSet referee_joined_referral_set = 169;
+    // Event notifying of an update to a party's activity streak
+    PartyActivityStreak party_activity_streak = 170;
 
     // Market tick events
     MarketEvent market = 1001;

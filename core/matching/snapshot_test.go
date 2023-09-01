@@ -37,10 +37,11 @@ const (
 var priceFactor = num.DecimalFromInt64(10)
 
 type orderdata struct {
-	id    string
-	price uint64
-	size  uint64
-	side  types.Side
+	id          string
+	price       uint64
+	size        uint64
+	side        types.Side
+	peggedOrder *types.PeggedOrder
 }
 
 func TestEmpty(t *testing.T) {
@@ -151,7 +152,10 @@ func addOrders(t *testing.T, ob *matching.CachedOrderBook, orders []orderdata) {
 		order := baseorder.Clone()
 		order.ID = i.id
 		order.Price = num.NewUint(i.price)
+
+		order.PeggedOrder = i.peggedOrder
 		order.Size = i.size
+
 		order.Remaining = i.size
 		order.Side = i.side
 		order.CreatedAt = createdAt
@@ -179,6 +183,22 @@ func TestSaveAndLoadSnapshot(t *testing.T) {
 	}
 	addOrders(t, ob.ob, orders)
 
+	// now add some pegged orders
+	details := &types.PeggedOrder{
+		Offset:    num.NewUint(100),
+		Reference: types.PeggedReferenceMid,
+	}
+	peggedOrders := []orderdata{
+		{id: vgcrypto.RandomHash(), price: 95, size: 1, side: types.SideBuy, peggedOrder: details},
+		{id: vgcrypto.RandomHash(), price: 105, size: 1, side: types.SideSell, peggedOrder: details},
+		{id: vgcrypto.RandomHash(), price: 95, size: 1, side: types.SideBuy, peggedOrder: details},
+		{id: vgcrypto.RandomHash(), price: 105, size: 1, side: types.SideSell, peggedOrder: details},
+		{id: vgcrypto.RandomHash(), price: 95, size: 1, side: types.SideBuy, peggedOrder: details},
+		{id: vgcrypto.RandomHash(), price: 105, size: 1, side: types.SideSell, peggedOrder: details},
+	}
+
+	addOrders(t, ob.ob, peggedOrders)
+
 	// Create a snapshot
 	payload, _, err := ob.ob.GetState(key)
 	assert.NoError(t, err)
@@ -191,6 +211,7 @@ func TestSaveAndLoadSnapshot(t *testing.T) {
 		{id: vgcrypto.RandomHash(), price: 105, size: 1, side: types.SideSell},
 	}
 	addOrders(t, ob.ob, orders2)
+
 	different, _, err := ob.ob.GetState(key)
 	assert.NoError(t, err)
 
@@ -227,6 +248,8 @@ func TestSaveAndLoadSnapshot(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, o1, o2)
 	}
+
+	assert.Equal(t, ob.ob.GetActivePeggedOrderIDs(), ob2.ob.GetActivePeggedOrderIDs())
 }
 
 func TestStopSnapshotTaking(t *testing.T) {

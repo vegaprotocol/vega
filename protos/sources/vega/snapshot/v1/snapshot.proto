@@ -137,6 +137,7 @@ message Payload {
     CurrentReferralProgram current_referral_program = 73;
     NewReferralProgram new_referral_program = 74;
     ReferralSets referral_sets = 75;
+    ActivityStreak activity_streak = 76;
   }
 }
 
@@ -354,6 +355,7 @@ message MatchingBook {
   string last_traded_price = 4;
   bool auction = 5;
   uint64 batch_id = 6;
+  repeated string pegged_order_ids = 7;
 }
 
 message NetParams {
@@ -588,6 +590,14 @@ message Position {
 message MarketPositions {
   string market_id = 1;
   repeated Position positions = 2;
+  repeated PartyPositionStats parties_records = 3;
+}
+
+message PartyPositionStats {
+  string party = 1;
+  uint64 latest_open_interest = 2;
+  uint64 lowest_open_interest = 3;
+  optional uint64 traded_volume = 4;
 }
 
 message SettlementState {
@@ -1124,4 +1134,16 @@ message EpochBalance {
 message InVesting {
   string asset = 1;
   string balance = 2;
+}
+
+message ActivityStreak {
+  repeated PartyActivityStreak parties_activity_streak = 1;
+}
+
+message PartyActivityStreak {
+  string party = 1;
+  uint64 active = 2;
+  uint64 inactive = 3;
+  string reward_distribution_multiplier = 4;
+  string reward_vesting_multiplier = 5;
 }

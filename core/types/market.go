@@ -28,6 +28,11 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+type MarketStats struct {
+	PartiesOpenNotionalVolume map[string]*num.Uint
+	PartiesTotalTradeVolume   map[string]*num.Uint
+}
+
 type LiquidityProviderFeeShares []*LiquidityProviderFeeShare
 
 func (ls LiquidityProviderFeeShares) String() string {
