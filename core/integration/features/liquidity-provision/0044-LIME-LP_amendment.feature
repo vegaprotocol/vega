@@ -46,6 +46,8 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | market.liquidityV2.sla.nonPerformanceBondPenaltySlope | 0.5   |
       | market.liquidityV2.sla.nonPerformanceBondPenaltyMax   | 1     |
       | validators.epoch.length                               | 10s   |
+      | market.liquidityV2.earlyExitPenalty | 0.25 |
+
 
     Given the average block duration is "2"
   @Now
@@ -177,6 +179,10 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     And the supplied stake should be "40000" for the market "ETH/MAR22"
     Then the network moves ahead "7" blocks
     And the supplied stake should be "37000" for the market "ETH/MAR22"
+    #AC: 0044-LIME-022, lp reduces commitment, no penalty
+    And the parties should have the following account balances:
+      | party | asset | market id | margin | general | bond  |
+      | lp1   | USD   | ETH/MAR22 | 640243 | 332757  | 27000 |
 
     #AC:0044-LIME-021, lp changes fee factor
     And the parties submit the following liquidity provision:
@@ -206,59 +212,84 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | mark price | trading mode            | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 35569        | 70000          | 1             |
 
-    # check LP fee distribution when no bond penalty
+    #AC: 0044-LIME-020, lp decreases commitment and gets bond slashing
+    And the parties submit the following liquidity provision:
+      | id   | party | market id | commitment amount | fee  | lp type   |
+      | lp_1 | lp1   | ETH/MAR22 | 10000             | 0.02 | amendment |
+    Then the network moves ahead "20" blocks
+    And the supplied stake should be "20001" for the market "ETH/MAR22"
+    And the parties should have the following account balances:
+      | party | asset | market id | margin | general | bond  |
+      | lp1   | USD   | ETH/MAR22 | 640243 | 345864  | 10001 |
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 35569        | 20001          | 1             |
+
+# check LP fee distribution
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/MAR22 | sell | 5      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     #liquidity fee collected: 5*1000*0.03=150
 
-    Then the network moves ahead "1" blocks
+    Then the network moves ahead "5" blocks
     And the parties should have the following account balances:
       | party | asset | market id | margin | general | bond  |
-      | lp1   | USD   | ETH/MAR22 | 640243 | 299757  | 60000 |
+      | lp1 | USD | ETH/MAR22 | 640243 | 345914 | 10001 |
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.8333333333333333 | 54600                   |
-      | lp2   | 0.1666666666666667 | 60000                   |
-
-    Then the network moves ahead "4" blocks
-    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share  | average entry valuation |
-      | lp1   | 0.8571428571428571 | 57166.6666666666666667  |
-      | lp2   | 0.1428571428571429 | 60000                   |
+      | lp1 | 0.5000249987500625 | 54600 |
+      | lp2 | 0.4999750012499375 | 60000 |
 
     Then the following transfers should happen:
       | from   | to  | from account                | to account                     | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 128    | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 21     | USD   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 50     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 49     | USD   |
 
-# #AC: 0044-LIME-049, at the end of the current epoch rewards/penalties are evaluated based on the balance of the bond account at start of epoch
-# When the parties cancel the following orders:
-#   | party | reference |
-#   | lp1   | lp-b-1    |
-#   | lp1   | lp-s-1    |
-# Then the network moves ahead "1" blocks
+    Then debug transfers
+# Then the network moves ahead "4" blocks
 # And the liquidity provider fee shares for the market "ETH/MAR22" should be:
 #   | party | equity like share  | average entry valuation |
-#   | lp1   | 0.8333333333333333 | 54600                   |
-#   | lp2   | 0.1666666666666667 | 60000                   |
+#   | lp1   | 0.8571428571428571 | 57166.6666666666666667  |
+#   | lp2   | 0.1428571428571429 | 60000                   |
 
-# And the parties should have the following account balances:
-#   | party | asset | market id | margin | general | bond  |
-#   | lp1   | USD   | ETH/MAR22 | 0      | 940000  | 60000 |
+# Then the following transfers should happen:
+#   | from   | to  | from account                | to account                     | market id | amount | asset |
+#   | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 128    | USD   |
+#   | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 21     | USD   |
 
-# Then the network moves ahead "9" blocks
+#     #AC: 0044-LIME-049, at the end of the current epoch rewards/penalties are evaluated based on the balance of the bond account at start of epoch
+#     When the parties cancel the following orders:
+#       | party | reference |
+#       | lp1   | lp-b-1    |
+#       | lp1   | lp-s-1    |
+#     Then the network moves ahead "1" blocks
+#     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+#       | party | equity like share  | average entry valuation |
+#       | lp1   | 0.8571428571428571 | 57166.6666666666666667  |
+#       | lp2   | 0.1428571428571429 | 60000                   |
 
-# And the parties should have the following account balances:
-#   | party | asset | market id | margin | general | bond  |
-#   | lp1   | USD   | ETH/MAR22 | 0      | 940000  | 30000 |
-# And the liquidity provider fee shares for the market "ETH/MAR22" should be:
-#   | party | equity like share | average entry valuation |
-#   | lp1   | 0.75              | 57166.6666666666666667  |
-#   | lp2   | 0.25              | 60000                   |
+#     And the parties should have the following account balances:
+#       | party | asset | market id | margin | general | bond  |
+#       | lp1   | USD   | ETH/MAR22 | 0      | 940000  | 60000 |
 
-# Then debug transfers
+#     Then the parties place the following orders:
+#       | party  | market id | side | volume | price | resulting trades | type       | tif     |
+#       | party1 | ETH/MAR22 | buy  | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+#       | party2 | ETH/MAR22 | sell | 5      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+# #liquidity fee collected: 5*1000*0.03=150
+
+#     Then the network moves ahead "21" blocks
+
+#     And the parties should have the following account balances:
+#       | party | asset | market id | margin | general | bond  |
+#       | lp1   | USD   | ETH/MAR22 | 0      | 940000  | 60000 |
+#     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+#       | party | equity like share | average entry valuation |
+#       | lp1   | 0.75              | 57166.6666666666666667  |
+#       | lp2   | 0.25              | 60000                   |
+
+#     Then debug transfers
 
 
 
