@@ -64,7 +64,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee  | lp type    |
       | lp_1 | lp1   | ETH/MAR22 | 50000             | 0.02 | submission |
-      | lp_2 | lp2   | ETH/MAR22 | 10000             | 0.01 | submission |
+      | lp_2 | lp2 | ETH/MAR22 | 10000 | 0.015 | submission |
 
     When the network moves ahead "2" blocks
     And the parties place the following pegged iceberg orders:
@@ -91,7 +91,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 3556        | 45976          | 1             |
     # # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569036
 
-    And the liquidity fee factor should be "0.02" for the market "ETH/MAR22"
+    And the liquidity fee factor should be "0.015" for the market "ETH/MAR22"
 
     And the parties should have the following margin levels:
       | party | market id | maintenance | search | initial | release |
@@ -188,10 +188,10 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     #AC:0044-LIME-021, lp changes fee factor
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee  | lp type   |
-      | lp_1 | lp1   | ETH/MAR22 | 50000             | 0.03 | amendment |
-    And the liquidity fee factor should be "0.02" for the market "ETH/MAR22"
+      | lp_1 | lp1 | ETH/MAR22 | 50000 | 0.008 | amendment |
+    And the liquidity fee factor should be "0.01" for the market "ETH/MAR22"
     Then the network moves ahead "10" blocks
-    And the liquidity fee factor should be "0.03" for the market "ETH/MAR22"
+    And the liquidity fee factor should be "0.008" for the market "ETH/MAR22"
 
     #AC: 0044-LIME-030, lp increases commitment and they do not have sufficient collateral in the settlement asset
     And the parties submit the following liquidity provision:
@@ -211,39 +211,32 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | lp1   | USD   | ETH/MAR22 | 640243 | 299757  | 60000 |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 35569        | 70000          | 1             |
+      | 1000 | TRADING_MODE_CONTINUOUS | 3556 | 70000 | 1 |
 
-    #AC: 0044-LIME-020, lp decreases commitment and gets bond slashing
-    And the parties submit the following liquidity provision:
-      | id   | party | market id | commitment amount | fee  | lp type   |
-      | lp_1 | lp1   | ETH/MAR22 | 10000             | 0.02 | amendment |
-    Then the network moves ahead "20" blocks
-    And the supplied stake should be "20001" for the market "ETH/MAR22"
-    And the parties should have the following account balances:
-      | party | asset | market id | margin | general | bond  |
-      | lp1   | USD   | ETH/MAR22 | 640243 | 345864  | 10001 |
-    And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 35569        | 20001          | 1             |
-
-# check LP fee distribution
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/MAR22 | sell | 5      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-    #liquidity fee collected: 5*1000*0.03=150
+    And the liquidity fee factor should be "0.008" for the market "ETH/MAR22"
+#liquidity fee collected: 5*1000*0.008=40
 
-    Then the network moves ahead "5" blocks
+    #AC: 0044-LIME-020, lp decreases commitment and gets bond slashing
+    #AC: 0044-LIME-049, at the end of the current epoch rewards/penalties are evaluated based on the balance of the bond account at start of epoch
+    And the parties submit the following liquidity provision:
+      | id   | party | market id | commitment amount | fee  | lp type   |
+      | lp_1 | lp1   | ETH/MAR22 | 1000              | 0.02 | amendment |
+      | lp_2 | lp2   | ETH/MAR22 | 500               | 0.02 | amendment |
+    Then the network moves ahead "10" blocks
     And the parties should have the following account balances:
-      | party | asset | market id | margin | general | bond  |
-      | lp1 | USD | ETH/MAR22 | 640243 | 345914 | 10001 |
-    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share  | average entry valuation |
-      | lp1 | 0.5000249987500625 | 54600 |
-      | lp2 | 0.4999750012499375 | 60000 |
+      | party | asset | market id | margin | general | bond |
+      | lp1   | USD   | ETH/MAR22 | 0      | 994845  | 501  |
+      | lp2   | USD   | ETH/MAR22 | 0      | 998693  | 251  |
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode                    | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | 21341        | 752            | 6             |
 
-#AC: 0044-LIME-049, at the end of the current epoch rewards/penalties are evaluated based on the balance of the bond account at start of epoch
     Then the following transfers should happen:
       | from   | to  | from account                | to account                     | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 50     | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 49     | USD   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 26 | USD |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 13 | USD |
+
