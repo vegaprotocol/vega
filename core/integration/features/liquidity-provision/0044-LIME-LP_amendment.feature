@@ -38,6 +38,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     And the markets:
       | id        | quote name | asset | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/MAR22 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA        |
+      | ETH/MAR23 | USD | USD | log-normal-risk-model | margin-calculator-1 | 2 | fees-config-1 | price-monitoring | default-eth-for-future | 1e0 | 0 | SLA |
 
     And the following network parameters are set:
       | name                                                  | value |
@@ -106,6 +107,15 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | party | asset | market id | margin | general | bond  |
       | lp1   | USD   | ETH/MAR22 | 64024  | 0       | 17988 |
       | lp2   | USD   | ETH/MAR22 | 32013  | 57987   | 5000  |
+
+    And the parties submit the following liquidity provision:
+      | id   | party | market id | commitment amount | fee  | lp type    |
+      | lp_3 | lp2   | ETH/MAR23 | 500               | 0.02 | submission |
+
+    And the parties should have the following account balances:
+      | party | asset | market id | margin | general | bond |
+      | lp2   | USD   | ETH/MAR22 | 32013  | 57487   | 5000 |
+      | lp2   | USD   | ETH/MAR23 | 0      | 57487   | 500  |
 
   Scenario: 002: lp1 and lp2 amend LP commitment
     Given the parties deposit on asset's general account the following amount:
