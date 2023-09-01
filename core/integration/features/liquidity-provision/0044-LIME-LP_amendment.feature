@@ -108,6 +108,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | lp1   | USD   | ETH/MAR22 | 64024  | 0       | 17988 |
       | lp2   | USD   | ETH/MAR22 | 32013  | 57987   | 5000  |
 
+#AC: 0044-LIME-075, lp commit in multi markets
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee  | lp type    |
       | lp_3 | lp2   | ETH/MAR23 | 500               | 0.02 | submission |
