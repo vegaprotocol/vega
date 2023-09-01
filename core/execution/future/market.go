@@ -3774,8 +3774,6 @@ func (m *Market) tradingTerminatedWithFinalState(ctx context.Context, finalState
 		return
 	}
 
-	m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
-
 	if finalState != types.MarketStateCancelled {
 		// we're either going to set state to trading terminated
 		// or we'll be performing the final settlement (setting market status to settled)
@@ -3796,6 +3794,8 @@ func (m *Market) tradingTerminatedWithFinalState(ctx context.Context, finalState
 		}
 		m.mkt.State = types.MarketStateTradingTerminated
 		m.mkt.TradingMode = types.MarketTradingModeNoTrading
+		m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
+
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		var err error
 		if settlementDataInAsset != nil {
@@ -3813,6 +3813,8 @@ func (m *Market) tradingTerminatedWithFinalState(ctx context.Context, finalState
 		}
 		return
 	}
+
+	m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
 	for party := range m.parties {
 		_, err := m.CancelAllOrders(ctx, party)
 		if err != nil {
@@ -3843,8 +3845,12 @@ func (m *Market) settlementData(ctx context.Context, settlementData *num.Numeric
 }
 
 func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Numeric) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	// if the market state for a perp is trading terminated then we have come in through goverannce
+	// and will already have the market lock
+	if m.mkt.State != types.MarketStateTradingTerminated {
+		m.mu.Lock()
+		defer m.mu.Unlock()
+	}
 
 	_, blockHash := vegacontext.TraceIDFromContext(ctx)
 	m.idgen = idgeneration.New(blockHash + crypto.HashStrToHex("perpsettlement"+m.GetID()))
