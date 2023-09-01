@@ -211,6 +211,90 @@ func TestUpdatingReferralProgramSucceeds(t *testing.T) {
 	require.True(t, te.engine.HasProgramEnded(), "The program should have ended before it even started")
 }
 
+func TestGettingRewardMultiplier(t *testing.T) {
+	ctx := vgtest.VegaContext(vgrand.RandomStr(5), vgtest.RandomI64())
+
+	te := newEngine(t)
+	te.engine.OnReferralProgramMinStakedVegaTokensUpdate(context.Background(), num.NewUint(100))
+	te.engine.OnReferralProgramMaxReferralRewardProportionUpdate(context.Background(), num.MustDecimalFromString("0.5"))
+	maxVolumeParams := num.UintFromUint64(2000)
+
+	// Cap the notional volume.
+	require.NoError(t, te.engine.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate(ctx, maxVolumeParams))
+
+	program1 := &types.ReferralProgram{
+		EndOfProgramTimestamp: time.Now().Add(24 * time.Hour),
+		WindowLength:          2,
+		BenefitTiers: []*types.BenefitTier{
+			{
+				MinimumEpochs:                     num.UintFromUint64(2),
+				MinimumRunningNotionalTakerVolume: num.UintFromUint64(1000),
+				ReferralRewardFactor:              num.DecimalFromFloat(0.001),
+				ReferralDiscountFactor:            num.DecimalFromFloat(0.002),
+			}, {
+				MinimumEpochs:                     num.UintFromUint64(3),
+				MinimumRunningNotionalTakerVolume: num.UintFromUint64(3000),
+				ReferralRewardFactor:              num.DecimalFromFloat(0.01),
+				ReferralDiscountFactor:            num.DecimalFromFloat(0.02),
+			}, {
+				MinimumEpochs:                     num.UintFromUint64(4),
+				MinimumRunningNotionalTakerVolume: num.UintFromUint64(4000),
+				ReferralRewardFactor:              num.DecimalFromFloat(0.1),
+				ReferralDiscountFactor:            num.DecimalFromFloat(0.2),
+			},
+		},
+		StakingTiers: []*types.StakingTier{
+			{
+				MinimumStakedTokens:      num.NewUint(1000),
+				ReferralRewardMultiplier: num.MustDecimalFromString("1.5"),
+			},
+			{
+				MinimumStakedTokens:      num.NewUint(10000),
+				ReferralRewardMultiplier: num.MustDecimalFromString("2"),
+			},
+			{
+				MinimumStakedTokens:      num.NewUint(100000),
+				ReferralRewardMultiplier: num.MustDecimalFromString("2.5"),
+			},
+		},
+	}
+
+	// Set the first program.
+	te.engine.UpdateProgram(program1)
+
+	setID1 := newSetID(t)
+	referrer1 := newPartyID(t)
+	referee1 := newPartyID(t)
+
+	te.broker.EXPECT().Send(gomock.Any()).Times(2)
+	te.timeSvc.EXPECT().GetTimeNow().Return(time.Now()).Times(2)
+
+	te.staking.EXPECT().GetAvailableBalance(string(referrer1)).AnyTimes().Return(num.NewUint(10001), nil)
+
+	assert.NoError(t, te.engine.CreateReferralSet(ctx, referrer1, setID1))
+	assert.NoError(t, te.engine.ApplyReferralCode(ctx, referee1, setID1))
+
+	// When the epoch ends, the running volume for set members should be
+	// computed.
+	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer1)).Return(num.UintFromUint64(1500)).Times(1)
+	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee1)).Return(num.UintFromUint64(2000)).Times(1)
+
+	// When the epoch starts, the new program should start.
+	expectReferralProgramStartedEvent(t, te)
+	lastEpochStartTime := program1.EndOfProgramTimestamp.Add(-2 * time.Hour)
+	nextEpoch(t, ctx, te, lastEpochStartTime)
+
+	assert.Equal(t, te.engine.RewardsFactorForParty(referee1).String(), "0.01")
+
+	// test reward multiplier
+	te.staking.EXPECT().GetAvailableBalance(string(referrer1)).AnyTimes().Return(num.NewUint(10001), nil)
+	assert.Equal(t, te.engine.RewardsMultiplierForParty(referee1).String(), "2")
+
+	// test both
+	te.staking.EXPECT().GetAvailableBalance(string(referrer1)).AnyTimes().Return(num.NewUint(10001), nil)
+	assert.Equal(t, te.engine.RewardsFactorMultiplierAppliedForParty(referee1).String(), "0.02")
+}
+
 func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	ctx := vgtest.VegaContext(vgrand.RandomStr(5), vgtest.RandomI64())
 
@@ -223,6 +307,7 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	referrer2 := newPartyID(t)
 	referee1 := newPartyID(t)
 	referee2 := newPartyID(t)
+	referee3 := newPartyID(t)
 	maxVolumeParams := num.UintFromUint64(2000)
 
 	// Cap the notional volume.
@@ -255,8 +340,8 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	// Set the first program.
 	te.engine.UpdateProgram(program1)
 
-	te.broker.EXPECT().Send(gomock.Any()).Times(3)
-	te.timeSvc.EXPECT().GetTimeNow().Return(time.Now()).Times(3)
+	te.broker.EXPECT().Send(gomock.Any()).Times(4)
+	te.timeSvc.EXPECT().GetTimeNow().Return(time.Now()).Times(4)
 
 	te.staking.EXPECT().GetAvailableBalance(string(referrer1)).AnyTimes().Return(num.NewUint(100), nil)
 	te.staking.EXPECT().GetAvailableBalance(string(referrer2)).AnyTimes().Return(num.NewUint(100), nil)
@@ -264,12 +349,14 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	assert.NoError(t, te.engine.CreateReferralSet(ctx, referrer1, setID1))
 	assert.NoError(t, te.engine.CreateReferralSet(ctx, referrer2, setID2))
 	assert.NoError(t, te.engine.ApplyReferralCode(ctx, referee1, setID1))
+	assert.NoError(t, te.engine.ApplyReferralCode(ctx, referee3, setID2))
 
 	// When the epoch ends, the running volume for set members should be
 	// computed.
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer1)).Return(num.UintFromUint64(800)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer2)).Return(num.UintFromUint64(20000)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee1)).Return(num.UintFromUint64(100)).Times(1)
+	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee3)).Return(num.UintFromUint64(0)).Times(1)
 
 	// When the epoch starts, the new program should start.
 	expectReferralProgramStartedEvent(t, te)
@@ -285,7 +372,6 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	// His set has not enough to notional volume to match tier 1.
 	// => No reward factor.
 	assert.Equal(t, num.DecimalZero().String(), te.engine.RewardsFactorForParty(referrer1).String())
-	// Only referees are eligible to discount factors.
 	assert.Equal(t, num.DecimalZero().String(), te.engine.DiscountFactorForParty(referrer1).String())
 
 	// Looking for reward factor for referee 1.
@@ -300,7 +386,7 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	// His set has not enough notional volume to match tier 2, because the volume is
 	// capped at 2000, so it matches tier 1.
 	// => Tier 1 reward factor.
-	assert.Equal(t, num.DecimalFromFloat(0.001).String(), te.engine.RewardsFactorForParty(referrer2).String())
+	assert.Equal(t, num.DecimalFromFloat(0.001).String(), te.engine.RewardsFactorForParty(referee3).String())
 	// Only referees are eligible to discount factors.
 	assert.Equal(t, num.DecimalZero().String(), te.engine.DiscountFactorForParty(referrer2).String())
 
@@ -314,6 +400,7 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer1)).Return(num.UintFromUint64(1900)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee1)).Return(num.UintFromUint64(1000)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer2)).Return(num.UintFromUint64(1000)).Times(1)
+	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee3)).Return(num.UintFromUint64(0)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee2)).Return(num.UintFromUint64(1000)).Times(1)
 
 	// When the epoch starts, the new program should start.
@@ -323,7 +410,7 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	// Looking for reward factor for referrer 1.
 	// His set has enough to notional volume to match tier 2.
 	// => Tier 2 reward factor.
-	assert.Equal(t, num.DecimalFromFloat(0.01).String(), te.engine.RewardsFactorForParty(referrer1).String())
+	assert.Equal(t, num.DecimalFromFloat(0.01).String(), te.engine.RewardsFactorForParty(referee1).String())
 
 	// Looking for reward factor for referee 1.
 	// With set, and member for long enough to match tier 2.
@@ -334,7 +421,7 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	// Looking for reward factor for referrer 2.
 	// His set has enough notional volume to match tier 3.
 	// => Tier 3 reward factor.
-	assert.Equal(t, num.DecimalFromFloat(0.1).String(), te.engine.RewardsFactorForParty(referrer2).String())
+	assert.Equal(t, num.DecimalFromFloat(0.1).String(), te.engine.RewardsFactorForParty(referee2).String())
 
 	// Looking for reward factor for referee 2.
 	// With set, but not member for long enough to match tier 1.
@@ -347,6 +434,7 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer1)).Return(num.UintFromUint64(10)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee1)).Return(num.UintFromUint64(10)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer2)).Return(num.UintFromUint64(500)).Times(1)
+	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee3)).Return(num.UintFromUint64(0)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee2)).Return(num.UintFromUint64(500)).Times(1)
 
 	// When the epoch starts, the new program should start.
@@ -359,7 +447,7 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	// Looking for reward factor for referrer 1.
 	// His set has enough to notional volume to match tier 2
 	// => Tier 1 reward factor.
-	assert.Equal(t, num.DecimalFromFloat(0.01).String(), te.engine.RewardsFactorForParty(referrer1).String())
+	assert.Equal(t, num.DecimalFromFloat(0.01).String(), te.engine.RewardsFactorForParty(referee1).String())
 
 	// Looking for reward factor for referee 1.
 	// With set, and member for long enough to match tier 2.
@@ -370,7 +458,7 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	// Looking for reward factor for referrer 2.
 	// His set has enough notional volume to match tier 3.
 	// => Tier 3 reward factor.
-	assert.Equal(t, num.DecimalFromFloat(0.1).String(), te.engine.RewardsFactorForParty(referrer2).String())
+	assert.Equal(t, num.DecimalFromFloat(0.1).String(), te.engine.RewardsFactorForParty(referee2).String())
 
 	// Looking for reward factor for referee 2.
 	// With set, and member for long enough to match tier 1.
@@ -383,6 +471,7 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer1)).Return(num.UintFromUint64(10000)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee1)).Return(num.UintFromUint64(10000)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer2)).Return(num.UintFromUint64(10000)).Times(1)
+	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee3)).Return(num.UintFromUint64(0)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee2)).Return(num.UintFromUint64(10000)).Times(1)
 
 	// When the epoch starts, the new program should start.

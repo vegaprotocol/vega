@@ -830,6 +830,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Param:   netparams.RewardsActivityStreakMinQuantumTradeVolume,
 			Watcher: svcs.activityStreak.OnMinQuantumTradeVolumeUpdate,
 		},
+		{
+			Param:   netparams.ReferralProgramMaxReferralRewardProportion,
+			Watcher: svcs.referralProgram.OnReferralProgramMaxReferralRewardProportionUpdate,
+		},
 	}
 
 	watchers = append(watchers, powWatchers...)

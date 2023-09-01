@@ -80,6 +80,7 @@
 - [9214](https://github.com/vegaprotocol/vega/issues/9214) - Add staking tier on referral program
 - [9205](https://github.com/vegaprotocol/vega/issues/9205) - Ensure staking requirement when creating / joining referral sets
 - [9032](https://github.com/vegaprotocol/vega/issues/9032) - Implement activity streaks.
+- [9246](https://github.com/vegaprotocol/vega/issues/9246) - Add rewards multiplier support in the referral engine.
 
 
 ### 🐛 Fixes

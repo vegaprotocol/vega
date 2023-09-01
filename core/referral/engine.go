@@ -61,6 +61,8 @@ type Engine struct {
 
 	referralProgramMinStakedVegaTokens *num.Uint
 
+	rewardProportionUpdate num.Decimal
+
 	// latestProgramVersion tracks the latest version of the program. It used to
 	// value any new program that comes in. It starts at 1.
 	// It's incremented every time an update is received. Therefore, if, during
@@ -197,8 +199,8 @@ func (e *Engine) RewardsFactorForParty(party types.PartyID) num.Decimal {
 		return num.DecimalZero()
 	}
 
-	setID, isReferrer := e.referrers[party]
-	if !isReferrer {
+	setID, isReferee := e.referees[party]
+	if !isReferee {
 		// This party is not eligible to referral program rewards.
 		return num.DecimalZero()
 	}
@@ -219,6 +221,43 @@ func (e *Engine) RewardsFactorForParty(party types.PartyID) num.Decimal {
 	}
 
 	return num.DecimalZero()
+}
+
+func (e *Engine) RewardsFactorMultiplierAppliedForParty(party types.PartyID) num.Decimal {
+	return num.MinD(
+		e.RewardsFactorForParty(party).Mul(e.RewardsMultiplierForParty(party)),
+		e.rewardProportionUpdate,
+	)
+}
+
+func (e *Engine) RewardsMultiplierForParty(party types.PartyID) num.Decimal {
+	if e.programHasEnded {
+		return num.DecimalZero()
+	}
+
+	setID, isReferee := e.referees[party]
+	if !isReferee {
+		// This party is not eligible to referral program rewards.
+		return num.DecimalZero()
+	}
+
+	if e.isSetEligible(setID) != nil {
+		return num.DecimalZero()
+	}
+
+	balance, _ := e.staking.GetAvailableBalance(
+		string(e.sets[setID].Referrer.PartyID),
+	)
+
+	var multiplier = num.DecimalOne()
+	for _, v := range e.currentProgram.StakingTiers {
+		if balance.LTE(v.MinimumStakedTokens) {
+			break
+		}
+		multiplier = v.ReferralRewardMultiplier
+	}
+
+	return multiplier
 }
 
 func (e *Engine) DiscountFactorForParty(party types.PartyID) num.Decimal {
@@ -253,6 +292,11 @@ func (e *Engine) DiscountFactorForParty(party types.PartyID) num.Decimal {
 	}
 
 	return num.DecimalZero()
+}
+
+func (e *Engine) OnReferralProgramMaxReferralRewardProportionUpdate(_ context.Context, value num.Decimal) error {
+	e.rewardProportionUpdate = value
+	return nil
 }
 
 func (e *Engine) OnReferralProgramMinStakedVegaTokensUpdate(_ context.Context, value *num.Uint) error {
