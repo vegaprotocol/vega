@@ -57,6 +57,16 @@ func TestReferralPrograms_AddReferralProgram(t *testing.T) {
 					},
 					EndOfProgramTimestamp: endTime.Unix(),
 					WindowLength:          100,
+					StakingTiers: []*vega.StakingTier{
+						{
+							MinimumStakedTokens:      "1000",
+							ReferralRewardMultiplier: "1.0",
+						},
+						{
+							MinimumStakedTokens:      "10000",
+							ReferralRewardMultiplier: "1.1",
+						},
+					},
 				},
 			},
 			{
@@ -79,6 +89,16 @@ func TestReferralPrograms_AddReferralProgram(t *testing.T) {
 					},
 					EndOfProgramTimestamp: endTime2.Unix(),
 					WindowLength:          200,
+					StakingTiers: []*vega.StakingTier{
+						{
+							MinimumStakedTokens:      "1000",
+							ReferralRewardMultiplier: "1.0",
+						},
+						{
+							MinimumStakedTokens:      "10000",
+							ReferralRewardMultiplier: "1.1",
+						},
+					},
 				},
 			},
 		}
@@ -130,6 +150,16 @@ func getReferralEvents(t *testing.T, endTime time.Time) (*eventspb.ReferralProgr
 			},
 			EndOfProgramTimestamp: endTime.Unix(),
 			WindowLength:          100,
+			StakingTiers: []*vega.StakingTier{
+				{
+					MinimumStakedTokens:      "1000",
+					ReferralRewardMultiplier: "1.0",
+				},
+				{
+					MinimumStakedTokens:      "10000",
+					ReferralRewardMultiplier: "1.1",
+				},
+			},
 		},
 	}
 
@@ -153,6 +183,16 @@ func getReferralEvents(t *testing.T, endTime time.Time) (*eventspb.ReferralProgr
 			},
 			EndOfProgramTimestamp: endTime.Unix(),
 			WindowLength:          200,
+			StakingTiers: []*vega.StakingTier{
+				{
+					MinimumStakedTokens:      "1000",
+					ReferralRewardMultiplier: "1.0",
+				},
+				{
+					MinimumStakedTokens:      "10000",
+					ReferralRewardMultiplier: "1.1",
+				},
+			},
 		},
 	}
 

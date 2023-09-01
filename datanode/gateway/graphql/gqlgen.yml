@@ -626,3 +626,5 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.BenefitTier
   ReferralProgram:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralProgram
+  StakingTier:
+    model: code.vegaprotocol.io/vega/protos/vega.StakingTier

@@ -10,6 +10,7 @@ create table if not exists referral_programs (
   benefit_tiers jsonb,
   end_of_program_timestamp timestamp with time zone not null,
   window_length int not null,
+  staking_tiers jsonb,
   vega_time timestamp with time zone not null,
   ended_at timestamp with time zone,
   primary key (vega_time)

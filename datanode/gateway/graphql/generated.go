@@ -1785,6 +1785,7 @@ type ComplexityRoot struct {
 		EndOfProgramTimestamp func(childComplexity int) int
 		EndedAt               func(childComplexity int) int
 		Id                    func(childComplexity int) int
+		StakingTiers          func(childComplexity int) int
 		Version               func(childComplexity int) int
 		WindowLength          func(childComplexity int) int
 	}
@@ -10343,6 +10344,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ReferralProgram.Id(childComplexity), true
+
+	case "ReferralProgram.stakingTiers":
+		if e.complexity.ReferralProgram.StakingTiers == nil {
+			break
+		}
+
+		return e.complexity.ReferralProgram.StakingTiers(childComplexity), true
 
 	case "ReferralProgram.version":
 		if e.complexity.ReferralProgram.Version == nil {
@@ -63721,6 +63729,56 @@ func (ec *executionContext) fieldContext_ReferralProgram_windowLength(ctx contex
 	return fc, nil
 }
 
+func (ec *executionContext) _ReferralProgram_stakingTiers(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralProgram) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralProgram_stakingTiers(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StakingTiers, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.StakingTier)
+	fc.Result = res
+	return ec.marshalNStakingTier2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐStakingTierᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReferralProgram_stakingTiers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReferralProgram",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "minimumStakedTokens":
+				return ec.fieldContext_StakingTier_minimumStakedTokens(ctx, field)
+			case "referralRewardMultiplier":
+				return ec.fieldContext_StakingTier_referralRewardMultiplier(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type StakingTier", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ReferralProgram_endedAt(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralProgram) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ReferralProgram_endedAt(ctx, field)
 	if err != nil {
@@ -66971,7 +67029,7 @@ func (ec *executionContext) fieldContext_StakingSummary_linkings(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _StakingTier_minimumStakedTokens(ctx context.Context, field graphql.CollectedField, obj *StakingTier) (ret graphql.Marshaler) {
+func (ec *executionContext) _StakingTier_minimumStakedTokens(ctx context.Context, field graphql.CollectedField, obj *vega.StakingTier) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_StakingTier_minimumStakedTokens(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -67015,7 +67073,7 @@ func (ec *executionContext) fieldContext_StakingTier_minimumStakedTokens(ctx con
 	return fc, nil
 }
 
-func (ec *executionContext) _StakingTier_referralRewardMultiplier(ctx context.Context, field graphql.CollectedField, obj *StakingTier) (ret graphql.Marshaler) {
+func (ec *executionContext) _StakingTier_referralRewardMultiplier(ctx context.Context, field graphql.CollectedField, obj *vega.StakingTier) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_StakingTier_referralRewardMultiplier(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -76362,9 +76420,9 @@ func (ec *executionContext) _UpdateReferralProgram_stakingTiers(ctx context.Cont
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*StakingTier)
+	res := resTmp.([]*vega.StakingTier)
 	fc.Result = res
-	return ec.marshalNStakingTier2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐStakingTierᚄ(ctx, field.Selections, res)
+	return ec.marshalNStakingTier2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐStakingTierᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_UpdateReferralProgram_stakingTiers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -96315,6 +96373,13 @@ func (ec *executionContext) _ReferralProgram(ctx context.Context, sel ast.Select
 				return innerFunc(ctx)
 
 			})
+		case "stakingTiers":
+
+			out.Values[i] = ec._ReferralProgram_stakingTiers(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "endedAt":
 
 			out.Values[i] = ec._ReferralProgram_endedAt(ctx, field, obj)
@@ -97348,7 +97413,7 @@ func (ec *executionContext) _StakingSummary(ctx context.Context, sel ast.Selecti
 
 var stakingTierImplementors = []string{"StakingTier"}
 
-func (ec *executionContext) _StakingTier(ctx context.Context, sel ast.SelectionSet, obj *StakingTier) graphql.Marshaler {
+func (ec *executionContext) _StakingTier(ctx context.Context, sel ast.SelectionSet, obj *vega.StakingTier) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, stakingTierImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -104050,7 +104115,7 @@ func (ec *executionContext) marshalNStakingSummary2ᚖcodeᚗvegaprotocolᚗio�
 	return ec._StakingSummary(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNStakingTier2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐStakingTierᚄ(ctx context.Context, sel ast.SelectionSet, v []*StakingTier) graphql.Marshaler {
+func (ec *executionContext) marshalNStakingTier2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐStakingTierᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.StakingTier) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -104074,7 +104139,7 @@ func (ec *executionContext) marshalNStakingTier2ᚕᚖcodeᚗvegaprotocolᚗio�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNStakingTier2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐStakingTier(ctx, sel, v[i])
+			ret[i] = ec.marshalNStakingTier2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐStakingTier(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -104094,7 +104159,7 @@ func (ec *executionContext) marshalNStakingTier2ᚕᚖcodeᚗvegaprotocolᚗio�
 	return ret
 }
 
-func (ec *executionContext) marshalNStakingTier2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐStakingTier(ctx context.Context, sel ast.SelectionSet, v *StakingTier) graphql.Marshaler {
+func (ec *executionContext) marshalNStakingTier2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐStakingTier(ctx context.Context, sel ast.SelectionSet, v *vega.StakingTier) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")

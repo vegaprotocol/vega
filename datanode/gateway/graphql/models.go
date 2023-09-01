@@ -661,13 +661,6 @@ type StakingSummary struct {
 	Linkings *v2.StakesConnection `json:"linkings"`
 }
 
-type StakingTier struct {
-	// Required number of governance tokens ($VEGA) a referrer must have staked to receive the multiplier
-	MinimumStakedTokens string `json:"minimumStakedTokens"`
-	// Multiplier applied to the referral reward factor when calculating referral rewards due to the referrer
-	ReferralRewardMultiplier string `json:"referralRewardMultiplier"`
-}
-
 // Price at which a stop order will trigger
 type StopOrderPrice struct {
 	Price string `json:"price"`
@@ -809,7 +802,7 @@ type UpdateReferralProgram struct {
 	// Benefit tiers for the program
 	BenefitTiers []*vega.BenefitTier `json:"benefitTiers"`
 	// Determines the level of benefit a party can expect based on their staking
-	StakingTiers []*StakingTier `json:"stakingTiers"`
+	StakingTiers []*vega.StakingTier `json:"stakingTiers"`
 	// The end time of the program
 	EndOfProgramTimestamp int64 `json:"endOfProgramTimestamp"`
 	// The window legnth to consider for the referral program

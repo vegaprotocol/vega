@@ -5735,6 +5735,12 @@ type ReferralProgram {
   endOfProgramTimestamp: Timestamp!
   "Number of epochs over which to evaluate a referral set's running volume."
   windowLength: Int!
+  """
+  Defined staking tiers in increasing order. First element will give Tier 1,
+  second element will give Tier 2, and so on. Determines the level of
+  benefit a party can expect based on their staking.
+  """
+  stakingTiers: [StakingTier!]!
   "Timestamp as RFC3339Nano when the program ended. If present, the current program has ended and no program is currently running."
   endedAt: Timestamp
 }

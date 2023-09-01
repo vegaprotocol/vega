@@ -19,6 +19,7 @@ type (
 		BenefitTiers          []*vega.BenefitTier
 		EndOfProgramTimestamp time.Time
 		WindowLength          uint64
+		StakingTiers          []*vega.StakingTier
 		VegaTime              time.Time
 		EndedAt               *time.Time
 	}
@@ -28,8 +29,10 @@ func ReferralProgramFromProto(proto *vega.ReferralProgram, vegaTime time.Time) *
 	return &ReferralProgram{
 		ID:                    ReferralID(proto.Id),
 		Version:               proto.Version,
+		BenefitTiers:          proto.BenefitTiers,
 		EndOfProgramTimestamp: time.Unix(proto.EndOfProgramTimestamp, 0),
 		WindowLength:          proto.WindowLength,
+		StakingTiers:          proto.StakingTiers,
 		VegaTime:              vegaTime,
 	}
 }
@@ -46,6 +49,7 @@ func (rp ReferralProgram) ToProto() *v2.ReferralProgram {
 		BenefitTiers:          rp.BenefitTiers,
 		EndOfProgramTimestamp: rp.EndOfProgramTimestamp.Unix(),
 		WindowLength:          rp.WindowLength,
+		StakingTiers:          rp.StakingTiers,
 		EndedAt:               endedAt,
 	}
 }

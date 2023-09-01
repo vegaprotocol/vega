@@ -3515,6 +3515,10 @@ message ReferralProgram {
   int64 end_of_program_timestamp = 4;
   // Number of epochs over which to evaluate a referral set's running volume.
   uint64 window_length = 5;
+  // Defined staking tiers in increasing order. First element will give Tier 1,
+  // second element will give Tier 2, and so on. Determines the level of
+  // benefit a party can expect based on their staking.
+  repeated vega.StakingTier staking_tiers = 6;
   // Timestamp as Unix time in nanoseconds at which the program ended.
-  optional int64 ended_at = 6;
+  optional int64 ended_at = 7;
 }
