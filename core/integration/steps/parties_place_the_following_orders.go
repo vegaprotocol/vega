@@ -186,6 +186,11 @@ func PartiesPlaceTheFollowingOrders(
 			orderSubmission.ReduceOnly = true
 		}
 
+		// check for pegged orders
+		if row.PeggedReference() != types.PeggedReferenceUnspecified {
+			orderSubmission.PeggedOrder = &types.PeggedOrder{Reference: row.PeggedReference(), Offset: row.PeggedOffset()}
+		}
+
 		// check for stop orders
 		stopOrderSubmission, err := buildStopOrder(&orderSubmission, row, now)
 		if err != nil {
@@ -378,6 +383,8 @@ func parseSubmitOrderTable(table *godog.Table) []RowWrapper {
 		"ra trailing",
 		"so expires in",
 		"so expiry strategy",
+		"pegged reference",
+		"pegged offset",
 	})
 }
 
@@ -525,4 +532,18 @@ func (r submitOrderRow) ExpiryStrategy() types.StopOrderExpiryStrategy {
 		return types.StopOrderExpiryStrategyCancels
 	}
 	return r.row.MustExpiryStrategy("so expiry strategy")
+}
+
+func (r submitOrderRow) PeggedReference() types.PeggedReference {
+	if !r.row.HasColumn("pegged reference") {
+		return types.PeggedReferenceUnspecified
+	}
+	return r.row.MustPeggedReference("pegged reference")
+}
+
+func (r submitOrderRow) PeggedOffset() *num.Uint {
+	if !r.row.HasColumn("pegged offset") {
+		return nil
+	}
+	return r.row.MustUint("pegged offset")
 }
