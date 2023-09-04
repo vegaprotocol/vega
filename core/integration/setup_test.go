@@ -203,6 +203,7 @@ func newExecutionTestSetup() *executionTestSetup {
 			execsetup.stateVarEngine,
 			marketActivityTracker,
 			execsetup.assetsEngine, // assets
+			&stubs.FeeDiscountRewardService{},
 		),
 		execsetup.broker,
 	)

@@ -694,6 +694,18 @@ type TradeFee struct {
 	InfrastructureFee string `json:"infrastructureFee"`
 	// The fee paid to the liquidity providers that committed liquidity to the market
 	LiquidityFee string `json:"liquidityFee"`
+	// Referral discount on maker fees for the trade
+	MakerFeeReferralDiscount *string `json:"makerFeeReferralDiscount"`
+	// Volume discount on maker fees for the trade
+	MakerFeeVolumeDiscount *string `json:"makerFeeVolumeDiscount"`
+	// Referral discount on infrastructure fees for the trade
+	InfrastructureFeeReferralDiscount *string `json:"infrastructureFeeReferralDiscount"`
+	// Volume discount on infrastructure fees for the trade
+	InfrastructureFeeVolumeDiscount *string `json:"infrastructureFeeVolumeDiscount"`
+	// Referral discount on liquidity fees for the trade
+	LiquidityFeeReferralDiscount *string `json:"liquidityFeeReferralDiscount"`
+	// Volume discount on liquidity fees for the trade
+	LiquidityFeeVolumeDiscount *string `json:"liquidityFeeVolumeDiscount"`
 }
 
 type TradeSettlement struct {

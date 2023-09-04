@@ -56,6 +56,7 @@ func NewMarketFromSnapshot(
 	quoteAssetDetails *assets.Asset,
 	marketActivityTracker *common.MarketActivityTracker,
 	peggedOrderNotify func(int64),
+	feeDiscountRewardService fee.FeeDiscountRewardService,
 ) (*Market, error) {
 	mkt := em.Market
 	if len(em.Market.ID) == 0 {
@@ -129,6 +130,7 @@ func NewMarketFromSnapshot(
 		collateral:                 collateralEngine,
 		broker:                     broker,
 		fee:                        feeEngine,
+		feeDiscountRewardService:   feeDiscountRewardService,
 		liquidity:                  marketLiquidity,
 		liquidityEngine:            liquidity,
 		parties:                    map[string]struct{}{},

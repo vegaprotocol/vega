@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -29,6 +30,7 @@ import (
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/common/mocks"
+	fmock "code.vegaprotocol.io/vega/core/fee/mocks"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	snp "code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
@@ -594,6 +596,10 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 		},
 	}
 	require.NoError(t, collateralEngine.EnableAsset(context.Background(), ethAsset))
+	feeDiscountReward := fmock.NewMockFeeDiscountRewardService(ctrl)
+	feeDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	feeDiscountReward.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	feeDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 
 	eng := execution.NewEngine(
 		log,
@@ -605,6 +611,7 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 		stubs.NewStateVar(),
 		marketActivityTracker,
 		stubs.NewAssetStub(),
+		feeDiscountReward,
 	)
 
 	statsData := stats.New(log, stats.NewDefaultConfig())
@@ -651,7 +658,10 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 	for _, p := range parties {
 		_, _ = collateralEngine.Deposit(context.Background(), p, ethAsset.ID, balance.Clone())
 	}
-
+	feeDiscountReward := fmock.NewMockFeeDiscountRewardService(ctrl)
+	feeDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	feeDiscountReward.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	feeDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	eng := execution.NewEngine(
 		log,
 		cfg,
@@ -662,6 +672,7 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 		stubs.NewStateVar(),
 		marketActivityTracker,
 		stubs.NewAssetStub(),
+		feeDiscountReward,
 	)
 
 	statsData := stats.New(log, stats.NewDefaultConfig())

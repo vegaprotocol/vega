@@ -371,6 +371,22 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 		e.broker.Send(events.NewAccountEvent(ctx, *pendingTransfersAcc))
 	}
 
+	pendingFeeReferrerRewardID := e.accountID(noMarket, systemOwner, asset.ID, types.AccountTypePendingFeeReferralReward)
+	if _, ok := e.accs[pendingFeeReferrerRewardID]; !ok {
+		pendingFeeReferrerRewardAcc := &types.Account{
+			ID:       pendingFeeReferrerRewardID,
+			Asset:    asset.ID,
+			Owner:    systemOwner,
+			Balance:  num.UintZero(),
+			MarketID: noMarket,
+			Type:     types.AccountTypePendingFeeReferralReward,
+		}
+
+		e.accs[pendingFeeReferrerRewardID] = pendingFeeReferrerRewardAcc
+		e.addAccountToHashableSlice(pendingFeeReferrerRewardAcc)
+		e.broker.Send(events.NewAccountEvent(ctx, *pendingFeeReferrerRewardAcc))
+	}
+
 	e.log.Info("new asset added successfully",
 		logging.AssetID(asset.ID),
 	)
@@ -1904,6 +1920,10 @@ func (e *Engine) getFeeTransferRequest(
 		return getAccount(marketID, t.Owner, types.AccountTypeMargin)
 	}
 
+	referralPendingRewardAccount := func() (*types.Account, error) {
+		return getAccount(noMarket, systemOwner, types.AccountTypePendingFeeReferralReward)
+	}
+
 	general, err := getAccount(noMarket, t.Owner, types.AccountTypeGeneral)
 	if err != nil {
 		return nil, err
@@ -1917,6 +1937,26 @@ func (e *Engine) getFeeTransferRequest(
 	}
 
 	switch t.Type {
+	case types.TransferTypeFeeReferrerRewardPay:
+		margin, err := marginAccount()
+		if err != nil {
+			return nil, err
+		}
+		pendingRewardAccount, err := referralPendingRewardAccount()
+		if err != nil {
+			return nil, err
+		}
+		treq.FromAccount = []*types.Account{general, margin}
+		treq.ToAccount = []*types.Account{pendingRewardAccount}
+		return treq, nil
+	case types.TransferTypeFeeReferrerRewardDistribute:
+		pendingRewardAccount, err := referralPendingRewardAccount()
+		if err != nil {
+			return nil, err
+		}
+		treq.FromAccount = []*types.Account{pendingRewardAccount}
+		treq.ToAccount = []*types.Account{general}
+		return treq, nil
 	case types.TransferTypeInfrastructureFeePay:
 		margin, err := marginAccount()
 		if err != nil {

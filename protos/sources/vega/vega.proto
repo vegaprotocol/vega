@@ -536,6 +536,22 @@ message Fee {
   string infrastructure_fee = 2;
   // Fee amount paid to market makers. This field is an unsigned integer scaled to the asset's decimal places.
   string liquidity_fee = 3;
+
+  // Volume discounts.
+  // Discount on maker fee based on the taker volume.
+  string maker_fee_volume_discount = 4;
+  // Discount on infrastructure fee based on the taker volume.
+  string infrastructure_fee_volume_discount = 5;
+  // Discount on liquidity fee basedo on taker volume.
+  string liquidity_fee_volume_discount = 6;
+
+  // Referrer discounts.
+  // Discount on maker fee for eligible referrer.
+  string maker_fee_referrer_discount = 7;
+  // Discount on infrastructure fee for eligible referrer.
+  string infrastructure_fee_referrer_discount = 8;
+  // Discount on liquidity fee for eligible referrer.
+  string liquidity_fee_referrer_discount = 9;
 }
 
 message TradeSet {
@@ -829,6 +845,9 @@ enum AccountType {
   // Per asset market reward account given to validators by their ranking
   ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING = 27;
 
+  // Per asset account for pending fee referral reward payouts
+  ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD = 28;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
@@ -938,6 +957,10 @@ enum TransferType {
   TRANSFER_TYPE_PERPETUALS_FUNDING_WIN = 37;
   // Funds moved from the vesting account to the vested account once the vesting period is reached.
   TRANSFER_TYPE_REWARDS_VESTED = 38;
+  // Fee referrer reward paid from general account.
+  TRANSFER_TYPE_FEE_REFERRER_REWARD_PAY = 39;
+  // Fee referrer reward received into general account of the referrer.
+  TRANSFER_TYPE_FEE_REFERRER_REWARD_DISTRIBUTE = 44;
 }
 
 // Represents a financial transfer within Vega
