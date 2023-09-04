@@ -5,7 +5,7 @@ Feature: Fees calculations
       | name                                               | value |
       | network.markPriceUpdateMaximumFrequency            | 0s    |
       | limits.markets.maxPeggedOrders                     | 4     |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 10s   |
+      | market.liquidity.providersFeeCalculationTimeStep | 10s   |
 
   Scenario: S001, Testing fees in continuous trading with one trade and no liquidity providers (0029-FEES-001)
 

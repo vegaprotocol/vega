@@ -8,15 +8,15 @@ Feature: Check not penalty if time on book amount is high enough
       | name                                                  | value |
       | market.stake.target.timeWindow                        | 24h   |
       | market.stake.target.scalingFactor                     | 1     |
-      | market.liquidityV2.bondPenaltyParameter               | 1     |
+      | market.liquidity.bondPenaltyParameter               | 1     |
       | market.liquidity.targetstake.triggering.ratio         | 0.1   |
       | network.markPriceUpdateMaximumFrequency               | 0s    |
       | limits.markets.maxPeggedOrders                        | 2     |
       | validators.epoch.length                               | 5s    |
-      | market.liquidityV2.earlyExitPenalty                   | 0.25  |
-      | market.liquidityV2.stakeToCcyVolume                   | 1.0   |
-      | market.liquidityV2.sla.nonPerformanceBondPenaltySlope | 0.19  |
-      | market.liquidityV2.sla.nonPerformanceBondPenaltyMax   | 1     |
+      | market.liquidity.earlyExitPenalty                   | 0.25  |
+      | market.liquidity.stakeToCcyVolume                   | 1.0   |
+      | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.19  |
+      | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 1     |
 
     And the average block duration is "1"
     And the simple risk model named "simple-risk-model-1":
@@ -36,7 +36,7 @@ Feature: Check not penalty if time on book amount is high enough
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5                    | 0                         | SLA        |
      And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 5s    |
+      | market.liquidity.providersFeeCalculationTimeStep | 5s    |
 
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount  |

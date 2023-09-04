@@ -16,7 +16,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | network.markPriceUpdateMaximumFrequency            | 0s    |
       | market.liquidity.successorLaunchWindowLength       | 1s    |
       | limits.markets.maxPeggedOrders                     | 4     |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 1s    |
+      | market.liquidity.providersFeeCalculationTimeStep | 1s    |
     And the average block duration is "1"
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |

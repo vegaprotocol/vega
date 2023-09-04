@@ -12,9 +12,9 @@ Feature: Simple example of successor markets
       | market.fee.factors.infrastructureFee          | 0.001 |
       | market.fee.factors.makerFee                   | 0.004 |
       | market.value.windowLength                     | 60s   |
-      | market.liquidityV2.bondPenaltyParameter       | 0.1   |
+      | market.liquidity.bondPenaltyParameter       | 0.1   |
       | validators.epoch.length                       | 5s    |
-      | market.liquidityV2.stakeToCcyVolume           | 0.2   |
+      | market.liquidity.stakeToCcyVolume           | 0.2   |
       | market.liquidity.successorLaunchWindowLength  | 1h    |
     And the following assets are registered:
       | id  | decimal places |
@@ -44,6 +44,7 @@ Feature: Simple example of successor markets
       | property           | type         | binding             |
       | trading.terminated | TYPE_BOOLEAN | trading termination |
     And the settlement data decimals for the oracle named "ethDec20Oracle" is given in "5" decimal places
+
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 1                             | 1.0                    |
@@ -71,7 +72,7 @@ Feature: Simple example of successor markets
       | ETH/DEC21 | ETH        | USD   | default-st-risk-model     | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 0              | 0                       | ETH/DEC19        | 0.6                     | 10                | SLA        |
     And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 5s    |
+      | market.liquidity.providersFeeCalculationTimeStep | 5s    |
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov1 | ETH/DEC19 | 9000              | 0.1 | submission |
@@ -234,7 +235,7 @@ Feature: Simple example of successor markets
       | ETH/DEC20 | ETH        | USD   | default-st-risk-model     | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 0              | 0                       | ETH/DEC19        | 0.6                     | 10                | SLA        |
     And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 5s    |
+      | market.liquidity.providersFeeCalculationTimeStep | 5s    |
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov1 | ETH/DEC19 | 9000              | 0.1 | submission |
@@ -355,7 +356,7 @@ Feature: Simple example of successor markets
       | ETH/DEC21 | ETH        | USD   | default-st-risk-model     | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 0              | 0                       | ETH/DEC19        | 0.1                     | 10                | SLA        |
     And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 5s    |
+      | market.liquidity.providersFeeCalculationTimeStep | 5s    |
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov1 | ETH/DEC19 | 9000              | 0.1 | submission |
@@ -492,7 +493,7 @@ Feature: Simple example of successor markets
       | ETH/DEC20 | ETH        | USD   | default-st-risk-model     | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 0              | 0                       | ETH/DEC19        | 0.8                     | 10                | SLA        |
     And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 5s    |
+      | market.liquidity.providersFeeCalculationTimeStep | 5s    |
       | market.liquidity.successorLaunchWindowLength       | 1s    |
 
     And the parties submit the following liquidity provision:
@@ -607,4 +608,3 @@ Feature: Simple example of successor markets
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "6460" for the market "ETH/DEC20"
     And the global insurance pool balance should be "6461" for the asset "USD"
-

@@ -9,7 +9,7 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
       | market.liquidity.targetstake.triggering.ratio      | 0     |
       | network.markPriceUpdateMaximumFrequency            | 0s    |
       | limits.markets.maxPeggedOrders                     | 18    |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 600s  |
+      | market.liquidity.providersFeeCalculationTimeStep | 600s  |
     And the following assets are registered:
       | id  | decimal places |
       | ETH | 5              |
@@ -172,8 +172,8 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
       | market.liquidity.targetstake.triggering.ratio | 1     |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | limits.markets.maxPeggedOrders                | 30    |
-      | market.liquidityV2.earlyExitPenalty           | 1.0   |
-      | market.liquidityV2.bondPenaltyParameter       | 1.0   |
+      | market.liquidity.earlyExitPenalty           | 1.0   |
+      | market.liquidity.bondPenaltyParameter       | 1.0   |
 
     And the following assets are registered:
       | id  | decimal places |

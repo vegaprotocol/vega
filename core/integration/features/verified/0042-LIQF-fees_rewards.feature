@@ -22,7 +22,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | limits.markets.maxPeggedOrders                      | 8     |
       | validators.epoch.length                             | 24h   |
-      | market.liquidityV2.providersFeeCalculationTimeStep  | 600s  |
+      | market.liquidity.providersFeeCalculationTimeStep  | 600s  |
     
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
