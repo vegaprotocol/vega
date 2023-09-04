@@ -84,6 +84,8 @@
 - [9254](https://github.com/vegaprotocol/vega/issues/9254) - Add fee discounts to trade API
 - [9246](https://github.com/vegaprotocol/vega/issues/9246) - Add rewards multiplier support in the referral engine.
 - [9063](https://github.com/vegaprotocol/vega/issues/9063) - Make `calculationTimeStep` a network parameter
+- [9167](https://github.com/vegaprotocol/vega/issues/9167) - Rename liquidity network parameters
+
 
 ### 🐛 Fixes
 

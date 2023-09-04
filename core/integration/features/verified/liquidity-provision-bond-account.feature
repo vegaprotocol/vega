@@ -28,10 +28,10 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | limits.markets.maxPeggedOrders          | 2     |
       | market.stake.target.timeWindow                        | 24h  |
       | market.stake.target.scalingFactor                     | 1    |
-      | market.liquidityV2.bondPenaltyParameter               | 0    |
+      | market.liquidity.bondPenaltyParameter               | 0    |
       | market.liquidity.targetstake.triggering.ratio         | 0.24 |
       | validators.epoch.length                               | 5s   |
-      | market.liquidityV2.sla.nonPerformanceBondPenaltySlope | 0    |
+      | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0    |
 
   @Now @NoPerp
   Scenario: 001, LP gets distressed during continuous trading, no DPD setting (0044-LIME-002, 0035-LIQM-004)
@@ -44,7 +44,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | ETH/MAR22 | updated-lqm-params   | 0.7                    | 0                         |
     And the following network parameters are set:
       | name                                  | value |
-      | market.liquidityV2.bondPenaltyParameter | 0.2   |
+      | market.liquidity.bondPenaltyParameter | 0.2   |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | party0 | USD   | 12500  |
@@ -196,7 +196,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
 #       | ETH/MAR22 | updated-lqm-params   | 0.7                    | 0                         |
 #     And the following network parameters are set:
 #       | name                                  | value |
-#       | market.liquidityV2.bondPenaltyParameter | 0.5   |
+#       | market.liquidity.bondPenaltyParameter | 0.5   |
 
 #     And the average block duration is "1"
 

@@ -23,7 +23,7 @@ Feature: Spot market
     And the following network parameters are set:
       | name                                                | value |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
-      | market.liquidityV2.earlyExitPenalty                 | 0.02  |
+      | market.liquidity.earlyExitPenalty                 | 0.02  |
       | market.stake.target.timeWindow                      | 2s    |
 
     Given time is updated to "2023-07-20T00:00:00Z"

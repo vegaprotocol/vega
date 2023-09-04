@@ -38,12 +38,12 @@ Feature: Test LP bond account when market is terminated
       | market.auction.minimumDuration                        | 1     |
       | market.fee.factors.infrastructureFee                  | 0.001 |
       | market.fee.factors.makerFee                           | 0.004 |
-      | market.liquidityV2.bondPenaltyParameter               | 0.2   |
+      | market.liquidity.bondPenaltyParameter               | 0.2   |
       | validators.epoch.length                               | 5s    |
-      | market.liquidityV2.stakeToCcyVolume                   | 1     |
+      | market.liquidity.stakeToCcyVolume                   | 1     |
       | market.liquidity.successorLaunchWindowLength          | 1h    |
-      | market.liquidityV2.sla.nonPerformanceBondPenaltySlope | 0.19  |
-      | market.liquidityV2.sla.nonPerformanceBondPenaltyMax   | 1     |
+      | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.19  |
+      | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 1     |
       | validators.epoch.length                               | 2s    |
 
     And the liquidity sla params named "SLA":
@@ -54,7 +54,7 @@ Feature: Test LP bond account when market is terminated
       | ETH/MAR22 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | ethDec19Oracle     | 1e1                    | 1e0                       | SLA        |
     And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 2s    |
+      | market.liquidity.providersFeeCalculationTimeStep | 2s    |
 
     Given the average block duration is "2"
   @Now @SLABond

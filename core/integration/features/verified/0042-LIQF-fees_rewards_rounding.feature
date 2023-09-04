@@ -9,7 +9,7 @@ Feature: All liquidity providers with `average fraction of liquidity provided by
       | market.liquidity.targetstake.triggering.ratio      | 0     |
       | network.markPriceUpdateMaximumFrequency            | 0s    |
       | limits.markets.maxPeggedOrders                     | 4     |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 600s  |
+      | market.liquidity.providersFeeCalculationTimeStep | 600s  |
     And the following assets are registered:
       | id  | decimal places |
       | ETH | 5              |

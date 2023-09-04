@@ -31,7 +31,7 @@ Feature: Test how offsets are applied with decimals
             | 1.0         | 0.5                          | 1                             | 1.0                    |
         And the following network parameters are set:
             | name                                               | value |
-            | market.liquidityV2.providersFeeCalculationTimeStep | 660s  |
+            | market.liquidity.providersFeeCalculationTimeStep | 660s  |
 
         And the markets:
             | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees         | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params |

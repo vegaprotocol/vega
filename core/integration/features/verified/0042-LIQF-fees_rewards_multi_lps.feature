@@ -27,7 +27,7 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
       | market.liquidity.targetstake.triggering.ratio       | 1     |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | limits.markets.maxPeggedOrders                      | 8     |
-      | market.liquidityV2.providersFeeCalculationTimeStep  | 10s   |
+      | market.liquidity.providersFeeCalculationTimeStep  | 10s   |
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 1                             | 1.0                    |
