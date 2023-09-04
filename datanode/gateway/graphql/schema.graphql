@@ -566,12 +566,11 @@ type Query {
     The funding period's start date will be used to determine if the funding period's data points should be included in the results.
     Start and end time should be expressed as an integer value of Unix nanoseconds.
     """
-    dateRange: DateRange,
+    dateRange: DateRange
     "Optional filter to only return data points from a specific data source. If omitted, no filtering is applied."
     source: FundingPeriodDataPointSource
     "Pagination control"
     pagination: Pagination
-
   ): FundingPeriodDataPointConnection!
 
   "Get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided."
@@ -1628,7 +1627,6 @@ type DataSourceSpecPerpetualBinding {
   """
   settlementScheduleProperty: String!
 }
-
 
 """
 DataSourceSpecToFutureBinding tells on which property data source data should be
@@ -4115,8 +4113,6 @@ type LiquiditySLAParameters {
   priceRange: String!
   "Specifies the minimum fraction of time LPs must spend 'on the book' providing their committed liquidity"
   commitmentMinTimeFraction: String!
-  "Specifies how often the quality of liquidity supplied by the LPS is evaluated and fees arising from that period are earmarked for specific parties"
-  providersFeeCalculationTimeStep: Int!
   "Specifies the number of liquidity epochs over which past performance will continue to affect rewards"
   performanceHysteresisEpochs: Int!
   """
@@ -5454,7 +5450,9 @@ type DataSourceSpecConfigurationTimeTrigger {
   triggers: [InternalTimeTrigger]!
 }
 
-union InternalDataSourceKind = DataSourceSpecConfigurationTime | DataSourceSpecConfigurationTimeTrigger
+union InternalDataSourceKind =
+    DataSourceSpecConfigurationTime
+  | DataSourceSpecConfigurationTimeTrigger
 
 """
 DataSourceDefinitionInternal is the top level object used for all internal data sources.
@@ -5611,10 +5609,10 @@ enum FundingPeriodDataPointSource {
 
 "Edge type containing a funding period cursor and its associated funding period data"
 type FundingPeriodEdge {
-    "The funding period data"
-    node: FundingPeriod!
-    "Cursor identifying the funding period data"
-    cursor: String!
+  "The funding period data"
+  node: FundingPeriod!
+  "Cursor identifying the funding period data"
+  cursor: String!
 }
 
 "Connection type for retrieving cursor-based paginated funding period data for perpetual markets"

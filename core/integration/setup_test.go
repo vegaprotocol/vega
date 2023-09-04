@@ -270,6 +270,10 @@ func newExecutionTestSetup() *executionTestSetup {
 			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
 			Watcher: execsetup.executionEngine.OnMarketLiquidityV2StakeToCCYVolumeUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2ProvidersFeeCalculationTimeStep,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep,
+		},
 	)
 	return execsetup
 }
@@ -337,6 +341,10 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
 			Watcher: e.executionEngine.OnMarketLiquidityV2StakeToCCYVolumeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2ProvidersFeeCalculationTimeStep,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep,
 		},
 		// End of liquidity version 2.
 		netparams.WatchParam{

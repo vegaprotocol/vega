@@ -2,9 +2,10 @@ Feature: Fees calculations
 
   Background:
     Given the following network parameters are set:
-      | name                                    | value |
-      | network.markPriceUpdateMaximumFrequency | 0s    |
-      | limits.markets.maxPeggedOrders          | 4     |
+      | name                                               | value |
+      | network.markPriceUpdateMaximumFrequency            | 0s    |
+      | limits.markets.maxPeggedOrders                     | 4     |
+      | market.liquidityV2.providersFeeCalculationTimeStep | 10s   |
 
   Scenario: S001, Testing fees in continuous trading with one trade and no liquidity providers (0029-FEES-001)
 
@@ -234,8 +235,8 @@ Feature: Fees calculations
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
@@ -680,8 +681,8 @@ Feature: Fees calculations
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
@@ -787,8 +788,8 @@ Feature: Fees calculations
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
 
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
@@ -957,8 +958,8 @@ Feature: Fees calculations
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
 
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
@@ -1076,8 +1077,8 @@ Feature: Fees calculations
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
 
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
@@ -1187,8 +1188,8 @@ Feature: Fees calculations
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
 
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
@@ -1310,8 +1311,8 @@ Feature: Fees calculations
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
 
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
@@ -1425,8 +1426,8 @@ Feature: Fees calculations
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
 
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
@@ -1721,8 +1722,8 @@ Feature: Fees calculations
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |

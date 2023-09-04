@@ -13,11 +13,10 @@ func TheLiquiditySLAPArams(config *market.Config, name string, table *godog.Tabl
 	return config.LiquiditySLAParams.Add(
 		name,
 		&types.LiquiditySLAParameters{
-			PriceRange:                      row.priceRange(),
-			CommitmentMinTimeFraction:       row.commitmentMinTimeFraction(),
-			SlaCompetitionFactor:            row.slaCompetitionFactor(),
-			ProvidersFeeCalculationTimeStep: row.providersFeeCalculationTimeStep(),
-			PerformanceHysteresisEpochs:     uint64(row.performanceHysteresisEpochs()),
+			PriceRange:                  row.priceRange(),
+			CommitmentMinTimeFraction:   row.commitmentMinTimeFraction(),
+			SlaCompetitionFactor:        row.slaCompetitionFactor(),
+			PerformanceHysteresisEpochs: uint64(row.performanceHysteresisEpochs()),
 		})
 }
 
@@ -25,7 +24,6 @@ func parseSLAParamsTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"price range",
 		"commitment min time fraction",
-		"providers fee calculation time step",
 		"performance hysteresis epochs",
 		"sla competition factor",
 	}, []string{})
@@ -41,10 +39,6 @@ func (r slaParamRow) priceRange() string {
 
 func (r slaParamRow) commitmentMinTimeFraction() string {
 	return r.row.MustStr("commitment min time fraction")
-}
-
-func (r slaParamRow) providersFeeCalculationTimeStep() int64 {
-	return r.row.MustI64("providers fee calculation time step")
 }
 
 func (r slaParamRow) performanceHysteresisEpochs() int64 {

@@ -126,6 +126,7 @@ type netParamsValues struct {
 	liquidityV2SLANonPerformanceBondPenaltyMax   num.Decimal
 	liquidityV2SLANonPerformanceBondPenaltySlope num.Decimal
 	liquidityV2StakeToCCYVolume                  num.Decimal
+	liquidityV2FeeCalculationTimeStep            time.Duration
 }
 
 func defaultNetParamsValues() netParamsValues {
@@ -154,6 +155,7 @@ func defaultNetParamsValues() netParamsValues {
 		liquidityV2SLANonPerformanceBondPenaltyMax:   num.DecimalFromInt64(-1),
 		liquidityV2SLANonPerformanceBondPenaltySlope: num.DecimalFromInt64(-1),
 		liquidityV2StakeToCCYVolume:                  num.DecimalFromInt64(-1),
+		liquidityV2FeeCalculationTimeStep:            time.Second * 5,
 	}
 }
 
@@ -880,6 +882,8 @@ func (e *Engine) propagateSLANetParams(_ context.Context, mkt *future.Market) {
 	if !e.npv.liquidityV2StakeToCCYVolume.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
 		mkt.OnMarketLiquidityV2StakeToCCYVolume(e.npv.liquidityV2StakeToCCYVolume)
 	}
+
+	mkt.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(e.npv.liquidityV2FeeCalculationTimeStep)
 }
 
 func (e *Engine) removeMarket(mktID string) {
@@ -1572,6 +1576,18 @@ func (e *Engine) OnMarketLiquidityV2StakeToCCYVolumeUpdate(_ context.Context, d 
 		m.OnMarketLiquidityV2StakeToCCYVolume(d)
 	}
 	e.npv.liquidityV2StakeToCCYVolume = d
+	return nil
+}
+
+func (e *Engine) OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(_ context.Context, t time.Duration) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update market SLA providers fee calculation time step (liquidity v2)",
+			logging.Duration("providersFeeCalculationTimeStep", t),
+		)
+	}
+	for _, m := range e.allMarketsCpy {
+		m.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(t)
+	}
 	return nil
 }
 

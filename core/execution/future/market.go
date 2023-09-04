@@ -252,7 +252,6 @@ func NewMarket(
 	marketLiquidity := common.NewMarketLiquidity(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
 		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange,
-		mkt.LiquiditySLAParams.ProvidersFeeCalculationTimeStep,
 	)
 
 	// The market is initially created in a proposed state

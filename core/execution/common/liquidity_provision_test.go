@@ -93,11 +93,11 @@ func newMarketLiquidity(t *testing.T) *marketLiquidityTest {
 		settlementAsset,
 		num.NewUint(1),
 		num.NewDecimalFromFloat(0.5),
-		time.Second*3,
 	)
 
 	marketLiquidity.OnMinLPStakeQuantumMultiple(num.DecimalOne())
 	marketLiquidity.OnEarlyExitPenalty(num.DecimalOne())
+	marketLiquidity.OnProvidersFeeCalculationTimeStep(time.Second * 3)
 
 	return &marketLiquidityTest{
 		ctrl:             ctrl,

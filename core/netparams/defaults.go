@@ -103,6 +103,9 @@ func defaultNetParams() map[string]value {
 		MarketLiquidityV2SLANonPerformanceBondPenaltySlope: NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("2"),
 		MarketLiquidityV2StakeToCCYVolume:                  NewDecimal(gteD0, lteD100).Mutable(true).MustUpdate("1"),
 
+		// @TODO karel add validation
+		MarketLiquidityV2ProvidersFeeCalculationTimeStep: NewDuration(gte1s, lte255h).Mutable(true).MustUpdate("1m"),
+
 		// governance market proposal
 		GovernanceProposalMarketMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
 		GovernanceProposalMarketMaxClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
@@ -299,6 +302,10 @@ func defaultNetParams() map[string]value {
 	// could just do 24 * 3600 * time.Second, but this is easier to read
 	maxFreq, _ := time.ParseDuration("24h")
 	m[MarkPriceUpdateMaximumFrequency].AddRules(DurationGTE(time.Duration(0)), DurationLTE(maxFreq))
+
+	m[MarketLiquidityV2ProvidersFeeCalculationTimeStep].AddRules(
+		DurationDependentLTE(ValidatorsEpochLength, m[ValidatorsEpochLength].(*Duration)),
+	)
 	return m
 }
 

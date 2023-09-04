@@ -661,9 +661,6 @@ func validateLPSLAParams(slaParams *types.LiquiditySLAParams) (types.ProposalErr
 	if slaParams.CommitmentMinTimeFraction.LessThan(num.DecimalZero()) || slaParams.CommitmentMinTimeFraction.GreaterThan(num.DecimalOne()) {
 		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("commitment min time fraction must be in range [0, 1]")
 	}
-	if slaParams.ProvidersFeeCalculationTimeStep.Seconds() < 0 {
-		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("provider fee calculation time step must be non negative")
-	}
 	if slaParams.SlaCompetitionFactor.LessThan(num.DecimalZero()) || slaParams.CommitmentMinTimeFraction.GreaterThan(num.DecimalOne()) {
 		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("sla competition factor must be in range [0, 1]")
 	}

@@ -302,12 +302,15 @@ Feature: Fees reward calculations for a single asset, single market
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 10                                  | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       | SLA        |
+    And the following network parameters are set:
+      | name                                               | value |
+      | market.liquidityV2.providersFeeCalculationTimeStep | 10s   |
 
     Given the parties deposit on asset's general account the following amount:
       | party                                                            | asset | amount   |

@@ -209,7 +209,7 @@ func NewMarket(
 	mkt.MarketTimestamps = ts
 	liquidity := liquidity.NewSnapshotEngine(liquidityConfig, log, timeService, broker, riskModel, pMonitor, book, as, quoteAsset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams)
 	els := common.NewEquityShares(num.DecimalZero())
-	marketLiquidity := common.NewMarketLiquidity(log, liquidity, collateralEngine, broker, book, els, marketActivityTracker, feeEngine, common.SpotMarketType, mkt.ID, quoteAsset, priceFactor, mkt.LiquiditySLAParams.PriceRange, mkt.LiquiditySLAParams.ProvidersFeeCalculationTimeStep)
+	marketLiquidity := common.NewMarketLiquidity(log, liquidity, collateralEngine, broker, book, els, marketActivityTracker, feeEngine, common.SpotMarketType, mkt.ID, quoteAsset, priceFactor, mkt.LiquiditySLAParams.PriceRange)
 	market := &Market{
 		log:                       log,
 		idgen:                     nil,

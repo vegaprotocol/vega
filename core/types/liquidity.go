@@ -15,7 +15,6 @@ package types
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/stringer"
@@ -45,20 +44,18 @@ const (
 )
 
 type LiquiditySLAParams struct {
-	PriceRange                      num.Decimal
-	CommitmentMinTimeFraction       num.Decimal
-	ProvidersFeeCalculationTimeStep time.Duration
-	PerformanceHysteresisEpochs     uint64
-	SlaCompetitionFactor            num.Decimal
+	PriceRange                  num.Decimal
+	CommitmentMinTimeFraction   num.Decimal
+	PerformanceHysteresisEpochs uint64
+	SlaCompetitionFactor        num.Decimal
 }
 
 func (l LiquiditySLAParams) IntoProto() *proto.LiquiditySLAParameters {
 	return &proto.LiquiditySLAParameters{
-		PriceRange:                      l.PriceRange.String(),
-		CommitmentMinTimeFraction:       l.CommitmentMinTimeFraction.String(),
-		ProvidersFeeCalculationTimeStep: int64(l.ProvidersFeeCalculationTimeStep.Seconds()),
-		PerformanceHysteresisEpochs:     l.PerformanceHysteresisEpochs,
-		SlaCompetitionFactor:            l.SlaCompetitionFactor.String(),
+		PriceRange:                  l.PriceRange.String(),
+		CommitmentMinTimeFraction:   l.CommitmentMinTimeFraction.String(),
+		PerformanceHysteresisEpochs: l.PerformanceHysteresisEpochs,
+		SlaCompetitionFactor:        l.SlaCompetitionFactor.String(),
 	}
 }
 
@@ -67,20 +64,18 @@ func LiquiditySLAParamsFromProto(l *proto.LiquiditySLAParameters) *LiquiditySLAP
 		return nil
 	}
 	return &LiquiditySLAParams{
-		PriceRange:                      num.MustDecimalFromString(l.PriceRange),
-		CommitmentMinTimeFraction:       num.MustDecimalFromString(l.CommitmentMinTimeFraction),
-		ProvidersFeeCalculationTimeStep: time.Second * time.Duration(l.ProvidersFeeCalculationTimeStep),
-		PerformanceHysteresisEpochs:     l.PerformanceHysteresisEpochs,
-		SlaCompetitionFactor:            num.MustDecimalFromString(l.SlaCompetitionFactor),
+		PriceRange:                  num.MustDecimalFromString(l.PriceRange),
+		CommitmentMinTimeFraction:   num.MustDecimalFromString(l.CommitmentMinTimeFraction),
+		PerformanceHysteresisEpochs: l.PerformanceHysteresisEpochs,
+		SlaCompetitionFactor:        num.MustDecimalFromString(l.SlaCompetitionFactor),
 	}
 }
 
 func (l LiquiditySLAParams) String() string {
 	return fmt.Sprintf(
-		"priceRange(%s) commitmentMinTimeFraction(%s) providersFeeCalculationTimeStep(%v) performanceHysteresisEpochs(%v) slaCompetitionFactor(%s)",
+		"priceRange(%s) commitmentMinTimeFraction(%s) performanceHysteresisEpochs(%v) slaCompetitionFactor(%s)",
 		l.PriceRange.String(),
 		l.CommitmentMinTimeFraction.String(),
-		l.ProvidersFeeCalculationTimeStep,
 		l.PerformanceHysteresisEpochs,
 		l.SlaCompetitionFactor.String(),
 	)
@@ -88,11 +83,10 @@ func (l LiquiditySLAParams) String() string {
 
 func (l LiquiditySLAParams) DeepClone() *LiquiditySLAParams {
 	return &LiquiditySLAParams{
-		PriceRange:                      l.PriceRange,
-		CommitmentMinTimeFraction:       l.CommitmentMinTimeFraction,
-		ProvidersFeeCalculationTimeStep: l.ProvidersFeeCalculationTimeStep,
-		PerformanceHysteresisEpochs:     l.PerformanceHysteresisEpochs,
-		SlaCompetitionFactor:            l.SlaCompetitionFactor,
+		PriceRange:                  l.PriceRange,
+		CommitmentMinTimeFraction:   l.CommitmentMinTimeFraction,
+		PerformanceHysteresisEpochs: l.PerformanceHysteresisEpochs,
+		SlaCompetitionFactor:        l.SlaCompetitionFactor,
 	}
 }
 
