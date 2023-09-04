@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -17,6 +18,8 @@ func Test_oracleSpecResolver_DataSourceSpec(t *testing.T) {
 		in0 context.Context
 		obj *vegapb.OracleSpec
 	}
+	var timeBasic time.Time
+	timeNow := uint64(timeBasic.UnixNano())
 	tests := []struct {
 		name    string
 		o       oracleSpecResolver
@@ -106,7 +109,17 @@ func Test_oracleSpecResolver_DataSourceSpec(t *testing.T) {
 										SourceType: &vegapb.DataSourceDefinitionExternal_EthOracle{
 											EthOracle: &vegapb.EthCallSpec{
 												Address: "test-address",
+												Abi: "",
+												Args: nil,
 												Method:  "stake",
+												Trigger: &vegapb.EthCallTrigger{
+													Trigger: &vegapb.EthCallTrigger_TimeTrigger{
+														TimeTrigger: &vegapb.EthTimeTrigger{
+															Initial: &timeNow,
+														},
+													},
+												},
+												RequiredConfirmations: uint64(0),
 												Filters: []*v1.Filter{
 													{
 														Key: &v1.PropertyKey{
@@ -124,7 +137,7 @@ func Test_oracleSpecResolver_DataSourceSpec(t *testing.T) {
 					},
 				},
 			},
-			wantJsn: `{"spec":{"id":"","createdAt":0,"updatedAt":null,"data":{"SourceType":{"External":{"SourceType":{"EthOracle":{"address":"test-address","method":"stake","filters":[{"key":{"name":"property-name","type":4}}]}}}}},"status":"STATUS_ACTIVE"}}`,
+			wantJsn: `{"spec":{"id":"","createdAt":0,"updatedAt":null,"data":{"SourceType":{"External":{"SourceType":{"EthOracle":{"address":"test-address","method":"stake","trigger":{"Trigger":{"TimeTrigger":{"initial":11651379494838206464}}},"filters":[{"key":{"name":"property-name","type":4}}]}}}}},"status":"STATUS_ACTIVE"}}`,
 			wantErr: assert.NoError,
 		},
 	}

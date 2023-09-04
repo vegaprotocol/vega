@@ -16,9 +16,9 @@ import (
 	"code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers"
 	"code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
-	v13 "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	v12 "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	v11 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	v12 "code.vegaprotocol.io/vega/protos/vega/data/v1"
+	v13 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
@@ -58,6 +58,8 @@ type ResolverRoot interface {
 	DataSourceDefinitionExternal() DataSourceDefinitionExternalResolver
 	DataSourceDefinitionInternal() DataSourceDefinitionInternalResolver
 	DataSourceSpecConfiguration() DataSourceSpecConfigurationResolver
+	DataSourceSpecConfigurationTime() DataSourceSpecConfigurationTimeResolver
+	DataSourceSpecConfigurationTimeTrigger() DataSourceSpecConfigurationTimeTriggerResolver
 	Delegation() DelegationResolver
 	Deposit() DepositResolver
 	ERC20MultiSigSignerAddedBundle() ERC20MultiSigSignerAddedBundleResolver
@@ -110,7 +112,6 @@ type ResolverRoot interface {
 	Position() PositionResolver
 	PositionUpdate() PositionUpdateResolver
 	PriceLevel() PriceLevelResolver
-	PropertyKey() PropertyKeyResolver
 	Proposal() ProposalResolver
 	ProposalDetail() ProposalDetailResolver
 	ProposalTerms() ProposalTermsResolver
@@ -611,6 +612,7 @@ type ComplexityRoot struct {
 		Args                  func(childComplexity int) int
 		Filters               func(childComplexity int) int
 		Method                func(childComplexity int) int
+		Normalisers           func(childComplexity int) int
 		RequiredConfirmations func(childComplexity int) int
 		Trigger               func(childComplexity int) int
 	}
@@ -1227,6 +1229,11 @@ type ComplexityRoot struct {
 	NodesConnection struct {
 		Edges    func(childComplexity int) int
 		PageInfo func(childComplexity int) int
+	}
+
+	Normaliser struct {
+		Expression func(childComplexity int) int
+		Name       func(childComplexity int) int
 	}
 
 	ObservableLiquidityProviderFeeShare struct {
@@ -2296,6 +2303,13 @@ type DataSourceDefinitionInternalResolver interface {
 }
 type DataSourceSpecConfigurationResolver interface {
 	Signers(ctx context.Context, obj *vega.DataSourceSpecConfiguration) ([]*Signer, error)
+	Filters(ctx context.Context, obj *vega.DataSourceSpecConfiguration) ([]*Filter, error)
+}
+type DataSourceSpecConfigurationTimeResolver interface {
+	Conditions(ctx context.Context, obj *vega.DataSourceSpecConfigurationTime) ([]*Condition, error)
+}
+type DataSourceSpecConfigurationTimeTriggerResolver interface {
+	Conditions(ctx context.Context, obj *vega.DataSourceSpecConfigurationTimeTrigger) ([]*Condition, error)
 }
 type DelegationResolver interface {
 	Party(ctx context.Context, obj *vega.Delegation) (*vega.Party, error)
@@ -2337,6 +2351,8 @@ type EthCallSpecResolver interface {
 	Args(ctx context.Context, obj *vega.EthCallSpec) ([]string, error)
 	Trigger(ctx context.Context, obj *vega.EthCallSpec) (*EthCallTrigger, error)
 	RequiredConfirmations(ctx context.Context, obj *vega.EthCallSpec) (int, error)
+	Normalisers(ctx context.Context, obj *vega.EthCallSpec) ([]*Normaliser, error)
+	Filters(ctx context.Context, obj *vega.EthCallSpec) ([]*Filter, error)
 }
 type EthereumKeyRotationResolver interface {
 	BlockHeight(ctx context.Context, obj *v1.EthereumKeyRotation) (string, error)
@@ -2632,9 +2648,6 @@ type PriceLevelResolver interface {
 	Volume(ctx context.Context, obj *vega.PriceLevel) (string, error)
 	NumberOfOrders(ctx context.Context, obj *vega.PriceLevel) (string, error)
 }
-type PropertyKeyResolver interface {
-	NumberDecimalPlaces(ctx context.Context, obj *v12.PropertyKey) (*int, error)
-}
 type ProposalResolver interface {
 	ID(ctx context.Context, obj *vega.GovernanceData) (*string, error)
 	Reference(ctx context.Context, obj *vega.GovernanceData) (string, error)
@@ -2720,7 +2733,7 @@ type QueryResolver interface {
 	ProposalsConnection(ctx context.Context, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) (*v2.GovernanceDataConnection, error)
 	ProtocolUpgradeStatus(ctx context.Context) (*ProtocolUpgradeStatus, error)
 	ProtocolUpgradeProposals(ctx context.Context, inState *v1.ProtocolUpgradeProposalStatus, approvedBy *string, pagination *v2.Pagination) (*v2.ProtocolUpgradeProposalConnection, error)
-	Statistics(ctx context.Context) (*v13.Statistics, error)
+	Statistics(ctx context.Context) (*v12.Statistics, error)
 	StopOrder(ctx context.Context, id string) (*v1.StopOrderEvent, error)
 	StopOrders(ctx context.Context, filter *v2.StopOrderFilter, pagination *v2.Pagination) (*v2.StopOrderConnection, error)
 	SuccessorMarkets(ctx context.Context, marketID string, fullHistory *bool, pagination *v2.Pagination) (*v2.SuccessorMarketConnection, error)
@@ -2770,30 +2783,30 @@ type StakeLinkingResolver interface {
 	BlockHeight(ctx context.Context, obj *v1.StakeLinking) (string, error)
 }
 type StatisticsResolver interface {
-	BlockHeight(ctx context.Context, obj *v13.Statistics) (string, error)
+	BlockHeight(ctx context.Context, obj *v12.Statistics) (string, error)
 
-	BacklogLength(ctx context.Context, obj *v13.Statistics) (string, error)
-	TotalPeers(ctx context.Context, obj *v13.Statistics) (string, error)
-	GenesisTime(ctx context.Context, obj *v13.Statistics) (int64, error)
-	CurrentTime(ctx context.Context, obj *v13.Statistics) (int64, error)
+	BacklogLength(ctx context.Context, obj *v12.Statistics) (string, error)
+	TotalPeers(ctx context.Context, obj *v12.Statistics) (string, error)
+	GenesisTime(ctx context.Context, obj *v12.Statistics) (int64, error)
+	CurrentTime(ctx context.Context, obj *v12.Statistics) (int64, error)
 
-	VegaTime(ctx context.Context, obj *v13.Statistics) (int64, error)
-	Status(ctx context.Context, obj *v13.Statistics) (string, error)
-	TxPerBlock(ctx context.Context, obj *v13.Statistics) (string, error)
-	AverageTxBytes(ctx context.Context, obj *v13.Statistics) (string, error)
-	AverageOrdersPerBlock(ctx context.Context, obj *v13.Statistics) (string, error)
-	TradesPerSecond(ctx context.Context, obj *v13.Statistics) (string, error)
-	OrdersPerSecond(ctx context.Context, obj *v13.Statistics) (string, error)
-	TotalMarkets(ctx context.Context, obj *v13.Statistics) (string, error)
-	TotalAmendOrder(ctx context.Context, obj *v13.Statistics) (string, error)
-	TotalCancelOrder(ctx context.Context, obj *v13.Statistics) (string, error)
-	TotalCreateOrder(ctx context.Context, obj *v13.Statistics) (string, error)
-	TotalOrders(ctx context.Context, obj *v13.Statistics) (string, error)
-	TotalTrades(ctx context.Context, obj *v13.Statistics) (string, error)
-	EventCount(ctx context.Context, obj *v13.Statistics) (string, error)
-	EventsPerSecond(ctx context.Context, obj *v13.Statistics) (string, error)
+	VegaTime(ctx context.Context, obj *v12.Statistics) (int64, error)
+	Status(ctx context.Context, obj *v12.Statistics) (string, error)
+	TxPerBlock(ctx context.Context, obj *v12.Statistics) (string, error)
+	AverageTxBytes(ctx context.Context, obj *v12.Statistics) (string, error)
+	AverageOrdersPerBlock(ctx context.Context, obj *v12.Statistics) (string, error)
+	TradesPerSecond(ctx context.Context, obj *v12.Statistics) (string, error)
+	OrdersPerSecond(ctx context.Context, obj *v12.Statistics) (string, error)
+	TotalMarkets(ctx context.Context, obj *v12.Statistics) (string, error)
+	TotalAmendOrder(ctx context.Context, obj *v12.Statistics) (string, error)
+	TotalCancelOrder(ctx context.Context, obj *v12.Statistics) (string, error)
+	TotalCreateOrder(ctx context.Context, obj *v12.Statistics) (string, error)
+	TotalOrders(ctx context.Context, obj *v12.Statistics) (string, error)
+	TotalTrades(ctx context.Context, obj *v12.Statistics) (string, error)
+	EventCount(ctx context.Context, obj *v12.Statistics) (string, error)
+	EventsPerSecond(ctx context.Context, obj *v12.Statistics) (string, error)
 
-	BlockDuration(ctx context.Context, obj *v13.Statistics) (string, error)
+	BlockDuration(ctx context.Context, obj *v12.Statistics) (string, error)
 }
 type StopOrderResolver interface {
 	ID(ctx context.Context, obj *v1.StopOrderEvent) (string, error)
@@ -4783,6 +4796,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EthCallSpec.Method(childComplexity), true
+
+	case "EthCallSpec.Normalisers":
+		if e.complexity.EthCallSpec.Normalisers == nil {
+			break
+		}
+
+		return e.complexity.EthCallSpec.Normalisers(childComplexity), true
 
 	case "EthCallSpec.RequiredConfirmations":
 		if e.complexity.EthCallSpec.RequiredConfirmations == nil {
@@ -7366,6 +7386,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NodesConnection.PageInfo(childComplexity), true
+
+	case "Normaliser.Expression":
+		if e.complexity.Normaliser.Expression == nil {
+			break
+		}
+
+		return e.complexity.Normaliser.Expression(childComplexity), true
+
+	case "Normaliser.Name":
+		if e.complexity.Normaliser.Name == nil {
+			break
+		}
+
+		return e.complexity.Normaliser.Name(childComplexity), true
 
 	case "ObservableLiquidityProviderFeeShare.averageEntryValuation":
 		if e.complexity.ObservableLiquidityProviderFeeShare.AverageEntryValuation == nil {
@@ -19241,7 +19275,7 @@ func (ec *executionContext) fieldContext_CandleEdge_cursor(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _Condition_operator(ctx context.Context, field graphql.CollectedField, obj *v12.Condition) (ret graphql.Marshaler) {
+func (ec *executionContext) _Condition_operator(ctx context.Context, field graphql.CollectedField, obj *Condition) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Condition_operator(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -19267,7 +19301,7 @@ func (ec *executionContext) _Condition_operator(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(v12.Condition_Operator)
+	res := resTmp.(v13.Condition_Operator)
 	fc.Result = res
 	return ec.marshalNConditionOperator2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐCondition_Operator(ctx, field.Selections, res)
 }
@@ -19285,7 +19319,7 @@ func (ec *executionContext) fieldContext_Condition_operator(ctx context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _Condition_value(ctx context.Context, field graphql.CollectedField, obj *v12.Condition) (ret graphql.Marshaler) {
+func (ec *executionContext) _Condition_value(ctx context.Context, field graphql.CollectedField, obj *Condition) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Condition_value(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -19308,9 +19342,9 @@ func (ec *executionContext) _Condition_value(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Condition_value(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19764,7 +19798,7 @@ func (ec *executionContext) _Data_data(ctx context.Context, field graphql.Collec
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*v12.Property)
+	res := resTmp.([]*v13.Property)
 	fc.Result = res
 	return ec.marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐPropertyᚄ(ctx, field.Selections, res)
 }
@@ -19811,7 +19845,7 @@ func (ec *executionContext) _Data_metaData(ctx context.Context, field graphql.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*v12.Property)
+	res := resTmp.([]*v13.Property)
 	fc.Result = res
 	return ec.marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐProperty(ctx, field.Selections, res)
 }
@@ -20332,7 +20366,7 @@ func (ec *executionContext) _DataSourceSpecConfiguration_filters(ctx context.Con
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Filters, nil
+		return ec.resolvers.DataSourceSpecConfiguration().Filters(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -20341,17 +20375,17 @@ func (ec *executionContext) _DataSourceSpecConfiguration_filters(ctx context.Con
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*v12.Filter)
+	res := resTmp.([]*Filter)
 	fc.Result = res
-	return ec.marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐFilterᚄ(ctx, field.Selections, res)
+	return ec.marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐFilterᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_DataSourceSpecConfiguration_filters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DataSourceSpecConfiguration",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "key":
@@ -20379,7 +20413,7 @@ func (ec *executionContext) _DataSourceSpecConfigurationTime_conditions(ctx cont
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Conditions, nil
+		return ec.resolvers.DataSourceSpecConfigurationTime().Conditions(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -20391,17 +20425,17 @@ func (ec *executionContext) _DataSourceSpecConfigurationTime_conditions(ctx cont
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*v12.Condition)
+	res := resTmp.([]*Condition)
 	fc.Result = res
-	return ec.marshalNCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐCondition(ctx, field.Selections, res)
+	return ec.marshalNCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐCondition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_DataSourceSpecConfigurationTime_conditions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DataSourceSpecConfigurationTime",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "operator":
@@ -20429,7 +20463,7 @@ func (ec *executionContext) _DataSourceSpecConfigurationTimeTrigger_conditions(c
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Conditions, nil
+		return ec.resolvers.DataSourceSpecConfigurationTimeTrigger().Conditions(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -20441,17 +20475,17 @@ func (ec *executionContext) _DataSourceSpecConfigurationTimeTrigger_conditions(c
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*v12.Condition)
+	res := resTmp.([]*Condition)
 	fc.Result = res
-	return ec.marshalNCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐCondition(ctx, field.Selections, res)
+	return ec.marshalNCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐCondition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_DataSourceSpecConfigurationTimeTrigger_conditions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DataSourceSpecConfigurationTimeTrigger",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "operator":
@@ -20491,7 +20525,7 @@ func (ec *executionContext) _DataSourceSpecConfigurationTimeTrigger_triggers(ctx
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*v12.InternalTimeTrigger)
+	res := resTmp.([]*v13.InternalTimeTrigger)
 	fc.Result = res
 	return ec.marshalNInternalTimeTrigger2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐInternalTimeTrigger(ctx, field.Selections, res)
 }
@@ -27351,6 +27385,53 @@ func (ec *executionContext) fieldContext_EthCallSpec_RequiredConfirmations(ctx c
 	return fc, nil
 }
 
+func (ec *executionContext) _EthCallSpec_Normalisers(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthCallSpec_Normalisers(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.EthCallSpec().Normalisers(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*Normaliser)
+	fc.Result = res
+	return ec.marshalONormaliser2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNormaliserᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EthCallSpec_Normalisers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EthCallSpec",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "Name":
+				return ec.fieldContext_Normaliser_Name(ctx, field)
+			case "Expression":
+				return ec.fieldContext_Normaliser_Expression(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Normaliser", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _EthCallSpec_Filters(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_EthCallSpec_Filters(ctx, field)
 	if err != nil {
@@ -27365,7 +27446,7 @@ func (ec *executionContext) _EthCallSpec_Filters(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Filters, nil
+		return ec.resolvers.EthCallSpec().Filters(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -27374,17 +27455,17 @@ func (ec *executionContext) _EthCallSpec_Filters(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*v12.Filter)
+	res := resTmp.([]*Filter)
 	fc.Result = res
-	return ec.marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐFilterᚄ(ctx, field.Selections, res)
+	return ec.marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐFilterᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EthCallSpec_Filters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EthCallSpec",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "key":
@@ -28429,7 +28510,7 @@ func (ec *executionContext) fieldContext_Fees_factors(ctx context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Filter_key(ctx context.Context, field graphql.CollectedField, obj *v12.Filter) (ret graphql.Marshaler) {
+func (ec *executionContext) _Filter_key(ctx context.Context, field graphql.CollectedField, obj *Filter) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Filter_key(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -28455,9 +28536,9 @@ func (ec *executionContext) _Filter_key(ctx context.Context, field graphql.Colle
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*v12.PropertyKey)
+	res := resTmp.(*PropertyKey)
 	fc.Result = res
-	return ec.marshalNPropertyKey2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐPropertyKey(ctx, field.Selections, res)
+	return ec.marshalNPropertyKey2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐPropertyKey(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Filter_key(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -28481,7 +28562,7 @@ func (ec *executionContext) fieldContext_Filter_key(ctx context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _Filter_conditions(ctx context.Context, field graphql.CollectedField, obj *v12.Filter) (ret graphql.Marshaler) {
+func (ec *executionContext) _Filter_conditions(ctx context.Context, field graphql.CollectedField, obj *Filter) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Filter_conditions(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -28504,9 +28585,9 @@ func (ec *executionContext) _Filter_conditions(ctx context.Context, field graphq
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*v12.Condition)
+	res := resTmp.([]*Condition)
 	fc.Result = res
-	return ec.marshalOCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐConditionᚄ(ctx, field.Selections, res)
+	return ec.marshalOCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐConditionᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Filter_conditions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -30798,7 +30879,7 @@ func (ec *executionContext) fieldContext_InstrumentMetadata_tags(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _InternalTimeTrigger_initial(ctx context.Context, field graphql.CollectedField, obj *v12.InternalTimeTrigger) (ret graphql.Marshaler) {
+func (ec *executionContext) _InternalTimeTrigger_initial(ctx context.Context, field graphql.CollectedField, obj *v13.InternalTimeTrigger) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InternalTimeTrigger_initial(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -30839,7 +30920,7 @@ func (ec *executionContext) fieldContext_InternalTimeTrigger_initial(ctx context
 	return fc, nil
 }
 
-func (ec *executionContext) _InternalTimeTrigger_every(ctx context.Context, field graphql.CollectedField, obj *v12.InternalTimeTrigger) (ret graphql.Marshaler) {
+func (ec *executionContext) _InternalTimeTrigger_every(ctx context.Context, field graphql.CollectedField, obj *v13.InternalTimeTrigger) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InternalTimeTrigger_every(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -44881,6 +44962,94 @@ func (ec *executionContext) fieldContext_NodesConnection_pageInfo(ctx context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _Normaliser_Name(ctx context.Context, field graphql.CollectedField, obj *Normaliser) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Normaliser_Name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Normaliser_Name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Normaliser",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Normaliser_Expression(ctx context.Context, field graphql.CollectedField, obj *Normaliser) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Normaliser_Expression(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Expression, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Normaliser_Expression(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Normaliser",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ObservableLiquidityProviderFeeShare_partyId(ctx context.Context, field graphql.CollectedField, obj *ObservableLiquidityProviderFeeShare) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ObservableLiquidityProviderFeeShare_partyId(ctx, field)
 	if err != nil {
@@ -54719,7 +54888,7 @@ func (ec *executionContext) fieldContext_PriceMonitoringTrigger_auctionExtension
 	return fc, nil
 }
 
-func (ec *executionContext) _Property_name(ctx context.Context, field graphql.CollectedField, obj *v12.Property) (ret graphql.Marshaler) {
+func (ec *executionContext) _Property_name(ctx context.Context, field graphql.CollectedField, obj *v13.Property) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Property_name(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -54763,7 +54932,7 @@ func (ec *executionContext) fieldContext_Property_name(ctx context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _Property_value(ctx context.Context, field graphql.CollectedField, obj *v12.Property) (ret graphql.Marshaler) {
+func (ec *executionContext) _Property_value(ctx context.Context, field graphql.CollectedField, obj *v13.Property) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Property_value(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -54807,7 +54976,7 @@ func (ec *executionContext) fieldContext_Property_value(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _PropertyKey_name(ctx context.Context, field graphql.CollectedField, obj *v12.PropertyKey) (ret graphql.Marshaler) {
+func (ec *executionContext) _PropertyKey_name(ctx context.Context, field graphql.CollectedField, obj *PropertyKey) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PropertyKey_name(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -54830,9 +54999,9 @@ func (ec *executionContext) _PropertyKey_name(ctx context.Context, field graphql
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PropertyKey_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -54848,7 +55017,7 @@ func (ec *executionContext) fieldContext_PropertyKey_name(ctx context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _PropertyKey_type(ctx context.Context, field graphql.CollectedField, obj *v12.PropertyKey) (ret graphql.Marshaler) {
+func (ec *executionContext) _PropertyKey_type(ctx context.Context, field graphql.CollectedField, obj *PropertyKey) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PropertyKey_type(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -54874,7 +55043,7 @@ func (ec *executionContext) _PropertyKey_type(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(v12.PropertyKey_Type)
+	res := resTmp.(v13.PropertyKey_Type)
 	fc.Result = res
 	return ec.marshalNPropertyKeyType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐPropertyKey_Type(ctx, field.Selections, res)
 }
@@ -54892,7 +55061,7 @@ func (ec *executionContext) fieldContext_PropertyKey_type(ctx context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _PropertyKey_numberDecimalPlaces(ctx context.Context, field graphql.CollectedField, obj *v12.PropertyKey) (ret graphql.Marshaler) {
+func (ec *executionContext) _PropertyKey_numberDecimalPlaces(ctx context.Context, field graphql.CollectedField, obj *PropertyKey) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PropertyKey_numberDecimalPlaces(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -54906,7 +55075,7 @@ func (ec *executionContext) _PropertyKey_numberDecimalPlaces(ctx context.Context
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PropertyKey().NumberDecimalPlaces(rctx, obj)
+		return obj.NumberDecimalPlaces, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -54924,8 +55093,8 @@ func (ec *executionContext) fieldContext_PropertyKey_numberDecimalPlaces(ctx con
 	fc = &graphql.FieldContext{
 		Object:     "PropertyKey",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
 		},
@@ -60979,7 +61148,7 @@ func (ec *executionContext) _Query_statistics(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*v13.Statistics)
+	res := resTmp.(*v12.Statistics)
 	fc.Result = res
 	return ec.marshalNStatistics2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋapiᚋv1ᚐStatistics(ctx, field.Selections, res)
 }
@@ -65537,7 +65706,7 @@ func (ec *executionContext) fieldContext_StakingSummary_linkings(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_blockHeight(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_blockHeight(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_blockHeight(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -65581,7 +65750,7 @@ func (ec *executionContext) fieldContext_Statistics_blockHeight(ctx context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_blockHash(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_blockHash(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_blockHash(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -65625,7 +65794,7 @@ func (ec *executionContext) fieldContext_Statistics_blockHash(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_backlogLength(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_backlogLength(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_backlogLength(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -65669,7 +65838,7 @@ func (ec *executionContext) fieldContext_Statistics_backlogLength(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_totalPeers(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_totalPeers(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_totalPeers(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -65713,7 +65882,7 @@ func (ec *executionContext) fieldContext_Statistics_totalPeers(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_genesisTime(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_genesisTime(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_genesisTime(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -65757,7 +65926,7 @@ func (ec *executionContext) fieldContext_Statistics_genesisTime(ctx context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_currentTime(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_currentTime(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_currentTime(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -65801,7 +65970,7 @@ func (ec *executionContext) fieldContext_Statistics_currentTime(ctx context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_upTime(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_upTime(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_upTime(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -65845,7 +66014,7 @@ func (ec *executionContext) fieldContext_Statistics_upTime(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_vegaTime(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_vegaTime(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_vegaTime(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -65889,7 +66058,7 @@ func (ec *executionContext) fieldContext_Statistics_vegaTime(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_status(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_status(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_status(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -65933,7 +66102,7 @@ func (ec *executionContext) fieldContext_Statistics_status(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_txPerBlock(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_txPerBlock(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_txPerBlock(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -65977,7 +66146,7 @@ func (ec *executionContext) fieldContext_Statistics_txPerBlock(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_averageTxBytes(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_averageTxBytes(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_averageTxBytes(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -66021,7 +66190,7 @@ func (ec *executionContext) fieldContext_Statistics_averageTxBytes(ctx context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_averageOrdersPerBlock(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_averageOrdersPerBlock(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_averageOrdersPerBlock(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -66065,7 +66234,7 @@ func (ec *executionContext) fieldContext_Statistics_averageOrdersPerBlock(ctx co
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_tradesPerSecond(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_tradesPerSecond(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_tradesPerSecond(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -66109,7 +66278,7 @@ func (ec *executionContext) fieldContext_Statistics_tradesPerSecond(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_ordersPerSecond(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_ordersPerSecond(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_ordersPerSecond(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -66153,7 +66322,7 @@ func (ec *executionContext) fieldContext_Statistics_ordersPerSecond(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_totalMarkets(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_totalMarkets(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_totalMarkets(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -66197,7 +66366,7 @@ func (ec *executionContext) fieldContext_Statistics_totalMarkets(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_totalAmendOrder(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_totalAmendOrder(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_totalAmendOrder(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -66241,7 +66410,7 @@ func (ec *executionContext) fieldContext_Statistics_totalAmendOrder(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_totalCancelOrder(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_totalCancelOrder(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_totalCancelOrder(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -66285,7 +66454,7 @@ func (ec *executionContext) fieldContext_Statistics_totalCancelOrder(ctx context
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_totalCreateOrder(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_totalCreateOrder(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_totalCreateOrder(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -66329,7 +66498,7 @@ func (ec *executionContext) fieldContext_Statistics_totalCreateOrder(ctx context
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_totalOrders(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_totalOrders(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_totalOrders(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -66373,7 +66542,7 @@ func (ec *executionContext) fieldContext_Statistics_totalOrders(ctx context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_totalTrades(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_totalTrades(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_totalTrades(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -66417,7 +66586,7 @@ func (ec *executionContext) fieldContext_Statistics_totalTrades(ctx context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_eventCount(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_eventCount(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_eventCount(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -66461,7 +66630,7 @@ func (ec *executionContext) fieldContext_Statistics_eventCount(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_eventsPerSecond(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_eventsPerSecond(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_eventsPerSecond(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -66505,7 +66674,7 @@ func (ec *executionContext) fieldContext_Statistics_eventsPerSecond(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_appVersionHash(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_appVersionHash(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_appVersionHash(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -66549,7 +66718,7 @@ func (ec *executionContext) fieldContext_Statistics_appVersionHash(ctx context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_appVersion(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_appVersion(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_appVersion(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -66593,7 +66762,7 @@ func (ec *executionContext) fieldContext_Statistics_appVersion(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_chainVersion(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_chainVersion(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_chainVersion(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -66637,7 +66806,7 @@ func (ec *executionContext) fieldContext_Statistics_chainVersion(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_blockDuration(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_blockDuration(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_blockDuration(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -66681,7 +66850,7 @@ func (ec *executionContext) fieldContext_Statistics_blockDuration(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _Statistics_chainId(ctx context.Context, field graphql.CollectedField, obj *v13.Statistics) (ret graphql.Marshaler) {
+func (ec *executionContext) _Statistics_chainId(ctx context.Context, field graphql.CollectedField, obj *v12.Statistics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Statistics_chainId(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -80684,7 +80853,7 @@ func (ec *executionContext) _CandleEdge(ctx context.Context, sel ast.SelectionSe
 
 var conditionImplementors = []string{"Condition"}
 
-func (ec *executionContext) _Condition(ctx context.Context, sel ast.SelectionSet, obj *v12.Condition) graphql.Marshaler {
+func (ec *executionContext) _Condition(ctx context.Context, sel ast.SelectionSet, obj *Condition) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, conditionImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -81122,9 +81291,22 @@ func (ec *executionContext) _DataSourceSpecConfiguration(ctx context.Context, se
 
 			})
 		case "filters":
+			field := field
 
-			out.Values[i] = ec._DataSourceSpecConfiguration_filters(ctx, field, obj)
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._DataSourceSpecConfiguration_filters(ctx, field, obj)
+				return res
+			}
 
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -81147,12 +81329,25 @@ func (ec *executionContext) _DataSourceSpecConfigurationTime(ctx context.Context
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("DataSourceSpecConfigurationTime")
 		case "conditions":
+			field := field
 
-			out.Values[i] = ec._DataSourceSpecConfigurationTime_conditions(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._DataSourceSpecConfigurationTime_conditions(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -81175,18 +81370,31 @@ func (ec *executionContext) _DataSourceSpecConfigurationTimeTrigger(ctx context.
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("DataSourceSpecConfigurationTimeTrigger")
 		case "conditions":
+			field := field
 
-			out.Values[i] = ec._DataSourceSpecConfigurationTimeTrigger_conditions(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._DataSourceSpecConfigurationTimeTrigger_conditions(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "triggers":
 
 			out.Values[i] = ec._DataSourceSpecConfigurationTimeTrigger_triggers(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -82911,10 +83119,40 @@ func (ec *executionContext) _EthCallSpec(ctx context.Context, sel ast.SelectionS
 				return innerFunc(ctx)
 
 			})
+		case "Normalisers":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EthCallSpec_Normalisers(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "Filters":
+			field := field
 
-			out.Values[i] = ec._EthCallSpec_Filters(ctx, field, obj)
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EthCallSpec_Filters(ctx, field, obj)
+				return res
+			}
 
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -83311,7 +83549,7 @@ func (ec *executionContext) _Fees(ctx context.Context, sel ast.SelectionSet, obj
 
 var filterImplementors = []string{"Filter"}
 
-func (ec *executionContext) _Filter(ctx context.Context, sel ast.SelectionSet, obj *v12.Filter) graphql.Marshaler {
+func (ec *executionContext) _Filter(ctx context.Context, sel ast.SelectionSet, obj *Filter) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, filterImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -84117,7 +84355,7 @@ func (ec *executionContext) _InstrumentMetadata(ctx context.Context, sel ast.Sel
 
 var internalTimeTriggerImplementors = []string{"InternalTimeTrigger"}
 
-func (ec *executionContext) _InternalTimeTrigger(ctx context.Context, sel ast.SelectionSet, obj *v12.InternalTimeTrigger) graphql.Marshaler {
+func (ec *executionContext) _InternalTimeTrigger(ctx context.Context, sel ast.SelectionSet, obj *v13.InternalTimeTrigger) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, internalTimeTriggerImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -88355,6 +88593,41 @@ func (ec *executionContext) _NodesConnection(ctx context.Context, sel ast.Select
 	return out
 }
 
+var normaliserImplementors = []string{"Normaliser"}
+
+func (ec *executionContext) _Normaliser(ctx context.Context, sel ast.SelectionSet, obj *Normaliser) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, normaliserImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Normaliser")
+		case "Name":
+
+			out.Values[i] = ec._Normaliser_Name(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "Expression":
+
+			out.Values[i] = ec._Normaliser_Expression(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var observableLiquidityProviderFeeShareImplementors = []string{"ObservableLiquidityProviderFeeShare"}
 
 func (ec *executionContext) _ObservableLiquidityProviderFeeShare(ctx context.Context, sel ast.SelectionSet, obj *ObservableLiquidityProviderFeeShare) graphql.Marshaler {
@@ -91209,7 +91482,7 @@ func (ec *executionContext) _PriceMonitoringTrigger(ctx context.Context, sel ast
 
 var propertyImplementors = []string{"Property"}
 
-func (ec *executionContext) _Property(ctx context.Context, sel ast.SelectionSet, obj *v12.Property) graphql.Marshaler {
+func (ec *executionContext) _Property(ctx context.Context, sel ast.SelectionSet, obj *v13.Property) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, propertyImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -91244,7 +91517,7 @@ func (ec *executionContext) _Property(ctx context.Context, sel ast.SelectionSet,
 
 var propertyKeyImplementors = []string{"PropertyKey"}
 
-func (ec *executionContext) _PropertyKey(ctx context.Context, sel ast.SelectionSet, obj *v12.PropertyKey) graphql.Marshaler {
+func (ec *executionContext) _PropertyKey(ctx context.Context, sel ast.SelectionSet, obj *PropertyKey) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, propertyKeyImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -91261,25 +91534,12 @@ func (ec *executionContext) _PropertyKey(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._PropertyKey_type(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "numberDecimalPlaces":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PropertyKey_numberDecimalPlaces(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec._PropertyKey_numberDecimalPlaces(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -94827,7 +95087,7 @@ func (ec *executionContext) _StakingSummary(ctx context.Context, sel ast.Selecti
 
 var statisticsImplementors = []string{"Statistics"}
 
-func (ec *executionContext) _Statistics(ctx context.Context, sel ast.SelectionSet, obj *v13.Statistics) graphql.Marshaler {
+func (ec *executionContext) _Statistics(ctx context.Context, sel ast.SelectionSet, obj *v12.Statistics) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, statisticsImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -98836,7 +99096,7 @@ func (ec *executionContext) marshalNCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋ
 	return ec._Candle(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐCondition(ctx context.Context, sel ast.SelectionSet, v []*v12.Condition) graphql.Marshaler {
+func (ec *executionContext) marshalNCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐCondition(ctx context.Context, sel ast.SelectionSet, v []*Condition) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -98860,7 +99120,7 @@ func (ec *executionContext) marshalNCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋv
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOCondition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐCondition(ctx, sel, v[i])
+			ret[i] = ec.marshalOCondition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐCondition(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -98874,7 +99134,7 @@ func (ec *executionContext) marshalNCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋv
 	return ret
 }
 
-func (ec *executionContext) marshalNCondition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐCondition(ctx context.Context, sel ast.SelectionSet, v *v12.Condition) graphql.Marshaler {
+func (ec *executionContext) marshalNCondition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐCondition(ctx context.Context, sel ast.SelectionSet, v *Condition) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -98884,12 +99144,12 @@ func (ec *executionContext) marshalNCondition2ᚖcodeᚗvegaprotocolᚗioᚋvega
 	return ec._Condition(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNConditionOperator2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐCondition_Operator(ctx context.Context, v interface{}) (v12.Condition_Operator, error) {
+func (ec *executionContext) unmarshalNConditionOperator2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐCondition_Operator(ctx context.Context, v interface{}) (v13.Condition_Operator, error) {
 	res, err := marshallers.UnmarshalConditionOperator(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNConditionOperator2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐCondition_Operator(ctx context.Context, sel ast.SelectionSet, v v12.Condition_Operator) graphql.Marshaler {
+func (ec *executionContext) marshalNConditionOperator2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐCondition_Operator(ctx context.Context, sel ast.SelectionSet, v v13.Condition_Operator) graphql.Marshaler {
 	res := marshallers.MarshalConditionOperator(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -99351,7 +99611,7 @@ func (ec *executionContext) marshalNFees2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋpr
 	return ec._Fees(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐFilter(ctx context.Context, sel ast.SelectionSet, v *v12.Filter) graphql.Marshaler {
+func (ec *executionContext) marshalNFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐFilter(ctx context.Context, sel ast.SelectionSet, v *Filter) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -99717,7 +99977,7 @@ func (ec *executionContext) marshalNInternalDataSourceKind2codeᚗvegaprotocol�
 	return ec._InternalDataSourceKind(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNInternalTimeTrigger2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐInternalTimeTrigger(ctx context.Context, sel ast.SelectionSet, v []*v12.InternalTimeTrigger) graphql.Marshaler {
+func (ec *executionContext) marshalNInternalTimeTrigger2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐInternalTimeTrigger(ctx context.Context, sel ast.SelectionSet, v []*v13.InternalTimeTrigger) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -100388,6 +100648,16 @@ func (ec *executionContext) marshalNNodesConnection2ᚖcodeᚗvegaprotocolᚗio�
 	return ec._NodesConnection(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNNormaliser2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNormaliser(ctx context.Context, sel ast.SelectionSet, v *Normaliser) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Normaliser(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNObservableLiquidityProviderFeeShare2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐObservableLiquidityProviderFeeShare(ctx context.Context, sel ast.SelectionSet, v *ObservableLiquidityProviderFeeShare) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -100952,7 +101222,7 @@ func (ec *executionContext) marshalNProduct2codeᚗvegaprotocolᚗioᚋvegaᚋda
 	return ec._Product(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNProperty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐProperty(ctx context.Context, sel ast.SelectionSet, v *v12.Property) graphql.Marshaler {
+func (ec *executionContext) marshalNProperty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐProperty(ctx context.Context, sel ast.SelectionSet, v *v13.Property) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -100962,7 +101232,7 @@ func (ec *executionContext) marshalNProperty2ᚖcodeᚗvegaprotocolᚗioᚋvega�
 	return ec._Property(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPropertyKey2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐPropertyKey(ctx context.Context, sel ast.SelectionSet, v *v12.PropertyKey) graphql.Marshaler {
+func (ec *executionContext) marshalNPropertyKey2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐPropertyKey(ctx context.Context, sel ast.SelectionSet, v *PropertyKey) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -100972,12 +101242,12 @@ func (ec *executionContext) marshalNPropertyKey2ᚖcodeᚗvegaprotocolᚗioᚋve
 	return ec._PropertyKey(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNPropertyKeyType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐPropertyKey_Type(ctx context.Context, v interface{}) (v12.PropertyKey_Type, error) {
+func (ec *executionContext) unmarshalNPropertyKeyType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐPropertyKey_Type(ctx context.Context, v interface{}) (v13.PropertyKey_Type, error) {
 	res, err := marshallers.UnmarshalPropertyKeyType(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNPropertyKeyType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐPropertyKey_Type(ctx context.Context, sel ast.SelectionSet, v v12.PropertyKey_Type) graphql.Marshaler {
+func (ec *executionContext) marshalNPropertyKeyType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐPropertyKey_Type(ctx context.Context, sel ast.SelectionSet, v v13.PropertyKey_Type) graphql.Marshaler {
 	res := marshallers.MarshalPropertyKeyType(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -101296,11 +101566,11 @@ func (ec *executionContext) marshalNStakingSummary2ᚖcodeᚗvegaprotocolᚗio�
 	return ec._StakingSummary(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNStatistics2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋapiᚋv1ᚐStatistics(ctx context.Context, sel ast.SelectionSet, v v13.Statistics) graphql.Marshaler {
+func (ec *executionContext) marshalNStatistics2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋapiᚋv1ᚐStatistics(ctx context.Context, sel ast.SelectionSet, v v12.Statistics) graphql.Marshaler {
 	return ec._Statistics(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNStatistics2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋapiᚋv1ᚐStatistics(ctx context.Context, sel ast.SelectionSet, v *v13.Statistics) graphql.Marshaler {
+func (ec *executionContext) marshalNStatistics2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋapiᚋv1ᚐStatistics(ctx context.Context, sel ast.SelectionSet, v *v12.Statistics) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -102630,7 +102900,7 @@ func (ec *executionContext) marshalOCandleEdge2ᚖcodeᚗvegaprotocolᚗioᚋveg
 	return ec._CandleEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐConditionᚄ(ctx context.Context, sel ast.SelectionSet, v []*v12.Condition) graphql.Marshaler {
+func (ec *executionContext) marshalOCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐConditionᚄ(ctx context.Context, sel ast.SelectionSet, v []*Condition) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -102657,7 +102927,7 @@ func (ec *executionContext) marshalOCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋv
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNCondition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐCondition(ctx, sel, v[i])
+			ret[i] = ec.marshalNCondition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐCondition(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -102677,7 +102947,7 @@ func (ec *executionContext) marshalOCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋv
 	return ret
 }
 
-func (ec *executionContext) marshalOCondition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐCondition(ctx context.Context, sel ast.SelectionSet, v *v12.Condition) graphql.Marshaler {
+func (ec *executionContext) marshalOCondition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐCondition(ctx context.Context, sel ast.SelectionSet, v *Condition) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -103282,7 +103552,7 @@ func (ec *executionContext) marshalOEthereumKeyRotation2ᚖcodeᚗvegaprotocol�
 	return ec._EthereumKeyRotation(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐFilterᚄ(ctx context.Context, sel ast.SelectionSet, v []*v12.Filter) graphql.Marshaler {
+func (ec *executionContext) marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐFilterᚄ(ctx context.Context, sel ast.SelectionSet, v []*Filter) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -103309,7 +103579,7 @@ func (ec *executionContext) marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvega
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐFilter(ctx, sel, v[i])
+			ret[i] = ec.marshalNFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐFilter(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -103545,7 +103815,7 @@ func (ec *executionContext) marshalOInt2ᚖint64(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalOInternalTimeTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐInternalTimeTrigger(ctx context.Context, sel ast.SelectionSet, v *v12.InternalTimeTrigger) graphql.Marshaler {
+func (ec *executionContext) marshalOInternalTimeTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐInternalTimeTrigger(ctx context.Context, sel ast.SelectionSet, v *v13.InternalTimeTrigger) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -104546,6 +104816,53 @@ func (ec *executionContext) marshalONodesConnection2ᚖcodeᚗvegaprotocolᚗio�
 		return graphql.Null
 	}
 	return ec._NodesConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalONormaliser2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNormaliserᚄ(ctx context.Context, sel ast.SelectionSet, v []*Normaliser) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNNormaliser2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNormaliser(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOObservableLiquidityProviderFeeShare2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐObservableLiquidityProviderFeeShareᚄ(ctx context.Context, sel ast.SelectionSet, v []*ObservableLiquidityProviderFeeShare) graphql.Marshaler {
@@ -105578,7 +105895,7 @@ func (ec *executionContext) marshalOProductConfiguration2codeᚗvegaprotocolᚗi
 	return ec._ProductConfiguration(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐProperty(ctx context.Context, sel ast.SelectionSet, v []*v12.Property) graphql.Marshaler {
+func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐProperty(ctx context.Context, sel ast.SelectionSet, v []*v13.Property) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -105619,7 +105936,7 @@ func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋve
 	return ret
 }
 
-func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐPropertyᚄ(ctx context.Context, sel ast.SelectionSet, v []*v12.Property) graphql.Marshaler {
+func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐPropertyᚄ(ctx context.Context, sel ast.SelectionSet, v []*v13.Property) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -105666,7 +105983,7 @@ func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋve
 	return ret
 }
 
-func (ec *executionContext) marshalOProperty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐProperty(ctx context.Context, sel ast.SelectionSet, v *v12.Property) graphql.Marshaler {
+func (ec *executionContext) marshalOProperty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐProperty(ctx context.Context, sel ast.SelectionSet, v *v13.Property) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

@@ -113,6 +113,12 @@ func TestDataSourceDefinitionGetOracle(t *testing.T) {
 									},
 								},
 							},
+							Normalisers: []*vegapb.Normaliser{
+								{
+									Name: "test-normaliser-name",
+									Expression: "test-normaliser-expression",
+								},
+							},
 						},
 					},
 				),
@@ -130,6 +136,10 @@ func TestDataSourceDefinitionGetOracle(t *testing.T) {
 			filters := r.Filters
 			assert.Equal(t, 1, len(filters))
 			assert.Equal(t, 0, len(filters[0].Conditions))
+			assert.Equal(t, "test-key", filters[0].Key.Name)
+			assert.Equal(t, 1, len(r.Normalisers))
+			assert.Equal(t, "test-normaliser-name", r.Normalisers[0].Name)
+			assert.Equal(t, "test-normaliser-expression", r.Normalisers[0].Expression)
 		})
 	})
 

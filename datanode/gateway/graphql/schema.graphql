@@ -3851,6 +3851,11 @@ type EthTimeTrigger {
   Until: Timestamp
 }
 
+type Normaliser {
+  Name: String!
+  Expression: String!
+}
+
 type EthCallSpec {
   Address: String!
   Abi: [String!]
@@ -3858,6 +3863,7 @@ type EthCallSpec {
   Args: [String!]
   Trigger: EthCallTrigger!
   RequiredConfirmations: Int!
+  Normalisers: [Normaliser!]
   Filters: [Filter!]
 }
 

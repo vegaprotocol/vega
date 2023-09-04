@@ -46,7 +46,9 @@ func (s *DataSourceDefinition) GetOracle() (*DataSourceSpecConfiguration, error)
 }
 
 func (s *DataSourceDefinition) GetEthOracle() (*EthCallSpec, error) {
-	ds := &EthCallSpec{}
+	ds := &EthCallSpec{
+		ArgsJson: []string{},
+	}
 	data := s.Content()
 	if data != nil {
 		switch tp := data.(type) {
@@ -69,7 +71,16 @@ func (s *DataSourceDefinition) GetEthOracle() (*EthCallSpec, error) {
 			}
 			ds.Trigger = EthCallTrigger{Trigger: trigger}
 			ds.RequiredConfirmations = tp.RequiredConfirmations
-			ds.Filters = s.GetFilters()
+			ds.Filters = FiltersFromProto(tp.GetFilters())
+
+			normalisers := []Normaliser{}
+			for _, n := range tp.Normalisers {
+				normalisers = append(normalisers, Normaliser{
+					Name: n.Name,
+					Expression: n.Expression,
+				})
+			}
+			ds.Normalisers = normalisers
 		}
 	}
 
@@ -159,6 +170,11 @@ type EthCallTrigger struct {
 	ethcallcommon.Trigger
 }
 
+type Normaliser struct {
+	Name       string
+	Expression string
+}
+
 type EthCallSpec struct {
 	Address               string
 	Abi                   []byte
@@ -167,6 +183,7 @@ type EthCallSpec struct {
 	Trigger               EthCallTrigger
 	RequiredConfirmations uint64
 	Filters               []Filter
+	Normalisers           []Normaliser
 }
 
 func (es *EthCallSpec) GetFilters() []Filter {
@@ -223,6 +240,15 @@ func (es *EthCallSpec) GetRequiredConfirmations() uint64 {
 	}
 
 	return uint64(0)
+}
+
+func (es *EthCallSpec) GetNormalisers() []Normaliser {
+	n := []Normaliser{}
+	if es != nil {
+		n = es.Normalisers
+	}
+
+	return n
 }
 
 // DataSourceSpecConfigurationTime is a simplified version of the internal time
