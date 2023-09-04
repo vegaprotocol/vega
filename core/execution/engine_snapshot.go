@@ -131,6 +131,7 @@ func (e *Engine) restoreSpotMarket(ctx context.Context, em *types.ExecSpotMarket
 		assetDetatils[1],
 		e.marketActivityTracker,
 		e.peggedOrderCountUpdated,
+		e.feeDiscountRewardService,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -205,6 +206,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 		ad,
 		e.marketActivityTracker,
 		e.peggedOrderCountUpdated,
+		e.feeDiscountRewardService,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",

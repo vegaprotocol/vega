@@ -27,6 +27,14 @@ var (
 	ErrInvalidFeeFactor = errors.New("fee factors must be positive")
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/fee FeeDiscountRewardService
+type FeeDiscountRewardService interface {
+	ReferralDiscountFactorForParty(party types.PartyID) num.Decimal
+	VolumeDiscountFactorForParty(party types.PartyID) num.Decimal
+	RewardsFactorMultiplierAppliedForParty(party types.PartyID) num.Decimal
+	GetReferrer(referee types.PartyID) (types.PartyID, error)
+}
+
 type Engine struct {
 	log *logging.Logger
 	cfg Config
@@ -98,6 +106,7 @@ func (e *Engine) SetLiquidityFee(v num.Decimal) {
 // are paid by the aggressive order.
 func (e *Engine) CalculateForContinuousMode(
 	trades []*types.Trade,
+	referral FeeDiscountRewardService,
 ) (events.FeesTransfer, error) {
 	if len(trades) <= 0 {
 		return nil, ErrEmptyTrades
@@ -108,6 +117,7 @@ func (e *Engine) CalculateForContinuousMode(
 		totalFeeAmount               = num.UintZero()
 		totalInfrastructureFeeAmount = num.UintZero()
 		totalLiquidityFeeAmount      = num.UintZero()
+		totalRewardAmount            = num.UintZero()
 		// we allocate the len of the trades + 2
 		// len(trade) = number of makerFee + 1 infra fee + 1 liquidity fee
 		transfers     = make([]*types.Transfer, 0, (len(trades)*2)+2)
@@ -115,24 +125,25 @@ func (e *Engine) CalculateForContinuousMode(
 	)
 
 	for _, v := range trades {
-		fee := e.calculateContinuousModeFees(v)
+		aggressor = v.Buyer
+		if v.Aggressor == types.SideSell {
+			aggressor = v.Seller
+		}
+		fee, reward := e.applyDiscountsAndRewards(aggressor, e.calculateContinuousModeFees(v), referral)
 		switch v.Aggressor {
 		case types.SideBuy:
 			v.BuyerFee = fee
 			v.SellerFee = types.NewFee()
-			aggressor = v.Buyer
 			maker = v.Seller
 		case types.SideSell:
 			v.SellerFee = fee
 			v.BuyerFee = types.NewFee()
-			aggressor = v.Seller
 			maker = v.Buyer
 		}
 
 		totalFeeAmount.AddSum(fee.InfrastructureFee, fee.LiquidityFee, fee.MakerFee)
 		totalInfrastructureFeeAmount.AddSum(fee.InfrastructureFee)
 		totalLiquidityFeeAmount.AddSum(fee.LiquidityFee)
-
 		// create a transfer for the aggressor
 		transfers = append(transfers, &types.Transfer{
 			Owner: aggressor,
@@ -151,6 +162,13 @@ func (e *Engine) CalculateForContinuousMode(
 			},
 			Type: types.TransferTypeMakerFeeReceive,
 		})
+
+		if reward == nil {
+			continue
+		}
+		totalRewardAmount.AddSum(reward.InfrastructureFeeReferrerReward)
+		totalRewardAmount.AddSum(reward.LiquidityFeeReferrerReward)
+		totalRewardAmount.AddSum(reward.MakerFeeReferrerReward)
 	}
 
 	// now create transfer for the infrastructure
@@ -172,6 +190,27 @@ func (e *Engine) CalculateForContinuousMode(
 		Type: types.TransferTypeLiquidityFeePay,
 	})
 
+	// if there's a referral reward - add transfers for it
+	if !totalRewardAmount.IsZero() {
+		referrer, _ := referral.GetReferrer(types.PartyID(aggressor))
+		transfers = append(transfers, &types.Transfer{
+			Owner: aggressor,
+			Amount: &types.FinancialAmount{
+				Asset:  e.asset,
+				Amount: totalRewardAmount.Clone(),
+			},
+			Type: types.TransferTypeFeeReferrerRewardPay,
+		})
+		transfersRecv = append(transfersRecv, &types.Transfer{
+			Owner: string(referrer),
+			Amount: &types.FinancialAmount{
+				Asset:  e.asset,
+				Amount: totalRewardAmount.Clone(),
+			},
+			Type: types.TransferTypeFeeReferrerRewardDistribute,
+		})
+	}
+
 	return &feesTransfer{
 		totalFeesAmountsPerParty: map[string]*num.Uint{aggressor: totalFeeAmount, maker: num.UintZero()},
 		transfers:                append(transfers, transfersRecv...),
@@ -185,6 +224,7 @@ func (e *Engine) CalculateForContinuousMode(
 // single party.
 func (e *Engine) CalculateForAuctionMode(
 	trades []*types.Trade,
+	referral FeeDiscountRewardService,
 ) (events.FeesTransfer, error) {
 	if len(trades) <= 0 {
 		return nil, ErrEmptyTrades
@@ -200,24 +240,23 @@ func (e *Engine) CalculateForAuctionMode(
 	// for each trades both party needs to pay half of the fees
 	// no maker fees are to be paid here.
 	for _, v := range trades {
-		fee, newTransfers := e.getAuctionModeFeesAndTransfers(v)
-		totalFee := num.Sum(fee.InfrastructureFee, fee.LiquidityFee)
+		buyerFess, sellerFees, newTransfers := e.getAuctionModeFeesAndTransfers(v, referral)
 		transfers = append(transfers, newTransfers...)
 
 		// increase the total fee for the parties
 		if sellerTotalFee, ok := totalFeesAmounts[v.Seller]; !ok {
-			totalFeesAmounts[v.Seller] = totalFee.Clone()
+			totalFeesAmounts[v.Seller] = num.Sum(sellerFees.InfrastructureFee, sellerFees.LiquidityFee)
 		} else {
-			sellerTotalFee.AddSum(totalFee)
+			sellerTotalFee.AddSum(num.Sum(sellerFees.InfrastructureFee, sellerFees.LiquidityFee))
 		}
 		if buyerTotalFee, ok := totalFeesAmounts[v.Buyer]; !ok {
-			totalFeesAmounts[v.Buyer] = totalFee.Clone()
+			totalFeesAmounts[v.Buyer] = num.Sum(buyerFess.InfrastructureFee, buyerFess.LiquidityFee).Clone()
 		} else {
-			buyerTotalFee.AddSum(totalFee)
+			buyerTotalFee.AddSum(num.Sum(buyerFess.InfrastructureFee, buyerFess.LiquidityFee).Clone())
 		}
 
-		v.BuyerFee = fee
-		v.SellerFee = fee
+		v.BuyerFee = buyerFess
+		v.SellerFee = sellerFees
 	}
 
 	return &feesTransfer{
@@ -233,6 +272,7 @@ func (e *Engine) CalculateForAuctionMode(
 // single party.
 func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 	trades []*types.Trade,
+	referral FeeDiscountRewardService,
 ) (events.FeesTransfer, error) {
 	if len(trades) <= 0 {
 		return nil, ErrEmptyTrades
@@ -257,12 +297,9 @@ func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 		)
 		// we are in the same auction, normal auction fees applies
 		if v.BuyerAuctionBatch == v.SellerAuctionBatch {
-			var fee *types.Fee
-			fee, newTransfers = e.getAuctionModeFeesAndTransfers(v)
-			// clone the fees, obviously
-			v.SellerFee, v.BuyerFee = fee, fee.Clone()
-			totalFee := num.Sum(fee.InfrastructureFee, fee.LiquidityFee)
-			sellerTotalFee, buyerTotalFee = totalFee, totalFee.Clone()
+			v.BuyerFee, v.SellerFee, newTransfers = e.getAuctionModeFeesAndTransfers(v, referral)
+			sellerTotalFee = num.Sum(v.BuyerFee.InfrastructureFee, v.BuyerFee.LiquidityFee)
+			buyerTotalFee = num.Sum(v.SellerFee.InfrastructureFee, v.SellerFee.LiquidityFee)
 		} else {
 			// set the aggressor to be the side of the party
 			// entering the later auction
@@ -272,7 +309,7 @@ func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 			}
 			// fees are being assign to the trade directly
 			// no need to do add them there as well
-			ftrnsfr, _ := e.CalculateForContinuousMode([]*types.Trade{v})
+			ftrnsfr, _ := e.CalculateForContinuousMode([]*types.Trade{v}, referral)
 			newTransfers = ftrnsfr.Transfers()
 			buyerTotalFee = ftrnsfr.TotalFeesAmountPerParty()[v.Buyer]
 			sellerTotalFee = ftrnsfr.TotalFeesAmountPerParty()[v.Seller]
@@ -504,16 +541,100 @@ type feeShare struct {
 	share num.Decimal
 }
 
-func (e *Engine) getAuctionModeFeesAndTransfers(t *types.Trade) (*types.Fee, []*types.Transfer) {
+func (e *Engine) applyDiscountsAndRewards(taker string, fees *types.Fee, referral FeeDiscountRewardService) (*types.Fee, *types.ReferrerReward) {
+	referralDiscountFactor := referral.ReferralDiscountFactorForParty(types.PartyID(taker))
+	volumeDiscountFactor := referral.VolumeDiscountFactorForParty(types.PartyID(taker))
+
+	mf := fees.MakerFee.Clone()
+	inf := fees.InfrastructureFee.Clone()
+	lf := fees.LiquidityFee.Clone()
+
+	// calculate referral discounts
+	referralMakerDiscount, _ := num.UintFromDecimal(mf.ToDecimal().Mul(referralDiscountFactor).Floor())
+	referralInfDiscount, _ := num.UintFromDecimal(inf.ToDecimal().Mul(referralDiscountFactor).Floor())
+	referralLfDiscount, _ := num.UintFromDecimal(lf.ToDecimal().Mul(referralDiscountFactor).Floor())
+
+	// apply referral discounts
+	mf = mf.Sub(mf, referralMakerDiscount)
+	inf = inf.Sub(inf, referralInfDiscount)
+	lf = lf.Sub(lf, referralLfDiscount)
+
+	// calculate volume discounts
+	volumeMakerDiscount, _ := num.UintFromDecimal(mf.ToDecimal().Mul(volumeDiscountFactor).Floor())
+	volumeInfDiscount, _ := num.UintFromDecimal(inf.ToDecimal().Mul(volumeDiscountFactor).Floor())
+	volumeLfDiscount, _ := num.UintFromDecimal(lf.ToDecimal().Mul(volumeDiscountFactor).Floor())
+
+	// apply volume discounts
+	mf = mf.Sub(mf, volumeMakerDiscount)
+	inf = inf.Sub(inf, volumeInfDiscount)
+	lf = lf.Sub(lf, volumeLfDiscount)
+
+	f := &types.Fee{
+		MakerFee:                          mf,
+		LiquidityFee:                      lf,
+		InfrastructureFee:                 inf,
+		MakerFeeVolumeDiscount:            volumeMakerDiscount,
+		InfrastructureFeeVolumeDiscount:   volumeInfDiscount,
+		LiquidityFeeVolumeDiscount:        volumeLfDiscount,
+		MakerFeeReferrerDiscount:          referralMakerDiscount,
+		InfrastructureFeeReferrerDiscount: referralInfDiscount,
+		LiquidityFeeReferrerDiscount:      referralLfDiscount,
+	}
+
+	// calculate rewards
+	referrer, err := referral.GetReferrer(types.PartyID(taker))
+	if err != nil {
+		return f, nil
+	}
+	factor := referral.RewardsFactorMultiplierAppliedForParty(referrer)
+	if factor.IsZero() {
+		return f, nil
+	}
+
+	referrerReward := types.NewReferrerReward()
+
+	referrerReward.MakerFeeReferrerReward, _ = num.UintFromDecimal(factor.Mul(mf.ToDecimal()).Floor())
+	referrerReward.InfrastructureFeeReferrerReward, _ = num.UintFromDecimal(factor.Mul(inf.ToDecimal()).Floor())
+	referrerReward.LiquidityFeeReferrerReward, _ = num.UintFromDecimal(factor.Mul(lf.ToDecimal()).Floor())
+
+	mf = mf.Sub(mf, referrerReward.MakerFeeReferrerReward)
+	inf = inf.Sub(inf, referrerReward.InfrastructureFeeReferrerReward)
+	lf = lf.Sub(lf, referrerReward.LiquidityFeeReferrerReward)
+
+	f.MakerFee = mf
+	f.InfrastructureFee = inf
+	f.LiquidityFee = lf
+	return f, referrerReward
+}
+
+func (e *Engine) getAuctionModeFeesAndTransfers(t *types.Trade, referral FeeDiscountRewardService) (*types.Fee, *types.Fee, []*types.Transfer) {
 	fee := e.calculateAuctionModeFees(t)
-	transfers := make([]*types.Transfer, 0, 4)
+	buyerFeers, buyerReferrerRewards := e.applyDiscountsAndRewards(t.Buyer, fee, referral)
+	sellerFeers, sellerReferrerRewards := e.applyDiscountsAndRewards(t.Seller, fee, referral)
+
+	transfers := make([]*types.Transfer, 0, 12)
 	transfers = append(transfers,
 		e.getAuctionModeFeeTransfers(
 			fee.InfrastructureFee, fee.LiquidityFee, t.Seller)...)
 	transfers = append(transfers,
 		e.getAuctionModeFeeTransfers(
 			fee.InfrastructureFee, fee.LiquidityFee, t.Buyer)...)
-	return fee, transfers
+
+	if buyerReferrerRewards != nil {
+		referrerParty, _ := referral.GetReferrer(types.PartyID(t.Buyer))
+		transfers = append(transfers,
+			e.getAuctionModeFeeReferrerRewardTransfers(
+				num.Sum(buyerReferrerRewards.InfrastructureFeeReferrerReward, buyerReferrerRewards.LiquidityFeeReferrerReward), t.Buyer, string(referrerParty))...)
+	}
+
+	if sellerReferrerRewards != nil {
+		referrerParty, _ := referral.GetReferrer(types.PartyID(t.Seller))
+		transfers = append(transfers,
+			e.getAuctionModeFeeReferrerRewardTransfers(
+				num.Sum(sellerReferrerRewards.InfrastructureFeeReferrerReward, sellerReferrerRewards.LiquidityFeeReferrerReward), t.Seller, string(referrerParty))...)
+	}
+
+	return buyerFeers, sellerFeers, transfers
 }
 
 func (e *Engine) calculateContinuousModeFees(trade *types.Trade) *types.Fee {
@@ -539,6 +660,28 @@ func (e *Engine) calculateAuctionModeFees(trade *types.Trade) *types.Fee {
 		MakerFee:          num.UintZero(),
 		InfrastructureFee: inf,
 		LiquidityFee:      lf,
+	}
+}
+
+func (e *Engine) getAuctionModeFeeReferrerRewardTransfers(reward *num.Uint, p, referrer string) []*types.Transfer {
+	return []*types.Transfer{
+		{
+			Owner: p,
+			Amount: &types.FinancialAmount{
+				Amount: reward.Clone(),
+				Asset:  e.asset,
+			},
+			Type:      types.TransferTypeFeeReferrerRewardPay,
+			MinAmount: reward.Clone(),
+		}, {
+			Owner: referrer,
+			Amount: &types.FinancialAmount{
+				Amount: reward.Clone(),
+				Asset:  e.asset,
+			},
+			Type:      types.TransferTypeFeeReferrerRewardDistribute,
+			MinAmount: reward.Clone(),
+		},
 	}
 }
 

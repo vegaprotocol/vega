@@ -75,10 +75,11 @@ type Market struct {
 	priceFactor     *num.Uint
 
 	// own engines
-	matching        *matching.CachedOrderBook
-	fee             *fee.Engine
-	liquidity       common.MarketLiquidityEngine
-	liquidityEngine common.LiquidityEngine
+	matching                 *matching.CachedOrderBook
+	fee                      *fee.Engine
+	feeDiscountRewardService fee.FeeDiscountRewardService
+	liquidity                common.MarketLiquidityEngine
+	liquidityEngine          common.LiquidityEngine
 
 	// deps engines
 	collateral common.Collateral
@@ -148,6 +149,7 @@ func NewMarket(
 	baseAssetDetails *assets.Asset,
 	quoteAssetDetails *assets.Asset,
 	peggedOrderNotify func(int64),
+	feeDiscountRewardService fee.FeeDiscountRewardService,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
 		return nil, common.ErrEmptyMarketID
@@ -217,6 +219,7 @@ func NewMarket(
 		timeService:               timeService,
 		broker:                    broker,
 		fee:                       feeEngine,
+		feeDiscountRewardService:  feeDiscountRewardService,
 		parties:                   map[string]struct{}{},
 		as:                        as,
 		pMonitor:                  pMonitor,
@@ -2755,12 +2758,12 @@ func (m *Market) calculateFeesForTrades(trades []*types.Trade) (events.FeesTrans
 		err  error
 	)
 	if !m.as.InAuction() {
-		fees, err = m.fee.CalculateForContinuousMode(trades)
+		fees, err = m.fee.CalculateForContinuousMode(trades, m.feeDiscountRewardService)
 	} else if m.as.IsMonitorAuction() {
 		// we are in auction mode
-		fees, err = m.fee.CalculateForAuctionMode(trades)
+		fees, err = m.fee.CalculateForAuctionMode(trades, m.feeDiscountRewardService)
 	} else if m.as.IsFBA() {
-		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades)
+		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades, m.feeDiscountRewardService)
 	}
 	return fees, err
 }
