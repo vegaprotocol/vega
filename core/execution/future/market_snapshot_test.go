@@ -14,6 +14,7 @@ package future_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -25,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/execution/future"
 	"code.vegaprotocol.io/vega/core/fee"
+	fmock "code.vegaprotocol.io/vega/core/fee/mocks"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/core/matching"
@@ -35,6 +37,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -194,7 +197,11 @@ func newMarketFromSnapshot(t *testing.T, ctrl *gomock.Controller, em *types.Exec
 	collateralEngine := collateral.New(log, collateral.NewDefaultConfig(), timeService, broker)
 
 	positionConfig.StreamPositionVerbose = true
+	feeDiscountReward := fmock.NewMockFeeDiscountRewardService(ctrl)
+	feeDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	feeDiscountReward.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	feeDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	return future.NewMarketFromSnapshot(context.Background(), log, em, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, timeService, broker, stubs.NewStateVar(), cfgAsset, marketActivityTracker,
-		peggedOrderCounterForTest)
+		peggedOrderCounterForTest, feeDiscountReward)
 }

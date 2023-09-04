@@ -2911,6 +2911,24 @@ type TradeFee {
 
   "The fee paid to the liquidity providers that committed liquidity to the market"
   liquidityFee: String!
+
+  "Referral discount on maker fees for the trade"
+  makerFeeReferralDiscount: String
+
+  "Volume discount on maker fees for the trade"
+  makerFeeVolumeDiscount: String
+  
+  "Referral discount on infrastructure fees for the trade"
+  infrastructureFeeReferralDiscount: String
+  
+  "Volume discount on infrastructure fees for the trade"
+  infrastructureFeeVolumeDiscount: String
+  
+  "Referral discount on liquidity fees for the trade"
+  liquidityFeeReferralDiscount: String
+  
+  "Volume discount on liquidity fees for the trade"
+  liquidityFeeVolumeDiscount: String
 }
 
 "Valid trade types"
@@ -3667,6 +3685,8 @@ enum AccountType {
   ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY
   "Validator ranking reward account is a per asset account for validator ranking reward funds"
   ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING
+  "Holds pending rewards to be paid to the referrer of a party out of fees paid by the taker"
+  ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD
 }
 
 "Types that describe why a transfer has been made"

@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/future"
 	"code.vegaprotocol.io/vega/core/execution/spot"
+	"code.vegaprotocol.io/vega/core/fee"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/monitor"
 	"code.vegaprotocol.io/vega/core/types"
@@ -69,8 +70,9 @@ type Engine struct {
 	allMarkets    map[string]common.CommonMarket
 	allMarketsCpy []common.CommonMarket
 
-	collateral common.Collateral
-	assets     common.Assets
+	collateral               common.Collateral
+	assets                   common.Assets
+	feeDiscountRewardService fee.FeeDiscountRewardService
 
 	broker                common.Broker
 	timeService           common.TimeService
@@ -167,29 +169,31 @@ func NewEngine(
 	stateVarEngine common.StateVarEngine,
 	marketActivityTracker *common.MarketActivityTracker,
 	assets common.Assets,
+	feeDiscountRewardService fee.FeeDiscountRewardService,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(executionConfig.Level.Get())
 	e := &Engine{
-		log:                   log,
-		Config:                executionConfig,
-		futureMarkets:         map[string]*future.Market{},
-		spotMarkets:           map[string]*spot.Market{},
-		allMarkets:            map[string]common.CommonMarket{},
-		timeService:           ts,
-		collateral:            collateral,
-		assets:                assets,
-		broker:                broker,
-		oracle:                oracle,
-		npv:                   defaultNetParamsValues(),
-		generatedProviders:    map[string]struct{}{},
-		stateVarEngine:        stateVarEngine,
-		marketActivityTracker: marketActivityTracker,
-		marketCPStates:        map[string]*types.CPMarketState{},
-		successors:            map[string][]string{},
-		isSuccessor:           map[string]string{},
-		skipRestoreSuccessors: map[string]struct{}{},
+		log:                      log,
+		Config:                   executionConfig,
+		futureMarkets:            map[string]*future.Market{},
+		spotMarkets:              map[string]*spot.Market{},
+		allMarkets:               map[string]common.CommonMarket{},
+		timeService:              ts,
+		collateral:               collateral,
+		assets:                   assets,
+		broker:                   broker,
+		oracle:                   oracle,
+		npv:                      defaultNetParamsValues(),
+		generatedProviders:       map[string]struct{}{},
+		stateVarEngine:           stateVarEngine,
+		marketActivityTracker:    marketActivityTracker,
+		marketCPStates:           map[string]*types.CPMarketState{},
+		successors:               map[string][]string{},
+		isSuccessor:              map[string]string{},
+		skipRestoreSuccessors:    map[string]struct{}{},
+		feeDiscountRewardService: feeDiscountRewardService,
 	}
 
 	// set the eligibility for proposer bonus checker
@@ -659,6 +663,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 		e.marketActivityTracker,
 		ad,
 		e.peggedOrderCountUpdated,
+		e.feeDiscountRewardService,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -736,6 +741,7 @@ func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Marke
 		bad,
 		qad,
 		e.peggedOrderCountUpdated,
+		e.feeDiscountRewardService,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",

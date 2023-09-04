@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"testing"
 	"time"
 
@@ -29,6 +30,7 @@ import (
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
+	fmock "code.vegaprotocol.io/vega/core/fee/mocks"
 
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/execution/common"
@@ -83,7 +85,11 @@ func getMockedEngine(t *testing.T) *engineFake {
 
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine, teams, balanceChecker), asset)
+	feeDiscountReward := fmock.NewMockFeeDiscountRewardService(ctrl)
+	feeDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	feeDiscountReward.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	feeDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine, teams, balanceChecker), asset, feeDiscountReward)
 	return &engineFake{
 		Engine:     exec,
 		ctrl:       ctrl,
@@ -136,8 +142,11 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	})
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-
-	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine, teams, balanceChecker), asset), ctrl
+	feeDiscountReward := fmock.NewMockFeeDiscountRewardService(ctrl)
+	feeDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	feeDiscountReward.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	feeDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine, teams, balanceChecker), asset, feeDiscountReward), ctrl
 }
 
 func TestEmptyMarkets(t *testing.T) {

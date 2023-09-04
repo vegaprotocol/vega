@@ -366,19 +366,19 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	// Looking for reward factor for party without a set.
 	loneWolfParty := newPartyID(t)
 	assert.Equal(t, num.DecimalZero().String(), te.engine.RewardsFactorForParty(loneWolfParty).String())
-	assert.Equal(t, num.DecimalZero().String(), te.engine.DiscountFactorForParty(loneWolfParty).String())
+	assert.Equal(t, num.DecimalZero().String(), te.engine.ReferralDiscountFactorForParty(loneWolfParty).String())
 
 	// Looking for reward factor for referrer 1.
 	// His set has not enough to notional volume to match tier 1.
 	// => No reward factor.
 	assert.Equal(t, num.DecimalZero().String(), te.engine.RewardsFactorForParty(referrer1).String())
-	assert.Equal(t, num.DecimalZero().String(), te.engine.DiscountFactorForParty(referrer1).String())
+	assert.Equal(t, num.DecimalZero().String(), te.engine.ReferralDiscountFactorForParty(referrer1).String())
 
 	// Looking for reward factor for referee 1.
 	// He is not a member for long enough.
 	// His set has not enough to notional volume to match tier 1.
 	// => No discount factor.
-	assert.Equal(t, num.DecimalZero().String(), te.engine.DiscountFactorForParty(referee1).String())
+	assert.Equal(t, num.DecimalZero().String(), te.engine.ReferralDiscountFactorForParty(referee1).String())
 	// Only referrers are eligible to reward factors.
 	assert.Equal(t, num.DecimalZero().String(), te.engine.RewardsFactorForParty(referee1).String())
 
@@ -388,7 +388,7 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	// => Tier 1 reward factor.
 	assert.Equal(t, num.DecimalFromFloat(0.001).String(), te.engine.RewardsFactorForParty(referee3).String())
 	// Only referees are eligible to discount factors.
-	assert.Equal(t, num.DecimalZero().String(), te.engine.DiscountFactorForParty(referrer2).String())
+	assert.Equal(t, num.DecimalZero().String(), te.engine.ReferralDiscountFactorForParty(referrer2).String())
 
 	// Adding a new referee.
 	te.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -416,7 +416,7 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	// With set, and member for long enough to match tier 2.
 	// His set has enough notional volume to match tier 3.
 	// => Tier 2 discount factor.
-	assert.Equal(t, num.DecimalFromFloat(0.002).String(), te.engine.DiscountFactorForParty(referee1).String())
+	assert.Equal(t, num.DecimalFromFloat(0.002).String(), te.engine.ReferralDiscountFactorForParty(referee1).String())
 
 	// Looking for reward factor for referrer 2.
 	// His set has enough notional volume to match tier 3.
@@ -427,7 +427,7 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	// With set, but not member for long enough to match tier 1.
 	// His set has enough notional volume to match tier 3.
 	// => No discount factor.
-	assert.Equal(t, num.DecimalZero().String(), te.engine.DiscountFactorForParty(referee2).String())
+	assert.Equal(t, num.DecimalZero().String(), te.engine.ReferralDiscountFactorForParty(referee2).String())
 
 	// When the epoch ends, the running volume for set members should be
 	// computed.
@@ -453,7 +453,7 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	// With set, and member for long enough to match tier 2.
 	// His set has enough notional volume to match tier 2.
 	// => Tier 1 discount factor.
-	assert.Equal(t, num.DecimalFromFloat(0.02).String(), te.engine.DiscountFactorForParty(referee1).String())
+	assert.Equal(t, num.DecimalFromFloat(0.02).String(), te.engine.ReferralDiscountFactorForParty(referee1).String())
 
 	// Looking for reward factor for referrer 2.
 	// His set has enough notional volume to match tier 3.
@@ -464,7 +464,7 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	// With set, and member for long enough to match tier 1.
 	// His set has enough notional volume to match tier 3.
 	// => Tier 1 discount factor.
-	assert.Equal(t, num.DecimalFromFloat(0.002).String(), te.engine.DiscountFactorForParty(referee2).String())
+	assert.Equal(t, num.DecimalFromFloat(0.002).String(), te.engine.ReferralDiscountFactorForParty(referee2).String())
 
 	// When the epoch ends, the running volume for set members should be
 	// computed.
@@ -481,7 +481,7 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 
 	// Program has ended, no more reward and discount factors.
 	assert.Equal(t, num.DecimalZero().String(), te.engine.RewardsFactorForParty(referrer1).String())
-	assert.Equal(t, num.DecimalZero().String(), te.engine.DiscountFactorForParty(referee1).String())
+	assert.Equal(t, num.DecimalZero().String(), te.engine.ReferralDiscountFactorForParty(referee1).String())
 	assert.Equal(t, num.DecimalZero().String(), te.engine.RewardsFactorForParty(referrer2).String())
-	assert.Equal(t, num.DecimalZero().String(), te.engine.DiscountFactorForParty(referee2).String())
+	assert.Equal(t, num.DecimalZero().String(), te.engine.ReferralDiscountFactorForParty(referee2).String())
 }
