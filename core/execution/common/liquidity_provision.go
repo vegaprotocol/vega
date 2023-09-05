@@ -636,7 +636,7 @@ func (m *MarketLiquidity) CancelLiquidityProvision(ctx context.Context, party st
 			logging.Error(err))
 	}
 
-	if currentProvision != nil && applied {
+	if applied && currentProvision != nil && !currentProvision.CommitmentAmount.IsZero() {
 		if err := m.releasePendingBondCollateral(ctx, currentProvision.CommitmentAmount.Clone(), party); err != nil {
 			m.log.Debug("could not submit update bond for lp amendment",
 				logging.PartyID(party),
