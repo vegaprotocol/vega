@@ -149,7 +149,7 @@ func (e *Engine) doesLPMeetsCommitment(
 		price := o.Price.ToDecimal()
 		// this order is in range and does contribute to the volume on notional
 		if price.GreaterThanOrEqual(minPrice) && price.LessThanOrEqual(maxPrice) {
-			orderVolume := num.UintZero().Mul(markPrice, num.NewUint(o.TrueRemaining())).ToDecimal().Div(positionFactor)
+			orderVolume := num.UintZero().Mul(markPrice, num.NewUint(o.VisibleRemaining())).ToDecimal().Div(positionFactor)
 
 			if o.Side == types.SideSell {
 				notionalVolumeSells = notionalVolumeSells.Add(orderVolume)
