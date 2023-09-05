@@ -87,7 +87,7 @@ func min(x, y uint64) uint64 {
 }
 
 // VisibleRemaining is the full amount seen on the book.
-// In the case of an iceberg order, it will be <= the peak order size
+// In the case of an iceberg order, it will be <= the peak order size.
 func (o *Order) VisibleRemaining() uint64 {
 	rem := o.Remaining
 	if o.IcebergOrder != nil {
