@@ -630,10 +630,26 @@ func (m *MarketLiquidity) CancelLiquidityProvision(ctx context.Context, party st
 		Fee:              num.DecimalZero(),
 	}
 
-	_, err := m.liquidityEngine.AmendLiquidityProvision(ctx, amendment, party, true)
+	applied, err := m.liquidityEngine.AmendLiquidityProvision(ctx, amendment, party, true)
 	if err != nil {
 		m.log.Panic("error while amending liquidity provision, this should not happen at this point, the LP was validated earlier",
 			logging.Error(err))
+	}
+
+	if currentProvision != nil && applied {
+		if err := m.releasePendingBondCollateral(ctx, currentProvision.CommitmentAmount.Clone(), party); err != nil {
+			m.log.Debug("could not submit update bond for lp amendment",
+				logging.PartyID(party),
+				logging.MarketID(m.marketID),
+				logging.Error(err))
+
+			// rollback amendment
+			amendment.CommitmentAmount = currentProvision.CommitmentAmount
+			amendment.Fee = currentProvision.Fee
+			m.liquidityEngine.AmendLiquidityProvision(ctx, amendment, party, false)
+
+			return err
+		}
 	}
 
 	return nil
