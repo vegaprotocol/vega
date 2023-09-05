@@ -32,8 +32,8 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | 3600    | 0.99        | 3                 |
 
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
-      | 0.5         | 0.5                          | 1                             | 1.0                    |
+      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
+      | 0.5         | 0.5                          | 10                                  | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
@@ -44,10 +44,10 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | name                                                  | value |
       | market.liquidityV2.bondPenaltyParameter               | 0.2   |
       | validators.epoch.length                               | 5s    |
-      | market.liquidity.stakeToCcyVolume                   | 1     |
+      | market.liquidityV2.stakeToCcyVolume | 1 |
       | market.liquidity.successorLaunchWindowLength          | 1h    |
-      | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.5   |
-      | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 1     |
+      | market.liquidityV2.sla.nonPerformanceBondPenaltySlope | 0.5 |
+      | market.liquidityV2.sla.nonPerformanceBondPenaltyMax   | 1   |
       | validators.epoch.length                               | 10s   |
       | market.liquidityV2.earlyExitPenalty                   | 0.25  |
 
@@ -233,10 +233,18 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
 
     #AC: 0044-LIME-020, lp decreases commitment and gets bond slashing
     #AC: 0044-LIME-049, at the end of the current epoch rewards/penalties are evaluated based on the balance of the bond account at start of epoch
+    And the parties should have the following account balances:
+      | party | asset | market id | margin | general | bond  |
+      | lp1   | USD   | ETH/MAR22 | 640243 | 299757  | 60000 |
+      | lp2   | USD   | ETH/MAR22 | 320122 | 669878  | 10000 |
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee  | lp type   |
       | lp_1 | lp1   | ETH/MAR22 | 1000              | 0.02 | amendment |
       | lp_2 | lp2   | ETH/MAR22 | 500               | 0.02 | amendment |
+    And the parties should have the following account balances:
+      | party | asset | market id | margin | general | bond  |
+      | lp1   | USD   | ETH/MAR22 | 640243 | 358757  | 1000  |
+      | lp2   | USD   | ETH/MAR22 | 320122 | 669878  | 10000 |
     Then the network moves ahead "10" blocks
     And the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
