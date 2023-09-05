@@ -670,11 +670,10 @@ func getTestFutureMarket(termInt bool) *vega.Market {
 		LinearSlippageFactor:    "1.23",
 		QuadraticSlippageFactor: "5.67",
 		LiquiditySlaParams: &vega.LiquiditySLAParameters{
-			PriceRange:                      "0.75",
-			CommitmentMinTimeFraction:       "0.5",
-			ProvidersFeeCalculationTimeStep: 0,
-			PerformanceHysteresisEpochs:     0,
-			SlaCompetitionFactor:            "1.0",
+			PriceRange:                  "0.75",
+			CommitmentMinTimeFraction:   "0.5",
+			PerformanceHysteresisEpochs: 0,
+			SlaCompetitionFactor:        "1.0",
 		},
 	}
 }
@@ -1500,11 +1499,10 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 			TradableInstrument: &vega.TradableInstrument{},
 		},
 		LiquiditySLAParameters: entities.LiquiditySLAParameters{
-			PriceRange:                      num.NewDecimalFromFloat(0),
-			CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0),
-			ProvidersFeeCalculationTimeStep: 0,
-			PerformanceHysteresisEpochs:     0,
-			SlaCompetitionFactor:            num.NewDecimalFromFloat(0),
+			PriceRange:                  num.NewDecimalFromFloat(0),
+			CommitmentMinTimeFraction:   num.NewDecimalFromFloat(0),
+			PerformanceHysteresisEpochs: 0,
+			SlaCompetitionFactor:        num.NewDecimalFromFloat(0),
 		},
 	}
 
@@ -1516,11 +1514,10 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 		},
 		ParentMarketID: parentMarket.ID,
 		LiquiditySLAParameters: entities.LiquiditySLAParameters{
-			PriceRange:                      num.NewDecimalFromFloat(0),
-			CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0),
-			ProvidersFeeCalculationTimeStep: 0,
-			PerformanceHysteresisEpochs:     0,
-			SlaCompetitionFactor:            num.NewDecimalFromFloat(0),
+			PriceRange:                  num.NewDecimalFromFloat(0),
+			CommitmentMinTimeFraction:   num.NewDecimalFromFloat(0),
+			PerformanceHysteresisEpochs: 0,
+			SlaCompetitionFactor:        num.NewDecimalFromFloat(0),
 		},
 	}
 
@@ -1534,11 +1531,10 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 		},
 		ParentMarketID: successorMarketA.ID,
 		LiquiditySLAParameters: entities.LiquiditySLAParameters{
-			PriceRange:                      num.NewDecimalFromFloat(0),
-			CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0),
-			ProvidersFeeCalculationTimeStep: 0,
-			PerformanceHysteresisEpochs:     0,
-			SlaCompetitionFactor:            num.NewDecimalFromFloat(0),
+			PriceRange:                  num.NewDecimalFromFloat(0),
+			CommitmentMinTimeFraction:   num.NewDecimalFromFloat(0),
+			PerformanceHysteresisEpochs: 0,
+			SlaCompetitionFactor:        num.NewDecimalFromFloat(0),
 		},
 	}
 
@@ -1549,11 +1545,10 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 			TradableInstrument: &vega.TradableInstrument{},
 		},
 		LiquiditySLAParameters: entities.LiquiditySLAParameters{
-			PriceRange:                      num.NewDecimalFromFloat(0),
-			CommitmentMinTimeFraction:       num.NewDecimalFromFloat(0),
-			ProvidersFeeCalculationTimeStep: 0,
-			PerformanceHysteresisEpochs:     0,
-			SlaCompetitionFactor:            num.NewDecimalFromFloat(0),
+			PriceRange:                  num.NewDecimalFromFloat(0),
+			CommitmentMinTimeFraction:   num.NewDecimalFromFloat(0),
+			PerformanceHysteresisEpochs: 0,
+			SlaCompetitionFactor:        num.NewDecimalFromFloat(0),
 		},
 	}
 

@@ -75,33 +75,31 @@ func defaultNetParams() map[string]value {
 		EthereumOraclesEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
 
 		// markets
-		MarketMarginScalingFactors:                      NewJSON(&proto.ScalingFactors{}, checks.MarginScalingFactor(), checks.MarginScalingFactorRange(num.DecimalOne(), num.DecimalFromInt64(100))).Mutable(true).MustUpdate(`{"search_level": 1.1, "initial_margin": 1.2, "collateral_release": 1.4}`),
-		MarketFeeFactorsMakerFee:                        NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00025"),
-		MarketFeeFactorsInfrastructureFee:               NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.0005"),
-		MarketAuctionMinimumDuration:                    NewDuration(gte1s, lte1d).Mutable(true).MustUpdate("30m0s"),
-		MarketAuctionMaximumDuration:                    NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate(week),
-		MarketLiquidityBondPenaltyParameter:             NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("1"),
-		MarketLiquidityMaximumLiquidityFeeFactorLevel:   NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("1"),
-		MarketLiquidityStakeToCCYVolume:                 NewDecimal(gteD0, lteD100).Mutable(true).MustUpdate("1"),
-		MarketLiquidityProvidersFeeDistributionTimeStep: NewDuration(gte0s, lte1mo).Mutable(true).MustUpdate("0s"),
-		MarketLiquidityTargetStakeTriggeringRatio:       NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
-		MarketProbabilityOfTradingTauScaling:            NewDecimal(gteD1, lteD1000).Mutable(true).MustUpdate("1"),
-		MarketMinProbabilityOfTradingForLPOrders:        NewDecimal(DecimalGTE(num.MustDecimalFromString("1e-12")), DecimalLTE(num.MustDecimalFromString("0.1"))).Mutable(true).MustUpdate("1e-8"),
-		MarketTargetStakeTimeWindow:                     NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate("1h0m0s"),
-		MarketTargetStakeScalingFactor:                  NewDecimal(gtD0, lteD100).Mutable(true).MustUpdate("10"),
-		MarketValueWindowLength:                         NewDuration(gte1m, lte1mo).Mutable(true).MustUpdate(week),
-		MarketPriceMonitoringDefaultParameters:          NewJSON(&proto.PriceMonitoringParameters{}, checks.PriceMonitoringParametersAuctionExtension(5*time.Second, 30*24*time.Hour), checks.PriceMonitoringParametersHorizon(5*time.Second, 30*24*time.Hour), checks.PriceMonitoringParametersProbability(num.DecimalFromFloat(0.9), num.DecimalOne())).Mutable(true).MustUpdate(`{"triggers": []}`),
-		MarketLiquidityProvisionShapesMaxSize:           NewInt(gteI1, lteI1000).Mutable(true).MustUpdate("5"),
-		MarketMinLpStakeQuantumMultiple:                 NewDecimal(gtD0, DecimalLT(num.MustDecimalFromString("1e10"))).Mutable(true).MustUpdate("1"),
-		RewardMarketCreationQuantumMultiple:             NewDecimal(gteD1, DecimalLT(num.MustDecimalFromString("1e20"))).Mutable(true).MustUpdate("10000000"),
+		MarketMarginScalingFactors:                NewJSON(&proto.ScalingFactors{}, checks.MarginScalingFactor(), checks.MarginScalingFactorRange(num.DecimalOne(), num.DecimalFromInt64(100))).Mutable(true).MustUpdate(`{"search_level": 1.1, "initial_margin": 1.2, "collateral_release": 1.4}`),
+		MarketFeeFactorsMakerFee:                  NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00025"),
+		MarketFeeFactorsInfrastructureFee:         NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.0005"),
+		MarketAuctionMinimumDuration:              NewDuration(gte1s, lte1d).Mutable(true).MustUpdate("30m0s"),
+		MarketAuctionMaximumDuration:              NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate(week),
+		MarketLiquidityTargetStakeTriggeringRatio: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
+		MarketProbabilityOfTradingTauScaling:      NewDecimal(gteD1, lteD1000).Mutable(true).MustUpdate("1"),
+		MarketMinProbabilityOfTradingForLPOrders:  NewDecimal(DecimalGTE(num.MustDecimalFromString("1e-12")), DecimalLTE(num.MustDecimalFromString("0.1"))).Mutable(true).MustUpdate("1e-8"),
+		MarketTargetStakeTimeWindow:               NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate("1h0m0s"),
+		MarketTargetStakeScalingFactor:            NewDecimal(gtD0, lteD100).Mutable(true).MustUpdate("10"),
+		MarketValueWindowLength:                   NewDuration(gte1m, lte1mo).Mutable(true).MustUpdate(week),
+		MarketPriceMonitoringDefaultParameters:    NewJSON(&proto.PriceMonitoringParameters{}, checks.PriceMonitoringParametersAuctionExtension(5*time.Second, 30*24*time.Hour), checks.PriceMonitoringParametersHorizon(5*time.Second, 30*24*time.Hour), checks.PriceMonitoringParametersProbability(num.DecimalFromFloat(0.9), num.DecimalOne())).Mutable(true).MustUpdate(`{"triggers": []}`),
+		MarketLiquidityProvisionShapesMaxSize:     NewInt(gteI1, lteI1000).Mutable(true).MustUpdate("5"),
+		MarketMinLpStakeQuantumMultiple:           NewDecimal(gtD0, DecimalLT(num.MustDecimalFromString("1e10"))).Mutable(true).MustUpdate("1"),
+		RewardMarketCreationQuantumMultiple:       NewDecimal(gteD1, DecimalLT(num.MustDecimalFromString("1e20"))).Mutable(true).MustUpdate("10000000"),
 
-		// Liquidity version 2.
-		MarketLiquidityV2BondPenaltyParameter:              NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("0.1"),
-		MarketLiquidityV2EarlyExitPenalty:                  NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("0.1"),
-		MarketLiquidityV2MaximumLiquidityFeeFactorLevel:    NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("1"),
-		MarketLiquidityV2SLANonPerformanceBondPenaltyMax:   NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.5"),
-		MarketLiquidityV2SLANonPerformanceBondPenaltySlope: NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("2"),
-		MarketLiquidityV2StakeToCCYVolume:                  NewDecimal(gteD0, lteD100).Mutable(true).MustUpdate("1"),
+		MarketLiquidityBondPenaltyParameter:              NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("0.1"),
+		MarketLiquidityEarlyExitPenalty:                  NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("0.1"),
+		MarketLiquidityMaximumLiquidityFeeFactorLevel:    NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("1"),
+		MarketLiquiditySLANonPerformanceBondPenaltyMax:   NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.5"),
+		MarketLiquiditySLANonPerformanceBondPenaltySlope: NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("2"),
+		MarketLiquidityStakeToCCYVolume:                  NewDecimal(gteD0, lteD100).Mutable(true).MustUpdate("1"),
+
+		// @TODO karel add validation
+		MarketLiquidityProvidersFeeCalculationTimeStep: NewDuration(gte1s, lte255h).Mutable(true).MustUpdate("1m"),
 
 		// governance market proposal
 		GovernanceProposalMarketMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
@@ -299,6 +297,10 @@ func defaultNetParams() map[string]value {
 	// could just do 24 * 3600 * time.Second, but this is easier to read
 	maxFreq, _ := time.ParseDuration("24h")
 	m[MarkPriceUpdateMaximumFrequency].AddRules(DurationGTE(time.Duration(0)), DurationLTE(maxFreq))
+
+	m[MarketLiquidityProvidersFeeCalculationTimeStep].AddRules(
+		DurationDependentLTE(ValidatorsEpochLength, m[ValidatorsEpochLength].(*Duration)),
+	)
 	return m
 }
 

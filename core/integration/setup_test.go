@@ -247,28 +247,32 @@ func newExecutionTestSetup() *executionTestSetup {
 		},
 
 		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityV2EarlyExitPenalty,
+			Param:   netparams.MarketLiquidityEarlyExitPenalty,
 			Watcher: execsetup.executionEngine.OnMarketLiquidityV2EarlyExitPenaltyUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltyMax,
+			Param:   netparams.MarketLiquiditySLANonPerformanceBondPenaltyMax,
 			Watcher: execsetup.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltySlope,
+			Param:   netparams.MarketLiquiditySLANonPerformanceBondPenaltySlope,
 			Watcher: execsetup.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityV2BondPenaltyParameter,
+			Param:   netparams.MarketLiquidityBondPenaltyParameter,
 			Watcher: execsetup.executionEngine.OnMarketLiquidityV2BondPenaltyUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityV2MaximumLiquidityFeeFactorLevel,
+			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
 			Watcher: execsetup.executionEngine.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
+			Param:   netparams.MarketLiquidityStakeToCCYVolume,
 			Watcher: execsetup.executionEngine.OnMarketLiquidityV2StakeToCCYVolumeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityProvidersFeeCalculationTimeStep,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep,
 		},
 	)
 	return execsetup
@@ -315,28 +319,32 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		},
 		// Liquidity version 2.
 		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityV2BondPenaltyParameter,
+			Param:   netparams.MarketLiquidityBondPenaltyParameter,
 			Watcher: e.executionEngine.OnMarketLiquidityV2BondPenaltyUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityV2EarlyExitPenalty,
+			Param:   netparams.MarketLiquidityEarlyExitPenalty,
 			Watcher: e.executionEngine.OnMarketLiquidityV2EarlyExitPenaltyUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityV2MaximumLiquidityFeeFactorLevel,
+			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
 			Watcher: e.executionEngine.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltySlope,
+			Param:   netparams.MarketLiquiditySLANonPerformanceBondPenaltySlope,
 			Watcher: e.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltyMax,
+			Param:   netparams.MarketLiquiditySLANonPerformanceBondPenaltyMax,
 			Watcher: e.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
+			Param:   netparams.MarketLiquidityStakeToCCYVolume,
 			Watcher: e.executionEngine.OnMarketLiquidityV2StakeToCCYVolumeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityProvidersFeeCalculationTimeStep,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep,
 		},
 		// End of liquidity version 2.
 		netparams.WatchParam{

@@ -2226,6 +2226,18 @@ func (mr *MockMarketLiquidityEngineMockRecorder) OnProbabilityOfTradingTauScalin
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnProbabilityOfTradingTauScalingUpdate", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).OnProbabilityOfTradingTauScalingUpdate), arg0)
 }
 
+// OnProvidersFeeCalculationTimeStep mocks base method.
+func (m *MockMarketLiquidityEngine) OnProvidersFeeCalculationTimeStep(arg0 time.Duration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "OnProvidersFeeCalculationTimeStep", arg0)
+}
+
+// OnProvidersFeeCalculationTimeStep indicates an expected call of OnProvidersFeeCalculationTimeStep.
+func (mr *MockMarketLiquidityEngineMockRecorder) OnProvidersFeeCalculationTimeStep(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnProvidersFeeCalculationTimeStep", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).OnProvidersFeeCalculationTimeStep), arg0)
+}
+
 // OnStakeToCcyVolumeUpdate mocks base method.
 func (m *MockMarketLiquidityEngine) OnStakeToCcyVolumeUpdate(arg0 decimal.Decimal) {
 	m.ctrl.T.Helper()

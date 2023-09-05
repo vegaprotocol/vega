@@ -17,38 +17,31 @@ const (
 	PerpsMarketTradingEnabled = "limits.markets.proposePerpetualEnabled"
 	EthereumOraclesEnabled    = "ethereum.oracles.enabled"
 
-	// market related parameters.
-	MarketMarginScalingFactors                    = "market.margin.scalingFactors"
-	MarketFeeFactorsMakerFee                      = "market.fee.factors.makerFee"
-	MarketFeeFactorsInfrastructureFee             = "market.fee.factors.infrastructureFee"
-	MarketAuctionMinimumDuration                  = "market.auction.minimumDuration"
-	MarketAuctionMaximumDuration                  = "market.auction.maximumDuration"
-	MarketLiquidityBondPenaltyParameter           = "market.liquidity.bondPenaltyParameter"
-	MarketLiquidityMaximumLiquidityFeeFactorLevel = "market.liquidity.maximumLiquidityFeeFactorLevel"
+	MarketMarginScalingFactors        = "market.margin.scalingFactors"
+	MarketFeeFactorsMakerFee          = "market.fee.factors.makerFee"
+	MarketFeeFactorsInfrastructureFee = "market.fee.factors.infrastructureFee"
+	MarketAuctionMinimumDuration      = "market.auction.minimumDuration"
+	MarketAuctionMaximumDuration      = "market.auction.maximumDuration"
 
-	// TODO karel - remove.
-	MarketLiquidityStakeToCCYVolume                 = "market.liquidity.stakeToCcyVolume"
-	MarketLiquidityProvidersFeeDistributionTimeStep = "market.liquidity.providers.fee.distributionTimeStep"
-	MarketLiquidityTargetStakeTriggeringRatio       = "market.liquidity.targetstake.triggering.ratio"
-	MarketProbabilityOfTradingTauScaling            = "market.liquidity.probabilityOfTrading.tau.scaling"
-	MarketMinProbabilityOfTradingForLPOrders        = "market.liquidity.minimum.probabilityOfTrading.lpOrders"
-	MarketTargetStakeTimeWindow                     = "market.stake.target.timeWindow"
-	MarketTargetStakeScalingFactor                  = "market.stake.target.scalingFactor"
-	MarketValueWindowLength                         = "market.value.windowLength"
-	MarketPriceMonitoringDefaultParameters          = "market.monitor.price.defaultParameters"
+	MarketTargetStakeTimeWindow            = "market.stake.target.timeWindow"
+	MarketTargetStakeScalingFactor         = "market.stake.target.scalingFactor"
+	MarketValueWindowLength                = "market.value.windowLength"
+	MarketPriceMonitoringDefaultParameters = "market.monitor.price.defaultParameters"
 
-	// TODO karel - remove.
-	MarketLiquidityProvisionShapesMaxSize = "market.liquidityProvision.shapes.maxSize"
-	MarketMinLpStakeQuantumMultiple       = "market.liquidityProvision.minLpStakeQuantumMultiple"
-	MarketSuccessorLaunchWindow           = "market.liquidity.successorLaunchWindowLength"
+	MarketMinLpStakeQuantumMultiple          = "market.liquidityProvision.minLpStakeQuantumMultiple"
+	MarketProbabilityOfTradingTauScaling     = "market.liquidity.probabilityOfTrading.tau.scaling"
+	MarketMinProbabilityOfTradingForLPOrders = "market.liquidity.minimum.probabilityOfTrading.lpOrders"
+	MarketSuccessorLaunchWindow              = "market.liquidity.successorLaunchWindowLength"
 
-	// Parameters for liquidity framework version 2.
-	MarketLiquidityV2BondPenaltyParameter              = "market.liquidityV2.bondPenaltyParameter"
-	MarketLiquidityV2EarlyExitPenalty                  = "market.liquidityV2.earlyExitPenalty"
-	MarketLiquidityV2MaximumLiquidityFeeFactorLevel    = "market.liquidityV2.maximumLiquidityFeeFactorLevel"
-	MarketLiquidityV2SLANonPerformanceBondPenaltyMax   = "market.liquidityV2.sla.nonPerformanceBondPenaltyMax"
-	MarketLiquidityV2SLANonPerformanceBondPenaltySlope = "market.liquidityV2.sla.nonPerformanceBondPenaltySlope"
-	MarketLiquidityV2StakeToCCYVolume                  = "market.liquidityV2.stakeToCcyVolume"
+	MarketLiquidityProvisionShapesMaxSize            = "market.liquidityProvision.shapes.maxSize"
+	MarketLiquidityTargetStakeTriggeringRatio        = "market.liquidity.targetstake.triggering.ratio"
+	MarketLiquidityBondPenaltyParameter              = "market.liquidity.bondPenaltyParameter"
+	MarketLiquidityEarlyExitPenalty                  = "market.liquidity.earlyExitPenalty"
+	MarketLiquidityMaximumLiquidityFeeFactorLevel    = "market.liquidity.maximumLiquidityFeeFactorLevel"
+	MarketLiquiditySLANonPerformanceBondPenaltyMax   = "market.liquidity.sla.nonPerformanceBondPenaltyMax"
+	MarketLiquiditySLANonPerformanceBondPenaltySlope = "market.liquidity.sla.nonPerformanceBondPenaltySlope"
+	MarketLiquidityStakeToCCYVolume                  = "market.liquidity.stakeToCcyVolume"
+	MarketLiquidityProvidersFeeCalculationTimeStep   = "market.liquidity.providersFeeCalculationTimeStep"
 
 	RewardAsset = "reward.asset"
 
@@ -261,15 +254,12 @@ var AllKeys = map[string]struct{}{
 	MarketAuctionMaximumDuration:                             {},
 	MarketLiquidityBondPenaltyParameter:                      {},
 	MarketLiquidityMaximumLiquidityFeeFactorLevel:            {},
-	MarketLiquidityStakeToCCYVolume:                          {},
-	MarketLiquidityProvidersFeeDistributionTimeStep:          {},
 	MarketLiquidityTargetStakeTriggeringRatio:                {},
-	MarketLiquidityV2BondPenaltyParameter:                    {},
-	MarketLiquidityV2EarlyExitPenalty:                        {},
-	MarketLiquidityV2MaximumLiquidityFeeFactorLevel:          {},
-	MarketLiquidityV2SLANonPerformanceBondPenaltySlope:       {},
-	MarketLiquidityV2SLANonPerformanceBondPenaltyMax:         {},
-	MarketLiquidityV2StakeToCCYVolume:                        {},
+	MarketLiquidityEarlyExitPenalty:                          {},
+	MarketLiquiditySLANonPerformanceBondPenaltySlope:         {},
+	MarketLiquiditySLANonPerformanceBondPenaltyMax:           {},
+	MarketLiquidityStakeToCCYVolume:                          {},
+	MarketLiquidityProvidersFeeCalculationTimeStep:           {},
 	MarketTargetStakeTimeWindow:                              {},
 	MarketTargetStakeScalingFactor:                           {},
 	MarketPriceMonitoringDefaultParameters:                   {},

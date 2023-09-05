@@ -126,3 +126,7 @@ func (m *Market) OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(d num.
 func (m *Market) OnMarketLiquidityV2StakeToCCYVolume(d num.Decimal) {
 	m.liquidity.OnStakeToCcyVolumeUpdate(d)
 }
+
+func (m *Market) OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(d time.Duration) {
+	m.liquidity.OnProvidersFeeCalculationTimeStep(d)
+}

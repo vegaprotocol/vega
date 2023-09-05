@@ -5,7 +5,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | name                                                | value |
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
-      | market.liquidityV2.bondPenaltyParameter             | 1     |
+      | market.liquidity.bondPenaltyParameter             | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0.1   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | limits.markets.maxPeggedOrders                      | 2     |
@@ -21,11 +21,14 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | horizon | probability | auction extension |
       | 1       | 0.99        | 5                 |
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 0.01        | 0.5                          | 10                                  | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 0.01        | 0.5                          | 1                             | 1.0                    |
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params | position decimal places |
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5                    | 0                         | SLA        | 2                       |
+    And the following network parameters are set:
+      | name                                               | value |
+      | market.liquidity.providersFeeCalculationTimeStep | 5s    |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | party0 | ETH   | 1721       |
@@ -158,7 +161,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | 1061       | TRADING_MODE_CONTINUOUS  | AUCTION_TRIGGER_UNSPECIFIED | 1803         | 1000           | 1700          |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 0      | 0       | 0    |
+      | party0 | ETH   | ETH/DEC21 | 0      | 3       | 0    |
     And the parties should have the following margin levels:
       | party  | market id | maintenance |
       | party0 | ETH/DEC21 | 0           |

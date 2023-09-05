@@ -645,28 +645,32 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		},
 		// Liquidity version 2.
 		{
-			Param:   netparams.MarketLiquidityV2BondPenaltyParameter,
+			Param:   netparams.MarketLiquidityBondPenaltyParameter,
 			Watcher: svcs.executionEngine.OnMarketLiquidityV2BondPenaltyUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityV2EarlyExitPenalty,
+			Param:   netparams.MarketLiquidityEarlyExitPenalty,
 			Watcher: svcs.executionEngine.OnMarketLiquidityV2EarlyExitPenaltyUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityV2MaximumLiquidityFeeFactorLevel,
+			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
 			Watcher: svcs.executionEngine.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltySlope,
+			Param:   netparams.MarketLiquiditySLANonPerformanceBondPenaltySlope,
 			Watcher: svcs.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltyMax,
+			Param:   netparams.MarketLiquiditySLANonPerformanceBondPenaltyMax,
 			Watcher: svcs.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
+			Param:   netparams.MarketLiquidityStakeToCCYVolume,
 			Watcher: svcs.executionEngine.OnMarketLiquidityV2StakeToCCYVolumeUpdate,
+		},
+		{
+			Param:   netparams.MarketLiquidityProvidersFeeCalculationTimeStep,
+			Watcher: svcs.executionEngine.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep,
 		},
 		// End of liquidity version 2.
 		{

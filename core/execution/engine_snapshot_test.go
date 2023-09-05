@@ -196,11 +196,10 @@ func getSpotMarketConfig() *types.Market {
 			},
 		},
 		LiquiditySLAParams: &types.LiquiditySLAParams{
-			PriceRange:                      num.DecimalFromFloat(0.05),
-			CommitmentMinTimeFraction:       num.DecimalFromFloat(0.5),
-			SlaCompetitionFactor:            num.DecimalFromFloat(0.5),
-			ProvidersFeeCalculationTimeStep: time.Second,
-			PerformanceHysteresisEpochs:     1,
+			PriceRange:                  num.DecimalFromFloat(0.05),
+			CommitmentMinTimeFraction:   num.DecimalFromFloat(0.5),
+			SlaCompetitionFactor:        num.DecimalFromFloat(0.5),
+			PerformanceHysteresisEpochs: 1,
 		},
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
@@ -350,11 +349,10 @@ func getMarketConfig() *types.Market {
 			},
 		},
 		LiquiditySLAParams: &types.LiquiditySLAParams{
-			PriceRange:                      num.DecimalOne(),
-			CommitmentMinTimeFraction:       num.DecimalFromFloat(0.5),
-			SlaCompetitionFactor:            num.DecimalOne(),
-			ProvidersFeeCalculationTimeStep: time.Second * 1,
-			PerformanceHysteresisEpochs:     1,
+			PriceRange:                  num.DecimalOne(),
+			CommitmentMinTimeFraction:   num.DecimalFromFloat(0.5),
+			SlaCompetitionFactor:        num.DecimalOne(),
+			PerformanceHysteresisEpochs: 1,
 		},
 		State: types.MarketStateActive,
 	}

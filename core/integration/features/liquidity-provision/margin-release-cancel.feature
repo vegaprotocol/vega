@@ -17,8 +17,8 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 6     |
       | validators.epoch.length                 | 1s    |
-      | market.liquidityV2.earlyExitPenalty     | 0     |
-      | market.liquidityV2.bondPenaltyParameter | 0     |
+      | market.liquidity.earlyExitPenalty     | 0     |
+      | market.liquidity.bondPenaltyParameter | 0     |
     And the average block duration is "1"
 
   @LPRelease

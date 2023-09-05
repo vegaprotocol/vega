@@ -35,9 +35,9 @@ Feature: Simple example of successor markets
       | market.fee.factors.infrastructureFee          | 0.001 |
       | market.fee.factors.makerFee                   | 0.004 |
       | market.value.windowLength                     | 60s   |
-      | market.liquidityV2.bondPenaltyParameter       | 0.1   |
+      | market.liquidity.bondPenaltyParameter       | 0.1   |
       | validators.epoch.length                       | 5s    |
-      | market.liquidityV2.stakeToCcyVolume           | 0.2   |
+      | market.liquidity.stakeToCcyVolume           | 0.2   |
       | market.liquidity.successorLaunchWindowLength | 8s |
     And the average block duration is "1"
 

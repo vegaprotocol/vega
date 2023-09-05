@@ -406,7 +406,8 @@ type CPMarketState struct {
 	LastTradeValue   *num.Uint
 	LastTradeVolume  *num.Uint
 	TTL              time.Time
-	Market           *Market // the full market object - needed in case the market has settled but a successor market is enacted during the successor window.
+	Market           *Market     // the full market object - needed in case the market has settled but a successor market is enacted during the successor window.
+	State            MarketState // only used during OnTick, indicating the parent is still in opening auction
 }
 
 func NewMarketStateFromProto(ms *checkpoint.MarketState) *CPMarketState {

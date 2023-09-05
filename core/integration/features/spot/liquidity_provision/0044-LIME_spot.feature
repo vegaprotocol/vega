@@ -13,8 +13,8 @@ Feature: Spot market
       | 360000  | 0.999       | 300               |
 
     And the liquidity sla params named "SLA-1":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 0.99        | 0.1                          | 1                                   | 2                             | 0.2                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 0.99        | 0.1                          | 2                             | 0.2                    |
 
     Given the following assets are registered:
       | id  | decimal places |
@@ -24,12 +24,12 @@ Feature: Spot market
     And the following network parameters are set:
       | name                                                  | value |
       | network.markPriceUpdateMaximumFrequency               | 0s    |
-      | market.liquidityV2.earlyExitPenalty                   | 0.02  |
+      | market.liquidity.earlyExitPenalty                   | 0.02  |
       | market.stake.target.timeWindow                        | 2s    |
-      | market.liquidityV2.earlyExitPenalty                   | 0.5   |
-      | market.liquidityV2.bondPenaltyParameter                 | 0     |
-      | market.liquidityV2.sla.nonPerformanceBondPenaltySlope | 0.5   |
-      | market.liquidityV2.sla.nonPerformanceBondPenaltyMax   | 0.2   |
+      | market.liquidity.earlyExitPenalty                   | 0.5   |
+      | market.liquidity.bondPenaltyParameter                 | 0     |
+      | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.5   |
+      | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 0.2   |
       | market.liquidity.maximumLiquidityFeeFactorLevel       | 0.4   |
       | validators.epoch.length                               | 2s    |
 
@@ -38,6 +38,9 @@ Feature: Spot market
     And the spot markets:
       | id      | name    | base asset | quote asset | risk model             | auction duration | fees          | price monitoring   | sla params |
       | BTC/ETH | BTC/ETH | BTC        | ETH         | lognormal-risk-model-1 | 1                | fees-config-1 | price-monitoring-1 | SLA-1      |
+    And the following network parameters are set:
+      | name                                               | value |
+      | market.liquidity.providersFeeCalculationTimeStep | 1s    |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |

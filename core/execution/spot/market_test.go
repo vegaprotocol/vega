@@ -146,11 +146,10 @@ func getMarketWithDP(base, quote string, pMonitorSettings *types.PriceMonitoring
 			TriggeringRatio: num.DecimalZero(),
 		},
 		LiquiditySLAParams: &types.LiquiditySLAParams{
-			PriceRange:                      num.DecimalFromFloat(0.05),
-			CommitmentMinTimeFraction:       num.DecimalFromFloat(0.5),
-			ProvidersFeeCalculationTimeStep: 1,
-			PerformanceHysteresisEpochs:     1,
-			SlaCompetitionFactor:            num.DecimalFromFloat(0.5),
+			PriceRange:                  num.DecimalFromFloat(0.05),
+			CommitmentMinTimeFraction:   num.DecimalFromFloat(0.5),
+			PerformanceHysteresisEpochs: 1,
+			SlaCompetitionFactor:        num.DecimalFromFloat(0.5),
 		},
 	}
 

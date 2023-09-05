@@ -252,7 +252,6 @@ func NewMarket(
 	marketLiquidity := common.NewMarketLiquidity(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
 		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange,
-		mkt.LiquiditySLAParams.ProvidersFeeCalculationTimeStep,
 	)
 
 	// The market is initially created in a proposed state
@@ -715,6 +714,10 @@ func (m *Market) CanLeaveOpeningAuction() bool {
 }
 
 func (m *Market) InheritParent(ctx context.Context, pstate *types.CPMarketState) {
+	// parent is in opening auction, do not inherit any state
+	if pstate.State == types.MarketStatePending {
+		return
+	}
 	// add the trade value from the parent
 	m.feeSplitter.SetTradeValue(pstate.LastTradeValue)
 	m.equityShares.InheritELS(pstate.Shares)
@@ -730,7 +733,7 @@ func (m *Market) RollbackInherit(ctx context.Context) {
 	// before the call to InheritParent was made. Market is still in opening auction, therefore
 	// feeSplitter trade value is zero, and equity shares are linear stake/vstake/ELS
 	// do make sure this call is not made when the market is active
-	if m.mkt.State == types.MarketStatePending {
+	if m.mkt.State == types.MarketStatePending || m.mkt.State == types.MarketStateProposed {
 		m.feeSplitter.SetTradeValue(num.UintZero())
 		m.equityShares.RollbackParentELS()
 	}

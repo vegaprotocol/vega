@@ -77,23 +77,21 @@ func NewMarketLiquidity(
 	asset string,
 	priceFactor *num.Uint,
 	priceRange num.Decimal,
-	feeDistributionTimeStep time.Duration,
 ) *MarketLiquidity {
 	ml := &MarketLiquidity{
-		log:                    log,
-		liquidityEngine:        liquidityEngine,
-		collateral:             collateral,
-		broker:                 broker,
-		orderBook:              orderBook,
-		equityShares:           equityShares,
-		marketActivityTracker:  marketActivityTracker,
-		fee:                    fee,
-		marketType:             marketType,
-		marketID:               marketID,
-		asset:                  asset,
-		priceFactor:            priceFactor,
-		priceRange:             priceRange,
-		feeCalculationTimeStep: feeDistributionTimeStep,
+		log:                   log,
+		liquidityEngine:       liquidityEngine,
+		collateral:            collateral,
+		broker:                broker,
+		orderBook:             orderBook,
+		equityShares:          equityShares,
+		marketActivityTracker: marketActivityTracker,
+		fee:                   fee,
+		marketType:            marketType,
+		marketID:              marketID,
+		asset:                 asset,
+		priceFactor:           priceFactor,
+		priceRange:            priceRange,
 	}
 
 	return ml
@@ -800,7 +798,6 @@ func (m *MarketLiquidity) validOrdersPriceRange() (*num.Uint, *num.Uint, error) 
 
 func (m *MarketLiquidity) UpdateMarketConfig(risk liquidity.RiskModel, monitor liquidity.PriceMonitor, slaParams *types.LiquiditySLAParams) {
 	m.priceRange = slaParams.PriceRange
-	m.feeCalculationTimeStep = slaParams.ProvidersFeeCalculationTimeStep
 	m.liquidityEngine.UpdateMarketConfig(risk, monitor, slaParams)
 }
 
@@ -838,6 +835,10 @@ func (m *MarketLiquidity) OnEarlyExitPenalty(earlyExitPenalty num.Decimal) {
 
 func (m *MarketLiquidity) OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal) {
 	m.liquidityEngine.OnStakeToCcyVolumeUpdate(stakeToCcyVolume)
+}
+
+func (m *MarketLiquidity) OnProvidersFeeCalculationTimeStep(d time.Duration) {
+	m.feeCalculationTimeStep = d
 }
 
 func (m *MarketLiquidity) IsProbabilityOfTradingInitialised() bool {

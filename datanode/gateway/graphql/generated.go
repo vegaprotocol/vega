@@ -887,11 +887,10 @@ type ComplexityRoot struct {
 	}
 
 	LiquiditySLAParameters struct {
-		CommitmentMinTimeFraction       func(childComplexity int) int
-		PerformanceHysteresisEpochs     func(childComplexity int) int
-		PriceRange                      func(childComplexity int) int
-		ProvidersFeeCalculationTimeStep func(childComplexity int) int
-		SlaCompetitionFactor            func(childComplexity int) int
+		CommitmentMinTimeFraction   func(childComplexity int) int
+		PerformanceHysteresisEpochs func(childComplexity int) int
+		PriceRange                  func(childComplexity int) int
+		SlaCompetitionFactor        func(childComplexity int) int
 	}
 
 	LogNormalModelParams struct {
@@ -5813,13 +5812,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LiquiditySLAParameters.PriceRange(childComplexity), true
-
-	case "LiquiditySLAParameters.providersFeeCalculationTimeStep":
-		if e.complexity.LiquiditySLAParameters.ProvidersFeeCalculationTimeStep == nil {
-			break
-		}
-
-		return e.complexity.LiquiditySLAParameters.ProvidersFeeCalculationTimeStep(childComplexity), true
 
 	case "LiquiditySLAParameters.slaCompetitionFactor":
 		if e.complexity.LiquiditySLAParameters.SlaCompetitionFactor == nil {
@@ -34287,50 +34279,6 @@ func (ec *executionContext) fieldContext_LiquiditySLAParameters_commitmentMinTim
 	return fc, nil
 }
 
-func (ec *executionContext) _LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx context.Context, field graphql.CollectedField, obj *vega.LiquiditySLAParameters) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ProvidersFeeCalculationTimeStep, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNInt2int64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "LiquiditySLAParameters",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _LiquiditySLAParameters_performanceHysteresisEpochs(ctx context.Context, field graphql.CollectedField, obj *vega.LiquiditySLAParameters) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_LiquiditySLAParameters_performanceHysteresisEpochs(ctx, field)
 	if err != nil {
@@ -37383,8 +37331,6 @@ func (ec *executionContext) fieldContext_Market_liquiditySLAParameters(ctx conte
 				return ec.fieldContext_LiquiditySLAParameters_priceRange(ctx, field)
 			case "commitmentMinTimeFraction":
 				return ec.fieldContext_LiquiditySLAParameters_commitmentMinTimeFraction(ctx, field)
-			case "providersFeeCalculationTimeStep":
-				return ec.fieldContext_LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx, field)
 			case "performanceHysteresisEpochs":
 				return ec.fieldContext_LiquiditySLAParameters_performanceHysteresisEpochs(ctx, field)
 			case "slaCompetitionFactor":
@@ -42214,8 +42160,6 @@ func (ec *executionContext) fieldContext_NewSpotMarket_liquiditySLAParams(ctx co
 				return ec.fieldContext_LiquiditySLAParameters_priceRange(ctx, field)
 			case "commitmentMinTimeFraction":
 				return ec.fieldContext_LiquiditySLAParameters_commitmentMinTimeFraction(ctx, field)
-			case "providersFeeCalculationTimeStep":
-				return ec.fieldContext_LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx, field)
 			case "performanceHysteresisEpochs":
 				return ec.fieldContext_LiquiditySLAParameters_performanceHysteresisEpochs(ctx, field)
 			case "slaCompetitionFactor":
@@ -75053,8 +74997,6 @@ func (ec *executionContext) fieldContext_UpdateSpotMarketConfiguration_liquidity
 				return ec.fieldContext_LiquiditySLAParameters_priceRange(ctx, field)
 			case "commitmentMinTimeFraction":
 				return ec.fieldContext_LiquiditySLAParameters_commitmentMinTimeFraction(ctx, field)
-			case "providersFeeCalculationTimeStep":
-				return ec.fieldContext_LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx, field)
 			case "performanceHysteresisEpochs":
 				return ec.fieldContext_LiquiditySLAParameters_performanceHysteresisEpochs(ctx, field)
 			case "slaCompetitionFactor":
@@ -85145,13 +85087,6 @@ func (ec *executionContext) _LiquiditySLAParameters(ctx context.Context, sel ast
 		case "commitmentMinTimeFraction":
 
 			out.Values[i] = ec._LiquiditySLAParameters_commitmentMinTimeFraction(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "providersFeeCalculationTimeStep":
-
-			out.Values[i] = ec._LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)

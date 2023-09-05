@@ -10,6 +10,7 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | market.liquidity.probabilityOfTrading.tau.scaling   | 1     |
       | limits.markets.maxPeggedOrders                      | 4     |
+      | market.liquidity.providersFeeCalculationTimeStep  | 600s  |
 
     And the following assets are registered:
       | id  | decimal places |
@@ -28,8 +29,8 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | 100000  | 0.99        | 3                 |
 
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 100         | 0.5                          | 600                                 | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 100         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
@@ -160,8 +161,8 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | 100000  | 0.99        | 3                 |
 
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
@@ -273,8 +274,8 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | 100000  | 0.99        | 3                 |
 
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
@@ -388,8 +389,8 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | 100000  | 0.99        | 3                 |
 
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
@@ -503,8 +504,8 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | 100000  | 0.99        | 3                 |
 
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
@@ -617,8 +618,8 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | 100000  | 0.99        | 3                 |
 
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 1.0         | 0.5                          | 600                                 | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |

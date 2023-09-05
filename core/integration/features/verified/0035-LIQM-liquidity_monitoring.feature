@@ -176,7 +176,7 @@ Feature: Test liquidity monitoring
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 1     |
       | market.stake.target.timeWindow                | 5s    |
-      | market.liquidityV2.bondPenaltyParameter       | 1     |
+      | market.liquidity.bondPenaltyParameter       | 1     |
     And the parties deposit on asset's general account the following amount:
       | party          | asset | amount |
       | lprov1         | ETH   | 1000   |

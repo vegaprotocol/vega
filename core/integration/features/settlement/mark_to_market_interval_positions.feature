@@ -360,8 +360,8 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
   @NoPerp
   Scenario: 003, settlement works correctly when party enters and leaves within one MTM window
     Given the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 2           | 0.5                          | 0                                   | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 2           | 0.5                          | 1                             | 1.0                    |
     And the markets are updated:
       | id        | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/DEC19 | 1e0                    | 0                         | SLA        |
