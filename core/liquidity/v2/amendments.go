@@ -47,8 +47,11 @@ func (e *Engine) AmendLiquidityProvision(
 		return false, nil
 	}
 
-	// we can update immediately since the commitment amount has not changed.
+	// update immediately since either the commitment amount has not changed or there is an opening auction.
 	updatedLp.Status = types.LiquidityProvisionStatusActive
+	if e.auctionState.IsOpeningAuction() && isCancel {
+		updatedLp.Status = types.LiquidityProvisionStatusCancelled
+	}
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, updatedLp))
 	e.provisions.Set(party, updatedLp)
 	return true, nil
