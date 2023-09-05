@@ -241,9 +241,10 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | id   | party | market id | commitment amount | fee  | lp type   |
       | lp_1 | lp1   | ETH/MAR22 | 1000              | 0.02 | amendment |
       | lp_2 | lp2   | ETH/MAR22 | 500               | 0.02 | amendment |
+    Then the network moves ahead "1" blocks
     And the parties should have the following account balances:
       | party | asset | market id | margin | general | bond  |
-      | lp1   | USD   | ETH/MAR22 | 640243 | 358757  | 1000  |
+      | lp1 | USD | ETH/MAR22 | 640243 | 309757 | 50000 |
       | lp2   | USD   | ETH/MAR22 | 320122 | 669878  | 10000 |
     Then the network moves ahead "10" blocks
     And the parties should have the following account balances:
