@@ -310,7 +310,7 @@ Feature: Fees reward calculations for a single asset, single market
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       | SLA        |
     And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 10s   |
+      | market.liquidity.providersFeeCalculationTimeStep | 10s   |
 
     Given the parties deposit on asset's general account the following amount:
       | party                                                            | asset | amount   |

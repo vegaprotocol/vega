@@ -26,14 +26,14 @@ Feature: Simple test creating a perpetual market.
       | market.fee.factors.infrastructureFee               | 0.001    |
       | market.fee.factors.makerFee                        | 0.004    |
       | market.value.windowLength                          | 60s      |
-      | market.liquidityV2.bondPenaltyParameter            | 0.1      |
+      | market.liquidity.bondPenaltyParameter            | 0.1      |
       | validators.epoch.length                            | 5s       |
       | limits.markets.maxPeggedOrders                     | 2        |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 5s |
+      | market.liquidity.providersFeeCalculationTimeStep | 5s |
 
     And the average block duration is "1"
 
-    # All parties have 1,000,000.000,000,000,000,000,000 
+    # All parties have 1,000,000.000,000,000,000,000,000
     # Add as many parties as needed here
     And the parties deposit on asset's general account the following amount:
       | party   | asset | amount                     |
@@ -130,4 +130,3 @@ Feature: Simple test creating a perpetual market.
       | market id | state                              | settlement price |
       | ETH/DEC19 | MARKET_STATE_UPDATE_TYPE_TERMINATE | 976              |
     Then the market state should be "STATE_CLOSED" for the market "ETH/DEC19"
-

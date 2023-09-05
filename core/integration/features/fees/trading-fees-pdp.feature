@@ -24,7 +24,7 @@ Feature: Fees calculations
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       | default-futures |
     And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 1s    |
+      | market.liquidity.providersFeeCalculationTimeStep | 1s    |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -232,7 +232,7 @@ Feature: Fees calculations
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       | SLA        |
     And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 10s   |
+      | market.liquidity.providersFeeCalculationTimeStep | 10s   |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -678,7 +678,7 @@ Feature: Fees calculations
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       | SLA        |
     And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 10s   |
+      | market.liquidity.providersFeeCalculationTimeStep | 10s   |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -789,7 +789,7 @@ Feature: Fees calculations
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1                      | 0                         | SLA        |
     And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 10s   |
+      | market.liquidity.providersFeeCalculationTimeStep | 10s   |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -961,7 +961,7 @@ Feature: Fees calculations
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e0                    | 0                         | SLA        |
     And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 10s   |
+      | market.liquidity.providersFeeCalculationTimeStep | 10s   |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -1082,7 +1082,7 @@ Feature: Fees calculations
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e6                    | 1e6                       | SLA        |
     And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 10s   |
+      | market.liquidity.providersFeeCalculationTimeStep | 10s   |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -1293,7 +1293,7 @@ Feature: Fees calculations
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e0                    | 0                         | SLA        |
     And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 10s   |
+      | market.liquidity.providersFeeCalculationTimeStep | 10s   |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -1408,7 +1408,7 @@ Feature: Fees calculations
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e0                    | 0                         | SLA        |
     And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 10s   |
+      | market.liquidity.providersFeeCalculationTimeStep | 10s   |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -1705,7 +1705,7 @@ Feature: Fees calculations
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       | SLA        |
     And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 10s   |
+      | market.liquidity.providersFeeCalculationTimeStep | 10s   |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:

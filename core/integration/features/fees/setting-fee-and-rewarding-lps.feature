@@ -44,7 +44,7 @@ Feature: Test liquidity provider reward distribution
       | ETH/DEC22 | ETH        | ETH   | lognormal-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-2 | ethDec21Oracle     | 1e0                    | 1e0                       | SLA        |
     And the following network parameters are set:
       | name                                               | value |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 600s  |
+      | market.liquidity.providersFeeCalculationTimeStep | 600s  |
     And the average block duration is "1"
 
 #   Scenario: 001, 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades
