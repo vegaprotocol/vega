@@ -155,7 +155,7 @@ func (es *EquityShares) UpdateVStake() {
 			recalc = true
 		}
 	}
-	if total.Equal(es.totalVStake) {
+	if !total.Equal(es.totalVStake) {
 		// some vStake changed, force recalc of ELS values.
 		es.totalVStake = total
 		recalc = true
@@ -236,6 +236,8 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 		v.stake = newStake
 		es.totalVStake = es.totalVStake.Add(v.vStake)
 		es.totalPStake = es.totalPStake.Add(v.stake)
+		// recalculate ELS for this party
+		v.share, _ = es.equity(id)
 		return
 	}
 
