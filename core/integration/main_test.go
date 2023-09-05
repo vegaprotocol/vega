@@ -359,6 +359,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`the network moves ahead "([^"]+)" with block duration of "([^"]+)"`, func(total, block string) error {
 		return steps.TheNetworkMovesAheadDurationWithBlocks(execsetup.executionEngine, execsetup.block, execsetup.timeService, total, block)
 	})
+	s.Step(`^the network moves ahead "([^"]+)" epochs$`, func(epochs string) error {
+		return steps.TheNetworkMovesAheadNEpochs(execsetup.broker, execsetup.block, execsetup.executionEngine, execsetup.epochEngine, execsetup.timeService, epochs)
+	})
 
 	// Assertion steps
 	s.Step(`^the parties should have the following staking account balances:$`, func(table *godog.Table) error {
