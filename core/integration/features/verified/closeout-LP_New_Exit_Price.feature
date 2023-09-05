@@ -26,7 +26,7 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
-      | market.liquidityV2.stakeToCcyVolume     | 1     |
+      | market.liquidity.stakeToCcyVolume     | 1     |
       | limits.markets.maxPeggedOrders          | 2     |
     And the average block duration is "1"
   Scenario: 001 Replicate a scenario from Lewis with Elias' implementation on Exit_price when there is insufficient orders, linear slippage factor = 1e6, quadratic slippage factor = 1e6, 0019-MCAL-001, 0019-MCAL-002

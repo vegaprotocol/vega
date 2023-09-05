@@ -6,8 +6,8 @@ import (
 )
 
 func (m *Market) GetCPState() *types.CPMarketState {
-	shares := m.equityShares.GetCPShares()
 	id := m.mkt.ID
+	shares := m.equityShares.GetCPShares()
 	// get all LP accounts, we don't have to sort this slice because we're fetching the balances
 	// in the same order as we got the ELS shares (which is already a deterministically sorted slice).
 	ipb, ok := m.collateral.GetInsurancePoolBalance(id, m.settlementAsset)
@@ -19,6 +19,7 @@ func (m *Market) GetCPState() *types.CPMarketState {
 		Shares:           shares,
 		InsuranceBalance: ipb,
 		LastTradeValue:   m.feeSplitter.TradeValue(),
+		State:            m.mkt.State,
 	}
 	// if the market was closed/settled, include the last valid market definition in the checkpoint
 	if m.mkt.State == types.MarketStateSettled || m.mkt.State == types.MarketStateClosed {

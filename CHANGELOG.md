@@ -84,6 +84,8 @@
 - [9254](https://github.com/vegaprotocol/vega/issues/9254) - Add fee discounts to trade API
 - [9246](https://github.com/vegaprotocol/vega/issues/9246) - Add rewards multiplier support in the referral engine.
 - [9063](https://github.com/vegaprotocol/vega/issues/9063) - Make `calculationTimeStep` a network parameter
+- [9167](https://github.com/vegaprotocol/vega/issues/9167) - Rename liquidity network parameters
+
 
 ### 🐛 Fixes
 
@@ -154,6 +156,7 @@
 - [9198](https://github.com/vegaprotocol/vega/issues/9198) - Fix panic during LP amendment applications
 - [9196](https://github.com/vegaprotocol/vega/issues/9196) - `API` documentation should specify the time format.
 - [9203](https://github.com/vegaprotocol/vega/issues/9203) - Do not remove LPs from the parties map if they are an LP without an open position
+- [9202](https://github.com/vegaprotocol/vega/issues/9202) - Fix `ELS` not calculated when leaving opening auction.
 
 ## 0.72.1
 

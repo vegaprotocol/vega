@@ -28,7 +28,7 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
       | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       | SLA        |
     And the following network parameters are set:
       | name                                               | value    |
-      | market.liquidityV2.providersFeeCalculationTimeStep | 24h0m0s  |
+      | market.liquidity.providersFeeCalculationTimeStep | 24h0m0s  |
 
     Given the average block duration is "2"
 
