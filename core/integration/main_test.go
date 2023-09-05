@@ -126,6 +126,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties receive the following reward for epoch (\d+):$`, func(epoch string, table *godog.Table) error {
 		return steps.PartiesShouldReceiveTheFollowingReward(execsetup.broker, table, epoch)
 	})
+	s.Step(`^the current epoch is "([^"]+)"$`, func(epoch string) error {
+		return steps.TheCurrentEpochIs(execsetup.broker, epoch)
+	})
 
 	// Market steps
 	s.Step(`the simple risk model named "([^"]*)":$`, func(name string, table *godog.Table) error {
