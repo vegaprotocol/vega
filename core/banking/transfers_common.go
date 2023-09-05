@@ -212,8 +212,13 @@ func (e *Engine) ensureFeeForTransferFunds(
 		err         error
 	)
 	switch fromAccountType {
-	case types.AccountTypeGeneral, types.AccountTypeVestedRewards:
+	case types.AccountTypeGeneral:
 		account, err = e.col.GetPartyGeneralAccount(from, asset)
+		if err != nil {
+			return nil, err
+		}
+	case types.AccountTypeVestedRewards:
+		account, err = e.col.GetPartyVestedRewardAccount(from, asset)
 		if err != nil {
 			return nil, err
 		}
