@@ -269,9 +269,19 @@ func newServices(
 	// TODO(): this is not pretty
 	svcs.topology.SetNotary(svcs.notary)
 
+	// The referral program is used to compute rewards, and can end when reaching
+	// the end of epoch. Since the engine will reject computations when the program
+	// is marked as ended, it needs to be one of the last service to register on
+	// epoch update, so the computation can happen for this epoch.
+	svcs.referralProgram = referral.NewSnapshottedEngine(svcs.broker, svcs.timeService, svcs.marketActivityTracker, svcs.stakingAccounts)
+	// The referral program engine must be notified of the epoch change *after* the
+	// market activity tracker, as it relies on computation that must happen, at
+	// the end of the epoch, in market activity tracker.
+	svcs.epochService.NotifyOnEpoch(svcs.referralProgram.OnEpoch, svcs.referralProgram.OnEpochRestore)
+
 	// instantiate the execution engine
 	svcs.executionEngine = execution.NewEngine(
-		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar, svcs.marketActivityTracker, svcs.assets,
+		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar, svcs.marketActivityTracker, svcs.assets, svcs.referralProgram,
 	)
 	svcs.epochService.NotifyOnEpoch(svcs.executionEngine.OnEpochEvent, svcs.executionEngine.OnEpochRestore)
 
@@ -349,7 +359,7 @@ func newServices(
 
 	svcs.snapshotEngine.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
 		svcs.notary, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar,
-		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier, svcs.vesting, svcs.activityStreak)
+		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier, svcs.vesting, svcs.activityStreak, svcs.referralProgram)
 
 	svcs.snapshotEngine.AddProviders(svcs.spam)
 
@@ -393,17 +403,6 @@ func newServices(
 	// on the team the parties belonged to during the epoch and not the new one.
 	svcs.teamsEngine = teams.NewSnapshottedEngine(svcs.epochService, svcs.broker, svcs.timeService)
 	svcs.snapshotEngine.AddProviders(svcs.teamsEngine)
-
-	// The referral program is used to compute rewards, and can end when reaching
-	// the end of epoch. Since the engine will reject computations when the program
-	// is marked as ended, it needs to be one of the last service to register on
-	// epoch update, so the computation can happen for this epoch.
-	svcs.referralProgram = referral.NewSnapshottedEngine(svcs.broker, svcs.timeService, svcs.marketActivityTracker, svcs.stakingAccounts)
-	svcs.snapshotEngine.AddProviders(svcs.referralProgram)
-	// The referral program engine must be notified of the epoch change *after* the
-	// market activity tracker, as it relies on computation that must happen, at
-	// the end of the epoch, in market activity tracker.
-	svcs.epochService.NotifyOnEpoch(svcs.referralProgram.OnEpoch, svcs.referralProgram.OnEpochRestore)
 
 	// setup config reloads for all engines / services /etc
 	svcs.registerConfigWatchers()
@@ -646,28 +645,32 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		},
 		// Liquidity version 2.
 		{
-			Param:   netparams.MarketLiquidityV2BondPenaltyParameter,
+			Param:   netparams.MarketLiquidityBondPenaltyParameter,
 			Watcher: svcs.executionEngine.OnMarketLiquidityV2BondPenaltyUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityV2EarlyExitPenalty,
+			Param:   netparams.MarketLiquidityEarlyExitPenalty,
 			Watcher: svcs.executionEngine.OnMarketLiquidityV2EarlyExitPenaltyUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityV2MaximumLiquidityFeeFactorLevel,
+			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
 			Watcher: svcs.executionEngine.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltySlope,
+			Param:   netparams.MarketLiquiditySLANonPerformanceBondPenaltySlope,
 			Watcher: svcs.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltyMax,
+			Param:   netparams.MarketLiquiditySLANonPerformanceBondPenaltyMax,
 			Watcher: svcs.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
+			Param:   netparams.MarketLiquidityStakeToCCYVolume,
 			Watcher: svcs.executionEngine.OnMarketLiquidityV2StakeToCCYVolumeUpdate,
+		},
+		{
+			Param:   netparams.MarketLiquidityProvidersFeeCalculationTimeStep,
+			Watcher: svcs.executionEngine.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep,
 		},
 		// End of liquidity version 2.
 		{
@@ -829,6 +832,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.RewardsActivityStreakMinQuantumTradeVolume,
 			Watcher: svcs.activityStreak.OnMinQuantumTradeVolumeUpdate,
+		},
+		{
+			Param:   netparams.ReferralProgramMaxReferralRewardProportion,
+			Watcher: svcs.referralProgram.OnReferralProgramMaxReferralRewardProportionUpdate,
 		},
 	}
 

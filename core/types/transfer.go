@@ -206,4 +206,7 @@ const (
 	TransferTypePerpFundingLoss TransferType = proto.TransferType_TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS
 	TransferTypePerpFundingWin  TransferType = proto.TransferType_TRANSFER_TYPE_PERPETUALS_FUNDING_WIN
 	TransferTypeRewardsVested   TransferType = proto.TransferType_TRANSFER_TYPE_REWARDS_VESTED
+
+	TransferTypeFeeReferrerRewardPay        TransferType = proto.TransferType_TRANSFER_TYPE_FEE_REFERRER_REWARD_PAY
+	TransferTypeFeeReferrerRewardDistribute TransferType = proto.TransferType_TRANSFER_TYPE_FEE_REFERRER_REWARD_DISTRIBUTE
 )

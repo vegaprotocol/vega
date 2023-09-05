@@ -56,6 +56,7 @@ func NewMarketFromSnapshot(
 	quoteAssetDetails *assets.Asset,
 	marketActivityTracker *common.MarketActivityTracker,
 	peggedOrderNotify func(int64),
+	feeDiscountRewardService fee.FeeDiscountRewardService,
 ) (*Market, error) {
 	mkt := em.Market
 	if len(em.Market.ID) == 0 {
@@ -101,7 +102,7 @@ func NewMarketFromSnapshot(
 	}
 	els := common.NewEquitySharesFromSnapshot(em.EquityShare)
 	liquidity := liquidity.NewSnapshotEngine(liquidityConfig, log, timeService, broker, riskModel, pMonitor, book, as, quoteAsset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams)
-	marketLiquidity := common.NewMarketLiquidity(log, liquidity, collateralEngine, broker, book, els, marketActivityTracker, feeEngine, common.FutureMarketType, mkt.ID, quoteAsset, priceFactor, mkt.LiquiditySLAParams.PriceRange, mkt.LiquiditySLAParams.ProvidersFeeCalculationTimeStep)
+	marketLiquidity := common.NewMarketLiquidity(log, liquidity, collateralEngine, broker, book, els, marketActivityTracker, feeEngine, common.FutureMarketType, mkt.ID, quoteAsset, priceFactor, mkt.LiquiditySLAParams.PriceRange)
 
 	// backward compatibility check for nil
 	stopOrders := stoporders.New(log)
@@ -129,6 +130,7 @@ func NewMarketFromSnapshot(
 		collateral:                 collateralEngine,
 		broker:                     broker,
 		fee:                        feeEngine,
+		feeDiscountRewardService:   feeDiscountRewardService,
 		liquidity:                  marketLiquidity,
 		liquidityEngine:            liquidity,
 		parties:                    map[string]struct{}{},

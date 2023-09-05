@@ -69,6 +69,18 @@ func (ts *Trades) Flush(ctx context.Context) ([]*entities.Trade, error) {
 			t.SellerLiquidityFee,
 			t.BuyerAuctionBatch,
 			t.SellerAuctionBatch,
+			t.BuyerMakerFeeReferralDiscount,
+			t.BuyerInfrastructureFeeReferralDiscount,
+			t.BuyerLiquidityFeeReferralDiscount,
+			t.BuyerMakerFeeVolumeDiscount,
+			t.BuyerInfrastructureFeeVolumeDiscount,
+			t.BuyerLiquidityFeeVolumeDiscount,
+			t.SellerMakerFeeReferralDiscount,
+			t.SellerInfrastructureFeeReferralDiscount,
+			t.SellerLiquidityFeeReferralDiscount,
+			t.SellerMakerFeeVolumeDiscount,
+			t.SellerInfrastructureFeeVolumeDiscount,
+			t.SellerLiquidityFeeVolumeDiscount,
 		})
 	}
 
@@ -82,7 +94,10 @@ func (ts *Trades) Flush(ctx context.Context) ([]*entities.Trade, error) {
 				"synthetic_time", "tx_hash", "vega_time", "seq_num", "id", "market_id", "price", "size", "buyer", "seller",
 				"aggressor", "buy_order", "sell_order", "type", "buyer_maker_fee", "buyer_infrastructure_fee",
 				"buyer_liquidity_fee", "seller_maker_fee", "seller_infrastructure_fee", "seller_liquidity_fee",
-				"buyer_auction_batch", "seller_auction_batch",
+				"buyer_auction_batch", "seller_auction_batch", "buyer_maker_fee_referral_discount", "buyer_infrastructure_fee_referral_discount",
+				"buyer_liquidity_fee_referral_discount", "buyer_maker_fee_volume_discount", "buyer_infrastructure_fee_volume_discount", "buyer_liquidity_fee_volume_discount",
+				"seller_maker_fee_referral_discount", "seller_infrastructure_fee_referral_discount", "seller_liquidity_fee_referral_discount",
+				"seller_maker_fee_volume_discount", "seller_infrastructure_fee_volume_discount", "seller_liquidity_fee_volume_discount",
 			},
 			pgx.CopyFromRows(rows),
 		)

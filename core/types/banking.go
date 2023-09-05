@@ -89,7 +89,7 @@ func (t *TransferBase) IsValid() error {
 	}
 
 	switch t.FromAccountType {
-	case AccountTypeGeneral /*, AccountTypeLockedForStaking*/ :
+	case AccountTypeGeneral, AccountTypeVestedRewards /*, AccountTypeLockedForStaking*/ :
 		break
 	default:
 		return ErrUnsupportedFromAccountType

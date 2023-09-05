@@ -139,12 +139,11 @@ func (es *EquityShares) OpeningAuctionEnded() {
 	}
 	es.openingAuctionEnded = true
 	es.r = num.DecimalZero()
+	// force recalc of vStake, ensuring ELS will be set properly
+	es.UpdateVStake()
 }
 
 func (es *EquityShares) UpdateVStake() {
-	if es.r.IsZero() {
-		return
-	}
 	total := num.DecimalZero()
 	factor := num.DecimalFromFloat(1.0).Add(es.r)
 	recalc := false
@@ -152,12 +151,15 @@ func (es *EquityShares) UpdateVStake() {
 		vStake := num.MaxD(v.stake, v.vStake.Mul(factor))
 		v.vStake = vStake
 		total = total.Add(vStake)
+		if !recalc && v.share.IsZero() {
+			recalc = true
+		}
 	}
-	// some vStake changed, force recalc of ELS values.
-	if !es.totalVStake.Equals(total) {
+	if !total.Equal(es.totalVStake) {
+		// some vStake changed, force recalc of ELS values.
+		es.totalVStake = total
 		recalc = true
 	}
-	es.totalVStake = total
 	if recalc {
 		es.updateAllELS()
 	}
@@ -234,6 +236,8 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 		v.stake = newStake
 		es.totalVStake = es.totalVStake.Add(v.vStake)
 		es.totalPStake = es.totalPStake.Add(v.stake)
+		// recalculate ELS for this party
+		v.share, _ = es.equity(id)
 		return
 	}
 

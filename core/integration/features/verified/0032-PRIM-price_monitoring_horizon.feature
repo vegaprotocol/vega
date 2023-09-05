@@ -5,7 +5,7 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
-      | market.liquidityV2.bondPenaltyParameter       | 0.2   |
+      | market.liquidity.bondPenaltyParameter       | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | limits.markets.maxPeggedOrders                | 2     |
@@ -87,7 +87,7 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
-      | market.liquidityV2.bondPenaltyParameter       | 0.2   |
+      | market.liquidity.bondPenaltyParameter       | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | limits.markets.maxPeggedOrders                | 2     |
@@ -171,7 +171,7 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
-      | market.liquidityV2.bondPenaltyParameter       | 0.2   |
+      | market.liquidity.bondPenaltyParameter       | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | limits.markets.maxPeggedOrders                | 2     |

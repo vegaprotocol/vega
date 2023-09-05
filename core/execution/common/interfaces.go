@@ -252,6 +252,7 @@ type MarketLiquidityEngine interface {
 	OnProbabilityOfTradingTauScalingUpdate(num.Decimal)
 	OnMaximumLiquidityFeeFactorLevelUpdate(num.Decimal)
 	OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal)
+	OnProvidersFeeCalculationTimeStep(d time.Duration)
 	StopAllLiquidityProvision(context.Context)
 	IsProbabilityOfTradingInitialised() bool
 	GetAverageLiquidityScores() map[string]num.Decimal
@@ -297,6 +298,7 @@ type CommonMarket interface {
 	OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(num.Decimal)
 	OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(num.Decimal)
 	OnMarketLiquidityV2StakeToCCYVolume(d num.Decimal)
+	OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(t time.Duration)
 
 	// liquidity provision
 	CancelLiquidityProvision(context.Context, *types.LiquidityProvisionCancellation, string) error

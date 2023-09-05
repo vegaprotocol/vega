@@ -28,11 +28,13 @@ import (
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	emocks "code.vegaprotocol.io/vega/core/execution/common/mocks"
+	fmocks "code.vegaprotocol.io/vega/core/fee/mocks"
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/governance/mocks"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtesting "code.vegaprotocol.io/vega/libs/testing"
@@ -40,6 +42,7 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	checkpointpb "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -193,7 +196,12 @@ func createExecutionEngine(t *testing.T, tm time.Time) (*execution.Engine, *gove
 	teams := emocks.NewMockTeams(ctrl)
 	bc := emocks.NewMockAccountBalanceChecker(ctrl)
 	marketTracker := common.NewMarketActivityTracker(log, epochEngine, teams, bc)
-	exec := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, marketTracker, asset)
+	feeDiscountReward := fmocks.NewMockFeeDiscountRewardService(ctrl)
+	feeDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("no referrer")).AnyTimes()
+	feeDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	feeDiscountReward.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+
+	exec := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, marketTracker, asset, feeDiscountReward)
 	accounts := mocks.NewMockStakingAccounts(ctrl)
 
 	witness := mocks.NewMockWitness(ctrl)

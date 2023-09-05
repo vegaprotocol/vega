@@ -887,11 +887,10 @@ type ComplexityRoot struct {
 	}
 
 	LiquiditySLAParameters struct {
-		CommitmentMinTimeFraction       func(childComplexity int) int
-		PerformanceHysteresisEpochs     func(childComplexity int) int
-		PriceRange                      func(childComplexity int) int
-		ProvidersFeeCalculationTimeStep func(childComplexity int) int
-		SLACompetitionFactor             func(childComplexity int) int
+		CommitmentMinTimeFraction   func(childComplexity int) int
+		PerformanceHysteresisEpochs func(childComplexity int) int
+		PriceRange                  func(childComplexity int) int
+		SlaCompetitionFactor        func(childComplexity int) int
 	}
 
 	LogNormalModelParams struct {
@@ -2022,9 +2021,15 @@ type ComplexityRoot struct {
 	}
 
 	TradeFee struct {
-		InfrastructureFee func(childComplexity int) int
-		LiquidityFee      func(childComplexity int) int
-		MakerFee          func(childComplexity int) int
+		InfrastructureFee                 func(childComplexity int) int
+		InfrastructureFeeReferralDiscount func(childComplexity int) int
+		InfrastructureFeeVolumeDiscount   func(childComplexity int) int
+		LiquidityFee                      func(childComplexity int) int
+		LiquidityFeeReferralDiscount      func(childComplexity int) int
+		LiquidityFeeVolumeDiscount        func(childComplexity int) int
+		MakerFee                          func(childComplexity int) int
+		MakerFeeReferralDiscount          func(childComplexity int) int
+		MakerFeeVolumeDiscount            func(childComplexity int) int
 	}
 
 	TradeSettlement struct {
@@ -2391,7 +2396,6 @@ type LiquidityProvisionUpdateResolver interface {
 }
 type LiquiditySLAParametersResolver interface {
 	PerformanceHysteresisEpochs(ctx context.Context, obj *vega.LiquiditySLAParameters) (int, error)
-	SLACompetitionFactor(ctx context.Context, obj *vega.LiquiditySLAParameters) (string, error)
 }
 type MarginLevelsResolver interface {
 	Market(ctx context.Context, obj *vega.MarginLevels) (*vega.Market, error)
@@ -5809,19 +5813,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LiquiditySLAParameters.PriceRange(childComplexity), true
 
-	case "LiquiditySLAParameters.providersFeeCalculationTimeStep":
-		if e.complexity.LiquiditySLAParameters.ProvidersFeeCalculationTimeStep == nil {
-			break
-		}
-
-		return e.complexity.LiquiditySLAParameters.ProvidersFeeCalculationTimeStep(childComplexity), true
-
 	case "LiquiditySLAParameters.slaCompetitionFactor":
-		if e.complexity.LiquiditySLAParameters.SLACompetitionFactor == nil {
+		if e.complexity.LiquiditySLAParameters.SlaCompetitionFactor == nil {
 			break
 		}
 
-		return e.complexity.LiquiditySLAParameters.SLACompetitionFactor(childComplexity), true
+		return e.complexity.LiquiditySLAParameters.SlaCompetitionFactor(childComplexity), true
 
 	case "LogNormalModelParams.mu":
 		if e.complexity.LogNormalModelParams.Mu == nil {
@@ -11302,6 +11299,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TradeFee.InfrastructureFee(childComplexity), true
 
+	case "TradeFee.infrastructureFeeReferralDiscount":
+		if e.complexity.TradeFee.InfrastructureFeeReferralDiscount == nil {
+			break
+		}
+
+		return e.complexity.TradeFee.InfrastructureFeeReferralDiscount(childComplexity), true
+
+	case "TradeFee.infrastructureFeeVolumeDiscount":
+		if e.complexity.TradeFee.InfrastructureFeeVolumeDiscount == nil {
+			break
+		}
+
+		return e.complexity.TradeFee.InfrastructureFeeVolumeDiscount(childComplexity), true
+
 	case "TradeFee.liquidityFee":
 		if e.complexity.TradeFee.LiquidityFee == nil {
 			break
@@ -11309,12 +11320,40 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TradeFee.LiquidityFee(childComplexity), true
 
+	case "TradeFee.liquidityFeeReferralDiscount":
+		if e.complexity.TradeFee.LiquidityFeeReferralDiscount == nil {
+			break
+		}
+
+		return e.complexity.TradeFee.LiquidityFeeReferralDiscount(childComplexity), true
+
+	case "TradeFee.liquidityFeeVolumeDiscount":
+		if e.complexity.TradeFee.LiquidityFeeVolumeDiscount == nil {
+			break
+		}
+
+		return e.complexity.TradeFee.LiquidityFeeVolumeDiscount(childComplexity), true
+
 	case "TradeFee.makerFee":
 		if e.complexity.TradeFee.MakerFee == nil {
 			break
 		}
 
 		return e.complexity.TradeFee.MakerFee(childComplexity), true
+
+	case "TradeFee.makerFeeReferralDiscount":
+		if e.complexity.TradeFee.MakerFeeReferralDiscount == nil {
+			break
+		}
+
+		return e.complexity.TradeFee.MakerFeeReferralDiscount(childComplexity), true
+
+	case "TradeFee.makerFeeVolumeDiscount":
+		if e.complexity.TradeFee.MakerFeeVolumeDiscount == nil {
+			break
+		}
+
+		return e.complexity.TradeFee.MakerFeeVolumeDiscount(childComplexity), true
 
 	case "TradeSettlement.price":
 		if e.complexity.TradeSettlement.Price == nil {
@@ -28143,6 +28182,18 @@ func (ec *executionContext) fieldContext_FeeEstimate_fees(ctx context.Context, f
 				return ec.fieldContext_TradeFee_infrastructureFee(ctx, field)
 			case "liquidityFee":
 				return ec.fieldContext_TradeFee_liquidityFee(ctx, field)
+			case "makerFeeReferralDiscount":
+				return ec.fieldContext_TradeFee_makerFeeReferralDiscount(ctx, field)
+			case "makerFeeVolumeDiscount":
+				return ec.fieldContext_TradeFee_makerFeeVolumeDiscount(ctx, field)
+			case "infrastructureFeeReferralDiscount":
+				return ec.fieldContext_TradeFee_infrastructureFeeReferralDiscount(ctx, field)
+			case "infrastructureFeeVolumeDiscount":
+				return ec.fieldContext_TradeFee_infrastructureFeeVolumeDiscount(ctx, field)
+			case "liquidityFeeReferralDiscount":
+				return ec.fieldContext_TradeFee_liquidityFeeReferralDiscount(ctx, field)
+			case "liquidityFeeVolumeDiscount":
+				return ec.fieldContext_TradeFee_liquidityFeeVolumeDiscount(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TradeFee", field.Name)
 		},
@@ -34228,50 +34279,6 @@ func (ec *executionContext) fieldContext_LiquiditySLAParameters_commitmentMinTim
 	return fc, nil
 }
 
-func (ec *executionContext) _LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx context.Context, field graphql.CollectedField, obj *vega.LiquiditySLAParameters) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ProvidersFeeCalculationTimeStep, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNInt2int64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "LiquiditySLAParameters",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _LiquiditySLAParameters_performanceHysteresisEpochs(ctx context.Context, field graphql.CollectedField, obj *vega.LiquiditySLAParameters) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_LiquiditySLAParameters_performanceHysteresisEpochs(ctx, field)
 	if err != nil {
@@ -34330,7 +34337,7 @@ func (ec *executionContext) _LiquiditySLAParameters_slaCompetitionFactor(ctx con
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.LiquiditySLAParameters().SLACompetitionFactor(rctx, obj)
+		return obj.SlaCompetitionFactor, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -34351,8 +34358,8 @@ func (ec *executionContext) fieldContext_LiquiditySLAParameters_slaCompetitionFa
 	fc = &graphql.FieldContext{
 		Object:     "LiquiditySLAParameters",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -37324,8 +37331,6 @@ func (ec *executionContext) fieldContext_Market_liquiditySLAParameters(ctx conte
 				return ec.fieldContext_LiquiditySLAParameters_priceRange(ctx, field)
 			case "commitmentMinTimeFraction":
 				return ec.fieldContext_LiquiditySLAParameters_commitmentMinTimeFraction(ctx, field)
-			case "providersFeeCalculationTimeStep":
-				return ec.fieldContext_LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx, field)
 			case "performanceHysteresisEpochs":
 				return ec.fieldContext_LiquiditySLAParameters_performanceHysteresisEpochs(ctx, field)
 			case "slaCompetitionFactor":
@@ -42155,8 +42160,6 @@ func (ec *executionContext) fieldContext_NewSpotMarket_liquiditySLAParams(ctx co
 				return ec.fieldContext_LiquiditySLAParameters_priceRange(ctx, field)
 			case "commitmentMinTimeFraction":
 				return ec.fieldContext_LiquiditySLAParameters_commitmentMinTimeFraction(ctx, field)
-			case "providersFeeCalculationTimeStep":
-				return ec.fieldContext_LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx, field)
 			case "performanceHysteresisEpochs":
 				return ec.fieldContext_LiquiditySLAParameters_performanceHysteresisEpochs(ctx, field)
 			case "slaCompetitionFactor":
@@ -48869,6 +48872,18 @@ func (ec *executionContext) fieldContext_OrderEstimate_fee(ctx context.Context, 
 				return ec.fieldContext_TradeFee_infrastructureFee(ctx, field)
 			case "liquidityFee":
 				return ec.fieldContext_TradeFee_liquidityFee(ctx, field)
+			case "makerFeeReferralDiscount":
+				return ec.fieldContext_TradeFee_makerFeeReferralDiscount(ctx, field)
+			case "makerFeeVolumeDiscount":
+				return ec.fieldContext_TradeFee_makerFeeVolumeDiscount(ctx, field)
+			case "infrastructureFeeReferralDiscount":
+				return ec.fieldContext_TradeFee_infrastructureFeeReferralDiscount(ctx, field)
+			case "infrastructureFeeVolumeDiscount":
+				return ec.fieldContext_TradeFee_infrastructureFeeVolumeDiscount(ctx, field)
+			case "liquidityFeeReferralDiscount":
+				return ec.fieldContext_TradeFee_liquidityFeeReferralDiscount(ctx, field)
+			case "liquidityFeeVolumeDiscount":
+				return ec.fieldContext_TradeFee_liquidityFeeVolumeDiscount(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TradeFee", field.Name)
 		},
@@ -70344,6 +70359,18 @@ func (ec *executionContext) fieldContext_Trade_buyerFee(ctx context.Context, fie
 				return ec.fieldContext_TradeFee_infrastructureFee(ctx, field)
 			case "liquidityFee":
 				return ec.fieldContext_TradeFee_liquidityFee(ctx, field)
+			case "makerFeeReferralDiscount":
+				return ec.fieldContext_TradeFee_makerFeeReferralDiscount(ctx, field)
+			case "makerFeeVolumeDiscount":
+				return ec.fieldContext_TradeFee_makerFeeVolumeDiscount(ctx, field)
+			case "infrastructureFeeReferralDiscount":
+				return ec.fieldContext_TradeFee_infrastructureFeeReferralDiscount(ctx, field)
+			case "infrastructureFeeVolumeDiscount":
+				return ec.fieldContext_TradeFee_infrastructureFeeVolumeDiscount(ctx, field)
+			case "liquidityFeeReferralDiscount":
+				return ec.fieldContext_TradeFee_liquidityFeeReferralDiscount(ctx, field)
+			case "liquidityFeeVolumeDiscount":
+				return ec.fieldContext_TradeFee_liquidityFeeVolumeDiscount(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TradeFee", field.Name)
 		},
@@ -70396,6 +70423,18 @@ func (ec *executionContext) fieldContext_Trade_sellerFee(ctx context.Context, fi
 				return ec.fieldContext_TradeFee_infrastructureFee(ctx, field)
 			case "liquidityFee":
 				return ec.fieldContext_TradeFee_liquidityFee(ctx, field)
+			case "makerFeeReferralDiscount":
+				return ec.fieldContext_TradeFee_makerFeeReferralDiscount(ctx, field)
+			case "makerFeeVolumeDiscount":
+				return ec.fieldContext_TradeFee_makerFeeVolumeDiscount(ctx, field)
+			case "infrastructureFeeReferralDiscount":
+				return ec.fieldContext_TradeFee_infrastructureFeeReferralDiscount(ctx, field)
+			case "infrastructureFeeVolumeDiscount":
+				return ec.fieldContext_TradeFee_infrastructureFeeVolumeDiscount(ctx, field)
+			case "liquidityFeeReferralDiscount":
+				return ec.fieldContext_TradeFee_liquidityFeeReferralDiscount(ctx, field)
+			case "liquidityFeeVolumeDiscount":
+				return ec.fieldContext_TradeFee_liquidityFeeVolumeDiscount(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TradeFee", field.Name)
 		},
@@ -70829,6 +70868,252 @@ func (ec *executionContext) _TradeFee_liquidityFee(ctx context.Context, field gr
 }
 
 func (ec *executionContext) fieldContext_TradeFee_liquidityFee(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TradeFee",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TradeFee_makerFeeReferralDiscount(ctx context.Context, field graphql.CollectedField, obj *TradeFee) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TradeFee_makerFeeReferralDiscount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MakerFeeReferralDiscount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TradeFee_makerFeeReferralDiscount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TradeFee",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TradeFee_makerFeeVolumeDiscount(ctx context.Context, field graphql.CollectedField, obj *TradeFee) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TradeFee_makerFeeVolumeDiscount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MakerFeeVolumeDiscount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TradeFee_makerFeeVolumeDiscount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TradeFee",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TradeFee_infrastructureFeeReferralDiscount(ctx context.Context, field graphql.CollectedField, obj *TradeFee) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TradeFee_infrastructureFeeReferralDiscount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InfrastructureFeeReferralDiscount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TradeFee_infrastructureFeeReferralDiscount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TradeFee",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TradeFee_infrastructureFeeVolumeDiscount(ctx context.Context, field graphql.CollectedField, obj *TradeFee) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TradeFee_infrastructureFeeVolumeDiscount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InfrastructureFeeVolumeDiscount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TradeFee_infrastructureFeeVolumeDiscount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TradeFee",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TradeFee_liquidityFeeReferralDiscount(ctx context.Context, field graphql.CollectedField, obj *TradeFee) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TradeFee_liquidityFeeReferralDiscount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiquidityFeeReferralDiscount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TradeFee_liquidityFeeReferralDiscount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TradeFee",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TradeFee_liquidityFeeVolumeDiscount(ctx context.Context, field graphql.CollectedField, obj *TradeFee) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TradeFee_liquidityFeeVolumeDiscount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiquidityFeeVolumeDiscount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TradeFee_liquidityFeeVolumeDiscount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "TradeFee",
 		Field:      field,
@@ -71458,6 +71743,18 @@ func (ec *executionContext) fieldContext_TradeUpdate_buyerFee(ctx context.Contex
 				return ec.fieldContext_TradeFee_infrastructureFee(ctx, field)
 			case "liquidityFee":
 				return ec.fieldContext_TradeFee_liquidityFee(ctx, field)
+			case "makerFeeReferralDiscount":
+				return ec.fieldContext_TradeFee_makerFeeReferralDiscount(ctx, field)
+			case "makerFeeVolumeDiscount":
+				return ec.fieldContext_TradeFee_makerFeeVolumeDiscount(ctx, field)
+			case "infrastructureFeeReferralDiscount":
+				return ec.fieldContext_TradeFee_infrastructureFeeReferralDiscount(ctx, field)
+			case "infrastructureFeeVolumeDiscount":
+				return ec.fieldContext_TradeFee_infrastructureFeeVolumeDiscount(ctx, field)
+			case "liquidityFeeReferralDiscount":
+				return ec.fieldContext_TradeFee_liquidityFeeReferralDiscount(ctx, field)
+			case "liquidityFeeVolumeDiscount":
+				return ec.fieldContext_TradeFee_liquidityFeeVolumeDiscount(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TradeFee", field.Name)
 		},
@@ -71510,6 +71807,18 @@ func (ec *executionContext) fieldContext_TradeUpdate_sellerFee(ctx context.Conte
 				return ec.fieldContext_TradeFee_infrastructureFee(ctx, field)
 			case "liquidityFee":
 				return ec.fieldContext_TradeFee_liquidityFee(ctx, field)
+			case "makerFeeReferralDiscount":
+				return ec.fieldContext_TradeFee_makerFeeReferralDiscount(ctx, field)
+			case "makerFeeVolumeDiscount":
+				return ec.fieldContext_TradeFee_makerFeeVolumeDiscount(ctx, field)
+			case "infrastructureFeeReferralDiscount":
+				return ec.fieldContext_TradeFee_infrastructureFeeReferralDiscount(ctx, field)
+			case "infrastructureFeeVolumeDiscount":
+				return ec.fieldContext_TradeFee_infrastructureFeeVolumeDiscount(ctx, field)
+			case "liquidityFeeReferralDiscount":
+				return ec.fieldContext_TradeFee_liquidityFeeReferralDiscount(ctx, field)
+			case "liquidityFeeVolumeDiscount":
+				return ec.fieldContext_TradeFee_liquidityFeeVolumeDiscount(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TradeFee", field.Name)
 		},
@@ -74688,8 +74997,6 @@ func (ec *executionContext) fieldContext_UpdateSpotMarketConfiguration_liquidity
 				return ec.fieldContext_LiquiditySLAParameters_priceRange(ctx, field)
 			case "commitmentMinTimeFraction":
 				return ec.fieldContext_LiquiditySLAParameters_commitmentMinTimeFraction(ctx, field)
-			case "providersFeeCalculationTimeStep":
-				return ec.fieldContext_LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx, field)
 			case "performanceHysteresisEpochs":
 				return ec.fieldContext_LiquiditySLAParameters_performanceHysteresisEpochs(ctx, field)
 			case "slaCompetitionFactor":
@@ -84784,13 +85091,6 @@ func (ec *executionContext) _LiquiditySLAParameters(ctx context.Context, sel ast
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "providersFeeCalculationTimeStep":
-
-			out.Values[i] = ec._LiquiditySLAParameters_providersFeeCalculationTimeStep(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "performanceHysteresisEpochs":
 			field := field
 
@@ -84812,25 +85112,12 @@ func (ec *executionContext) _LiquiditySLAParameters(ctx context.Context, sel ast
 
 			})
 		case "slaCompetitionFactor":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._LiquiditySLAParameters_slaCompetitionFactor(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._LiquiditySLAParameters_slaCompetitionFactor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -96041,6 +96328,30 @@ func (ec *executionContext) _TradeFee(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "makerFeeReferralDiscount":
+
+			out.Values[i] = ec._TradeFee_makerFeeReferralDiscount(ctx, field, obj)
+
+		case "makerFeeVolumeDiscount":
+
+			out.Values[i] = ec._TradeFee_makerFeeVolumeDiscount(ctx, field, obj)
+
+		case "infrastructureFeeReferralDiscount":
+
+			out.Values[i] = ec._TradeFee_infrastructureFeeReferralDiscount(ctx, field, obj)
+
+		case "infrastructureFeeVolumeDiscount":
+
+			out.Values[i] = ec._TradeFee_infrastructureFeeVolumeDiscount(ctx, field, obj)
+
+		case "liquidityFeeReferralDiscount":
+
+			out.Values[i] = ec._TradeFee_liquidityFeeReferralDiscount(ctx, field, obj)
+
+		case "liquidityFeeVolumeDiscount":
+
+			out.Values[i] = ec._TradeFee_liquidityFeeVolumeDiscount(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

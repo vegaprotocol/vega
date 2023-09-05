@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/future"
 	"code.vegaprotocol.io/vega/core/execution/spot"
+	"code.vegaprotocol.io/vega/core/fee"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/monitor"
 	"code.vegaprotocol.io/vega/core/types"
@@ -69,8 +70,9 @@ type Engine struct {
 	allMarkets    map[string]common.CommonMarket
 	allMarketsCpy []common.CommonMarket
 
-	collateral common.Collateral
-	assets     common.Assets
+	collateral               common.Collateral
+	assets                   common.Assets
+	feeDiscountRewardService fee.FeeDiscountRewardService
 
 	broker                common.Broker
 	timeService           common.TimeService
@@ -124,6 +126,7 @@ type netParamsValues struct {
 	liquidityV2SLANonPerformanceBondPenaltyMax   num.Decimal
 	liquidityV2SLANonPerformanceBondPenaltySlope num.Decimal
 	liquidityV2StakeToCCYVolume                  num.Decimal
+	liquidityV2FeeCalculationTimeStep            time.Duration
 }
 
 func defaultNetParamsValues() netParamsValues {
@@ -152,6 +155,7 @@ func defaultNetParamsValues() netParamsValues {
 		liquidityV2SLANonPerformanceBondPenaltyMax:   num.DecimalFromInt64(-1),
 		liquidityV2SLANonPerformanceBondPenaltySlope: num.DecimalFromInt64(-1),
 		liquidityV2StakeToCCYVolume:                  num.DecimalFromInt64(-1),
+		liquidityV2FeeCalculationTimeStep:            time.Second * 5,
 	}
 }
 
@@ -167,29 +171,31 @@ func NewEngine(
 	stateVarEngine common.StateVarEngine,
 	marketActivityTracker *common.MarketActivityTracker,
 	assets common.Assets,
+	feeDiscountRewardService fee.FeeDiscountRewardService,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(executionConfig.Level.Get())
 	e := &Engine{
-		log:                   log,
-		Config:                executionConfig,
-		futureMarkets:         map[string]*future.Market{},
-		spotMarkets:           map[string]*spot.Market{},
-		allMarkets:            map[string]common.CommonMarket{},
-		timeService:           ts,
-		collateral:            collateral,
-		assets:                assets,
-		broker:                broker,
-		oracle:                oracle,
-		npv:                   defaultNetParamsValues(),
-		generatedProviders:    map[string]struct{}{},
-		stateVarEngine:        stateVarEngine,
-		marketActivityTracker: marketActivityTracker,
-		marketCPStates:        map[string]*types.CPMarketState{},
-		successors:            map[string][]string{},
-		isSuccessor:           map[string]string{},
-		skipRestoreSuccessors: map[string]struct{}{},
+		log:                      log,
+		Config:                   executionConfig,
+		futureMarkets:            map[string]*future.Market{},
+		spotMarkets:              map[string]*spot.Market{},
+		allMarkets:               map[string]common.CommonMarket{},
+		timeService:              ts,
+		collateral:               collateral,
+		assets:                   assets,
+		broker:                   broker,
+		oracle:                   oracle,
+		npv:                      defaultNetParamsValues(),
+		generatedProviders:       map[string]struct{}{},
+		stateVarEngine:           stateVarEngine,
+		marketActivityTracker:    marketActivityTracker,
+		marketCPStates:           map[string]*types.CPMarketState{},
+		successors:               map[string][]string{},
+		isSuccessor:              map[string]string{},
+		skipRestoreSuccessors:    map[string]struct{}{},
+		feeDiscountRewardService: feeDiscountRewardService,
 	}
 
 	// set the eligibility for proposer bonus checker
@@ -659,6 +665,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 		e.marketActivityTracker,
 		ad,
 		e.peggedOrderCountUpdated,
+		e.feeDiscountRewardService,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -736,6 +743,7 @@ func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Marke
 		bad,
 		qad,
 		e.peggedOrderCountUpdated,
+		e.feeDiscountRewardService,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -874,6 +882,8 @@ func (e *Engine) propagateSLANetParams(_ context.Context, mkt *future.Market) {
 	if !e.npv.liquidityV2StakeToCCYVolume.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
 		mkt.OnMarketLiquidityV2StakeToCCYVolume(e.npv.liquidityV2StakeToCCYVolume)
 	}
+
+	mkt.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(e.npv.liquidityV2FeeCalculationTimeStep)
 }
 
 func (e *Engine) removeMarket(mktID string) {
@@ -1566,6 +1576,18 @@ func (e *Engine) OnMarketLiquidityV2StakeToCCYVolumeUpdate(_ context.Context, d 
 		m.OnMarketLiquidityV2StakeToCCYVolume(d)
 	}
 	e.npv.liquidityV2StakeToCCYVolume = d
+	return nil
+}
+
+func (e *Engine) OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(_ context.Context, t time.Duration) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update market SLA providers fee calculation time step (liquidity v2)",
+			logging.Duration("providersFeeCalculationTimeStep", t),
+		)
+	}
+	for _, m := range e.allMarketsCpy {
+		m.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(t)
+	}
 	return nil
 }
 

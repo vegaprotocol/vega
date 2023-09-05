@@ -291,7 +291,7 @@ Feature: Test settlement at expiry time from internal oracle
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC21"
 
-    And the insurance pool balance should be "10001" for the market "ETH/DEC21"
+    And the insurance pool balance should be "10000" for the market "ETH/DEC21"
     And the insurance pool balance should be "10000" for the market "ETH/DEC19"
 
     When the oracles broadcast data signed with "0xCAFECAFE1":

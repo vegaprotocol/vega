@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -44,6 +45,10 @@ var (
 		return fmt.Errorf("%v not eligible for referral rewards, staking balance required of %s got %s", party, required.String(), balance.String())
 	}
 
+	ErrNotPartOfAReferralSet = func(party types.PartyID) error {
+		return fmt.Errorf("%v is not part of a referral set", party)
+	}
+
 	ErrNotAValidSetID = errors.New("not a valid set ID")
 )
 
@@ -60,6 +65,8 @@ type Engine struct {
 	referralSetsNotionalVolumes *runningVolumes
 
 	referralProgramMinStakedVegaTokens *num.Uint
+
+	rewardProportionUpdate num.Decimal
 
 	// latestProgramVersion tracks the latest version of the program. It used to
 	// value any new program that comes in. It starts at 1.
@@ -84,6 +91,15 @@ type Engine struct {
 	sets      map[types.ReferralSetID]*types.ReferralSet
 	referrers map[types.PartyID]types.ReferralSetID
 	referees  map[types.PartyID]types.ReferralSetID
+}
+
+func (e *Engine) GetReferrer(referee types.PartyID) (types.PartyID, error) {
+	setID, ok := e.referees[referee]
+	if !ok {
+		return "", ErrNotPartOfAReferralSet(referee)
+	}
+
+	return e.sets[setID].Referrer.PartyID, nil
 }
 
 func (e *Engine) SetExists(setID types.ReferralSetID) bool {
@@ -185,6 +201,15 @@ func (e *Engine) removeFromSet(party types.PartyID, prevSet types.ReferralSetID)
 func (e *Engine) UpdateProgram(newProgram *types.ReferralProgram) {
 	e.latestProgramVersion += 1
 	e.newProgram = newProgram
+
+	sort.Slice(e.newProgram.BenefitTiers, func(i, j int) bool {
+		return e.newProgram.BenefitTiers[i].MinimumRunningNotionalTakerVolume.LT(e.newProgram.BenefitTiers[j].MinimumRunningNotionalTakerVolume)
+	})
+
+	sort.Slice(e.newProgram.StakingTiers, func(i, j int) bool {
+		return e.newProgram.StakingTiers[i].MinimumStakedTokens.LT(e.newProgram.StakingTiers[j].MinimumStakedTokens)
+	})
+
 	e.newProgram.Version = e.latestProgramVersion
 }
 
@@ -197,8 +222,8 @@ func (e *Engine) RewardsFactorForParty(party types.PartyID) num.Decimal {
 		return num.DecimalZero()
 	}
 
-	setID, isReferrer := e.referrers[party]
-	if !isReferrer {
+	setID, isReferee := e.referees[party]
+	if !isReferee {
 		// This party is not eligible to referral program rewards.
 		return num.DecimalZero()
 	}
@@ -221,7 +246,48 @@ func (e *Engine) RewardsFactorForParty(party types.PartyID) num.Decimal {
 	return num.DecimalZero()
 }
 
-func (e *Engine) DiscountFactorForParty(party types.PartyID) num.Decimal {
+func (e *Engine) RewardsFactorMultiplierAppliedForParty(party types.PartyID) num.Decimal {
+	return num.MinD(
+		e.RewardsFactorForParty(party).Mul(e.RewardsMultiplierForParty(party)),
+		e.rewardProportionUpdate,
+	)
+}
+
+func (e *Engine) RewardsMultiplierForParty(party types.PartyID) num.Decimal {
+	if e.programHasEnded {
+		return num.DecimalZero()
+	}
+
+	setID, isReferee := e.referees[party]
+	if !isReferee {
+		// This party is not eligible to referral program rewards.
+		return num.DecimalZero()
+	}
+
+	if e.isSetEligible(setID) != nil {
+		return num.DecimalZero()
+	}
+
+	balance, _ := e.staking.GetAvailableBalance(
+		string(e.sets[setID].Referrer.PartyID),
+	)
+
+	multiplier := num.DecimalOne()
+	for _, v := range e.currentProgram.StakingTiers {
+		if balance.LTE(v.MinimumStakedTokens) {
+			break
+		}
+		multiplier = v.ReferralRewardMultiplier
+	}
+
+	return multiplier
+}
+
+func (e *Engine) VolumeDiscountFactorForParty(party types.PartyID) num.Decimal {
+	return num.DecimalZero()
+}
+
+func (e *Engine) ReferralDiscountFactorForParty(party types.PartyID) num.Decimal {
 	if e.programHasEnded {
 		return num.DecimalZero()
 	}
@@ -253,6 +319,11 @@ func (e *Engine) DiscountFactorForParty(party types.PartyID) num.Decimal {
 	}
 
 	return num.DecimalZero()
+}
+
+func (e *Engine) OnReferralProgramMaxReferralRewardProportionUpdate(_ context.Context, value num.Decimal) error {
+	e.rewardProportionUpdate = value
+	return nil
 }
 
 func (e *Engine) OnReferralProgramMinStakedVegaTokensUpdate(_ context.Context, value *num.Uint) error {

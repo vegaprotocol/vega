@@ -499,11 +499,10 @@ func getSpotMarketUpdateProposal() *protoTypes.Proposal {
 					},
 				},
 				SlaParams: &protoTypes.LiquiditySLAParameters{
-					PriceRange:                      "",
-					CommitmentMinTimeFraction:       "0.5",
-					ProvidersFeeCalculationTimeStep: 1,
-					PerformanceHysteresisEpochs:     2,
-					SlaCompetitionFactor:            "0.75",
+					PriceRange:                  "",
+					CommitmentMinTimeFraction:   "0.5",
+					PerformanceHysteresisEpochs: 2,
+					SlaCompetitionFactor:        "0.75",
 				},
 			},
 		},
@@ -995,11 +994,10 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 					},
 				},
 				SlaParams: &protoTypes.LiquiditySLAParameters{
-					PriceRange:                      "",
-					CommitmentMinTimeFraction:       "0.5",
-					ProvidersFeeCalculationTimeStep: 1,
-					PerformanceHysteresisEpochs:     2,
-					SlaCompetitionFactor:            "0.75",
+					PriceRange:                  "",
+					CommitmentMinTimeFraction:   "0.5",
+					PerformanceHysteresisEpochs: 2,
+					SlaCompetitionFactor:        "0.75",
 				},
 			}
 			assert.Equal(t, want, newMarket.UpdateSpotMarket.Changes)

@@ -86,14 +86,15 @@ type Market struct {
 	priceFactor     *num.Uint
 
 	// own engines
-	matching           *matching.CachedOrderBook
-	tradableInstrument *markets.TradableInstrument
-	risk               *risk.Engine
-	position           *positions.SnapshotEngine
-	settlement         *settlement.SnapshotEngine
-	fee                *fee.Engine
-	liquidity          *common.MarketLiquidity
-	liquidityEngine    common.LiquidityEngine
+	matching                 *matching.CachedOrderBook
+	tradableInstrument       *markets.TradableInstrument
+	risk                     *risk.Engine
+	position                 *positions.SnapshotEngine
+	settlement               *settlement.SnapshotEngine
+	fee                      *fee.Engine
+	feeDiscountRewardService fee.FeeDiscountRewardService
+	liquidity                *common.MarketLiquidity
+	liquidityEngine          common.LiquidityEngine
 
 	// deps engines
 	collateral common.Collateral
@@ -173,6 +174,7 @@ func NewMarket(
 	marketActivityTracker *common.MarketActivityTracker,
 	assetDetails *assets.Asset,
 	peggedOrderNotify func(int64),
+	feeDiscountRewardService fee.FeeDiscountRewardService,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
 		return nil, common.ErrEmptyMarketID
@@ -250,7 +252,6 @@ func NewMarket(
 	marketLiquidity := common.NewMarketLiquidity(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
 		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange,
-		mkt.LiquiditySLAParams.ProvidersFeeCalculationTimeStep,
 	)
 
 	// The market is initially created in a proposed state
@@ -274,44 +275,45 @@ func NewMarket(
 
 	marketType := mkt.MarketType()
 	market := &Market{
-		log:                     log,
-		idgen:                   nil,
-		mkt:                     mkt,
-		matching:                book,
-		tradableInstrument:      tradableInstrument,
-		risk:                    riskEngine,
-		position:                positionEngine,
-		settlement:              settleEngine,
-		collateral:              collateralEngine,
-		timeService:             timeService,
-		broker:                  broker,
-		fee:                     feeEngine,
-		liquidity:               marketLiquidity,
-		liquidityEngine:         liquidityEngine, // TODO karel - consider not having this
-		parties:                 map[string]struct{}{},
-		as:                      auctionState,
-		pMonitor:                pMonitor,
-		lMonitor:                lMonitor,
-		tsCalc:                  tsCalc,
-		peggedOrders:            common.NewPeggedOrders(log, timeService),
-		expiringOrders:          common.NewExpiringOrders(),
-		feeSplitter:             common.NewFeeSplitter(),
-		equityShares:            equityShares,
-		lastBestAskPrice:        num.UintZero(),
-		lastMidSellPrice:        num.UintZero(),
-		lastMidBuyPrice:         num.UintZero(),
-		lastBestBidPrice:        num.UintZero(),
-		stateVarEngine:          stateVarEngine,
-		marketActivityTracker:   marketActivityTracker,
-		priceFactor:             priceFactor,
-		positionFactor:          positionFactor,
-		nextMTM:                 time.Time{}, // default to zero time
-		linearSlippageFactor:    mkt.LinearSlippageFactor,
-		quadraticSlippageFactor: mkt.QuadraticSlippageFactor,
-		maxStopOrdersPerParties: num.UintZero(),
-		stopOrders:              stoporders.New(log),
-		expiringStopOrders:      common.NewExpiringOrders(),
-		perp:                    marketType == types.MarketTypePerp,
+		log:                      log,
+		idgen:                    nil,
+		mkt:                      mkt,
+		matching:                 book,
+		tradableInstrument:       tradableInstrument,
+		risk:                     riskEngine,
+		position:                 positionEngine,
+		settlement:               settleEngine,
+		collateral:               collateralEngine,
+		timeService:              timeService,
+		broker:                   broker,
+		fee:                      feeEngine,
+		liquidity:                marketLiquidity,
+		liquidityEngine:          liquidityEngine, // TODO karel - consider not having this
+		parties:                  map[string]struct{}{},
+		as:                       auctionState,
+		pMonitor:                 pMonitor,
+		lMonitor:                 lMonitor,
+		tsCalc:                   tsCalc,
+		peggedOrders:             common.NewPeggedOrders(log, timeService),
+		expiringOrders:           common.NewExpiringOrders(),
+		feeSplitter:              common.NewFeeSplitter(),
+		equityShares:             equityShares,
+		lastBestAskPrice:         num.UintZero(),
+		lastMidSellPrice:         num.UintZero(),
+		lastMidBuyPrice:          num.UintZero(),
+		lastBestBidPrice:         num.UintZero(),
+		stateVarEngine:           stateVarEngine,
+		marketActivityTracker:    marketActivityTracker,
+		priceFactor:              priceFactor,
+		positionFactor:           positionFactor,
+		nextMTM:                  time.Time{}, // default to zero time
+		linearSlippageFactor:     mkt.LinearSlippageFactor,
+		quadraticSlippageFactor:  mkt.QuadraticSlippageFactor,
+		maxStopOrdersPerParties:  num.UintZero(),
+		stopOrders:               stoporders.New(log),
+		expiringStopOrders:       common.NewExpiringOrders(),
+		perp:                     marketType == types.MarketTypePerp,
+		feeDiscountRewardService: feeDiscountRewardService,
 	}
 
 	assets, _ := mkt.GetAssets()
@@ -712,6 +714,10 @@ func (m *Market) CanLeaveOpeningAuction() bool {
 }
 
 func (m *Market) InheritParent(ctx context.Context, pstate *types.CPMarketState) {
+	// parent is in opening auction, do not inherit any state
+	if pstate.State == types.MarketStatePending {
+		return
+	}
 	// add the trade value from the parent
 	m.feeSplitter.SetTradeValue(pstate.LastTradeValue)
 	m.equityShares.InheritELS(pstate.Shares)
@@ -727,7 +733,7 @@ func (m *Market) RollbackInherit(ctx context.Context) {
 	// before the call to InheritParent was made. Market is still in opening auction, therefore
 	// feeSplitter trade value is zero, and equity shares are linear stake/vstake/ELS
 	// do make sure this call is not made when the market is active
-	if m.mkt.State == types.MarketStatePending {
+	if m.mkt.State == types.MarketStatePending || m.mkt.State == types.MarketStateProposed {
 		m.feeSplitter.SetTradeValue(num.UintZero())
 		m.equityShares.RollbackParentELS()
 	}
@@ -1998,12 +2004,12 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 	)
 
 	if !m.as.InAuction() {
-		fees, err = m.fee.CalculateForContinuousMode(trades)
+		fees, err = m.fee.CalculateForContinuousMode(trades, m.feeDiscountRewardService)
 	} else if m.as.IsMonitorAuction() {
 		// we are in auction mode
-		fees, err = m.fee.CalculateForAuctionMode(trades)
+		fees, err = m.fee.CalculateForAuctionMode(trades, m.feeDiscountRewardService)
 	} else if m.as.IsFBA() {
-		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades)
+		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades, m.feeDiscountRewardService)
 	}
 
 	if err != nil {

@@ -48,8 +48,22 @@ type Trade struct {
 	SellerMakerFee          decimal.Decimal
 	SellerInfrastructureFee decimal.Decimal
 	SellerLiquidityFee      decimal.Decimal
-	BuyerAuctionBatch       uint64
-	SellerAuctionBatch      uint64
+
+	BuyerMakerFeeReferralDiscount           decimal.Decimal
+	BuyerMakerFeeVolumeDiscount             decimal.Decimal
+	BuyerInfrastructureFeeReferralDiscount  decimal.Decimal
+	BuyerInfrastructureFeeVolumeDiscount    decimal.Decimal
+	BuyerLiquidityFeeReferralDiscount       decimal.Decimal
+	BuyerLiquidityFeeVolumeDiscount         decimal.Decimal
+	SellerMakerFeeReferralDiscount          decimal.Decimal
+	SellerMakerFeeVolumeDiscount            decimal.Decimal
+	SellerInfrastructureFeeReferralDiscount decimal.Decimal
+	SellerInfrastructureFeeVolumeDiscount   decimal.Decimal
+	SellerLiquidityFeeReferralDiscount      decimal.Decimal
+	SellerLiquidityFeeVolumeDiscount        decimal.Decimal
+
+	BuyerAuctionBatch  uint64
+	SellerAuctionBatch uint64
 }
 
 func (t Trade) ToProto() *vega.Trade {
@@ -66,14 +80,26 @@ func (t Trade) ToProto() *vega.Trade {
 		Timestamp: t.VegaTime.UnixNano(),
 		Type:      t.Type,
 		BuyerFee: &vega.Fee{
-			MakerFee:          t.BuyerMakerFee.String(),
-			InfrastructureFee: t.BuyerInfrastructureFee.String(),
-			LiquidityFee:      t.BuyerLiquidityFee.String(),
+			MakerFee:                          t.BuyerMakerFee.String(),
+			InfrastructureFee:                 t.BuyerInfrastructureFee.String(),
+			LiquidityFee:                      t.BuyerLiquidityFee.String(),
+			MakerFeeReferrerDiscount:          t.BuyerMakerFeeReferralDiscount.String(),
+			MakerFeeVolumeDiscount:            t.BuyerMakerFeeVolumeDiscount.String(),
+			InfrastructureFeeReferrerDiscount: t.BuyerInfrastructureFeeReferralDiscount.String(),
+			InfrastructureFeeVolumeDiscount:   t.BuyerInfrastructureFeeVolumeDiscount.String(),
+			LiquidityFeeReferrerDiscount:      t.BuyerLiquidityFeeReferralDiscount.String(),
+			LiquidityFeeVolumeDiscount:        t.BuyerLiquidityFeeVolumeDiscount.String(),
 		},
 		SellerFee: &vega.Fee{
-			MakerFee:          t.SellerMakerFee.String(),
-			InfrastructureFee: t.SellerInfrastructureFee.String(),
-			LiquidityFee:      t.SellerLiquidityFee.String(),
+			MakerFee:                          t.SellerMakerFee.String(),
+			InfrastructureFee:                 t.SellerInfrastructureFee.String(),
+			LiquidityFee:                      t.SellerLiquidityFee.String(),
+			MakerFeeReferrerDiscount:          t.SellerMakerFeeReferralDiscount.String(),
+			MakerFeeVolumeDiscount:            t.SellerMakerFeeVolumeDiscount.String(),
+			InfrastructureFeeReferrerDiscount: t.SellerInfrastructureFeeReferralDiscount.String(),
+			InfrastructureFeeVolumeDiscount:   t.SellerInfrastructureFeeVolumeDiscount.String(),
+			LiquidityFeeReferrerDiscount:      t.SellerLiquidityFeeReferralDiscount.String(),
+			LiquidityFeeVolumeDiscount:        t.SellerLiquidityFeeVolumeDiscount.String(),
 		},
 		BuyerAuctionBatch:  t.BuyerAuctionBatch,
 		SellerAuctionBatch: t.SellerAuctionBatch,
@@ -102,66 +128,162 @@ func TradeFromProto(t *vega.Trade, txHash TxHash, vegaTime time.Time, sequenceNu
 	buyerMakerFee := decimal.Zero
 	buyerInfraFee := decimal.Zero
 	buyerLiquidityFee := decimal.Zero
+
+	buyerMakerFeeReferrerDiscount := decimal.Zero
+	buyerMakerFeeVolumeDiscount := decimal.Zero
+	buyerInfraFeeReferrerDiscount := decimal.Zero
+	buyerInfraFeeVolumeDiscount := decimal.Zero
+	buyerLiquidityFeeReferrerDiscount := decimal.Zero
+	buyerLiquidityFeeVolumeDiscount := decimal.Zero
+
 	if t.BuyerFee != nil {
 		buyerMakerFee, err = decimal.NewFromString(t.BuyerFee.MakerFee)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode buyer maker fee:%w", err)
 		}
-
+		if len(t.BuyerFee.MakerFeeReferrerDiscount) > 0 {
+			buyerMakerFeeReferrerDiscount, err = decimal.NewFromString(t.BuyerFee.MakerFeeReferrerDiscount)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode buyer maker fee referrer discount:%w", err)
+			}
+		}
+		if len(t.BuyerFee.MakerFeeVolumeDiscount) > 0 {
+			buyerMakerFeeVolumeDiscount, err = decimal.NewFromString(t.BuyerFee.MakerFeeVolumeDiscount)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode buyer maker fee volume discount:%w", err)
+			}
+		}
 		buyerInfraFee, err = decimal.NewFromString(t.BuyerFee.InfrastructureFee)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode buyer infrastructure fee:%w", err)
 		}
-
+		if len(t.BuyerFee.InfrastructureFeeReferrerDiscount) > 0 {
+			buyerInfraFeeReferrerDiscount, err = decimal.NewFromString(t.BuyerFee.InfrastructureFeeReferrerDiscount)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode buyer infrastructure fee referrer discount:%w", err)
+			}
+		}
+		if len(t.BuyerFee.InfrastructureFeeVolumeDiscount) > 0 {
+			buyerInfraFeeVolumeDiscount, err = decimal.NewFromString(t.BuyerFee.InfrastructureFeeVolumeDiscount)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode buyer infrastructure fee volume discount:%w", err)
+			}
+		}
 		buyerLiquidityFee, err = decimal.NewFromString(t.BuyerFee.LiquidityFee)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode buyer liquidity fee:%w", err)
+		}
+		if len(t.BuyerFee.LiquidityFeeReferrerDiscount) > 0 {
+			buyerLiquidityFeeReferrerDiscount, err = decimal.NewFromString(t.BuyerFee.LiquidityFeeReferrerDiscount)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode buyer liquidity fee referrer discount:%w", err)
+			}
+		}
+		if len(t.BuyerFee.LiquidityFeeVolumeDiscount) > 0 {
+			buyerLiquidityFeeVolumeDiscount, err = decimal.NewFromString(t.BuyerFee.LiquidityFeeVolumeDiscount)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode buyer liquidity fee volume discount:%w", err)
+			}
 		}
 	}
 
 	sellerMakerFee := decimal.Zero
 	sellerInfraFee := decimal.Zero
 	sellerLiquidityFee := decimal.Zero
+
+	sellerMakerFeeReferrerDiscount := decimal.Zero
+	sellerMakerFeeVolumeDiscount := decimal.Zero
+	sellerInfraFeeReferrerDiscount := decimal.Zero
+	sellerInfraFeeVolumeDiscount := decimal.Zero
+	sellerLiquidityFeeReferrerDiscount := decimal.Zero
+	sellerLiquidityFeeVolumeDiscount := decimal.Zero
+
 	if t.SellerFee != nil {
 		sellerMakerFee, err = decimal.NewFromString(t.SellerFee.MakerFee)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode seller maker fee:%w", err)
 		}
-
+		if len(t.SellerFee.MakerFeeReferrerDiscount) > 0 {
+			sellerMakerFeeReferrerDiscount, err = decimal.NewFromString(t.SellerFee.MakerFeeReferrerDiscount)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode seller maker fee referrer discount:%w", err)
+			}
+		}
+		if len(t.SellerFee.MakerFeeVolumeDiscount) > 0 {
+			sellerMakerFeeVolumeDiscount, err = decimal.NewFromString(t.SellerFee.MakerFeeVolumeDiscount)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode seller maker fee volume discount:%w", err)
+			}
+		}
 		sellerInfraFee, err = decimal.NewFromString(t.SellerFee.InfrastructureFee)
 		if err != nil {
-			return nil, fmt.Errorf("failed to decode buyer infrastructure fee:%w", err)
+			return nil, fmt.Errorf("failed to decode seller infrastructure fee:%w", err)
 		}
-
+		if len(t.SellerFee.InfrastructureFeeReferrerDiscount) > 0 {
+			sellerInfraFeeReferrerDiscount, err = decimal.NewFromString(t.SellerFee.InfrastructureFeeReferrerDiscount)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode seller infrastructure fee referrer discount:%w", err)
+			}
+		}
+		if len(t.SellerFee.InfrastructureFeeVolumeDiscount) > 0 {
+			sellerInfraFeeVolumeDiscount, err = decimal.NewFromString(t.SellerFee.InfrastructureFeeVolumeDiscount)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode seller infrastructure fee volume discount:%w", err)
+			}
+		}
 		sellerLiquidityFee, err = decimal.NewFromString(t.SellerFee.LiquidityFee)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode seller liquidity fee:%w", err)
 		}
+		if len(t.SellerFee.LiquidityFeeReferrerDiscount) > 0 {
+			sellerLiquidityFeeReferrerDiscount, err = decimal.NewFromString(t.SellerFee.LiquidityFeeReferrerDiscount)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode seller liquidity fee referrer discount:%w", err)
+			}
+		}
+		if len(t.SellerFee.LiquidityFeeVolumeDiscount) > 0 {
+			sellerLiquidityFeeVolumeDiscount, err = decimal.NewFromString(t.SellerFee.LiquidityFeeVolumeDiscount)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode seller liquidity fee volume discount:%w", err)
+			}
+		}
 	}
 
 	trade := Trade{
-		SyntheticTime:           syntheticTime,
-		TxHash:                  txHash,
-		VegaTime:                vegaTime,
-		SeqNum:                  sequenceNumber,
-		ID:                      TradeID(t.Id),
-		MarketID:                MarketID(t.MarketId),
-		Price:                   price,
-		Size:                    t.Size,
-		Buyer:                   PartyID(t.Buyer),
-		Seller:                  PartyID(t.Seller),
-		Aggressor:               t.Aggressor,
-		BuyOrder:                OrderID(t.BuyOrder),
-		SellOrder:               OrderID(t.SellOrder),
-		Type:                    t.Type,
-		BuyerMakerFee:           buyerMakerFee,
-		BuyerInfrastructureFee:  buyerInfraFee,
-		BuyerLiquidityFee:       buyerLiquidityFee,
-		SellerMakerFee:          sellerMakerFee,
-		SellerInfrastructureFee: sellerInfraFee,
-		SellerLiquidityFee:      sellerLiquidityFee,
-		BuyerAuctionBatch:       t.BuyerAuctionBatch,
-		SellerAuctionBatch:      t.SellerAuctionBatch,
+		SyntheticTime:                           syntheticTime,
+		TxHash:                                  txHash,
+		VegaTime:                                vegaTime,
+		SeqNum:                                  sequenceNumber,
+		ID:                                      TradeID(t.Id),
+		MarketID:                                MarketID(t.MarketId),
+		Price:                                   price,
+		Size:                                    t.Size,
+		Buyer:                                   PartyID(t.Buyer),
+		Seller:                                  PartyID(t.Seller),
+		Aggressor:                               t.Aggressor,
+		BuyOrder:                                OrderID(t.BuyOrder),
+		SellOrder:                               OrderID(t.SellOrder),
+		Type:                                    t.Type,
+		BuyerMakerFee:                           buyerMakerFee,
+		BuyerInfrastructureFee:                  buyerInfraFee,
+		BuyerLiquidityFee:                       buyerLiquidityFee,
+		BuyerMakerFeeReferralDiscount:           buyerMakerFeeReferrerDiscount,
+		BuyerMakerFeeVolumeDiscount:             buyerMakerFeeVolumeDiscount,
+		BuyerInfrastructureFeeReferralDiscount:  buyerInfraFeeReferrerDiscount,
+		BuyerInfrastructureFeeVolumeDiscount:    buyerInfraFeeVolumeDiscount,
+		BuyerLiquidityFeeReferralDiscount:       buyerLiquidityFeeReferrerDiscount,
+		BuyerLiquidityFeeVolumeDiscount:         buyerLiquidityFeeVolumeDiscount,
+		SellerMakerFee:                          sellerMakerFee,
+		SellerInfrastructureFee:                 sellerInfraFee,
+		SellerLiquidityFee:                      sellerLiquidityFee,
+		SellerMakerFeeReferralDiscount:          sellerMakerFeeReferrerDiscount,
+		SellerMakerFeeVolumeDiscount:            sellerMakerFeeVolumeDiscount,
+		SellerInfrastructureFeeReferralDiscount: sellerInfraFeeReferrerDiscount,
+		SellerInfrastructureFeeVolumeDiscount:   sellerInfraFeeVolumeDiscount,
+		SellerLiquidityFeeReferralDiscount:      sellerLiquidityFeeReferrerDiscount,
+		SellerLiquidityFeeVolumeDiscount:        sellerLiquidityFeeVolumeDiscount,
+		BuyerAuctionBatch:                       t.BuyerAuctionBatch,
+		SellerAuctionBatch:                      t.SellerAuctionBatch,
 	}
 	return &trade, nil
 }

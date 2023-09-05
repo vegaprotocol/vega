@@ -177,7 +177,7 @@ func (e *Engine) makeFeeTransferForTransferFunds(
 	feeAmount, _ := num.UintFromDecimal(amount.ToDecimal().Mul(e.transferFeeFactor))
 
 	switch fromAccountType {
-	case types.AccountTypeGeneral:
+	case types.AccountTypeGeneral, types.AccountTypeVestedRewards:
 	default:
 		e.log.Panic("from account not supported",
 			logging.String("account-type", fromAccountType.String()),
@@ -212,7 +212,7 @@ func (e *Engine) ensureFeeForTransferFunds(
 		err         error
 	)
 	switch fromAccountType {
-	case types.AccountTypeGeneral:
+	case types.AccountTypeGeneral, types.AccountTypeVestedRewards:
 		account, err = e.col.GetPartyGeneralAccount(from, asset)
 		if err != nil {
 			return nil, err
