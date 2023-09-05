@@ -25,7 +25,27 @@ create view current_referral_program as (
     order by vega_time desc limit 1 -- there should only be 1 referral program running at any time, so just get the last record.
 );
 
+create table referral_sets(
+    id bytea not null,
+    referrer bytea not null,
+    created_at timestamp with time zone not null,
+    updated_at timestamp with time zone not null,
+    vega_time timestamp with time zone not null,
+    primary key (id)
+);
+
+create table referral_set_referees(
+    referral_set_id bytea not null,
+    referee bytea not null,
+    joined_at timestamp with time zone not null,
+    at_epoch bigint not null,
+    vega_time timestamp with time zone not null,
+    primary key (referral_set_id, referee)
+);
+
 -- +goose Down
 
+drop table if exists referral_set_referees;
+drop table if exists referral_sets;
 drop view if exists current_referral_program;
 drop table if exists referral_programs;

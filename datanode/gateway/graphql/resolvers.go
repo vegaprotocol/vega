@@ -495,6 +495,10 @@ func (r *VegaResolverRoot) ReferralProgram() ReferralProgramResolver {
 	return (*referralProgramResolver)(r)
 }
 
+func (r *VegaResolverRoot) ReferralSetReferee() ReferralSetRefereeResolver {
+	return (*referralSetRefereeResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -1492,6 +1496,43 @@ func (r *myQueryResolver) LiquidityProviders(ctx context.Context, partyID, marke
 	}
 
 	return providers.LiquidityProviders, nil
+}
+
+func (r *myQueryResolver) CurrentReferralProgram(ctx context.Context) (*v2.ReferralProgram, error) {
+	resp, err := r.tradingDataClientV2.GetCurrentReferralProgram(ctx, &v2.GetCurrentReferralProgramRequest{})
+	if err != nil {
+		return &v2.ReferralProgram{}, err
+	}
+
+	return resp.CurrentReferralProgram, nil
+}
+
+func (r *myQueryResolver) ReferralSets(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.ReferralSetConnection, error) {
+	req := &v2.ListReferralSetsRequest{
+		ReferralSetId: id,
+		Pagination:    pagination,
+	}
+
+	resp, err := r.tradingDataClientV2.ListReferralSets(ctx, req)
+	if err != nil {
+		return &v2.ReferralSetConnection{}, err
+	}
+
+	return resp.ReferralSets, nil
+}
+
+func (r *myQueryResolver) ReferralSetReferees(ctx context.Context, id string, pagination *v2.Pagination) (*v2.ReferralSetRefereeConnection, error) {
+	req := &v2.ListReferralSetRefereesRequest{
+		ReferralSetId: id,
+		Pagination:    pagination,
+	}
+
+	resp, err := r.tradingDataClientV2.ListReferralSetReferees(ctx, req)
+	if err != nil {
+		return &v2.ReferralSetRefereeConnection{}, err
+	}
+
+	return resp.ReferralSetReferees, nil
 }
 
 // END: Root Resolver

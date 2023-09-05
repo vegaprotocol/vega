@@ -54,6 +54,7 @@ type SQLSubscribers struct {
 	fundingPeriodStore        *sqlstore.FundingPeriods
 	partyActivityStreakStore  *sqlstore.PartyActivityStreaks
 	referralProgramStore      *sqlstore.ReferralPrograms
+	referralSetsStore         *sqlstore.ReferralSets
 
 	// Services
 	candleService               *candlesv2.Svc
@@ -96,6 +97,7 @@ type SQLSubscribers struct {
 	fundingPeriodService        *service.FundingPeriods
 	partyActivityStreakService  *service.PartyActivityStreak
 	referralProgramService      *service.ReferralPrograms
+	referralSetsService         *service.ReferralSets
 
 	// Subscribers
 	accountSub              *sqlsubscribers.Account
@@ -136,6 +138,7 @@ type SQLSubscribers struct {
 	fundingPeriodSub        *sqlsubscribers.FundingPeriod
 	partyActivityStreakSub  *sqlsubscribers.PartyActivityStreak
 	referralProgramSub      *sqlsubscribers.ReferralProgram
+	referralSetsSub         *sqlsubscribers.ReferralSets
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -180,6 +183,7 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.fundingPeriodSub,
 		s.partyActivityStreakSub,
 		s.referralProgramSub,
+		s.referralSetsSub,
 	}
 }
 
@@ -228,6 +232,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.fundingPeriodStore = sqlstore.NewFundingPeriods(transactionalConnectionSource)
 	s.partyActivityStreakStore = sqlstore.NewPartyActivityStreaks(transactionalConnectionSource)
 	s.referralProgramStore = sqlstore.NewReferralPrograms(transactionalConnectionSource)
+	s.referralSetsStore = sqlstore.NewReferralSets(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
@@ -272,6 +277,8 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.partyActivityStreakService = service.NewPartyActivityStreak(
 		s.partyActivityStreakStore)
 	s.fundingPeriodService = service.NewFundingPeriods(s.fundingPeriodStore)
+	s.referralProgramService = service.NewReferralPrograms(s.referralProgramStore)
+	s.referralSetsService = service.NewReferralSets(s.referralSetsStore)
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		s.marketDepthService,
@@ -327,4 +334,5 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.fundingPeriodSub = sqlsubscribers.NewFundingPeriod(s.fundingPeriodService)
 	s.partyActivityStreakSub = sqlsubscribers.NewPartyActivityStreak(s.partyActivityStreakService)
 	s.referralProgramSub = sqlsubscribers.NewReferralProgram(s.referralProgramService)
+	s.referralSetsSub = sqlsubscribers.NewReferralSets(s.referralSetsService)
 }

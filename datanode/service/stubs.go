@@ -39,6 +39,7 @@ type (
 	}
 	FundingPeriods   struct{ *sqlstore.FundingPeriods }
 	ReferralPrograms struct{ *sqlstore.ReferralPrograms }
+	ReferralSets     struct{ *sqlstore.ReferralSets }
 )
 
 type (
@@ -132,4 +133,8 @@ func NewFundingPeriods(store *sqlstore.FundingPeriods) *FundingPeriods {
 
 func NewReferralPrograms(store *sqlstore.ReferralPrograms) *ReferralPrograms {
 	return &ReferralPrograms{ReferralPrograms: store}
+}
+
+func NewReferralSets(store *sqlstore.ReferralSets) *ReferralSets {
+	return &ReferralSets{ReferralSets: store}
 }

@@ -47,7 +47,7 @@ func (rp *ReferralPrograms) UpdateReferralProgram(ctx context.Context, referral 
 	return rp.insertReferralProgram(ctx, referral)
 }
 
-func (rp *ReferralPrograms) EndReferralProgram(ctx context.Context, referralID entities.ReferralID, version uint64,
+func (rp *ReferralPrograms) EndReferralProgram(ctx context.Context, referralID entities.ReferralProgramID, version uint64,
 	vegaTime time.Time,
 ) error {
 	defer metrics.StartSQLQuery("ReferralPrograms", "EndReferralProgram")()

@@ -268,7 +268,7 @@ func TestReferralPrograms_EndReferralProgram(t *testing.T) {
 		require.NoError(t, err)
 
 		block = addTestBlock(t, ctx, bs)
-		err = rs.EndReferralProgram(ctx, entities.ReferralID(endedEvent.Id), endedEvent.Version, block.VegaTime)
+		err = rs.EndReferralProgram(ctx, entities.ReferralProgramID(endedEvent.Id), endedEvent.Version, block.VegaTime)
 		require.NoError(t, err)
 
 		ended := entities.ReferralProgramFromProto(updatedEvent.Program, block.VegaTime)
@@ -317,7 +317,7 @@ func TestReferralPrograms_GetCurrentReferralProgram(t *testing.T) {
 		assert.Equal(t, *updated, got)
 
 		block = addTestBlock(t, ctx, bs)
-		err = rs.EndReferralProgram(ctx, entities.ReferralID(endedEvent.Id), endedEvent.Version, block.VegaTime)
+		err = rs.EndReferralProgram(ctx, entities.ReferralProgramID(endedEvent.Id), endedEvent.Version, block.VegaTime)
 		require.NoError(t, err)
 
 		ended := entities.ReferralProgramFromProto(updatedEvent.Program, block.VegaTime)

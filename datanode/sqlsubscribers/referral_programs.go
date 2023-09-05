@@ -28,7 +28,7 @@ type (
 	ReferralStore interface {
 		AddReferralProgram(ctx context.Context, referral *entities.ReferralProgram) error
 		UpdateReferralProgram(ctx context.Context, referral *entities.ReferralProgram) error
-		EndReferralProgram(ctx context.Context, referralID entities.ReferralID, version uint64, vegaTime time.Time) error
+		EndReferralProgram(ctx context.Context, referralID entities.ReferralProgramID, version uint64, vegaTime time.Time) error
 	}
 
 	ReferralProgram struct {
@@ -75,6 +75,6 @@ func (rp *ReferralProgram) consumeReferralProgramUpdatedEvent(ctx context.Contex
 }
 
 func (rp *ReferralProgram) consumeReferralProgramEndedEvent(ctx context.Context, e ReferralProgramEndedEvent) error {
-	referralID := entities.ReferralID(e.GetReferralProgramEnded().GetId())
+	referralID := entities.ReferralProgramID(e.GetReferralProgramEnded().GetId())
 	return rp.store.EndReferralProgram(ctx, referralID, e.GetReferralProgramEnded().GetVersion(), rp.vegaTime)
 }

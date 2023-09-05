@@ -111,6 +111,7 @@ type TradingDataServiceV2 struct {
 	fundingPeriodService       *service.FundingPeriods
 	partyActivityStreak        *service.PartyActivityStreak
 	referralProgramService     *service.ReferralPrograms
+	referralSetsService        *service.ReferralSets
 }
 
 // ListAccounts lists accounts matching the request.
@@ -4019,5 +4020,73 @@ func (t *TradingDataServiceV2) GetCurrentReferralProgram(ctx context.Context, _ 
 
 	return &v2.GetCurrentReferralProgramResponse{
 		CurrentReferralProgram: referralProgram.ToProto(),
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListReferralSets(ctx context.Context, req *v2.ListReferralSetsRequest) (
+	*v2.ListReferralSetsResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListReferralSets")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	var id *entities.ReferralSetID
+
+	if req.ReferralSetId != nil {
+		id = ptr.From(entities.ReferralSetID(*req.ReferralSetId))
+	}
+
+	sets, pageInfo, err := t.referralSetsService.ListReferralSets(ctx, id, pagination)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	edges, err := makeEdges[*v2.ReferralSetEdge](sets)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	connection := &v2.ReferralSetConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListReferralSetsResponse{
+		ReferralSets: connection,
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListReferralSetReferees(ctx context.Context, req *v2.ListReferralSetRefereesRequest) (
+	*v2.ListReferralSetRefereesResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListReferralSetReferees")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	id := entities.ReferralSetID(req.ReferralSetId)
+
+	referees, pageInfo, err := t.referralSetsService.ListReferralSetReferees(ctx, id, pagination)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	edges, err := makeEdges[*v2.ReferralSetRefereeEdge](referees)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	connection := &v2.ReferralSetRefereeConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListReferralSetRefereesResponse{
+		ReferralSetReferees: connection,
 	}, nil
 }

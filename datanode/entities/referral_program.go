@@ -10,11 +10,11 @@ import (
 )
 
 type (
-	_ReferralProgram struct{}
-	ReferralID       = ID[_ReferralProgram]
+	_ReferralProgram  struct{}
+	ReferralProgramID = ID[_ReferralProgram]
 
 	ReferralProgram struct {
-		ID                    ReferralID
+		ID                    ReferralProgramID
 		Version               uint64
 		BenefitTiers          []*vega.BenefitTier
 		EndOfProgramTimestamp time.Time
@@ -27,7 +27,7 @@ type (
 
 func ReferralProgramFromProto(proto *vega.ReferralProgram, vegaTime time.Time) *ReferralProgram {
 	return &ReferralProgram{
-		ID:                    ReferralID(proto.Id),
+		ID:                    ReferralProgramID(proto.Id),
 		Version:               proto.Version,
 		BenefitTiers:          proto.BenefitTiers,
 		EndOfProgramTimestamp: time.Unix(proto.EndOfProgramTimestamp, 0),

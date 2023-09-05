@@ -741,6 +741,20 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referral program"};
   }
 
+  // List referral sets
+  //
+  // List all referral sets, or a specific referral set if you know its ID.
+  rpc ListReferralSets(ListReferralSetsRequest) returns (ListReferralSetsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referral program"};
+  }
+
+  // List referral set referees
+  //
+  // List all referees that belong to a referral set.
+  rpc ListReferralSetReferees(ListReferralSetRefereesRequest) returns (ListReferralSetRefereesResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referral program"};
+  }
+
   // Export network history as CSV
   //
   // Export CSV table data from network history between two block heights.
@@ -3521,4 +3535,88 @@ message ReferralProgram {
   repeated vega.StakingTier staking_tiers = 6;
   // Timestamp as Unix time in nanoseconds at which the program ended.
   optional int64 ended_at = 7;
+}
+
+// Data relating to a referral set.
+message ReferralSet {
+  // Unique ID of the created set.
+  string id = 1;
+  // Party that created the set.
+  string referrer = 2;
+  // Time in Unix nanoseconds when the set was created.
+  int64 created_at = 3;
+  // Time in Unix nanoseconds when the set was updated.
+  int64 updated_at = 4;
+}
+
+// Referral set data with the corresponding cursor.
+message ReferralSetEdge {
+  // Referral set data.
+  ReferralSet node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Page of referral set data and corresponding page information.
+message ReferralSetConnection {
+  // Page of referral set data and their corresponding cursors.
+  repeated ReferralSetEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+// Request to retrieve information about a referral set or sets
+message ListReferralSetsRequest {
+  // Optional Referral set ID to retrieve information for
+  optional string referral_set_id = 1;
+  // Optional pagination information to limit the data that is returned.
+  optional Pagination pagination = 2;
+}
+
+// Response containing information about a referral set or sets
+message ListReferralSetsResponse {
+  // Page of referral set data and corresponding page information.
+  ReferralSetConnection referral_sets = 1;
+}
+
+// Data relating to referees that have joined a referral set
+message ReferralSetReferee {
+  // Unique ID of the referral set the referee joined.
+  string referral_set_id = 1;
+  // Party that joined the set.
+  string referee = 2;
+  // Time in Unix nanoseconds when the party joined the set.
+  int64 joined_at = 3;
+  // Epoch at which the party joined the set.
+  uint64 at_epoch = 4;
+}
+
+// Referral set referee data with the corresponding cursor.
+message ReferralSetRefereeEdge {
+  // Referral set referee data.
+  ReferralSetReferee node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Page of referral set referee data and corresponding page information.
+message ReferralSetRefereeConnection {
+  // Page of referral set referee data and their corresponding cursors.
+  repeated ReferralSetRefereeEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+// Request to retrieve information about a referral set's referees
+message ListReferralSetRefereesRequest {
+  // Referral set ID to retrieve information for
+  string referral_set_id = 1;
+  // Optional pagination information to limit the data that is returned.
+  optional Pagination pagination = 2;
+}
+
+// Response containing information about a referral set's referees
+message ListReferralSetRefereesResponse {
+  // Page of referral set referee data and corresponding page information.
+  ReferralSetRefereeConnection referral_set_referees = 1;
 }

@@ -628,3 +628,15 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralProgram
   StakingTier:
     model: code.vegaprotocol.io/vega/protos/vega.StakingTier
+  ReferralSet:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSet
+  ReferralSetEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetEdge
+  ReferralSetConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetConnection
+  ReferralSetReferee:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetReferee
+  ReferralSetRefereeEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetRefereeEdge
+  ReferralSetRefereeConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetRefereeConnection

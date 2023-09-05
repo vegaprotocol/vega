@@ -439,6 +439,14 @@ type TradingDataServiceClient interface {
 	//
 	// Get the on-going referral program.
 	GetCurrentReferralProgram(ctx context.Context, in *GetCurrentReferralProgramRequest, opts ...grpc.CallOption) (*GetCurrentReferralProgramResponse, error)
+	// List referral sets
+	//
+	// List all referral sets, or a specific referral set if you know its ID.
+	ListReferralSets(ctx context.Context, in *ListReferralSetsRequest, opts ...grpc.CallOption) (*ListReferralSetsResponse, error)
+	// List referral set referees
+	//
+	// List all referees that belong to a referral set.
+	ListReferralSetReferees(ctx context.Context, in *ListReferralSetRefereesRequest, opts ...grpc.CallOption) (*ListReferralSetRefereesResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -1706,6 +1714,24 @@ func (c *tradingDataServiceClient) GetCurrentReferralProgram(ctx context.Context
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ListReferralSets(ctx context.Context, in *ListReferralSetsRequest, opts ...grpc.CallOption) (*ListReferralSetsResponse, error) {
+	out := new(ListReferralSetsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListReferralSets", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListReferralSetReferees(ctx context.Context, in *ListReferralSetRefereesRequest, opts ...grpc.CallOption) (*ListReferralSetRefereesResponse, error) {
+	out := new(ListReferralSetRefereesResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListReferralSetReferees", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
 	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
@@ -2167,6 +2193,14 @@ type TradingDataServiceServer interface {
 	//
 	// Get the on-going referral program.
 	GetCurrentReferralProgram(context.Context, *GetCurrentReferralProgramRequest) (*GetCurrentReferralProgramResponse, error)
+	// List referral sets
+	//
+	// List all referral sets, or a specific referral set if you know its ID.
+	ListReferralSets(context.Context, *ListReferralSetsRequest) (*ListReferralSetsResponse, error)
+	// List referral set referees
+	//
+	// List all referees that belong to a referral set.
+	ListReferralSetReferees(context.Context, *ListReferralSetRefereesRequest) (*ListReferralSetRefereesResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2521,6 +2555,12 @@ func (UnimplementedTradingDataServiceServer) GetPartyActivityStreak(context.Cont
 }
 func (UnimplementedTradingDataServiceServer) GetCurrentReferralProgram(context.Context, *GetCurrentReferralProgramRequest) (*GetCurrentReferralProgramResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCurrentReferralProgram not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListReferralSets(context.Context, *ListReferralSetsRequest) (*ListReferralSetsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListReferralSets not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListReferralSetReferees(context.Context, *ListReferralSetRefereesRequest) (*ListReferralSetRefereesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListReferralSetReferees not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
@@ -4283,6 +4323,42 @@ func _TradingDataService_GetCurrentReferralProgram_Handler(srv interface{}, ctx 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ListReferralSets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListReferralSetsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListReferralSets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListReferralSets",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListReferralSets(ctx, req.(*ListReferralSetsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListReferralSetReferees_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListReferralSetRefereesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListReferralSetReferees(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListReferralSetReferees",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListReferralSetReferees(ctx, req.(*ListReferralSetRefereesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ExportNetworkHistory_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportNetworkHistoryRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -4644,6 +4720,14 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCurrentReferralProgram",
 			Handler:    _TradingDataService_GetCurrentReferralProgram_Handler,
+		},
+		{
+			MethodName: "ListReferralSets",
+			Handler:    _TradingDataService_ListReferralSets_Handler,
+		},
+		{
+			MethodName: "ListReferralSetReferees",
+			Handler:    _TradingDataService_ListReferralSetReferees_Handler,
 		},
 		{
 			MethodName: "Ping",

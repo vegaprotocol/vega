@@ -438,6 +438,9 @@ type Query {
   "List core snapshots"
   coreSnapshots(pagination: Pagination): CoreSnapshotConnection
 
+  "Get the current referral program"
+  currentReferralProgram: ReferralProgram
+
   "Find a deposit using its ID"
   deposit("ID of the Deposit" id: ID!): Deposit
 
@@ -760,6 +763,21 @@ type Query {
     approvedBy: String
     pagination: Pagination
   ): ProtocolUpgradeProposalConnection
+
+  "List referral sets"
+  referralSets(
+    "Optional referral set ID to fetch information for"
+    id: ID
+    "Optional pagination information"
+    pagination: Pagination
+  ): ReferralSetConnection!
+
+  referralSetReferees(
+    "Referral set ID to fetch referees for"
+    id: ID!
+    "Optional pagination information"
+    pagination: Pagination
+  ): ReferralSetRefereeConnection!
 
   "Get statistics about the Vega node"
   statistics: Statistics!
@@ -4117,7 +4135,7 @@ type UpdateReferralProgram {
   "Current version of the referral program"
   version: Int!
   "ID of the proposal that created the referral program"
-  id: ID! 
+  id: ID!
   "Benefit tiers for the program"
   benefitTiers: [BenefitTier!]!
   "Determines the level of benefit a party can expect based on their staking"
@@ -4132,7 +4150,7 @@ type BenefitTier {
   "The minimum number of epochs the party needs to be in the referral set to be eligible for the benefit"
   minimumEpochs: Int!
   "The minimum running notional for the given benefit tier"
-  minimumRunningNotionalTakerVolume: String! 
+  minimumRunningNotionalTakerVolume: String!
   "The proportion of the referee's taker fees to be discounted"
   referralDiscountFactor: String!
   "The proportion of the referee's taker fees to be rewarded to the referrer"
@@ -4150,7 +4168,7 @@ type UpdateVolumeDiscountProgram {
   "The current version of the volume discount program"
   version: Int!
   "ID of the proposal that created the discount program"
-  id: ID! 
+  id: ID!
   "The benefit tiers for the program"
   benefitTiers: [VolumeBenefitTier!]!
   "The end time of the program"
@@ -4161,7 +4179,7 @@ type UpdateVolumeDiscountProgram {
 
 type VolumeBenefitTier {
   "The minimum running notional for the given benefit tier"
-  minimumRunningNotionalTakerVolume: String! 
+  minimumRunningNotionalTakerVolume: String!
   "Discount given to those in this benefit tier"
   volumeDiscountFactor: String!
 }
@@ -5743,4 +5761,60 @@ type ReferralProgram {
   stakingTiers: [StakingTier!]!
   "Timestamp as RFC3339Nano when the program ended. If present, the current program has ended and no program is currently running."
   endedAt: Timestamp
+}
+
+"Data relating to a referral set."
+type ReferralSet {
+  "Unique ID of the created set."
+  id: ID!
+  "Party that created the set."
+  referrer: ID!
+  "Timestamp as RFC3339Nano when the referral set was created."
+  created_at: Timestamp!
+  "Timestamp as RFC3339Nano when the referral set was updated."
+  updated_at: Timestamp!
+}
+
+"Edge type containing the referral set and cursor information returned by a ReferralSetConnection"
+type ReferralSetEdge {
+  "The referral set"
+  node: ReferralSet!
+  "The cursor for this referral set"
+  cursor: String!
+}
+
+"Connection type for retrieving cursor-based paginated referral set information"
+type ReferralSetConnection {
+  "The referral sets in this connection"
+  edges: [ReferralSetEdge]!
+  "The pagination information"
+  pageInfo: PageInfo!
+}
+
+"Data relating to referees that have joined a referral set"
+type ReferralSetReferee {
+  "Unique ID of the referral set the referee joined."
+  referral_set_id: ID!
+  "Party that joined the set."
+  referee: ID!
+  "Timestamp as RFC3339Nano when the party joined the set."
+  joined_at: Timestamp!
+  "Epoch at which the party joined the set."
+  at_epoch: Int!
+}
+
+"Edge type containing the referral set referee and cursor information returned by a ReferralSetRefereeConnection"
+type ReferralSetRefereeEdge {
+  "The referral set referee"
+  node: ReferralSetReferee!
+  "The cursor for this referral set referee"
+  cursor: String!
+}
+
+"Connection type for retrieving cursor-based paginated referral set referee information"
+type ReferralSetRefereeConnection {
+  "The referral set referees in this connection"
+  edges: [ReferralSetRefereeEdge]!
+  "The pagination information"
+  pageInfo: PageInfo!
 }
