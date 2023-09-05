@@ -62,6 +62,35 @@ func TheNetworkMovesAheadNBlocks(exec Execution, block *helpers.Block, time *stu
 	return nil
 }
 
+func TheNetworkMovesAheadNEpochs(broker *stubs.BrokerStub, block *helpers.Block, exec Execution, epochService EpochService, ts *stubs.TimeStub, epochs string) error {
+	nr, err := strconv.ParseInt(epochs, 10, 0)
+	if err != nil {
+		return err
+	}
+	for i := int64(0); i < nr; i++ {
+		if err := TheNetworkMovesAheadToTheNextEpoch(broker, block, exec, epochService, ts); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func TheNetworkMovesAheadToTheNextEpoch(broker *stubs.BrokerStub, block *helpers.Block, exec Execution, epochService EpochService, ts *stubs.TimeStub) error {
+	ee := broker.GetCurrentEpoch()
+	last := ee.Epoch().GetSeq()
+	current := last
+	now := ts.GetTimeNow()
+	for current == last {
+		epochService.OnBlockEnd(context.Background())
+		exec.BlockEnd(context.Background())
+		now = now.Add(block.GetDuration())
+		ts.SetTime(now)
+		ee = broker.GetCurrentEpoch()
+		current = ee.Epoch().GetSeq()
+	}
+	return nil
+}
+
 func TheNetworkMovesAheadDurationWithBlocks(exec Execution, block *helpers.Block, ts *stubs.TimeStub, delta, dur string) error {
 	td, err := time.ParseDuration(delta)
 	if err != nil {
