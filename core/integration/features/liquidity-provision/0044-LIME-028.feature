@@ -9,15 +9,15 @@ Feature: Check we can use LIMIT, PEGGED and ICEBERG orders to cover our commitme
       | name                                                  | value |
       | market.stake.target.timeWindow                        | 24h   |
       | market.stake.target.scalingFactor                     | 1     |
-      | market.liquidityV2.bondPenaltyParameter               | 1     |
+      | market.liquidity.bondPenaltyParameter                 | 1     |
       | market.liquidity.targetstake.triggering.ratio         | 0.1   |
       | network.markPriceUpdateMaximumFrequency               | 0s    |
       | limits.markets.maxPeggedOrders                        | 2     |
       | validators.epoch.length                               | 5s    |
-      | market.liquidityV2.earlyExitPenalty                   | 0.25  |
-      | market.liquidityV2.stakeToCcyVolume                   | 1.0   |
-      | market.liquidityV2.sla.nonPerformanceBondPenaltySlope | 0.19  |
-      | market.liquidityV2.sla.nonPerformanceBondPenaltyMax   | 1     |
+      | market.liquidity.earlyExitPenalty                     | 0.25  |
+      | market.liquidity.stakeToCcyVolume                     | 1.0   |
+      | market.liquidity.sla.nonPerformanceBondPenaltySlope   | 0.19  |
+      | market.liquidity.sla.nonPerformanceBondPenaltyMax     | 1     |
 
     And the average block duration is "1"
     And the simple risk model named "simple-risk-model-1":
@@ -30,8 +30,8 @@ Feature: Check we can use LIMIT, PEGGED and ICEBERG orders to cover our commitme
       | horizon | probability | auction extension |
       | 1       | 0.99        | 5                 |
     And the liquidity sla params named "SLA":
-      | price range | commitment min time fraction | providers fee calculation time step | performance hysteresis epochs | sla competition factor |
-      | 0.01        | 0.5                          | 10                                  | 1                             | 1.0                    |
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 0.01        | 0.5                          | 1                             | 1.0                    |
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5                    | 0                         | SLA        |
@@ -106,8 +106,8 @@ Feature: Check we can use LIMIT, PEGGED and ICEBERG orders to cover our commitme
     # Place ICEBERG orders to cover our commitment
     When the parties place the following iceberg orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | only |
-      | party1 | ETH/DEC21 | buy  | 10     | 999   | 0                | TYPE_LIMIT | TIF_GTC | 5         | 1                    | post |      
-      | party1 | ETH/DEC21 | sell | 10     | 1001  | 0                | TYPE_LIMIT | TIF_GTC | 5         | 1                    | post |      
+      | party1 | ETH/DEC21 | buy  | 100    | 999   | 0                | TYPE_LIMIT | TIF_GTC | 90        | 1                    | post |      
+      | party1 | ETH/DEC21 | sell | 100    | 1001  | 0                | TYPE_LIMIT | TIF_GTC | 90        | 1                    | post |      
 
     # Move forward an epoch and make sure the accounts do not change as we have the full epoch covered with ICEBERG orders
     When the network moves ahead "7" blocks
@@ -116,7 +116,7 @@ Feature: Check we can use LIMIT, PEGGED and ICEBERG orders to cover our commitme
       | lp1 | party1 | ETH/DEC21 | 10000             | STATUS_ACTIVE    |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general  | bond  |
-      | party1 | ETH   | ETH/DEC21 | 1200    | 99988800 | 10000 |    
+      | party1 | ETH   | ETH/DEC21 | 12000   | 99978000 | 10000 |    
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
   Scenario: 004, LP is not covered fully with ICEBERG orders due to small peak size
@@ -129,8 +129,8 @@ Feature: Check we can use LIMIT, PEGGED and ICEBERG orders to cover our commitme
     # Place ICEBERG orders which have a too small peak to cover our commitment
     When the parties place the following iceberg orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | only |
-      | party1 | ETH/DEC21 | buy  | 10     | 999   | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | post |      
-      | party1 | ETH/DEC21 | sell | 10     | 1001  | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | post |      
+      | party1 | ETH/DEC21 | buy  | 100    | 999   | 0                | TYPE_LIMIT | TIF_GTC | 5         | 2                    | post |      
+      | party1 | ETH/DEC21 | sell | 100    | 1001  | 0                | TYPE_LIMIT | TIF_GTC | 5         | 2                    | post |      
 
     # Move forward an epoch and make sure we get a penalty
     When the network moves ahead "7" blocks
@@ -139,5 +139,5 @@ Feature: Check we can use LIMIT, PEGGED and ICEBERG orders to cover our commitme
       | lp1 | party1 | ETH/DEC21 | 10000             | STATUS_ACTIVE    |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general  | bond  |
-      | party1 | ETH   | ETH/DEC21 | 1200    | 99988800 | 8100 |    
+      | party1 | ETH   | ETH/DEC21 | 12000   | 99978000 | 8100 |    
     And the insurance pool balance should be "1900" for the market "ETH/DEC21"
