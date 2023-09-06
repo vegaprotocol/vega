@@ -241,7 +241,11 @@ func NewMarketFromSnapshot(
 }
 
 func (m *Market) GetNewStateProviders() []types.StateProvider {
-	return []types.StateProvider{m.position, m.matching, m.tsCalc, m.liquidityEngine, m.settlement}
+	return []types.StateProvider{
+		m.position, m.matching, m.tsCalc,
+		m.liquidityEngine.V1StateProvider(), m.liquidityEngine.V2StateProvider(),
+		m.settlement,
+	}
 }
 
 func (m *Market) GetState() *types.ExecMarket {

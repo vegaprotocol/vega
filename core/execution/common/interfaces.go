@@ -226,11 +226,8 @@ type LiquidityEngine interface {
 	SetLastFeeDistributionTime(t time.Time)
 	GetLastFeeDistributionTime() time.Time
 
-	Namespace() types.SnapshotNamespace
-	Keys() []string
-	GetState(k string) ([]byte, []types.StateProvider, error)
-	LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error)
-	Stopped() bool
+	V1StateProvider() types.StateProvider
+	V2StateProvider() types.StateProvider
 	StopSnapshots()
 }
 

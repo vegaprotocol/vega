@@ -50,6 +50,15 @@ type LiquiditySLAParams struct {
 	SlaCompetitionFactor        num.Decimal
 }
 
+func DefaultLiquiditySLAParams() *LiquiditySLAParams {
+	return &LiquiditySLAParams{
+		PriceRange:                  num.DecimalOne(),
+		CommitmentMinTimeFraction:   num.DecimalFromFloat(0.5),
+		SlaCompetitionFactor:        num.DecimalOne(),
+		PerformanceHysteresisEpochs: 1,
+	}
+}
+
 func (l LiquiditySLAParams) IntoProto() *proto.LiquiditySLAParameters {
 	return &proto.LiquiditySLAParameters{
 		PriceRange:                  l.PriceRange.String(),
