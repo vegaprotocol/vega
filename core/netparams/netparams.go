@@ -136,7 +136,7 @@ func (s *Store) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 
 	// now iterate over all parameters and update the existing ones
 	for k, v := range state {
-		if err := s.UpdateOptionalValidation(ctx, k, v, false); err != nil {
+		if err := s.UpdateOptionalValidation(ctx, k, v, false, true); err != nil {
 			return fmt.Errorf("%v: %v", k, err)
 		}
 	}
@@ -271,15 +271,20 @@ func (s *Store) Validate(key, value string) error {
 // Update will update the stored value for a given key
 // will return an error if the value do not pass validation.
 func (s *Store) Update(ctx context.Context, key, value string) error {
-	return s.UpdateOptionalValidation(ctx, key, value, true)
+	return s.UpdateOptionalValidation(ctx, key, value, true, true)
 }
 
-func (s *Store) UpdateOptionalValidation(ctx context.Context, key, value string, validate bool) error {
+func (s *Store) UpdateOptionalValidation(ctx context.Context, key, value string, validate, failIfUnknown bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	svalue, ok := s.store[key]
 	if !ok {
-		return ErrUnknownKey
+		if failIfUnknown {
+			return ErrUnknownKey
+		}
+
+		s.log.Warn("unknown network parameter", logging.String("key", key))
+		return nil
 	}
 
 	if err := svalue.UpdateOptionalValidation(value, validate); err != nil {
