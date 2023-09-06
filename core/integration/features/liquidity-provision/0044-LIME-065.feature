@@ -51,7 +51,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
       | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.7   |
       | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 0.6   |
       | validators.epoch.length                             | 10s   |
-      | market.liquidity.earlyExitPenalty                   | 0.25  |
+      | market.liquidity.earlyExitPenalty | 0.25 |
       | market.liquidity.maximumLiquidityFeeFactorLevel     | 0.25  |
 
     Given the average block duration is "1"
@@ -151,12 +151,13 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee  | lp type   |
       | lp_1 | lp1   | ETH/MAR22 | 1000              | 0.02 | amendment |
+    And the current epoch is "1"
 
     Then the network moves ahead "1" epochs
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_MONITORING_AUCTION | 3600    | 973       | 1027      | 7113         | 5001           | 2             |
-#AC 0044-LIME-067:When LP1 decreases its commitment more than maximum-penalty-free-reduction-amount, then penalty-incurring-reduction-amount= 3000-(7113-5001) = 888,we should see SLA bond peanlty by transfering 0.25*888=222 in insurance pool and 0.75*888=666 to general account, and ELS updated
+#AC 0044-LIME-067:When LP1 decreases its commitment more than maximum-penalty-free-reduction-amount, then penalty-incurring-reduction-amount= 3000-(8000-7113) = 2112,we should see SLA bond peanlty by transfering 0.25*2112=528 in insurance pool and 0.75*2112=1584 to general account, and ELS updated
 
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
