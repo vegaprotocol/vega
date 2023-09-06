@@ -3348,6 +3348,11 @@ func (e *Engine) GetOrCreatePartyVestingRewardAccount(ctx context.Context, party
 	return acc.Clone()
 }
 
+func (e *Engine) GetPartyVestedRewardAccount(partyID, asset string) (*types.Account, error) {
+	vested := e.accountID(noMarket, partyID, asset, types.AccountTypeVestedRewards)
+	return e.GetAccountByID(vested)
+}
+
 // GetOrCreatePartyVestedAccount create the general account for a party.
 func (e *Engine) GetOrCreatePartyVestedRewardAccount(ctx context.Context, partyID, asset string) *types.Account {
 	if !e.AssetExists(asset) {
