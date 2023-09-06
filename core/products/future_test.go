@@ -27,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,6 +36,7 @@ func TestScalingOfSettlementData(t *testing.T) {
 	t.Run("Need to scale up the settlement data for asset decimals", testScalingUpNeeded)
 	t.Run("Need to scale down the settlement data for asset decimals no loss of precision", testScalingDownNeeded)
 	t.Run("Need to scale down the settlement data for asset decimals with loss of precision", testScalingDownNeededWithPrecisionLoss)
+	t.Run("a future product can be updated", testUpdateFuture)
 }
 
 func testNoScalingNeeded(t *testing.T) {
@@ -145,23 +147,43 @@ func testScalingDownNeededWithPrecisionLoss(t *testing.T) {
 	require.Equal(t, num.NewUint(123450000), scaled)
 }
 
+func testUpdateFuture(t *testing.T) {
+	// Create test future with settlement data type integer with decimals (that represents a decimal)
+	ft := testFuture(t, datapb.PropertyKey_TYPE_INTEGER)
+
+	fp := getTestFutureProd(t, datapb.PropertyKey_TYPE_INTEGER, 10)
+
+	// two new subscription
+	ft.oe.EXPECT().
+		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(1).
+		Return(subscriptionID(3), func(ctx context.Context, sid spec.SubscriptionID) {}, nil)
+	ft.oe.EXPECT().
+		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(1).
+		Return(subscriptionID(4), func(ctx context.Context, sid spec.SubscriptionID) {}, nil)
+
+	ft.future.Update(context.Background(), &types.InstrumentFuture{Future: fp}, ft.oe)
+
+	assert.Equal(t, 2, ft.unsub)
+}
+
 type tstFuture struct {
 	oe     *mocks.MockOracleEngine
 	future *products.Future
+	unsub  int
 }
 
-func testFuture(t *testing.T, propertyTpe datapb.PropertyKey_Type) *tstFuture {
+func (tf *tstFuture) unsubscribe(_ context.Context, _ spec.SubscriptionID) {
+	tf.unsub++
+}
+
+func getTestFutureProd(t *testing.T, propertyTpe datapb.PropertyKey_Type, dp uint64) *types.Future {
 	t.Helper()
-
-	log := logging.NewTestLogger()
-	ctrl := gomock.NewController(t)
-	oe := mocks.NewMockOracleEngine(ctrl)
-
 	pubKeys := []*dstypes.Signer{
 		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
 
-	var dp uint64 = 5
 	f := &types.Future{
 		SettlementAsset: "ETH",
 		QuoteName:       "ETH",
@@ -209,25 +231,40 @@ func testFuture(t *testing.T, propertyTpe datapb.PropertyKey_Type) *tstFuture {
 		),
 	}
 
+	return f
+}
+
+func testFuture(t *testing.T, propertyTpe datapb.PropertyKey_Type) *tstFuture {
+	t.Helper()
+
+	log := logging.NewTestLogger()
+	ctrl := gomock.NewController(t)
+	oe := mocks.NewMockOracleEngine(ctrl)
+
+	var dp uint64 = 5
+	f := getTestFutureProd(t, propertyTpe, dp)
+
+	testFuture := &tstFuture{
+		oe: oe,
+	}
+
 	ctx := context.Background()
 	oe.EXPECT().
 		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
-		Return(subscriptionID(1), func(ctx context.Context, sid spec.SubscriptionID) {}, nil)
+		Return(subscriptionID(1), testFuture.unsubscribe, nil)
 
 	oe.EXPECT().
 		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
-		Return(subscriptionID(2), func(ctx context.Context, sid spec.SubscriptionID) {}, nil)
+		Return(subscriptionID(2), testFuture.unsubscribe, nil)
 
 	future, err := products.NewFuture(ctx, log, f, oe, uint32(dp))
 	if err != nil {
 		t.Fatalf("couldn't create a Future for testing: %v", err)
 	}
-	return &tstFuture{
-		future: future,
-		oe:     oe,
-	}
+	testFuture.future = future
+	return testFuture
 }
 
 func subscriptionID(i uint64) spec.SubscriptionID {
