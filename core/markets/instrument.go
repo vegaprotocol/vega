@@ -51,19 +51,15 @@ func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.
 }
 
 func (i *TradableInstrument) UpdateInstrument(ctx context.Context, log *logging.Logger, ti *types.TradableInstrument, marketID string, oe products.OracleEngine, broker products.Broker) error {
-	instrument, err := NewInstrument(ctx, log, ti.Instrument, marketID, oe, broker, i.assetDP)
-	if err != nil {
-		return err
-	}
+	i.Instrument.Update(ctx, log, ti.Instrument, oe)
 
-	asset := instrument.Product.GetAsset()
+	asset := i.Instrument.Product.GetAsset()
 
 	riskModel, err := risk.NewModel(ti.RiskModel, asset)
 	if err != nil {
 		return fmt.Errorf("unable to instantiate risk model: %w", err)
 	}
 
-	i.Instrument = instrument
 	i.RiskModel = riskModel
 	i.MarginCalculator = ti.MarginCalculator
 	return nil
@@ -107,4 +103,18 @@ func (i *Instrument) UnsubscribeSettlementData(ctx context.Context) {
 func (i *Instrument) Unsubscribe(ctx context.Context) {
 	i.UnsubscribeTradingTerminated(ctx)
 	i.UnsubscribeSettlementData(ctx)
+}
+
+// NewInstrument will instantiate a new instrument
+// using a market framework configuration for a instrument.
+func (i *Instrument) Update(ctx context.Context, log *logging.Logger, pi *types.Instrument, oe products.OracleEngine) error {
+	if err := i.Product.Update(ctx, pi.Product, oe); err != nil {
+		return err
+	}
+
+	i.ID = pi.ID
+	i.Code = pi.Code
+	i.Name = pi.Name
+	i.Metadata = pi.Metadata
+	return nil
 }
