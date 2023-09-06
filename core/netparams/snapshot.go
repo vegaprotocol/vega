@@ -131,7 +131,7 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 	}
 
 	for _, kv := range np.NetParams.Params {
-		if err := s.UpdateOptionalValidation(ctx, kv.Key, kv.Value, false); err != nil {
+		if err := s.UpdateOptionalValidation(ctx, kv.Key, kv.Value, false, false); err != nil {
 			return nil, err
 		}
 	}
