@@ -499,6 +499,10 @@ func (r *VegaResolverRoot) ReferralSetReferee() ReferralSetRefereeResolver {
 	return (*referralSetRefereeResolver)(r)
 }
 
+func (r *VegaResolverRoot) BenefitTier() BenefitTierResolver {
+	return (*benefitTierResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
