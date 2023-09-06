@@ -61,6 +61,6 @@ func (pas *PartyActivityStreaks) Get(
 }
 
 const (
-	partyActivityStreakAddQuery = `INSERT INTO party_activity_streaks (party_id, active_for, inactive_for, is_active, reward_distribution_activity_multiplier, reward_vesting_activity_multiplier, epoch, traded_volume, open_volume, vega_time, hash) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+	partyActivityStreakAddQuery = `INSERT INTO party_activity_streaks (party_id, active_for, inactive_for, is_active, reward_distribution_activity_multiplier, reward_vesting_activity_multiplier, epoch, traded_volume, open_volume, vega_time, tx_hash) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 `
 )

@@ -3349,7 +3349,6 @@ message GetPartyActivityStreakResponse {
   vega.events.v1.PartyActivityStreak activity_streak = 1;
 }
 
-
 // Request to list a perpetual market's funding periods
 message ListFundingPeriodsRequest {
   // Market ID to get funding periods for.
