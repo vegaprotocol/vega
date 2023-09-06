@@ -81,7 +81,6 @@ Feature: Check early exit liquidity penalty is working
       | lp2 | party2 | ETH/DEC21 | 540               | STATUS_ACTIVE |
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
-
     # Reduce the commitment of the second LP and check the insurance pool receives the right amount of penalty
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | lp type     |
