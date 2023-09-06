@@ -145,6 +145,7 @@
 - [8944](https://github.com/vegaprotocol/vega/issues/8944) - Fix ignoring of asset `ID` in ledger export, and make it optional.
 - [8971](https://github.com/vegaprotocol/vega/issues/8971) - Record the epoch start time even in opening auction
 - [8992](https://github.com/vegaprotocol/vega/issues/8992) - allow for 0 time step for `SLA` fee calculation
+- [9266](https://github.com/vegaprotocol/vega/issues/9266) - Preserve perpetual state when updating product
 - [8988](https://github.com/vegaprotocol/vega/issues/8988) - allow amend/cancel of pending liquidity provision
 - [8993](https://github.com/vegaprotocol/vega/issues/8993) - handle the case where commitment min time fraction is 1
 - [9252](https://github.com/vegaprotocol/vega/issues/9252) - Preserve the order of pegged orders in snapshots.
@@ -159,6 +160,8 @@
 - [9196](https://github.com/vegaprotocol/vega/issues/9196) - `API` documentation should specify the time format.
 - [9203](https://github.com/vegaprotocol/vega/issues/9203) - Do not remove LPs from the parties map if they are an LP without an open position
 - [9202](https://github.com/vegaprotocol/vega/issues/9202) - Fix `ELS` not calculated when leaving opening auction.
+- [9276](https://github.com/vegaprotocol/vega/issues/9276) - Properly save stats in the positions snapshot
+
 
 ## 0.72.1
 

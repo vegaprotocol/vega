@@ -233,6 +233,45 @@ func (f *Future) Serialize() *snapshotpb.Product {
 	return &snapshotpb.Product{}
 }
 
+func (f *Future) Update(ctx context.Context, pp interface{}, oe OracleEngine) error {
+	ff, ok := pp.(*types.InstrumentFuture)
+	if !ok {
+		f.log.Panic("attempting to update a future into something else")
+	}
+
+	cfg := ff.Future
+
+	// unsubscribe the old data sources
+	f.oracle.unsubSettle(ctx)
+	f.oracle.unsubTerm(ctx)
+
+	oracle, err := newFutureOracle(cfg)
+	if err != nil {
+		return err
+	}
+
+	// subscribe to new
+	// Oracle spec for settlement data.
+	osForSettle, err := spec.New(*datasource.SpecFromDefinition(*cfg.DataSourceSpecForSettlementData.Data))
+	if err != nil {
+		return err
+	}
+	osForTerm, err := spec.New(*datasource.SpecFromDefinition(*cfg.DataSourceSpecForTradingTermination.Data))
+	if err != nil {
+		return err
+	}
+	tradingTerminationCb := f.updateTradingTerminated
+	if oracle.binding.terminationType == datapb.PropertyKey_TYPE_TIMESTAMP {
+		tradingTerminationCb = f.updateTradingTerminatedByTimestamp
+	}
+	if err := oracle.bindAll(ctx, oe, osForSettle, osForTerm, f.updateSettlementData, tradingTerminationCb); err != nil {
+		return err
+	}
+
+	f.oracle = oracle
+	return nil
+}
+
 func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine, assetDP uint32) (*Future, error) {
 	if f.DataSourceSpecForSettlementData == nil || f.DataSourceSpecForTradingTermination == nil || f.DataSourceSpecBinding == nil {
 		return nil, ErrDataSourceSpecAndBindingAreRequired
