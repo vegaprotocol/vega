@@ -92,6 +92,7 @@ Feature: Staking & Delegation
     |  node3  |      0.07887     |     0.07887      | 
     |  node4  |      0.07657     |     0.07657      | 
     And the current epoch is "2"
+    Then the network moves ahead "1" epochs
 
   Scenario: Parties get rewarded for a full epoch of having delegated stake - the reward amount is capped (0061-REWP-additional-tests) 
     Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. 

@@ -53,6 +53,7 @@ func TestPeriodicSettlement(t *testing.T) {
 	t.Run("terminate perps market test", testTerminateTrading)
 	t.Run("margin increase", testGetMarginIncrease)
 	t.Run("test pathological case with out of order points", testOutOfOrderPointsBeforePeriodStart)
+	t.Run("test update perpetual", testUpdatePerpetual)
 }
 
 func TestExternalDataPointTWAPInSequence(t *testing.T) {
@@ -703,6 +704,41 @@ func testGetMarginIncrease(t *testing.T) {
 	assert.Equal(t, "5", inc.String())
 }
 
+func testUpdatePerpetual(t *testing.T) {
+	// margin factor is 0.5
+	perp := testPerpetualWithOpts(t, "0", "0", "0", "0.5")
+	defer perp.ctrl.Finish()
+	ctx := context.Background()
+
+	// test data
+	points := getTestDataPoints(t)
+	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
+	perp.perpetual.OnLeaveOpeningAuction(ctx, 1000)
+	submitDataWithDifference(t, perp, points, 10)
+
+	// query margin factor before update
+	lastPoint := points[len(points)-1]
+	inc := perp.perpetual.GetMarginIncrease(lastPoint.t)
+	assert.Equal(t, "5", inc.String())
+
+	// do the perps update with a new margin factor
+	update := getTestPerpProd(t)
+	update.MarginFundingFactor = num.DecimalFromFloat(1)
+	err := perp.perpetual.Update(ctx, &types.InstrumentPerps{Perps: update}, perp.oe)
+	require.NoError(t, err)
+
+	// expect two unsubscriptions
+	assert.Equal(t, perp.unsub, 2)
+
+	// margin increase should now be double, which means the data-points were preserved
+	inc = perp.perpetual.GetMarginIncrease(lastPoint.t)
+	assert.Equal(t, "10", inc.String())
+
+	// now submit a data point and check it is expected i.e the funding period is still active
+	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
+	assert.NoError(t, perp.perpetual.SubmitDataPoint(ctx, num.NewUint(123), lastPoint.t+int64(time.Hour)))
+}
+
 // submits the given data points as both external and interval but with the given different added to the internal price.
 func submitDataWithDifference(t *testing.T, perp *tstPerp, points []*testDataPoint, diff int) {
 	t.Helper()
@@ -764,6 +800,12 @@ type tstPerp struct {
 	perpetual *products.Perpetual
 	ctrl      *gomock.Controller
 	perp      *types.Perps
+
+	unsub int
+}
+
+func (tp *tstPerp) unsubscribe(_ context.Context, _ spec.SubscriptionID) {
+	tp.unsub++
 }
 
 func testPerpetual(t *testing.T) *tstPerp {
@@ -778,25 +820,27 @@ func testPerpetualWithOpts(t *testing.T, interestRate, clampLowerBound, clampUpp
 	ctrl := gomock.NewController(t)
 	oe := mocks.NewMockOracleEngine(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
-	oe.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(spec.SubscriptionID(1), func(_ context.Context, _ spec.SubscriptionID) {}, nil)
 	perp := getTestPerpProd(t)
+
+	tp := &tstPerp{
+		oe:     oe,
+		broker: broker,
+		ctrl:   ctrl,
+		perp:   perp,
+	}
+	tp.oe.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(spec.SubscriptionID(1), tp.unsubscribe, nil)
 
 	perpetual, err := products.NewPerpetual(context.Background(), log, perp, "", oe, broker, 1)
 	perp.InterestRate = num.MustDecimalFromString(interestRate)
 	perp.ClampLowerBound = num.MustDecimalFromString(clampLowerBound)
 	perp.ClampUpperBound = num.MustDecimalFromString(clampUpperBound)
 	perp.MarginFundingFactor = num.MustDecimalFromString(marginFactor)
-
 	if err != nil {
 		t.Fatalf("couldn't create a perp for testing: %v", err)
 	}
-	return &tstPerp{
-		perpetual: perpetual,
-		oe:        oe,
-		broker:    broker,
-		ctrl:      ctrl,
-		perp:      perp,
-	}
+
+	tp.perpetual = perpetual
+	return tp
 }
 
 func getTestPerpProd(t *testing.T) *types.Perps {

@@ -480,11 +480,6 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	assets, _ := config.GetAssets()
 	m.settlementAsset = assets[0]
 
-	if m.mkt.State == types.MarketStateTradingTerminated {
-		m.tradableInstrument.Instrument.UnsubscribeSettlementData(ctx)
-	} else {
-		m.tradableInstrument.Instrument.Unsubscribe(ctx)
-	}
 	if err := m.tradableInstrument.UpdateInstrument(ctx, m.log, m.mkt.TradableInstrument, m.GetID(), oracleEngine, m.broker); err != nil {
 		return err
 	}

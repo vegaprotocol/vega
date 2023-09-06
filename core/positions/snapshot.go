@@ -14,12 +14,14 @@ package positions
 
 import (
 	"context"
+	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+	"golang.org/x/exp/maps"
 )
 
 type SnapshotEngine struct {
@@ -100,9 +102,11 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 		}
 
 		for _, v := range pl.MarketPositions.PartieRecords {
-			e.partiesOpenInterest[v.Party] = &openInterestRecord{
-				Latest: v.LatestOpenInterest,
-				Lowest: v.LowestOpenInterest,
+			if v.LatestOpenInterest != nil && v.LowestOpenInterest != nil {
+				e.partiesOpenInterest[v.Party] = &openInterestRecord{
+					Latest: *v.LatestOpenInterest,
+					Lowest: *v.LowestOpenInterest,
+				}
 			}
 
 			if v.TradedVolume != nil {
@@ -127,7 +131,6 @@ func (e *SnapshotEngine) serialise() ([]byte, error) {
 
 	e.log.Debug("serialising snapshot", logging.Int("positions", len(e.positionsCpy)))
 	positions := make([]*types.MarketPosition, 0, len(e.positionsCpy))
-	partiesRecord := make([]*snapshotpb.PartyPositionStats, 0, len(e.partiesOpenInterest))
 
 	for _, evt := range e.positionsCpy {
 		party := evt.Party()
@@ -143,20 +146,36 @@ func (e *SnapshotEngine) serialise() ([]byte, error) {
 			Distressed:     distressed,
 		}
 		positions = append(positions, pos)
-
-		poi := e.partiesOpenInterest[party]
-		partyRecord := &snapshotpb.PartyPositionStats{
-			Party:              party,
-			LowestOpenInterest: poi.Lowest,
-			LatestOpenInterest: poi.Latest,
-		}
-
-		if tv, ok := e.partiesTradedSize[party]; ok {
-			partyRecord.TradedVolume = ptr.From(tv)
-		}
-
-		partiesRecord = append(partiesRecord, partyRecord)
 	}
+
+	partiesRecordsMap := map[string]*snapshotpb.PartyPositionStats{}
+
+	// now iterate over both map as some could have been remove
+	// when closing positions or being closed out.
+	for party, poi := range e.partiesOpenInterest {
+		partiesRecordsMap[party] = &snapshotpb.PartyPositionStats{
+			Party:              party,
+			LowestOpenInterest: ptr.From(poi.Lowest),
+			LatestOpenInterest: ptr.From(poi.Latest),
+		}
+	}
+
+	for party, tradedSize := range e.partiesTradedSize {
+		if pr, ok := partiesRecordsMap[party]; ok {
+			pr.TradedVolume = ptr.From(tradedSize)
+			continue
+		}
+
+		partiesRecordsMap[party] = &snapshotpb.PartyPositionStats{
+			Party:        party,
+			TradedVolume: ptr.From(tradedSize),
+		}
+	}
+
+	partiesRecord := maps.Values(partiesRecordsMap)
+	sort.Slice(partiesRecord, func(i, j int) bool {
+		return partiesRecord[i].Party < partiesRecord[j].Party
+	})
 
 	e.pl.Data = &types.PayloadMarketPositions{
 		MarketPositions: &types.MarketPositions{
