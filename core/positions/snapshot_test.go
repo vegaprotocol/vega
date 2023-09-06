@@ -278,3 +278,69 @@ func TestStopSnapshotTaking(t *testing.T) {
 	assert.Nil(t, s)
 	assert.True(t, engine.Stopped())
 }
+
+func TestSnapshotClosedPositionStillSerializeStats(t *testing.T) {
+	engine := getTestEngine(t)
+	// fillTestPositions(engine)
+
+	keys := engine.Keys()
+	s1, _, err := engine.GetState(keys[0])
+	require.Nil(t, err)
+
+	// first load two orders
+
+	buyOrder := &types.Order{
+		Party:     "test_party_1",
+		Side:      types.SideBuy,
+		Size:      uint64(150),
+		Remaining: uint64(150),
+		Price:     num.UintZero(),
+	}
+	engine.RegisterOrder(context.TODO(), buyOrder)
+
+	sellOrder := &types.Order{
+		Party:     "test_party_2",
+		Side:      types.SideSell,
+		Size:      uint64(150),
+		Remaining: uint64(150),
+		Price:     num.UintZero(),
+	}
+	engine.RegisterOrder(context.TODO(), sellOrder)
+
+	// then get them to update the positions
+
+	trade := &types.Trade{
+		Size:   150,
+		Buyer:  "test_party_1",
+		Seller: "test_party_2",
+	}
+
+	engine.Update(context.TODO(), trade, buyOrder, sellOrder)
+
+	// now we close the positions
+	// just swap the parties on the orders
+	// and trades
+	buyOrder.Party, sellOrder.Party = sellOrder.Party, buyOrder.Party
+	trade.Buyer, trade.Seller = trade.Seller, trade.Buyer
+
+	engine.RegisterOrder(context.TODO(), buyOrder)
+	engine.RegisterOrder(context.TODO(), sellOrder)
+	engine.Update(context.TODO(), trade, buyOrder, sellOrder)
+
+	// should get 2 closed positions
+	assert.Len(t, engine.GetClosedPositions(), 2)
+
+	s2, _, err := engine.GetState(keys[0])
+	require.Nil(t, err)
+	require.False(t, bytes.Equal(s1, s2))
+
+	payload := &snapshot.Payload{}
+	assert.NoError(t, proto.Unmarshal(s2, payload))
+
+	marketPositions := payload.Data.(*snapshot.Payload_MarketPositions)
+	assert.NotNil(t, marketPositions)
+	// assert the records are saved
+	assert.Len(t, marketPositions.MarketPositions.PartiesRecords, 2)
+	// while yet, there's no positions anymores.
+	assert.Len(t, marketPositions.MarketPositions.Positions, 0)
+}
