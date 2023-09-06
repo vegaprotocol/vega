@@ -126,6 +126,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties receive the following reward for epoch (\d+):$`, func(epoch string, table *godog.Table) error {
 		return steps.PartiesShouldReceiveTheFollowingReward(execsetup.broker, table, epoch)
 	})
+	s.Step(`^the current epoch is "([^"]+)"$`, func(epoch string) error {
+		return steps.TheCurrentEpochIs(execsetup.broker, epoch)
+	})
 
 	// Market steps
 	s.Step(`the simple risk model named "([^"]*)":$`, func(name string, table *godog.Table) error {
@@ -355,6 +358,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`the network moves ahead "([^"]+)" with block duration of "([^"]+)"`, func(total, block string) error {
 		return steps.TheNetworkMovesAheadDurationWithBlocks(execsetup.executionEngine, execsetup.block, execsetup.timeService, total, block)
+	})
+	s.Step(`^the network moves ahead "([^"]+)" epochs$`, func(epochs string) error {
+		return steps.TheNetworkMovesAheadNEpochs(execsetup.broker, execsetup.block, execsetup.executionEngine, execsetup.epochEngine, execsetup.timeService, epochs)
 	})
 
 	// Assertion steps

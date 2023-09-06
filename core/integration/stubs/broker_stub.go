@@ -591,6 +591,21 @@ func (b *BrokerStub) GetDelegationBalanceEvents(epochSeq string) []events.Delega
 	return s
 }
 
+func (b *BrokerStub) GetCurrentEpoch() *events.EpochEvent {
+	batch := b.GetBatch(events.EpochUpdate)
+	if len(batch) == 0 {
+		return nil
+	}
+	last := batch[len(batch)-1]
+	switch et := last.(type) {
+	case events.EpochEvent:
+		return &et
+	case *events.EpochEvent:
+		return et
+	}
+	return nil
+}
+
 func (b *BrokerStub) GetDelegationBalance(epochSeq string) []types.Delegation {
 	evts := b.GetDelegationBalanceEvents(epochSeq)
 	balances := make([]types.Delegation, 0, len(evts))
