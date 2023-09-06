@@ -29,6 +29,10 @@ message PartyActivityStreak {
   string reward_vesting_activity_multiplier = 6;
   // The epoch when these informations were accurate.
   uint64 epoch = 7;
+  // Traded volume for the party at the end of that given epoch
+  string traded_volume = 8;
+  // Open interest volume of the party at the end of the epoch
+  string open_volume = 9;
 }
 
 // Event notifying on the details of a funding interval for a perpetuals market.
