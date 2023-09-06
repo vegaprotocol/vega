@@ -119,7 +119,7 @@ Feature: Check we can use LIMIT, PEGGED and ICEBERG orders to cover our commitme
       | party1 | ETH   | ETH/DEC21 | 12000   | 99978000 | 10000 |    
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
-  Scenario: 004, LP is not covered fully with ICEBERG orders due to small peak size
+  Scenario: 004, LP is covered fully with ICEBERG orders even with small peak size
     When the opening auction period ends for market "ETH/DEC21"
     And the auction ends with a traded volume of "10" at a price of "1000"
     Then the market data for the market "ETH/DEC21" should be:
@@ -139,5 +139,5 @@ Feature: Check we can use LIMIT, PEGGED and ICEBERG orders to cover our commitme
       | lp1 | party1 | ETH/DEC21 | 10000             | STATUS_ACTIVE    |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general  | bond  |
-      | party1 | ETH   | ETH/DEC21 | 12000   | 99978000 | 8100 |    
-    And the insurance pool balance should be "1900" for the market "ETH/DEC21"
+      | party1 | ETH   | ETH/DEC21 | 12000   | 99978000 | 10000 |    
+    And the insurance pool balance should be "0" for the market "ETH/DEC21"
