@@ -45,8 +45,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
 
     And the following network parameters are set:
       | name                                                | value |
-      | market.liquidity.bondPenaltyParameter               | 0.2   |
-      | validators.epoch.length                             | 5s    |
+      | market.liquidity.bondPenaltyParameter | 0.2 |
       | market.liquidity.stakeToCcyVolume                   | 1     |
       | market.liquidity.successorLaunchWindowLength        | 1h    |
       | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.7   |
@@ -77,6 +76,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
       | lp_2 | lp2   | ETH/MAR22 | 4000              | 0.015 | submission |
 
     When the network moves ahead "4" blocks
+    And the current epoch is "0"
 
     #AC 0044-LIME-071: When an LP amends the Fee Factor to a value greater than `market.liquidity.maximumLiquidityFeeFactorLevel`, the amendments are rejected
     And the parties submit the following liquidity provision:
@@ -115,6 +115,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
       | lp_1 | lp1   | ETH/MAR22 | 4000              | 0.02 | amendment |
 
     When the network moves ahead "3" blocks
+    And the current epoch is "0"
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
       | lp1 | 0.6 | 6000  |
@@ -125,6 +126,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
       | lp2   | USD   | ETH/MAR22 | 64024  | 31976   | 4000 |
 
     When the network moves ahead "5" blocks
+    And the current epoch is "1"
 #AC 0044-LIME-065:When LP1 decreases its commitment, we should see this cash flow (6000-4000=2000) going from bond account to general account, and ELS updated
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
@@ -150,7 +152,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
       | id   | party | market id | commitment amount | fee  | lp type   |
       | lp_1 | lp1   | ETH/MAR22 | 1000              | 0.02 | amendment |
 
-    When the network moves ahead "11" blocks
+    Then the network moves ahead "1" epochs
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_MONITORING_AUCTION | 3600    | 973       | 1027      | 7113         | 5001           | 2             |
@@ -165,6 +167,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
       | lp1   | USD   | ETH/MAR22 | 0      | 98478   | 1001 |
       | lp2   | USD   | ETH/MAR22 | 0      | 96007   | 4000 |
     And the insurance pool balance should be "528" for the market "ETH/MAR22"
+    And the current epoch is "2"
 
 
 
