@@ -727,6 +727,13 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Markets"};
   }
 
+  // List party activity streak
+  //
+  // Get a party activity accross epochs
+  rpc GetPartyActivityStreak(GetPartyActivityStreakRequest) returns (GetPartyActivityStreakResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referrals"};
+  }
+
   // Export network history as CSV
   //
   // Export CSV table data from network history between two block heights.
@@ -3327,6 +3334,21 @@ message ListEntitiesResponse {
   repeated vega.events.v1.EthereumKeyRotation ethereum_key_rotations = 27;
   repeated vega.events.v1.ProtocolUpgradeEvent protocol_upgrade_proposals = 28;
 }
+
+// Request to get a party activity streaks accross epochs
+message GetPartyActivityStreakRequest {
+  // The party ID.
+  string party_id = 1 [(google.api.field_behavior) = REQUIRED];
+  // An optional epoch, returns last if not specified.
+  optional uint64 epoch = 2;
+}
+
+// Response to get a party activity streaks accross epochs
+message GetPartyActivityStreakResponse {
+  // The activity streak of a party at a given epoch
+  vega.events.v1.PartyActivityStreak activity_streak = 1;
+}
+
 
 // Request to list a perpetual market's funding periods
 message ListFundingPeriodsRequest {
