@@ -78,14 +78,6 @@ func (o *Order) TrueRemaining() uint64 {
 	return rem
 }
 
-// Returns the min of 2 uint64s.
-func min(x, y uint64) uint64 {
-	if y < x {
-		return y
-	}
-	return x
-}
-
 // IcebergNeedsRefresh returns whether the given iceberg order's visible peak has
 // dropped below the minimum visible size, and there is hidden volume available to
 // restore it.
