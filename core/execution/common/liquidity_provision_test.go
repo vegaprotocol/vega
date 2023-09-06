@@ -455,11 +455,11 @@ func TestLiquidityProvisionsAmendments(t *testing.T) {
 
 	bAcc, err := testLiquidity.collateralEngine.GetPartyBondAccount(testLiquidity.marketID, provider, testLiquidity.asset)
 	assert.NoError(t, err)
-	t.Log(bAcc)
+	assert.Equal(t, "10000", bAcc.Balance.String())
 
 	gAcc, err := testLiquidity.collateralEngine.GetPartyGeneralAccount(provider, testLiquidity.asset)
 	assert.NoError(t, err)
-	t.Log(gAcc)
+	assert.Equal(t, "0", gAcc.Balance.String())
 
 	testLiquidity.liquidityEngine.EXPECT().
 		AmendLiquidityProvision(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
@@ -498,15 +498,13 @@ func TestLiquidityProvisionsAmendments(t *testing.T) {
 		deterministicID, types.MarketStateActive)
 	assert.NoError(t, err)
 
-	t.Log("---------------------------------- after")
-
 	bAcc, err = testLiquidity.collateralEngine.GetPartyBondAccount(testLiquidity.marketID, provider, testLiquidity.asset)
 	assert.NoError(t, err)
-	t.Log(bAcc)
+	assert.Equal(t, "1000", bAcc.Balance.String())
 
 	gAcc, err = testLiquidity.collateralEngine.GetPartyGeneralAccount(provider, testLiquidity.asset)
 	assert.NoError(t, err)
-	t.Log(gAcc)
+	assert.Equal(t, "9000", gAcc.Balance.String())
 }
 
 func TestCancelLiquidityProvisionDuringOpeningAuction(t *testing.T) {
@@ -542,8 +540,11 @@ func TestCancelLiquidityProvisionDuringOpeningAuction(t *testing.T) {
 
 	testLiquidity.liquidityEngine.EXPECT().
 		SubmitLiquidityProvision(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(nil, true).
+		Return(true, nil).
 		AnyTimes()
+
+	testLiquidity.equityShares.EXPECT().SetPartyStake(gomock.Any(), gomock.Any())
+	testLiquidity.equityShares.EXPECT().AllShares()
 
 	testLiquidity.liquidityEngine.EXPECT().PendingProvision().Return(nil).AnyTimes()
 	one := num.UintOne()
@@ -574,11 +575,11 @@ func TestCancelLiquidityProvisionDuringOpeningAuction(t *testing.T) {
 
 	bAcc, err := testLiquidity.collateralEngine.GetPartyBondAccount(testLiquidity.marketID, provider, testLiquidity.asset)
 	assert.NoError(t, err)
-	t.Log(bAcc)
+	assert.Equal(t, "10000", bAcc.Balance.String())
 
 	gAcc, err := testLiquidity.collateralEngine.GetPartyGeneralAccount(provider, testLiquidity.asset)
 	assert.NoError(t, err)
-	t.Log(gAcc)
+	assert.Equal(t, "0", gAcc.Balance.String())
 
 	testLiquidity.liquidityEngine.EXPECT().
 		AmendLiquidityProvision(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
@@ -609,21 +610,14 @@ func TestCancelLiquidityProvisionDuringOpeningAuction(t *testing.T) {
 		}).
 		AnyTimes()
 
-	lpa := &types.LiquidityProvisionAmendment{
-		MarketID:         testLiquidity.marketID,
-		CommitmentAmount: num.NewUint(1000),
-	}
-	err = testLiquidity.marketLiquidity.AmendLiquidityProvision(ctx, lpa, provider,
-		deterministicID, types.MarketStateActive)
+	err = testLiquidity.marketLiquidity.CancelLiquidityProvision(ctx, provider)
 	assert.NoError(t, err)
-
-	t.Log("---------------------------------- after")
 
 	bAcc, err = testLiquidity.collateralEngine.GetPartyBondAccount(testLiquidity.marketID, provider, testLiquidity.asset)
 	assert.NoError(t, err)
-	t.Log(bAcc)
+	assert.Equal(t, "0", bAcc.Balance.String())
 
 	gAcc, err = testLiquidity.collateralEngine.GetPartyGeneralAccount(provider, testLiquidity.asset)
 	assert.NoError(t, err)
-	t.Log(gAcc)
+	assert.Equal(t, "10000", gAcc.Balance.String())
 }
