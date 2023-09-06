@@ -267,6 +267,44 @@ type Perpetual struct {
 	externalTWAP *cachedTWAP
 }
 
+func (p *Perpetual) Update(ctx context.Context, pp interface{}, oe OracleEngine) error {
+	iPerp, ok := pp.(*types.InstrumentPerps)
+	if !ok {
+		p.log.Panic("attempting to update a perpetual into something else")
+	}
+
+	// unsubsribe all old oracles
+	p.oracle.unsubAll(ctx)
+
+	// grab all the new margin-factor and whatnot.
+	p.p = iPerp.Perps
+
+	// make sure we have all we need
+	if p.p.DataSourceSpecForSettlementData == nil || p.p.DataSourceSpecForSettlementSchedule == nil || p.p.DataSourceSpecBinding == nil {
+		return ErrDataSourceSpecAndBindingAreRequired
+	}
+	oracle, err := newPerpOracle(p.p)
+	if err != nil {
+		return err
+	}
+
+	// create specs from source
+	osForSettle, err := spec.New(*datasource.SpecFromDefinition(*p.p.DataSourceSpecForSettlementData.Data))
+	if err != nil {
+		return err
+	}
+	osForSchedule, err := spec.New(*datasource.SpecFromDefinition(*p.p.DataSourceSpecForSettlementSchedule.Data))
+	if err != nil {
+		return err
+	}
+	if err = oracle.bindAll(ctx, oe, osForSettle, osForSchedule, p.receiveDataPoint, p.receiveSettlementCue); err != nil {
+		return err
+	}
+	p.oracle = oracle // ensure oracle on perp is not an old copy
+
+	return nil
+}
+
 func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, marketID string, oe OracleEngine, broker Broker, assetDP uint32) (*Perpetual, error) {
 	// make sure we have all we need
 	if p.DataSourceSpecForSettlementData == nil || p.DataSourceSpecForSettlementSchedule == nil || p.DataSourceSpecBinding == nil {
@@ -276,7 +314,6 @@ func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, mark
 	if err != nil {
 		return nil, err
 	}
-
 	// check decimal places for settlement data
 	perp := &Perpetual{
 		p:            p,
