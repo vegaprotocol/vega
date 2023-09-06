@@ -44,6 +44,7 @@ func TestLiquidityScoresMechanics(t *testing.T) {
 	)
 	defer tng.ctrl.Finish()
 	tng.priceMonitor.EXPECT().GetValidPriceRange().AnyTimes().Return(minPmPrice, maxPmPrice).AnyTimes()
+	tng.auctionState.EXPECT().IsOpeningAuction().Return(false).AnyTimes()
 
 	gomock.InOrder(
 		tng.riskModel.EXPECT().ProbabilityOfTrading(bestBid, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(num.DecimalFromFloat(0.5)),

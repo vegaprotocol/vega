@@ -64,6 +64,7 @@ func TestEngineSnapshot(t *testing.T) {
 
 	// Adding some state.
 	originalEngine.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	originalEngine.auctionState.EXPECT().IsOpeningAuction().Return(false).AnyTimes()
 	originalEngine.auctionState.EXPECT().InAuction().Return(false).AnyTimes()
 
 	// Adding provisions.
@@ -104,6 +105,7 @@ func TestEngineSnapshot(t *testing.T) {
 	otherEngine := newTestEngine(t)
 	otherEngine.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	otherEngine.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	otherEngine.auctionState.EXPECT().IsOpeningAuction().Return(false).AnyTimes()
 	otherEngine.auctionState.EXPECT().InAuction().Return(false).AnyTimes()
 
 	// Just to verify the keys are deterministic.
