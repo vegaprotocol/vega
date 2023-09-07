@@ -52,6 +52,7 @@ type SQLSubscribers struct {
 	snapStore                 *sqlstore.CoreSnapshotData
 	stopOrderStore            *sqlstore.StopOrders
 	fundingPeriodStore        *sqlstore.FundingPeriods
+	partyActivityStreakStore  *sqlstore.PartyActivityStreaks
 
 	// Services
 	candleService               *candlesv2.Svc
@@ -92,6 +93,7 @@ type SQLSubscribers struct {
 	coreSnapshotService         *service.SnapshotData
 	stopOrderService            *service.StopOrders
 	fundingPeriodService        *service.FundingPeriods
+	partyActivityStreakService  *service.PartyActivityStreak
 
 	// Subscribers
 	accountSub              *sqlsubscribers.Account
@@ -130,6 +132,7 @@ type SQLSubscribers struct {
 	snapSub                 *sqlsubscribers.SnapshotData
 	stopOrdersSub           *sqlsubscribers.StopOrder
 	fundingPeriodSub        *sqlsubscribers.FundingPeriod
+	partyActivityStreakSub  *sqlsubscribers.PartyActivityStreak
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -172,6 +175,7 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.snapSub,
 		s.stopOrdersSub,
 		s.fundingPeriodSub,
+		s.partyActivityStreakSub,
 	}
 }
 
@@ -218,6 +222,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.snapStore = sqlstore.NewCoreSnapshotData(transactionalConnectionSource)
 	s.stopOrderStore = sqlstore.NewStopOrders(transactionalConnectionSource)
 	s.fundingPeriodStore = sqlstore.NewFundingPeriods(transactionalConnectionSource)
+	s.partyActivityStreakStore = sqlstore.NewPartyActivityStreaks(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
@@ -259,6 +264,8 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.coreSnapshotService = service.NewSnapshotData(s.snapStore)
 	s.stopOrderService = service.NewStopOrders(s.stopOrderStore)
 	s.fundingPeriodService = service.NewFundingPeriods(s.fundingPeriodStore)
+	s.partyActivityStreakService = service.NewPartyActivityStreak(
+		s.partyActivityStreakStore)
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		s.marketDepthService,
@@ -312,4 +319,5 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.snapSub = sqlsubscribers.NewSnapshotData(s.coreSnapshotService)
 	s.stopOrdersSub = sqlsubscribers.NewStopOrder(s.stopOrderService)
 	s.fundingPeriodSub = sqlsubscribers.NewFundingPeriod(s.fundingPeriodService)
+	s.partyActivityStreakSub = sqlsubscribers.NewPartyActivityStreak(s.partyActivityStreakService)
 }

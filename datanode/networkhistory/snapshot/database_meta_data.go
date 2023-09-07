@@ -103,7 +103,8 @@ func NewDatabaseMetaData(ctx context.Context, connPool *pgxpool.Pool) (DatabaseM
 	}
 
 	result := DatabaseMetadata{
-		TableNameToMetaData: map[string]TableMetadata{}, DatabaseVersion: dbVersion,
+		TableNameToMetaData:                    map[string]TableMetadata{},
+		DatabaseVersion:                        dbVersion,
 		ContinuousAggregatesMetaData:           caggsMeta,
 		CurrentStateTablesCreateConstraintsSql: currentStateCreateConstraintsSql,
 		CurrentStateTablesDropConstraintsSql:   currentStateDropConstraintsSql,
@@ -253,8 +254,8 @@ func getCreateConstraintsSql(ctx context.Context, conn *pgxpool.Pool, hyperTable
 
 	err = pgxscan.Select(ctx, conn, &constraints,
 		`SELECT relname as tablename, 'ALTER TABLE '||nspname||'.'||relname||' ADD CONSTRAINT '||conname||' '|| pg_get_constraintdef(pg_constraint.oid)||';' as sql
-		FROM pg_constraint 
-		INNER JOIN pg_class ON conrelid=pg_class.oid 
+		FROM pg_constraint
+		INNER JOIN pg_class ON conrelid=pg_class.oid
 		INNER JOIN pg_namespace ON pg_namespace.oid=pg_class.relnamespace where pg_namespace.nspname='public'
 		ORDER BY CASE WHEN contype='f' THEN 0 ELSE 1 END DESC,contype DESC,nspname DESC,relname DESC,conname DESC`)
 
@@ -283,9 +284,9 @@ func getDropConstraintsSql(ctx context.Context, conn *pgxpool.Pool, hyperTableNa
 
 	err = pgxscan.Select(ctx, conn, &constraints,
 		`SELECT relname as tablename, 'ALTER TABLE '||nspname||'.'||relname||' DROP CONSTRAINT '||conname||';' as sql
-		FROM pg_constraint 
-		INNER JOIN pg_class ON conrelid=pg_class.oid 
-		INNER JOIN pg_namespace ON pg_namespace.oid=pg_class.relnamespace where pg_namespace.nspname='public' 
+		FROM pg_constraint
+		INNER JOIN pg_class ON conrelid=pg_class.oid
+		INNER JOIN pg_namespace ON pg_namespace.oid=pg_class.relnamespace where pg_namespace.nspname='public'
 		ORDER BY CASE WHEN contype='f' THEN 0 ELSE 1 END,contype,nspname,relname,conname`)
 
 	if err != nil {

@@ -618,3 +618,5 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPeriodEdge
   FundingPeriodConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPeriodConnection
+  PartyActivityStreak:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.PartyActivityStreak
