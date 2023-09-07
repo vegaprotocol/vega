@@ -13,6 +13,7 @@
 package steps
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -36,6 +37,12 @@ func MarketOpeningAuctionPeriodEnds(execEngine Execution, timeStub *stubs.TimeSt
 	data, err := execEngine.GetMarketData(mkt.ID)
 	if err != nil {
 		return errMarketDataNotFound(marketID, err)
+	}
+	// ensure we simulate the end of the governance period
+	if data.MarketState != types.MarketStatePending {
+		if err := execEngine.StartOpeningAuction(context.Background(), mkt.ID); err != nil {
+			return err
+		}
 	}
 
 	end := time.Unix(0, data.AuctionEnd)

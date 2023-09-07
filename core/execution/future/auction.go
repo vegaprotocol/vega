@@ -72,7 +72,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		}
 
 		// first check liquidity - before we mark auction as ready to leave
-		m.checkLiquidity(ctx, trades, true)
+		// m.checkLiquidity(ctx, trades, true)
 		if !m.as.CanLeave() {
 			if e := m.as.AuctionExtended(ctx, now); e != nil {
 				m.broker.Send(e)
