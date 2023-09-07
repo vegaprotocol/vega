@@ -44,6 +44,8 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+
+	liqmocks "code.vegaprotocol.io/vega/core/liquidity/v2/mocks"
 )
 
 //go:embed testcp/checkpoint.cp
@@ -202,7 +204,9 @@ func createExecutionEngine(t *testing.T, tm time.Time) (*execution.Engine, *gove
 	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 
-	exec := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, marketTracker, asset, referralDiscountReward, volumeDiscount)
+	epochTime := liqmocks.NewMockEpochTime(ctrl)
+
+	exec := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, marketTracker, asset, referralDiscountReward, volumeDiscount, epochTime)
 	accounts := mocks.NewMockStakingAccounts(ctrl)
 
 	witness := mocks.NewMockWitness(ctrl)

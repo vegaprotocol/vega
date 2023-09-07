@@ -175,6 +175,10 @@ func (s *Svc) Load(ctx context.Context, data []byte) error {
 	return nil
 }
 
+func (s *Svc) GetEpochStartTime() time.Time {
+	return s.epoch.StartTime
+}
+
 // fastForward advances time and expires/starts any epoch that would have expired/started during the time period. It would trigger the epoch events naturally
 // so will have a side effect of delegations getting promoted and rewards getting calculated and potentially paid.
 func (s *Svc) fastForward(ctx context.Context) {

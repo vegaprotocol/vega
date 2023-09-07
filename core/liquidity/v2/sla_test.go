@@ -53,6 +53,8 @@ func newTestEngine(t *testing.T) *testEngine {
 	stateVarEngine := stubs.NewStateVar()
 	risk.EXPECT().GetProjectionHorizon().AnyTimes()
 
+	epochTime := mocks.NewMockEpochTime(ctrl)
+
 	auctionState := mmocks.NewMockAuctionState(ctrl)
 
 	defaultSLAParams := &types.LiquiditySLAParams{
@@ -76,6 +78,7 @@ func newTestEngine(t *testing.T) *testEngine {
 		stateVarEngine,
 		num.NewDecimalFromFloat(1), // positionFactor
 		defaultSLAParams,
+		epochTime,
 	)
 
 	engine.OnNonPerformanceBondPenaltyMaxUpdate(num.DecimalFromFloat(0.5)) // nonPerformanceBondPenaltyMax

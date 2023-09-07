@@ -16,6 +16,7 @@ import (
 	fmocks "code.vegaprotocol.io/vega/core/fee/mocks"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/liquidity/v2"
+	liqmocks "code.vegaprotocol.io/vega/core/liquidity/v2/mocks"
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/monitor"
 	"code.vegaprotocol.io/vega/core/types"
@@ -199,7 +200,9 @@ func newTestMarket(
 	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 
-	market, _ := spot.NewMarket(log, matching.NewDefaultConfig(), fee.NewDefaultConfig(), liquidity.NewDefaultConfig(), collateral, &mkt, ts, broker, as, statevarEngine, mat, baseAsset, quoteAsset, peggedOrderCounterForTest, referralDiscountReward, volumeDiscount)
+	epochTime := liqmocks.NewMockEpochTime(ctrl)
+
+	market, _ := spot.NewMarket(log, matching.NewDefaultConfig(), fee.NewDefaultConfig(), liquidity.NewDefaultConfig(), collateral, &mkt, ts, broker, as, statevarEngine, mat, baseAsset, quoteAsset, peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, epochTime)
 
 	tm := &testMarket{
 		market:           market,

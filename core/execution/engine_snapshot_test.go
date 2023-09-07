@@ -44,6 +44,8 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	liqmocks "code.vegaprotocol.io/vega/core/liquidity/v2/mocks"
 )
 
 type engineFake struct {
@@ -91,7 +93,10 @@ func getMockedEngine(t *testing.T) *engineFake {
 	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
-	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine, teams, balanceChecker), asset, referralDiscountReward, volumeDiscount)
+
+	epochTime := liqmocks.NewMockEpochTime(ctrl)
+
+	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine, teams, balanceChecker), asset, referralDiscountReward, volumeDiscount, epochTime)
 	return &engineFake{
 		Engine:     exec,
 		ctrl:       ctrl,
@@ -149,7 +154,9 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
-	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine, teams, balanceChecker), asset, referralDiscountReward, volumeDiscount), ctrl
+
+	epochTime := liqmocks.NewMockEpochTime(ctrl)
+	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine, teams, balanceChecker), asset, referralDiscountReward, volumeDiscount, epochTime), ctrl
 }
 
 func TestEmptyMarkets(t *testing.T) {

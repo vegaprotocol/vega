@@ -55,6 +55,11 @@ type TimeService interface {
 	GetTimeNow() time.Time
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/liquidity/v2 EpochTime
+type EpochTime interface {
+	GetEpochStartTime() time.Time
+}
+
 // RiskModel allows calculation of min/max price range and a probability of trading.
 type RiskModel interface {
 	ProbabilityOfTrading(currentPrice, orderPrice num.Decimal, minPrice, maxPrice num.Decimal, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal

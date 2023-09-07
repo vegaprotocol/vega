@@ -478,6 +478,7 @@ func NewSnapshotEngine(
 	stateVarEngine StateVarEngine,
 	positionFactor num.Decimal,
 	slaParams *types.LiquiditySLAParams,
+	epochTime EpochTime,
 ) *SnapshotEngine {
 	if slaParams == nil {
 		slaParams = defaultLiquiditySLAParams()

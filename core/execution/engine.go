@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/core/execution/future"
 	"code.vegaprotocol.io/vega/core/execution/spot"
 	"code.vegaprotocol.io/vega/core/fee"
+	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/monitor"
 	"code.vegaprotocol.io/vega/core/types"
@@ -101,6 +102,8 @@ type Engine struct {
 	successorWindow time.Duration
 	// only used once, during CP restore, this doesn't need to be included in a snapshot or checkpoint.
 	skipRestoreSuccessors map[string]struct{}
+
+	epochTime liquidity.EpochTime
 }
 
 type netParamsValues struct {
@@ -174,6 +177,7 @@ func NewEngine(
 	assets common.Assets,
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
+	epochTime liquidity.EpochTime,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -199,6 +203,7 @@ func NewEngine(
 		skipRestoreSuccessors:         map[string]struct{}{},
 		referralDiscountRewardService: referralDiscountRewardService,
 		volumeDiscountService:         volumeDiscountService,
+		epochTime:                     epochTime,
 	}
 
 	// set the eligibility for proposer bonus checker
@@ -670,6 +675,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 		e.peggedOrderCountUpdated,
 		e.referralDiscountRewardService,
 		e.volumeDiscountService,
+		e.epochTime,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -749,6 +755,7 @@ func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Marke
 		e.peggedOrderCountUpdated,
 		e.referralDiscountRewardService,
 		e.volumeDiscountService,
+		e.epochTime,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",

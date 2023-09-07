@@ -52,6 +52,8 @@ import (
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
+	liqmocks "code.vegaprotocol.io/vega/core/liquidity/v2/mocks"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -239,10 +241,12 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 
+	epochTime := liqmocks.NewMockEpochTime(tm.ctrl)
+
 	mktEngine, err := future.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.timeService, tm.broker, mas, statevarEngine, marketActivityTracker, cfgAsset,
-		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount,
+		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, epochTime,
 	)
 	require.NoError(tm.t, err)
 
@@ -641,10 +645,13 @@ func getTestMarket2WithDP(
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("no referrer")).AnyTimes()
 	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+
+	epochTime := liqmocks.NewMockEpochTime(tm.ctrl)
+
 	mktEngine, err := future.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, timeService, broker, mas, statevar, marketActivityTracker, cfgAsset,
-		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount)
+		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, epochTime)
 	if err != nil {
 		t.Fatalf("couldn't create a market: %v", err)
 	}

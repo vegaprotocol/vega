@@ -17,6 +17,8 @@ type snapshotV1 struct {
 
 	stopped  bool
 	hashKeys []string
+
+	epochTime EpochTime
 }
 
 func (e *snapshotV1) Namespace() types.SnapshotNamespace {
@@ -64,8 +66,7 @@ func (e *snapshotV1) Stop() {
 func (e *snapshotV1) loadPerformances(provisions []*typespb.LiquidityProvision) error {
 	var err error
 
-	// TODO karel - how to get the time?
-	// e.Engine.slaEpochStart = time.Unix(0, performances.EpochStartTime)
+	e.Engine.slaEpochStart = e.epochTime.GetEpochStartTime()
 
 	e.Engine.slaPerformance = map[string]*slaPerformance{}
 	for _, provision := range provisions {

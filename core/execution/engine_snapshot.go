@@ -112,6 +112,7 @@ func (e *Engine) restoreSpotMarket(ctx context.Context, em *types.ExecSpotMarket
 	nextMTM := time.Unix(0, em.NextMTM)
 	// create market auction state
 	e.log.Info("restoring market", logging.String("id", em.Market.ID))
+
 	mkt, err := spot.NewMarketFromSnapshot(
 		ctx,
 		e.log,
@@ -133,6 +134,7 @@ func (e *Engine) restoreSpotMarket(ctx context.Context, em *types.ExecSpotMarket
 		e.peggedOrderCountUpdated,
 		e.referralDiscountRewardService,
 		e.volumeDiscountService,
+		e.epochTime,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -209,6 +211,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 		e.peggedOrderCountUpdated,
 		e.referralDiscountRewardService,
 		e.volumeDiscountService,
+		e.epochTime,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
