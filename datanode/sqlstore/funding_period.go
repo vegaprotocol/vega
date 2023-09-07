@@ -99,7 +99,7 @@ func (fp *FundingPeriods) ListFundingPeriods(ctx context.Context, marketID entit
 }
 
 func (fp *FundingPeriods) ListFundingPeriodDataPoints(ctx context.Context, marketID entities.MarketID, dateRange entities.DateRange,
-	source *entities.FundingPeriodDataPointSource, pagination entities.CursorPagination,
+	source *entities.FundingPeriodDataPointSource, seq *uint64, pagination entities.CursorPagination,
 ) ([]entities.FundingPeriodDataPoint, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("FundingPeriodDataPoint", "ListFundingPeriodDataPoints")()
 	var dataPoints []entities.FundingPeriodDataPoint
@@ -115,9 +115,11 @@ func (fp *FundingPeriods) ListFundingPeriodDataPoints(ctx context.Context, marke
 	if dateRange.End != nil {
 		query = fmt.Sprintf("%s and timestamp < %s", query, nextBindVar(&args, dateRange.End))
 	}
-
 	if source != nil {
 		query = fmt.Sprintf("%s and data_point_type = %s", query, nextBindVar(&args, *source))
+	}
+	if seq != nil {
+		query = fmt.Sprintf("%s and funding_period_seq = %s", query, nextBindVar(&args, *seq))
 	}
 
 	query, args, err = PaginateQuery[entities.FundingPeriodDataPointCursor](query, args, fundingPeriodDataPointOrdering, pagination)
