@@ -3363,12 +3363,14 @@ message ListFundingPeriodsResponse {
 message ListFundingPeriodDataPointsRequest {
   // Market ID to get funding period data points for.
   string market_id = 1 [(google.api.field_behavior) = REQUIRED];
-  // Optional date range to limit data points to a specific funding periods within a date range.
+  // Restrict the data points to those within the given date range.
   optional DateRange date_range = 2;
-  // Optional funding period data point source to filter for, e.g. internal or external data points only.
+  // Restrict the data points to those with the given source type.
   optional vega.events.v1.FundingPeriodDataPoint.Source source = 3;
+  // Restrict the data points to those that contributed to the given funding period sequence.
+  optional uint64 seq = 4;
   // Optional pagination information to limit the data that is returned.
-  optional Pagination pagination = 4;
+  optional Pagination pagination = 5;
 }
 
 // Funding period data point with the corresponding cursor.

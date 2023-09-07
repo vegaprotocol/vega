@@ -3984,6 +3984,7 @@ func (t *TradingDataServiceV2) ListFundingPeriodDataPoints(ctx context.Context, 
 		entities.MarketID(req.MarketId),
 		dateRange,
 		(*entities.FundingPeriodDataPointSource)(req.Source),
+		req.Seq,
 		pagination,
 	)
 	if err != nil {
