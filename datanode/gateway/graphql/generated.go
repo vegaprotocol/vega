@@ -104,6 +104,7 @@ type ResolverRoot interface {
 	OrderSubmission() OrderSubmissionResolver
 	OrderUpdate() OrderUpdateResolver
 	Party() PartyResolver
+	PartyActivityStreak() PartyActivityStreakResolver
 	PartyStake() PartyStakeResolver
 	Perpetual() PerpetualResolver
 	PerpetualProduct() PerpetualProductResolver
@@ -1410,6 +1411,7 @@ type ComplexityRoot struct {
 
 	Party struct {
 		AccountsConnection            func(childComplexity int, marketID *string, assetID *string, typeArg *vega.AccountType, pagination *v2.Pagination) int
+		ActivityStreak                func(childComplexity int, epoch *int) int
 		DelegationsConnection         func(childComplexity int, nodeID *string, pagination *v2.Pagination) int
 		DepositsConnection            func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		Id                            func(childComplexity int) int
@@ -1425,6 +1427,17 @@ type ComplexityRoot struct {
 		TransfersConnection           func(childComplexity int, direction *TransferDirection, pagination *v2.Pagination) int
 		VotesConnection               func(childComplexity int, pagination *v2.Pagination) int
 		WithdrawalsConnection         func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
+	}
+
+	PartyActivityStreak struct {
+		ActiveFor                    func(childComplexity int) int
+		Epoch                        func(childComplexity int) int
+		InactiveFor                  func(childComplexity int) int
+		IsActive                     func(childComplexity int) int
+		OpenVolume                   func(childComplexity int) int
+		RewardDistributionMultiplier func(childComplexity int) int
+		RewardVestingMultiplier      func(childComplexity int) int
+		TradedVolume                 func(childComplexity int) int
 	}
 
 	PartyConnection struct {
@@ -2598,6 +2611,15 @@ type PartyResolver interface {
 	RewardsConnection(ctx context.Context, obj *vega.Party, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) (*v2.RewardsConnection, error)
 	RewardSummaries(ctx context.Context, obj *vega.Party, assetID *string) ([]*vega.RewardSummary, error)
 	TransfersConnection(ctx context.Context, obj *vega.Party, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
+	ActivityStreak(ctx context.Context, obj *vega.Party, epoch *int) (*v1.PartyActivityStreak, error)
+}
+type PartyActivityStreakResolver interface {
+	ActiveFor(ctx context.Context, obj *v1.PartyActivityStreak) (int, error)
+	InactiveFor(ctx context.Context, obj *v1.PartyActivityStreak) (int, error)
+
+	RewardDistributionMultiplier(ctx context.Context, obj *v1.PartyActivityStreak) (string, error)
+	RewardVestingMultiplier(ctx context.Context, obj *v1.PartyActivityStreak) (string, error)
+	Epoch(ctx context.Context, obj *v1.PartyActivityStreak) (int, error)
 }
 type PartyStakeResolver interface {
 	Linkings(ctx context.Context, obj *v2.GetStakeResponse) ([]*v1.StakeLinking, error)
@@ -8243,6 +8265,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Party.AccountsConnection(childComplexity, args["marketId"].(*string), args["assetId"].(*string), args["type"].(*vega.AccountType), args["pagination"].(*v2.Pagination)), true
 
+	case "Party.activityStreak":
+		if e.complexity.Party.ActivityStreak == nil {
+			break
+		}
+
+		args, err := ec.field_Party_activityStreak_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Party.ActivityStreak(childComplexity, args["epoch"].(*int)), true
+
 	case "Party.delegationsConnection":
 		if e.complexity.Party.DelegationsConnection == nil {
 			break
@@ -8417,6 +8451,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Party.WithdrawalsConnection(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination)), true
+
+	case "PartyActivityStreak.activeFor":
+		if e.complexity.PartyActivityStreak.ActiveFor == nil {
+			break
+		}
+
+		return e.complexity.PartyActivityStreak.ActiveFor(childComplexity), true
+
+	case "PartyActivityStreak.epoch":
+		if e.complexity.PartyActivityStreak.Epoch == nil {
+			break
+		}
+
+		return e.complexity.PartyActivityStreak.Epoch(childComplexity), true
+
+	case "PartyActivityStreak.inactiveFor":
+		if e.complexity.PartyActivityStreak.InactiveFor == nil {
+			break
+		}
+
+		return e.complexity.PartyActivityStreak.InactiveFor(childComplexity), true
+
+	case "PartyActivityStreak.isActive":
+		if e.complexity.PartyActivityStreak.IsActive == nil {
+			break
+		}
+
+		return e.complexity.PartyActivityStreak.IsActive(childComplexity), true
+
+	case "PartyActivityStreak.openVolume":
+		if e.complexity.PartyActivityStreak.OpenVolume == nil {
+			break
+		}
+
+		return e.complexity.PartyActivityStreak.OpenVolume(childComplexity), true
+
+	case "PartyActivityStreak.rewardDistributionMultiplier":
+		if e.complexity.PartyActivityStreak.RewardDistributionMultiplier == nil {
+			break
+		}
+
+		return e.complexity.PartyActivityStreak.RewardDistributionMultiplier(childComplexity), true
+
+	case "PartyActivityStreak.rewardVestingMultiplier":
+		if e.complexity.PartyActivityStreak.RewardVestingMultiplier == nil {
+			break
+		}
+
+		return e.complexity.PartyActivityStreak.RewardVestingMultiplier(childComplexity), true
+
+	case "PartyActivityStreak.tradedVolume":
+		if e.complexity.PartyActivityStreak.TradedVolume == nil {
+			break
+		}
+
+		return e.complexity.PartyActivityStreak.TradedVolume(childComplexity), true
 
 	case "PartyConnection.edges":
 		if e.complexity.PartyConnection.Edges == nil {
@@ -12522,6 +12612,21 @@ func (ec *executionContext) field_Party_accountsConnection_args(ctx context.Cont
 	return args, nil
 }
 
+func (ec *executionContext) field_Party_activityStreak_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["epoch"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("epoch"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["epoch"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Party_delegationsConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -14969,6 +15074,8 @@ func (ec *executionContext) fieldContext_AccountBalance_party(ctx context.Contex
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -15573,6 +15680,8 @@ func (ec *executionContext) fieldContext_AccountEvent_party(ctx context.Context,
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -20806,6 +20915,8 @@ func (ec *executionContext) fieldContext_Delegation_party(ctx context.Context, f
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -21251,6 +21362,8 @@ func (ec *executionContext) fieldContext_Deposit_party(ctx context.Context, fiel
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -24643,6 +24756,8 @@ func (ec *executionContext) fieldContext_Entities_parties(ctx context.Context, f
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -32637,6 +32752,8 @@ func (ec *executionContext) fieldContext_LiquidityProviderFeeShare_party(ctx con
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -32935,6 +33052,8 @@ func (ec *executionContext) fieldContext_LiquidityProvision_party(ctx context.Co
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -35393,6 +35512,8 @@ func (ec *executionContext) fieldContext_MarginLevels_party(ctx context.Context,
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -47948,6 +48069,8 @@ func (ec *executionContext) fieldContext_Order_party(ctx context.Context, field 
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -51448,6 +51571,428 @@ func (ec *executionContext) fieldContext_Party_transfersConnection(ctx context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _Party_activityStreak(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Party_activityStreak(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Party().ActivityStreak(rctx, obj, fc.Args["epoch"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v1.PartyActivityStreak)
+	fc.Result = res
+	return ec.marshalOPartyActivityStreak2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐPartyActivityStreak(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Party_activityStreak(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Party",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "activeFor":
+				return ec.fieldContext_PartyActivityStreak_activeFor(ctx, field)
+			case "inactiveFor":
+				return ec.fieldContext_PartyActivityStreak_inactiveFor(ctx, field)
+			case "isActive":
+				return ec.fieldContext_PartyActivityStreak_isActive(ctx, field)
+			case "rewardDistributionMultiplier":
+				return ec.fieldContext_PartyActivityStreak_rewardDistributionMultiplier(ctx, field)
+			case "rewardVestingMultiplier":
+				return ec.fieldContext_PartyActivityStreak_rewardVestingMultiplier(ctx, field)
+			case "epoch":
+				return ec.fieldContext_PartyActivityStreak_epoch(ctx, field)
+			case "tradedVolume":
+				return ec.fieldContext_PartyActivityStreak_tradedVolume(ctx, field)
+			case "openVolume":
+				return ec.fieldContext_PartyActivityStreak_openVolume(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PartyActivityStreak", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Party_activityStreak_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PartyActivityStreak_activeFor(ctx context.Context, field graphql.CollectedField, obj *v1.PartyActivityStreak) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PartyActivityStreak_activeFor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PartyActivityStreak().ActiveFor(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PartyActivityStreak_activeFor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PartyActivityStreak",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PartyActivityStreak_inactiveFor(ctx context.Context, field graphql.CollectedField, obj *v1.PartyActivityStreak) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PartyActivityStreak_inactiveFor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PartyActivityStreak().InactiveFor(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PartyActivityStreak_inactiveFor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PartyActivityStreak",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PartyActivityStreak_isActive(ctx context.Context, field graphql.CollectedField, obj *v1.PartyActivityStreak) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PartyActivityStreak_isActive(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsActive, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PartyActivityStreak_isActive(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PartyActivityStreak",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PartyActivityStreak_rewardDistributionMultiplier(ctx context.Context, field graphql.CollectedField, obj *v1.PartyActivityStreak) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PartyActivityStreak_rewardDistributionMultiplier(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PartyActivityStreak().RewardDistributionMultiplier(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PartyActivityStreak_rewardDistributionMultiplier(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PartyActivityStreak",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PartyActivityStreak_rewardVestingMultiplier(ctx context.Context, field graphql.CollectedField, obj *v1.PartyActivityStreak) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PartyActivityStreak_rewardVestingMultiplier(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PartyActivityStreak().RewardVestingMultiplier(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PartyActivityStreak_rewardVestingMultiplier(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PartyActivityStreak",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PartyActivityStreak_epoch(ctx context.Context, field graphql.CollectedField, obj *v1.PartyActivityStreak) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PartyActivityStreak_epoch(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PartyActivityStreak().Epoch(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PartyActivityStreak_epoch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PartyActivityStreak",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PartyActivityStreak_tradedVolume(ctx context.Context, field graphql.CollectedField, obj *v1.PartyActivityStreak) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PartyActivityStreak_tradedVolume(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TradedVolume, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PartyActivityStreak_tradedVolume(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PartyActivityStreak",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PartyActivityStreak_openVolume(ctx context.Context, field graphql.CollectedField, obj *v1.PartyActivityStreak) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PartyActivityStreak_openVolume(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OpenVolume, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PartyActivityStreak_openVolume(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PartyActivityStreak",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PartyConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.PartyConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PartyConnection_edges(ctx, field)
 	if err != nil {
@@ -51623,6 +52168,8 @@ func (ec *executionContext) fieldContext_PartyEdge_node(ctx context.Context, fie
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -52936,6 +53483,8 @@ func (ec *executionContext) fieldContext_Position_party(ctx context.Context, fie
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -55089,6 +55638,8 @@ func (ec *executionContext) fieldContext_Proposal_party(ctx context.Context, fie
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -55746,6 +56297,8 @@ func (ec *executionContext) fieldContext_ProposalDetail_party(ctx context.Contex
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -60634,6 +61187,8 @@ func (ec *executionContext) fieldContext_Query_party(ctx context.Context, field 
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -62567,6 +63122,8 @@ func (ec *executionContext) fieldContext_Reward_party(ctx context.Context, field
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -64999,6 +65556,8 @@ func (ec *executionContext) fieldContext_StakeLinking_party(ctx context.Context,
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -70009,6 +70568,8 @@ func (ec *executionContext) fieldContext_Trade_buyer(ctx context.Context, field 
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -70087,6 +70648,8 @@ func (ec *executionContext) fieldContext_Trade_seller(ctx context.Context, field
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -75123,6 +75686,8 @@ func (ec *executionContext) fieldContext_Vote_party(ctx context.Context, field g
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -75664,6 +76229,8 @@ func (ec *executionContext) fieldContext_Withdrawal_party(ctx context.Context, f
 				return ec.fieldContext_Party_rewardSummaries(ctx, field)
 			case "transfersConnection":
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -90192,6 +90759,165 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 				return innerFunc(ctx)
 
 			})
+		case "activityStreak":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Party_activityStreak(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var partyActivityStreakImplementors = []string{"PartyActivityStreak"}
+
+func (ec *executionContext) _PartyActivityStreak(ctx context.Context, sel ast.SelectionSet, obj *v1.PartyActivityStreak) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, partyActivityStreakImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PartyActivityStreak")
+		case "activeFor":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PartyActivityStreak_activeFor(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "inactiveFor":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PartyActivityStreak_inactiveFor(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "isActive":
+
+			out.Values[i] = ec._PartyActivityStreak_isActive(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "rewardDistributionMultiplier":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PartyActivityStreak_rewardDistributionMultiplier(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "rewardVestingMultiplier":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PartyActivityStreak_rewardVestingMultiplier(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "epoch":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PartyActivityStreak_epoch(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "tradedVolume":
+
+			out.Values[i] = ec._PartyActivityStreak_tradedVolume(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "openVolume":
+
+			out.Values[i] = ec._PartyActivityStreak_openVolume(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -105290,6 +106016,13 @@ func (ec *executionContext) marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋp
 		return graphql.Null
 	}
 	return ec._Party(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOPartyActivityStreak2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐPartyActivityStreak(ctx context.Context, sel ast.SelectionSet, v *v1.PartyActivityStreak) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PartyActivityStreak(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOPartyConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyConnection(ctx context.Context, sel ast.SelectionSet, v *v2.PartyConnection) graphql.Marshaler {

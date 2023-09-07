@@ -200,17 +200,22 @@ func (e *Engine) update(ctx context.Context, epochSeq uint64) {
 	sort.Strings(partiesKey)
 	evts := []events.Event{}
 	for _, party := range partiesKey {
+		ps := parties[party]
 		if _, ok := parties[party]; !ok {
 			e.updateStreak(party, num.UintZero(), num.UintZero())
+			ps = &partyStats{
+				OpenVolume:  num.UintZero(),
+				TradeVolume: num.UintZero(),
+			}
 		}
 
-		evt := e.makeEvent(party, epochSeq)
+		evt := e.makeEvent(party, epochSeq, ps.OpenVolume, ps.TradeVolume)
 		evts = append(evts, events.NewPartyActivityStreakEvent(ctx, evt))
 	}
 	e.broker.SendBatch(evts)
 }
 
-func (e *Engine) makeEvent(party string, epochSeq uint64) *eventspb.PartyActivityStreak {
+func (e *Engine) makeEvent(party string, epochSeq uint64, openVolume, tradedVolume *num.Uint) *eventspb.PartyActivityStreak {
 	partyActivity := e.partiesActivity[party]
 	return &eventspb.PartyActivityStreak{
 		Party:                                party,
@@ -220,6 +225,8 @@ func (e *Engine) makeEvent(party string, epochSeq uint64) *eventspb.PartyActivit
 		RewardDistributionActivityMultiplier: partyActivity.RewardDistributionActivityMultiplier.String(),
 		RewardVestingActivityMultiplier:      partyActivity.RewardVestingActivityMultiplier.String(),
 		Epoch:                                epochSeq,
+		TradedVolume:                         tradedVolume.String(),
+		OpenVolume:                           openVolume.String(),
 	}
 }
 

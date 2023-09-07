@@ -17,23 +17,24 @@ import (
 )
 
 type (
-	Asset              struct{ *sqlstore.Assets }
-	Block              struct{ *sqlstore.Blocks }
-	Party              struct{ *sqlstore.Parties }
-	NetworkLimits      struct{ *sqlstore.NetworkLimits }
-	Epoch              struct{ *sqlstore.Epochs }
-	Deposit            struct{ *sqlstore.Deposits }
-	Withdrawal         struct{ *sqlstore.Withdrawals }
-	RiskFactor         struct{ *sqlstore.RiskFactors }
-	NetworkParameter   struct{ *sqlstore.NetworkParameters }
-	Checkpoint         struct{ *sqlstore.Checkpoints }
-	OracleSpec         struct{ *sqlstore.OracleSpec }
-	OracleData         struct{ *sqlstore.OracleData }
-	LiquidityProvision struct{ *sqlstore.LiquidityProvision }
-	Transfer           struct{ *sqlstore.Transfers }
-	StakeLinking       struct{ *sqlstore.StakeLinking }
-	Notary             struct{ *sqlstore.Notary }
-	MultiSig           struct {
+	Asset               struct{ *sqlstore.Assets }
+	Block               struct{ *sqlstore.Blocks }
+	Party               struct{ *sqlstore.Parties }
+	PartyActivityStreak struct{ *sqlstore.PartyActivityStreaks }
+	NetworkLimits       struct{ *sqlstore.NetworkLimits }
+	Epoch               struct{ *sqlstore.Epochs }
+	Deposit             struct{ *sqlstore.Deposits }
+	Withdrawal          struct{ *sqlstore.Withdrawals }
+	RiskFactor          struct{ *sqlstore.RiskFactors }
+	NetworkParameter    struct{ *sqlstore.NetworkParameters }
+	Checkpoint          struct{ *sqlstore.Checkpoints }
+	OracleSpec          struct{ *sqlstore.OracleSpec }
+	OracleData          struct{ *sqlstore.OracleData }
+	LiquidityProvision  struct{ *sqlstore.LiquidityProvision }
+	Transfer            struct{ *sqlstore.Transfers }
+	StakeLinking        struct{ *sqlstore.StakeLinking }
+	Notary              struct{ *sqlstore.Notary }
+	MultiSig            struct {
 		*sqlstore.ERC20MultiSigSignerEvent
 	}
 	FundingPeriods struct{ *sqlstore.FundingPeriods }
@@ -54,6 +55,10 @@ func NewBlock(store *sqlstore.Blocks) *Block {
 
 func NewParty(store *sqlstore.Parties) *Party {
 	return &Party{Parties: store}
+}
+
+func NewPartyActivityStreak(store *sqlstore.PartyActivityStreaks) *PartyActivityStreak {
+	return &PartyActivityStreak{PartyActivityStreaks: store}
 }
 
 func NewNetworkLimits(store *sqlstore.NetworkLimits) *NetworkLimits {

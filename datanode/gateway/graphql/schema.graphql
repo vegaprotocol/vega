@@ -2358,6 +2358,34 @@ type Party {
     "Pagination information"
     pagination: Pagination
   ): TransferConnection
+
+  "The activity streak"
+  activityStreak(
+    "An optional epoch"
+    epoch: Int
+  ): PartyActivityStreak
+}
+
+"""
+The activity streak for a party.
+"""
+type PartyActivityStreak {
+  "The number of epochs the party has been active in a row"
+  activeFor: Int!
+  "The number of epochs the party has been inactive in a row"
+  inactiveFor: Int!
+  "If the party is considered as active, and thus eligible for rewards multipliers"
+  isActive: Boolean!
+  "The rewards distribution multiplier for the party"
+  rewardDistributionMultiplier: String!
+  "The rewards vesting multiplier for the party"
+  rewardVestingMultiplier: String!
+  "The epoch for which this information is relevant"
+  epoch: Int!
+  "The traded volume for that party in the given epoch"
+  tradedVolume: String!
+  "The open volume for the party in the given epoch"
+  openVolume: String!
 }
 
 """
@@ -2915,16 +2943,16 @@ type TradeFee {
 
   "Volume discount on maker fees for the trade"
   makerFeeVolumeDiscount: String
-  
+
   "Referral discount on infrastructure fees for the trade"
   infrastructureFeeReferralDiscount: String
-  
+
   "Volume discount on infrastructure fees for the trade"
   infrastructureFeeVolumeDiscount: String
-  
+
   "Referral discount on liquidity fees for the trade"
   liquidityFeeReferralDiscount: String
-  
+
   "Volume discount on liquidity fees for the trade"
   liquidityFeeVolumeDiscount: String
 }
