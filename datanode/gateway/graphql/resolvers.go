@@ -487,6 +487,10 @@ func (r *VegaResolverRoot) UpdateSpotMarketConfiguration() UpdateSpotMarketConfi
 	return (*updateSpotMarketConfigurationResolver)(r)
 }
 
+func (r *VegaResolverRoot) PartyActivityStreak() PartyActivityStreakResolver {
+	return (*partyActivityStreakResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -1498,6 +1502,29 @@ func (r *myNodeSignatureResolver) Signature(_ context.Context, obj *commandspb.N
 // BEGIN: Party Resolver
 
 type myPartyResolver VegaResolverRoot
+
+func (r *myPartyResolver) ActivityStreak(
+	ctx context.Context,
+	obj *vega.Party,
+	epoch *int,
+) (*eventspb.PartyActivityStreak, error) {
+	var epoc *uint64
+	if epoch != nil {
+		if *epoch <= 0 {
+			return nil, errors.New("epoch must be positive")
+		}
+		epoc = ptr.From(uint64(*epoch))
+	}
+	res, err := r.r.clt2.GetPartyActivityStreak(ctx, &v2.GetPartyActivityStreakRequest{
+		PartyId: obj.Id,
+		Epoch:   epoc,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res.ActivityStreak, nil
+}
 
 func (r *myPartyResolver) TransfersConnection(
 	ctx context.Context,
