@@ -113,3 +113,64 @@ func TestAmendments(t *testing.T) {
 		"invalid liquidity provision fee",
 	)
 }
+
+func TestCancelTroughAmendmentDuringOpeningAuction(t *testing.T) {
+	var (
+		party = "party-1"
+		ctx   = context.Background()
+		tng   = newTestEngine(t)
+	)
+	defer tng.ctrl.Finish()
+
+	assert.EqualError(t,
+		tng.engine.CanAmend(nil, party, true),
+		liquidity.ErrPartyHaveNoLiquidityProvision.Error(),
+	)
+
+	lps, _ := types.LiquidityProvisionSubmissionFromProto(&commandspb.LiquidityProvisionSubmission{
+		MarketId:         market,
+		CommitmentAmount: "10000",
+		Fee:              "0.5",
+		Reference:        "ref-lp-submission-1",
+	})
+
+	idgen := idgeneration.New(crypto.RandomHash())
+	// initially submit our provision to be amended, does not matter what's in
+	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// set opening auction
+	tng.auctionState.EXPECT().InAuction().Return(true).AnyTimes()
+	tng.auctionState.EXPECT().IsOpeningAuction().Return(true).AnyTimes()
+
+	applied, err := tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen)
+	assert.NoError(t, err)
+	assert.True(t, applied)
+
+	// amend to zero - cancel
+	lpa, _ := types.LiquidityProvisionAmendmentFromProto(&commandspb.LiquidityProvisionAmendment{
+		MarketId:         market,
+		CommitmentAmount: "0",
+		Fee:              "0",
+	})
+
+	applied, err = tng.engine.AmendLiquidityProvision(ctx, lpa, party, true)
+	assert.NoError(t, err)
+	assert.True(t, applied)
+
+	// should not be in pending
+	pendingLp := tng.engine.PendingProvisionByPartyID(party)
+	assert.Nil(t, pendingLp)
+
+	// should not be in current
+	currentLp := tng.engine.LiquidityProvisionByPartyID(party)
+	assert.Nil(t, currentLp)
+
+	// LP is able to submit again - since they cancelled before
+	applied, err = tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen)
+	assert.NoError(t, err)
+	assert.True(t, applied)
+
+	lp := tng.engine.LiquidityProvisionByPartyID(party)
+	assert.Equal(t, lps.CommitmentAmount.String(), lp.CommitmentAmount.String())
+	assert.Equal(t, lps.Fee.String(), lp.Fee.String())
+	assert.EqualValues(t, 1, lp.Version)
+}

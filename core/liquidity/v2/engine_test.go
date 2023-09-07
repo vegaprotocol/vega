@@ -70,6 +70,7 @@ func testSubmissionCreateAndCancel(t *testing.T) {
 
 	// Creating a submission should fire an event
 	te.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	te.auctionState.EXPECT().IsOpeningAuction().Return(false).AnyTimes()
 
 	idgen := idgeneration.New(deterministicID)
 	_, err = te.engine.SubmitLiquidityProvision(ctx, lps, party, idgen)
@@ -129,6 +130,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	// We don't care about the following calls
 	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	tng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tng.auctionState.EXPECT().IsOpeningAuction().Return(false).AnyTimes()
 
 	zero := num.UintZero()
 	tng.orderbook.EXPECT().GetBestStaticBidPrice().Return(zero, nil).AnyTimes()
