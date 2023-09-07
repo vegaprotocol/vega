@@ -42,7 +42,7 @@ func OraclesBroadcastDataSignedWithKeys(
 		return err
 	}
 	meta := map[string]string{
-		"eth-block-time": row.metaTime(timesvc),
+		"eth-block-time": row.metaTimeSeconds(timesvc),
 	}
 
 	// we need a traceID here in case of final MTM settlement -> an idgen is required
@@ -81,7 +81,7 @@ func OraclesBroadcastDataWithBlockTimeSignedWithKeys(
 				Signers: pubKeysSigners,
 				Data:    map[string]string{},
 				MetaData: map[string]string{
-					"eth-block-time": time,
+					"eth-block-time": row.metaTimeSeconds(timesvc),
 				},
 			}
 		}
@@ -167,4 +167,12 @@ func (r oracleDataPropertyRow) metaTime(timeSvc *stubs.TimeStub) string {
 	}
 	tm := timeSvc.GetTimeNow().Add(r.timeOffset())
 	return fmt.Sprintf("%d", tm.UnixNano())
+}
+
+func (r oracleDataPropertyRow) metaTimeSeconds(timeSvc *stubs.TimeStub) string {
+	if r.row.HasColumn("eth-block-time") {
+		return r.row.MustStr("eth-block-time")
+	}
+	tm := timeSvc.GetTimeNow().Add(r.timeOffset())
+	return fmt.Sprintf("%d", tm.Unix())
 }
