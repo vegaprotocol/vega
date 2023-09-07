@@ -455,6 +455,15 @@ func (e *snapshotV2) buildHashKeys(market string) {
 	)
 }
 
+func defaultLiquiditySLAParams() *types.LiquiditySLAParams {
+	return &types.LiquiditySLAParams{
+		PriceRange:                  num.DecimalFromFloat(0.05),
+		CommitmentMinTimeFraction:   num.DecimalFromFloat(0.95),
+		SlaCompetitionFactor:        num.DecimalFromFloat(0.9),
+		PerformanceHysteresisEpochs: 1,
+	}
+}
+
 func NewSnapshotEngine(
 	config Config,
 	log *logging.Logger,
@@ -471,7 +480,7 @@ func NewSnapshotEngine(
 	slaParams *types.LiquiditySLAParams,
 ) *SnapshotEngine {
 	if slaParams == nil {
-		slaParams = types.DefaultLiquiditySLAParams()
+		slaParams = defaultLiquiditySLAParams()
 	}
 
 	e := NewEngine(

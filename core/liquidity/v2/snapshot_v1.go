@@ -2,6 +2,7 @@ package liquidity
 
 import (
 	"context"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
@@ -37,10 +38,11 @@ func (e *snapshotV1) LoadState(ctx context.Context, p *types.Payload) ([]types.S
 
 	switch pl := p.Data.(type) {
 	case *types.PayloadLiquidityProvisions:
-		return nil, e.loadProvisions(ctx, pl.Provisions.GetLiquidityProvisions(), p)
-		// TODO karel - implement the pending provisions
-	// case *types.PayloadLiquidityPendingProvisions:
-	// 	return nil, e.loadProvisions(ctx, pl.PendingProvisions, p)
+		if err := e.loadProvisions(ctx, pl.Provisions.GetLiquidityProvisions(), p); err != nil {
+			return nil, err
+		}
+
+		return nil, e.loadPerformances(pl.Provisions.GetLiquidityProvisions())
 	case *types.PayloadLiquidityScores:
 		return nil, e.loadScores(pl.LiquidityScores, p)
 	case *types.PayloadLiquiditySupplied:
@@ -57,6 +59,32 @@ func (e *snapshotV1) Stopped() bool {
 func (e *snapshotV1) Stop() {
 	e.log.Debug("market has been cleared, stopping snapshot production", logging.MarketID(e.marketID))
 	e.stopped = true
+}
+
+func (e *snapshotV1) loadPerformances(provisions []*typespb.LiquidityProvision) error {
+	var err error
+
+	// TODO karel - how to get the time?
+	// e.Engine.slaEpochStart = time.Unix(0, performances.EpochStartTime)
+
+	e.Engine.slaPerformance = map[string]*slaPerformance{}
+	for _, provision := range provisions {
+		previousPenalties := restoreSliceRing[*num.Decimal](
+			[]*num.Decimal{},
+			e.Engine.slaParams.PerformanceHysteresisEpochs,
+			0,
+		)
+
+		var startTime time.Time
+
+		e.Engine.slaPerformance[provision.PartyId] = &slaPerformance{
+			s:                 time.Duration(time.Second * 0),
+			start:             startTime,
+			previousPenalties: previousPenalties,
+		}
+	}
+
+	return err
 }
 
 func (e *snapshotV1) loadProvisions(ctx context.Context, provisions []*typespb.LiquidityProvision, p *types.Payload) error {
