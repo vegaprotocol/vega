@@ -14,10 +14,7 @@ import (
 
 type snapshotV1 struct {
 	*Engine
-
-	stopped  bool
-	hashKeys []string
-
+	stopped   bool
 	epochTime EpochTime
 }
 
@@ -26,7 +23,7 @@ func (e *snapshotV1) Namespace() types.SnapshotNamespace {
 }
 
 func (e *snapshotV1) Keys() []string {
-	return e.hashKeys
+	return []string{}
 }
 
 func (e *snapshotV1) GetState(k string) ([]byte, []types.StateProvider, error) {

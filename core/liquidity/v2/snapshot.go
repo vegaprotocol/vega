@@ -508,7 +508,10 @@ func NewSnapshotEngine(
 			market:  marketID,
 			stopped: false,
 		},
-		snapshotV1: &snapshotV1{},
+		snapshotV1: &snapshotV1{
+			Engine:    e,
+			epochTime: epochTime,
+		},
 	}
 
 	se.buildHashKeys(marketID)
