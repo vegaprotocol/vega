@@ -86,7 +86,13 @@ Feature: Check we process commitment changes in time order
    And the parties submit the following liquidity provision:
     | id  | party  | market id | commitment amount | fee   | lp type     |
     | lp1 | party1 | ETH/DEC21 | 540               | 0.001 | amendment   |
+   When the network moves ahead "5" blocks
+
+
+   And the parties submit the following liquidity provision:
+    | id  | party  | market id | commitment amount | fee   | lp type     |
     | lp2 | party2 | ETH/DEC21 | 470               | 0.001 | amendment   |
+   When the network moves ahead "7" blocks
 
    And the parties submit the following liquidity provision:
     | id  | party  | market id | commitment amount | fee   | lp type     |
@@ -101,7 +107,7 @@ Feature: Check we process commitment changes in time order
 
    And the parties should have the following account balances:
      | party  | asset | market id | margin  | general  | bond  |
-     | party1 | ETH   | ETH/DEC21 | 1200    | 99998322 | 471   |    
-     | party2 | ETH   | ETH/DEC21 | 1200    | 99998322 | 471   |    
-   And the insurance pool balance should be "14" for the market "ETH/DEC21"
+     | party1 | ETH   | ETH/DEC21 | 1200    | 99998315 | 470   |    
+     | party2 | ETH   | ETH/DEC21 | 1200    | 99998330 | 470   |    
+   And the insurance pool balance should be "15" for the market "ETH/DEC21"
 
