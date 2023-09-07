@@ -44,7 +44,8 @@ func (e *snapshotV1) LoadState(ctx context.Context, p *types.Payload) ([]types.S
 			return nil, err
 		}
 
-		return nil, e.loadPerformances(pl.Provisions.GetLiquidityProvisions())
+		e.loadPerformances(pl.Provisions.GetLiquidityProvisions())
+		return nil, nil
 	case *types.PayloadLiquidityScores:
 		return nil, e.loadScores(pl.LiquidityScores)
 	case *types.PayloadLiquiditySupplied:
@@ -63,9 +64,7 @@ func (e *snapshotV1) Stop() {
 	e.stopped = true
 }
 
-func (e *snapshotV1) loadPerformances(provisions []*typespb.LiquidityProvision) error {
-	var err error
-
+func (e *snapshotV1) loadPerformances(provisions []*typespb.LiquidityProvision) {
 	e.Engine.slaEpochStart = e.epochTime.GetEpochStartTime()
 
 	e.Engine.slaPerformance = map[string]*slaPerformance{}
@@ -84,8 +83,6 @@ func (e *snapshotV1) loadPerformances(provisions []*typespb.LiquidityProvision) 
 			previousPenalties: previousPenalties,
 		}
 	}
-
-	return err
 }
 
 func (e *snapshotV1) loadProvisions(ctx context.Context, provisions []*typespb.LiquidityProvision) error {
