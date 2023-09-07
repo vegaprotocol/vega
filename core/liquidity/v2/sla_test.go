@@ -55,8 +55,6 @@ func newTestEngine(t *testing.T) *testEngine {
 
 	auctionState := mmocks.NewMockAuctionState(ctrl)
 
-	auctionState.EXPECT().IsOpeningAuction().Return(false).AnyTimes()
-
 	defaultSLAParams := &types.LiquiditySLAParams{
 		PriceRange:                  num.DecimalFromFloat(0.2), // priceRange
 		CommitmentMinTimeFraction:   num.DecimalFromFloat(0.5), // commitmentMinTimeFraction
@@ -240,6 +238,8 @@ func TestSLAPerformanceSingleEpochFeePenalty(t *testing.T) {
 				party := "lp-party-1"
 
 				te.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+				te.auctionState.EXPECT().IsOpeningAuction().Return(false).AnyTimes()
+				te.auctionState.EXPECT().InAuction().Return(inAuction).AnyTimes()
 
 				lps := &types.LiquidityProvisionSubmission{
 					MarketID:         te.marketID,
@@ -250,8 +250,6 @@ func TestSLAPerformanceSingleEpochFeePenalty(t *testing.T) {
 
 				_, err := te.engine.SubmitLiquidityProvision(ctx, lps, party, idGen)
 				require.NoError(t, err)
-
-				te.auctionState.EXPECT().InAuction().Return(inAuction).AnyTimes()
 
 				te.orderbook.EXPECT().GetLastTradedPrice().Return(num.NewUint(15)).AnyTimes()
 				te.orderbook.EXPECT().GetIndicativePrice().Return(num.NewUint(15)).AnyTimes()
@@ -330,6 +328,7 @@ func TestSLAPerformanceMultiEpochFeePenalty(t *testing.T) {
 			ctx := context.Background()
 
 			te.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+			te.auctionState.EXPECT().IsOpeningAuction().Return(false).AnyTimes()
 
 			lps := &types.LiquidityProvisionSubmission{
 				MarketID:         te.marketID,
@@ -488,6 +487,7 @@ func TestSLAPerformanceBondPenalty(t *testing.T) {
 			party := "lp-party-1"
 
 			te.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+			te.auctionState.EXPECT().IsOpeningAuction().Return(false).AnyTimes()
 
 			lps := &types.LiquidityProvisionSubmission{
 				MarketID:         te.marketID,
