@@ -729,7 +729,7 @@ service TradingDataService {
 
   // List party activity streak
   //
-  // Get a party activity accross epochs
+  // Get a party's activity across epochs
   rpc GetPartyActivityStreak(GetPartyActivityStreakRequest) returns (GetPartyActivityStreakResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referrals"};
   }
@@ -3335,7 +3335,7 @@ message ListEntitiesResponse {
   repeated vega.events.v1.ProtocolUpgradeEvent protocol_upgrade_proposals = 28;
 }
 
-// Request to get a party activity streaks accross epochs
+// Request to get a party's activity streaks across epochs
 message GetPartyActivityStreakRequest {
   // The party ID.
   string party_id = 1 [(google.api.field_behavior) = REQUIRED];
@@ -3343,9 +3343,9 @@ message GetPartyActivityStreakRequest {
   optional uint64 epoch = 2;
 }
 
-// Response to get a party activity streaks accross epochs
+// Response when getting a party's activity streaks across epochs
 message GetPartyActivityStreakResponse {
-  // The activity streak of a party at a given epoch
+  // A party's activity streak in a given epoch
   vega.events.v1.PartyActivityStreak activity_streak = 1;
 }
 

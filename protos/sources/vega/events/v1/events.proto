@@ -27,11 +27,11 @@ message PartyActivityStreak {
   string reward_distribution_activity_multiplier = 5;
   // The vesting multiplier for this party.
   string reward_vesting_activity_multiplier = 6;
-  // The epoch when these informations were accurate.
+  // The epoch this information is relevant to.
   uint64 epoch = 7;
-  // Traded volume for the party at the end of that given epoch
+  // Party's traded volume at the end of the given epoch
   string traded_volume = 8;
-  // Open interest volume of the party at the end of the epoch
+  // Party's open interest volume at the end of the given epoch
   string open_volume = 9;
 }
 

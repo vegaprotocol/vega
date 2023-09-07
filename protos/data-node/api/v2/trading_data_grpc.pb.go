@@ -433,7 +433,7 @@ type TradingDataServiceClient interface {
 	ListFundingPeriodDataPoints(ctx context.Context, in *ListFundingPeriodDataPointsRequest, opts ...grpc.CallOption) (*ListFundingPeriodDataPointsResponse, error)
 	// List party activity streak
 	//
-	// Get a party activity accross epochs
+	// Get a party's activity across epochs
 	GetPartyActivityStreak(ctx context.Context, in *GetPartyActivityStreakRequest, opts ...grpc.CallOption) (*GetPartyActivityStreakResponse, error)
 	// Export network history as CSV
 	//
@@ -2148,7 +2148,7 @@ type TradingDataServiceServer interface {
 	ListFundingPeriodDataPoints(context.Context, *ListFundingPeriodDataPointsRequest) (*ListFundingPeriodDataPointsResponse, error)
 	// List party activity streak
 	//
-	// Get a party activity accross epochs
+	// Get a party's activity across epochs
 	GetPartyActivityStreak(context.Context, *GetPartyActivityStreakRequest) (*GetPartyActivityStreakResponse, error)
 	// Export network history as CSV
 	//

@@ -41,7 +41,7 @@ func (pas *PartyActivityStreaks) Get(
 	var (
 		query          string
 		args           []interface{}
-		activityStreak *entities.PartyActivityStreak
+		activityStreak []*entities.PartyActivityStreak
 	)
 	if epoch != nil {
 		query = fmt.Sprintf(
@@ -56,8 +56,15 @@ func (pas *PartyActivityStreaks) Get(
 	}
 
 	err := pgxscan.Select(ctx, pas.Connection, &activityStreak, query, args...)
+	if err != nil {
+		return nil, err
+	}
 
-	return activityStreak, err
+	if len(activityStreak) <= 0 {
+		return nil, entities.ErrNotFound
+	}
+
+	return activityStreak[0], nil
 }
 
 const (

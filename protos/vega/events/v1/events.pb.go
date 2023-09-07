@@ -713,11 +713,11 @@ type PartyActivityStreak struct {
 	RewardDistributionActivityMultiplier string `protobuf:"bytes,5,opt,name=reward_distribution_activity_multiplier,json=rewardDistributionActivityMultiplier,proto3" json:"reward_distribution_activity_multiplier,omitempty"`
 	// The vesting multiplier for this party.
 	RewardVestingActivityMultiplier string `protobuf:"bytes,6,opt,name=reward_vesting_activity_multiplier,json=rewardVestingActivityMultiplier,proto3" json:"reward_vesting_activity_multiplier,omitempty"`
-	// The epoch when these informations were accurate.
+	// The epoch this information is relevant to.
 	Epoch uint64 `protobuf:"varint,7,opt,name=epoch,proto3" json:"epoch,omitempty"`
-	// Traded volume for the party at the end of that given epoch
+	// Party's traded volume at the end of the given epoch
 	TradedVolume string `protobuf:"bytes,8,opt,name=traded_volume,json=tradedVolume,proto3" json:"traded_volume,omitempty"`
-	// Open interest volume of the party at the end of the epoch
+	// Party's open interest volume at the end of the given epoch
 	OpenVolume string `protobuf:"bytes,9,opt,name=open_volume,json=openVolume,proto3" json:"open_volume,omitempty"`
 }
 

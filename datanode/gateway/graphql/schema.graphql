@@ -2361,7 +2361,7 @@ type Party {
 
   "The activity streak"
   activityStreak(
-    "An option epoch"
+    "An optional epoch"
     epoch: Int
   ): PartyActivityStreak
 }
@@ -2374,17 +2374,17 @@ type PartyActivityStreak {
   activeFor: Int!
   "The number of epochs the party has been inactive in a row"
   inactiveFor: Int!
-  "Is the party considered as active, and then eligible for rewards multipliers"
+  "If the party is considered as active, and thus eligible for rewards multipliers"
   isActive: Boolean!
   "The rewards distribution multiplier for the party"
   rewardDistributionMultiplier: String!
   "The rewards vesting multiplier for the party"
   rewardVestingMultiplier: String!
-  "The epoch at which this informations were valid"
+  "The epoch for which this information is relevant"
   epoch: Int!
-  "The traded volume for that party on that given epoch"
+  "The traded volume for that party in the given epoch"
   tradedVolume: String!
-  "The open volume for that party on that given epoch"
+  "The open volume for the party in the given epoch"
   openVolume: String!
 }
 

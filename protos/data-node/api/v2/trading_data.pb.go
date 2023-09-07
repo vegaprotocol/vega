@@ -17322,7 +17322,7 @@ func (x *ListEntitiesResponse) GetProtocolUpgradeProposals() []*v1.ProtocolUpgra
 	return nil
 }
 
-// Request to get a party activity streaks accross epochs
+// Request to get a party's activity streaks across epochs
 type GetPartyActivityStreakRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -17380,13 +17380,13 @@ func (x *GetPartyActivityStreakRequest) GetEpoch() uint64 {
 	return 0
 }
 
-// Response to get a party activity streaks accross epochs
+// Response when getting a party's activity streaks across epochs
 type GetPartyActivityStreakResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The activity streak of a party at a given epoch
+	// A party's activity streak in a given epoch
 	ActivityStreak *v1.PartyActivityStreak `protobuf:"bytes,1,opt,name=activity_streak,json=activityStreak,proto3" json:"activity_streak,omitempty"`
 }
 
