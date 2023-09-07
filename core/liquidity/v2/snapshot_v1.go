@@ -38,15 +38,15 @@ func (e *snapshotV1) LoadState(ctx context.Context, p *types.Payload) ([]types.S
 
 	switch pl := p.Data.(type) {
 	case *types.PayloadLiquidityProvisions:
-		if err := e.loadProvisions(ctx, pl.Provisions.GetLiquidityProvisions(), p); err != nil {
+		if err := e.loadProvisions(ctx, pl.Provisions.GetLiquidityProvisions()); err != nil {
 			return nil, err
 		}
 
 		return nil, e.loadPerformances(pl.Provisions.GetLiquidityProvisions())
 	case *types.PayloadLiquidityScores:
-		return nil, e.loadScores(pl.LiquidityScores, p)
+		return nil, e.loadScores(pl.LiquidityScores)
 	case *types.PayloadLiquiditySupplied:
-		return nil, e.loadSupplied(pl.LiquiditySupplied, p)
+		return nil, e.loadSupplied(pl.LiquiditySupplied)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
@@ -78,7 +78,7 @@ func (e *snapshotV1) loadPerformances(provisions []*typespb.LiquidityProvision) 
 		var startTime time.Time
 
 		e.Engine.slaPerformance[provision.PartyId] = &slaPerformance{
-			s:                 time.Duration(time.Second * 0),
+			s:                 0,
 			start:             startTime,
 			previousPenalties: previousPenalties,
 		}
@@ -87,7 +87,7 @@ func (e *snapshotV1) loadPerformances(provisions []*typespb.LiquidityProvision) 
 	return err
 }
 
-func (e *snapshotV1) loadProvisions(ctx context.Context, provisions []*typespb.LiquidityProvision, p *types.Payload) error {
+func (e *snapshotV1) loadProvisions(ctx context.Context, provisions []*typespb.LiquidityProvision) error {
 	e.Engine.provisions = newSnapshotableProvisionsPerParty()
 
 	evts := make([]events.Event, 0, len(provisions))
@@ -105,7 +105,7 @@ func (e *snapshotV1) loadProvisions(ctx context.Context, provisions []*typespb.L
 	return err
 }
 
-func (e *snapshotV1) loadSupplied(ls *snapshotpb.LiquiditySupplied, p *types.Payload) error {
+func (e *snapshotV1) loadSupplied(ls *snapshotpb.LiquiditySupplied) error {
 	// Dirty hack so we can reuse the supplied engine from the liquidity engine v1,
 	// without snapshot payload namespace issue.
 	err := e.suppliedEngine.Reload(&snapshotpb.LiquiditySupplied{
@@ -121,7 +121,7 @@ func (e *snapshotV1) loadSupplied(ls *snapshotpb.LiquiditySupplied, p *types.Pay
 	return err
 }
 
-func (e *snapshotV1) loadScores(ls *snapshotpb.LiquidityScores, p *types.Payload) error {
+func (e *snapshotV1) loadScores(ls *snapshotpb.LiquidityScores) error {
 	var err error
 
 	e.nAvg = int64(ls.RunningAverageCounter)
