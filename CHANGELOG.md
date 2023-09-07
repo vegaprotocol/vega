@@ -81,12 +81,14 @@
 - [9205](https://github.com/vegaprotocol/vega/issues/9205) - Ensure staking requirement when creating / joining referral sets
 - [9032](https://github.com/vegaprotocol/vega/issues/9032) - Implement activity streaks.
 - [9133](https://github.com/vegaprotocol/vega/issues/9133) - Apply discounts/rewards in fee calculation
+- [9281](https://github.com/vegaprotocol/vega/issues/9281) - Add ability to filter funding period data points by the sequence they land in.
 - [9254](https://github.com/vegaprotocol/vega/issues/9254) - Add fee discounts to trade API
 - [9246](https://github.com/vegaprotocol/vega/issues/9246) - Add rewards multiplier support in the referral engine.
 - [9063](https://github.com/vegaprotocol/vega/issues/9063) - Make `calculationTimeStep` a network parameter
 - [9167](https://github.com/vegaprotocol/vega/issues/9167) - Rename liquidity network parameters
 - [9288](https://github.com/vegaprotocol/vega/issues/9288) - Add check for current epoch to integration tests.
 - [9288](https://github.com/vegaprotocol/vega/issues/9288) - Allow integration test time to progress by epoch.
+- [9078](https://github.com/vegaprotocol/vega/issues/9078) - Add activity streak `API`.
 
 
 ### 🐛 Fixes

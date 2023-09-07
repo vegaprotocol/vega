@@ -109,6 +109,25 @@ type TradingDataServiceV2 struct {
 	coreSnapshotService        *service.SnapshotData
 	stopOrderService           *service.StopOrders
 	fundingPeriodService       *service.FundingPeriods
+	partyActivityStreak        *service.PartyActivityStreak
+}
+
+func (t *TradingDataServiceV2) GetPartyActivityStreak(ctx context.Context, req *v2.GetPartyActivityStreakRequest) (*v2.GetPartyActivityStreakResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetPartyActivityStreak")()
+
+	if !crypto.IsValidVegaPubKey(req.PartyId) {
+		return nil, formatE(ErrInvalidPartyID)
+	}
+
+	activityStreak, err := t.partyActivityStreak.Get(
+		ctx, entities.PartyID(req.PartyId), req.Epoch)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.GetPartyActivityStreakResponse{
+		ActivityStreak: activityStreak.ToProto(),
+	}, nil
 }
 
 // ListAccounts lists accounts matching the request.
@@ -3984,6 +4003,7 @@ func (t *TradingDataServiceV2) ListFundingPeriodDataPoints(ctx context.Context, 
 		entities.MarketID(req.MarketId),
 		dateRange,
 		(*entities.FundingPeriodDataPointSource)(req.Source),
+		req.Seq,
 		pagination,
 	)
 	if err != nil {

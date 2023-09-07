@@ -569,7 +569,7 @@ func testListDataPointsAllSequences(t *testing.T, ctx context.Context, stores *f
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
 	dateRange := entities.DateRange{}
-	got, pageInfo, err := stores.fp.ListFundingPeriodDataPoints(ctx, stores.markets[0].ID, dateRange, nil, pagination)
+	got, pageInfo, err := stores.fp.ListFundingPeriodDataPoints(ctx, stores.markets[0].ID, dateRange, nil, nil, pagination)
 	require.NoError(t, err)
 	want := stores.dataPoints[:]
 	assert.Equal(t, want, got)
@@ -586,7 +586,7 @@ func testListDataPointsSpecifiedSequences(t *testing.T, ctx context.Context, sto
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
 	dateRange := entities.DateRange{}
-	got, pageInfo, err := stores.fp.ListFundingPeriodDataPoints(ctx, stores.markets[0].ID, dateRange, nil, pagination)
+	got, pageInfo, err := stores.fp.ListFundingPeriodDataPoints(ctx, stores.markets[0].ID, dateRange, nil, nil, pagination)
 	require.NoError(t, err)
 	want := stores.dataPoints[:]
 	assert.Equal(t, want, got)
@@ -614,7 +614,7 @@ func testListDataPointsNoSource(t *testing.T, ctx context.Context, stores *fundi
 		Start: ptr.From(stores.dataPoints[4].Timestamp),
 		End:   ptr.From(stores.dataPoints[1].Timestamp),
 	}
-	testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange, nil, pagination, want, wantPageInfo)
+	testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange, nil, nil, pagination, want, wantPageInfo)
 	want = stores.dataPoints[1:]
 	wantPageInfo = entities.PageInfo{
 		HasNextPage:     false,
@@ -627,15 +627,15 @@ func testListDataPointsNoSource(t *testing.T, ctx context.Context, stores *fundi
 		Start: ptr.From(stores.dataPoints[4].Timestamp),
 		End:   ptr.From(stores.dataPoints[0].Timestamp),
 	}
-	testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange, nil, pagination, want, wantPageInfo)
+	testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange, nil, nil, pagination, want, wantPageInfo)
 }
 
 func testFundingPeriodsListDataPoints(t *testing.T, ctx context.Context, fp *sqlstore.FundingPeriods, marketID entities.MarketID, dateRange entities.DateRange,
-	source *entities.FundingPeriodDataPointSource, pagination entities.CursorPagination, want []entities.FundingPeriodDataPoint,
+	source *entities.FundingPeriodDataPointSource, seq *uint64, pagination entities.CursorPagination, want []entities.FundingPeriodDataPoint,
 	wantPageInfo entities.PageInfo,
 ) {
 	t.Helper()
-	got, pageInfo, err := fp.ListFundingPeriodDataPoints(ctx, marketID, dateRange, source, pagination)
+	got, pageInfo, err := fp.ListFundingPeriodDataPoints(ctx, marketID, dateRange, source, seq, pagination)
 	require.NoError(t, err)
 	assert.Equal(t, want, got)
 	assert.Equal(t, wantPageInfo, pageInfo)
@@ -658,10 +658,10 @@ func testListDataPointsForSource(t *testing.T, ctx context.Context, stores *fund
 		}
 		dateRange := entities.DateRange{}
 		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange,
-			ptr.From(entities.FundingPeriodDataPointSourceExternal), pagination, want, wantPageInfo)
+			ptr.From(entities.FundingPeriodDataPointSourceExternal), nil, pagination, want, wantPageInfo)
 	})
 
-	t.Run("should filter by sequence and source", func(t *testing.T) {
+	t.Run("should filter by date range and source", func(t *testing.T) {
 		want := []entities.FundingPeriodDataPoint{}
 		want = append(want, stores.dataPoints[1])
 		want = append(want, stores.dataPoints[3:]...)
@@ -677,7 +677,21 @@ func testListDataPointsForSource(t *testing.T, ctx context.Context, stores *fund
 			End:   ptr.From(stores.dataPoints[0].Timestamp),
 		}
 		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange,
-			ptr.From(entities.FundingPeriodDataPointSourceExternal), pagination, want, wantPageInfo)
+			ptr.From(entities.FundingPeriodDataPointSourceExternal), nil, pagination, want, wantPageInfo)
+	})
+	t.Run("should filter by seq", func(t *testing.T) {
+		want := []entities.FundingPeriodDataPoint{}
+		want = append(want, stores.dataPoints[1])
+		wantPageInfo := entities.PageInfo{
+			HasNextPage:     false,
+			HasPreviousPage: false,
+			StartCursor:     want[0].Cursor().Encode(),
+			EndCursor:       want[len(want)-1].Cursor().Encode(),
+		}
+		dateRange := entities.DateRange{}
+		// sequence 2 only, which is one point
+		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange,
+			nil, ptr.From(uint64(2)), pagination, want, wantPageInfo)
 	})
 }
 
@@ -700,7 +714,7 @@ func testListDataPointsPagination(t *testing.T, ctx context.Context, stores *fun
 		}
 		dateRange := entities.DateRange{}
 		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange,
-			nil, pagination, want, wantPageInfo)
+			nil, nil, pagination, want, wantPageInfo)
 	})
 
 	t.Run("should return the first page after the cursor when first is specified with a cursor", func(t *testing.T) {
@@ -717,7 +731,7 @@ func testListDataPointsPagination(t *testing.T, ctx context.Context, stores *fun
 		}
 		dateRange := entities.DateRange{}
 		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange,
-			nil, pagination, want, wantPageInfo)
+			nil, nil, pagination, want, wantPageInfo)
 	})
 
 	t.Run("should return the last page when last is specified with no cursor", func(t *testing.T) {
@@ -733,7 +747,7 @@ func testListDataPointsPagination(t *testing.T, ctx context.Context, stores *fun
 		}
 		dateRange := entities.DateRange{}
 		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange,
-			nil, pagination, want, wantPageInfo)
+			nil, nil, pagination, want, wantPageInfo)
 	})
 
 	t.Run("should return the last page before the cursor when last is specified with a cursor", func(t *testing.T) {
@@ -750,6 +764,6 @@ func testListDataPointsPagination(t *testing.T, ctx context.Context, stores *fun
 		}
 		dateRange := entities.DateRange{}
 		testFundingPeriodsListDataPoints(t, ctx, stores.fp, stores.markets[0].ID, dateRange,
-			nil, pagination, want, wantPageInfo)
+			nil, nil, pagination, want, wantPageInfo)
 	})
 }
