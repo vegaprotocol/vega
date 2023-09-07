@@ -398,7 +398,7 @@ func createDynamicQuery(filterQueries [3]string, closeOnAccountFilters entities.
 				whereClause = fmt.Sprintf("WHERE (%s) AND (%s)", filterQueries[0], filterQueries[1])
 			} else {
 				tableName = tableNameOpenOnFilterQuery
-				whereClause = fmt.Sprintf("WHERE (%s) OR (%s)", filterQueries[0], filterQueries[1])
+				whereClause = fmt.Sprintf("WHERE ((%s) OR (%s))", filterQueries[0], filterQueries[1])
 			}
 		}
 	} else {
