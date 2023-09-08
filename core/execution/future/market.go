@@ -791,6 +791,11 @@ func (m *Market) PostRestore(ctx context.Context) error {
 		}
 	}
 
+	_, err := m.collateral.GetOrCreateLiquidityFeesBonusDistributionAccount(ctx, m.GetID(), m.GetSettlementAsset())
+	if err != nil {
+		m.log.Panic("failed to get bonus distribution account", logging.Error(err))
+	}
+
 	return nil
 }
 

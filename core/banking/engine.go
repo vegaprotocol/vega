@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"math/big"
 	"sort"
 	"strings"
@@ -524,6 +525,10 @@ func (e *Engine) newDeposit(
 }
 
 func (e *Engine) GetDispatchStrategy(hash string) *proto.DispatchStrategy {
+	fmt.Printf("want strategy: %v\n", hash)
+	for k, v := range e.hashToStrategy {
+		fmt.Printf("%v -> %v\n", k, v.ds.String())
+	}
 	ds, ok := e.hashToStrategy[hash]
 	if !ok {
 		e.log.Panic("could not find dispatch strategy in banking engine", logging.String("hash", hash))
