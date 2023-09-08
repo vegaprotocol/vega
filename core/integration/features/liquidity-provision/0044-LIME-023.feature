@@ -1,6 +1,6 @@
 Feature: If we are below target stake, everyone gets the penalty
 
-# For a market with market.liquidity.earlyExitPenalty = 0.25 and target stake < total stake already,
+# For a market with market.liquidity.earlyExitPenalty = 0.25 and target stake > total stake,
 # a liquidity provider who reduces their commitment by 100 will only receive 75 back into their
 # general account with 25 transferred into the market's insurance account. (0044-LIME-023)
 
@@ -89,7 +89,7 @@ Feature: If we are below target stake, everyone gets the penalty
    And the parties should have the following account balances:
      | party  | asset | market id | margin  | general  | bond  |
      | party1 | ETH   | ETH/DEC21 | 1200    | 99998375 | 400   |   
-   # party1 should give us 25% of the 100 commitment they reduced  
+   # party1 should give us 25% of the 100 they reduced by (25 added to insurance pool)  
    And the insurance pool balance should be "25" for the market "ETH/DEC21"
 
    # Now reduce the commitment for party 2
@@ -105,6 +105,6 @@ Feature: If we are below target stake, everyone gets the penalty
    And the parties should have the following account balances:
      | party  | asset | market id | margin  | general  | bond  |
      | party2 | ETH   | ETH/DEC21 | 1200    | 99998600 | 100   |    
-   # party2 should give up 25% of 400
+   # party2 should give up 25% of 400 (add 100 to the insurance pool)
    And the insurance pool balance should be "125" for the market "ETH/DEC21"
 
