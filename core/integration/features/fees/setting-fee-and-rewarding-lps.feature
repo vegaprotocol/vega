@@ -487,7 +487,7 @@ Feature: Test liquidity provider reward distribution
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
   @FeeRound
-  Scenario: 005, 2 LPs joining at start, unequal commitments, 1 LP lp3 joining later, and 4 LPs lp4/5/6/7 with large commitment and low/high fee joins later
+  Scenario: 005, 2 LPs joining at start, unequal commitments, 1 LP lp3 joining later, and 4 LPs lp4/5/6/7 with large commitment and low/high fee joins later (0042-LIQF-032)
 
     And the following network parameters are set:
       | name                    | value |
