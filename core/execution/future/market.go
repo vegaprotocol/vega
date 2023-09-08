@@ -3786,7 +3786,8 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade, pers
 	m.checkBondBalance(ctx)
 	var vBid, vAsk uint64
 	// if we're not in auction, or we are checking liquidity when leaving opening auction, or we have best bid/ask volume
-	if !m.as.InAuction() || m.matching.BidAndAskPresentAfterAuction() {
+	// if !m.as.InAuction() || m.matching.BidAndAskPresentAfterAuction() {
+	if !m.as.InAuction() {
 		_, vBid, _ = m.getBestStaticBidPriceAndVolume()
 		_, vAsk, _ = m.getBestStaticAskPriceAndVolume()
 	}
