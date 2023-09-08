@@ -150,6 +150,10 @@ type ProtocolUpgradeService interface {
 	IsValidProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag string) error
 }
 
+type EthCallEngine interface {
+	Start()
+}
+
 type App struct {
 	abci              *abci.App
 	currentTimestamp  time.Time
@@ -200,6 +204,7 @@ type App struct {
 	protocolUpgradeService ProtocolUpgradeService
 	erc20MultiSigTopology  ERC20MultiSigTopology
 	gastimator             *Gastimator
+	ethCallEngine          EthCallEngine
 
 	nilPow  bool
 	nilSpam bool
@@ -245,6 +250,7 @@ func NewApp(
 	protocolUpgradeService ProtocolUpgradeService,
 	codec abci.Codec,
 	gastimator *Gastimator,
+	ethCallEngine EthCallEngine,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -292,6 +298,7 @@ func NewApp(
 		erc20MultiSigTopology:  erc20MultiSigTopology,
 		protocolUpgradeService: protocolUpgradeService,
 		gastimator:             gastimator,
+		ethCallEngine:          ethCallEngine,
 	}
 
 	// setup handlers
@@ -722,6 +729,8 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 			Height: uint64(req.InitialHeight),
 		}),
 	)
+
+	app.ethCallEngine.Start()
 
 	return tmtypes.ResponseInitChain{
 		Validators: app.top.GetValidatorPowerUpdates(),
