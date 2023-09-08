@@ -393,7 +393,7 @@ Feature: Calculating SLA Performance
       | lp1  | lp1 | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_GENERAL | ETH/DEC23 | 100    | USD   |
 
 
-  Scenario: LP fulfills the mininum time fraction when performance hysteresis epochs is > 1. (0042-LIQF-047)
+  Scenario: LPs average penalty over the last N epochs is worse then their current performance when performance hysteresis epochs is > 1. (0042-LIQF-047)
 
     # Initialise the market with the required parameters
     Given the liquidity sla params named "scenario-sla-params":
@@ -457,7 +457,7 @@ Feature: Calculating SLA Performance
       |      | lp1 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ACCOUNT_TYPE_GENERAL                           | ETH/DEC23 | 25     | USD   |
 
 
-  Scenario: LP fulfills the mininum time fraction when performance hysteresis epochs is > 1. (0042-LIQF-039)
+  Scenario: LPs average penalty over the last N epochs is worse then their current performance when performance hysteresis epochs is > 1. (0042-LIQF-039)
 
     # Initialise the market with the required parameters
     Given the liquidity sla params named "scenario-sla-params":
@@ -522,7 +522,7 @@ Feature: Calculating SLA Performance
       |      | lp1 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ACCOUNT_TYPE_GENERAL                           | ETH/DEC23 | 50     | USD   |
 
 
-  Scenario: LP fulfills the mininum time fraction when performance hysteresis epochs is > 1. (0042-LIQF-040)
+  Scenario: LPs average penalty over the last N epochs is better then their current performance when performance hysteresis epochs is > 1. (0042-LIQF-040)
 
     # Initialise the market with the required parameters
     Given the liquidity sla params named "scenario-sla-params":
@@ -578,81 +578,3 @@ Feature: Calculating SLA Performance
     Then the following transfers should happen:
       | from | to | from account                   | to account             | market id | amount | asset |
       | lp1  |    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE | ETH/DEC23 | 100    | USD   |
-
-
-  Scenario: LP fulfills the mininum time fraction when performance hysteresis epochs is > 1. (0042-LIQF-052)
-
-    # Initialise the market with the required parameters
-    Given the liquidity sla params named "scenario-sla-params":
-      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
-      | 1           | 0.0                          | 3                             | 1                      |
-    And the markets are updated:
-      | id        | sla params          | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC23 | scenario-sla-params | 1e-3                   | 0                         |
-
-    # Setup the market with 1 LP who is initially meeting their commitment
-    Given the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee | lp type    |
-      | lp1 | lp1   | ETH/DEC23 | 10000             | 0.1 | submission |
-    And the parties place the following pegged iceberg orders:
-      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset | reference      |
-      | lp1   | ETH/DEC23 | 200       | 120                  | buy  | BID              | 1000   | 1      | lp1-ice-buy-1  |
-      | lp1   | ETH/DEC23 | 200       | 120                  | sell | ASK              | 1000   | 1      | lp1-ice-sell-1 |
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux1  | ETH/DEC23 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux1  | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC23 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
-    And the opening auction period ends for market "ETH/DEC23"
-    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC23"
-
-    # Ensure LPs average timeBookFraction ~0.50 over the last 2 epochs, and will be ~1.0 in the next epoch
-    Given the network moves ahead "30" blocks
-    And the parties cancel the following orders:
-      | party | reference      |
-      | lp1   | lp1-ice-buy-1  |
-      | lp1   | lp1-ice-sell-1 |
-    And the network moves ahead "1" epochs
-    And the parties place the following pegged iceberg orders:
-      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset | reference      |
-      | lp1   | ETH/DEC23 | 200       | 120                  | buy  | BID              | 1000   | 1      | lp1-ice-buy-2  |
-      | lp1   | ETH/DEC23 | 200       | 120                  | sell | ASK              | 1000   | 1      | lp1-ice-sell-2 |
-    And the network moves ahead "30" blocks
-    And the parties cancel the following orders:
-      | party | reference      |
-      | lp1   | lp1-ice-buy-2  |
-      | lp1   | lp1-ice-sell-2 |
-    And the network moves ahead "1" epochs
-
-    # Generate liquidity fees to be allocated to the LP
-    Given the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/DEC23 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-    Then the accumulated liquidity fees should be "100" for the market "ETH/DEC23"
-
-    When the network moves ahead "1" epochs
-    Then the following transfers should happen:
-      | from | to | from account                   | to account             | market id | amount | asset |
-      | lp1  |    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE | ETH/DEC23 | 100    | USD   |
-
-
-
-
-
-
-
-    
-
-
-
- 
-
-    
-
-
-
-
-
-
