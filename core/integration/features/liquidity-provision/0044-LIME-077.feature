@@ -19,6 +19,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
       | market.auction.minimumDuration                | 1     |
       | market.fee.factors.infrastructureFee          | 0.001 |
       | market.fee.factors.makerFee                   | 0.004 |
+      | spam.protection.max.stopOrdersPerMarket | 5 |
     #risk factor short:3.5569036
     #risk factor long:0.801225765
     And the following assets are registered:
@@ -115,6 +116,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
     Then the network moves ahead "1" blocks
 
     #AC 0044-LIME-077: Parked pegged limit orders and stop-loss orders do not count towards an LPs liquidity commitment.
+# post-only orders count towards an LPs liquidity commitment
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference | only |
       | lp1   | ETH/MAR22 | buy  | 10     | 950   | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     | post |
@@ -122,13 +124,57 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
       | lp2   | ETH/MAR22 | sell | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC | lp2-s     | post |
       | lp1   | ETH/MAR22 | sell | 10     | 1050  | 0                | TYPE_LIMIT | TIF_GTC | lp1-s     | post |
 
-    When the network moves ahead "2" epochs
+    When the network moves ahead "1" epochs
     And the supplied stake should be "10000" for the market "ETH/MAR22"
 
+    Then the parties cancel the following orders:
+      | party | reference |
+      | lp1   | lp1-b     |
+      | lp1   | lp1-s     |
+
+    Then the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | lp1   | ETH/MAR22 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | lp2   | ETH/MAR22 | buy  | 2      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the network moves ahead "1" blocks
+
+    Then the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type        | tif     | reference        | only   | fb price trigger |
+      | lp1   | ETH/MAR22 | buy  | 2      | 950   | 0                | TYPE_MARKET | TIF_GTC | lp1-b-stop-order | reduce | 900              |
+
+    When the network moves ahead "1" epochs
+
+    And the supplied stake should be "9400" for the market "ETH/MAR22"
     And the current epoch is "3"
-    And the insurance pool balance should be "0" for the market "ETH/MAR22"
-    Then the parties should have the following account balances:
-      | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 53355  | 40645   | 6000 |
-      | lp2   | USD   | ETH/MAR22 | 53355  | 42645   | 4000 |
+    And the insurance pool balance should be "600" for the market "ETH/MAR22"
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode                    | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | 10670        | 9400           | 3             |
+
+    Then the following transfers should happen:
+      | from | to     | from account      | to account             | market id | amount | asset |
+      | lp1  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 600    | USD   |
+
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset | reference |
+      | lp1   | ETH/MAR22 | 12        | 1                    | buy  | BID              | 12     | 20     | lp1-b     |
+      | lp1   | ETH/MAR22 | 12        | 1                    | sell | ASK              | 12     | 20     | lp1-s     |
+    When the network moves ahead "1" blocks
+
+    And the orders should have the following status:
+      | party | reference | status        |
+      | lp1   | lp1-b     | STATUS_PARKED |
+      | lp1   | lp1-s     | STATUS_PARKED |
+
+    When the network moves ahead "1" epochs
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode                    | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | 10670        | 8860           | 3             |
+
+    #lp1 got bond penalty for placing parked order
+    Then the following transfers should happen:
+      | from | to     | from account      | to account             | market id | amount | asset |
+      | lp1  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 540    | USD   |
+    And the insurance pool balance should be "1140" for the market "ETH/MAR22"
+
 
