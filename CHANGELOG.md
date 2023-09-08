@@ -86,6 +86,7 @@
 - [9246](https://github.com/vegaprotocol/vega/issues/9246) - Add rewards multiplier support in the referral engine.
 - [9063](https://github.com/vegaprotocol/vega/issues/9063) - Make `calculationTimeStep` a network parameter
 - [9167](https://github.com/vegaprotocol/vega/issues/9167) - Rename liquidity network parameters
+- [9302](https://github.com/vegaprotocol/vega/issues/9302) - Volume discount program
 - [9288](https://github.com/vegaprotocol/vega/issues/9288) - Add check for current epoch to integration tests.
 - [9288](https://github.com/vegaprotocol/vega/issues/9288) - Allow integration test time to progress by epoch.
 - [9078](https://github.com/vegaprotocol/vega/issues/9078) - Add activity streak `API`.

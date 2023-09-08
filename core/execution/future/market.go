@@ -86,15 +86,16 @@ type Market struct {
 	priceFactor     *num.Uint
 
 	// own engines
-	matching                 *matching.CachedOrderBook
-	tradableInstrument       *markets.TradableInstrument
-	risk                     *risk.Engine
-	position                 *positions.SnapshotEngine
-	settlement               *settlement.SnapshotEngine
-	fee                      *fee.Engine
-	feeDiscountRewardService fee.FeeDiscountRewardService
-	liquidity                *common.MarketLiquidity
-	liquidityEngine          common.LiquidityEngine
+	matching                      *matching.CachedOrderBook
+	tradableInstrument            *markets.TradableInstrument
+	risk                          *risk.Engine
+	position                      *positions.SnapshotEngine
+	settlement                    *settlement.SnapshotEngine
+	fee                           *fee.Engine
+	referralDiscountRewardService fee.ReferralDiscountRewardService
+	volumeDiscountService         fee.VolumeDiscountService
+	liquidity                     *common.MarketLiquidity
+	liquidityEngine               common.LiquidityEngine
 
 	// deps engines
 	collateral common.Collateral
@@ -174,7 +175,8 @@ func NewMarket(
 	marketActivityTracker *common.MarketActivityTracker,
 	assetDetails *assets.Asset,
 	peggedOrderNotify func(int64),
-	feeDiscountRewardService fee.FeeDiscountRewardService,
+	referralDiscountRewardService fee.ReferralDiscountRewardService,
+	volumeDiscountService fee.VolumeDiscountService,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
 		return nil, common.ErrEmptyMarketID
@@ -275,45 +277,46 @@ func NewMarket(
 
 	marketType := mkt.MarketType()
 	market := &Market{
-		log:                      log,
-		idgen:                    nil,
-		mkt:                      mkt,
-		matching:                 book,
-		tradableInstrument:       tradableInstrument,
-		risk:                     riskEngine,
-		position:                 positionEngine,
-		settlement:               settleEngine,
-		collateral:               collateralEngine,
-		timeService:              timeService,
-		broker:                   broker,
-		fee:                      feeEngine,
-		liquidity:                marketLiquidity,
-		liquidityEngine:          liquidityEngine, // TODO karel - consider not having this
-		parties:                  map[string]struct{}{},
-		as:                       auctionState,
-		pMonitor:                 pMonitor,
-		lMonitor:                 lMonitor,
-		tsCalc:                   tsCalc,
-		peggedOrders:             common.NewPeggedOrders(log, timeService),
-		expiringOrders:           common.NewExpiringOrders(),
-		feeSplitter:              common.NewFeeSplitter(),
-		equityShares:             equityShares,
-		lastBestAskPrice:         num.UintZero(),
-		lastMidSellPrice:         num.UintZero(),
-		lastMidBuyPrice:          num.UintZero(),
-		lastBestBidPrice:         num.UintZero(),
-		stateVarEngine:           stateVarEngine,
-		marketActivityTracker:    marketActivityTracker,
-		priceFactor:              priceFactor,
-		positionFactor:           positionFactor,
-		nextMTM:                  time.Time{}, // default to zero time
-		linearSlippageFactor:     mkt.LinearSlippageFactor,
-		quadraticSlippageFactor:  mkt.QuadraticSlippageFactor,
-		maxStopOrdersPerParties:  num.UintZero(),
-		stopOrders:               stoporders.New(log),
-		expiringStopOrders:       common.NewExpiringOrders(),
-		perp:                     marketType == types.MarketTypePerp,
-		feeDiscountRewardService: feeDiscountRewardService,
+		log:                           log,
+		idgen:                         nil,
+		mkt:                           mkt,
+		matching:                      book,
+		tradableInstrument:            tradableInstrument,
+		risk:                          riskEngine,
+		position:                      positionEngine,
+		settlement:                    settleEngine,
+		collateral:                    collateralEngine,
+		timeService:                   timeService,
+		broker:                        broker,
+		fee:                           feeEngine,
+		liquidity:                     marketLiquidity,
+		liquidityEngine:               liquidityEngine, // TODO karel - consider not having this
+		parties:                       map[string]struct{}{},
+		as:                            auctionState,
+		pMonitor:                      pMonitor,
+		lMonitor:                      lMonitor,
+		tsCalc:                        tsCalc,
+		peggedOrders:                  common.NewPeggedOrders(log, timeService),
+		expiringOrders:                common.NewExpiringOrders(),
+		feeSplitter:                   common.NewFeeSplitter(),
+		equityShares:                  equityShares,
+		lastBestAskPrice:              num.UintZero(),
+		lastMidSellPrice:              num.UintZero(),
+		lastMidBuyPrice:               num.UintZero(),
+		lastBestBidPrice:              num.UintZero(),
+		stateVarEngine:                stateVarEngine,
+		marketActivityTracker:         marketActivityTracker,
+		priceFactor:                   priceFactor,
+		positionFactor:                positionFactor,
+		nextMTM:                       time.Time{}, // default to zero time
+		linearSlippageFactor:          mkt.LinearSlippageFactor,
+		quadraticSlippageFactor:       mkt.QuadraticSlippageFactor,
+		maxStopOrdersPerParties:       num.UintZero(),
+		stopOrders:                    stoporders.New(log),
+		expiringStopOrders:            common.NewExpiringOrders(),
+		perp:                          marketType == types.MarketTypePerp,
+		referralDiscountRewardService: referralDiscountRewardService,
+		volumeDiscountService:         volumeDiscountService,
 	}
 
 	assets, _ := mkt.GetAssets()
@@ -1999,12 +2002,12 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 	)
 
 	if !m.as.InAuction() {
-		fees, err = m.fee.CalculateForContinuousMode(trades, m.feeDiscountRewardService)
+		fees, err = m.fee.CalculateForContinuousMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
 	} else if m.as.IsMonitorAuction() {
 		// we are in auction mode
-		fees, err = m.fee.CalculateForAuctionMode(trades, m.feeDiscountRewardService)
+		fees, err = m.fee.CalculateForAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
 	} else if m.as.IsFBA() {
-		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades, m.feeDiscountRewardService)
+		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
 	}
 
 	if err != nil {

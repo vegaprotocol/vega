@@ -233,15 +233,16 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	bc := mocks.NewMockAccountBalanceChecker(tm.ctrl)
 	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine, teams, bc)
 
-	feeDiscountReward := fmocks.NewMockFeeDiscountRewardService(tm.ctrl)
-	feeDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("no referrer")).AnyTimes()
-	feeDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	feeDiscountReward.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	referralDiscountReward := fmocks.NewMockReferralDiscountRewardService(tm.ctrl)
+	volumeDiscount := fmocks.NewMockVolumeDiscountService(tm.ctrl)
+	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("no referrer")).AnyTimes()
+	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 
 	mktEngine, err := future.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.timeService, tm.broker, mas, statevarEngine, marketActivityTracker, cfgAsset,
-		peggedOrderCounterForTest, feeDiscountReward,
+		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount,
 	)
 	require.NoError(tm.t, err)
 
@@ -635,14 +636,15 @@ func getTestMarket2WithDP(
 	bc := mocks.NewMockAccountBalanceChecker(tm.ctrl)
 	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epoch, teams, bc)
 
-	feeDiscountReward := fmocks.NewMockFeeDiscountRewardService(tm.ctrl)
-	feeDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("no referrer")).AnyTimes()
-	feeDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	feeDiscountReward.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	referralDiscountReward := fmocks.NewMockReferralDiscountRewardService(tm.ctrl)
+	volumeDiscount := fmocks.NewMockVolumeDiscountService(tm.ctrl)
+	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("no referrer")).AnyTimes()
+	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	mktEngine, err := future.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, timeService, broker, mas, statevar, marketActivityTracker, cfgAsset,
-		peggedOrderCounterForTest, feeDiscountReward)
+		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount)
 	if err != nil {
 		t.Fatalf("couldn't create a market: %v", err)
 	}

@@ -120,6 +120,8 @@ const (
 	ProposalErrorInvalidPerpsProduct ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_PERPETUAL_PRODUCT
 	// ProposalErrorInvalidReferralProgram is returned when the referral program proposal is not valid.
 	ProposalErrorInvalidReferralProgram ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_REFERRAL_PROGRAM
+	// ProposalErrorInvalidVolumeDiscountProgram is returned when the volume discount program proposal is not valid.
+	ProposalErrorInvalidVolumeDiscountProgram ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_VOLUME_DISCOUNT_PROGRAM
 )
 
 type ProposalState = vegapb.Proposal_State
@@ -158,6 +160,7 @@ const (
 	ProposalTermsTypeCancelTransfer
 	ProposalTermsTypeUpdateMarketState
 	ProposalTermsTypeUpdateReferralProgram
+	ProposalTermsTypeUpdateVolumeDiscountProgram
 )
 
 type ProposalSubmission struct {
@@ -257,6 +260,15 @@ func (p *Proposal) IsSpotMarketUpdate() bool {
 func (p *Proposal) IsReferralProgramUpdate() bool {
 	switch p.Terms.Change.(type) {
 	case *ProposalTermsUpdateReferralProgram:
+		return true
+	default:
+		return false
+	}
+}
+
+func (p *Proposal) IsVolumeDiscountProgramUpdate() bool {
+	switch p.Terms.Change.(type) {
+	case *ProposalTermsUpdateVolumeDiscountProgram:
 		return true
 	default:
 		return false
@@ -528,6 +540,8 @@ func (p ProposalTerms) IntoProto() *vegapb.ProposalTerms {
 		r.Change = ch
 	case *vegapb.ProposalTerms_UpdateReferralProgram:
 		r.Change = ch
+	case *vegapb.ProposalTerms_UpdateVolumeDiscountProgram:
+		r.Change = ch
 	}
 	return r
 }
@@ -629,6 +643,15 @@ func (p *ProposalTerms) GetUpdateSpotMarket() *UpdateSpotMarket {
 	}
 }
 
+func (p *ProposalTerms) GetUpdateVolumeDiscountProgram() *UpdateVolumeDiscountProgram {
+	switch c := p.Change.(type) {
+	case *ProposalTermsUpdateVolumeDiscountProgram:
+		return c.UpdateVolumeDiscountProgram
+	default:
+		return nil
+	}
+}
+
 func (p *ProposalTerms) GetUpdateReferralProgram() *UpdateReferralProgram {
 	switch c := p.Change.(type) {
 	case *ProposalTermsUpdateReferralProgram:
@@ -687,6 +710,8 @@ func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
 			change, err = NewTerminateMarketFromProto(ch)
 		case *vegapb.ProposalTerms_UpdateReferralProgram:
 			change, err = NewUpdateReferralProgramProposalFromProto(ch)
+		case *vegapb.ProposalTerms_UpdateVolumeDiscountProgram:
+			change, err = NewUpdateVolumeDiscountProgramProposalFromProto(ch)
 		}
 	}
 	if err != nil {
