@@ -65,6 +65,8 @@ func TestEthereumOracleVerifierSnapshotEmpty(t *testing.T) {
 	_, err = restoredVerifier.LoadState(context.Background(), types.PayloadFromProto(slbsnap))
 	require.Nil(t, err)
 
+	restoredVerifier.ethCallEngine.EXPECT().Start()
+
 	// As the verifier has no state, the call engine should not have its last block set.
 	restoredVerifier.OnStateLoaded(context.Background())
 }
@@ -141,9 +143,8 @@ func TestEthereumOracleVerifierWithPendingQueryResults(t *testing.T) {
 	_, err = restoredVerifier.LoadState(context.Background(), types.PayloadFromProto(slbsnap))
 	require.Nil(t, err)
 
-	// After the state of the verifier is loaded it should inform the call engine of the last processed block
-	// and this should match the restored values.
-	restoredVerifier.ethCallEngine.EXPECT().UpdatePreviousEthBlock(uint64(5), uint64(100))
+	// After the state of the verifier is loaded it should start the call engine at the restored height
+	restoredVerifier.ethCallEngine.EXPECT().StartAtHeight(uint64(5), uint64(100))
 	restoredVerifier.OnStateLoaded(context.Background())
 
 	// Check its there by adding it again and checking for duplication error
