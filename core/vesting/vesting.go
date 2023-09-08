@@ -251,9 +251,11 @@ func (e *Engine) moveLocked() {
 func (e *Engine) distributeVested(ctx context.Context) {
 	transfers := []*types.Transfer{}
 	parties := maps.Keys(e.state)
+	sort.Strings(parties)
 	for _, party := range parties {
 		rewards := e.state[party]
 		assets := maps.Keys(rewards.Vesting)
+		sort.Strings(assets)
 		for _, asset := range assets {
 			balance := rewards.Vesting[asset]
 			transfer := e.makeTransfer(
