@@ -1,4 +1,4 @@
-Feature: Test LP mechanics when there are multiple liquidity providers, and LPs try to amend liquidity commitment;
+Feature: Test LP mechanics when there are multiple liquidity providers, test stop-loss orders and parked orders (does not count towards LP commitment)
 
   Background:
 
