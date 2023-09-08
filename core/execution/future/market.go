@@ -46,6 +46,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	"golang.org/x/exp/maps"
 )
 
 // LiquidityMonitor.
@@ -774,6 +775,22 @@ func (m *Market) GetID() string {
 func (m *Market) PostRestore(ctx context.Context) error {
 	// tell the matching engine about the markets price factor so it can finish restoring orders
 	m.matching.RestoreWithMarketPriceFactor(m.priceFactor)
+
+	// TODO(jeremy): This bit is here specifically to create account
+	// which should have been create with the normal process of
+	// submitting liquidity provisions for the market.
+	// should probably be removed in the near future (aft this release)
+	lpParties := maps.Keys(m.liquidityEngine.ProvisionsPerParty())
+	sort.Strings(lpParties)
+
+	for _, p := range lpParties {
+		_, err := m.collateral.GetOrCreatePartyLiquidityFeeAccount(
+			ctx, p, m.GetID(), m.GetSettlementAsset())
+		if err != nil {
+			m.log.Panic("couldn't create party liquidity fee account")
+		}
+	}
+
 	return nil
 }
 
