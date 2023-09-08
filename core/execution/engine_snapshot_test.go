@@ -156,6 +156,8 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 
 	epochTime := liqmocks.NewMockEpochTime(ctrl)
+	epochTime.EXPECT().GetEpochStartTime().AnyTimes().Return(time.Now())
+
 	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine, teams, balanceChecker), asset, referralDiscountReward, volumeDiscount, epochTime), ctrl
 }
 

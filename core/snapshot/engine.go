@@ -825,6 +825,7 @@ func (e *Engine) restoreStateFromSnapshot(ctx context.Context, payloads []*types
 
 	// Calling providers that need to be called before restoring their state.
 	for _, provider := range e.preRestoreProviders {
+
 		if err := provider.OnStateLoadStarts(ctx); err != nil {
 			return fmt.Errorf("an error occurred on provider %q during snapshot pre-restoration: %w", provider.Namespace(), err)
 		}

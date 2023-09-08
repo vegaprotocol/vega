@@ -603,7 +603,7 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 
 	epochTime := liqmocks.NewMockEpochTime(ctrl)
-
+	epochTime.EXPECT().GetEpochStartTime().AnyTimes().Return(time.Now())
 	eng := execution.NewEngine(
 		log,
 		cfg,

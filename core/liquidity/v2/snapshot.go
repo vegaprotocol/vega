@@ -510,6 +510,7 @@ func NewSnapshotEngine(
 		},
 		snapshotV1: &snapshotV1{
 			Engine:    e,
+			market:    marketID,
 			epochTime: epochTime,
 		},
 	}

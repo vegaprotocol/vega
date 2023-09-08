@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	typespb "code.vegaprotocol.io/vega/protos/vega"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
@@ -14,8 +15,10 @@ import (
 
 type snapshotV1 struct {
 	*Engine
+	market    string
 	stopped   bool
 	epochTime EpochTime
+	keys      []string
 }
 
 func (e *snapshotV1) Namespace() types.SnapshotNamespace {
@@ -23,11 +26,84 @@ func (e *snapshotV1) Namespace() types.SnapshotNamespace {
 }
 
 func (e *snapshotV1) Keys() []string {
-	return []string{}
+	if len(e.keys) <= 0 {
+		e.keys = []string{
+			(&types.PayloadLiquidityParameters{
+				Parameters: &snapshotpb.LiquidityParameters{
+					MarketId: e.market,
+				},
+			}).Key(),
+			(&types.PayloadLiquidityPendingProvisions{
+				PendingProvisions: &snapshotpb.LiquidityPendingProvisions{
+					MarketId: e.market,
+				},
+			}).Key(),
+			(&types.PayloadLiquidityProvisions{
+				Provisions: &snapshotpb.LiquidityProvisions{
+					MarketId: e.market,
+				},
+			}).Key(),
+			(&types.PayloadLiquiditySupplied{
+				LiquiditySupplied: &snapshotpb.LiquiditySupplied{
+					MarketId: e.market,
+				},
+			}).Key(),
+			(&types.PayloadLiquidityScores{
+				LiquidityScores: &snapshotpb.LiquidityScores{
+					MarketId: e.market,
+				},
+			}).Key(),
+		}
+	}
+
+	return e.keys
 }
 
 func (e *snapshotV1) GetState(k string) ([]byte, []types.StateProvider, error) {
-	return nil, nil, nil
+	var (
+		keys  = e.Keys()
+		state = &snapshotpb.Payload{}
+	)
+
+	switch k {
+	case keys[0]:
+		state.Data = &snapshotpb.Payload_LiquidityParameters{
+			LiquidityParameters: &snapshotpb.LiquidityParameters{
+				MarketId: e.market,
+			},
+		}
+	case keys[1]:
+		state.Data = &snapshotpb.Payload_LiquidityPendingProvisions{
+			LiquidityPendingProvisions: &snapshotpb.LiquidityPendingProvisions{
+				MarketId: e.market,
+			},
+		}
+	case keys[2]:
+		state.Data = &snapshotpb.Payload_LiquidityProvisions{
+			LiquidityProvisions: &snapshotpb.LiquidityProvisions{
+				MarketId: e.market,
+			},
+		}
+	case keys[3]:
+		state.Data = &snapshotpb.Payload_LiquiditySupplied{
+			LiquiditySupplied: &snapshotpb.LiquiditySupplied{
+				MarketId: e.market,
+			},
+		}
+	case keys[4]:
+		state.Data = &snapshotpb.Payload_LiquidityScores{
+			LiquidityScores: &snapshotpb.LiquidityScores{
+				MarketId: e.market,
+			},
+		}
+	}
+
+	buf, err := proto.Marshal(state)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return buf, nil, nil
 }
 
 func (e *snapshotV1) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
@@ -47,6 +123,11 @@ func (e *snapshotV1) LoadState(ctx context.Context, p *types.Payload) ([]types.S
 		return nil, e.loadScores(pl.LiquidityScores)
 	case *types.PayloadLiquiditySupplied:
 		return nil, e.loadSupplied(pl.LiquiditySupplied)
+	case *types.PayloadLiquidityPendingProvisions:
+		return nil, nil
+	case *types.PayloadLiquidityParameters:
+		return nil, nil
+
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
@@ -62,19 +143,19 @@ func (e *snapshotV1) Stop() {
 }
 
 func (e *snapshotV1) loadPerformances(provisions []*typespb.LiquidityProvision) {
-	e.Engine.slaEpochStart = e.epochTime.GetEpochStartTime()
+	e.slaEpochStart = e.epochTime.GetEpochStartTime()
 
-	e.Engine.slaPerformance = map[string]*slaPerformance{}
+	e.slaPerformance = map[string]*slaPerformance{}
 	for _, provision := range provisions {
-		previousPenalties := restoreSliceRing[*num.Decimal](
+		previousPenalties := restoreSliceRing(
 			[]*num.Decimal{},
-			e.Engine.slaParams.PerformanceHysteresisEpochs,
+			e.slaParams.PerformanceHysteresisEpochs,
 			0,
 		)
 
 		var startTime time.Time
 
-		e.Engine.slaPerformance[provision.PartyId] = &slaPerformance{
+		e.slaPerformance[provision.PartyId] = &slaPerformance{
 			s:                 0,
 			start:             startTime,
 			previousPenalties: previousPenalties,
@@ -83,7 +164,7 @@ func (e *snapshotV1) loadPerformances(provisions []*typespb.LiquidityProvision) 
 }
 
 func (e *snapshotV1) loadProvisions(ctx context.Context, provisions []*typespb.LiquidityProvision) error {
-	e.Engine.provisions = newSnapshotableProvisionsPerParty()
+	e.provisions = newSnapshotableProvisionsPerParty()
 
 	evts := make([]events.Event, 0, len(provisions))
 	for _, v := range provisions {
@@ -91,7 +172,7 @@ func (e *snapshotV1) loadProvisions(ctx context.Context, provisions []*typespb.L
 		if err != nil {
 			return err
 		}
-		e.Engine.provisions.Set(v.PartyId, provision)
+		e.provisions.Set(v.PartyId, provision)
 		evts = append(evts, events.NewLiquidityProvisionEvent(ctx, provision))
 	}
 
