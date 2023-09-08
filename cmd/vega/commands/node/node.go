@@ -171,7 +171,7 @@ func (n *Command) Run(
 	n.Log.Info("Vega startup complete",
 		logging.String("node-mode", string(n.conf.NodeMode)))
 
-	// wait for possible protocol upgrade, or user exist
+	// wait for possible protocol upgrade, or user exit
 	if err := n.wait(errCh); err != nil {
 		return err
 	}

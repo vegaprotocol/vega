@@ -130,6 +130,7 @@ func New(
 			svcs.protocolUpgradeEngine,
 			svcs.codec,
 			svcs.gastimator,
+			svcs.ethCallEngine,
 		),
 		log:         log,
 		confWatcher: confWatcher,
