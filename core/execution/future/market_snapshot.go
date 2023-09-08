@@ -128,6 +128,17 @@ func NewMarketFromSnapshot(
 	priceFactor := num.UintZero().Exp(num.NewUint(10), num.NewUint(exp))
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
+	// TODO(jeremy): remove this once the upgrade with the .73 have run on mainnet
+	// this is required to support the migration to SLA liquidity
+	if !(mkt.LiquiditySLAParams != nil) {
+		mkt.LiquiditySLAParams = &types.LiquiditySLAParams{
+			PriceRange:                  num.MustDecimalFromString("0.05"),
+			CommitmentMinTimeFraction:   num.MustDecimalFromString("0.95"),
+			PerformanceHysteresisEpochs: 1,
+			SlaCompetitionFactor:        num.MustDecimalFromString("0.90"),
+		}
+	}
+
 	liquidityEngine := liquidity.NewSnapshotEngine(
 		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel,
 		pMonitor, book, as, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams, epochTime,
