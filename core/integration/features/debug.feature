@@ -1,18 +1,16 @@
 Feature: Simple example of successor markets
   Background:
-    Given time is updated to "2019-11-30T00:00:00Z"
-    And the following assets are registered:
+    Given the following assets are registered:
       | id  | decimal places |
       | ETH | 0              |
       | USD | 0              |
-    Given the log normal risk model named "lognormal-risk-model-fish":
+    And the log normal risk model named "lognormal-risk-model-fish":
       | risk aversion | tau  | mu | r   | sigma |
       | 0.001         | 0.01 | 0  | 0.0 | 1.2   |
     And the margin calculator named "margin-calculator-1":
       | search factor | initial factor | release factor |
       | 1.2           | 1.5            | 2              |
-    Given time is updated to "2023-07-20T00:00:00Z"
-    Given the average block duration is "1"
+    And the average block duration is "1"
     # Create some oracles
     ## oracle for parent
     And the oracle spec for settlement data filtering data from "0xCAFECAFE1" named "ethDec19Oracle":
@@ -62,11 +60,11 @@ Feature: Simple example of successor markets
     Given the markets:
       | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params |
       | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec19Oracle     | 0.1                    | 0                         | 0              | 0                       |                  |                         |                   | SLA        |
-    And the parties place the following orders:
+    When the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-    When the network moves ahead "2" blocks
+    #When the network moves ahead "2" blocks
     Then the market data for the market "ETH/DEC19" should be:
       | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
       | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 4878         | 0              | 0             |
@@ -75,10 +73,10 @@ Feature: Simple example of successor markets
       | id  | party   | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov1 | ETH/DEC19 | 9000              | 0.1 | submission |
       | lp1 | lpprov1 | ETH/DEC19 | 9000              | 0.1 | submission |
-    And the opening auction period ends for market "ETH/DEC19"
+    Then the opening auction period ends for market "ETH/DEC19"
     And the network moves ahead "20" blocks
     #And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-    Then the market data for the market "ETH/DEC19" should be:
+    And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode                 | auction trigger             | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_UNSPECIFIED | 4878         | 9000           | 1             |
 
