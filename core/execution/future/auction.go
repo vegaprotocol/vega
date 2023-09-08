@@ -71,8 +71,6 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 			return
 		}
 
-		// opening auction requirements satisfied at this point, other requirements still need to be checked downstream though
-		m.as.SetReadyToLeave()
 		// first check liquidity - before we mark auction as ready to leave
 		m.checkLiquidity(ctx, trades, true)
 		if !m.as.CanLeave() {
@@ -81,6 +79,8 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 			}
 			return
 		}
+		// opening auction requirements satisfied at this point, other requirements still need to be checked downstream though
+		m.as.SetReadyToLeave()
 		m.pMonitor.CheckPrice(ctx, m.as, trades, true)
 		if m.as.ExtensionTrigger() == types.AuctionTriggerPrice {
 			// this should never, ever happen

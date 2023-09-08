@@ -79,8 +79,8 @@ Feature: Simple example of successor markets
     And the network moves ahead "20" blocks
     #And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the market data for the market "ETH/DEC19" should be:
-      | mark price | trading mode                 | auction trigger             | target stake | supplied stake | open interest |
-      | 0 | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 0 | 3140 | 1 |
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 4878         | 3140           | 1             |
 
     Then the following transfers should happen:
       | from    | to     | from account      | to account             | market id | amount | asset |
@@ -110,4 +110,3 @@ Feature: Simple example of successor markets
 #   #And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 #   Then the market data for the market "ETH/DEC19" should be:
 #     | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-#     | 1000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 4878         | 9000           | 1             |

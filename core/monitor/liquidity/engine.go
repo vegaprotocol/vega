@@ -87,11 +87,8 @@ func (e *Engine) UpdateTargetStakeTriggerRatio(ctx context.Context, ratio num.De
 // The constant c1 represents the netparam `MarketLiquidityTargetStakeTriggeringRatio`,
 // "true" gets returned if non-persistent order should be rejected.
 func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.Uint, trades []*types.Trade,
-	rf types.RiskFactor, refPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64, persistent bool,
+	rf types.RiskFactor, refPrice *num.Uint, _, _ uint64, persistent bool,
 ) bool {
-	if as.IsOpeningAuction() {
-		return true
-	}
 	exp := as.ExpiresAt()
 	if exp != nil && exp.After(t) {
 		// we're in auction, and the auction isn't expiring yet, so we don't have to do anything yet
@@ -110,7 +107,7 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.
 
 	isOpening := as.IsOpeningAuction()
 	if exp != nil && as.IsLiquidityAuction() || as.IsLiquidityExtension() || isOpening {
-		if currentStake.GTE(targetStake) && bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
+		if currentStake.GTE(targetStake) {
 			as.SetReadyToLeave()
 			return false // all done
 		}
@@ -123,8 +120,8 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.
 	scaledTargetStakeDec := targetStake.ToDecimal().Mul(c1)
 	scaledTargetStake, _ := num.UintFromDecimal(scaledTargetStakeDec)
 	stakeUndersupplied := currentStake.LT(scaledTargetStake)
-	if stakeUndersupplied || bestStaticBidVolume == 0 || bestStaticAskVolume == 0 {
-		if stakeUndersupplied && len(trades) > 0 && !persistent {
+	if stakeUndersupplied {
+		if len(trades) > 0 && !persistent {
 			// non-persistent order cannot trigger auction by raising target stake
 			// we're going to stay in continuous trading
 			return true
