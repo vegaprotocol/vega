@@ -284,6 +284,8 @@ func (e *Engine) preEnactProposal(ctx context.Context, p *proposal) (te *ToEnact
 		te.msu = &ToEnactMarketStateUpdate{}
 	case types.ProposalTermsTypeUpdateReferralProgram:
 		te.referralProgram = updatedReferralProgramFromProposal(p)
+	case types.ProposalTermsTypeUpdateVolumeDiscountProgram:
+		te.volumeDiscountProgram = updatedVolumeDiscountProgramFromProposal(p)
 	}
 	return //nolint:nakedret
 }
@@ -672,6 +674,8 @@ func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParamet
 		return e.getUpdateMarketStateProposalParameters(), nil
 	case types.ProposalTermsTypeUpdateReferralProgram:
 		return e.getReferralProgramNetworkParameters(), nil
+	case types.ProposalTermsTypeUpdateVolumeDiscountProgram:
+		return e.getVolumeDiscountProgramNetworkParameters(), nil
 	default:
 		return nil, ErrUnsupportedProposalType
 	}
@@ -997,6 +1001,8 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		return validateUpdateSpotMarketChange(terms.GetUpdateSpotMarket())
 	case types.ProposalTermsTypeUpdateReferralProgram:
 		return validateUpdateReferralProgram(e.netp, terms.GetUpdateReferralProgram())
+	case types.ProposalTermsTypeUpdateVolumeDiscountProgram:
+		return validateUpdateVolumeDiscountProgram(e.netp, terms.GetUpdateVolumeDiscountProgram())
 	default:
 		return types.ProposalErrorUnspecified, nil
 	}

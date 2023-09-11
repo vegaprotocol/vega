@@ -124,6 +124,7 @@ func New(
 			svcs.statevar,
 			svcs.teamsEngine,
 			svcs.referralProgram,
+			svcs.volumeDiscount,
 			svcs.blockchainClient,
 			svcs.erc20MultiSigTopology,
 			stats.GetVersion(),

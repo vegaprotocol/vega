@@ -63,6 +63,7 @@ import (
 	"code.vegaprotocol.io/vega/core/validators/erc20multisig"
 	"code.vegaprotocol.io/vega/core/vegatime"
 	"code.vegaprotocol.io/vega/core/vesting"
+	"code.vegaprotocol.io/vega/core/volumediscount"
 	"code.vegaprotocol.io/vega/libs/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
@@ -147,6 +148,7 @@ type allServices struct {
 
 	activityStreak *activitystreak.SnapshotEngine
 	vesting        *vesting.SnapshotEngine
+	volumeDiscount *volumediscount.SnapshottedEngine
 }
 
 func newServices(
@@ -275,9 +277,15 @@ func newServices(
 	// the end of the epoch, in market activity tracker.
 	svcs.epochService.NotifyOnEpoch(svcs.referralProgram.OnEpoch, svcs.referralProgram.OnEpochRestore)
 
+	svcs.volumeDiscount = volumediscount.NewSnapshottedEngine(svcs.broker, svcs.marketActivityTracker)
+	svcs.epochService.NotifyOnEpoch(
+		svcs.volumeDiscount.OnEpoch,
+		svcs.volumeDiscount.OnEpochRestore,
+	)
+
 	// instantiate the execution engine
 	svcs.executionEngine = execution.NewEngine(
-		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar, svcs.marketActivityTracker, svcs.assets, svcs.referralProgram,
+		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar, svcs.marketActivityTracker, svcs.assets, svcs.referralProgram, svcs.volumeDiscount,
 	)
 	svcs.epochService.NotifyOnEpoch(svcs.executionEngine.OnEpochEvent, svcs.executionEngine.OnEpochRestore)
 
@@ -355,7 +363,7 @@ func newServices(
 
 	svcs.snapshotEngine.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
 		svcs.notary, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar,
-		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier, svcs.vesting, svcs.activityStreak, svcs.referralProgram)
+		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier, svcs.vesting, svcs.activityStreak, svcs.referralProgram, svcs.volumeDiscount)
 
 	svcs.snapshotEngine.AddProviders(svcs.spam)
 

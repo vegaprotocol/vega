@@ -320,6 +320,8 @@ message ProposalTerms {
     UpdateMarketState update_market_state = 111;
     // Proposal change for updating the referral program.
     UpdateReferralProgram update_referral_program = 112;
+    // Proposal change for updating the volume discount program.
+    UpdateVolumeDiscountProgram update_volume_discount_program = 113;
   }
 }
 
@@ -519,6 +521,8 @@ enum ProposalError {
   PROPOSAL_ERROR_INVALID_PERPETUAL_PRODUCT = 55;
   // Referral program proposal is invalid
   PROPOSAL_ERROR_INVALID_REFERRAL_PROGRAM = 56;
+  // Volume discount program proposal is invalid
+  PROPOSAL_ERROR_INVALID_VOLUME_DISCOUNT_PROGRAM = 57;
 }
 
 // Governance vote
@@ -551,6 +555,11 @@ message Vote {
   string total_governance_token_weight = 6;
   // The weight of the vote compared to the total amount of equity-like share on the market.
   string total_equity_like_share_weight = 7;
+}
+
+message UpdateVolumeDiscountProgram {
+  // Configuration for a change to update a volume discount program
+  VolumeDiscountProgram changes = 1;
 }
 
 message UpdateReferralProgram {

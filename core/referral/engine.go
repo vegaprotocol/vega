@@ -283,10 +283,6 @@ func (e *Engine) RewardsMultiplierForParty(party types.PartyID) num.Decimal {
 	return multiplier
 }
 
-func (e *Engine) VolumeDiscountFactorForParty(party types.PartyID) num.Decimal {
-	return num.DecimalZero()
-}
-
 func (e *Engine) ReferralDiscountFactorForParty(party types.PartyID) num.Decimal {
 	if e.programHasEnded {
 		return num.DecimalZero()

@@ -548,8 +548,6 @@ func (mat *MarketActivityTracker) calculateMetricForIndividuals(asset string, pa
 // CalculateMetricForTeams returns a slice of metrics for the team and a slice of metrics for each team member.
 func (mat *MarketActivityTracker) calculateMetricForTeams(asset string, teams map[string][]string, marketsInScope []string, metric vega.DispatchMetric, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired num.Decimal, windowSize int, topN num.Decimal) ([]*types.PartyContibutionScore, map[string][]*types.PartyContibutionScore) {
 	teamScores := make([]*types.PartyContibutionScore, 0, len(teams))
-	teamMembersScores := map[string][]*types.PartyContibutionScore{}
-
 	teamKeys := make([]string, 0, len(teams))
 	for k := range teams {
 		teamKeys = append(teamKeys, k)
@@ -558,12 +556,12 @@ func (mat *MarketActivityTracker) calculateMetricForTeams(asset string, teams ma
 
 	ps := make(map[string][]*types.PartyContibutionScore, len(teamScores))
 	for _, t := range teamKeys {
-		ts, ps := mat.calculateMetricForTeam(asset, teams[t], marketsInScope, metric, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, windowSize, topN)
+		ts, teamMemberScores := mat.calculateMetricForTeam(asset, teams[t], marketsInScope, metric, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, windowSize, topN)
 		if ts.IsZero() {
 			continue
 		}
 		teamScores = append(teamScores, &types.PartyContibutionScore{Party: t, Score: ts})
-		teamMembersScores[t] = ps
+		ps[t] = teamMemberScores
 	}
 
 	return teamScores, ps
@@ -571,12 +569,30 @@ func (mat *MarketActivityTracker) calculateMetricForTeams(asset string, teams ma
 
 // calculateMetricForTeam returns the metric score for team and a slice of the score for each of its members.
 func (mat *MarketActivityTracker) calculateMetricForTeam(asset string, parties []string, marketsInScope []string, metric vega.DispatchMetric, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired num.Decimal, windowSize int, topN num.Decimal) (num.Decimal, []*types.PartyContibutionScore) {
+	return calculateMetricForTeamUtil(asset, parties, marketsInScope, metric, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, windowSize, topN, mat.isEligibleForReward, mat.calculateMetricForParty)
+}
+
+func calculateMetricForTeamUtil(asset string,
+	parties []string,
+	marketsInScope []string,
+	metric vega.DispatchMetric,
+	minStakingBalanceRequired *num.Uint,
+	notionalTimeWeightedAveragePositionRequired num.Decimal,
+	windowSize int,
+	topN num.Decimal,
+	isEligibleForReward func(asset, party string, markets []string, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired num.Decimal) bool,
+	calculateMetricForParty func(asset, party string, marketsInScope []string, metric vega.DispatchMetric, windowSize int) num.Decimal,
+) (num.Decimal, []*types.PartyContibutionScore) {
 	teamPartyScores := []*types.PartyContibutionScore{}
 	for _, party := range parties {
-		if !mat.isEligibleForReward(asset, party, marketsInScope, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired) {
+		if !isEligibleForReward(asset, party, marketsInScope, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired) {
 			continue
 		}
-		teamPartyScores = append(teamPartyScores, &types.PartyContibutionScore{Party: party, Score: mat.calculateMetricForParty(asset, party, marketsInScope, metric, windowSize)})
+		teamPartyScores = append(teamPartyScores, &types.PartyContibutionScore{Party: party, Score: calculateMetricForParty(asset, party, marketsInScope, metric, windowSize)})
+	}
+
+	if len(teamPartyScores) == 0 {
+		return num.DecimalZero(), []*types.PartyContibutionScore{}
 	}
 
 	sort.Slice(teamPartyScores, func(i, j int) bool {
@@ -590,7 +606,7 @@ func (mat *MarketActivityTracker) calculateMetricForTeam(asset string, parties [
 
 	total := num.DecimalZero()
 	for i := 0; i < maxIndex; i++ {
-		total.Add(teamPartyScores[i].Score)
+		total = total.Add(teamPartyScores[i].Score)
 	}
 
 	return total.Div(num.DecimalFromInt64(int64(maxIndex))), teamPartyScores
@@ -688,6 +704,14 @@ func (mat *MarketActivityTracker) RecordNotionalTakerVolume(party string, volume
 
 func (mat *MarketActivityTracker) clearNotionalTakerVolume() {
 	mat.partyTakerNotionalVolume = map[string]*num.Uint{}
+}
+
+func (mat *MarketActivityTracker) NotionalTakerVolumeForAllParties() map[types.PartyID]*num.Uint {
+	res := make(map[types.PartyID]*num.Uint, len(mat.partyTakerNotionalVolume))
+	for k, u := range mat.partyTakerNotionalVolume {
+		res[types.PartyID(k)] = u.Clone()
+	}
+	return res
 }
 
 func (mat *MarketActivityTracker) NotionalTakerVolumeForParty(party string) *num.Uint {

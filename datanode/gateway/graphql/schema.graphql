@@ -4096,6 +4096,60 @@ type UpdateMarketState {
   price: String
 }
 
+
+type UpdateReferralProgram {
+  "Current version of the referral program"
+  version: Int!
+  "ID of the proposal that created the referral program"
+  id: ID! 
+  "Benefit tiers for the program"
+  benefitTiers: [BenefitTier!]!
+  "Determines the level of benefit a party can expect based on their staking"
+  stakingTiers: [StakingTier!]!
+  "The end time of the program"
+  endOfProgramTimestamp: Timestamp!
+  "The window legnth to consider for the referral program"
+  windowLength: Int!
+}
+
+type BenefitTier {
+  "The minimum number of epochs the party needs to be in the referral set to be eligible for the benefit"
+  minimumEpochs: Int!
+  "The minimum running notional for the given benefit tier"
+  minimumRunningNotionalTakerVolume: String! 
+  "The proportion of the referee's taker fees to be discounted"
+  referralDiscountFactor: String!
+  "The proportion of the referee's taker fees to be rewarded to the referrer"
+  referralRewardFactor: String!
+}
+
+type StakingTier {
+  "Required number of governance tokens ($VEGA) a referrer must have staked to receive the multiplier"
+  minimumStakedTokens: String!
+  "Multiplier applied to the referral reward factor when calculating referral rewards due to the referrer"
+  referralRewardMultiplier: String!
+}
+
+type UpdateVolumeDiscountProgram {
+  "The current version of the volume discount program"
+  version: Int!
+  "ID of the proposal that created the discount program"
+  id: ID! 
+  "The benefit tiers for the program"
+  benefitTiers: [VolumeBenefitTier!]!
+  "The end time of the program"
+  endOfProgramTimestamp: Timestamp!
+  "The window legnth to consider for the volume discount program"
+  windowLength: Int!
+}
+
+type VolumeBenefitTier {
+  "The minimum running notional for the given benefit tier"
+  minimumRunningNotionalTakerVolume: String! 
+  "Discount given to those in this benefit tier"
+  volumeDiscountFactor: String!
+}
+
 "Configuration for a new spot market on Vega"
 type NewSpotMarket {
   "New spot market instrument configuration"
@@ -4170,6 +4224,8 @@ union ProposalChange =
   | UpdateMarketState
   | NewSpotMarket
   | UpdateSpotMarket
+  | UpdateVolumeDiscountProgram
+  | UpdateReferralProgram
 
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 

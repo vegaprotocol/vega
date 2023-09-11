@@ -1739,6 +1739,30 @@ func (e *tstEngine) newProposalForReferralProgramUpdate(partyID string, now time
 	return prop
 }
 
+func (e *tstEngine) newProposalForVolumeDiscountProgramUpdate(partyID string, now time.Time, configuration *types.VolumeDiscountProgram) types.Proposal {
+	id := e.newProposalID()
+	prop := types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     partyID,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(96 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(4 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(2 * time.Hour).Unix(),
+			Change: &types.ProposalTermsUpdateVolumeDiscountProgram{
+				UpdateVolumeDiscountProgram: &types.UpdateVolumeDiscountProgram{
+					Changes: configuration,
+				},
+			},
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+	return prop
+}
+
 func (e *tstEngine) newProposalForNewAsset(partyID string, now time.Time) types.Proposal {
 	id := e.newProposalID()
 	return types.Proposal{

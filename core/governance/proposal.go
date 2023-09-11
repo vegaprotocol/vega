@@ -37,20 +37,21 @@ type ProposalParameters struct {
 // ToEnact wraps the proposal in a type that has a convenient interface
 // to quickly work out what change we're dealing with, and get the data.
 type ToEnact struct {
-	p                 *proposal
-	m                 *ToEnactNewMarket
-	s                 *ToEnactNewSpotMarket
-	newAsset          *types.Asset
-	updatedAsset      *types.Asset
-	n                 *types.NetworkParameter
-	as                *types.AssetDetails
-	updatedMarket     *types.Market
-	updatedSpotMarket *types.Market
-	f                 *ToEnactFreeform
-	t                 *ToEnactTransfer
-	c                 *ToEnactCancelTransfer
-	msu               *ToEnactMarketStateUpdate
-	referralProgram   *types.ReferralProgram
+	p                     *proposal
+	m                     *ToEnactNewMarket
+	s                     *ToEnactNewSpotMarket
+	newAsset              *types.Asset
+	updatedAsset          *types.Asset
+	n                     *types.NetworkParameter
+	as                    *types.AssetDetails
+	updatedMarket         *types.Market
+	updatedSpotMarket     *types.Market
+	f                     *ToEnactFreeform
+	t                     *ToEnactTransfer
+	c                     *ToEnactCancelTransfer
+	msu                   *ToEnactMarketStateUpdate
+	referralProgram       *types.ReferralProgram
+	volumeDiscountProgram *types.VolumeDiscountProgram
 }
 
 type ToEnactMarketStateUpdate struct{}
@@ -69,6 +70,10 @@ type ToEnactNewSpotMarket struct{}
 
 // ToEnactFreeform there is nothing to enact with a freeform proposal.
 type ToEnactFreeform struct{}
+
+func (t ToEnact) IsVolumeDiscountProgramUpdate() bool {
+	return t.volumeDiscountProgram != nil
+}
 
 func (t ToEnact) IsReferralProgramUpdate() bool {
 	return t.referralProgram != nil
@@ -149,6 +154,10 @@ func (t *ToEnact) UpdateNetworkParameter() *types.NetworkParameter {
 
 func (t *ToEnact) ReferralProgramUpdate() *types.ReferralProgram {
 	return t.referralProgram
+}
+
+func (t *ToEnact) VolumeDiscountProgramUpdate() *types.VolumeDiscountProgram {
+	return t.volumeDiscountProgram
 }
 
 func (t *ToEnact) UpdateMarket() *types.Market {
