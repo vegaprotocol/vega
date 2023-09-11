@@ -526,8 +526,10 @@ func (e *Engine) newDeposit(
 func (e *Engine) GetDispatchStrategy(hash string) *proto.DispatchStrategy {
 	ds, ok := e.hashToStrategy[hash]
 	if !ok {
-		e.log.Panic("could not find dispatch strategy in banking engine", logging.String("hash", hash))
+		e.log.Warn("could not find dispatch strategy in banking engine", logging.String("hash", hash))
+		return nil
 	}
+
 	return ds.ds
 }
 

@@ -70,9 +70,10 @@ type Engine struct {
 	allMarkets    map[string]common.CommonMarket
 	allMarketsCpy []common.CommonMarket
 
-	collateral               common.Collateral
-	assets                   common.Assets
-	feeDiscountRewardService fee.FeeDiscountRewardService
+	collateral                    common.Collateral
+	assets                        common.Assets
+	referralDiscountRewardService fee.ReferralDiscountRewardService
+	volumeDiscountService         fee.VolumeDiscountService
 
 	broker                common.Broker
 	timeService           common.TimeService
@@ -171,31 +172,33 @@ func NewEngine(
 	stateVarEngine common.StateVarEngine,
 	marketActivityTracker *common.MarketActivityTracker,
 	assets common.Assets,
-	feeDiscountRewardService fee.FeeDiscountRewardService,
+	referralDiscountRewardService fee.ReferralDiscountRewardService,
+	volumeDiscountService fee.VolumeDiscountService,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(executionConfig.Level.Get())
 	e := &Engine{
-		log:                      log,
-		Config:                   executionConfig,
-		futureMarkets:            map[string]*future.Market{},
-		spotMarkets:              map[string]*spot.Market{},
-		allMarkets:               map[string]common.CommonMarket{},
-		timeService:              ts,
-		collateral:               collateral,
-		assets:                   assets,
-		broker:                   broker,
-		oracle:                   oracle,
-		npv:                      defaultNetParamsValues(),
-		generatedProviders:       map[string]struct{}{},
-		stateVarEngine:           stateVarEngine,
-		marketActivityTracker:    marketActivityTracker,
-		marketCPStates:           map[string]*types.CPMarketState{},
-		successors:               map[string][]string{},
-		isSuccessor:              map[string]string{},
-		skipRestoreSuccessors:    map[string]struct{}{},
-		feeDiscountRewardService: feeDiscountRewardService,
+		log:                           log,
+		Config:                        executionConfig,
+		futureMarkets:                 map[string]*future.Market{},
+		spotMarkets:                   map[string]*spot.Market{},
+		allMarkets:                    map[string]common.CommonMarket{},
+		timeService:                   ts,
+		collateral:                    collateral,
+		assets:                        assets,
+		broker:                        broker,
+		oracle:                        oracle,
+		npv:                           defaultNetParamsValues(),
+		generatedProviders:            map[string]struct{}{},
+		stateVarEngine:                stateVarEngine,
+		marketActivityTracker:         marketActivityTracker,
+		marketCPStates:                map[string]*types.CPMarketState{},
+		successors:                    map[string][]string{},
+		isSuccessor:                   map[string]string{},
+		skipRestoreSuccessors:         map[string]struct{}{},
+		referralDiscountRewardService: referralDiscountRewardService,
+		volumeDiscountService:         volumeDiscountService,
 	}
 
 	// set the eligibility for proposer bonus checker
@@ -665,7 +668,8 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 		e.marketActivityTracker,
 		ad,
 		e.peggedOrderCountUpdated,
-		e.feeDiscountRewardService,
+		e.referralDiscountRewardService,
+		e.volumeDiscountService,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -743,7 +747,8 @@ func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Marke
 		bad,
 		qad,
 		e.peggedOrderCountUpdated,
-		e.feeDiscountRewardService,
+		e.referralDiscountRewardService,
+		e.volumeDiscountService,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",

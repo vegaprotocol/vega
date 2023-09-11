@@ -71,14 +71,17 @@ func (i InternalTimeTrigger) DeepClone() *InternalTimeTrigger {
 }
 
 func (i InternalTimeTrigger) IsTriggered(timeNow time.Time) bool {
-	if i.nextTrigger != nil {
-		if i.nextTrigger.Before(timeNow) {
-			*i.nextTrigger = i.nextTrigger.Add(time.Duration(i.Every) * time.Second)
-			return true
-		}
+	if i.nextTrigger == nil {
+		return false
 	}
 
-	return false
+	triggered := false
+	for i.nextTrigger.Before(timeNow) {
+		triggered = true
+		*i.nextTrigger = i.nextTrigger.Add(time.Duration(i.Every) * time.Second)
+	}
+
+	return triggered
 }
 
 func (i *InternalTimeTrigger) SetNextTrigger(timeNow time.Time) {

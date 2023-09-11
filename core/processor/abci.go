@@ -134,6 +134,10 @@ type ReferralProgram interface {
 	ApplyReferralCode(context.Context, types.PartyID, types.ReferralSetID) error
 }
 
+type VolumeDiscountProgram interface {
+	UpdateProgram(program *types.VolumeDiscountProgram)
+}
+
 type BlockchainClient interface {
 	Validators(height *int64) ([]*tmtypesint.Validator, error)
 }
@@ -148,6 +152,10 @@ type ProtocolUpgradeService interface {
 	SetCoreReadyForUpgrade()
 	Cleanup(ctx context.Context)
 	IsValidProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag string) error
+}
+
+type EthCallEngine interface {
+	Start()
 }
 
 type App struct {
@@ -197,9 +205,11 @@ type App struct {
 	stateVar               StateVarEngine
 	teamsEngine            TeamsEngine
 	referralProgram        ReferralProgram
+	volumeDiscountProgram  VolumeDiscountProgram
 	protocolUpgradeService ProtocolUpgradeService
 	erc20MultiSigTopology  ERC20MultiSigTopology
 	gastimator             *Gastimator
+	ethCallEngine          EthCallEngine
 
 	nilPow  bool
 	nilSpam bool
@@ -239,12 +249,14 @@ func NewApp(
 	stateVarEngine StateVarEngine,
 	teamsEngine TeamsEngine,
 	referralProgram ReferralProgram,
+	volumeDiscountProgram VolumeDiscountProgram,
 	blockchainClient BlockchainClient,
 	erc20MultiSigTopology ERC20MultiSigTopology,
 	version string, // we need the version for snapshot reload
 	protocolUpgradeService ProtocolUpgradeService,
 	codec abci.Codec,
 	gastimator *Gastimator,
+	ethCallEngine EthCallEngine,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -287,11 +299,13 @@ func NewApp(
 		stateVar:               stateVarEngine,
 		teamsEngine:            teamsEngine,
 		referralProgram:        referralProgram,
+		volumeDiscountProgram:  volumeDiscountProgram,
 		version:                version,
 		blockchainClient:       blockchainClient,
 		erc20MultiSigTopology:  erc20MultiSigTopology,
 		protocolUpgradeService: protocolUpgradeService,
 		gastimator:             gastimator,
+		ethCallEngine:          ethCallEngine,
 	}
 
 	// setup handlers
@@ -722,6 +736,8 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 			Height: uint64(req.InitialHeight),
 		}),
 	)
+
+	app.ethCallEngine.Start()
 
 	return tmtypes.ResponseInitChain{
 		Validators: app.top.GetValidatorPowerUpdates(),
@@ -1911,6 +1927,8 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			app.enactMarketStateUpdate(ctx, prop)
 		case toEnact.IsReferralProgramUpdate():
 			app.referralProgram.UpdateProgram(toEnact.ReferralProgramUpdate())
+		case toEnact.IsVolumeDiscountProgramUpdate():
+			app.volumeDiscountProgram.UpdateProgram(toEnact.VolumeDiscountProgramUpdate())
 		default:
 			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
 			prop.FailUnexpectedly(fmt.Errorf("unknown proposal \"%s\" cannot be enacted", prop.ID))

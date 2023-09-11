@@ -7,20 +7,22 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
-type FeeDiscountRewardService struct{}
+type ReferralDiscountRewardService struct{}
 
-func (*FeeDiscountRewardService) ReferralDiscountFactorForParty(party types.PartyID) num.Decimal {
+func (*ReferralDiscountRewardService) ReferralDiscountFactorForParty(party types.PartyID) num.Decimal {
 	return num.DecimalZero()
 }
 
-func (*FeeDiscountRewardService) VolumeDiscountFactorForParty(party types.PartyID) num.Decimal {
+func (*ReferralDiscountRewardService) RewardsFactorMultiplierAppliedForParty(party types.PartyID) num.Decimal {
 	return num.DecimalZero()
 }
 
-func (*FeeDiscountRewardService) RewardsFactorMultiplierAppliedForParty(party types.PartyID) num.Decimal {
-	return num.DecimalZero()
-}
-
-func (*FeeDiscountRewardService) GetReferrer(referee types.PartyID) (types.PartyID, error) {
+func (*ReferralDiscountRewardService) GetReferrer(referee types.PartyID) (types.PartyID, error) {
 	return types.PartyID(""), errors.New("no referrer")
+}
+
+type VolumeDiscountService struct{}
+
+func (*VolumeDiscountService) VolumeDiscountFactorForParty(party types.PartyID) num.Decimal {
+	return num.DecimalZero()
 }

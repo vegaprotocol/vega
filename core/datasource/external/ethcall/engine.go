@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"reflect"
 	"sync"
 	"time"
 
@@ -47,6 +48,7 @@ func (b blockIndex) Time() uint64 {
 type Engine struct {
 	log                   *logging.Logger
 	cfg                   Config
+	isValidator           bool
 	client                EthReaderCaller
 	calls                 map[string]Call
 	forwarder             Forwarder
@@ -56,14 +58,15 @@ type Engine struct {
 	mu                    sync.Mutex
 }
 
-func NewEngine(log *logging.Logger, cfg Config, client EthReaderCaller, forwarder Forwarder) *Engine {
+func NewEngine(log *logging.Logger, cfg Config, isValidator bool, client EthReaderCaller, forwarder Forwarder) *Engine {
 	e := &Engine{
-		log:       log,
-		cfg:       cfg,
-		client:    client,
-		forwarder: forwarder,
-		calls:     make(map[string]Call),
-		poller:    newPoller(cfg.PollEvery.Get()),
+		log:         log,
+		cfg:         cfg,
+		isValidator: isValidator,
+		client:      client,
+		forwarder:   forwarder,
+		calls:       make(map[string]Call),
+		poller:      newPoller(cfg.PollEvery.Get()),
 	}
 
 	return e
@@ -72,43 +75,27 @@ func NewEngine(log *logging.Logger, cfg Config, client EthReaderCaller, forwarde
 // Start starts the polling of the Ethereum bridges, listens to the events
 // they emit and forward it to the network.
 func (e *Engine) Start() {
-	ctx, cancelEthereumQueries := context.WithCancel(context.Background())
-	defer cancelEthereumQueries()
+	if e.isValidator && !reflect.ValueOf(e.client).IsNil() {
+		go func() {
+			ctx, cancelEthereumQueries := context.WithCancel(context.Background())
+			defer cancelEthereumQueries()
 
-	e.cancelEthereumQueries = cancelEthereumQueries
+			e.cancelEthereumQueries = cancelEthereumQueries
 
-	if e.log.IsDebug() {
-		e.log.Debug("Starting ethereum contract call polling engine")
+			if e.log.IsDebug() {
+				e.log.Debug("Starting ethereum contract call polling engine")
+			}
+
+			e.poller.Loop(func() {
+				e.Poll(ctx, time.Now())
+			})
+		}()
 	}
-
-	e.poller.Loop(func() {
-		e.Poll(ctx, time.Now())
-	})
 }
 
-func (e *Engine) UpdatePreviousEthBlock(height uint64, time uint64) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
+func (e *Engine) StartAtHeight(height uint64, time uint64) {
 	e.prevEthBlock = blockIndex{number: height, time: time}
-}
-
-func (e *Engine) initPreviousEthBlock(height uint64, time uint64) bool {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	if e.prevEthBlock == nil {
-		e.prevEthBlock = blockIndex{number: height, time: time}
-		return true
-	}
-	return false
-}
-
-func (e *Engine) getPreviousEthBlock() blockish {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	return blockIndex{
-		number: e.prevEthBlock.NumberU64(),
-		time:   e.prevEthBlock.Time(),
-	}
+	e.Start()
 }
 
 func (e *Engine) getCalls() map[string]Call {
@@ -222,13 +209,13 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 		logging.BigInt("ethBlock", lastEthBlock.Number()),
 		logging.Time("ethTime", time.Unix(int64(lastEthBlock.Time()), 0)))
 
-	// If this is the first time we're running, just set the previous block and return
-	if e.initPreviousEthBlock(lastEthBlock.NumberU64(), lastEthBlock.Time()) {
-		return
+	// If the previous eth block has not been set, set it to the current eth block
+	if e.prevEthBlock == nil {
+		e.prevEthBlock = blockIndex{number: lastEthBlock.NumberU64(), time: lastEthBlock.Time()}
 	}
 
 	// Go through an eth blocks one at a time until we get to the most recent one
-	for prevEthBlock := e.getPreviousEthBlock(); prevEthBlock.NumberU64() < lastEthBlock.NumberU64(); prevEthBlock = e.getPreviousEthBlock() {
+	for prevEthBlock := e.prevEthBlock; prevEthBlock.NumberU64() < lastEthBlock.NumberU64(); prevEthBlock = e.prevEthBlock {
 		nextBlockNum := big.NewInt(0).SetUint64(prevEthBlock.NumberU64() + 1)
 		nextEthBlock, err := e.client.BlockByNumber(ctx, nextBlockNum)
 		if err != nil {
@@ -252,7 +239,8 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 				}
 			}
 		}
-		e.UpdatePreviousEthBlock(nextEthBlock.NumberU64(), nextEthBlock.Time())
+
+		e.prevEthBlock = blockIndex{nextEthBlock.NumberU64(), nextEthBlock.Time()}
 	}
 }
 

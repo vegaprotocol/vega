@@ -63,6 +63,7 @@ import (
 	"code.vegaprotocol.io/vega/core/validators/erc20multisig"
 	"code.vegaprotocol.io/vega/core/vegatime"
 	"code.vegaprotocol.io/vega/core/vesting"
+	"code.vegaprotocol.io/vega/core/volumediscount"
 	"code.vegaprotocol.io/vega/libs/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
@@ -71,13 +72,13 @@ import (
 
 type EthCallEngine interface {
 	Start()
+	StartAtHeight(height uint64, timestamp uint64)
 	Stop()
 	MakeResult(specID string, bytes []byte) (ethcall.Result, error)
 	CallSpec(ctx context.Context, id string, atBlock uint64) (ethcall.Result, error)
 	GetRequiredConfirmations(id string) (uint64, error)
 	OnSpecActivated(ctx context.Context, spec datasource.Spec) error
 	OnSpecDeactivated(ctx context.Context, spec datasource.Spec)
-	UpdatePreviousEthBlock(height uint64, timestamp uint64)
 }
 
 type allServices struct {
@@ -147,6 +148,7 @@ type allServices struct {
 
 	activityStreak *activitystreak.SnapshotEngine
 	vesting        *vesting.SnapshotEngine
+	volumeDiscount *volumediscount.SnapshottedEngine
 }
 
 func newServices(
@@ -231,11 +233,7 @@ func newServices(
 
 	svcs.oracle = spec.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
 
-	svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.ethClient, svcs.eventForwarder)
-
-	if svcs.conf.IsValidator() && ethClient != nil {
-		go svcs.ethCallEngine.Start()
-	}
+	svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.conf.IsValidator(), svcs.ethClient, svcs.eventForwarder)
 
 	svcs.ethereumOraclesVerifier = ethverifier.New(svcs.log, svcs.witness, svcs.timeService, svcs.broker,
 		svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations)
@@ -279,9 +277,15 @@ func newServices(
 	// the end of the epoch, in market activity tracker.
 	svcs.epochService.NotifyOnEpoch(svcs.referralProgram.OnEpoch, svcs.referralProgram.OnEpochRestore)
 
+	svcs.volumeDiscount = volumediscount.NewSnapshottedEngine(svcs.broker, svcs.marketActivityTracker)
+	svcs.epochService.NotifyOnEpoch(
+		svcs.volumeDiscount.OnEpoch,
+		svcs.volumeDiscount.OnEpochRestore,
+	)
+
 	// instantiate the execution engine
 	svcs.executionEngine = execution.NewEngine(
-		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar, svcs.marketActivityTracker, svcs.assets, svcs.referralProgram,
+		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar, svcs.marketActivityTracker, svcs.assets, svcs.referralProgram, svcs.volumeDiscount,
 	)
 	svcs.epochService.NotifyOnEpoch(svcs.executionEngine.OnEpochEvent, svcs.executionEngine.OnEpochRestore)
 
@@ -359,7 +363,7 @@ func newServices(
 
 	svcs.snapshotEngine.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
 		svcs.notary, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar,
-		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier, svcs.vesting, svcs.activityStreak, svcs.referralProgram)
+		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier, svcs.vesting, svcs.activityStreak, svcs.referralProgram, svcs.volumeDiscount)
 
 	svcs.snapshotEngine.AddProviders(svcs.spam)
 

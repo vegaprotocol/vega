@@ -18,6 +18,30 @@ import (
 type SnapshotEngine struct {
 	*Engine
 
+	*snapshotV2
+	*snapshotV1
+}
+
+func (e SnapshotEngine) OnEpochRestore(ep types.Epoch) {
+	e.slaEpochStart = ep.StartTime
+}
+
+func (e SnapshotEngine) V2StateProvider() types.StateProvider {
+	return e.snapshotV2
+}
+
+func (e SnapshotEngine) V1StateProvider() types.StateProvider {
+	return e.snapshotV1
+}
+
+func (e SnapshotEngine) StopSnapshots() {
+	e.snapshotV1.Stop()
+	e.snapshotV2.Stop()
+}
+
+type snapshotV2 struct {
+	*Engine
+
 	pl     types.Payload
 	market string
 
@@ -38,20 +62,20 @@ type SnapshotEngine struct {
 	suppliedKey          string
 }
 
-func (e *SnapshotEngine) Namespace() types.SnapshotNamespace {
+func (e *snapshotV2) Namespace() types.SnapshotNamespace {
 	return types.LiquidityV2Snapshot
 }
 
-func (e *SnapshotEngine) Keys() []string {
+func (e *snapshotV2) Keys() []string {
 	return e.hashKeys
 }
 
-func (e *SnapshotEngine) GetState(k string) ([]byte, []types.StateProvider, error) {
+func (e *snapshotV2) GetState(k string) ([]byte, []types.StateProvider, error) {
 	state, err := e.serialise(k)
 	return state, nil, err
 }
 
-func (e *SnapshotEngine) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
+func (e *snapshotV2) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != p.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
@@ -72,16 +96,16 @@ func (e *SnapshotEngine) LoadState(ctx context.Context, p *types.Payload) ([]typ
 	}
 }
 
-func (e *SnapshotEngine) Stopped() bool {
+func (e *snapshotV2) Stopped() bool {
 	return e.stopped
 }
 
-func (e *SnapshotEngine) StopSnapshots() {
+func (e *snapshotV2) Stop() {
 	e.log.Debug("market has been cleared, stopping snapshot production", logging.MarketID(e.marketID))
 	e.stopped = true
 }
 
-func (e *SnapshotEngine) serialise(k string) ([]byte, error) {
+func (e *snapshotV2) serialise(k string) ([]byte, error) {
 	var (
 		buf []byte
 		err error
@@ -128,7 +152,7 @@ func (e *SnapshotEngine) serialise(k string) ([]byte, error) {
 	return buf, nil
 }
 
-func (e *SnapshotEngine) serialiseProvisions() ([]byte, error) {
+func (e *snapshotV2) serialiseProvisions() ([]byte, error) {
 	// these are sorted already, only a conversion to proto is needed
 	lps := e.Engine.provisions.Slice()
 	pblps := make([]*typespb.LiquidityProvision, 0, len(lps))
@@ -148,7 +172,7 @@ func (e *SnapshotEngine) serialiseProvisions() ([]byte, error) {
 	return e.marshalPayload(payload)
 }
 
-func (e *SnapshotEngine) serialisePendingProvisions() ([]byte, error) {
+func (e *snapshotV2) serialisePendingProvisions() ([]byte, error) {
 	// these are sorted already, only a conversion to proto is needed
 	lps := e.Engine.pendingProvisions.Slice()
 	pblps := make([]*typespb.LiquidityProvision, 0, len(lps))
@@ -168,7 +192,7 @@ func (e *SnapshotEngine) serialisePendingProvisions() ([]byte, error) {
 	return e.marshalPayload(payload)
 }
 
-func (e *SnapshotEngine) serialisePerformances() ([]byte, error) {
+func (e *snapshotV2) serialisePerformances() ([]byte, error) {
 	// Extract and sort the parties to serialize a deterministic array.
 	parties := make([]string, 0, len(e.slaPerformance))
 	for party := range e.slaPerformance {
@@ -219,7 +243,7 @@ func (e *SnapshotEngine) serialisePerformances() ([]byte, error) {
 	return e.marshalPayload(payload)
 }
 
-func (e *SnapshotEngine) serialiseSupplied() ([]byte, error) {
+func (e *snapshotV2) serialiseSupplied() ([]byte, error) {
 	v1Payload := e.suppliedEngine.Payload()
 
 	// Dirty hack to support serialization of a mutualized supplied engine between
@@ -237,7 +261,7 @@ func (e *SnapshotEngine) serialiseSupplied() ([]byte, error) {
 	})
 }
 
-func (e *SnapshotEngine) serialiseScores() ([]byte, error) {
+func (e *snapshotV2) serialiseScores() ([]byte, error) {
 	scores := make([]*snapshotpb.LiquidityScore, 0, len(e.avgScores))
 
 	keys := make([]string, 0, len(e.avgScores))
@@ -273,7 +297,7 @@ func (e *SnapshotEngine) serialiseScores() ([]byte, error) {
 	return e.marshalPayload(payload)
 }
 
-func (e *SnapshotEngine) marshalPayload(payload *snapshotpb.Payload) ([]byte, error) {
+func (e *snapshotV2) marshalPayload(payload *snapshotpb.Payload) ([]byte, error) {
 	buf, err := proto.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -282,7 +306,7 @@ func (e *SnapshotEngine) marshalPayload(payload *snapshotpb.Payload) ([]byte, er
 	return buf, nil
 }
 
-func (e *SnapshotEngine) loadProvisions(ctx context.Context, provisions []*typespb.LiquidityProvision, p *types.Payload) error {
+func (e *snapshotV2) loadProvisions(ctx context.Context, provisions []*typespb.LiquidityProvision, p *types.Payload) error {
 	e.Engine.provisions = newSnapshotableProvisionsPerParty()
 
 	evts := make([]events.Event, 0, len(provisions))
@@ -301,7 +325,7 @@ func (e *SnapshotEngine) loadProvisions(ctx context.Context, provisions []*types
 	return err
 }
 
-func (e *SnapshotEngine) loadPendingProvisions(ctx context.Context, provisions []*typespb.LiquidityProvision, p *types.Payload) error {
+func (e *snapshotV2) loadPendingProvisions(ctx context.Context, provisions []*typespb.LiquidityProvision, p *types.Payload) error {
 	e.Engine.pendingProvisions = newSnapshotablePendingProvisions()
 
 	evts := make([]events.Event, 0, len(provisions))
@@ -320,7 +344,7 @@ func (e *SnapshotEngine) loadPendingProvisions(ctx context.Context, provisions [
 	return err
 }
 
-func (e *SnapshotEngine) loadPerformances(performances *snapshotpb.LiquidityV2Performances, p *types.Payload) error {
+func (e *snapshotV2) loadPerformances(performances *snapshotpb.LiquidityV2Performances, p *types.Payload) error {
 	var err error
 
 	e.Engine.slaEpochStart = time.Unix(0, performances.EpochStartTime)
@@ -358,7 +382,7 @@ func (e *SnapshotEngine) loadPerformances(performances *snapshotpb.LiquidityV2Pe
 	return err
 }
 
-func (e *SnapshotEngine) loadSupplied(ls *snapshotpb.LiquidityV2Supplied, p *types.Payload) error {
+func (e *snapshotV2) loadSupplied(ls *snapshotpb.LiquidityV2Supplied, p *types.Payload) error {
 	// Dirty hack so we can reuse the supplied engine from the liquidity engine v1,
 	// without snapshot payload namespace issue.
 	err := e.suppliedEngine.Reload(&snapshotpb.LiquiditySupplied{
@@ -374,7 +398,7 @@ func (e *SnapshotEngine) loadSupplied(ls *snapshotpb.LiquidityV2Supplied, p *typ
 	return err
 }
 
-func (e *SnapshotEngine) loadScores(ls *snapshotpb.LiquidityV2Scores, p *types.Payload) error {
+func (e *snapshotV2) loadScores(ls *snapshotpb.LiquidityV2Scores, p *types.Payload) error {
 	var err error
 
 	e.nAvg = int64(ls.RunningAverageCounter)
@@ -395,7 +419,7 @@ func (e *SnapshotEngine) loadScores(ls *snapshotpb.LiquidityV2Scores, p *types.P
 	return err
 }
 
-func (e *SnapshotEngine) buildHashKeys(market string) {
+func (e *snapshotV2) buildHashKeys(market string) {
 	e.provisionsKey = (&types.PayloadLiquidityV2Provisions{
 		Provisions: &snapshotpb.LiquidityV2Provisions{
 			MarketId: market,
@@ -435,6 +459,15 @@ func (e *SnapshotEngine) buildHashKeys(market string) {
 	)
 }
 
+func defaultLiquiditySLAParams() *types.LiquiditySLAParams {
+	return &types.LiquiditySLAParams{
+		PriceRange:                  num.DecimalFromFloat(0.05),
+		CommitmentMinTimeFraction:   num.DecimalFromFloat(0.95),
+		SlaCompetitionFactor:        num.DecimalFromFloat(0.9),
+		PerformanceHysteresisEpochs: 1,
+	}
+}
+
 func NewSnapshotEngine(
 	config Config,
 	log *logging.Logger,
@@ -450,25 +483,38 @@ func NewSnapshotEngine(
 	positionFactor num.Decimal,
 	slaParams *types.LiquiditySLAParams,
 ) *SnapshotEngine {
+	if slaParams == nil {
+		slaParams = defaultLiquiditySLAParams()
+	}
+
+	e := NewEngine(
+		config,
+		log,
+		timeService,
+		broker,
+		riskModel,
+		priceMonitor,
+		orderBook,
+		auctionState,
+		asset,
+		marketID,
+		stateVarEngine,
+		positionFactor,
+		slaParams,
+	)
+
 	se := &SnapshotEngine{
-		Engine: NewEngine(
-			config,
-			log,
-			timeService,
-			broker,
-			riskModel,
-			priceMonitor,
-			orderBook,
-			auctionState,
-			asset,
-			marketID,
-			stateVarEngine,
-			positionFactor,
-			slaParams,
-		),
-		pl:      types.Payload{},
-		market:  marketID,
-		stopped: false,
+		Engine: e,
+		snapshotV2: &snapshotV2{
+			Engine:  e,
+			pl:      types.Payload{},
+			market:  marketID,
+			stopped: false,
+		},
+		snapshotV1: &snapshotV1{
+			Engine: e,
+			market: marketID,
+		},
 	}
 
 	se.buildHashKeys(marketID)

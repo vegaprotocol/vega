@@ -1708,6 +1708,14 @@ message ReferralProgram {
   repeated StakingTier staking_tiers = 6;
 }
 
+message VolumeBenefitTier {
+  // Required running notional taker volume in quantum units for parties
+  // to access this tier.
+  string minimum_running_notional_taker_volume = 1;
+  // Proportion of the taker fees to be discounted
+  string volume_discount_factor = 2;
+}
+
 message BenefitTier {
   // Required running notional taker volume in quantum units for parties
   // to access this tier.
@@ -1737,6 +1745,23 @@ message StakingTier {
   // Multiplier applied to the referral reward factor when calculating referral
   // rewards due to the referrer.
   string referral_reward_multiplier = 2;
+}
+
+message VolumeDiscountProgram {
+  // Incremental version of the program. It is incremented after each program
+  // update.
+  uint64 version = 1;
+  // Unique ID generated from the proposal that created this program.
+  string id = 2;
+  // Defined benefit tiers in increasing order. First element will give Tier 1,
+  // second element will give Tier 2, and so on. Determines the level of
+  // benefit a party can expect based on performance criteria.
+  repeated VolumeBenefitTier benefit_tiers = 3;
+  // Timestamp as Unix time in seconds after which when the current epoch ends, the
+  // program's status will become STATE_CLOSED and benefits will be disabled.
+  int64 end_of_program_timestamp = 4;
+  // Number of epochs over which to evaluate a referral set's running volume.
+  uint64 window_length = 5;
 }
 
 // A list of activity streak benefit tiers
