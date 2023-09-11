@@ -447,6 +447,7 @@ type TradingDataServiceClient interface {
 	//
 	// List all referees that belong to a referral set.
 	ListReferralSetReferees(ctx context.Context, in *ListReferralSetRefereesRequest, opts ...grpc.CallOption) (*ListReferralSetRefereesResponse, error)
+	GetReferralSetStats(ctx context.Context, in *GetReferralSetStatsRequest, opts ...grpc.CallOption) (*GetReferralSetStatsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -1732,6 +1733,15 @@ func (c *tradingDataServiceClient) ListReferralSetReferees(ctx context.Context, 
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) GetReferralSetStats(ctx context.Context, in *GetReferralSetStatsRequest, opts ...grpc.CallOption) (*GetReferralSetStatsResponse, error) {
+	out := new(GetReferralSetStatsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetReferralSetStats", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
 	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
@@ -2201,6 +2211,7 @@ type TradingDataServiceServer interface {
 	//
 	// List all referees that belong to a referral set.
 	ListReferralSetReferees(context.Context, *ListReferralSetRefereesRequest) (*ListReferralSetRefereesResponse, error)
+	GetReferralSetStats(context.Context, *GetReferralSetStatsRequest) (*GetReferralSetStatsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2561,6 +2572,9 @@ func (UnimplementedTradingDataServiceServer) ListReferralSets(context.Context, *
 }
 func (UnimplementedTradingDataServiceServer) ListReferralSetReferees(context.Context, *ListReferralSetRefereesRequest) (*ListReferralSetRefereesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListReferralSetReferees not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetReferralSetStats(context.Context, *GetReferralSetStatsRequest) (*GetReferralSetStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetReferralSetStats not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
@@ -4359,6 +4373,24 @@ func _TradingDataService_ListReferralSetReferees_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_GetReferralSetStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetReferralSetStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetReferralSetStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetReferralSetStats",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetReferralSetStats(ctx, req.(*GetReferralSetStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ExportNetworkHistory_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportNetworkHistoryRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -4728,6 +4760,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListReferralSetReferees",
 			Handler:    _TradingDataService_ListReferralSetReferees_Handler,
+		},
+		{
+			MethodName: "GetReferralSetStats",
+			Handler:    _TradingDataService_GetReferralSetStats_Handler,
 		},
 		{
 			MethodName: "Ping",

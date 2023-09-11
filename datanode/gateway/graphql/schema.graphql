@@ -5745,7 +5745,7 @@ type FundingPeriodConnection {
 type ReferralProgram {
   "Unique ID generated from the proposal that created this program."
   id: ID!
-  "Incremental version of the program. It is incremented after each program update."
+  "Incremental version of the program. It is incremented each time the referral program is edited."
   version: Int!
   "Defined tiers in increasing order. First element will give Tier 1, second element will give Tier 2, etc."
   benefit_tiers: [BenefitTier!]!
@@ -5773,6 +5773,11 @@ type ReferralSet {
   created_at: Timestamp!
   "Timestamp as RFC3339Nano when the referral set was updated."
   updated_at: Timestamp!
+  """
+  Referral set statistics for the latest or specific epoch.
+  If provided the results can be filtered for a specific referee
+  """
+  stats(epoch: Int, referee: ID): ReferralSetStats!
 }
 
 "Edge type containing the referral set and cursor information returned by a ReferralSetConnection"
@@ -5799,7 +5804,7 @@ type ReferralSetReferee {
   referee: ID!
   "Timestamp as RFC3339Nano when the party joined the set."
   joined_at: Timestamp!
-  "Epoch at which the party joined the set."
+  "Epoch in which the party joined the set."
   at_epoch: Int!
 }
 
@@ -5811,10 +5816,30 @@ type ReferralSetRefereeEdge {
   cursor: String!
 }
 
-"Connection type for retrieving cursor-based paginated referral set referee information"
+"Connection type for retrieving cursor-based paginated information about the referral set referees"
 type ReferralSetRefereeConnection {
   "The referral set referees in this connection"
   edges: [ReferralSetRefereeEdge]!
   "The pagination information"
   pageInfo: PageInfo!
+}
+
+type ReferralSetStats {
+  "Unique ID of the set"
+  setId: ID!
+  "Epoch at which the set's statistics are updated."
+  atEpoch: Int
+  "Running volume for the set based on the window length of the current referral program."
+  referralSetRunningNotionalTakerVolume: String!
+  "Referees' statistics for that epoch."
+  referees_stats: [RefereeStats!]!
+}
+
+type RefereeStats {
+  "Unique ID of the party."
+  partyId: ID!
+  "Discount factor applied to the party."
+  discountFactor: String!
+  "Reward factor applied to the party."
+  rewardFactor: String!
 }

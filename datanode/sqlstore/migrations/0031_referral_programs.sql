@@ -43,8 +43,32 @@ create table referral_set_referees(
     primary key (referral_set_id, referee)
 );
 
+create table referral_set_stats(
+    set_id bytea not null,
+    at_epoch bigint not null,
+    referral_set_running_notional_taker_volume numeric,
+    referees_stats jsonb not null,
+    vega_time timestamp with time zone not null,
+    primary key (vega_time, set_id)
+);
+
+select create_hypertable('referral_set_stats', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+
+-- make sure that it doesn't exist in case migrations have failed previously
+drop view if exists referral_set_referee_stats;
+
+create view referral_set_referee_stats as (
+  select set_id, at_epoch, referral_set_running_notional_taker_volume, stats.referee_stats->>'party_id' as party_id,
+         stats.referee_stats->>'discount_factor' as discount_factor, stats.referee_stats->>'reward_factor' as reward_factor,
+         vega_time
+  from referral_set_stats,
+       jsonb_array_elements(referees_stats) with ordinality stats(referee_stats, position)
+);
+
 -- +goose Down
 
+drop view if exists referral_set_referee_stats;
+drop table if exists referral_set_stats;
 drop table if exists referral_set_referees;
 drop table if exists referral_sets;
 drop view if exists current_referral_program;

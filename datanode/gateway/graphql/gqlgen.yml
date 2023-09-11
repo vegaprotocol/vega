@@ -640,3 +640,7 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetRefereeEdge
   ReferralSetRefereeConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetRefereeConnection
+  ReferralSetStats:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetStats
+  RefereeStats:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.RefereeStats

@@ -499,6 +499,14 @@ func (r *VegaResolverRoot) ReferralSetReferee() ReferralSetRefereeResolver {
 	return (*referralSetRefereeResolver)(r)
 }
 
+func (r *VegaResolverRoot) ReferralSet() ReferralSetResolver {
+	return (*referralSetResolver)(r)
+}
+
+func (r *VegaResolverRoot) ReferralSetStats() ReferralSetStatsResolver {
+	return (*referralSetStatsResolver)(r)
+}
+
 func (r *VegaResolverRoot) BenefitTier() BenefitTierResolver {
 	return (*benefitTierResolver)(r)
 }

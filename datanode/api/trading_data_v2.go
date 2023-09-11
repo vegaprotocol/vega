@@ -4090,3 +4090,26 @@ func (t *TradingDataServiceV2) ListReferralSetReferees(ctx context.Context, req 
 		ReferralSetReferees: connection,
 	}, nil
 }
+
+func (t *TradingDataServiceV2) GetReferralSetStats(ctx context.Context, req *v2.GetReferralSetStatsRequest) (
+	*v2.GetReferralSetStatsResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetReferralSetStats")()
+
+	id := entities.ReferralSetID(req.ReferralSetId)
+
+	var referee *entities.PartyID
+
+	if req.Referee != nil {
+		referee = ptr.From(entities.PartyID(*req.Referee))
+	}
+
+	stats, err := t.referralSetsService.GetReferralSetStats(ctx, id, req.AtEpoch, referee)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.GetReferralSetStatsResponse{
+		Stats: stats.ToProto(),
+	}, nil
+}

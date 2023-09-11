@@ -7284,7 +7284,7 @@ type BusEvent_VolumeDiscountProgramEnded struct {
 }
 
 type BusEvent_ReferralSetStatsUpdated struct {
-	// Event notifying of an update of a referral set's statistics.
+	// Event notifying of an update to a referral set's statistics.
 	ReferralSetStatsUpdated *ReferralSetStatsUpdated `protobuf:"bytes,174,opt,name=referral_set_stats_updated,json=referralSetStatsUpdated,proto3,oneof"`
 }
 

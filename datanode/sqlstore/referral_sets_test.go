@@ -7,6 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/num"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"github.com/georgysavva/scany/pgxscan"
@@ -362,5 +365,242 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 			StartCursor:     want[0].Cursor().Encode(),
 			EndCursor:       want[len(want)-1].Cursor().Encode(),
 		}, pageInfo)
+	})
+}
+
+func TestReferralSets_AddReferralSetStats(t *testing.T) {
+	bs, ps, rs := setupReferralSetsTest(t)
+	// ctx, rollback := tempTransaction(t)
+	// defer rollback()
+
+	ctx := context.Background()
+
+	sets, referees := setupReferralSetsAndReferees(t, ctx, bs, ps, rs)
+	src := rand.New(rand.NewSource(time.Now().UnixNano()))
+	r := rand.New(src)
+	set := sets[r.Intn(len(sets))]
+	setID := set.ID.String()
+	refs := referees[setID]
+
+	takerVolume, err := num.DecimalFromString("100000")
+	require.NoError(t, err)
+
+	t.Run("Should add stats for an epoch if it does not exist", func(t *testing.T) {
+		epoch := uint64(1)
+		block := addTestBlock(t, ctx, bs)
+		stats := entities.ReferralSetStats{
+			SetID:                                 set.ID,
+			AtEpoch:                               epoch,
+			ReferralSetRunningNotionalTakerVolume: takerVolume,
+			RefereesStats:                         getRefereeStats(t, refs, "0.01", "0.02"),
+			VegaTime:                              block.VegaTime,
+		}
+
+		err := rs.AddReferralSetStats(ctx, &stats)
+		require.NoError(t, err)
+
+		var got entities.ReferralSetStats
+		err = pgxscan.Get(ctx, connectionSource.Connection, &got, "SELECT * FROM referral_set_stats WHERE set_id = $1 and at_epoch = $2", set.ID, epoch)
+		require.NoError(t, err)
+		assert.Equal(t, stats, got)
+	})
+
+	t.Run("Should return an error if the stats for an epoch already exists", func(t *testing.T) {
+		epoch := uint64(2)
+		block := addTestBlock(t, ctx, bs)
+		stats := entities.ReferralSetStats{
+			SetID:                                 set.ID,
+			AtEpoch:                               epoch,
+			ReferralSetRunningNotionalTakerVolume: takerVolume,
+			RefereesStats:                         getRefereeStats(t, refs, "0.01", "0.02"),
+			VegaTime:                              block.VegaTime,
+		}
+
+		err := rs.AddReferralSetStats(ctx, &stats)
+		require.NoError(t, err)
+		var got entities.ReferralSetStats
+		err = pgxscan.Get(ctx, connectionSource.Connection, &got, "SELECT * FROM referral_set_stats WHERE set_id = $1 and at_epoch = $2", set.ID, epoch)
+		require.NoError(t, err)
+		assert.Equal(t, stats, got)
+
+		err = rs.AddReferralSetStats(ctx, &stats)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "duplicate key value violates unique constraint")
+	})
+}
+
+func getRefereeStats(t *testing.T, refs []entities.ReferralSetReferee, discountFactor, rewardFactor string) []*eventspb.RefereeStats {
+	t.Helper()
+	stats := make([]*eventspb.RefereeStats, len(refs))
+	for i, r := range refs {
+		stats[i] = &eventspb.RefereeStats{
+			PartyId:        r.Referee.String(),
+			DiscountFactor: discountFactor,
+			RewardFactor:   rewardFactor,
+		}
+	}
+	return stats
+}
+
+func setupReferralStats(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, ps *sqlstore.Parties, rs *sqlstore.ReferralSets) (
+	[]entities.ReferralSet, map[string][]entities.ReferralSetStats,
+) {
+	t.Helper()
+	sets, referees := setupReferralSetsAndReferees(t, ctx, bs, ps, rs)
+
+	testData := []struct {
+		DiscountFactor string
+		RewardFactor   string
+	}{
+		{
+			DiscountFactor: "0.01",
+			RewardFactor:   "0.01",
+		},
+		{
+			DiscountFactor: "0.02",
+			RewardFactor:   "0.02",
+		},
+		{
+			DiscountFactor: "0.03",
+			RewardFactor:   "0.03",
+		},
+		{
+			DiscountFactor: "0.04",
+			RewardFactor:   "0.04",
+		},
+		{
+			DiscountFactor: "0.05",
+			RewardFactor:   "0.05",
+		},
+		{
+			DiscountFactor: "0.06",
+			RewardFactor:   "0.06",
+		},
+		{
+			DiscountFactor: "0.07",
+			RewardFactor:   "0.07",
+		},
+		{
+			DiscountFactor: "0.08",
+			RewardFactor:   "0.08",
+		},
+		{
+			DiscountFactor: "0.09",
+			RewardFactor:   "0.09",
+		},
+		{
+			DiscountFactor: "0.1",
+			RewardFactor:   "0.1",
+		},
+	}
+
+	inserted := make(map[string][]entities.ReferralSetStats)
+
+	takerVolume, err := num.DecimalFromString("1000000")
+	require.NoError(t, err)
+
+	blockTime := time.Now().Add(-time.Minute)
+
+	for i, td := range testData {
+		block := addTestBlockForTime(t, ctx, bs, blockTime)
+		for _, set := range sets {
+			setID := set.ID.String()
+			inserted[setID] = make([]entities.ReferralSetStats, 0)
+
+			stats := getRefereeStats(t, referees[set.ID.String()], td.DiscountFactor, td.DiscountFactor)
+			sort.Slice(stats, func(i, j int) bool {
+				return stats[i].PartyId < stats[j].PartyId
+			})
+
+			setStats := entities.ReferralSetStats{
+				SetID:                                 set.ID,
+				AtEpoch:                               uint64(i),
+				ReferralSetRunningNotionalTakerVolume: takerVolume,
+				RefereesStats:                         stats,
+				VegaTime:                              block.VegaTime,
+			}
+
+			err := rs.AddReferralSetStats(ctx, &setStats)
+			require.NoError(t, err)
+
+			inserted[setID] = append(inserted[setID], setStats)
+		}
+		blockTime = blockTime.Add(time.Second)
+	}
+
+	return sets, inserted
+}
+
+func TestReferralSets_GetReferralSetStats(t *testing.T) {
+	bs, ps, rs := setupReferralSetsTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	sets, stats := setupReferralStats(t, ctx, bs, ps, rs)
+
+	// Pick a random set ID and get the stats that were inserted for it
+	src := rand.New(rand.NewSource(time.Now().UnixNano()))
+	r := rand.New(src)
+	set := sets[r.Intn(len(sets))]
+	setID := set.ID.String()
+	testStats := stats[setID]
+
+	// sort by AtEpoch in descending order
+	sort.Slice(testStats, func(i, j int) bool {
+		return testStats[i].AtEpoch > testStats[j].AtEpoch
+	})
+
+	t.Run("Should return the stats for the most current epoch if no epoch is provided", func(t *testing.T) {
+		// the stats we want is the first one in the sorted slice
+		want := testStats[0]
+		got, err := rs.GetReferralSetStats(ctx, set.ID, nil, nil)
+		require.NoError(t, err)
+		assert.Equal(t, want, got)
+	})
+
+	t.Run("Should return the stats for the specified epoch if an epoch is provided", func(t *testing.T) {
+		wantIndex := r.Intn(len(testStats))
+		want := testStats[wantIndex]
+		wantEpoch := want.AtEpoch
+
+		got, err := rs.GetReferralSetStats(ctx, set.ID, &wantEpoch, nil)
+		require.NoError(t, err)
+		assert.Equal(t, want, got)
+	})
+
+	t.Run("Should return the stats for the most current and referee if no epoch and a referee is provided", func(t *testing.T) {
+		// the stats we want is the first one in the sorted slice
+		wantStats := testStats[0]
+		refIndex := r.Intn(len(wantStats.RefereesStats))
+		refStats := wantStats.RefereesStats[refIndex]
+		referee := entities.PartyID(refStats.PartyId)
+		want := entities.ReferralSetStats{
+			SetID:                                 wantStats.SetID,
+			AtEpoch:                               wantStats.AtEpoch,
+			ReferralSetRunningNotionalTakerVolume: wantStats.ReferralSetRunningNotionalTakerVolume,
+			RefereesStats:                         []*eventspb.RefereeStats{refStats},
+			VegaTime:                              wantStats.VegaTime,
+		}
+		got, err := rs.GetReferralSetStats(ctx, set.ID, nil, &referee)
+		require.NoError(t, err)
+		assert.Equal(t, want, got)
+	})
+
+	t.Run("Should return the stats for the specified epoch and referee if they are provided", func(t *testing.T) {
+		wantIndex := r.Intn(len(testStats))
+		wantStats := testStats[wantIndex]
+		refIndex := r.Intn(len(wantStats.RefereesStats))
+		refStats := wantStats.RefereesStats[refIndex]
+		referee := entities.PartyID(refStats.PartyId)
+		want := entities.ReferralSetStats{
+			SetID:                                 wantStats.SetID,
+			AtEpoch:                               wantStats.AtEpoch,
+			ReferralSetRunningNotionalTakerVolume: wantStats.ReferralSetRunningNotionalTakerVolume,
+			RefereesStats:                         []*eventspb.RefereeStats{refStats},
+			VegaTime:                              wantStats.VegaTime,
+		}
+		got, err := rs.GetReferralSetStats(ctx, set.ID, &want.AtEpoch, &referee)
+		require.NoError(t, err)
+		assert.Equal(t, want, got)
 	})
 }

@@ -1169,7 +1169,7 @@ message BusEvent {
     VolumeDiscountProgramUpdated volume_discount_program_updated = 172;
     // Event notifying that a volume discount program has ended.
     VolumeDiscountProgramEnded volume_discount_program_ended = 173;
-    // Event notifying of an update of a referral set's statistics.
+    // Event notifying of an update to a referral set's statistics.
     ReferralSetStatsUpdated referral_set_stats_updated = 174;
 
     // Market tick events
