@@ -107,3 +107,67 @@ Feature: Test LP SLA Bond penalty;
       | lp1  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 1050   | USD   |
       | lp2  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 2400   | USD   |
 
+  Scenario: 002: lp1 and lp2 during opening auction 0044-LIME-050, 0044-LIME-053
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount |
+      | lp1    | USD   | 100000 |
+      | lp2    | USD   | 100000 |
+      | party1 | USD   | 100000 |
+      | party2 | USD   | 100000 |
+      | party3 | USD   | 100000 |
+
+    And the parties submit the following liquidity provision:
+      | id   | party | market id | commitment amount | fee   | lp type    |
+      | lp_1 | lp1   | ETH/MAR22 | 4000              | 0.02  | submission |
+      | lp_2 | lp2   | ETH/MAR22 | 4000              | 0.015 | submission |
+    And the supplied stake should be "8000" for the market "ETH/MAR22"
+    And the current epoch is "0"
+
+    #AC 0044-LIME-050: for marketing in opening auction, in terms of the liquidity they are expected to supply: this only takes effect from the start of the next epoch
+    When the network moves ahead "10" blocks
+    And the current epoch is "1"
+    And the supplied stake should be "8000" for the market "ETH/MAR22"
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset | reference |
+      | lp1   | ETH/MAR22 | 12        | 1                    | buy  | BID              | 12     | 20     | lp-b-1    |
+      | lp1   | ETH/MAR22 | 12        | 1                    | sell | ASK              | 12     | 20     | lp-s-1    |
+
+    When the network moves ahead "10" blocks
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | buy  | 10     | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/MAR22 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 10     | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/MAR22"
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party1 | 1000  | 1    | party2 |
+
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 3556         | 8000           | 1             |
+    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 1 x 1 x 3.5569036 =3556
+    And the liquidity fee factor should be "0.015" for the market "ETH/MAR22"
+    When the network moves ahead "10" blocks
+
+    Then the following transfers should happen:
+      | from | to     | from account      | to account             | market id | amount | asset |
+      | lp1  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 0      | USD   |
+      | lp2  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 2400   | USD   |
+    Then debug transfers
+
+# When the network moves ahead "3" blocks
+# Then the parties cancel the following orders:
+#   | party | reference |
+#   | lp1   | lp-b-1    |
+#   | lp1   | lp-s-1    |
+# When the network moves ahead "7" blocks
+# #fraction_of_time_on_book=0.375
+# #0.7 * (1 - 0.375 / 0.6) = 0.2625, so bond penalty for lp1 should be 0.2625*4000=1050; bond penalty for lp2 should be 0.6*4000=2400
+# Then the following transfers should happen:
+#   | from | to     | from account      | to account             | market id | amount | asset |
+#   | lp1  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 1050   | USD   |
+#   | lp2  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 2400   | USD   |
+
