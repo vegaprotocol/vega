@@ -153,6 +153,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.AccountDetails
   AccountUpdate:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AccountBalance
+  PerpetualData:
+    model: code.vegaprotocol.io/vega/protos/vega.PerpetualData
   MarketData:
     model: code.vegaprotocol.io/vega/protos/vega.MarketData
   ObservableMarketData:

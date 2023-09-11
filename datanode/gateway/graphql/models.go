@@ -50,6 +50,10 @@ type ProductConfiguration interface {
 	IsProductConfiguration()
 }
 
+type ProductData interface {
+	IsProductData()
+}
+
 type ProposalChange interface {
 	IsProposalChange()
 }

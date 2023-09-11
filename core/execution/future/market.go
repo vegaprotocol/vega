@@ -613,13 +613,6 @@ func (m *Market) GetMarketData() types.MarketData {
 		mode = m.mkt.TradingMode
 	}
 
-	var fundingRate *num.Decimal
-
-	if m.perp {
-		t := m.timeService.GetTimeNow().UnixNano()
-		fundingRate = (m.tradableInstrument.Instrument.Product.(*products.Perpetual)).GetFundingRate(t)
-	}
-
 	return types.MarketData{
 		Market:                    m.GetID(),
 		BestBidPrice:              m.priceToMarketPrecision(bestBidPrice),
@@ -651,7 +644,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		LiquidityProviderFeeShare: m.equityShares.LpsToLiquidityProviderFeeShare(m.liquidityEngine.GetAverageLiquidityScores()),
 		NextMTM:                   m.nextMTM.UnixNano(),
 		MarketGrowth:              m.equityShares.GetMarketGrowth(),
-		FundingRate:               fundingRate,
+		ProductData:               m.tradableInstrument.Instrument.Product.GetData(m.timeService.GetTimeNow().UnixNano()),
 	}
 }
 
