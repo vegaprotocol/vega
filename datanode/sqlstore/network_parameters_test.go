@@ -37,8 +37,8 @@ func addNetParam(t *testing.T, ctx context.Context, ns *sqlstore.NetworkParamete
 }
 
 func TestNetParams(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	netParamStore := sqlstore.NewNetworkParameters(connectionSource)
 	blockStore := sqlstore.NewBlocks(connectionSource)
 	block1 := addTestBlock(t, ctx, blockStore)
@@ -86,8 +86,8 @@ func TestNetworkParameterPagination(t *testing.T) {
 }
 
 func testNetworkParameterPaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ps, parameters := setupNetworkParameterPaginationTest(t, ctx)
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -105,8 +105,8 @@ func testNetworkParameterPaginationNoPagination(t *testing.T) {
 }
 
 func testNetworkParameterPaginationFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ps, parameters := setupNetworkParameterPaginationTest(t, ctx)
 
 	first := int32(3)
@@ -125,8 +125,8 @@ func testNetworkParameterPaginationFirst(t *testing.T) {
 }
 
 func testNetworkParameterPaginationLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ps, parameters := setupNetworkParameterPaginationTest(t, ctx)
 
 	last := int32(3)
@@ -145,8 +145,8 @@ func testNetworkParameterPaginationLast(t *testing.T) {
 }
 
 func testNetworkParameterPaginationFirstAndAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ps, parameters := setupNetworkParameterPaginationTest(t, ctx)
 
 	first := int32(3)
@@ -166,8 +166,8 @@ func testNetworkParameterPaginationFirstAndAfter(t *testing.T) {
 }
 
 func testNetworkParameterPaginationLastAndBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ps, parameters := setupNetworkParameterPaginationTest(t, ctx)
 
 	last := int32(3)

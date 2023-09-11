@@ -48,8 +48,8 @@ func setupOracleSpecTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.OracleSpec, 
 }
 
 func testInsertIntoNewBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, os, conn := setupOracleSpecTest(t)
 
 	var rowCount int
@@ -75,8 +75,8 @@ func testInsertIntoNewBlock(t *testing.T) {
 }
 
 func testUpdateExistingInBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, os, conn := setupOracleSpecTest(t)
 
 	var rowCount int
@@ -108,8 +108,8 @@ func testUpdateExistingInBlock(t *testing.T) {
 }
 
 func testGetSpecByID(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, os, conn := setupOracleSpecTest(t)
 
 	var rowCount int
@@ -149,8 +149,8 @@ func testGetSpecByID(t *testing.T) {
 }
 
 func testGetSpecByTxHash(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, os, conn := setupOracleSpecTest(t)
 
 	var rowCount int
@@ -421,8 +421,8 @@ func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *s
 }
 
 func testOracleSpecPaginationGetSpecID(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
 
@@ -439,8 +439,7 @@ func testOracleSpecPaginationGetSpecID(t *testing.T) {
 }
 
 func testOracleSpecPaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
@@ -457,8 +456,7 @@ func testOracleSpecPaginationNoPagination(t *testing.T) {
 }
 
 func testOracleSpecPaginationFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
@@ -479,8 +477,7 @@ func testOracleSpecPaginationFirst(t *testing.T) {
 }
 
 func testOracleSpecPaginationLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
@@ -501,8 +498,7 @@ func testOracleSpecPaginationLast(t *testing.T) {
 }
 
 func testOracleSpecPaginationFirstAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
@@ -524,8 +520,7 @@ func testOracleSpecPaginationFirstAfter(t *testing.T) {
 }
 
 func testOracleSpecPaginationLastBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
@@ -547,8 +542,7 @@ func testOracleSpecPaginationLastBefore(t *testing.T) {
 }
 
 func testOracleSpecPaginationNoPaginationNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))
@@ -565,8 +559,7 @@ func testOracleSpecPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testOracleSpecPaginationFirstNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))
@@ -587,8 +580,7 @@ func testOracleSpecPaginationFirstNewestFirst(t *testing.T) {
 }
 
 func testOracleSpecPaginationLastNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))
@@ -609,8 +601,7 @@ func testOracleSpecPaginationLastNewestFirst(t *testing.T) {
 }
 
 func testOracleSpecPaginationFirstAfterNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))
@@ -632,8 +623,7 @@ func testOracleSpecPaginationFirstAfterNewestFirst(t *testing.T) {
 }
 
 func testOracleSpecPaginationLastBeforeNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))

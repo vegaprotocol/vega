@@ -83,8 +83,8 @@ func assertRewardsMatch(t *testing.T, expected, actual []entities.Reward) {
 }
 
 func TestRewards(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ps := sqlstore.NewParties(connectionSource)
 	as := sqlstore.NewAssets(connectionSource)
 	rs := sqlstore.NewRewards(connectionSource)
@@ -137,8 +137,8 @@ func TestRewards(t *testing.T) {
 }
 
 func TestEpochRewardSummary(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ps := sqlstore.NewParties(connectionSource)
 	as := sqlstore.NewAssets(connectionSource)
 	rs := sqlstore.NewRewards(connectionSource)
@@ -474,8 +474,8 @@ func TestRewardsPagination(t *testing.T) {
 
 func testRewardsCursorPaginationNoPagination(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
@@ -497,8 +497,8 @@ func testRewardsCursorPaginationNoPagination(t *testing.T) {
 
 func testRewardsCursorPaginationFirstPage(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
@@ -521,8 +521,8 @@ func testRewardsCursorPaginationFirstPage(t *testing.T) {
 
 func testRewardsCursorPaginationLastPage(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
@@ -545,8 +545,8 @@ func testRewardsCursorPaginationLastPage(t *testing.T) {
 
 func testRewardsCursorPaginationFirstPageAfter(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
@@ -571,8 +571,8 @@ func testRewardsCursorPaginationFirstPageAfter(t *testing.T) {
 
 func testRewardsCursorPaginationLastPageBefore(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
@@ -596,8 +596,8 @@ func testRewardsCursorPaginationLastPageBefore(t *testing.T) {
 
 func testRewardsCursorPaginationNoPaginationNewestFirst(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
@@ -619,8 +619,8 @@ func testRewardsCursorPaginationNoPaginationNewestFirst(t *testing.T) {
 
 func testRewardsCursorPaginationFirstPageNewestFirst(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
@@ -643,8 +643,8 @@ func testRewardsCursorPaginationFirstPageNewestFirst(t *testing.T) {
 
 func testRewardsCursorPaginationLastPageNewestFirst(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
@@ -667,8 +667,8 @@ func testRewardsCursorPaginationLastPageNewestFirst(t *testing.T) {
 
 func testRewardsCursorPaginationFirstPageAfterNewestFirst(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
@@ -693,8 +693,8 @@ func testRewardsCursorPaginationFirstPageAfterNewestFirst(t *testing.T) {
 
 func testRewardsCursorPaginationLastPageBeforeNewestFirst(t *testing.T) {
 	bs, rs, ps, as := setupRewardsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
