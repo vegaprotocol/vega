@@ -21,7 +21,7 @@ import (
 )
 
 // given party contribution scores, reward multipliers and distribution strategy calculate the payout per party.
-func calculateRewardsByContributionIndividual(epochSeq, asset, accountID string, balance *num.Uint, partyContribution []*types.PartyContibutionScore, rewardFactors map[string]num.Decimal, timestamp time.Time, ds *vega.DispatchStrategy) *payout {
+func calculateRewardsByContributionIndividual(epochSeq, asset, accountID string, balance *num.Uint, partyContribution []*types.PartyContributionScore, rewardFactors map[string]num.Decimal, timestamp time.Time, ds *vega.DispatchStrategy) *payout {
 	po := &payout{
 		asset:           asset,
 		fromAccount:     accountID,
@@ -33,7 +33,7 @@ func calculateRewardsByContributionIndividual(epochSeq, asset, accountID string,
 	total := num.UintZero()
 	rewardBalance := balance.ToDecimal()
 
-	var partyScores []*types.PartyContibutionScore
+	var partyScores []*types.PartyContributionScore
 	if ds.DistributionStrategy == vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA {
 		partyScores = proRataRewardCalculator(partyContribution, rewardFactors)
 	} else if ds.DistributionStrategy == vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK {
@@ -55,7 +55,7 @@ func calculateRewardsByContributionIndividual(epochSeq, asset, accountID string,
 }
 
 // given party contribution scores, reward multipliers and distribution strategy calculate the payout per party in a team.
-func calculateRewardsByContributionTeam(epochSeq, asset, accountID string, balance *num.Uint, teamContribution []*types.PartyContibutionScore, teamPartyContribution map[string][]*types.PartyContibutionScore, rewardFactors map[string]num.Decimal, timestamp time.Time, ds *vega.DispatchStrategy) *payout {
+func calculateRewardsByContributionTeam(epochSeq, asset, accountID string, balance *num.Uint, teamContribution []*types.PartyContributionScore, teamPartyContribution map[string][]*types.PartyContributionScore, rewardFactors map[string]num.Decimal, timestamp time.Time, ds *vega.DispatchStrategy) *payout {
 	po := &payout{
 		asset:           asset,
 		fromAccount:     accountID,
@@ -67,14 +67,14 @@ func calculateRewardsByContributionTeam(epochSeq, asset, accountID string, balan
 	total := num.UintZero()
 	rewardBalance := balance.ToDecimal()
 
-	var teamScores []*types.PartyContibutionScore
+	var teamScores []*types.PartyContributionScore
 	if ds.DistributionStrategy == vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA {
 		teamScores = proRataRewardCalculator(teamContribution, map[string]num.Decimal{})
 	} else if ds.DistributionStrategy == vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK {
 		teamScores = rankingRewardCalculator(teamContribution, ds.RankTable, map[string]num.Decimal{})
 	}
 
-	partyScores := []*types.PartyContibutionScore{}
+	partyScores := []*types.PartyContributionScore{}
 	totalScore := num.DecimalZero()
 	for _, teamScore := range teamScores {
 		partyScores = append(partyScores, calcPartyInTeamRewardShare(teamScore, teamPartyContribution[teamScore.Party], rewardFactors)...)
@@ -99,8 +99,8 @@ func calculateRewardsByContributionTeam(epochSeq, asset, accountID string, balan
 	return po
 }
 
-func calcPartyInTeamRewardShare(teamScore *types.PartyContibutionScore, partyToMetricScore []*types.PartyContibutionScore, rewardFactors map[string]num.Decimal) []*types.PartyContibutionScore {
-	ps := make([]*types.PartyContibutionScore, 0, len(partyToMetricScore))
+func calcPartyInTeamRewardShare(teamScore *types.PartyContributionScore, partyToMetricScore []*types.PartyContributionScore, rewardFactors map[string]num.Decimal) []*types.PartyContributionScore {
+	ps := make([]*types.PartyContributionScore, 0, len(partyToMetricScore))
 
 	totalScores := num.DecimalZero()
 	for _, pcs := range partyToMetricScore {
@@ -112,11 +112,11 @@ func calcPartyInTeamRewardShare(teamScore *types.PartyContibutionScore, partyToM
 			rewardFactor = factor
 		}
 		score := rewardFactor.Mul(pcs.Score)
-		ps = append(ps, &types.PartyContibutionScore{Party: pcs.Party, Score: score})
+		ps = append(ps, &types.PartyContributionScore{Party: pcs.Party, Score: score})
 		totalScores = totalScores.Add(score)
 	}
 	if totalScores.IsZero() {
-		return []*types.PartyContibutionScore{}
+		return []*types.PartyContributionScore{}
 	}
 
 	for _, pcs := range ps {
