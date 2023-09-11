@@ -86,6 +86,7 @@
 - [9246](https://github.com/vegaprotocol/vega/issues/9246) - Add rewards multiplier support in the referral engine.
 - [9063](https://github.com/vegaprotocol/vega/issues/9063) - Make `calculationTimeStep` a network parameter
 - [9167](https://github.com/vegaprotocol/vega/issues/9167) - Rename liquidity network parameters
+- [9302](https://github.com/vegaprotocol/vega/issues/9302) - Volume discount program
 - [9288](https://github.com/vegaprotocol/vega/issues/9288) - Add check for current epoch to integration tests.
 - [9288](https://github.com/vegaprotocol/vega/issues/9288) - Allow integration test time to progress by epoch.
 - [9078](https://github.com/vegaprotocol/vega/issues/9078) - Add activity streak `API`.
@@ -102,11 +103,13 @@
 - [8545](https://github.com/vegaprotocol/vega/issues/8545) - Block Explorer pagination does not order correctly.
 - [8748](https://github.com/vegaprotocol/vega/issues/8748) - `ListSuccessorMarkets` does not return results.
 - [8749](https://github.com/vegaprotocol/vega/issues/8749) - Ensure stop order expiry is in the future
+- [9337](https://github.com/vegaprotocol/vega/issues/9337) - Non deterministic ordering of vesting ledger events 
 - [8773](https://github.com/vegaprotocol/vega/issues/8773) - Fix panic with stop orders
 - [8792](https://github.com/vegaprotocol/vega/issues/8792) - Fix panic when starting null block chain node.
 - [8739](https://github.com/vegaprotocol/vega/issues/8739) - Cancel orders for rejected markets.
 - [9118](https://github.com/vegaprotocol/vega/issues/9118) - Improve list stop orders error message
 - [9105](https://github.com/vegaprotocol/vega/issues/9105) - Truncate virtual stake decimal places
+- [9348](https://github.com/vegaprotocol/vega/issues/9348) - Nil pointer error in Ethereum call engine when running with null block chain 
 - [8800](https://github.com/vegaprotocol/vega/issues/8800) - `expiresAt` is always null in the Stop Orders `API`.
 - [8796](https://github.com/vegaprotocol/vega/issues/8796) - Avoid updating active proposals slice while iterating over it.
 - [8631](https://github.com/vegaprotocol/vega/issues/8631) - Prevent duplicate Ethereum call chain event after snapshot start
@@ -157,6 +160,7 @@
 - [9153](https://github.com/vegaprotocol/vega/issues/9153) - `MTM` win transfers can be less than one.
 - [9227](https://github.com/vegaprotocol/vega/issues/9227) - Do not allow market updates that change the product type.
 - [9178](https://github.com/vegaprotocol/vega/issues/9178) - Fix LP amendment panic
+- [9329](https://github.com/vegaprotocol/vega/issues/9329) - Roll next trigger time forward until after the time that triggered it.
 - [9053](https://github.com/vegaprotocol/vega/issues/9053) - Handle settle market events in core positions plug-in.
 - [9189](https://github.com/vegaprotocol/vega/issues/9189) - Fix stop orders snapshots
 - [9313](https://github.com/vegaprotocol/vega/issues/9313) - `ListLedgerEntries` transfers type filter works as expected with open to and from filters.

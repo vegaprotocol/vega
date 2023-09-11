@@ -274,20 +274,29 @@ func (mat *MarketActivityTracker) LoadState(ctx context.Context, p *types.Payloa
 func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTracker {
 	valueTrades, _ := num.UintFromString(tracker.ValueTraded, 10)
 	mft := &marketTracker{
-		makerFeesReceived:      map[string]*feeData{},
-		makerFeesPaid:          map[string]*feeData{},
-		lpFees:                 map[string]*feeData{},
-		timeWeightedPosition:   map[string]*twPosition{},
-		partyM2M:               map[string]*m2mData{},
-		twNotionalPosition:     map[string]*twNotionalPosition{},
-		totalMakerFeesReceived: &feeData{},
-		totalMakerFeesPaid:     &feeData{},
-		totalLpFees:            &feeData{},
-		valueTraded:            valueTrades,
-		proposer:               tracker.Proposer,
-		proposersPaid:          map[string]struct{}{},
-		asset:                  tracker.Asset,
-		readyToDelete:          tracker.ReadyToDelete,
+		makerFeesReceived:    map[string]*feeData{},
+		makerFeesPaid:        map[string]*feeData{},
+		lpFees:               map[string]*feeData{},
+		timeWeightedPosition: map[string]*twPosition{},
+		partyM2M:             map[string]*m2mData{},
+		twNotionalPosition:   map[string]*twNotionalPosition{},
+		totalMakerFeesReceived: &feeData{
+			runningTotal:   num.UintZero(),
+			previousEpochs: make([]*num.Uint, maxWindowSize),
+		},
+		totalMakerFeesPaid: &feeData{
+			runningTotal:   num.UintZero(),
+			previousEpochs: make([]*num.Uint, maxWindowSize),
+		},
+		totalLpFees: &feeData{
+			runningTotal:   num.UintZero(),
+			previousEpochs: make([]*num.Uint, maxWindowSize),
+		},
+		valueTraded:   valueTrades,
+		proposer:      tracker.Proposer,
+		proposersPaid: map[string]struct{}{},
+		asset:         tracker.Asset,
+		readyToDelete: tracker.ReadyToDelete,
 	}
 
 	for _, bpfpa := range tracker.BonusPaid {
@@ -299,7 +308,7 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 		total := num.UintZero()
 		for _, mf := range tracker.MakerFeesReceived {
 			fd := &feeData{
-				previousEpochs:    make([]*num.Uint, 0, maxWindowSize),
+				previousEpochs:    make([]*num.Uint, maxWindowSize),
 				previousEpochsIdx: 0,
 			}
 			fd.runningTotal, _ = num.UintFromString(mf.Fee, 10)
@@ -308,7 +317,7 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 		}
 		mft.totalMakerFeesReceived = &feeData{
 			runningTotal:      total,
-			previousEpochs:    make([]*num.Uint, 0, maxWindowSize),
+			previousEpochs:    make([]*num.Uint, maxWindowSize),
 			previousEpochsIdx: 0,
 		}
 	}
@@ -317,7 +326,7 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 		total := num.UintZero()
 		for _, mf := range tracker.MakerFeesPaid {
 			fd := &feeData{
-				previousEpochs:    make([]*num.Uint, 0, maxWindowSize),
+				previousEpochs:    make([]*num.Uint, maxWindowSize),
 				previousEpochsIdx: 0,
 			}
 			fd.runningTotal, _ = num.UintFromString(mf.Fee, 10)
@@ -326,7 +335,7 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 		}
 		mft.totalMakerFeesPaid = &feeData{
 			runningTotal:      total,
-			previousEpochs:    make([]*num.Uint, 0, maxWindowSize),
+			previousEpochs:    make([]*num.Uint, maxWindowSize),
 			previousEpochsIdx: 0,
 		}
 	}
@@ -335,16 +344,17 @@ func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTr
 		total := num.UintZero()
 		for _, mf := range tracker.LpFees {
 			fd := &feeData{
-				previousEpochs:    make([]*num.Uint, 0, maxWindowSize),
+				previousEpochs:    make([]*num.Uint, maxWindowSize),
 				previousEpochsIdx: 0,
 			}
 			fd.runningTotal, _ = num.UintFromString(mf.Fee, 10)
 			total.AddSum(fd.runningTotal)
 			mft.makerFeesPaid[mf.Party] = fd
 		}
+
 		mft.totalLpFees = &feeData{
 			runningTotal:      total,
-			previousEpochs:    make([]*num.Uint, 0, maxWindowSize),
+			previousEpochs:    make([]*num.Uint, maxWindowSize),
 			previousEpochsIdx: 0,
 		}
 	}

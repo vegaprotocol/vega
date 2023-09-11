@@ -105,7 +105,8 @@ func (e *Engine) getUpdateMarketStateProposalParameters() *ProposalParameters {
 }
 
 func (e *Engine) getReferralProgramNetworkParameters() *ProposalParameters {
-	return e.getProposalParametersFromNetParams(netparams.GovernanceProposalUpdateMarketMinClose,
+	return e.getProposalParametersFromNetParams(
+		netparams.GovernanceProposalReferralProgramMinClose,
 		netparams.GovernanceProposalReferralProgramMaxClose,
 		netparams.GovernanceProposalReferralProgramMinEnact,
 		netparams.GovernanceProposalReferralProgramMaxEnact,
@@ -113,6 +114,22 @@ func (e *Engine) getReferralProgramNetworkParameters() *ProposalParameters {
 		netparams.GovernanceProposalReferralProgramRequiredMajority,
 		netparams.GovernanceProposalReferralProgramMinProposerBalance,
 		netparams.GovernanceProposalReferralProgramMinVoterBalance,
+		"0",
+		"0",
+		"0",
+	)
+}
+
+func (e *Engine) getVolumeDiscountProgramNetworkParameters() *ProposalParameters {
+	return e.getProposalParametersFromNetParams(
+		netparams.GovernanceProposalVolumeDiscountProgramMinClose,
+		netparams.GovernanceProposalVolumeDiscountProgramMaxClose,
+		netparams.GovernanceProposalVolumeDiscountProgramMinEnact,
+		netparams.GovernanceProposalVolumeDiscountProgramMaxEnact,
+		netparams.GovernanceProposalVolumeDiscountProgramRequiredParticipation,
+		netparams.GovernanceProposalVolumeDiscountProgramRequiredMajority,
+		netparams.GovernanceProposalVolumeDiscountProgramMinProposerBalance,
+		netparams.GovernanceProposalVolumeDiscountProgramMinVoterBalance,
 		"0",
 		"0",
 		"0",
