@@ -37,6 +37,12 @@ func (e *Engine) AmendLiquidityProvision(
 	if lp == nil {
 		lp, _ = e.pendingProvisions.Get(party)
 	}
+
+	// If we are cancelling the LP, preserve the reference field
+	if lpa.CommitmentAmount.IsZero() {
+		lpa.Reference = lp.Reference
+	}
+
 	updatedLp := e.createAmendedProvision(lp, lpa)
 
 	// add to pending provision since the change in CommitmentAmount should be reflected at the beginning of next epoch
