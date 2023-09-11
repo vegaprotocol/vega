@@ -43,7 +43,7 @@ func TestPeriodicSettlement(t *testing.T) {
 	t.Run("incoming data ignored before leaving opening auction", testIncomingDataIgnoredBeforeLeavingOpeningAuction)
 	t.Run("period end with no data point", testPeriodEndWithNoDataPoints)
 	t.Run("equal internal and external prices", testEqualInternalAndExternalPrices)
-	t.Run("constant difference long pays short", testConstantDifferenceLongPaysShort)
+	t.Run("constant difference long pays short", TestConstantDifferenceLongPaysShort)
 	t.Run("data points outside of period", testDataPointsOutsidePeriod)
 	t.Run("data points not on boundary", testDataPointsNotOnBoundary)
 	t.Run("matching data points outside of period through callbacks", testRegisteredCallbacks)
@@ -223,7 +223,7 @@ func testEqualInternalAndExternalPrices(t *testing.T) {
 	assert.Equal(t, "0", fundingPayment.String())
 }
 
-func testConstantDifferenceLongPaysShort(t *testing.T) {
+func TestConstantDifferenceLongPaysShort(t *testing.T) {
 	perp := testPerpetual(t)
 	defer perp.ctrl.Finish()
 	ctx := context.Background()
@@ -247,10 +247,19 @@ func testConstantDifferenceLongPaysShort(t *testing.T) {
 
 	perp.broker.EXPECT().Send(gomock.Any()).Times(2)
 	perp.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+
+	productData := perp.perpetual.GetData(points[len(points)-1].t)
+	perpData, ok := productData.Data.(*types.PerpetualData)
+	assert.True(t, ok)
+
 	perp.perpetual.PromptSettlementCue(ctx, points[len(points)-1].t)
 	assert.NotNil(t, fundingPayment)
 	assert.True(t, fundingPayment.IsInt())
 	assert.Equal(t, "-10", fundingPayment.String())
+	assert.Equal(t, "-10", perpData.FundingPayment)
+	assert.Equal(t, "116", perpData.ExternalTWAP)
+	assert.Equal(t, "106", perpData.InternalTWAP)
+	assert.Equal(t, "-0.0862068965517241", perpData.FundingRate)
 }
 
 func testDataPointsOutsidePeriod(t *testing.T) {

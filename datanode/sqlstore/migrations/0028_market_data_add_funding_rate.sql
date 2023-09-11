@@ -1,7 +1,7 @@
 -- +goose Up
 
-alter table market_data add column if not exists funding_rate numeric;
-alter table current_market_data add column if not exists funding_rate numeric;
+alter table market_data add column if not exists product_data JSONB;
+alter table current_market_data add column if not exists product_data JSONB;
 
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION update_current_market_data()
@@ -14,7 +14,7 @@ INSERT INTO current_market_data(synthetic_time,tx_hash,vega_time,seq_num,market,
                                 best_static_offer_price,best_static_offer_volume,mid_price,static_mid_price,open_interest,
                                 auction_end,auction_start,indicative_price,indicative_volume,market_trading_mode,
                                 auction_trigger,extension_trigger,target_stake,supplied_stake,price_monitoring_bounds,
-                                market_value_proxy,liquidity_provider_fee_shares,market_state,next_mark_to_market, market_growth, last_traded_price, funding_rate)
+                                market_value_proxy,liquidity_provider_fee_shares,market_state,next_mark_to_market, market_growth, last_traded_price, product_data)
 VALUES(NEW.synthetic_time, NEW.tx_hash, NEW.vega_time, NEW.seq_num, NEW.market,
        NEW.mark_price, NEW.best_bid_price, NEW.best_bid_volume, NEW.best_offer_price,
        NEW.best_offer_volume, NEW.best_static_bid_price, NEW.best_static_bid_volume,
@@ -23,7 +23,7 @@ VALUES(NEW.synthetic_time, NEW.tx_hash, NEW.vega_time, NEW.seq_num, NEW.market,
        NEW.indicative_price, NEW.indicative_volume, NEW.market_trading_mode,
        NEW.auction_trigger, NEW.extension_trigger, NEW.target_stake, NEW.supplied_stake,
        NEW.price_monitoring_bounds, NEW.market_value_proxy,
-       NEW.liquidity_provider_fee_shares, NEW.market_state, NEW.next_mark_to_market, NEW.market_growth, NEW.last_traded_price, NEW.funding_rate)
+       NEW.liquidity_provider_fee_shares, NEW.market_state, NEW.next_mark_to_market, NEW.market_growth, NEW.last_traded_price, NEW.product_data)
     ON CONFLICT(market) DO UPDATE SET
     synthetic_time=EXCLUDED.synthetic_time,tx_hash=EXCLUDED.tx_hash,vega_time=EXCLUDED.vega_time,seq_num=EXCLUDED.seq_num,market=EXCLUDED.market,mark_price=EXCLUDED.mark_price,
                                best_bid_price=EXCLUDED.best_bid_price,best_bid_volume=EXCLUDED.best_bid_volume,best_offer_price=EXCLUDED.best_offer_price,best_offer_volume=EXCLUDED.best_offer_volume,
@@ -33,7 +33,7 @@ VALUES(NEW.synthetic_time, NEW.tx_hash, NEW.vega_time, NEW.seq_num, NEW.market,
                                market_trading_mode=EXCLUDED.market_trading_mode,auction_trigger=EXCLUDED.auction_trigger,extension_trigger=EXCLUDED.extension_trigger,target_stake=EXCLUDED.target_stake,
                                supplied_stake=EXCLUDED.supplied_stake,price_monitoring_bounds=EXCLUDED.price_monitoring_bounds,
                                market_value_proxy=EXCLUDED.market_value_proxy,liquidity_provider_fee_shares=EXCLUDED.liquidity_provider_fee_shares,market_state=EXCLUDED.market_state,
-                               next_mark_to_market=EXCLUDED.next_mark_to_market,market_growth=EXCLUDED.market_growth,last_traded_price=EXCLUDED.last_traded_price,funding_rate=EXCLUDED.funding_rate;
+                               next_mark_to_market=EXCLUDED.next_mark_to_market,market_growth=EXCLUDED.market_growth,last_traded_price=EXCLUDED.last_traded_price,product_data=EXCLUDED.product_data;
 
 RETURN NULL;
 END;
@@ -79,5 +79,5 @@ END;
 $$;
 -- +goose StatementEnd
 
-alter table current_market_data drop column if exists funding_rate;
-alter table market_data drop column if exists funding_rate;
+alter table current_market_data drop column if exists product_data;
+alter table market_data drop column if exists product_data;

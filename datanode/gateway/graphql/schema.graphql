@@ -192,6 +192,22 @@ type MarginLevelsUpdate {
   timestamp: Timestamp!
 }
 
+
+"Details of a  perpetual product."
+type PerpetualData {
+  "Funding payment for this period as the difference between the time-weighted average price of the external and internal data point."
+  fundingPayment: String
+  "Percentage difference between the time-weighted average price of the external and internal data point."
+  fundingRate: String
+  "Time-weighted average price calculated from data points for this period from the external data source."
+  externalTwap: String
+  "Time-weighted average price calculated from data points for this period from the internal data source."
+  internalTwap: String
+}
+
+union ProductData = PerpetualData
+
+
 "Live data of a Market"
 type MarketData {
   "Market of the associated mark price"
@@ -257,7 +273,7 @@ type MarketData {
   "The last traded price (an unsigned integer)"
   lastTradedPrice: String!
   "The current funding rate. This applies only to a perpetual market"
-  fundingRate: String
+  productData: ProductData
 }
 
 "Live data of a Market"
@@ -323,7 +339,7 @@ type ObservableMarketData {
   "The last traded price (an unsigned integer)"
   lastTradedPrice: String!
   "The current funding rate. This applies only to a perpetual market"
-  fundingRate: String
+  productData: ProductData
 }
 
 "Timestamps for when the market changes state"

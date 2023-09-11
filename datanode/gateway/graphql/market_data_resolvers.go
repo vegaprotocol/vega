@@ -200,6 +200,18 @@ func (r *myMarketDataResolver) MarketGrowth(_ context.Context, m *types.MarketDa
 	return m.MarketGrowth, nil
 }
 
+func (r *myMarketDataResolver) ProductData(_ context.Context, m *types.MarketData) (ProductData, error) {
+	if m.GetProductData() == nil {
+		return nil, nil
+	}
+
+	switch pd := m.GetProductData().Data.(type) {
+	case *types.ProductData_PerpetualData:
+		return pd.PerpetualData, nil
+	}
+	return nil, nil
+}
+
 type myObservableMarketDataResolver myMarketDataResolver
 
 func (r *myObservableMarketDataResolver) MarketID(ctx context.Context, m *types.MarketData) (string, error) {
@@ -276,6 +288,18 @@ func (r *myObservableMarketDataResolver) Timestamp(ctx context.Context, m *types
 
 func (r *myObservableMarketDataResolver) PriceMonitoringBounds(ctx context.Context, obj *types.MarketData) ([]*PriceMonitoringBounds, error) {
 	return (*myMarketDataResolver)(r).PriceMonitoringBounds(ctx, obj)
+}
+
+func (r *myObservableMarketDataResolver) ProductData(_ context.Context, m *types.MarketData) (ProductData, error) {
+	if m.GetProductData() == nil {
+		return nil, nil
+	}
+
+	switch pd := m.GetProductData().Data.(type) {
+	case *types.ProductData_PerpetualData:
+		return pd.PerpetualData, nil
+	}
+	return nil, nil
 }
 
 // ExtensionTrigger same as Trigger.

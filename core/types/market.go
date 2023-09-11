@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"strings"
 
-	"code.vegaprotocol.io/vega/libs/ptr"
-
 	"code.vegaprotocol.io/vega/core/datasource"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/stringer"
@@ -746,6 +744,34 @@ func (i Instrument) String() string {
 	)
 }
 
+type iProductData interface {
+	IntoProto() *vegapb.ProductData
+}
+
+type ProductData struct {
+	Data iProductData
+}
+
+type PerpetualData struct {
+	FundingRate    string
+	FundingPayment string
+	InternalTWAP   string
+	ExternalTWAP   string
+}
+
+func (p PerpetualData) IntoProto() *vegapb.ProductData {
+	return &vegapb.ProductData{
+		Data: &vegapb.ProductData_PerpetualData{
+			PerpetualData: &vegapb.PerpetualData{
+				FundingRate:    p.FundingRate,
+				FundingPayment: p.FundingPayment,
+				InternalTwap:   p.InternalTWAP,
+				ExternalTwap:   p.ExternalTWAP,
+			},
+		},
+	}
+}
+
 type MarketData struct {
 	MarkPrice                 *num.Uint
 	LastTradedPrice           *num.Uint
@@ -777,7 +803,7 @@ type MarketData struct {
 	LiquidityProviderFeeShare []*LiquidityProviderFeeShare
 	NextMTM                   int64
 	MarketGrowth              num.Decimal
-	FundingRate               *num.Decimal
+	ProductData               *ProductData
 }
 
 func (m MarketData) DeepClone() *MarketData {
@@ -836,18 +862,19 @@ func (m MarketData) IntoProto() *vegapb.MarketData {
 		LiquidityProviderFeeShare: make([]*vegapb.LiquidityProviderFeeShare, 0, len(m.LiquidityProviderFeeShare)),
 		NextMarkToMarket:          m.NextMTM,
 		MarketGrowth:              m.MarketGrowth.String(),
-		FundingRate:               nil,
 	}
 
-	if m.FundingRate != nil {
-		r.FundingRate = ptr.From(m.FundingRate.String())
-	}
 	for _, pmb := range m.PriceMonitoringBounds {
 		r.PriceMonitoringBounds = append(r.PriceMonitoringBounds, pmb.IntoProto())
 	}
 	for _, lpfs := range m.LiquidityProviderFeeShare {
 		r.LiquidityProviderFeeShare = append(r.LiquidityProviderFeeShare, proto.Clone(lpfs).(*vegapb.LiquidityProviderFeeShare)) // call IntoProto if this type gets updated
 	}
+
+	if m.ProductData != nil {
+		r.ProductData = m.ProductData.Data.IntoProto()
+	}
+
 	return r
 }
 

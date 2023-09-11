@@ -1007,7 +1007,6 @@ type ComplexityRoot struct {
 		BestStaticOfferVolume     func(childComplexity int) int
 		Commitments               func(childComplexity int) int
 		ExtensionTrigger          func(childComplexity int) int
-		FundingRate               func(childComplexity int) int
 		IndicativePrice           func(childComplexity int) int
 		IndicativeVolume          func(childComplexity int) int
 		LastTradedPrice           func(childComplexity int) int
@@ -1022,6 +1021,7 @@ type ComplexityRoot struct {
 		NextMarkToMarket          func(childComplexity int) int
 		OpenInterest              func(childComplexity int) int
 		PriceMonitoringBounds     func(childComplexity int) int
+		ProductData               func(childComplexity int) int
 		StaticMidPrice            func(childComplexity int) int
 		SuppliedStake             func(childComplexity int) int
 		TargetStake               func(childComplexity int) int
@@ -1256,7 +1256,6 @@ type ComplexityRoot struct {
 		BestStaticOfferPrice      func(childComplexity int) int
 		BestStaticOfferVolume     func(childComplexity int) int
 		ExtensionTrigger          func(childComplexity int) int
-		FundingRate               func(childComplexity int) int
 		IndicativePrice           func(childComplexity int) int
 		IndicativeVolume          func(childComplexity int) int
 		LastTradedPrice           func(childComplexity int) int
@@ -1271,6 +1270,7 @@ type ComplexityRoot struct {
 		NextMarkToMarket          func(childComplexity int) int
 		OpenInterest              func(childComplexity int) int
 		PriceMonitoringBounds     func(childComplexity int) int
+		ProductData               func(childComplexity int) int
 		StaticMidPrice            func(childComplexity int) int
 		SuppliedStake             func(childComplexity int) int
 		TargetStake               func(childComplexity int) int
@@ -1477,6 +1477,13 @@ type ComplexityRoot struct {
 		MarginFundingFactor                 func(childComplexity int) int
 		QuoteName                           func(childComplexity int) int
 		SettlementAsset                     func(childComplexity int) int
+	}
+
+	PerpetualData struct {
+		ExternalTwap   func(childComplexity int) int
+		FundingPayment func(childComplexity int) int
+		FundingRate    func(childComplexity int) int
+		InternalTwap   func(childComplexity int) int
 	}
 
 	PerpetualProduct struct {
@@ -2499,6 +2506,8 @@ type MarketDataResolver interface {
 
 	LiquidityProviderFeeShare(ctx context.Context, obj *vega.MarketData) ([]*LiquidityProviderFeeShare, error)
 	NextMarkToMarket(ctx context.Context, obj *vega.MarketData) (string, error)
+
+	ProductData(ctx context.Context, obj *vega.MarketData) (ProductData, error)
 }
 type MarketDepthResolver interface {
 	Market(ctx context.Context, obj *vega.MarketDepth) (*vega.Market, error)
@@ -2588,6 +2597,8 @@ type ObservableMarketDataResolver interface {
 
 	LiquidityProviderFeeShare(ctx context.Context, obj *vega.MarketData) ([]*ObservableLiquidityProviderFeeShare, error)
 	NextMarkToMarket(ctx context.Context, obj *vega.MarketData) (string, error)
+
+	ProductData(ctx context.Context, obj *vega.MarketData) (ProductData, error)
 }
 type ObservableMarketDepthResolver interface {
 	LastTrade(ctx context.Context, obj *vega.MarketDepth) (*MarketDepthTrade, error)
@@ -6438,13 +6449,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarketData.ExtensionTrigger(childComplexity), true
 
-	case "MarketData.fundingRate":
-		if e.complexity.MarketData.FundingRate == nil {
-			break
-		}
-
-		return e.complexity.MarketData.FundingRate(childComplexity), true
-
 	case "MarketData.indicativePrice":
 		if e.complexity.MarketData.IndicativePrice == nil {
 			break
@@ -6542,6 +6546,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarketData.PriceMonitoringBounds(childComplexity), true
+
+	case "MarketData.productData":
+		if e.complexity.MarketData.ProductData == nil {
+			break
+		}
+
+		return e.complexity.MarketData.ProductData(childComplexity), true
 
 	case "MarketData.staticMidPrice":
 		if e.complexity.MarketData.StaticMidPrice == nil {
@@ -7556,13 +7567,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ObservableMarketData.ExtensionTrigger(childComplexity), true
 
-	case "ObservableMarketData.fundingRate":
-		if e.complexity.ObservableMarketData.FundingRate == nil {
-			break
-		}
-
-		return e.complexity.ObservableMarketData.FundingRate(childComplexity), true
-
 	case "ObservableMarketData.indicativePrice":
 		if e.complexity.ObservableMarketData.IndicativePrice == nil {
 			break
@@ -7660,6 +7664,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ObservableMarketData.PriceMonitoringBounds(childComplexity), true
+
+	case "ObservableMarketData.productData":
+		if e.complexity.ObservableMarketData.ProductData == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.ProductData(childComplexity), true
 
 	case "ObservableMarketData.staticMidPrice":
 		if e.complexity.ObservableMarketData.StaticMidPrice == nil {
@@ -8688,6 +8699,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Perpetual.SettlementAsset(childComplexity), true
+
+	case "PerpetualData.externalTwap":
+		if e.complexity.PerpetualData.ExternalTwap == nil {
+			break
+		}
+
+		return e.complexity.PerpetualData.ExternalTwap(childComplexity), true
+
+	case "PerpetualData.fundingPayment":
+		if e.complexity.PerpetualData.FundingPayment == nil {
+			break
+		}
+
+		return e.complexity.PerpetualData.FundingPayment(childComplexity), true
+
+	case "PerpetualData.fundingRate":
+		if e.complexity.PerpetualData.FundingRate == nil {
+			break
+		}
+
+		return e.complexity.PerpetualData.FundingRate(childComplexity), true
+
+	case "PerpetualData.internalTwap":
+		if e.complexity.PerpetualData.InternalTwap == nil {
+			break
+		}
+
+		return e.complexity.PerpetualData.InternalTwap(childComplexity), true
 
 	case "PerpetualProduct.clampLowerBound":
 		if e.complexity.PerpetualProduct.ClampLowerBound == nil {
@@ -31010,14 +31049,11 @@ func (ec *executionContext) _Instrument_product(ctx context.Context, field graph
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(Product)
 	fc.Result = res
-	return ec.marshalNProduct2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProduct(ctx, field.Selections, res)
+	return ec.marshalOProduct2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProduct(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Instrument_product(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -37374,8 +37410,8 @@ func (ec *executionContext) fieldContext_Market_data(ctx context.Context, field 
 				return ec.fieldContext_MarketData_marketGrowth(ctx, field)
 			case "lastTradedPrice":
 				return ec.fieldContext_MarketData_lastTradedPrice(ctx, field)
-			case "fundingRate":
-				return ec.fieldContext_MarketData_fundingRate(ctx, field)
+			case "productData":
+				return ec.fieldContext_MarketData_productData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MarketData", field.Name)
 		},
@@ -39338,8 +39374,8 @@ func (ec *executionContext) fieldContext_MarketData_lastTradedPrice(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _MarketData_fundingRate(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MarketData_fundingRate(ctx, field)
+func (ec *executionContext) _MarketData_productData(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MarketData_productData(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -39352,7 +39388,7 @@ func (ec *executionContext) _MarketData_fundingRate(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.FundingRate, nil
+		return ec.resolvers.MarketData().ProductData(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -39361,19 +39397,19 @@ func (ec *executionContext) _MarketData_fundingRate(ctx context.Context, field g
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(ProductData)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOProductData2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProductData(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MarketData_fundingRate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MarketData_productData(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MarketData",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type ProductData does not have child fields")
 		},
 	}
 	return fc, nil
@@ -39672,8 +39708,8 @@ func (ec *executionContext) fieldContext_MarketDataEdge_node(ctx context.Context
 				return ec.fieldContext_MarketData_marketGrowth(ctx, field)
 			case "lastTradedPrice":
 				return ec.fieldContext_MarketData_lastTradedPrice(ctx, field)
-			case "fundingRate":
-				return ec.fieldContext_MarketData_fundingRate(ctx, field)
+			case "productData":
+				return ec.fieldContext_MarketData_productData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MarketData", field.Name)
 		},
@@ -46843,8 +46879,8 @@ func (ec *executionContext) fieldContext_ObservableMarketData_lastTradedPrice(ct
 	return fc, nil
 }
 
-func (ec *executionContext) _ObservableMarketData_fundingRate(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ObservableMarketData_fundingRate(ctx, field)
+func (ec *executionContext) _ObservableMarketData_productData(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ObservableMarketData_productData(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -46857,7 +46893,7 @@ func (ec *executionContext) _ObservableMarketData_fundingRate(ctx context.Contex
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.FundingRate, nil
+		return ec.resolvers.ObservableMarketData().ProductData(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -46866,19 +46902,19 @@ func (ec *executionContext) _ObservableMarketData_fundingRate(ctx context.Contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(ProductData)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOProductData2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProductData(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ObservableMarketData_fundingRate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ObservableMarketData_productData(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ObservableMarketData",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type ProductData does not have child fields")
 		},
 	}
 	return fc, nil
@@ -53210,6 +53246,170 @@ func (ec *executionContext) fieldContext_Perpetual_dataSourceSpecBinding(ctx con
 				return ec.fieldContext_DataSourceSpecPerpetualBinding_settlementScheduleProperty(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DataSourceSpecPerpetualBinding", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PerpetualData_fundingPayment(ctx context.Context, field graphql.CollectedField, obj *vega.PerpetualData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PerpetualData_fundingPayment(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FundingPayment, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PerpetualData_fundingPayment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PerpetualData",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PerpetualData_fundingRate(ctx context.Context, field graphql.CollectedField, obj *vega.PerpetualData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PerpetualData_fundingRate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FundingRate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PerpetualData_fundingRate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PerpetualData",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PerpetualData_externalTwap(ctx context.Context, field graphql.CollectedField, obj *vega.PerpetualData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PerpetualData_externalTwap(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExternalTwap, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PerpetualData_externalTwap(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PerpetualData",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PerpetualData_internalTwap(ctx context.Context, field graphql.CollectedField, obj *vega.PerpetualData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PerpetualData_internalTwap(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InternalTwap, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PerpetualData_internalTwap(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PerpetualData",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -69219,8 +69419,8 @@ func (ec *executionContext) fieldContext_Subscription_marketsData(ctx context.Co
 				return ec.fieldContext_ObservableMarketData_marketGrowth(ctx, field)
 			case "lastTradedPrice":
 				return ec.fieldContext_ObservableMarketData_lastTradedPrice(ctx, field)
-			case "fundingRate":
-				return ec.fieldContext_ObservableMarketData_fundingRate(ctx, field)
+			case "productData":
+				return ec.fieldContext_ObservableMarketData_productData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ObservableMarketData", field.Name)
 		},
@@ -80545,6 +80745,22 @@ func (ec *executionContext) _ProductConfiguration(ctx context.Context, sel ast.S
 	}
 }
 
+func (ec *executionContext) _ProductData(ctx context.Context, sel ast.SelectionSet, obj ProductData) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case vega.PerpetualData:
+		return ec._PerpetualData(ctx, sel, &obj)
+	case *vega.PerpetualData:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._PerpetualData(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 func (ec *executionContext) _ProposalChange(ctx context.Context, sel ast.SelectionSet, obj ProposalChange) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
@@ -85655,9 +85871,6 @@ func (ec *executionContext) _Instrument(ctx context.Context, sel ast.SelectionSe
 					}
 				}()
 				res = ec._Instrument_product(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			}
 
@@ -88041,10 +88254,23 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "fundingRate":
+		case "productData":
+			field := field
 
-			out.Values[i] = ec._MarketData_fundingRate(ctx, field, obj)
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketData_productData(ctx, field, obj)
+				return res
+			}
 
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -90417,10 +90643,23 @@ func (ec *executionContext) _ObservableMarketData(ctx context.Context, sel ast.S
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "fundingRate":
+		case "productData":
+			field := field
 
-			out.Values[i] = ec._ObservableMarketData_fundingRate(ctx, field, obj)
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketData_productData(ctx, field, obj)
+				return res
+			}
 
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -92292,6 +92531,43 @@ func (ec *executionContext) _Perpetual(ctx context.Context, sel ast.SelectionSet
 				return innerFunc(ctx)
 
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var perpetualDataImplementors = []string{"PerpetualData", "ProductData"}
+
+func (ec *executionContext) _PerpetualData(ctx context.Context, sel ast.SelectionSet, obj *vega.PerpetualData) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, perpetualDataImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PerpetualData")
+		case "fundingPayment":
+
+			out.Values[i] = ec._PerpetualData_fundingPayment(ctx, field, obj)
+
+		case "fundingRate":
+
+			out.Values[i] = ec._PerpetualData_fundingRate(ctx, field, obj)
+
+		case "externalTwap":
+
+			out.Values[i] = ec._PerpetualData_externalTwap(ctx, field, obj)
+
+		case "internalTwap":
+
+			out.Values[i] = ec._PerpetualData_internalTwap(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -102999,16 +103275,6 @@ func (ec *executionContext) marshalNPriceMonitoringTrigger2ᚖcodeᚗvegaprotoco
 	return ec._PriceMonitoringTrigger(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNProduct2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProduct(ctx context.Context, sel ast.SelectionSet, v Product) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._Product(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNProperty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐProperty(ctx context.Context, sel ast.SelectionSet, v *v12.Property) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -107743,11 +108009,25 @@ func (ec *executionContext) marshalOPriceMonitoringTrigger2ᚕᚖcodeᚗvegaprot
 	return ret
 }
 
+func (ec *executionContext) marshalOProduct2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProduct(ctx context.Context, sel ast.SelectionSet, v Product) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Product(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOProductConfiguration2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProductConfiguration(ctx context.Context, sel ast.SelectionSet, v ProductConfiguration) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._ProductConfiguration(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOProductData2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProductData(ctx context.Context, sel ast.SelectionSet, v ProductData) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ProductData(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐProperty(ctx context.Context, sel ast.SelectionSet, v []*v12.Property) graphql.Marshaler {
