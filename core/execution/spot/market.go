@@ -2854,6 +2854,7 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 }
 
 func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
+	m.liquidityEngine.OnEpochRestore(epoch)
 }
 
 func (m *Market) GetMarketCounters() *types.MarketCounters {

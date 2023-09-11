@@ -202,6 +202,7 @@ func newMarketFromSnapshot(t *testing.T, ctrl *gomock.Controller, em *types.Exec
 	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+
 	return future.NewMarketFromSnapshot(context.Background(), log, em, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, timeService, broker, stubs.NewStateVar(), cfgAsset, marketActivityTracker,
 		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount)

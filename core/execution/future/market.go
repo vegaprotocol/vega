@@ -46,6 +46,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	"golang.org/x/exp/maps"
 )
 
 // LiquidityMonitor.
@@ -246,8 +247,7 @@ func NewMarket(
 
 	liquidityEngine := liquidity.NewSnapshotEngine(
 		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel,
-		pMonitor, book, auctionState, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams,
-	)
+		pMonitor, book, auctionState, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams)
 
 	equityShares := common.NewEquityShares(num.DecimalZero())
 
@@ -357,7 +357,9 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	m.updateLiquidityFee(ctx)
 }
 
-func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {}
+func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
+	m.liquidityEngine.OnEpochRestore(epoch)
+}
 
 func (m *Market) onEpochEndPartiesStats() {
 	if m.markPrice == nil {
@@ -772,6 +774,27 @@ func (m *Market) GetID() string {
 func (m *Market) PostRestore(ctx context.Context) error {
 	// tell the matching engine about the markets price factor so it can finish restoring orders
 	m.matching.RestoreWithMarketPriceFactor(m.priceFactor)
+
+	// TODO(jeremy): This bit is here specifically to create account
+	// which should have been create with the normal process of
+	// submitting liquidity provisions for the market.
+	// should probably be removed in the near future (aft this release)
+	lpParties := maps.Keys(m.liquidityEngine.ProvisionsPerParty())
+	sort.Strings(lpParties)
+
+	for _, p := range lpParties {
+		_, err := m.collateral.GetOrCreatePartyLiquidityFeeAccount(
+			ctx, p, m.GetID(), m.GetSettlementAsset())
+		if err != nil {
+			m.log.Panic("couldn't create party liquidity fee account")
+		}
+	}
+
+	_, err := m.collateral.GetOrCreateLiquidityFeesBonusDistributionAccount(ctx, m.GetID(), m.GetSettlementAsset())
+	if err != nil {
+		m.log.Panic("failed to get bonus distribution account", logging.Error(err))
+	}
+
 	return nil
 }
 

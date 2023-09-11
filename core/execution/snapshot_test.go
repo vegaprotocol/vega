@@ -664,6 +664,7 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+
 	eng := execution.NewEngine(
 		log,
 		cfg,
