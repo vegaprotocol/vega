@@ -193,6 +193,7 @@ func (o OrderReferenceCheck) HasMoved(changes uint8) bool {
 }
 
 type LiquidityEngine interface {
+	OnEpochRestore(ep types.Epoch)
 	ResetSLAEpoch(t time.Time, markPrice *num.Uint, midPrice *num.Uint, positionFactor num.Decimal)
 	ApplyPendingProvisions(ctx context.Context, now time.Time) liquidity.Provisions
 	PendingProvision() liquidity.Provisions
@@ -226,11 +227,8 @@ type LiquidityEngine interface {
 	SetLastFeeDistributionTime(t time.Time)
 	GetLastFeeDistributionTime() time.Time
 
-	Namespace() types.SnapshotNamespace
-	Keys() []string
-	GetState(k string) ([]byte, []types.StateProvider, error)
-	LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error)
-	Stopped() bool
+	V1StateProvider() types.StateProvider
+	V2StateProvider() types.StateProvider
 	StopSnapshots()
 }
 

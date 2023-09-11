@@ -196,12 +196,13 @@ func createExecutionEngine(t *testing.T, tm time.Time) (*execution.Engine, *gove
 	teams := emocks.NewMockTeams(ctrl)
 	bc := emocks.NewMockAccountBalanceChecker(ctrl)
 	marketTracker := common.NewMarketActivityTracker(log, epochEngine, teams, bc)
-	feeDiscountReward := fmocks.NewMockFeeDiscountRewardService(ctrl)
-	feeDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("no referrer")).AnyTimes()
-	feeDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	feeDiscountReward.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	referralDiscountReward := fmocks.NewMockReferralDiscountRewardService(ctrl)
+	volumeDiscount := fmocks.NewMockVolumeDiscountService(ctrl)
+	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("no referrer")).AnyTimes()
+	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 
-	exec := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, marketTracker, asset, feeDiscountReward)
+	exec := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, marketTracker, asset, referralDiscountReward, volumeDiscount)
 	accounts := mocks.NewMockStakingAccounts(ctrl)
 
 	witness := mocks.NewMockWitness(ctrl)

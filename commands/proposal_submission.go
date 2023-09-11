@@ -168,6 +168,8 @@ func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
 		errs.Merge(checkMarketUpdateState(c))
 	case *protoTypes.ProposalTerms_UpdateReferralProgram:
 		errs.Merge(checkReferralProgram(terms, c))
+	case *protoTypes.ProposalTerms_UpdateVolumeDiscountProgram:
+		errs.Merge(checkVolumeDiscountProgram(terms, c))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change", ErrIsNotValid)
 	}
@@ -293,6 +295,60 @@ func checkReferralProgram(terms *vegapb.ProposalTerms, change *vegapb.ProposalTe
 	}
 	for i, tier := range changes.StakingTiers {
 		errs.Merge(checkStakingTier(i, tier))
+	}
+	return errs
+}
+
+func checkVolumeDiscountProgram(terms *vegapb.ProposalTerms, change *vegapb.ProposalTerms_UpdateVolumeDiscountProgram) Errors {
+	errs := NewErrors()
+	if change.UpdateVolumeDiscountProgram == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_volume_discount_program", ErrIsRequired)
+	}
+	if change.UpdateVolumeDiscountProgram.Changes == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_volume_discount_program.changes", ErrIsRequired)
+	}
+	changes := change.UpdateVolumeDiscountProgram.Changes
+	if changes.EndOfProgramTimestamp == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_volume_discount_program.changes.end_of_program_timestamp", ErrIsRequired)
+	} else if changes.EndOfProgramTimestamp < 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_volume_discount_program.changes.end_of_program_timestamp", ErrMustBePositive)
+	} else if changes.EndOfProgramTimestamp < terms.EnactmentTimestamp {
+		errs.AddForProperty("proposal_submission.terms.change.update_volume_discount_program.changes.end_of_program_timestamp", ErrMustBeGreaterThanEnactmentTimestamp)
+	}
+	if changes.WindowLength == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_volume_discount_program.changes.window_length", ErrIsRequired)
+	} else if changes.WindowLength > 100 {
+		errs.AddForProperty("proposal_submission.terms.change.update_volume_discount_program.changes.window_length", ErrMustBeAtMost100)
+	}
+	for i, tier := range changes.BenefitTiers {
+		errs.Merge(checkVolumeBenefitTier(i, tier))
+	}
+
+	return errs
+}
+
+func checkVolumeBenefitTier(index int, tier *vegapb.VolumeBenefitTier) Errors {
+	errs := NewErrors()
+	propertyPath := fmt.Sprintf("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.%d", index)
+	if len(tier.MinimumRunningNotionalTakerVolume) == 0 {
+		errs.AddForProperty(propertyPath+".minimum_running_notional_taker_volume", ErrIsRequired)
+	} else {
+		mrtv, overflow := num.UintFromString(tier.MinimumRunningNotionalTakerVolume, 10)
+		if overflow {
+			errs.AddForProperty(propertyPath+".minimum_running_notional_taker_volume", ErrIsNotValidNumber)
+		} else if mrtv.IsNegative() || mrtv.IsZero() {
+			errs.AddForProperty(propertyPath+".minimum_running_notional_taker_volume", ErrMustBePositive)
+		}
+	}
+	if len(tier.VolumeDiscountFactor) == 0 {
+		errs.AddForProperty(propertyPath+".volume_discount_factor", ErrIsRequired)
+	} else {
+		rdf, err := num.DecimalFromString(tier.VolumeDiscountFactor)
+		if err != nil {
+			errs.AddForProperty(propertyPath+".volume_discount_factor", ErrIsNotValidNumber)
+		} else if rdf.IsNegative() {
+			errs.AddForProperty(propertyPath+".volume_discount_factor", ErrMustBePositiveOrZero)
+		}
 	}
 	return errs
 }
