@@ -225,11 +225,11 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
 
   Scenario: An LP with bid order outside valid range during auction is penalised (0044-LIME-098)
     Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount   |
-      | lp1    | USD   | 20000000 |
-      | party1 | USD   | 1000000  |
-      | party2 | USD   | 1000000  |
-      | party3 | USD   | 1000000  |
+      | party  | asset | amount     |
+      | lp1    | USD   | 20000000   |
+      | party1 | USD   | 1000000000 |
+      | party2 | USD   | 1000000000 |
+      | party3 | USD   | 1000000    |
 
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee  | lp type    |
@@ -238,8 +238,8 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     When the network moves ahead "2" blocks
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | lp1    | ETH/JAN23 | buy  | 100    | 4740  | 0                | TYPE_LIMIT | TIF_GTC |
-      | lp1    | ETH/JAN23 | sell | 100    | 5750  | 0                | TYPE_LIMIT | TIF_GTC |
+      | lp1    | ETH/JAN23 | buy  | 100    | 4999  | 0                | TYPE_LIMIT | TIF_GTC |
+      | lp1    | ETH/JAN23 | sell | 100    | 5001  | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/JAN23 | buy  | 10     | 4900  | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/JAN23 | buy  | 1      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/JAN23 | sell | 10     | 5100  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -266,13 +266,15 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/JAN23 | buy  | 5      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/JAN23 | sell | 5      | 5000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/JAN23 | buy  | 5000   | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/JAN23 | sell | 5000   | 5000  | 1                | TYPE_LIMIT | TIF_GTC |
 
-    When the network moves ahead "2" blocks
+    When the network moves ahead "1" epochs
     Then the market data for the market "ETH/JAN23" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 5000       | TRADING_MODE_CONTINUOUS | 3600    | 4865      | 5139      | 1422760      | 180000         | 8             |
+      | 5000       | TRADING_MODE_CONTINUOUS | 3600    | 4865      | 5139      | 889758535    | 180000         | 5003          |
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/JAN23"
+
 
 # And the parties should have the following account balances:
 #   | party | asset | market id | margin | general | bond  |
