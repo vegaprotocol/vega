@@ -155,6 +155,19 @@ func (t *TransactionResult) setTx(tx interface{}) *TransactionResult {
 		t.evt.Transaction = &eventspb.TransactionResult_StopOrderCancellation{
 			StopOrderCancellation: tv,
 		}
+	case *commandspb.CreateReferralSet:
+		t.evt.Transaction = &eventspb.TransactionResult_CreateReferralSet{
+			CreateReferralSet: tv,
+		}
+	case *commandspb.UpdateReferralSet:
+		t.evt.Transaction = &eventspb.TransactionResult_UpdateReferralSet{
+			UpdateReferralSet: tv,
+		}
+	case *commandspb.ApplyReferralCode:
+		t.evt.Transaction = &eventspb.TransactionResult_ApplyReferralCode{
+			ApplyReferralCode: tv,
+		}
+
 	default:
 		panic(fmt.Sprintf("unsupported command: %v", tv))
 	}
