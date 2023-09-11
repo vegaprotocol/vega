@@ -178,7 +178,6 @@ func NewMarket(
 	peggedOrderNotify func(int64),
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
-	epochTime liquidity.EpochTime,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
 		return nil, common.ErrEmptyMarketID
@@ -248,9 +247,7 @@ func NewMarket(
 
 	liquidityEngine := liquidity.NewSnapshotEngine(
 		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel,
-		pMonitor, book, auctionState, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams,
-		epochTime,
-	)
+		pMonitor, book, auctionState, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams)
 
 	equityShares := common.NewEquityShares(num.DecimalZero())
 
@@ -360,7 +357,9 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	m.updateLiquidityFee(ctx)
 }
 
-func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {}
+func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
+	m.liquidityEngine.OnEpochRestore(epoch)
+}
 
 func (m *Market) onEpochEndPartiesStats() {
 	if m.markPrice == nil {

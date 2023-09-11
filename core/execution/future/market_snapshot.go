@@ -59,7 +59,6 @@ func NewMarketFromSnapshot(
 	peggedOrderNotify func(int64),
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
-	epochTime liquidity.EpochTime,
 ) (*Market, error) {
 	mkt := em.Market
 	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(mkt.PositionDecimalPlaces))
@@ -141,8 +140,7 @@ func NewMarketFromSnapshot(
 
 	liquidityEngine := liquidity.NewSnapshotEngine(
 		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel,
-		pMonitor, book, as, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams, epochTime,
-	)
+		pMonitor, book, as, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams)
 
 	equityShares := common.NewEquitySharesFromSnapshot(em.EquityShare)
 

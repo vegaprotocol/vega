@@ -58,7 +58,6 @@ func NewMarketFromSnapshot(
 	peggedOrderNotify func(int64),
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
-	epochTime liquidity.EpochTime,
 ) (*Market, error) {
 	mkt := em.Market
 	if len(em.Market.ID) == 0 {
@@ -103,7 +102,7 @@ func NewMarketFromSnapshot(
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
 	els := common.NewEquitySharesFromSnapshot(em.EquityShare)
-	liquidity := liquidity.NewSnapshotEngine(liquidityConfig, log, timeService, broker, riskModel, pMonitor, book, as, quoteAsset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams, epochTime)
+	liquidity := liquidity.NewSnapshotEngine(liquidityConfig, log, timeService, broker, riskModel, pMonitor, book, as, quoteAsset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams)
 	marketLiquidity := common.NewMarketLiquidity(log, liquidity, collateralEngine, broker, book, els, marketActivityTracker, feeEngine, common.FutureMarketType, mkt.ID, quoteAsset, priceFactor, mkt.LiquiditySLAParams.PriceRange)
 
 	// backward compatibility check for nil

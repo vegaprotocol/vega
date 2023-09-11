@@ -22,6 +22,10 @@ type SnapshotEngine struct {
 	*snapshotV1
 }
 
+func (e SnapshotEngine) OnEpochRestore(ep types.Epoch) {
+	e.slaEpochStart = ep.StartTime
+}
+
 func (e SnapshotEngine) V2StateProvider() types.StateProvider {
 	return e.snapshotV2
 }
@@ -478,7 +482,6 @@ func NewSnapshotEngine(
 	stateVarEngine StateVarEngine,
 	positionFactor num.Decimal,
 	slaParams *types.LiquiditySLAParams,
-	epochTime EpochTime,
 ) *SnapshotEngine {
 	if slaParams == nil {
 		slaParams = defaultLiquiditySLAParams()
@@ -509,9 +512,8 @@ func NewSnapshotEngine(
 			stopped: false,
 		},
 		snapshotV1: &snapshotV1{
-			Engine:    e,
-			market:    marketID,
-			epochTime: epochTime,
+			Engine: e,
+			market: marketID,
 		},
 	}
 

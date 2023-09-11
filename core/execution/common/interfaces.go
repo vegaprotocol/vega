@@ -193,6 +193,7 @@ func (o OrderReferenceCheck) HasMoved(changes uint8) bool {
 }
 
 type LiquidityEngine interface {
+	OnEpochRestore(ep types.Epoch)
 	ResetSLAEpoch(t time.Time, markPrice *num.Uint, midPrice *num.Uint, positionFactor num.Decimal)
 	ApplyPendingProvisions(ctx context.Context, now time.Time) liquidity.Provisions
 	PendingProvision() liquidity.Provisions

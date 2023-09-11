@@ -42,8 +42,6 @@ import (
 	protos "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/golang/mock/gomock"
-
-	liqmocks "code.vegaprotocol.io/vega/core/liquidity/v2/mocks"
 )
 
 var (
@@ -194,8 +192,6 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.stateVarEngine = stubs.NewStateVar()
 	// @TODO stub assets engine and pass it in
 
-	epochTime := liqmocks.NewMockEpochTime(ctrl)
-
 	execsetup.executionEngine = newExEng(
 		execution.NewEngine(
 			execsetup.log,
@@ -209,7 +205,6 @@ func newExecutionTestSetup() *executionTestSetup {
 			execsetup.assetsEngine, // assets
 			&stubs.ReferralDiscountRewardService{},
 			&stubs.VolumeDiscountService{},
-			epochTime,
 		),
 		execsetup.broker,
 	)

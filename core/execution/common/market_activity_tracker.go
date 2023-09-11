@@ -369,11 +369,7 @@ func (mat *MarketActivityTracker) clearDeletedMarkets() {
 func (mt *marketTracker) clearFeeActivity() {
 	fees := []map[string]*feeData{mt.lpFees, mt.makerFeesPaid, mt.makerFeesReceived}
 	for _, fee := range fees {
-		for party, fd := range fee {
-			fmt.Printf("PARTY: %v\n", party)
-			fmt.Printf("RUNNING TOTAL: %s\n", fd.runningTotal)
-			fmt.Printf("PREVIOUS EPOCH: %v\n", fd.previousEpochsIdx)
-			fmt.Printf("PREVIOUS EPOCHS LEN: %v\n", len(fd.previousEpochs))
+		for _, fd := range fee {
 			fd.previousEpochs[fd.previousEpochsIdx] = fd.runningTotal
 			fd.previousEpochsIdx = (fd.previousEpochsIdx + 1) % maxWindowSize
 			fd.runningTotal = num.UintZero()

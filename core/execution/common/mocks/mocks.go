@@ -1609,6 +1609,18 @@ func (mr *MockLiquidityEngineMockRecorder) LiquidityProvisionByPartyID(arg0 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LiquidityProvisionByPartyID", reflect.TypeOf((*MockLiquidityEngine)(nil).LiquidityProvisionByPartyID), arg0)
 }
 
+// OnEpochRestore mocks base method.
+func (m *MockLiquidityEngine) OnEpochRestore(arg0 types.Epoch) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "OnEpochRestore", arg0)
+}
+
+// OnEpochRestore indicates an expected call of OnEpochRestore.
+func (mr *MockLiquidityEngineMockRecorder) OnEpochRestore(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnEpochRestore", reflect.TypeOf((*MockLiquidityEngine)(nil).OnEpochRestore), arg0)
+}
+
 // OnMaximumLiquidityFeeFactorLevelUpdate mocks base method.
 func (m *MockLiquidityEngine) OnMaximumLiquidityFeeFactorLevelUpdate(arg0 decimal.Decimal) {
 	m.ctrl.T.Helper()

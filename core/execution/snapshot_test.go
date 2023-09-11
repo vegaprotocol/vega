@@ -32,7 +32,6 @@ import (
 	"code.vegaprotocol.io/vega/core/execution/common/mocks"
 	fmock "code.vegaprotocol.io/vega/core/fee/mocks"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
-	liqmocks "code.vegaprotocol.io/vega/core/liquidity/v2/mocks"
 	snp "code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
@@ -602,8 +601,6 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 
-	epochTime := liqmocks.NewMockEpochTime(ctrl)
-	epochTime.EXPECT().GetEpochStartTime().AnyTimes().Return(time.Now())
 	eng := execution.NewEngine(
 		log,
 		cfg,
@@ -616,7 +613,6 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 		stubs.NewAssetStub(),
 		referralDiscountReward,
 		volumeDiscount,
-		epochTime,
 	)
 
 	statsData := stats.New(log, stats.NewDefaultConfig())
@@ -669,8 +665,6 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 
-	epochTime := liqmocks.NewMockEpochTime(ctrl)
-
 	eng := execution.NewEngine(
 		log,
 		cfg,
@@ -683,7 +677,6 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 		stubs.NewAssetStub(),
 		referralDiscountReward,
 		volumeDiscount,
-		epochTime,
 	)
 
 	statsData := stats.New(log, stats.NewDefaultConfig())

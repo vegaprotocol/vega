@@ -15,10 +15,9 @@ import (
 
 type snapshotV1 struct {
 	*Engine
-	market    string
-	stopped   bool
-	epochTime EpochTime
-	keys      []string
+	market  string
+	stopped bool
+	keys    []string
 }
 
 func (e *snapshotV1) Namespace() types.SnapshotNamespace {
@@ -143,8 +142,6 @@ func (e *snapshotV1) Stop() {
 }
 
 func (e *snapshotV1) loadPerformances(provisions []*typespb.LiquidityProvision) {
-	e.slaEpochStart = e.epochTime.GetEpochStartTime()
-
 	e.slaPerformance = map[string]*slaPerformance{}
 	for _, provision := range provisions {
 		previousPenalties := restoreSliceRing(
