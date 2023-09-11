@@ -160,6 +160,7 @@
 - [9153](https://github.com/vegaprotocol/vega/issues/9153) - `MTM` win transfers can be less than one.
 - [9227](https://github.com/vegaprotocol/vega/issues/9227) - Do not allow market updates that change the product type.
 - [9178](https://github.com/vegaprotocol/vega/issues/9178) - Fix LP amendment panic
+- [9329](https://github.com/vegaprotocol/vega/issues/9329) - Roll next trigger time forward until after the time that triggered it.
 - [9053](https://github.com/vegaprotocol/vega/issues/9053) - Handle settle market events in core positions plug-in.
 - [9189](https://github.com/vegaprotocol/vega/issues/9189) - Fix stop orders snapshots
 - [9313](https://github.com/vegaprotocol/vega/issues/9313) - `ListLedgerEntries` transfers type filter works as expected with open to and from filters.

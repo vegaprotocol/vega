@@ -173,3 +173,23 @@ func TestInternalTimeTriggersIsTriggered(t *testing.T) {
 	triggered = ttl.IsTriggered(nt.Add(time.Second * 15))
 	assert.Equal(t, false, triggered)
 }
+
+func TestInternalTimeTriggersIsTriggeredLongInterval(t *testing.T) {
+	timeNow := time.Now()
+	nt := timeNow.Add(time.Minute)
+	tt := &common.InternalTimeTrigger{
+		Initial: &timeNow,
+		Every:   int64(15),
+	}
+
+	tt.SetNextTrigger(nt)
+	ttl := common.InternalTimeTriggers{tt}
+
+	// Given time is after the next trigger many multiples of "every"
+	triggered := ttl.IsTriggered(nt.Add(time.Second * 60))
+	assert.Equal(t, true, triggered)
+
+	// check we rolled forward and a past time is not triggered
+	triggered = ttl.IsTriggered(nt.Add(time.Second * 30))
+	assert.Equal(t, false, triggered)
+}
