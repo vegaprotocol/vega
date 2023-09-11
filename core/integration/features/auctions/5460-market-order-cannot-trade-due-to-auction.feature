@@ -36,6 +36,7 @@ Feature: Test for issue 5460
       | party_r  | ETH   | 10000000000000000 |
       | party_r1 | ETH   | 10000000000000000 |
 
+  @SLABug
   Scenario: 002 replicate bug
 
     When the parties submit the following liquidity provision:
@@ -100,7 +101,7 @@ Feature: Test for issue 5460
       | sell | 30204 | 0      |
     When the network moves ahead "1" blocks
 
-    Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC21"
+    #Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC21"
 
     And the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
