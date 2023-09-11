@@ -28,7 +28,6 @@ import (
 
 func TestNotary_Push(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	store := mocks.NewMockNotaryStore(ctrl)
 
@@ -48,7 +47,6 @@ func TestNotary_Push(t *testing.T) {
 
 func TestNotary_PushWrongEvent(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	defer func() {
 		if r := recover(); r == nil {

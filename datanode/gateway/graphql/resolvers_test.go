@@ -30,14 +30,14 @@ import (
 	"code.vegaprotocol.io/vega/datanode/gateway/graphql/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
-	vega "code.vegaprotocol.io/vega/protos/vega"
 	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
 func TestNewResolverRoot_ConstructAndResolve(t *testing.T) {
 	root := buildTestResolverRoot(t)
-	defer root.Finish()
+
 	assert.NotNil(t, root)
 
 	partyResolver := root.Party()
@@ -82,7 +82,7 @@ func TestNewResolverRoot_ConstructAndResolve(t *testing.T) {
 
 func TestNewResolverRoot_QueryResolver(t *testing.T) {
 	root := buildTestResolverRoot(t)
-	defer root.Finish()
+
 	assert.NotNil(t, root)
 
 	queryResolver := root.Query()
@@ -642,7 +642,6 @@ func getPerpetualMarketUpdateProposal() *protoTypes.Proposal {
 
 func TestNewResolverRoot_Proposals(t *testing.T) {
 	root := buildTestResolverRoot(t)
-	defer root.Finish()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -1097,7 +1096,6 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 func TestNewResolverRoot_SpotResolver(t *testing.T) {
 	ctx := context.Background()
 	root := buildTestResolverRoot(t)
-	defer root.Finish()
 
 	spotMarket := getTestSpotMarket()
 	root.tradingDataClient.EXPECT().GetMarket(gomock.Any(), gomock.Any()).Return(&v2.GetMarketResponse{Market: spotMarket}, nil)
@@ -1141,7 +1139,6 @@ func TestNewResolverRoot_SpotResolver(t *testing.T) {
 func TestNewResolverRoot_PerpetualResolver(t *testing.T) {
 	ctx := context.Background()
 	root := buildTestResolverRoot(t)
-	defer root.Finish()
 
 	perpsMarket := getTestPerpetualMarket()
 	want := perpsMarket.TradableInstrument.Instrument.GetPerpetual()
@@ -1187,7 +1184,7 @@ func TestNewResolverRoot_PerpetualResolver(t *testing.T) {
 
 func TestNewResolverRoot_Resolver(t *testing.T) {
 	root := buildTestResolverRoot(t)
-	defer root.Finish()
+
 	ctx := context.Background()
 
 	marketNotExistsErr := errors.New("market does not exist")
@@ -1260,7 +1257,7 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 
 func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	root := buildTestResolverRoot(t)
-	defer root.Finish()
+
 	ctx := context.Background()
 
 	marketID := "BTC/DEC19"
@@ -1300,7 +1297,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 
 func TestRewardsResolver(t *testing.T) {
 	root := buildTestResolverRoot(t)
-	defer root.Finish()
+
 	ctx := context.Background()
 	partyResolver := root.Party()
 	root.tradingDataClient.EXPECT().ListRewardSummaries(gomock.Any(), gomock.Any()).Times(1).Return(nil, errors.New("some error"))
@@ -1312,7 +1309,6 @@ func TestRewardsResolver(t *testing.T) {
 
 func TestNewResolverRoot_EpochResolver(t *testing.T) {
 	root := buildTestResolverRoot(t)
-	defer root.Finish()
 	ctx := context.Background()
 
 	now := time.Now()
@@ -1386,6 +1382,9 @@ func buildTestResolverRoot(t *testing.T) *testResolver {
 		coreProxyClient,
 		tradingDataClientV2,
 	)
+	t.Cleanup(func() {
+		_ = log.Sync()
+	})
 	return &testResolver{
 		resolverRoot:      resolver,
 		log:               log,
@@ -1393,9 +1392,4 @@ func buildTestResolverRoot(t *testing.T) *testResolver {
 		coreProxyClient:   coreProxyClient,
 		tradingDataClient: tradingDataClientV2,
 	}
-}
-
-func (t *testResolver) Finish() {
-	_ = t.log.Sync()
-	t.ctrl.Finish()
 }

@@ -204,7 +204,6 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	}
 
 	tidy = func() {
-		mockCtrl.Finish()
 		cleanupFn()
 	}
 

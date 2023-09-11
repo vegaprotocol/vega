@@ -27,7 +27,6 @@ import (
 
 func TestWithdrawal_Push(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	store := mocks.NewMockWithdrawalStore(ctrl)
 
