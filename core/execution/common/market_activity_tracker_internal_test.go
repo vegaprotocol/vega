@@ -1242,6 +1242,53 @@ func TestCalculateMetricForParty(t *testing.T) {
 	}
 }
 
+func TestCalculateMetricForTeamUtil(t *testing.T) {
+	isEligible := func(asset, party string, markets []string, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired num.Decimal) bool {
+		if party == "party1" || party == "party2" || party == "party3" || party == "party4" {
+			return true
+		}
+		return false
+	}
+	calculateMetricForParty := func(asset, party string, marketsInScope []string, metric vega.DispatchMetric, windowSize int) num.Decimal {
+		if party == "party1" {
+			return num.DecimalFromFloat(1.5)
+		}
+		if party == "party2" {
+			return num.DecimalFromFloat(2)
+		}
+		if party == "party3" {
+			return num.DecimalFromFloat(0.5)
+		}
+		if party == "party4" {
+			return num.DecimalFromFloat(2.5)
+		}
+		if party == "party5" {
+			return num.DecimalFromFloat(0.8)
+		}
+		return num.DecimalZero()
+	}
+
+	teamScore, partyScores := calculateMetricForTeamUtil("asset1", []string{"party1", "party2", "party3", "party4", "party5"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintOne(), num.DecimalOne(), 5, num.DecimalFromFloat(0.5), isEligible, calculateMetricForParty)
+	// we're indicating the the score of the team need to be the mean of the top 0.5 * number of participants = floor(0.5*5) = 2
+	// the top scores are 2.5 and 2 => team score should be 2.25
+	// 4 party scores expected (1-4) as party5 is not eligible
+	require.Equal(t, "2.25", teamScore.String())
+	require.Equal(t, 4, len(partyScores))
+	require.Equal(t, "party4", partyScores[0].Party)
+	require.Equal(t, "2.5", partyScores[0].Score.String())
+	require.Equal(t, "party2", partyScores[1].Party)
+	require.Equal(t, "2", partyScores[1].Score.String())
+	require.Equal(t, "party1", partyScores[2].Party)
+	require.Equal(t, "1.5", partyScores[2].Score.String())
+	require.Equal(t, "party3", partyScores[3].Party)
+	require.Equal(t, "0.5", partyScores[3].Score.String())
+
+	// lets repeat the check when there is no one eligible
+	teamScore, partyScores = calculateMetricForTeamUtil("asset1", []string{"party5"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintOne(), num.DecimalOne(), 5, num.DecimalFromFloat(0.5), isEligible, calculateMetricForParty)
+	require.Equal(t, "0", teamScore.String())
+	require.Equal(t, 0, len(partyScores))
+}
+
 type DummyEpochEngine struct {
 	target func(context.Context, types.Epoch)
 }

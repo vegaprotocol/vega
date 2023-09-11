@@ -85,11 +85,14 @@ func getMockedEngine(t *testing.T) *engineFake {
 
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	feeDiscountReward := fmock.NewMockFeeDiscountRewardService(ctrl)
-	feeDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	feeDiscountReward.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	feeDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
-	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine, teams, balanceChecker), asset, feeDiscountReward)
+	referralDiscountReward := fmock.NewMockReferralDiscountRewardService(ctrl)
+	volumeDiscount := fmock.NewMockVolumeDiscountService(ctrl)
+
+	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+
+	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine, teams, balanceChecker), asset, referralDiscountReward, volumeDiscount)
 	return &engineFake{
 		Engine:     exec,
 		ctrl:       ctrl,
@@ -142,11 +145,13 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	})
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	feeDiscountReward := fmock.NewMockFeeDiscountRewardService(ctrl)
-	feeDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	feeDiscountReward.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	feeDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
-	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine, teams, balanceChecker), asset, feeDiscountReward), ctrl
+	referralDiscountReward := fmock.NewMockReferralDiscountRewardService(ctrl)
+	volumeDiscount := fmock.NewMockVolumeDiscountService(ctrl)
+	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+
+	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine, teams, balanceChecker), asset, referralDiscountReward, volumeDiscount), ctrl
 }
 
 func TestEmptyMarkets(t *testing.T) {
@@ -398,7 +403,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 	b, providers, err := engine.GetState(key)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, b)
-	assert.Len(t, providers, 5)
+	assert.Len(t, providers, 6)
 
 	// Turn the bytes back into a payload and restore to a new engine
 	engine2, ctrl := createEngine(t)
@@ -418,7 +423,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 	require.Equal(t, marketConfig2.ID, tt.ExecutionMarkets.Successors[0].SuccessorMarkets[0])
 
 	loadStateProviders, err := engine2.LoadState(ctx, types.PayloadFromProto(snap))
-	assert.Len(t, loadStateProviders, 10)
+	assert.Len(t, loadStateProviders, 12)
 	assert.NoError(t, err)
 
 	providerMap := map[string]map[string]types.StateProvider{}

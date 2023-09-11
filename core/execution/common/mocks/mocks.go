@@ -1567,22 +1567,6 @@ func (mr *MockLiquidityEngineMockRecorder) GetLastFeeDistributionTime() *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastFeeDistributionTime", reflect.TypeOf((*MockLiquidityEngine)(nil).GetLastFeeDistributionTime))
 }
 
-// GetState mocks base method.
-func (m *MockLiquidityEngine) GetState(arg0 string) ([]byte, []types.StateProvider, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetState", arg0)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].([]types.StateProvider)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetState indicates an expected call of GetState.
-func (mr *MockLiquidityEngineMockRecorder) GetState(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetState", reflect.TypeOf((*MockLiquidityEngine)(nil).GetState), arg0)
-}
-
 // IsLiquidityProvider mocks base method.
 func (m *MockLiquidityEngine) IsLiquidityProvider(arg0 string) bool {
 	m.ctrl.T.Helper()
@@ -1611,20 +1595,6 @@ func (mr *MockLiquidityEngineMockRecorder) IsProbabilityOfTradingInitialised() *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsProbabilityOfTradingInitialised", reflect.TypeOf((*MockLiquidityEngine)(nil).IsProbabilityOfTradingInitialised))
 }
 
-// Keys mocks base method.
-func (m *MockLiquidityEngine) Keys() []string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Keys")
-	ret0, _ := ret[0].([]string)
-	return ret0
-}
-
-// Keys indicates an expected call of Keys.
-func (mr *MockLiquidityEngineMockRecorder) Keys() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Keys", reflect.TypeOf((*MockLiquidityEngine)(nil).Keys))
-}
-
 // LiquidityProvisionByPartyID mocks base method.
 func (m *MockLiquidityEngine) LiquidityProvisionByPartyID(arg0 string) *types.LiquidityProvision {
 	m.ctrl.T.Helper()
@@ -1639,33 +1609,16 @@ func (mr *MockLiquidityEngineMockRecorder) LiquidityProvisionByPartyID(arg0 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LiquidityProvisionByPartyID", reflect.TypeOf((*MockLiquidityEngine)(nil).LiquidityProvisionByPartyID), arg0)
 }
 
-// LoadState mocks base method.
-func (m *MockLiquidityEngine) LoadState(arg0 context.Context, arg1 *types.Payload) ([]types.StateProvider, error) {
+// OnEpochRestore mocks base method.
+func (m *MockLiquidityEngine) OnEpochRestore(arg0 types.Epoch) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LoadState", arg0, arg1)
-	ret0, _ := ret[0].([]types.StateProvider)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	m.ctrl.Call(m, "OnEpochRestore", arg0)
 }
 
-// LoadState indicates an expected call of LoadState.
-func (mr *MockLiquidityEngineMockRecorder) LoadState(arg0, arg1 interface{}) *gomock.Call {
+// OnEpochRestore indicates an expected call of OnEpochRestore.
+func (mr *MockLiquidityEngineMockRecorder) OnEpochRestore(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadState", reflect.TypeOf((*MockLiquidityEngine)(nil).LoadState), arg0, arg1)
-}
-
-// Namespace mocks base method.
-func (m *MockLiquidityEngine) Namespace() types.SnapshotNamespace {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Namespace")
-	ret0, _ := ret[0].(types.SnapshotNamespace)
-	return ret0
-}
-
-// Namespace indicates an expected call of Namespace.
-func (mr *MockLiquidityEngineMockRecorder) Namespace() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Namespace", reflect.TypeOf((*MockLiquidityEngine)(nil).Namespace))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnEpochRestore", reflect.TypeOf((*MockLiquidityEngine)(nil).OnEpochRestore), arg0)
 }
 
 // OnMaximumLiquidityFeeFactorLevelUpdate mocks base method.
@@ -1858,20 +1811,6 @@ func (mr *MockLiquidityEngineMockRecorder) StopSnapshots() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StopSnapshots", reflect.TypeOf((*MockLiquidityEngine)(nil).StopSnapshots))
 }
 
-// Stopped mocks base method.
-func (m *MockLiquidityEngine) Stopped() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Stopped")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// Stopped indicates an expected call of Stopped.
-func (mr *MockLiquidityEngineMockRecorder) Stopped() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stopped", reflect.TypeOf((*MockLiquidityEngine)(nil).Stopped))
-}
-
 // SubmitLiquidityProvision mocks base method.
 func (m *MockLiquidityEngine) SubmitLiquidityProvision(arg0 context.Context, arg1 *types.LiquidityProvisionSubmission, arg2 string, arg3 liquidity.IDGen) (bool, error) {
 	m.ctrl.T.Helper()
@@ -1924,6 +1863,34 @@ func (m *MockLiquidityEngine) UpdatePartyCommitment(arg0 string, arg1 *num.Uint)
 func (mr *MockLiquidityEngineMockRecorder) UpdatePartyCommitment(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePartyCommitment", reflect.TypeOf((*MockLiquidityEngine)(nil).UpdatePartyCommitment), arg0, arg1)
+}
+
+// V1StateProvider mocks base method.
+func (m *MockLiquidityEngine) V1StateProvider() types.StateProvider {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "V1StateProvider")
+	ret0, _ := ret[0].(types.StateProvider)
+	return ret0
+}
+
+// V1StateProvider indicates an expected call of V1StateProvider.
+func (mr *MockLiquidityEngineMockRecorder) V1StateProvider() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "V1StateProvider", reflect.TypeOf((*MockLiquidityEngine)(nil).V1StateProvider))
+}
+
+// V2StateProvider mocks base method.
+func (m *MockLiquidityEngine) V2StateProvider() types.StateProvider {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "V2StateProvider")
+	ret0, _ := ret[0].(types.StateProvider)
+	return ret0
+}
+
+// V2StateProvider indicates an expected call of V2StateProvider.
+func (mr *MockLiquidityEngineMockRecorder) V2StateProvider() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "V2StateProvider", reflect.TypeOf((*MockLiquidityEngine)(nil).V2StateProvider))
 }
 
 // ValidateLiquidityProvisionAmendment mocks base method.

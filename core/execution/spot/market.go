@@ -75,11 +75,12 @@ type Market struct {
 	priceFactor     *num.Uint
 
 	// own engines
-	matching                 *matching.CachedOrderBook
-	fee                      *fee.Engine
-	feeDiscountRewardService fee.FeeDiscountRewardService
-	liquidity                common.MarketLiquidityEngine
-	liquidityEngine          common.LiquidityEngine
+	matching                      *matching.CachedOrderBook
+	fee                           *fee.Engine
+	referralDiscountRewardService fee.ReferralDiscountRewardService
+	volumeDiscountService         fee.VolumeDiscountService
+	liquidity                     common.MarketLiquidityEngine
+	liquidityEngine               common.LiquidityEngine
 
 	// deps engines
 	collateral common.Collateral
@@ -149,7 +150,8 @@ func NewMarket(
 	baseAssetDetails *assets.Asset,
 	quoteAssetDetails *assets.Asset,
 	peggedOrderNotify func(int64),
-	feeDiscountRewardService fee.FeeDiscountRewardService,
+	referralDiscountRewardService fee.ReferralDiscountRewardService,
+	volumeDiscountService fee.VolumeDiscountService,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
 		return nil, common.ErrEmptyMarketID
@@ -211,42 +213,43 @@ func NewMarket(
 	els := common.NewEquityShares(num.DecimalZero())
 	marketLiquidity := common.NewMarketLiquidity(log, liquidity, collateralEngine, broker, book, els, marketActivityTracker, feeEngine, common.SpotMarketType, mkt.ID, quoteAsset, priceFactor, mkt.LiquiditySLAParams.PriceRange)
 	market := &Market{
-		log:                       log,
-		idgen:                     nil,
-		mkt:                       mkt,
-		matching:                  book,
-		collateral:                collateralEngine,
-		timeService:               timeService,
-		broker:                    broker,
-		fee:                       feeEngine,
-		feeDiscountRewardService:  feeDiscountRewardService,
-		parties:                   map[string]struct{}{},
-		as:                        as,
-		pMonitor:                  pMonitor,
-		liquidity:                 marketLiquidity,
-		liquidityEngine:           liquidity,
-		tsCalc:                    tsCalc,
-		peggedOrders:              common.NewPeggedOrders(log, timeService),
-		expiringOrders:            common.NewExpiringOrders(),
-		feeSplitter:               common.NewFeeSplitter(),
-		equityShares:              els,
-		lastBestAskPrice:          num.UintZero(),
-		lastMidSellPrice:          num.UintZero(),
-		lastMidBuyPrice:           num.UintZero(),
-		lastBestBidPrice:          num.UintZero(),
-		stateVarEngine:            stateVarEngine,
-		marketActivityTracker:     marketActivityTracker,
-		priceFactor:               priceFactor,
-		baseFactor:                baseFactor,
-		minLPStakeQuantumMultiple: num.MustDecimalFromString("1"),
-		positionFactor:            positionFactor,
-		baseAsset:                 baseAsset,
-		quoteAsset:                quoteAsset,
-		orderHoldingTracker:       NewHoldingAccountTracker(mkt.ID, log, collateralEngine),
-		nextMTM:                   time.Time{}, // default to zero time
-		maxStopOrdersPerParties:   num.UintZero(),
-		stopOrders:                stoporders.New(log),
-		expiringStopOrders:        common.NewExpiringOrders(),
+		log:                           log,
+		idgen:                         nil,
+		mkt:                           mkt,
+		matching:                      book,
+		collateral:                    collateralEngine,
+		timeService:                   timeService,
+		broker:                        broker,
+		fee:                           feeEngine,
+		referralDiscountRewardService: referralDiscountRewardService,
+		volumeDiscountService:         volumeDiscountService,
+		parties:                       map[string]struct{}{},
+		as:                            as,
+		pMonitor:                      pMonitor,
+		liquidity:                     marketLiquidity,
+		liquidityEngine:               liquidity,
+		tsCalc:                        tsCalc,
+		peggedOrders:                  common.NewPeggedOrders(log, timeService),
+		expiringOrders:                common.NewExpiringOrders(),
+		feeSplitter:                   common.NewFeeSplitter(),
+		equityShares:                  els,
+		lastBestAskPrice:              num.UintZero(),
+		lastMidSellPrice:              num.UintZero(),
+		lastMidBuyPrice:               num.UintZero(),
+		lastBestBidPrice:              num.UintZero(),
+		stateVarEngine:                stateVarEngine,
+		marketActivityTracker:         marketActivityTracker,
+		priceFactor:                   priceFactor,
+		baseFactor:                    baseFactor,
+		minLPStakeQuantumMultiple:     num.MustDecimalFromString("1"),
+		positionFactor:                positionFactor,
+		baseAsset:                     baseAsset,
+		quoteAsset:                    quoteAsset,
+		orderHoldingTracker:           NewHoldingAccountTracker(mkt.ID, log, collateralEngine),
+		nextMTM:                       time.Time{}, // default to zero time
+		maxStopOrdersPerParties:       num.UintZero(),
+		stopOrders:                    stoporders.New(log),
+		expiringStopOrders:            common.NewExpiringOrders(),
 	}
 	liquidity.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 
@@ -2758,12 +2761,12 @@ func (m *Market) calculateFeesForTrades(trades []*types.Trade) (events.FeesTrans
 		err  error
 	)
 	if !m.as.InAuction() {
-		fees, err = m.fee.CalculateForContinuousMode(trades, m.feeDiscountRewardService)
+		fees, err = m.fee.CalculateForContinuousMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
 	} else if m.as.IsMonitorAuction() {
 		// we are in auction mode
-		fees, err = m.fee.CalculateForAuctionMode(trades, m.feeDiscountRewardService)
+		fees, err = m.fee.CalculateForAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
 	} else if m.as.IsFBA() {
-		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades, m.feeDiscountRewardService)
+		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
 	}
 	return fees, err
 }
@@ -2851,6 +2854,7 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 }
 
 func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
+	m.liquidityEngine.OnEpochRestore(epoch)
 }
 
 func (m *Market) GetMarketCounters() *types.MarketCounters {
