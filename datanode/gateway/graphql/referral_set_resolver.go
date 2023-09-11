@@ -18,6 +18,10 @@ func (r *referralSetRefereeResolver) AtEpoch(ctx context.Context, obj *v2.Referr
 	return int(obj.AtEpoch), nil
 }
 
+func (r *referralSetRefereeResolver) RefereeID(ctx context.Context, obj *v2.ReferralSetReferee) (string, error) {
+	return obj.Referee, nil
+}
+
 type referralSetResolver VegaResolverRoot
 
 func (r *referralSetResolver) Stats(ctx context.Context, obj *v2.ReferralSet, epoch *int, referee *string) (*v2.ReferralSetStats, error) {

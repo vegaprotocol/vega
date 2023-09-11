@@ -5748,7 +5748,7 @@ type ReferralProgram {
   "Incremental version of the program. It is incremented each time the referral program is edited."
   version: Int!
   "Defined tiers in increasing order. First element will give Tier 1, second element will give Tier 2, etc."
-  benefit_tiers: [BenefitTier!]!
+  benefitTiers: [BenefitTier!]!
   "Timestamp as RFC3339Nano, after which when the current epoch ends, the programs status will become STATE_CLOSED and benefits will be disabled."
   endOfProgramTimestamp: Timestamp!
   "Number of epochs over which to evaluate a referral set's running volume."
@@ -5770,9 +5770,9 @@ type ReferralSet {
   "Party that created the set."
   referrer: ID!
   "Timestamp as RFC3339Nano when the referral set was created."
-  created_at: Timestamp!
+  createdAt: Timestamp!
   "Timestamp as RFC3339Nano when the referral set was updated."
-  updated_at: Timestamp!
+  updatedAt: Timestamp!
   """
   Referral set statistics for the latest or specific epoch.
   If provided the results can be filtered for a specific referee
@@ -5799,13 +5799,13 @@ type ReferralSetConnection {
 "Data relating to referees that have joined a referral set"
 type ReferralSetReferee {
   "Unique ID of the referral set the referee joined."
-  referral_set_id: ID!
+  referralSetId: ID!
   "Party that joined the set."
-  referee: ID!
+  refereeId: ID!
   "Timestamp as RFC3339Nano when the party joined the set."
-  joined_at: Timestamp!
+  joinedAt: Timestamp!
   "Epoch in which the party joined the set."
-  at_epoch: Int!
+  atEpoch: Int!
 }
 
 "Edge type containing the referral set referee and cursor information returned by a ReferralSetRefereeConnection"

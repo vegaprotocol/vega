@@ -1823,7 +1823,7 @@ type ComplexityRoot struct {
 	ReferralSetReferee struct {
 		AtEpoch       func(childComplexity int) int
 		JoinedAt      func(childComplexity int) int
-		Referee       func(childComplexity int) int
+		RefereeID     func(childComplexity int) int
 		ReferralSetId func(childComplexity int) int
 	}
 
@@ -2891,6 +2891,8 @@ type ReferralSetResolver interface {
 	Stats(ctx context.Context, obj *v2.ReferralSet, epoch *int, referee *string) (*v2.ReferralSetStats, error)
 }
 type ReferralSetRefereeResolver interface {
+	RefereeID(ctx context.Context, obj *v2.ReferralSetReferee) (string, error)
+
 	AtEpoch(ctx context.Context, obj *v2.ReferralSetReferee) (int, error)
 }
 type ReferralSetStatsResolver interface {
@@ -10435,7 +10437,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RefereeStats.RewardFactor(childComplexity), true
 
-	case "ReferralProgram.benefit_tiers":
+	case "ReferralProgram.benefitTiers":
 		if e.complexity.ReferralProgram.BenefitTiers == nil {
 			break
 		}
@@ -10484,7 +10486,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ReferralProgram.WindowLength(childComplexity), true
 
-	case "ReferralSet.created_at":
+	case "ReferralSet.createdAt":
 		if e.complexity.ReferralSet.CreatedAt == nil {
 			break
 		}
@@ -10517,7 +10519,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ReferralSet.Stats(childComplexity, args["epoch"].(*int), args["referee"].(*string)), true
 
-	case "ReferralSet.updated_at":
+	case "ReferralSet.updatedAt":
 		if e.complexity.ReferralSet.UpdatedAt == nil {
 			break
 		}
@@ -10552,28 +10554,28 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ReferralSetEdge.Node(childComplexity), true
 
-	case "ReferralSetReferee.at_epoch":
+	case "ReferralSetReferee.atEpoch":
 		if e.complexity.ReferralSetReferee.AtEpoch == nil {
 			break
 		}
 
 		return e.complexity.ReferralSetReferee.AtEpoch(childComplexity), true
 
-	case "ReferralSetReferee.joined_at":
+	case "ReferralSetReferee.joinedAt":
 		if e.complexity.ReferralSetReferee.JoinedAt == nil {
 			break
 		}
 
 		return e.complexity.ReferralSetReferee.JoinedAt(childComplexity), true
 
-	case "ReferralSetReferee.referee":
-		if e.complexity.ReferralSetReferee.Referee == nil {
+	case "ReferralSetReferee.refereeId":
+		if e.complexity.ReferralSetReferee.RefereeID == nil {
 			break
 		}
 
-		return e.complexity.ReferralSetReferee.Referee(childComplexity), true
+		return e.complexity.ReferralSetReferee.RefereeID(childComplexity), true
 
-	case "ReferralSetReferee.referral_set_id":
+	case "ReferralSetReferee.referralSetId":
 		if e.complexity.ReferralSetReferee.ReferralSetId == nil {
 			break
 		}
@@ -59580,8 +59582,8 @@ func (ec *executionContext) fieldContext_Query_currentReferralProgram(ctx contex
 				return ec.fieldContext_ReferralProgram_id(ctx, field)
 			case "version":
 				return ec.fieldContext_ReferralProgram_version(ctx, field)
-			case "benefit_tiers":
-				return ec.fieldContext_ReferralProgram_benefit_tiers(ctx, field)
+			case "benefitTiers":
+				return ec.fieldContext_ReferralProgram_benefitTiers(ctx, field)
 			case "endOfProgramTimestamp":
 				return ec.fieldContext_ReferralProgram_endOfProgramTimestamp(ctx, field)
 			case "windowLength":
@@ -64243,8 +64245,8 @@ func (ec *executionContext) fieldContext_ReferralProgram_version(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _ReferralProgram_benefit_tiers(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralProgram) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ReferralProgram_benefit_tiers(ctx, field)
+func (ec *executionContext) _ReferralProgram_benefitTiers(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralProgram) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralProgram_benefitTiers(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -64274,7 +64276,7 @@ func (ec *executionContext) _ReferralProgram_benefit_tiers(ctx context.Context, 
 	return ec.marshalNBenefitTier2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐBenefitTierᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ReferralProgram_benefit_tiers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ReferralProgram_benefitTiers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ReferralProgram",
 		Field:      field,
@@ -64564,8 +64566,8 @@ func (ec *executionContext) fieldContext_ReferralSet_referrer(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _ReferralSet_created_at(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSet) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ReferralSet_created_at(ctx, field)
+func (ec *executionContext) _ReferralSet_createdAt(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSet) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSet_createdAt(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -64595,7 +64597,7 @@ func (ec *executionContext) _ReferralSet_created_at(ctx context.Context, field g
 	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ReferralSet_created_at(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ReferralSet_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ReferralSet",
 		Field:      field,
@@ -64608,8 +64610,8 @@ func (ec *executionContext) fieldContext_ReferralSet_created_at(ctx context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _ReferralSet_updated_at(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSet) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ReferralSet_updated_at(ctx, field)
+func (ec *executionContext) _ReferralSet_updatedAt(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSet) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSet_updatedAt(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -64639,7 +64641,7 @@ func (ec *executionContext) _ReferralSet_updated_at(ctx context.Context, field g
 	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ReferralSet_updated_at(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ReferralSet_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ReferralSet",
 		Field:      field,
@@ -64864,10 +64866,10 @@ func (ec *executionContext) fieldContext_ReferralSetEdge_node(ctx context.Contex
 				return ec.fieldContext_ReferralSet_id(ctx, field)
 			case "referrer":
 				return ec.fieldContext_ReferralSet_referrer(ctx, field)
-			case "created_at":
-				return ec.fieldContext_ReferralSet_created_at(ctx, field)
-			case "updated_at":
-				return ec.fieldContext_ReferralSet_updated_at(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_ReferralSet_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_ReferralSet_updatedAt(ctx, field)
 			case "stats":
 				return ec.fieldContext_ReferralSet_stats(ctx, field)
 			}
@@ -64921,8 +64923,8 @@ func (ec *executionContext) fieldContext_ReferralSetEdge_cursor(ctx context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _ReferralSetReferee_referral_set_id(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetReferee) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ReferralSetReferee_referral_set_id(ctx, field)
+func (ec *executionContext) _ReferralSetReferee_referralSetId(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetReferee) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSetReferee_referralSetId(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -64952,7 +64954,7 @@ func (ec *executionContext) _ReferralSetReferee_referral_set_id(ctx context.Cont
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ReferralSetReferee_referral_set_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ReferralSetReferee_referralSetId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ReferralSetReferee",
 		Field:      field,
@@ -64965,8 +64967,8 @@ func (ec *executionContext) fieldContext_ReferralSetReferee_referral_set_id(ctx 
 	return fc, nil
 }
 
-func (ec *executionContext) _ReferralSetReferee_referee(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetReferee) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ReferralSetReferee_referee(ctx, field)
+func (ec *executionContext) _ReferralSetReferee_refereeId(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetReferee) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSetReferee_refereeId(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -64979,7 +64981,7 @@ func (ec *executionContext) _ReferralSetReferee_referee(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Referee, nil
+		return ec.resolvers.ReferralSetReferee().RefereeID(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -64996,12 +64998,12 @@ func (ec *executionContext) _ReferralSetReferee_referee(ctx context.Context, fie
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ReferralSetReferee_referee(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ReferralSetReferee_refereeId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ReferralSetReferee",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ID does not have child fields")
 		},
@@ -65009,8 +65011,8 @@ func (ec *executionContext) fieldContext_ReferralSetReferee_referee(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _ReferralSetReferee_joined_at(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetReferee) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ReferralSetReferee_joined_at(ctx, field)
+func (ec *executionContext) _ReferralSetReferee_joinedAt(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetReferee) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSetReferee_joinedAt(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -65040,7 +65042,7 @@ func (ec *executionContext) _ReferralSetReferee_joined_at(ctx context.Context, f
 	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ReferralSetReferee_joined_at(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ReferralSetReferee_joinedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ReferralSetReferee",
 		Field:      field,
@@ -65053,8 +65055,8 @@ func (ec *executionContext) fieldContext_ReferralSetReferee_joined_at(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _ReferralSetReferee_at_epoch(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetReferee) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ReferralSetReferee_at_epoch(ctx, field)
+func (ec *executionContext) _ReferralSetReferee_atEpoch(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetReferee) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSetReferee_atEpoch(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -65084,7 +65086,7 @@ func (ec *executionContext) _ReferralSetReferee_at_epoch(ctx context.Context, fi
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ReferralSetReferee_at_epoch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ReferralSetReferee_atEpoch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ReferralSetReferee",
 		Field:      field,
@@ -65240,14 +65242,14 @@ func (ec *executionContext) fieldContext_ReferralSetRefereeEdge_node(ctx context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "referral_set_id":
-				return ec.fieldContext_ReferralSetReferee_referral_set_id(ctx, field)
-			case "referee":
-				return ec.fieldContext_ReferralSetReferee_referee(ctx, field)
-			case "joined_at":
-				return ec.fieldContext_ReferralSetReferee_joined_at(ctx, field)
-			case "at_epoch":
-				return ec.fieldContext_ReferralSetReferee_at_epoch(ctx, field)
+			case "referralSetId":
+				return ec.fieldContext_ReferralSetReferee_referralSetId(ctx, field)
+			case "refereeId":
+				return ec.fieldContext_ReferralSetReferee_refereeId(ctx, field)
+			case "joinedAt":
+				return ec.fieldContext_ReferralSetReferee_joinedAt(ctx, field)
+			case "atEpoch":
+				return ec.fieldContext_ReferralSetReferee_atEpoch(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ReferralSetReferee", field.Name)
 		},
@@ -98110,9 +98112,9 @@ func (ec *executionContext) _ReferralProgram(ctx context.Context, sel ast.Select
 				return innerFunc(ctx)
 
 			})
-		case "benefit_tiers":
+		case "benefitTiers":
 
-			out.Values[i] = ec._ReferralProgram_benefit_tiers(ctx, field, obj)
+			out.Values[i] = ec._ReferralProgram_benefitTiers(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
@@ -98190,16 +98192,16 @@ func (ec *executionContext) _ReferralSet(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "created_at":
+		case "createdAt":
 
-			out.Values[i] = ec._ReferralSet_created_at(ctx, field, obj)
+			out.Values[i] = ec._ReferralSet_createdAt(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "updated_at":
+		case "updatedAt":
 
-			out.Values[i] = ec._ReferralSet_updated_at(ctx, field, obj)
+			out.Values[i] = ec._ReferralSet_updatedAt(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
@@ -98315,28 +98317,14 @@ func (ec *executionContext) _ReferralSetReferee(ctx context.Context, sel ast.Sel
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ReferralSetReferee")
-		case "referral_set_id":
+		case "referralSetId":
 
-			out.Values[i] = ec._ReferralSetReferee_referral_set_id(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "referee":
-
-			out.Values[i] = ec._ReferralSetReferee_referee(ctx, field, obj)
+			out.Values[i] = ec._ReferralSetReferee_referralSetId(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "joined_at":
-
-			out.Values[i] = ec._ReferralSetReferee_joined_at(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "at_epoch":
+		case "refereeId":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -98345,7 +98333,34 @@ func (ec *executionContext) _ReferralSetReferee(ctx context.Context, sel ast.Sel
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._ReferralSetReferee_at_epoch(ctx, field, obj)
+				res = ec._ReferralSetReferee_refereeId(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "joinedAt":
+
+			out.Values[i] = ec._ReferralSetReferee_joinedAt(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "atEpoch":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ReferralSetReferee_atEpoch(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
