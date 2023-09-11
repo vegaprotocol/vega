@@ -103,7 +103,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
     And the current epoch is "1"
 
     Then the markets are updated:
-      | id        | quote name | asset | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/MAR22 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA-22-1   |
+      | id        | risk model            | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | log-normal-risk-model | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA-22-1   |
 
 #
