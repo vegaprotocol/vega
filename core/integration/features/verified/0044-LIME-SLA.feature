@@ -32,11 +32,9 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 0.05        | 1                            | 1                             | 1.0                    |
 
-    And the markets:
-      | id        | quote name | asset | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/MAR22 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA        |
-      | ETH/MAR23 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA2       |
-      | ETH/JAN23 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA3       |
+    And the liquidity monitoring parameters:
+      | name       | triggering ratio | time window | scaling factor |
+      | lqm-params | 10               | 3600s       | 1              |
 
     And the following network parameters are set:
       | name                                                | value |
@@ -57,6 +55,12 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 1     |
       | validators.epoch.length                             | 10s   |
       | market.liquidity.providersFeeCalculationTimeStep    | 10s   |
+
+    And the markets:
+      | id        | quote name | asset | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params | liquidity monitoring |
+      | ETH/MAR22 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA        | lqm-params           |
+      | ETH/MAR23 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA2       | lqm-params           |
+      | ETH/JAN23 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA3       | lqm-params           |
 
     Given the average block duration is "2"
   @Now
@@ -223,7 +227,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | lp1   | USD   | ETH/MAR23 | 533536 | 1466484 | 0     |
       | lp2   | USD   | ETH/MAR23 | 533536 | 1416484 | 50000 |
 
-  Scenario: An LP with bid order outside valid range during auction is penalised (0044-LIME-098)
+  Scenario: An LP with orders inside valid range during auction isn't penalised (0044-LIME-096)
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | lp1    | USD   | 20000000   |
@@ -238,8 +242,8 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     When the network moves ahead "2" blocks
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | lp1    | ETH/JAN23 | buy  | 100    | 4999  | 0                | TYPE_LIMIT | TIF_GTC |
-      | lp1    | ETH/JAN23 | sell | 100    | 5001  | 0                | TYPE_LIMIT | TIF_GTC |
+      | lp1    | ETH/JAN23 | buy  | 100    | 4750  | 0                | TYPE_LIMIT | TIF_GTC |
+      | lp1    | ETH/JAN23 | sell | 100    | 5250  | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/JAN23 | buy  | 10     | 4900  | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/JAN23 | buy  | 1      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/JAN23 | sell | 10     | 5100  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -252,33 +256,155 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
 
     And the market data for the market "ETH/JAN23" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 5000       | TRADING_MODE_CONTINUOUS | 3600    | 4865      | 5139      | 177845       | 180000         | 1             |
-
-    Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/JAN23 | buy  | 2      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/JAN23 | sell | 2      | 5000  | 1                | TYPE_LIMIT | TIF_GTC |
-
-    When the network moves ahead "2" blocks
-    Then the market data for the market "ETH/JAN23" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 5000       | TRADING_MODE_CONTINUOUS | 3600    | 4865      | 5139      | 533535       | 180000         | 3             |
+      | 5000       | TRADING_MODE_CONTINUOUS | 3600    | 4865      | 5139      | 17784        | 180000         | 1             |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/JAN23 | buy  | 5000   | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/JAN23 | sell | 5000   | 5000  | 1                | TYPE_LIMIT | TIF_GTC |
 
-    When the network moves ahead "1" epochs
+    When the network moves ahead "2" blocks
     Then the market data for the market "ETH/JAN23" should be:
+      | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 5000       | TRADING_MODE_MONITORING_AUCTION | 3600    | 4865      | 5139      | 88940284     | 180000         | 5001          |
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/JAN23"
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/JAN23 | buy  | 1      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/JAN23 | sell | 1      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    When the network moves ahead "1" epochs
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/JAN23"
+    Then the parties should have the following account balances:
+      | party | asset | market id | margin  | general  | bond   |
+      | lp1   | USD   | ETH/JAN23 | 2801062 | 17518938 | 180000 |
+
+    When the network moves ahead "1" epochs
+    Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/JAN23"
+    Then the parties should have the following account balances:
+      | party | asset | market id | margin  | general  | bond   |
+      | lp1   | USD   | ETH/JAN23 | 2801062 | 17518938 | 180000 |
+
+  Scenario: An LP with bid orders outside valid range during auction is penalised (0044-LIME-098)
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount     |
+      | lp1    | USD   | 20000000   |
+      | party1 | USD   | 1000000000 |
+      | party2 | USD   | 1000000000 |
+      | party3 | USD   | 1000000    |
+
+    And the parties submit the following liquidity provision:
+      | id   | party | market id | commitment amount | fee  | lp type    |
+      | lp_1 | lp1   | ETH/JAN23 | 180000            | 0.02 | submission |
+
+    When the network moves ahead "2" blocks
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | lp1    | ETH/JAN23 | buy  | 100    | 4740  | 0                | TYPE_LIMIT | TIF_GTC |
+      | lp1    | ETH/JAN23 | sell | 100    | 5250  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/JAN23 | buy  | 10     | 4900  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/JAN23 | buy  | 1      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/JAN23 | sell | 10     | 5100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/JAN23 | sell | 1      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/JAN23"
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party1 | 5000  | 1    | party2 |
+
+    And the market data for the market "ETH/JAN23" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 5000       | TRADING_MODE_CONTINUOUS | 3600    | 4865      | 5139      | 889758535    | 180000         | 5003          |
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/JAN23"
+      | 5000       | TRADING_MODE_CONTINUOUS | 3600    | 4865      | 5139      | 17784        | 180000         | 1             |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/JAN23 | buy  | 5000   | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/JAN23 | sell | 5000   | 5000  | 1                | TYPE_LIMIT | TIF_GTC |
+
+    When the network moves ahead "2" blocks
+    Then the market data for the market "ETH/JAN23" should be:
+      | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 5000       | TRADING_MODE_MONITORING_AUCTION | 3600    | 4865      | 5139      | 88940284     | 180000         | 5001          |
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/JAN23"
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/JAN23 | buy  | 1      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/JAN23 | sell | 1      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    When the network moves ahead "1" epochs
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/JAN23"
+    Then the parties should have the following account balances:
+      | party | asset | market id | margin  | general  | bond   |
+      | lp1   | USD   | ETH/JAN23 | 2801062 | 17018938 | 108000 |
+
+    When the network moves ahead "2" epochs
+    Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/JAN23"
+    Then the parties should have the following account balances:
+      | party | asset | market id | margin  | general  | bond  |
+      | lp1   | USD   | ETH/JAN23 | 2801062 | 17018938 | 27000 |
+
+  Scenario: An LP with ask orders outside valid range during auction is penalised (0044-LIME-099)
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount     |
+      | lp1    | USD   | 20000000   |
+      | party1 | USD   | 1000000000 |
+      | party2 | USD   | 1000000000 |
+      | party3 | USD   | 1000000    |
+
+    And the parties submit the following liquidity provision:
+      | id   | party | market id | commitment amount | fee  | lp type    |
+      | lp_1 | lp1   | ETH/JAN23 | 180000            | 0.02 | submission |
+
+    When the network moves ahead "2" blocks
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | lp1    | ETH/JAN23 | buy  | 100    | 4750  | 0                | TYPE_LIMIT | TIF_GTC |
+      | lp1    | ETH/JAN23 | sell | 100    | 5260  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/JAN23 | buy  | 10     | 4900  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/JAN23 | buy  | 1      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/JAN23 | sell | 10     | 5100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/JAN23 | sell | 1      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/JAN23"
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party1 | 5000  | 1    | party2 |
+
+    And the market data for the market "ETH/JAN23" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 5000       | TRADING_MODE_CONTINUOUS | 3600    | 4865      | 5139      | 17784        | 180000         | 1             |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/JAN23 | buy  | 5000   | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/JAN23 | sell | 5000   | 5000  | 1                | TYPE_LIMIT | TIF_GTC |
+
+    When the network moves ahead "2" blocks
+    Then the market data for the market "ETH/JAN23" should be:
+      | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 5000       | TRADING_MODE_MONITORING_AUCTION | 3600    | 4865      | 5139      | 88940284     | 180000         | 5001          |
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/JAN23"
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/JAN23 | buy  | 1      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/JAN23 | sell | 1      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    When the network moves ahead "1" epochs
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/JAN23"
+    Then the parties should have the following account balances:
+      | party | asset | market id | margin  | general  | bond  |
+      | lp1   | USD   | ETH/JAN23 | 2806398 | 17013602 | 90000 |
+
+    When the network moves ahead "2" epochs
+    Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/JAN23"
+    Then the parties should have the following account balances:
+      | party | asset | market id | margin  | general  | bond  |
+      | lp1   | USD   | ETH/JAN23 | 2806398 | 17013602 | 22500 |
 
 
-# And the parties should have the following account balances:
-#   | party | asset | market id | margin | general | bond  |
-#   | lp1   | USD   | ETH/JAN23 | 533536 | 1416464 | 50000 |
 
 # And the network moves ahead "1" epochs
 
