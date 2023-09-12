@@ -7,7 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
-func calculateRewardsForValidators(epochSeq, asset, accountID string, balance *num.Uint, timestamp time.Time, rankingScoreContributions []*types.PartyContibutionScore, lockForEpochs uint64) *payout {
+func calculateRewardsForValidators(epochSeq, asset, accountID string, balance *num.Uint, timestamp time.Time, rankingScoreContributions []*types.PartyContributionScore, lockForEpochs uint64) *payout {
 	if balance.IsZero() || balance.IsNegative() {
 		return nil
 	}

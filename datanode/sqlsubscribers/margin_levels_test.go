@@ -29,7 +29,6 @@ import (
 
 func TestMarginLevels_Push(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	accountSource := TestNullAccountSource{}
 

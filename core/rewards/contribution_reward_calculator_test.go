@@ -23,7 +23,7 @@ import (
 )
 
 func TestCalculateRewardsByContributionIndividualProRata(t *testing.T) {
-	partyContribution := []*types.PartyContibutionScore{
+	partyContribution := []*types.PartyContributionScore{
 		{Party: "p1", Score: num.DecimalFromFloat(0.6)},
 		{Party: "p2", Score: num.DecimalFromFloat(0.5)},
 		{Party: "p3", Score: num.DecimalFromFloat(0.1)},
@@ -53,7 +53,7 @@ func TestCalculateRewardsByContributionIndividualProRata(t *testing.T) {
 }
 
 func TestCalculateRewardsByContributionIndividualRanking(t *testing.T) {
-	partyContribution := []*types.PartyContibutionScore{
+	partyContribution := []*types.PartyContributionScore{
 		{Party: "p1", Score: num.DecimalFromFloat(0.6)},
 		{Party: "p2", Score: num.DecimalFromFloat(0.5)},
 		{Party: "p3", Score: num.DecimalFromFloat(0.1)},
@@ -88,7 +88,7 @@ func TestCalculateRewardsByContributionIndividualRanking(t *testing.T) {
 }
 
 func TestCalculateRewardsByContributionTeamsRank(t *testing.T) {
-	teamContribution := []*types.PartyContibutionScore{
+	teamContribution := []*types.PartyContributionScore{
 		{Party: "t1", Score: num.DecimalFromFloat(0.6)},
 		{Party: "t2", Score: num.DecimalFromFloat(0.5)},
 		{Party: "t3", Score: num.DecimalFromFloat(0.1)},
@@ -96,30 +96,30 @@ func TestCalculateRewardsByContributionTeamsRank(t *testing.T) {
 		{Party: "t5", Score: num.DecimalFromFloat(0.2)},
 	}
 
-	t1PartyContribution := []*types.PartyContibutionScore{
+	t1PartyContribution := []*types.PartyContributionScore{
 		{Party: "p11", Score: num.DecimalFromFloat(0.2)},
 		{Party: "p12", Score: num.DecimalFromFloat(0.5)},
 	}
 
-	t2PartyContribution := []*types.PartyContibutionScore{
+	t2PartyContribution := []*types.PartyContributionScore{
 		{Party: "p21", Score: num.DecimalFromFloat(0.05)},
 		{Party: "p22", Score: num.DecimalFromFloat(0.3)},
 	}
 
-	t3PartyContribution := []*types.PartyContibutionScore{
+	t3PartyContribution := []*types.PartyContributionScore{
 		{Party: "p31", Score: num.DecimalFromFloat(0.2)},
 		{Party: "p32", Score: num.DecimalFromFloat(0.3)},
 		{Party: "p33", Score: num.DecimalFromFloat(0.6)},
 	}
-	t4PartyContribution := []*types.PartyContibutionScore{
+	t4PartyContribution := []*types.PartyContributionScore{
 		{Party: "p41", Score: num.DecimalFromFloat(0.2)},
 	}
-	t5PartyContribution := []*types.PartyContibutionScore{
+	t5PartyContribution := []*types.PartyContributionScore{
 		{Party: "p51", Score: num.DecimalFromFloat(0.2)},
 		{Party: "p52", Score: num.DecimalFromFloat(0.8)},
 	}
 
-	teamToPartyContribution := map[string][]*types.PartyContibutionScore{
+	teamToPartyContribution := map[string][]*types.PartyContributionScore{
 		"t1": t1PartyContribution,
 		"t2": t2PartyContribution,
 		"t3": t3PartyContribution,
@@ -174,7 +174,7 @@ func TestCalculateRewardsByContributionTeamsRank(t *testing.T) {
 }
 
 func TestCalculateRewardsByContributionTeamsProRata(t *testing.T) {
-	teamContribution := []*types.PartyContibutionScore{
+	teamContribution := []*types.PartyContributionScore{
 		{Party: "t1", Score: num.DecimalFromFloat(0.6)},
 		{Party: "t2", Score: num.DecimalFromFloat(0.5)},
 		{Party: "t3", Score: num.DecimalFromFloat(0.1)},
@@ -182,30 +182,30 @@ func TestCalculateRewardsByContributionTeamsProRata(t *testing.T) {
 		{Party: "t5", Score: num.DecimalFromFloat(0.2)},
 	}
 
-	t1PartyContribution := []*types.PartyContibutionScore{
+	t1PartyContribution := []*types.PartyContributionScore{
 		{Party: "p11", Score: num.DecimalFromFloat(0.2)},
 		{Party: "p12", Score: num.DecimalFromFloat(0.5)},
 	}
 
-	t2PartyContribution := []*types.PartyContibutionScore{
+	t2PartyContribution := []*types.PartyContributionScore{
 		{Party: "p21", Score: num.DecimalFromFloat(0.05)},
 		{Party: "p22", Score: num.DecimalFromFloat(0.3)},
 	}
 
-	t3PartyContribution := []*types.PartyContibutionScore{
+	t3PartyContribution := []*types.PartyContributionScore{
 		{Party: "p31", Score: num.DecimalFromFloat(0.2)},
 		{Party: "p32", Score: num.DecimalFromFloat(0.3)},
 		{Party: "p33", Score: num.DecimalFromFloat(0.6)},
 	}
-	t4PartyContribution := []*types.PartyContibutionScore{
+	t4PartyContribution := []*types.PartyContributionScore{
 		{Party: "p41", Score: num.DecimalFromFloat(0.2)},
 	}
-	t5PartyContribution := []*types.PartyContibutionScore{
+	t5PartyContribution := []*types.PartyContributionScore{
 		{Party: "p51", Score: num.DecimalFromFloat(0.2)},
 		{Party: "p52", Score: num.DecimalFromFloat(0.8)},
 	}
 
-	teamToPartyContribution := map[string][]*types.PartyContibutionScore{
+	teamToPartyContribution := map[string][]*types.PartyContributionScore{
 		"t1": t1PartyContribution,
 		"t2": t2PartyContribution,
 		"t3": t3PartyContribution,
