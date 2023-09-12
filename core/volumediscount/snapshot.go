@@ -83,7 +83,7 @@ func (e *SnapshottedEngine) restore(vdp *snapshotpb.VolumeDiscountProgram) error
 		e.parties[types.PartyID(v)] = struct{}{}
 	}
 	for _, pv := range vdp.AveragePartyVolume {
-		volume, err := num.DecimalFromString(pv.Volume)
+		volume, err := num.UnmarshalBinaryDecimal(pv.Volume)
 		if err != nil {
 			return err
 		}
@@ -94,9 +94,9 @@ func (e *SnapshottedEngine) restore(vdp *snapshotpb.VolumeDiscountProgram) error
 		if len(epv.PartyVolume) > 0 {
 			volumes := map[types.PartyID]*num.Uint{}
 			for _, pv := range epv.PartyVolume {
-				v, overflow := num.UintFromString(pv.Volume, 10)
-				if overflow {
-					return errors.New("failed to load epoch data for volume discount program")
+				var v *num.Uint
+				if len(pv.Volume) > 0 {
+					v = num.UintFromBytes(pv.Volume)
 				}
 				volumes[types.PartyID(pv.Party)] = v
 			}
@@ -141,7 +141,8 @@ func (e *SnapshottedEngine) serialiseDiscountVolumeProgram() ([]byte, error) {
 
 	avgPartyVolumes := make([]*snapshotpb.PartyVolume, 0, len(e.avgVolumePerParty))
 	for pi, d := range e.avgVolumePerParty {
-		avgPartyVolumes = append(avgPartyVolumes, &snapshotpb.PartyVolume{Party: string(pi), Volume: d.String()})
+		b, _ := d.MarshalBinary()
+		avgPartyVolumes = append(avgPartyVolumes, &snapshotpb.PartyVolume{Party: string(pi), Volume: b})
 	}
 	sort.Slice(avgPartyVolumes, func(i, j int) bool {
 		return avgPartyVolumes[i].Party < avgPartyVolumes[j].Party
@@ -153,7 +154,12 @@ func (e *SnapshottedEngine) serialiseDiscountVolumeProgram() ([]byte, error) {
 		if len(epv) > 0 {
 			ed.PartyVolume = make([]*snapshotpb.PartyVolume, 0, len(epv))
 			for pi, u := range epv {
-				ed.PartyVolume = append(ed.PartyVolume, &snapshotpb.PartyVolume{Party: string(pi), Volume: u.String()})
+				var b []byte
+				if u != nil {
+					bb := u.Bytes()
+					b = bb[:]
+				}
+				ed.PartyVolume = append(ed.PartyVolume, &snapshotpb.PartyVolume{Party: string(pi), Volume: b})
 			}
 			sort.Slice(ed.PartyVolume, func(i, j int) bool {
 				return ed.PartyVolume[i].Party < ed.PartyVolume[j].Party

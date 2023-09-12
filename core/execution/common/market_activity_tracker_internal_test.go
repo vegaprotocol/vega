@@ -44,9 +44,10 @@ func TestSortedK(t *testing.T) {
 }
 
 func TestCalcTotalForWindowD(t *testing.T) {
-	data := make([]num.Decimal, maxWindowSize)
+	data := make([]*num.Decimal, maxWindowSize)
 	for i := int64(0); i < maxWindowSize; i++ {
-		data[i] = num.DecimalFromInt64(i)
+		d := num.DecimalFromInt64(i)
+		data[i] = &d
 	}
 	for idx := 0; idx < len(data); idx++ {
 		require.Equal(t, num.DecimalFromInt64(4950), calcTotalForWindowD(data, idx, maxWindowSize))
@@ -229,11 +230,12 @@ func TestGetPartiesForMetric(t *testing.T) {
 
 func TestGetRelativeReturnMetricTotal(t *testing.T) {
 	tracker := getDefaultTracker(t)
-	m2m := &m2mData{runningTotal: num.DecimalZero(), previousEpochs: make([]num.Decimal, maxWindowSize), previousEpochsIdx: 3}
+	m2m := &m2mData{runningTotal: num.DecimalZero(), previousEpochs: make([]*num.Decimal, maxWindowSize), previousEpochsIdx: 3}
 	tracker.partyM2M["p1"] = m2m
 
 	for i := int64(0); i < maxWindowSize; i++ {
-		m2m.previousEpochs[i] = num.DecimalFromInt64(i)
+		d := num.DecimalFromInt64(i)
+		m2m.previousEpochs[i] = &d
 	}
 	// nothing for party2
 	require.Equal(t, num.DecimalZero(), tracker.getRelativeReturnMetricTotal("p2", 5))
@@ -243,11 +245,12 @@ func TestGetRelativeReturnMetricTotal(t *testing.T) {
 
 func TestGetPositionMetricTotal(t *testing.T) {
 	tracker := getDefaultTracker(t)
-	position := &twPosition{position: num.DecimalZero(), t: time.Now(), currentEpochTWPosition: num.DecimalE(), previousEpochs: make([]num.Decimal, maxWindowSize), previousEpochsIdx: 3}
+	position := &twPosition{position: num.DecimalZero(), t: time.Now(), currentEpochTWPosition: num.DecimalE(), previousEpochs: make([]*num.Decimal, maxWindowSize), previousEpochsIdx: 3}
 	tracker.timeWeightedPosition["p1"] = position
 
 	for i := int64(0); i < maxWindowSize; i++ {
-		position.previousEpochs[i] = num.DecimalFromInt64(i)
+		d := num.DecimalFromInt64(i)
+		position.previousEpochs[i] = &d
 	}
 	// nothing for party2
 	require.Equal(t, num.DecimalZero(), tracker.getPositionMetricTotal("p2", 5))
