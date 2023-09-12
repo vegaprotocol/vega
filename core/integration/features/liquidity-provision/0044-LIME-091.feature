@@ -81,10 +81,10 @@ Feature: Test change of SLA market parameter
 
     And the parties place the following pegged iceberg orders:
       | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset | reference |
-      | lp1   | ETH/MAR22 | 12        | 1                    | buy  | BID              | 12     | 200    | lp-b-1    |
-      | lp1   | ETH/MAR22 | 12        | 1                    | sell | ASK              | 12     | 200    | lp-s-1    |
-      | lp2   | ETH/MAR22 | 12        | 1                    | buy  | BID              | 12     | 200    | lp-b-1    |
-      | lp2   | ETH/MAR22 | 12        | 1                    | sell | ASK              | 12     | 200    | lp-s-1    |
+      | lp1 | ETH/MAR22 | 1 | 1 | buy  | BID | 12 | 200 | lp-b-1 |
+      | lp1 | ETH/MAR22 | 1 | 1 | sell | ASK | 12 | 200 | lp-s-1 |
+      | lp2 | ETH/MAR22 | 1 | 1 | buy  | BID | 12 | 200 | lp-b-1 |
+      | lp2 | ETH/MAR22 | 1 | 1 | sell | ASK | 12 | 200 | lp-s-1 |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
