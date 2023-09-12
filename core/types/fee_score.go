@@ -17,8 +17,8 @@ import (
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
-// FeePartyScore represents the fraction the party has in the total fee.
-type PartyContibutionScore struct {
+// PartyContributionScore represents the fraction the party has in the total fee.
+type PartyContributionScore struct {
 	Party string
 	Score num.Decimal
 }

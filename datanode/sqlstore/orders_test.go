@@ -80,8 +80,7 @@ func txHashFromString(s string) entities.TxHash {
 }
 
 func TestOrders(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewParties(connectionSource)
 	os := sqlstore.NewOrders(connectionSource)
@@ -443,8 +442,7 @@ func generateTestOrders(t *testing.T, ctx context.Context, blocks []entities.Blo
 }
 
 func TestOrders_GetLiveOrders(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	ps := sqlstore.NewParties(connectionSource)
@@ -876,8 +874,7 @@ func sortOrders(orders []entities.Order) {
 }
 
 func testOrdersCursorPaginationByMarketNoCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -912,8 +909,7 @@ func testOrdersCursorPaginationByMarketNoCursorNewestFirst(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByPartyNoCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -949,8 +945,7 @@ func testOrdersCursorPaginationByPartyNoCursorNewestFirst(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByOrderIDNoCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -981,8 +976,7 @@ func testOrdersCursorPaginationByOrderIDNoCursorNewestFirst(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByMarketAndPartyNoCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1015,8 +1009,7 @@ func testOrdersCursorPaginationByMarketAndPartyNoCursorNewestFirst(t *testing.T)
 // -- First Cursor Tests --
 
 func testOrdersCursorPaginationByMarketFirstCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1049,8 +1042,7 @@ func testOrdersCursorPaginationByMarketFirstCursorNewestFirst(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByPartyFirstCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1084,8 +1076,7 @@ func testOrdersCursorPaginationByPartyFirstCursorNewestFirst(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByOrderIDFirstCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1114,8 +1105,7 @@ func testOrdersCursorPaginationByOrderIDFirstCursorNewestFirst(t *testing.T) {
 }
 
 func testOrdersCursorPaginationByMarketAndPartyFirstCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1148,8 +1138,7 @@ func testOrdersCursorPaginationByMarketAndPartyFirstCursorNewestFirst(t *testing
 // -- First and After tests --
 
 func testOrdersCursorPaginationByMarketFirstAndAfterCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1180,8 +1169,7 @@ func testOrdersCursorPaginationByMarketFirstAndAfterCursorNewestFirst(t *testing
 }
 
 func testOrdersCursorPaginationByPartyFirstAndAfterCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1213,8 +1201,7 @@ func testOrdersCursorPaginationByPartyFirstAndAfterCursorNewestFirst(t *testing.
 }
 
 func testOrdersCursorPaginationByOrderIDFirstAndAfterCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1244,8 +1231,7 @@ func testOrdersCursorPaginationByOrderIDFirstAndAfterCursorNewestFirst(t *testin
 }
 
 func testOrdersCursorPaginationByMarketAndPartyFirstAndAfterCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1276,8 +1262,7 @@ func testOrdersCursorPaginationByMarketAndPartyFirstAndAfterCursorNewestFirst(t 
 // -- Last and Before tests --
 
 func testOrdersCursorPaginationBetweenDatesByMarketNoCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1308,8 +1293,7 @@ func testOrdersCursorPaginationBetweenDatesByMarketNoCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationBetweenDatesByMarketFirstCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1340,8 +1324,7 @@ func testOrdersCursorPaginationBetweenDatesByMarketFirstCursor(t *testing.T) {
 }
 
 func testOrdersCursorPaginationBetweenDatesByMarketFirstAndAfterCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1395,8 +1378,7 @@ func testOrdersFilter(t *testing.T) {
 }
 
 func testOrdersFilterByMarketAndStates(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1434,8 +1416,7 @@ func testOrdersFilterByMarketAndStates(t *testing.T) {
 }
 
 func testOrdersFilterByPartyAndStates(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1475,8 +1456,7 @@ func testOrdersFilterByPartyAndStates(t *testing.T) {
 }
 
 func testOrdersFilterByReferenceAndStates(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1511,8 +1491,7 @@ func testOrdersFilterByReferenceAndStates(t *testing.T) {
 }
 
 func testOrdersFilterByMarketAndTypes(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1551,8 +1530,7 @@ func testOrdersFilterByMarketAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterByPartyAndTypes(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1591,8 +1569,7 @@ func testOrdersFilterByPartyAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterByReferenceAndTypes(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1627,8 +1604,7 @@ func testOrdersFilterByReferenceAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterByMarketAndTimeInForce(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1666,8 +1642,7 @@ func testOrdersFilterByMarketAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterByPartyAndTimeInForce(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1707,8 +1682,7 @@ func testOrdersFilterByPartyAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterByReferenceAndTimeInForce(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1743,8 +1717,7 @@ func testOrdersFilterByReferenceAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterByMarketStatesAndTypes(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1781,8 +1754,7 @@ func testOrdersFilterByMarketStatesAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterByPartyStatesAndTypes(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1820,8 +1792,7 @@ func testOrdersFilterByPartyStatesAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterByReferenceStatesAndTypes(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1855,8 +1826,7 @@ func testOrdersFilterByReferenceStatesAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterByMarketStatesAndTimeInForce(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1893,8 +1863,7 @@ func testOrdersFilterByMarketStatesAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterByPartyStatesAndTimeInForce(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1933,8 +1902,7 @@ func testOrdersFilterByPartyStatesAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterByReferenceStatesAndTimeInForce(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -1968,8 +1936,7 @@ func testOrdersFilterByReferenceStatesAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterByMarketStatesTypesAndTimeInForce(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2005,8 +1972,7 @@ func testOrdersFilterByMarketStatesTypesAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterByPartyStatesTypesAndTimeInForce(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2043,8 +2009,7 @@ func testOrdersFilterByPartyStatesTypesAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterByReferenceStatesTypesAndTimeInForce(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2099,8 +2064,7 @@ func testOrdersFilterLiquidityOrders(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByMarketAndStates(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2136,8 +2100,7 @@ func testOrdersFilterExcludeLiquidityByMarketAndStates(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByPartyAndStates(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2175,8 +2138,7 @@ func testOrdersFilterExcludeLiquidityByPartyAndStates(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByReferenceAndStates(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2207,8 +2169,7 @@ func testOrdersFilterExcludeLiquidityByReferenceAndStates(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByMarketAndTypes(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2244,8 +2205,7 @@ func testOrdersFilterExcludeLiquidityByMarketAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByPartyAndTypes(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2282,8 +2242,7 @@ func testOrdersFilterExcludeLiquidityByPartyAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByReferenceAndTypes(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2317,8 +2276,7 @@ func testOrdersFilterExcludeLiquidityByReferenceAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByMarketAndTimeInForce(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2354,8 +2312,7 @@ func testOrdersFilterExcludeLiquidityByMarketAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByPartyAndTimeInForce(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2393,8 +2350,7 @@ func testOrdersFilterExcludeLiquidityByPartyAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByReferenceAndTimeInForce(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2428,8 +2384,7 @@ func testOrdersFilterExcludeLiquidityByReferenceAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByMarketStatesAndTypes(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2464,8 +2419,7 @@ func testOrdersFilterExcludeLiquidityByMarketStatesAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByPartyStatesAndTypes(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2501,8 +2455,7 @@ func testOrdersFilterExcludeLiquidityByPartyStatesAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByReferenceStatesAndTypes(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2535,8 +2488,7 @@ func testOrdersFilterExcludeLiquidityByReferenceStatesAndTypes(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByMarketStatesAndTimeInForce(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2571,8 +2523,7 @@ func testOrdersFilterExcludeLiquidityByMarketStatesAndTimeInForce(t *testing.T) 
 }
 
 func testOrdersFilterExcludeLiquidityByPartyStatesAndTimeInForce(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2609,8 +2560,7 @@ func testOrdersFilterExcludeLiquidityByPartyStatesAndTimeInForce(t *testing.T) {
 }
 
 func testOrdersFilterExcludeLiquidityByReferenceStatesAndTimeInForce(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2641,8 +2591,7 @@ func testOrdersFilterExcludeLiquidityByReferenceStatesAndTimeInForce(t *testing.
 }
 
 func testOrdersFilterExcludeLiquidityByMarketStatesTypesAndTimeInForce(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2676,8 +2625,7 @@ func testOrdersFilterExcludeLiquidityByMarketStatesTypesAndTimeInForce(t *testin
 }
 
 func testOrdersFilterExcludeLiquidityByPartyStatesTypesAndTimeInForce(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)
@@ -2712,8 +2660,7 @@ func testOrdersFilterExcludeLiquidityByPartyStatesTypesAndTimeInForce(t *testing
 }
 
 func testOrdersFilterExcludeLiquidityByReferenceStatesTypesAndTimeInForce(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupOrderCursorPaginationTests(t)
 	testData := generateTestOrdersForCursorPagination(t, ctx, stores)

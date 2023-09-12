@@ -45,8 +45,7 @@ const (
 )
 
 func TestGetExistingCandles(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 
@@ -67,8 +66,7 @@ func TestGetExistingCandles(t *testing.T) {
 }
 
 func TestCandlesPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 
@@ -108,8 +106,7 @@ func TestCandlesPagination(t *testing.T) {
 }
 
 func TestNotional(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 	tradeStore := sqlstore.NewTrades(connectionSource)
@@ -145,8 +142,7 @@ func TestNotional(t *testing.T) {
 }
 
 func TestCandlesGetForEmptyInterval(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 	tradeStore := sqlstore.NewTrades(connectionSource)
@@ -187,8 +183,7 @@ func TestCandlesGetForEmptyInterval(t *testing.T) {
 }
 
 func TestCandlesGetLatest(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 	tradeStore := sqlstore.NewTrades(connectionSource)
@@ -214,8 +209,7 @@ func TestCandlesGetLatest(t *testing.T) {
 }
 
 func TestCandlesGetForDifferentIntervalAndTimeBounds(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 	tradeStore := sqlstore.NewTrades(connectionSource)
@@ -381,8 +375,7 @@ func createTestTrade(t *testing.T, price int, size int, block entities.Block, se
 }
 
 func TestCandlesCursorPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 	tradeStore := sqlstore.NewTrades(connectionSource)

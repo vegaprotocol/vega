@@ -48,8 +48,7 @@ func TestTransfersPagination(t *testing.T) {
 }
 
 func testTransfersGetTransferToOrFromParty(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	now := time.Now()
 	block := getTestBlock(t, ctx, now)
@@ -122,8 +121,7 @@ func testTransfersGetTransferToOrFromParty(t *testing.T) {
 }
 
 func testTransfersGetTransfersByParty(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	now := time.Now()
 	block := getTestBlock(t, ctx, now)
@@ -199,8 +197,7 @@ func testTransfersGetTransfersByParty(t *testing.T) {
 }
 
 func testTransfersGetFromAccountAndGetToAccount(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	now := time.Now()
 	block := getTestBlock(t, ctx, now)
@@ -276,8 +273,7 @@ func testTransfersGetFromAccountAndGetToAccount(t *testing.T) {
 }
 
 func testTransfersUpdatesInDifferentBlocks(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	now := time.Now()
 	block := getTestBlock(t, ctx, now)
@@ -330,8 +326,7 @@ func testTransfersUpdatesInDifferentBlocks(t *testing.T) {
 }
 
 func testTransfersUpdateInSameBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	now := time.Now()
 	block := getTestBlock(t, ctx, now)
@@ -383,8 +378,7 @@ func testTransfersUpdateInSameBlock(t *testing.T) {
 }
 
 func testTransfersAddAndRetrieveOneOffTransfer(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	now := time.Now()
 	block := getTestBlock(t, ctx, now)
@@ -418,8 +412,7 @@ func testTransfersAddAndRetrieveOneOffTransfer(t *testing.T) {
 }
 
 func testTransfersAddAndRetrieveRecurringTransfer(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	now := time.Now()
 	block := getTestBlock(t, ctx, now)
@@ -456,8 +449,7 @@ func testTransfersAddAndRetrieveRecurringTransfer(t *testing.T) {
 }
 
 func testGetByTxHash(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	now := time.Now()
 	block := getTestBlock(t, ctx, now)
@@ -554,8 +546,7 @@ func getTestAccounts(t *testing.T, ctx context.Context, accounts *sqlstore.Accou
 }
 
 func testTransferPaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	transfers := sqlstore.NewTransfers(connectionSource)
@@ -581,8 +572,8 @@ func testTransferPaginationNoPagination(t *testing.T) {
 }
 
 func testTransferPaginationFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs := sqlstore.NewBlocks(connectionSource)
 	transfers := sqlstore.NewTransfers(connectionSource)
 
@@ -609,8 +600,7 @@ func testTransferPaginationFirst(t *testing.T) {
 }
 
 func testTransferPaginationLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	transfers := sqlstore.NewTransfers(connectionSource)
@@ -637,8 +627,7 @@ func testTransferPaginationLast(t *testing.T) {
 }
 
 func testTransferPaginationFirstAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	transfers := sqlstore.NewTransfers(connectionSource)
@@ -666,8 +655,7 @@ func testTransferPaginationFirstAfter(t *testing.T) {
 }
 
 func testTransferPaginationLastBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	transfers := sqlstore.NewTransfers(connectionSource)

@@ -92,8 +92,8 @@ func assertProposalMatch(t *testing.T, expected, actual entities.Proposal) {
 }
 
 func TestProposals(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	partyStore := sqlstore.NewParties(connectionSource)
 	propStore := sqlstore.NewProposals(connectionSource)
 	blockStore := sqlstore.NewBlocks(connectionSource)
@@ -204,8 +204,7 @@ func TestProposalCursorPagination(t *testing.T) {
 }
 
 func testProposalCursorPaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -247,8 +246,7 @@ func testProposalCursorPaginationNoPagination(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -274,8 +272,7 @@ func testProposalCursorPaginationWithFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstAndAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -307,8 +304,7 @@ func testProposalCursorPaginationWithFirstAndAfter(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -334,8 +330,7 @@ func testProposalCursorPaginationWithLast(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLastAndBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -367,8 +362,7 @@ func testProposalCursorPaginationWithLastAndBefore(t *testing.T) {
 }
 
 func testProposalCursorPaginationNoPaginationNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -410,8 +404,7 @@ func testProposalCursorPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -437,8 +430,7 @@ func testProposalCursorPaginationWithFirstNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstAndAfterNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -470,8 +462,7 @@ func testProposalCursorPaginationWithFirstAndAfterNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLastNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -497,8 +488,7 @@ func testProposalCursorPaginationWithLastNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLastAndBeforeNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -530,8 +520,7 @@ func testProposalCursorPaginationWithLastAndBeforeNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationNoPaginationByParty(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -564,8 +553,7 @@ func testProposalCursorPaginationNoPaginationByParty(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstByParty(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -592,8 +580,7 @@ func testProposalCursorPaginationWithFirstByParty(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstAndAfterByParty(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -621,8 +608,7 @@ func testProposalCursorPaginationWithFirstAndAfterByParty(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLastByParty(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -649,8 +635,7 @@ func testProposalCursorPaginationWithLastByParty(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLastAndBeforeByParty(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -680,8 +665,7 @@ func testProposalCursorPaginationWithLastAndBeforeByParty(t *testing.T) {
 }
 
 func testProposalCursorPaginationNoPaginationByPartyNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -715,8 +699,7 @@ func testProposalCursorPaginationNoPaginationByPartyNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstByPartyNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -744,8 +727,7 @@ func testProposalCursorPaginationWithFirstByPartyNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstAndAfterByPartyNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -774,8 +756,7 @@ func testProposalCursorPaginationWithFirstAndAfterByPartyNewestFirst(t *testing.
 }
 
 func testProposalCursorPaginationWithLastByPartyNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -803,8 +784,7 @@ func testProposalCursorPaginationWithLastByPartyNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLastAndBeforeByPartyNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -835,8 +815,7 @@ func testProposalCursorPaginationWithLastAndBeforeByPartyNewestFirst(t *testing.
 }
 
 func testProposalCursorPaginationOpenOnly(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -867,8 +846,7 @@ func testProposalCursorPaginationOpenOnly(t *testing.T) {
 }
 
 func testProposalCursorPaginationGivenState(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -970,8 +948,7 @@ func createPaginationTestProposals(t *testing.T, ctx context.Context, pps *sqlst
 }
 
 func TestProposeSuccessorMarket(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	partyStore := sqlstore.NewParties(connectionSource)
 	propStore := sqlstore.NewProposals(connectionSource)
@@ -1262,8 +1239,7 @@ func TestSpotMarketProposal(t *testing.T) {
 func testShouldSaveNewSpotMarketProposalsToStore(t *testing.T) {
 	bs, pts, ps := setupProposalTest(t)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	block1 := addTestBlock(t, ctx, bs)
 	party1 := addTestParty(t, ctx, pts, block1)
@@ -1293,8 +1269,7 @@ func testShouldSaveNewSpotMarketProposalsToStore(t *testing.T) {
 func testShouldSaveUpdateSpotMarketProposalsToStore(t *testing.T) {
 	bs, pts, ps := setupProposalTest(t)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	block1 := addTestBlock(t, ctx, bs)
 	party1 := addTestParty(t, ctx, pts, block1)
@@ -1329,8 +1304,7 @@ func TestPerpetualMarketProposal(t *testing.T) {
 func testShouldSaveNewPerpetualMarketProposalsToStore(t *testing.T) {
 	bs, pts, ps := setupProposalTest(t)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	block1 := addTestBlock(t, ctx, bs)
 	party1 := addTestParty(t, ctx, pts, block1)
@@ -1364,8 +1338,7 @@ func testShouldSaveNewPerpetualMarketProposalsToStore(t *testing.T) {
 func testShouldUpdateSavePerpetualMarketProposalsToStore(t *testing.T) {
 	bs, pts, ps := setupProposalTest(t)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	block1 := addTestBlock(t, ctx, bs)
 	party1 := addTestParty(t, ctx, pts, block1)

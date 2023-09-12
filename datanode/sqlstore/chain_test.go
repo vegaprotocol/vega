@@ -21,8 +21,7 @@ import (
 )
 
 func TestChain(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	cs := sqlstore.NewChain(connectionSource)
 
