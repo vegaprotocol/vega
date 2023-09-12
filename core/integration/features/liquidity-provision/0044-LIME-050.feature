@@ -56,7 +56,7 @@ Feature: Test LP, when market is in opening auction, in terms of the liquidity t
 
     Given the average block duration is "1"
   @Now
-  Scenario: 001: lp1 and lp2 on the market ETH/MAR22, 0044-LIME-050
+  Scenario: 001: lp1 and lp2 on the market ETH/MAR22 placed commitment during opening auction, 0044-LIME-050
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | lp1    | USD   | 100000 |
@@ -65,15 +65,31 @@ Feature: Test LP, when market is in opening auction, in terms of the liquidity t
       | party2 | USD   | 100000 |
       | party3 | USD   | 100000 |
 
-
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee   | lp type    |
       | lp_1 | lp1   | ETH/MAR22 | 4000              | 0.02  | submission |
       | lp_2 | lp2   | ETH/MAR22 | 4000              | 0.015 | submission |
-
+    And the supplied stake should be "8000" for the market "ETH/MAR22"
     When the network moves ahead "4" blocks
+    And the insurance pool balance should be "0" for the market "ETH/MAR22"
+
+    And the parties submit the following liquidity provision:
+      | id   | party | market id | commitment amount | fee   | lp type   |
+      | lp_1 | lp1   | ETH/MAR22 | 6000              | 0.02  | amendment |
+      | lp_2 | lp2   | ETH/MAR22 | 6000              | 0.015 | amendment |
+    #When a LP increases their commitment then: It takes effect immediately for the purposes of LP stake supplied to the market
+    And the supplied stake should be "12000" for the market "ETH/MAR22"
+    When the network moves ahead "4" blocks
+    And the insurance pool balance should be "0" for the market "ETH/MAR22"
     And the current epoch is "0"
 
+    #lp place pegged order end of first epoch
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset | reference |
+      | lp1   | ETH/MAR22 | 12        | 1                    | buy  | BID              | 12     | 20     | lp-b-1    |
+      | lp1   | ETH/MAR22 | 12        | 1                    | sell | ASK              | 12     | 20     | lp-s-1    |
+    When the network moves ahead "5" blocks
+    And the current epoch is "1"
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -88,21 +104,20 @@ Feature: Test LP, when market is in opening auction, in terms of the liquidity t
       | buyer  | price | size | seller |
       | party1 | 1000  | 1    | party2 |
 
-    And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 3556         | 8000           | 1             |
-    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 1 x 1 x 3.5569036 =3556
-    And the liquidity fee factor should be "0.015" for the market "ETH/MAR22"
-    When the network moves ahead "5" blocks
-    And the current epoch is "0"
-
-    #lp place pegged order end of first epoch
-    And the parties place the following pegged iceberg orders:
-      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset | reference |
-      | lp1   | ETH/MAR22 | 12        | 1                    | buy  | BID              | 12     | 20     | lp-b-1    |
-      | lp1   | ETH/MAR22 | 12        | 1                    | sell | ASK              | 12     | 20     | lp-s-1    |
-
-    When the network moves ahead "3" blocks
+    When the network moves ahead "6" blocks
     And the current epoch is "1"
-    And the insurance pool balance should be "3450" for the market "ETH/MAR22"
+    And the insurance pool balance should be "0" for the market "ETH/MAR22"
+    And the supplied stake should be "12000" for the market "ETH/MAR22"
+
+    When the network moves ahead "6" blocks
+    And the current epoch is "2"
+    And the insurance pool balance should be "3600" for the market "ETH/MAR22"
+    And the supplied stake should be "8400" for the market "ETH/MAR22"
+
+    Then the following transfers should happen:
+      | from | to     | from account      | to account             | market id | amount | asset |
+      | lp1  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 0      | USD   |
+      | lp2  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 3600   | USD   |
+
+
 
