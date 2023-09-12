@@ -454,7 +454,10 @@ func (e *Engine) loadReferralSetsFromSnapshot(setsProto *snapshotpb.ReferralSets
 
 		runningVolumes := make([]*notionalVolume, 0, len(setProto.RunningVolumes))
 		for _, volume := range setProto.RunningVolumes {
-			volumeNum, _ := num.UintFromString(volume.Volume, 10)
+			var volumeNum *num.Uint
+			if len(volume.Volume) > 0 {
+				volumeNum = num.UintFromBytes(volume.Volume)
+			}
 			runningVolumes = append(runningVolumes, &notionalVolume{
 				epoch: volume.Epoch,
 				value: volumeNum,

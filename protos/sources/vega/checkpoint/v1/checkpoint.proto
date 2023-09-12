@@ -237,7 +237,7 @@ message MarketActivityTracker {
 
 message TakerNotionalVolume {
   string party = 1;
-  string volume = 2;
+  bytes volume = 2;
 }
 
 message ReturnsData {
@@ -247,23 +247,23 @@ message ReturnsData {
 
 message TWNotionalPosition {
   string party = 1;
-  string position = 2;
+  bytes position = 2;
   int64 time = 3;
-  string price = 4;
-  string tw_notional_position = 5;
+  bytes price = 4;
+  bytes tw_notional_position = 5;
 }
 
 message TWPositionData {
   string party = 1;
-  string position = 2;
+  bytes position = 2;
   int64 time = 3;
   DataWithHistory data = 4;
 }
 
 message DataWithHistory {
-  string running_total = 2;
-  repeated string previous_epochs = 3;
-  uint64 previous_epochs_index = 4;
+  bytes running_total = 1;
+  repeated bytes previous_epochs = 2;
+  uint64 previous_epochs_index = 3;
 }
 
 message PartyFeeData {
