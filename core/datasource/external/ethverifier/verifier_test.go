@@ -43,18 +43,19 @@ import (
 type verifierTest struct {
 	*ethverifier.Verifier
 
-	ctrl              *gomock.Controller
-	witness           *mocks.MockWitness
-	ts                *omocks.MockTimeService
-	oracleBroadcaster *mocks.MockOracleDataBroadcaster
-	ethCallEngine     *mocks.MockEthCallEngine
-	ethConfirmations  *mocks.MockEthereumConfirmations
-	broker            *mocks2.MockBroker
+	ctrl                     *gomock.Controller
+	witness                  *mocks.MockWitness
+	ts                       *omocks.MockTimeService
+	oracleBroadcaster        *mocks.MockOracleDataBroadcaster
+	ethCallEngine            *mocks.MockEthCallEngine
+	ethConfirmations         *mocks.MockEthereumConfirmations
+	broker                   *mocks2.MockBroker
+	ethContractCallEventChan chan ethcall.ContractCallEvent
 
 	onTick func(context.Context, time.Time)
 }
 
-func getTestEthereumOracleVerifier(t *testing.T) *verifierTest {
+func getTestEthereumOracleVerifier(ctx context.Context, t *testing.T) *verifierTest {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
@@ -64,16 +65,19 @@ func getTestEthereumOracleVerifier(t *testing.T) *verifierTest {
 	ethCallEngine := mocks.NewMockEthCallEngine(ctrl)
 	ethConfirmations := mocks.NewMockEthereumConfirmations(ctrl)
 	broker := mocks2.NewMockBroker(ctrl)
+	ethContractCallEventChan := make(chan ethcall.ContractCallEvent)
 
 	evt := &verifierTest{
-		Verifier:          ethverifier.New(log, witness, ts, broker, broadcaster, ethCallEngine, ethConfirmations),
-		ctrl:              ctrl,
-		witness:           witness,
-		ts:                ts,
-		oracleBroadcaster: broadcaster,
-		ethCallEngine:     ethCallEngine,
-		ethConfirmations:  ethConfirmations,
-		broker:            broker,
+		Verifier: ethverifier.New(ctx, log, witness, ts, broker, broadcaster, ethCallEngine, ethConfirmations,
+			ethContractCallEventChan),
+		ctrl:                     ctrl,
+		witness:                  witness,
+		ts:                       ts,
+		oracleBroadcaster:        broadcaster,
+		ethCallEngine:            ethCallEngine,
+		ethConfirmations:         ethConfirmations,
+		broker:                   broker,
+		ethContractCallEventChan: ethContractCallEventChan,
 	}
 	evt.onTick = evt.Verifier.OnTick
 
@@ -89,10 +93,13 @@ func TestVerifier(t *testing.T) {
 	t.Run("testProcessEthereumOracleChainEventWithGlobalError", testProcessEthereumOracleChainEventWithGlobalError)
 	t.Run("testProcessEthereumOracleChainEventWithLocalError", testProcessEthereumOracleChainEventWithLocalError)
 	t.Run("testProcessEthereumOracleChainEventWithMismatchedError", testProcessEthereumOracleChainEventWithMismatchedError)
+	t.Run("testProcessEthereumOracleQueryResultWithoutCorrespondingLocalCallEventFails", testProcessEthereumOracleQueryResultWithoutCorrespondingLocalCallEventFails)
 }
 
 func testProcessEthereumOracleChainEventWithGlobalError(t *testing.T) {
-	eov := getTestEthereumOracleVerifier(t)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+	eov := getTestEthereumOracleVerifier(ctx, t)
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
@@ -147,7 +154,9 @@ func testProcessEthereumOracleChainEventWithGlobalError(t *testing.T) {
 }
 
 func testProcessEthereumOracleChainEventWithLocalError(t *testing.T) {
-	eov := getTestEthereumOracleVerifier(t)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+	eov := getTestEthereumOracleVerifier(ctx, t)
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
@@ -180,7 +189,9 @@ func testProcessEthereumOracleChainEventWithLocalError(t *testing.T) {
 }
 
 func testProcessEthereumOracleChainEventWithMismatchedError(t *testing.T) {
-	eov := getTestEthereumOracleVerifier(t)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+	eov := getTestEthereumOracleVerifier(ctx, t)
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
@@ -213,7 +224,9 @@ func testProcessEthereumOracleChainEventWithMismatchedError(t *testing.T) {
 }
 
 func testProcessEthereumOracleQueryOK(t *testing.T) {
-	eov := getTestEthereumOracleVerifier(t)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+	eov := getTestEthereumOracleVerifier(ctx, t)
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
@@ -238,7 +251,10 @@ func testProcessEthereumOracleQueryOK(t *testing.T) {
 			return nil
 		})
 
-	err := eov.ProcessEthereumContractCallResult(generateDummyCallEvent())
+	dummyEvent := generateDummyCallEvent()
+
+	eov.ethContractCallEventChan <- dummyEvent
+	err := eov.ProcessEthereumContractCallResult(dummyEvent)
 	assert.NoError(t, err)
 	assert.NoError(t, checkResult)
 
@@ -257,7 +273,9 @@ func testProcessEthereumOracleQueryOK(t *testing.T) {
 }
 
 func testProcessEthereumOracleQueryResultMismatch(t *testing.T) {
-	eov := getTestEthereumOracleVerifier(t)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+	eov := getTestEthereumOracleVerifier(ctx, t)
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
@@ -274,13 +292,17 @@ func testProcessEthereumOracleQueryResultMismatch(t *testing.T) {
 			return nil
 		})
 
-	err := eov.ProcessEthereumContractCallResult(generateIncorrectDummyCallEvent())
+	dummyEvent := generateIncorrectDummyCallEvent()
+	eov.ethContractCallEventChan <- dummyEvent
+	err := eov.ProcessEthereumContractCallResult(dummyEvent)
 	assert.NoError(t, err)
 	assert.ErrorContains(t, checkResult, "mismatched")
 }
 
 func testProcessEthereumOracleFilterMismatch(t *testing.T) {
-	eov := getTestEthereumOracleVerifier(t)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+	eov := getTestEthereumOracleVerifier(ctx, t)
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
@@ -299,13 +321,17 @@ func testProcessEthereumOracleFilterMismatch(t *testing.T) {
 			return nil
 		})
 
-	err := eov.ProcessEthereumContractCallResult(generateDummyCallEvent())
+	dummyEvent := generateDummyCallEvent()
+	eov.ethContractCallEventChan <- dummyEvent
+	err := eov.ProcessEthereumContractCallResult(dummyEvent)
 	assert.NoError(t, err)
 	assert.ErrorContains(t, checkResult, "failed filter")
 }
 
 func testProcessEthereumOracleInsufficientConfirmations(t *testing.T) {
-	eov := getTestEthereumOracleVerifier(t)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+	eov := getTestEthereumOracleVerifier(ctx, t)
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
@@ -324,14 +350,19 @@ func testProcessEthereumOracleInsufficientConfirmations(t *testing.T) {
 			return nil
 		})
 
-	err := eov.ProcessEthereumContractCallResult(generateDummyCallEvent())
+	dummyEvent := generateDummyCallEvent()
+	eov.ethContractCallEventChan <- dummyEvent
+	err := eov.ProcessEthereumContractCallResult(dummyEvent)
 
 	assert.ErrorIs(t, checkResult, eth.ErrMissingConfirmations)
 	assert.Nil(t, err)
 }
 
 func testProcessEthereumOracleQueryDuplicateIgnored(t *testing.T) {
-	eov := getTestEthereumOracleVerifier(t)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+
+	eov := getTestEthereumOracleVerifier(ctx, t)
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
@@ -350,12 +381,40 @@ func testProcessEthereumOracleQueryDuplicateIgnored(t *testing.T) {
 			return nil
 		})
 
-	err := eov.ProcessEthereumContractCallResult(generateDummyCallEvent())
+	dummyEvent := generateDummyCallEvent()
+	eov.ethContractCallEventChan <- dummyEvent
+	err := eov.ProcessEthereumContractCallResult(dummyEvent)
 	assert.NoError(t, checkResult)
 	assert.NoError(t, err)
 
 	err = eov.ProcessEthereumContractCallResult(generateDummyCallEvent())
 	assert.ErrorContains(t, err, "duplicated")
+}
+
+func testProcessEthereumOracleQueryResultWithoutCorrespondingLocalCallEventFails(t *testing.T) {
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+	eov := getTestEthereumOracleVerifier(ctx, t)
+	defer eov.ctrl.Finish()
+	assert.NotNil(t, eov)
+
+	result := okResult()
+
+	eov.ethCallEngine.EXPECT().CallSpec(gomock.Any(), "testspec", uint64(1)).Return(result, nil)
+	eov.ts.EXPECT().GetTimeNow().Times(1)
+
+	var checkResult error
+	eov.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(1).
+		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time) error {
+			checkResult = toCheck.Check(context.Background())
+			return nil
+		})
+
+	dummyEvent := generateDummyCallEvent()
+	err := eov.ProcessEthereumContractCallResult(dummyEvent)
+	assert.NoError(t, err)
+	assert.ErrorContains(t, checkResult, "event not found in local contract calls")
 }
 
 func generateDummyCallEvent() ethcall.ContractCallEvent {

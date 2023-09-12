@@ -29,7 +29,7 @@ type ContractCallEvent struct {
 	Error       *string
 }
 
-func EthereumContractCallResultFromProto(
+func EthereumContractCallEventFromProto(
 	qr *vegapb.EthContractCallEvent,
 ) (ContractCallEvent, error) {
 	if len(qr.SpecId) <= 0 || qr.BlockHeight == 0 || qr.BlockTime <= 0 ||

@@ -51,22 +51,22 @@ type Engine struct {
 	isValidator           bool
 	client                EthReaderCaller
 	calls                 map[string]Call
-	forwarder             Forwarder
+	sendCallEvent         func(*vega.EthContractCallEvent) error
 	prevEthBlock          blockish
 	cancelEthereumQueries context.CancelFunc
 	poller                *poller
 	mu                    sync.Mutex
 }
 
-func NewEngine(log *logging.Logger, cfg Config, isValidator bool, client EthReaderCaller, forwarder Forwarder) *Engine {
+func NewEngine(log *logging.Logger, cfg Config, isValidator bool, client EthReaderCaller, sendCallEvent func(*vega.EthContractCallEvent) error) *Engine {
 	e := &Engine{
-		log:         log,
-		cfg:         cfg,
-		isValidator: isValidator,
-		client:      client,
-		forwarder:   forwarder,
-		calls:       make(map[string]Call),
-		poller:      newPoller(cfg.PollEvery.Get()),
+		log:           log,
+		cfg:           cfg,
+		isValidator:   isValidator,
+		client:        client,
+		sendCallEvent: sendCallEvent,
+		calls:         make(map[string]Call),
+		poller:        newPoller(cfg.PollEvery.Get()),
 	}
 
 	return e
@@ -228,14 +228,18 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 				res, err := call.Call(ctx, e.client, nextEthBlock.NumberU64())
 				if err != nil {
 					e.log.Errorf("failed to call contract: %w", err)
-					event := makeErrorChainEvent(err.Error(), specID, nextEthBlock)
-					e.forwarder.ForwardFromSelf(event)
+					event := makeErroredEthContractCallEvent(err.Error(), specID, nextEthBlock)
+					if err := e.sendCallEvent(event); err != nil {
+						e.log.Errorf("failed to send errored call event: %w", err)
+					}
 					continue
 				}
 
 				if res.PassesFilters {
-					event := makeChainEvent(res, specID, nextEthBlock)
-					e.forwarder.ForwardFromSelf(event)
+					event := makeEthContractCallEvent(res, specID, nextEthBlock)
+					if err := e.sendCallEvent(event); err != nil {
+						e.log.Errorf("failed to send call event: %w", err)
+					}
 				}
 			}
 		}
@@ -244,38 +248,22 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 	}
 }
 
-func makeChainEvent(res Result, specID string, block blockish) *commandspb.ChainEvent {
-	ce := commandspb.ChainEvent{
-		TxId:  "internal", // NA
-		Nonce: 0,          // NA
-		Event: &commandspb.ChainEvent_ContractCall{
-			ContractCall: &vega.EthContractCallEvent{
-				SpecId:      specID,
-				BlockHeight: block.NumberU64(),
-				BlockTime:   block.Time(),
-				Result:      res.Bytes,
-			},
-		},
+func makeEthContractCallEvent(res Result, specID string, block blockish) *vega.EthContractCallEvent {
+	return &vega.EthContractCallEvent{
+		SpecId:      specID,
+		BlockHeight: block.NumberU64(),
+		BlockTime:   block.Time(),
+		Result:      res.Bytes,
 	}
-
-	return &ce
 }
 
-func makeErrorChainEvent(errMsg string, specID string, block blockish) *commandspb.ChainEvent {
-	ce := commandspb.ChainEvent{
-		TxId:  "internal", // NA
-		Nonce: 0,          // NA
-		Event: &commandspb.ChainEvent_ContractCall{
-			ContractCall: &vega.EthContractCallEvent{
-				SpecId:      specID,
-				BlockHeight: block.NumberU64(),
-				BlockTime:   block.Time(),
-				Error:       &errMsg,
-			},
-		},
+func makeErroredEthContractCallEvent(errMsg string, specID string, block blockish) *vega.EthContractCallEvent {
+	return &vega.EthContractCallEvent{
+		SpecId:      specID,
+		BlockHeight: block.NumberU64(),
+		BlockTime:   block.Time(),
+		Error:       &errMsg,
 	}
-
-	return &ce
 }
 
 func (e *Engine) ReloadConf(cfg Config) {

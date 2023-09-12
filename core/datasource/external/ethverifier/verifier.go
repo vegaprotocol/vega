@@ -103,6 +103,8 @@ type Verifier struct {
 	mu     sync.Mutex
 	hashes map[string]struct{}
 
+	localContractCalls sync.Map
+
 	// snapshot data
 	snapshotState *verifierSnapshotState
 }
@@ -120,6 +122,7 @@ func (p pendingCallEvent) GetType() types.NodeVoteType {
 func (p *pendingCallEvent) Check(ctx context.Context) error { return p.check(ctx) }
 
 func New(
+	ctx context.Context,
 	log *logging.Logger,
 	witness Witness,
 	ts TimeService,
@@ -127,6 +130,7 @@ func New(
 	oracleBroadcaster OracleDataBroadcaster,
 	ethCallEngine EthCallEngine,
 	ethConfirmations EthereumConfirmations,
+	localCallEventChan chan ethcall.ContractCallEvent,
 ) (sv *Verifier) {
 	log = log.Named("ethereum-oracle-verifier")
 	s := &Verifier{
@@ -140,6 +144,18 @@ func New(
 		hashes:           map[string]struct{}{},
 		snapshotState:    &verifierSnapshotState{},
 	}
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case callEvent := <-localCallEventChan:
+				s.localContractCalls.Store(callEvent.Hash(), callEvent)
+			}
+		}
+	}()
+
 	return s
 }
 
@@ -207,6 +223,10 @@ func (s *Verifier) checkCallEventResult(ctx context.Context, callEvent ethcall.C
 		return fmt.Errorf("failed to execute call event spec: %w", err)
 	}
 
+	if _, ok := s.localContractCalls.Load(callEvent.Hash()); !ok {
+		return fmt.Errorf("call event not found in local contract calls")
+	}
+
 	if !bytes.Equal(callEvent.Result, checkResult.Bytes) {
 		return fmt.Errorf("mismatched results for block %d", callEvent.BlockHeight)
 	}
@@ -223,6 +243,8 @@ func (s *Verifier) checkCallEventResult(ctx context.Context, callEvent ethcall.C
 	if !checkResult.PassesFilters {
 		return fmt.Errorf("failed filter check")
 	}
+
+	s.localContractCalls.Delete(callEvent.Hash())
 
 	return nil
 }

@@ -16,6 +16,8 @@ import (
 	"context"
 	"fmt"
 
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"code.vegaprotocol.io/vega/core/activitystreak"
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/banking"
@@ -67,6 +69,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	"code.vegaprotocol.io/vega/protos/vega"
 	"code.vegaprotocol.io/vega/version"
 )
 
@@ -233,10 +236,30 @@ func newServices(
 
 	svcs.oracle = spec.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
 
-	svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.conf.IsValidator(), svcs.ethClient, svcs.eventForwarder)
+	verifierCallEventsChan := make(chan ethcall.ContractCallEvent, 100)
+	svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.conf.IsValidator(), svcs.ethClient,
+		func(event *vega.EthContractCallEvent) error {
+			callResult, err := ethcall.EthereumContractCallEventFromProto(event)
+			if err != nil {
+				return fmt.Errorf("failed to convert event proto call result: %w", err)
+			}
 
-	svcs.ethereumOraclesVerifier = ethverifier.New(svcs.log, svcs.witness, svcs.timeService, svcs.broker,
-		svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations)
+			verifierCallEventsChan <- callResult
+
+			ce := commandspb.ChainEvent{
+				TxId:  "internal", // NA
+				Nonce: 0,          // NA
+				Event: &commandspb.ChainEvent_ContractCall{
+					ContractCall: event,
+				},
+			}
+			svcs.eventForwarder.ForwardFromSelf(&ce)
+
+			return nil
+		})
+
+	svcs.ethereumOraclesVerifier = ethverifier.New(svcs.ctx, svcs.log, svcs.witness, svcs.timeService, svcs.broker,
+		svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations, verifierCallEventsChan)
 
 	// Not using the activation event bus event here as on recovery the ethCallEngine needs to have all specs - is this necessary?
 	svcs.oracle.AddSpecActivationListener(svcs.ethCallEngine)

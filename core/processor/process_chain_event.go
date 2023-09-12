@@ -133,7 +133,7 @@ func (app *App) processChainEvent(
 			return errors.New("unsupported erc20 multisig event")
 		}
 	case *commandspb.ChainEvent_ContractCall:
-		callResult, err := ethcall.EthereumContractCallResultFromProto(c.ContractCall)
+		callResult, err := ethcall.EthereumContractCallEventFromProto(c.ContractCall)
 		if err != nil {
 			app.log.Error("received invalid contract call", logging.Error(err), logging.String("call", c.ContractCall.String()))
 			return err

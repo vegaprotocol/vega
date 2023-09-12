@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/protos/vega"
+
 	"code.vegaprotocol.io/vega/core/config/encoding"
 	"code.vegaprotocol.io/vega/core/datasource"
 	"code.vegaprotocol.io/vega/core/datasource/common"
@@ -34,7 +36,17 @@ func TestEngine(t *testing.T) {
 	forwarder := mocks.NewMockForwarder(ctrl)
 
 	log := logging.NewTestLogger()
-	e := ethcall.NewEngine(log, TEST_CONFIG, true, tc.client, forwarder)
+	e := ethcall.NewEngine(log, TEST_CONFIG, true, tc.client, func(event *vega.EthContractCallEvent) error {
+		ce := commandspb.ChainEvent{
+			TxId:  "internal", // NA
+			Nonce: 0,          // NA
+			Event: &commandspb.ChainEvent_ContractCall{
+				ContractCall: event,
+			},
+		}
+		forwarder.ForwardFromSelf(&ce)
+		return nil
+	})
 
 	currentEthTime := tc.client.Blockchain().CurrentBlock().Time
 
@@ -127,7 +139,18 @@ func TestEngineWithErrorSpec(t *testing.T) {
 	forwarder := mocks.NewMockForwarder(ctrl)
 
 	log := logging.NewTestLogger()
-	e := ethcall.NewEngine(log, TEST_CONFIG, true, tc.client, forwarder)
+	e := ethcall.NewEngine(log, TEST_CONFIG, true, tc.client, func(event *vega.EthContractCallEvent) error {
+		ce := commandspb.ChainEvent{
+			TxId:  "internal", // NA
+			Nonce: 0,          // NA
+			Event: &commandspb.ChainEvent_ContractCall{
+				ContractCall: event,
+			},
+		}
+		forwarder.ForwardFromSelf(&ce)
+
+		return nil
+	})
 
 	currentEthTime := tc.client.Blockchain().CurrentBlock().Time
 

@@ -36,7 +36,9 @@ var (
 )
 
 func TestEthereumOracleVerifierSnapshotEmpty(t *testing.T) {
-	eov := getTestEthereumOracleVerifier(t)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+	eov := getTestEthereumOracleVerifier(ctx, t)
 	defer eov.ctrl.Finish()
 
 	assert.Equal(t, 2, len(eov.Keys()))
@@ -57,7 +59,7 @@ func TestEthereumOracleVerifierSnapshotEmpty(t *testing.T) {
 	require.Nil(t, err)
 
 	// Restore
-	restoredVerifier := getTestEthereumOracleVerifier(t)
+	restoredVerifier := getTestEthereumOracleVerifier(ctx, t)
 	defer restoredVerifier.ctrl.Finish()
 
 	_, err = restoredVerifier.LoadState(context.Background(), types.PayloadFromProto(snap))
@@ -72,7 +74,9 @@ func TestEthereumOracleVerifierSnapshotEmpty(t *testing.T) {
 }
 
 func TestEthereumOracleVerifierWithPendingQueryResults(t *testing.T) {
-	eov := getTestEthereumOracleVerifier(t)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+	eov := getTestEthereumOracleVerifier(ctx, t)
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
@@ -107,6 +111,7 @@ func TestEthereumOracleVerifierWithPendingQueryResults(t *testing.T) {
 		Result:      []byte("testbytes"),
 	}
 
+	eov.ethContractCallEventChan <- callEvent
 	err = eov.ProcessEthereumContractCallResult(callEvent)
 	assert.NoError(t, err)
 	assert.NoError(t, checkResult)
@@ -134,7 +139,7 @@ func TestEthereumOracleVerifierWithPendingQueryResults(t *testing.T) {
 	require.Nil(t, err)
 
 	// Restore
-	restoredVerifier := getTestEthereumOracleVerifier(t)
+	restoredVerifier := getTestEthereumOracleVerifier(ctx, t)
 	defer restoredVerifier.ctrl.Finish()
 	restoredVerifier.witness.EXPECT().RestoreResource(gomock.Any(), gomock.Any()).Times(1)
 

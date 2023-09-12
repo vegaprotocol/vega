@@ -172,6 +172,10 @@ func (s *Verifier) restorePendingCallEvents(_ context.Context,
 		if err := s.witness.RestoreResource(pending, s.onCallEventVerified); err != nil {
 			s.log.Panic("unable to restore pending call event resource", logging.String("ID", pending.GetID()), logging.Error(err))
 		}
+
+		// Restore the local contract calls map from the pending events map so that pending calls will pass the verification
+		// step that ensures a corresponding local contract call has occurred.
+		s.localContractCalls.Store(callEvent.Hash(), callEvent)
 	}
 
 	var err error
