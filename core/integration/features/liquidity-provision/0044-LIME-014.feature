@@ -124,7 +124,7 @@ Feature: Test LP SLA Bond penalty;
     And the current epoch is "0"
 
     #AC 0044-LIME-050: for marketing in opening auction, in terms of the liquidity they are expected to supply: this only takes effect from the start of the next epoch
-    When the network moves ahead "10" blocks
+    When the network moves ahead "20" blocks
     And the current epoch is "1"
     And the supplied stake should be "8000" for the market "ETH/MAR22"
     And the parties place the following pegged iceberg orders:
