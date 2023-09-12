@@ -73,8 +73,9 @@ func (mat *MarketActivityTracker) Load(ctx context.Context, data []byte) error {
 		mat.assetToMarketTrackers[data.Asset][data.Market] = marketTrackerFromProto(data)
 	}
 	for _, tnv := range b.TakerNotionalVolume {
-		volume, _ := num.UintFromString(tnv.Volume, 10)
-		mat.partyTakerNotionalVolume[tnv.Party] = volume
+		if len(tnv.Volume) > 0 {
+			mat.partyTakerNotionalVolume[tnv.Party] = num.UintFromBytes(tnv.Volume)
+		}
 	}
 	return nil
 }

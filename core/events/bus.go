@@ -137,6 +137,7 @@ const (
 	DistressedOrdersClosedEvent
 	ExpiredOrdersEvent
 	DistressedPositionsEvent
+	SpotLiquidityProvisionEvent
 	StopOrderEvent
 	FundingPeriodEvent
 	FundingPeriodDataPointEvent
@@ -153,6 +154,7 @@ const (
 	VolumeDiscountProgramStartedEvent
 	VolumeDiscountProgramEndedEvent
 	VolumeDiscountProgramUpdatedEvent
+	ReferralSetStatsUpdatedEvent
 )
 
 var (
@@ -240,7 +242,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_STARTED:  VolumeDiscountProgramStartedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_ENDED:    VolumeDiscountProgramEndedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_UPDATED:  VolumeDiscountProgramUpdatedEvent,
-
+		eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_SET_STATS_UPDATED:       ReferralSetStatsUpdatedEvent,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -319,6 +321,7 @@ var (
 		VolumeDiscountProgramStartedEvent: eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_STARTED,
 		VolumeDiscountProgramEndedEvent:   eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_ENDED,
 		VolumeDiscountProgramUpdatedEvent: eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_UPDATED,
+		ReferralSetStatsUpdatedEvent:      eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_SET_STATS_UPDATED,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -398,6 +401,7 @@ var (
 		VolumeDiscountProgramStartedEvent: "VolumeDiscountProgramStartedEvent",
 		VolumeDiscountProgramEndedEvent:   "VolumeDiscountProgramEndedEvent",
 		VolumeDiscountProgramUpdatedEvent: "VolumeDiscountProgramUpdatedEvent",
+		ReferralSetStatsUpdatedEvent:      "ReferralSetStatsUpdatedEvent",
 	}
 )
 

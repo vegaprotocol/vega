@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # It is important that snapshotscopy{to|from} path is accessible at the same location in
 # the container and outside of it. If you're using a custom vega home, you must call this script

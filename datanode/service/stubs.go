@@ -37,7 +37,9 @@ type (
 	MultiSig            struct {
 		*sqlstore.ERC20MultiSigSignerEvent
 	}
-	FundingPeriods struct{ *sqlstore.FundingPeriods }
+	FundingPeriods   struct{ *sqlstore.FundingPeriods }
+	ReferralPrograms struct{ *sqlstore.ReferralPrograms }
+	ReferralSets     struct{ *sqlstore.ReferralSets }
 )
 
 type (
@@ -127,4 +129,12 @@ func NewNode(store *sqlstore.Node) *Node {
 
 func NewFundingPeriods(store *sqlstore.FundingPeriods) *FundingPeriods {
 	return &FundingPeriods{FundingPeriods: store}
+}
+
+func NewReferralPrograms(store *sqlstore.ReferralPrograms) *ReferralPrograms {
+	return &ReferralPrograms{ReferralPrograms: store}
+}
+
+func NewReferralSets(store *sqlstore.ReferralSets) *ReferralSets {
+	return &ReferralSets{ReferralSets: store}
 }

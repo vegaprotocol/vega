@@ -629,6 +629,23 @@ func TestFeesTracker(t *testing.T) {
 	}
 }
 
+func TestDecimalSerialisation(t *testing.T) {
+	d := num.DecimalE()
+	b, err := d.MarshalBinary()
+	require.NoError(t, err)
+	dd, err := num.UnmarshalBinaryDecimal(b)
+	require.NoError(t, err)
+	require.Equal(t, d, dd)
+}
+
+func TestUintSerialisation(t *testing.T) {
+	ui, _ := num.UintFromString("1000000000000000000", 10)
+	b := ui.Bytes()
+	bb := b[:]
+	uiLoad := num.UintFromBytes(bb)
+	require.Equal(t, ui, uiLoad)
+}
+
 func TestSnapshot(t *testing.T) {
 	tracker := setupDefaultTrackerForTest(t)
 

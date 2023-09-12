@@ -153,6 +153,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.AccountDetails
   AccountUpdate:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AccountBalance
+  PerpetualData:
+    model: code.vegaprotocol.io/vega/protos/vega.PerpetualData
   MarketData:
     model: code.vegaprotocol.io/vega/protos/vega.MarketData
   ObservableMarketData:
@@ -620,3 +622,25 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPeriodConnection
   PartyActivityStreak:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.PartyActivityStreak
+  BenefitTier:
+    model: code.vegaprotocol.io/vega/protos/vega.BenefitTier
+  ReferralProgram:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralProgram
+  StakingTier:
+    model: code.vegaprotocol.io/vega/protos/vega.StakingTier
+  ReferralSet:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSet
+  ReferralSetEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetEdge
+  ReferralSetConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetConnection
+  ReferralSetReferee:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetReferee
+  ReferralSetRefereeEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetRefereeEdge
+  ReferralSetRefereeConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetRefereeConnection
+  ReferralSetStats:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetStats
+  RefereeStats:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.RefereeStats

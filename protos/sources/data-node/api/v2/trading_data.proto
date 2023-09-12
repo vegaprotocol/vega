@@ -734,6 +734,31 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referrals"};
   }
 
+  // Get current referral program
+  //
+  // Get the on-going referral program.
+  rpc GetCurrentReferralProgram(GetCurrentReferralProgramRequest) returns (GetCurrentReferralProgramResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referral program"};
+  }
+
+  // List referral sets
+  //
+  // List all referral sets, or a specific referral set if you know its ID.
+  rpc ListReferralSets(ListReferralSetsRequest) returns (ListReferralSetsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referral program"};
+  }
+
+  // List referral set referees
+  //
+  // List all referees that belong to a referral set.
+  rpc ListReferralSetReferees(ListReferralSetRefereesRequest) returns (ListReferralSetRefereesResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referral program"};
+  }
+
+  rpc GetReferralSetStats(GetReferralSetStatsRequest) returns (GetReferralSetStatsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referral program"};
+  }
+
   // Export network history as CSV
   //
   // Export CSV table data from network history between two block heights.
@@ -3480,4 +3505,152 @@ message LiquidationPrice {
   string including_buy_orders = 2;
   // Liquidation price assuming sell orders start getting filled.
   string including_sell_orders = 3;
+}
+
+// Request to get the current referral program
+message GetCurrentReferralProgramRequest {}
+
+// Response containing the current referral program
+message GetCurrentReferralProgramResponse {
+  // Referral program currently activated on the network.
+  ReferralProgram current_referral_program = 1;
+}
+
+// Referral program for reporting purposes differs slightly from the referral program
+// message in the referral program created and referral program updated events, as it includes
+// an optional timestamp that is set when the referral program has ended.
+message ReferralProgram {
+  // Incremental version of the program. It is incremented after each program
+  // update.
+  uint64 version = 1;
+  // Unique ID generated from the proposal that created this program.
+  string id = 2;
+  // Defined tiers in increasing order. First element will give Tier 1, second
+  // element will give Tier 2, and so on.
+  repeated vega.BenefitTier benefit_tiers = 3;
+  // Timestamp as Unix time in seconds, after which when the current epoch ends, the
+  // programs status will become STATE_CLOSED and benefits will be disabled.
+  int64 end_of_program_timestamp = 4;
+  // Number of epochs over which to evaluate a referral set's running volume.
+  uint64 window_length = 5;
+  // Defined staking tiers in increasing order. First element will give Tier 1,
+  // second element will give Tier 2, and so on. Determines the level of
+  // benefit a party can expect based on their staking.
+  repeated vega.StakingTier staking_tiers = 6;
+  // Timestamp as Unix time in nanoseconds at which the program ended.
+  optional int64 ended_at = 7;
+}
+
+// Data relating to a referral set.
+message ReferralSet {
+  // Unique ID of the created set.
+  string id = 1;
+  // Party that created the set.
+  string referrer = 2;
+  // Time in Unix nanoseconds when the set was created.
+  int64 created_at = 3;
+  // Time in Unix nanoseconds when the set was updated.
+  int64 updated_at = 4;
+}
+
+// Referral set data with the corresponding cursor.
+message ReferralSetEdge {
+  // Referral set data.
+  ReferralSet node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Page of referral set data and corresponding page information.
+message ReferralSetConnection {
+  // Page of referral set data and their corresponding cursors.
+  repeated ReferralSetEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+// Request to retrieve information about a referral set or sets
+message ListReferralSetsRequest {
+  // Referral set ID to retrieve information for
+  optional string referral_set_id = 1;
+  // pagination information to limit the data that is returned.
+  optional Pagination pagination = 2;
+}
+
+// Response containing information about a referral set or sets
+message ListReferralSetsResponse {
+  // Page of referral set data and corresponding page information.
+  ReferralSetConnection referral_sets = 1;
+}
+
+// Data relating to referees that have joined a referral set
+message ReferralSetReferee {
+  // Unique ID of the referral set the referee joined.
+  string referral_set_id = 1;
+  // Party that joined the set.
+  string referee = 2;
+  // Time in Unix nanoseconds when the party joined the set.
+  int64 joined_at = 3;
+  // Epoch at which the party joined the set.
+  uint64 at_epoch = 4;
+}
+
+// Data about the Referral set's referees with the corresponding cursor.
+message ReferralSetRefereeEdge {
+  // Referral set referee data.
+  ReferralSetReferee node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Page of data about the referral set's referees and corresponding page information.
+message ReferralSetRefereeConnection {
+  // Page of referral set referee data and their corresponding cursors.
+  repeated ReferralSetRefereeEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+// Request to retrieve information about a referral set's referees
+message ListReferralSetRefereesRequest {
+  // Referral set ID to retrieve information for
+  string referral_set_id = 1;
+  // Pagination information to limit the data that is returned.
+  optional Pagination pagination = 2;
+}
+
+// Response containing information about a referral set's referees
+message ListReferralSetRefereesResponse {
+  // Page of referral set referee data and corresponding page information.
+  ReferralSetRefereeConnection referral_set_referees = 1;
+}
+
+// Request to get a referral set's stats
+message GetReferralSetStatsRequest {
+  // Unique ID of the set.
+  string referral_set_id = 1;
+  // Epoch at which the set's statistics were updated.
+  // If omitted, the last received statistics are returned
+  optional uint64 at_epoch = 2;
+  // Referee's party ID to filter statistics for.
+  // If omitted the statistics for all referees will be returned.
+  optional string referee = 3;
+}
+
+// Response returned containing the referral set's stats
+message GetReferralSetStatsResponse {
+  // Referral set stats requests
+  ReferralSetStats stats = 1;
+}
+
+message ReferralSetStats {
+  // Unique ID of the set.
+  string set_id = 1;
+  // Epoch at which the set's statistics are updated.
+  uint64 at_epoch = 2;
+  // Running volume for the set based on the window length of the current
+  // referral program.
+  string referral_set_running_notional_taker_volume = 3;
+  // Referees' statistics for that epoch.
+  repeated vega.events.v1.RefereeStats referees_stats = 4;
 }

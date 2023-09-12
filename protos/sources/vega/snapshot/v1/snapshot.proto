@@ -1119,7 +1119,7 @@ message ReferralSet {
 
 message RunningVolume {
   uint64 epoch = 1;
-  string volume = 2;
+  bytes volume = 2;
 }
 
 message AssetLocked {
@@ -1145,8 +1145,8 @@ message PartyActivityStreak {
   string party = 1;
   uint64 active = 2;
   uint64 inactive = 3;
-  string reward_distribution_multiplier = 4;
-  string reward_vesting_multiplier = 5;
+  bytes reward_distribution_multiplier = 4;
+  bytes reward_vesting_multiplier = 5;
 }
 
 message VolumeDiscountProgram {
@@ -1164,5 +1164,5 @@ message EpochPartyVolumes {
 
 message PartyVolume {
   string party = 1;
-  string volume = 2;
+  bytes volume = 2;
 }

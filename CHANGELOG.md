@@ -44,6 +44,7 @@
 - [9146](https://github.com/vegaprotocol/vega/issues/9146) - Improve `TWAP` for perpetual markets to do calculations incrementally.
 - [8817](https://github.com/vegaprotocol/vega/issues/8817) - Add interest term to perpetual funding payment calculation.
 - [8755](https://github.com/vegaprotocol/vega/issues/8755) - Improve testing for perpetual settlement and collateral transfers.
+- [9319](https://github.com/vegaprotocol/vega/issues/9319) - Introduce product data field in market data for product specific information.
 - [8756](https://github.com/vegaprotocol/vega/issues/8756) - Settlement and margin implementation for `PERPS`.
 - [8932](https://github.com/vegaprotocol/vega/issues/8932) - Fix range validation of `performanceHysteresisEpochs`
 - [8887](https://github.com/vegaprotocol/vega/pull/8887) - Remove differences for snapshot loading when the `nullchain` is used instead of `tendermint`
@@ -90,7 +91,8 @@
 - [9288](https://github.com/vegaprotocol/vega/issues/9288) - Add check for current epoch to integration tests.
 - [9288](https://github.com/vegaprotocol/vega/issues/9288) - Allow integration test time to progress by epoch.
 - [9078](https://github.com/vegaprotocol/vega/issues/9078) - Add activity streak `API`.
-
+- [9351](https://github.com/vegaprotocol/vega/issues/9351) - Avoid using strings in market activity tracker snapshot and checkpoint
+- [9079](https://github.com/vegaprotocol/vega/issues/9079) - Add API to get the current referral program
 
 ### 🐛 Fixes
 
@@ -103,13 +105,13 @@
 - [8545](https://github.com/vegaprotocol/vega/issues/8545) - Block Explorer pagination does not order correctly.
 - [8748](https://github.com/vegaprotocol/vega/issues/8748) - `ListSuccessorMarkets` does not return results.
 - [8749](https://github.com/vegaprotocol/vega/issues/8749) - Ensure stop order expiry is in the future
-- [9337](https://github.com/vegaprotocol/vega/issues/9337) - Non deterministic ordering of vesting ledger events 
+- [9337](https://github.com/vegaprotocol/vega/issues/9337) - Non deterministic ordering of vesting ledger events
 - [8773](https://github.com/vegaprotocol/vega/issues/8773) - Fix panic with stop orders
 - [8792](https://github.com/vegaprotocol/vega/issues/8792) - Fix panic when starting null block chain node.
 - [8739](https://github.com/vegaprotocol/vega/issues/8739) - Cancel orders for rejected markets.
 - [9118](https://github.com/vegaprotocol/vega/issues/9118) - Improve list stop orders error message
 - [9105](https://github.com/vegaprotocol/vega/issues/9105) - Truncate virtual stake decimal places
-- [9348](https://github.com/vegaprotocol/vega/issues/9348) - Nil pointer error in Ethereum call engine when running with null block chain 
+- [9348](https://github.com/vegaprotocol/vega/issues/9348) - Nil pointer error in Ethereum call engine when running with null block chain
 - [8800](https://github.com/vegaprotocol/vega/issues/8800) - `expiresAt` is always null in the Stop Orders `API`.
 - [8796](https://github.com/vegaprotocol/vega/issues/8796) - Avoid updating active proposals slice while iterating over it.
 - [8631](https://github.com/vegaprotocol/vega/issues/8631) - Prevent duplicate Ethereum call chain event after snapshot start
@@ -169,7 +171,8 @@
 - [9203](https://github.com/vegaprotocol/vega/issues/9203) - Do not remove LPs from the parties map if they are an LP without an open position
 - [9202](https://github.com/vegaprotocol/vega/issues/9202) - Fix `ELS` not calculated when leaving opening auction.
 - [9276](https://github.com/vegaprotocol/vega/issues/9276) - Properly save stats in the positions snapshot
-
+- [9276](https://github.com/vegaprotocol/vega/issues/9276) - Properly save stats in the positions snapshot
+- [9305](https://github.com/vegaprotocol/vega/issues/9305) - Properly propagate `providersFeeCalculationTimeStep` parameter
 
 ## 0.72.1
 

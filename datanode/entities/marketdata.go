@@ -13,12 +13,11 @@
 package entities
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
-
-	"code.vegaprotocol.io/vega/libs/ptr"
 
 	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -101,8 +100,8 @@ type MarketData struct {
 	// Last traded price, as an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
 	LastTradedPrice num.Decimal
-	// Current funding rate
-	FundingRate *num.Decimal
+	// Data specific to the product type
+	ProductData *ProductData
 }
 
 type PriceMonitoringTrigger struct {
@@ -128,15 +127,6 @@ func (trigger PriceMonitoringTrigger) ToProto() *types.PriceMonitoringTrigger {
 func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, error) {
 	var mark, bid, offer, staticBid, staticOffer, mid, staticMid, indicative, targetStake, suppliedStake, growth, lastTradedPrice num.Decimal
 	var err error
-	var fundingRate *num.Decimal
-
-	if data.FundingRate != nil {
-		rate, err := parseDecimal(*data.FundingRate)
-		if err != nil {
-			return nil, err
-		}
-		fundingRate = &rate
-	}
 
 	if mark, err = parseDecimal(data.MarkPrice); err != nil {
 		return nil, err
@@ -207,7 +197,10 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 		TxHash:                     txHash,
 		NextMarkToMarket:           nextMTM,
 		MarketGrowth:               growth,
-		FundingRate:                fundingRate,
+	}
+
+	if data.ProductData != nil {
+		marketData.ProductData = &ProductData{data.ProductData}
 	}
 
 	return marketData, nil
@@ -227,6 +220,14 @@ func parseDecimal(input string) (decimal.Decimal, error) {
 }
 
 func (md MarketData) Equal(other MarketData) bool {
+	productData1 := []byte{}
+	productData2 := []byte{}
+	if md.ProductData != nil {
+		productData1, _ = md.ProductData.MarshalJSON()
+	}
+	if other.ProductData != nil {
+		productData2, _ = other.ProductData.MarshalJSON()
+	}
 	return md.LastTradedPrice.Equals(other.LastTradedPrice) &&
 		md.MarkPrice.Equals(other.MarkPrice) &&
 		md.BestBidPrice.Equals(other.BestBidPrice) &&
@@ -257,19 +258,7 @@ func (md MarketData) Equal(other MarketData) bool {
 		md.MarketState == other.MarketState &&
 		md.NextMarkToMarket.Equal(other.NextMarkToMarket) &&
 		md.MarketGrowth.Equal(other.MarketGrowth) &&
-		decimalPtrMatches(md.FundingRate, other.FundingRate)
-}
-
-func decimalPtrMatches(a, b *num.Decimal) bool {
-	if a == nil && b == nil {
-		return true
-	}
-
-	if a == nil && b != nil || a != nil && b == nil {
-		return false
-	}
-
-	return a.Equal(*b)
+		bytes.Equal(productData1, productData2)
 }
 
 func priceMonitoringBoundsMatches(bounds, other []*types.PriceMonitoringBounds) bool {
@@ -318,12 +307,6 @@ func liquidityProviderFeeShareMatches(feeShares, other []*types.LiquidityProvide
 }
 
 func (md MarketData) ToProto() *types.MarketData {
-	var fundingRate *string
-
-	if md.FundingRate != nil {
-		fundingRate = ptr.From(md.FundingRate.String())
-	}
-
 	result := types.MarketData{
 		LastTradedPrice:           md.LastTradedPrice.String(),
 		MarkPrice:                 md.MarkPrice.String(),
@@ -355,7 +338,10 @@ func (md MarketData) ToProto() *types.MarketData {
 		LiquidityProviderFeeShare: md.LiquidityProviderFeeShares,
 		NextMarkToMarket:          md.NextMarkToMarket.UnixNano(),
 		MarketGrowth:              md.MarketGrowth.String(),
-		FundingRate:               fundingRate,
+	}
+
+	if md.ProductData != nil {
+		result.ProductData = md.ProductData.ProductData
 	}
 
 	return &result

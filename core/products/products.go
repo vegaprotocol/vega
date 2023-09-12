@@ -68,6 +68,7 @@ type Product interface {
 	// snapshot specific
 	Serialize() *snapshotpb.Product
 	GetMarginIncrease(int64) *num.Uint
+	GetData(t int64) *types.ProductData
 }
 
 // New instance a new product from a Market framework product configuration.
