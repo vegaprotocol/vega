@@ -44,6 +44,7 @@ func (SpotProduct) IsProductConfiguration()                               {}
 func (PerpetualProduct) IsProductConfiguration()                          {}
 func (Spot) IsProduct()                                                   {}
 func (Perpetual) IsProduct()                                              {}
+func (PerpetualData) IsProductData()                                      {}
 func (UpdateFutureProduct) IsUpdateProductConfiguration()                 {}
 func (UpdatePerpetualProduct) IsUpdateProductConfiguration()              {}
 func (UpdateSpotMarketConfiguration_LogNormal) IsRiskModel()              {}

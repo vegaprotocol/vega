@@ -165,6 +165,8 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.VolumeDiscountProgramEndedEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_UPDATED:
 		return events.VolumeDiscountProgramUpdatedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_SET_STATS_UPDATED:
+		return events.ReferralSetStatsUpdatedEventFromStream(ctx, be)
 	}
 
 	return nil

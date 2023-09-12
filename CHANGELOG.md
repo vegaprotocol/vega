@@ -44,6 +44,7 @@
 - [9146](https://github.com/vegaprotocol/vega/issues/9146) - Improve `TWAP` for perpetual markets to do calculations incrementally.
 - [8817](https://github.com/vegaprotocol/vega/issues/8817) - Add interest term to perpetual funding payment calculation.
 - [8755](https://github.com/vegaprotocol/vega/issues/8755) - Improve testing for perpetual settlement and collateral transfers.
+- [9319](https://github.com/vegaprotocol/vega/issues/9319) - Introduce product data field in market data for product specific information.
 - [8756](https://github.com/vegaprotocol/vega/issues/8756) - Settlement and margin implementation for `PERPS`.
 - [8932](https://github.com/vegaprotocol/vega/issues/8932) - Fix range validation of `performanceHysteresisEpochs`
 - [8887](https://github.com/vegaprotocol/vega/pull/8887) - Remove differences for snapshot loading when the `nullchain` is used instead of `tendermint`
@@ -90,7 +91,7 @@
 - [9288](https://github.com/vegaprotocol/vega/issues/9288) - Add check for current epoch to integration tests.
 - [9288](https://github.com/vegaprotocol/vega/issues/9288) - Allow integration test time to progress by epoch.
 - [9078](https://github.com/vegaprotocol/vega/issues/9078) - Add activity streak `API`.
-
+- [9079](https://github.com/vegaprotocol/vega/issues/9079) - Add API to get the current referral program
 
 ### 🐛 Fixes
 

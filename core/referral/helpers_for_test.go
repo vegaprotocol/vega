@@ -143,3 +143,12 @@ func expectReferralProgramUpdatedEvent(t *testing.T, engine *testEngine) *gomock
 		assert.True(t, ok, "Event should be a ReferralProgramUpdated, but is %T", evt)
 	}).Times(1)
 }
+
+func expectReferralSetStatsUpdatedEvent(t *testing.T, engine *testEngine, times int) *gomock.Call {
+	t.Helper()
+
+	return engine.broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
+		_, ok := evt.(*events.ReferralSetStatsUpdated)
+		assert.True(t, ok, "Event should be a ReferralSetStatsUpdated, but is %T", evt)
+	}).Times(times)
+}

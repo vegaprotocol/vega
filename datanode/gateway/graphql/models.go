@@ -50,6 +50,10 @@ type ProductConfiguration interface {
 	IsProductConfiguration()
 }
 
+type ProductData interface {
+	IsProductData()
+}
+
 type ProposalChange interface {
 	IsProposalChange()
 }
@@ -103,17 +107,6 @@ type AuctionDuration struct {
 	DurationSecs int `json:"durationSecs"`
 	// Target uncrossing trading volume
 	Volume int `json:"volume"`
-}
-
-type BenefitTier struct {
-	// The minimum number of epochs the party needs to be in the referral set to be eligible for the benefit
-	MinimumEpochs int `json:"minimumEpochs"`
-	// The minimum running notional for the given benefit tier
-	MinimumRunningNotionalTakerVolume string `json:"minimumRunningNotionalTakerVolume"`
-	// The proportion of the referee's taker fees to be discounted
-	ReferralDiscountFactor string `json:"referralDiscountFactor"`
-	// The proportion of the referee's taker fees to be rewarded to the referrer
-	ReferralRewardFactor string `json:"referralRewardFactor"`
 }
 
 // A Vega builtin asset, mostly for testing purpose
@@ -668,13 +661,6 @@ type StakingSummary struct {
 	Linkings *v2.StakesConnection `json:"linkings"`
 }
 
-type StakingTier struct {
-	// Required number of governance tokens ($VEGA) a referrer must have staked to receive the multiplier
-	MinimumStakedTokens string `json:"minimumStakedTokens"`
-	// Multiplier applied to the referral reward factor when calculating referral rewards due to the referrer
-	ReferralRewardMultiplier string `json:"referralRewardMultiplier"`
-}
-
 // Price at which a stop order will trigger
 type StopOrderPrice struct {
 	Price string `json:"price"`
@@ -814,9 +800,9 @@ type UpdateReferralProgram struct {
 	// ID of the proposal that created the referral program
 	ID string `json:"id"`
 	// Benefit tiers for the program
-	BenefitTiers []*BenefitTier `json:"benefitTiers"`
+	BenefitTiers []*vega.BenefitTier `json:"benefitTiers"`
 	// Determines the level of benefit a party can expect based on their staking
-	StakingTiers []*StakingTier `json:"stakingTiers"`
+	StakingTiers []*vega.StakingTier `json:"stakingTiers"`
 	// The end time of the program
 	EndOfProgramTimestamp int64 `json:"endOfProgramTimestamp"`
 	// The window legnth to consider for the referral program

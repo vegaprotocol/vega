@@ -137,7 +137,10 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 		te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee8)).Return(num.UintFromUint64(100)).Times(1)
 		te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee9)).Return(num.UintFromUint64(100)).Times(1)
 
-		expectReferralProgramUpdatedEvent(t, te)
+		gomock.InOrder(
+			expectReferralSetStatsUpdatedEvent(t, te, 4),
+			expectReferralProgramUpdatedEvent(t, te),
+		)
 		lastEpochStartTime = program2.EndOfProgramTimestamp.Add(-2 * time.Hour)
 		nextEpoch(t, ctx, te, lastEpochStartTime)
 
@@ -154,6 +157,8 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 		te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee7)).Return(num.UintFromUint64(200)).Times(1)
 		te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee8)).Return(num.UintFromUint64(200)).Times(1)
 		te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee9)).Return(num.UintFromUint64(200)).Times(1)
+
+		expectReferralSetStatsUpdatedEvent(t, te, 4)
 		lastEpochStartTime = program2.EndOfProgramTimestamp.Add(-1 * time.Hour)
 		nextEpoch(t, ctx, te, lastEpochStartTime)
 	}
