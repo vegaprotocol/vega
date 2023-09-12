@@ -168,6 +168,7 @@ message UpdateSpotMarket {
 
 // Configuration to update a futures market on Vega
 message UpdateMarketConfiguration {
+  reserved 5; // lp_price_range
   // Updated futures market instrument configuration.
   UpdateInstrumentConfiguration instrument = 1;
   // Optional futures market metadata, tags.
@@ -183,9 +184,6 @@ message UpdateMarketConfiguration {
     // Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected.
     LogNormalRiskModel log_normal = 101;
   }
-  // Percentage move up and down from the mid price which specifies the range of
-  // price levels over which automated liquidity provision orders will be deployed.
-  string lp_price_range = 5;
   // Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume.
   string linear_slippage_factor = 6;
   // Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume.
