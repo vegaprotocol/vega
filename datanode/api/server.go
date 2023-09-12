@@ -126,6 +126,8 @@ type GRPCServer struct {
 	stopOrderService           *service.StopOrders
 	fundingPeriodService       *service.FundingPeriods
 	partyActivityStreak        *service.PartyActivityStreak
+	referralProgramService     *service.ReferralPrograms
+	referralSetsService        *service.ReferralSets
 
 	eventObserver *eventObserver
 
@@ -179,6 +181,8 @@ func NewGRPCServer(
 	stopOrderService *service.StopOrders,
 	fundingPeriodService *service.FundingPeriods,
 	partyActivityStreak *service.PartyActivityStreak,
+	referralProgramService *service.ReferralPrograms,
+	referralSetsService *service.ReferralSets,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -229,6 +233,8 @@ func NewGRPCServer(
 		stopOrderService:           stopOrderService,
 		fundingPeriodService:       fundingPeriodService,
 		partyActivityStreak:        partyActivityStreak,
+		referralProgramService:     referralProgramService,
+		referralSetsService:        referralSetsService,
 
 		eventObserver: &eventObserver{
 			log:          log,
@@ -434,6 +440,8 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		stopOrderService:           g.stopOrderService,
 		fundingPeriodService:       g.fundingPeriodService,
 		partyActivityStreak:        g.partyActivityStreak,
+		referralProgramService:     g.referralProgramService,
+		referralSetsService:        g.referralSetsService,
 	}
 
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)
