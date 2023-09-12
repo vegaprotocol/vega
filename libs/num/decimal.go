@@ -131,3 +131,9 @@ func Variance(numbers []Decimal) (Decimal, error) {
 	}
 	return total.Div(DecimalFromInt64(int64(len(numbers)))), nil
 }
+
+func UnmarshalBinaryDecimal(data []byte) (Decimal, error) {
+	d := decimal.New(0, 1)
+	err := d.UnmarshalBinary(data)
+	return d, err
+}

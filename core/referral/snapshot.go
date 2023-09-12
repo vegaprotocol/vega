@@ -132,9 +132,14 @@ func (e *SnapshottedEngine) serialiseReferralSets() ([]byte, error) {
 		if isTracked {
 			runningVolumesProto := make([]*snapshotpb.RunningVolume, 0, len(runningVolumes))
 			for _, volume := range runningVolumes {
+				var b []byte
+				if volume != nil {
+					bb := volume.value.Bytes()
+					b = bb[:]
+				}
 				runningVolumesProto = append(runningVolumesProto, &snapshotpb.RunningVolume{
 					Epoch:  volume.epoch,
-					Volume: volume.value.String(),
+					Volume: b,
 				})
 			}
 			setProto.RunningVolumes = runningVolumesProto
