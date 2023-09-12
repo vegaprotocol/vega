@@ -92,7 +92,7 @@
 - [9288](https://github.com/vegaprotocol/vega/issues/9288) - Allow integration test time to progress by epoch.
 - [9078](https://github.com/vegaprotocol/vega/issues/9078) - Add activity streak `API`.
 - [9351](https://github.com/vegaprotocol/vega/issues/9351) - Avoid using strings in market activity tracker snapshot and checkpoint
-
+- [9079](https://github.com/vegaprotocol/vega/issues/9079) - Add API to get the current referral program
 
 ### 🐛 Fixes
 

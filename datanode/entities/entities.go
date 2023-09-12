@@ -21,7 +21,7 @@ type Entities interface {
 		StakeLinking | NodeSignature | KeyRotation | ERC20MultiSigSignerAddedEvent |
 		ERC20MultiSigSignerRemovedEvent | EthereumKeyRotation | AggregatedBalance | AggregatedLedgerEntry |
 		ProtocolUpgradeProposal | CoreSnapshotData | EpochRewardSummary | SuccessorMarket | StopOrder |
-		LiquidityProvider | FundingPeriod | FundingPeriodDataPoint
+		LiquidityProvider | FundingPeriod | FundingPeriodDataPoint | ReferralSet | ReferralSetReferee
 }
 
 type PagedEntity[T proto.Message] interface {

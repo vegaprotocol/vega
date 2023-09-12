@@ -296,6 +296,9 @@ var (
 	// Funding Periods.
 	ErrListFundingPeriod           = errors.New("failed to get funding periods")
 	ErrListFundingPeriodDataPoints = errors.New("failed to get funding period data points")
+
+	// Referral Programs.
+	ErrGetCurrentReferralProgram = errors.New("failed to get current referral program")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.
