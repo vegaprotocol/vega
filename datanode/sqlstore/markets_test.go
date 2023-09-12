@@ -51,8 +51,8 @@ func TestMarkets_Get(t *testing.T) {
 func getByIDShouldReturnTheRequestedMarketIfItExists(t *testing.T) {
 	bs, md := setupMarketsTest(t)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	block := addTestBlock(t, ctx, bs)
 
 	market := entities.Market{
@@ -75,8 +75,8 @@ func getByIDShouldReturnTheRequestedMarketIfItExists(t *testing.T) {
 func getByIDShouldReturnASpotMarketIfItExists(t *testing.T) {
 	bs, md := setupMarketsTest(t)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	block := addTestBlock(t, ctx, bs)
 
 	marketProto := getTestSpotMarket()
@@ -95,8 +95,8 @@ func getByIDShouldReturnASpotMarketIfItExists(t *testing.T) {
 func getByIDShouldReturnAPerpetualMarketIfItExists(t *testing.T) {
 	bs, md := setupMarketsTest(t)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	block := addTestBlock(t, ctx, bs)
 
 	marketProto := getTestSpotMarket()
@@ -115,8 +115,8 @@ func getByIDShouldReturnAPerpetualMarketIfItExists(t *testing.T) {
 func getByTxHashReturnsMatchingMarkets(t *testing.T) {
 	bs, md := setupMarketsTest(t)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	block := addTestBlock(t, ctx, bs)
 
 	market := entities.Market{
@@ -140,8 +140,8 @@ func getByTxHashReturnsMatchingMarkets(t *testing.T) {
 func getByIDShouldReturnErrorIfTheMarketDoesNotExist(t *testing.T) {
 	bs, md := setupMarketsTest(t)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	block := addTestBlock(t, ctx, bs)
 
 	market := entities.Market{
@@ -160,8 +160,8 @@ func getByIDShouldReturnErrorIfTheMarketDoesNotExist(t *testing.T) {
 func getAllPagedShouldNotIncludeRejectedMarkets(t *testing.T) {
 	bs, md := setupMarketsTest(t)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	block := addTestBlock(t, ctx, bs)
 
 	market := entities.Market{
@@ -200,8 +200,7 @@ func getAllPagedShouldNotIncludeRejectedMarkets(t *testing.T) {
 func shouldInsertAValidMarketRecord(t *testing.T) {
 	bs, md := setupMarketsTest(t)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	conn := connectionSource.Connection
 	var rowCount int
@@ -234,8 +233,7 @@ func setupMarketsTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Markets) {
 
 func shouldUpdateAValidMarketRecord(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	conn := connectionSource.Connection
 	var rowCount int
@@ -320,8 +318,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 func shouldInsertAValidSpotMarketRecord(t *testing.T) {
 	bs, md := setupMarketsTest(t)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	conn := connectionSource.Connection
 	var rowCount int
@@ -347,8 +344,7 @@ func shouldInsertAValidSpotMarketRecord(t *testing.T) {
 func shouldInsertAValidPerpetualMarketRecord(t *testing.T) {
 	bs, md := setupMarketsTest(t)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	conn := connectionSource.Connection
 	var rowCount int
@@ -751,8 +747,7 @@ func TestMarketsCursorPagination(t *testing.T) {
 }
 
 func testCursorPaginationReturnsTheSpecifiedMarket(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, md := setupMarketsTest(t)
 
@@ -785,8 +780,8 @@ func testCursorPaginationReturnsTheSpecifiedMarket(t *testing.T) {
 
 func testCursorPaginationReturnsAllMarkets(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 
@@ -823,8 +818,8 @@ func testCursorPaginationReturnsAllMarkets(t *testing.T) {
 
 func testCursorPaginationReturnsFirstPage(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	first := int32(3)
@@ -862,8 +857,8 @@ func testCursorPaginationReturnsFirstPage(t *testing.T) {
 
 func testCursorPaginationReturnsLastPage(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	last := int32(3)
@@ -901,8 +896,8 @@ func testCursorPaginationReturnsLastPage(t *testing.T) {
 
 func testCursorPaginationReturnsPageTraversingForward(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	first := int32(3)
@@ -946,8 +941,8 @@ func testCursorPaginationReturnsPageTraversingForward(t *testing.T) {
 
 func testCursorPaginationReturnsPageTraversingBackward(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	last := int32(3)
@@ -991,8 +986,8 @@ func testCursorPaginationReturnsPageTraversingBackward(t *testing.T) {
 
 func testCursorPaginationReturnsTheSpecifiedMarketNewestFirst(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -1027,8 +1022,8 @@ func testCursorPaginationReturnsTheSpecifiedMarketNewestFirst(t *testing.T) {
 
 func testCursorPaginationReturnsAllMarketsNewestFirst(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 
@@ -1065,8 +1060,8 @@ func testCursorPaginationReturnsAllMarketsNewestFirst(t *testing.T) {
 
 func testCursorPaginationReturnsFirstPageNewestFirst(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	first := int32(3)
@@ -1104,8 +1099,8 @@ func testCursorPaginationReturnsFirstPageNewestFirst(t *testing.T) {
 
 func testCursorPaginationReturnsLastPageNewestFirst(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	last := int32(3)
@@ -1143,8 +1138,8 @@ func testCursorPaginationReturnsLastPageNewestFirst(t *testing.T) {
 
 func testCursorPaginationReturnsPageTraversingForwardNewestFirst(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	first := int32(3)
@@ -1188,8 +1183,8 @@ func testCursorPaginationReturnsPageTraversingForwardNewestFirst(t *testing.T) {
 
 func testCursorPaginationReturnsPageTraversingBackwardNewestFirst(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	last := int32(3)
@@ -1238,8 +1233,7 @@ func TestSuccessorMarkets(t *testing.T) {
 }
 
 func testMarketLineageCreated(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, md := setupMarketsTest(t)
 	parentMarket := entities.Market{
@@ -1371,8 +1365,8 @@ func testMarketLineageCreated(t *testing.T) {
 }
 
 func testListSuccessorMarkets(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	md, markets, proposals := setupSuccessorMarkets(t, ctx)
 
 	successors := []entities.SuccessorMarket{
@@ -1458,8 +1452,7 @@ func testListSuccessorMarkets(t *testing.T) {
 }
 
 func testGetMarketWithParentAndSuccessor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	md, _, _ := setupSuccessorMarkets(t, ctx)
 

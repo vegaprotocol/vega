@@ -75,8 +75,7 @@ func TestStopOrders_Add(t *testing.T) {
 	ps := sqlstore.NewParties(connectionSource)
 	ms := sqlstore.NewMarkets(connectionSource)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blocks := []entities.Block{
 		addTestBlock(t, ctx, bs),
@@ -143,8 +142,7 @@ func TestStopOrders_Get(t *testing.T) {
 	ps := sqlstore.NewParties(connectionSource)
 	ms := sqlstore.NewMarkets(connectionSource)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	block := addTestBlock(t, ctx, bs)
 	block2 := addTestBlock(t, ctx, bs)
@@ -204,8 +202,8 @@ func TestStopOrders_ListStopOrders(t *testing.T) {
 	ps := sqlstore.NewParties(connectionSource)
 	ms := sqlstore.NewMarkets(connectionSource)
 
-	// ctx, rollback := tempTransaction(t)
-	// defer rollback()
+	// ctx := tempTransaction(t)
+	//
 
 	ctx := context.Background()
 

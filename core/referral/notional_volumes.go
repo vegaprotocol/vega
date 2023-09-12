@@ -70,7 +70,7 @@ func (vs *runningVolumes) RunningSetVolumeForWindow(setID types.ReferralSetID, w
 	trackedEpochsCount := uint64(len(runningVolumeSet))
 	startIndex := uint64(0)
 	if trackedEpochsCount > window {
-		startIndex = trackedEpochsCount - window - 1
+		startIndex = trackedEpochsCount - window
 	}
 
 	runningVolumeForWindow := num.UintZero()

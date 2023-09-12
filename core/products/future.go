@@ -272,6 +272,10 @@ func (f *Future) Update(ctx context.Context, pp interface{}, oe OracleEngine) er
 	return nil
 }
 
+func (f *Future) GetData(t int64) *types.ProductData {
+	return nil
+}
+
 func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine, assetDP uint32) (*Future, error) {
 	if f.DataSourceSpecForSettlementData == nil || f.DataSourceSpecForTradingTermination == nil || f.DataSourceSpecBinding == nil {
 		return nil, ErrDataSourceSpecAndBindingAreRequired

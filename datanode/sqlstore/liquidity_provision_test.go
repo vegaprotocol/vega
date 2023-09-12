@@ -63,8 +63,7 @@ func setupLPTests(t *testing.T) (*sqlstore.Blocks, *sqlstore.LiquidityProvision,
 }
 
 func testInsertNewInCurrentBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -86,8 +85,7 @@ func testInsertNewInCurrentBlock(t *testing.T) {
 }
 
 func testUpdateExistingInCurrentBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -112,8 +110,7 @@ func testUpdateExistingInCurrentBlock(t *testing.T) {
 }
 
 func testGetLPByReferenceAndParty(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -150,8 +147,7 @@ func testGetLPByReferenceAndParty(t *testing.T) {
 }
 
 func testGetLPByReferenceAndPartyLiveOrders(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -188,8 +184,7 @@ func testGetLPByReferenceAndPartyLiveOrders(t *testing.T) {
 }
 
 func testLiquidityProvisionGetByTxHash(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -231,8 +226,7 @@ func testLiquidityProvisionGetByTxHash(t *testing.T) {
 }
 
 func testGetLPByPartyOnly(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -273,8 +267,7 @@ func testGetLPByPartyOnly(t *testing.T) {
 }
 
 func testGetLPByPartyOnlyLiveOrders(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -315,8 +308,7 @@ func testGetLPByPartyOnlyLiveOrders(t *testing.T) {
 }
 
 func testGetLPByPartyAndMarket(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -361,8 +353,7 @@ func testGetLPByPartyAndMarket(t *testing.T) {
 }
 
 func testGetLPByPartyAndMarketLiveOrders(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -407,8 +398,7 @@ func testGetLPByPartyAndMarketLiveOrders(t *testing.T) {
 }
 
 func testGetLPNoPartyAndMarketErrors(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	_, lp, _ := setupLPTests(t)
 	partyID := entities.PartyID("")
@@ -421,8 +411,7 @@ func testGetLPNoPartyAndMarketErrors(t *testing.T) {
 }
 
 func testGetLPNoPartyWithMarket(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -464,8 +453,7 @@ func testGetLPNoPartyWithMarket(t *testing.T) {
 }
 
 func testGetLPNoPartyWithMarketLiveOrders(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -605,8 +593,8 @@ func getTestLiquidityProvision(live bool) []*vega.LiquidityProvision {
 }
 
 func testLiquidityProvisionPaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, lpStore, _ := setupLPTests(t)
 	testLps := addLiquidityProvisions(ctx, t, bs, lpStore)
 
@@ -629,8 +617,7 @@ func testLiquidityProvisionPaginationNoPagination(t *testing.T) {
 }
 
 func testLiquidityProvisionPaginationFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lpStore, _ := setupLPTests(t)
 	testLps := addLiquidityProvisions(ctx, t, bs, lpStore)
@@ -656,8 +643,8 @@ func testLiquidityProvisionPaginationFirst(t *testing.T) {
 }
 
 func testLiquidityProvisionPaginationLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, lpStore, _ := setupLPTests(t)
 	testLps := addLiquidityProvisions(ctx, t, bs, lpStore)
 
@@ -682,8 +669,8 @@ func testLiquidityProvisionPaginationLast(t *testing.T) {
 }
 
 func testLiquidityProvisionPaginationFirstAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, lpStore, _ := setupLPTests(t)
 	testLps := addLiquidityProvisions(ctx, t, bs, lpStore)
 
@@ -709,8 +696,8 @@ func testLiquidityProvisionPaginationFirstAfter(t *testing.T) {
 }
 
 func testLiquidityProvisionPaginationLastBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, lsStore, _ := setupLPTests(t)
 	testLps := addLiquidityProvisions(ctx, t, bs, lsStore)
 
@@ -786,8 +773,8 @@ func TestLiquidityProvision_ListProviders(t *testing.T) {
 }
 
 func testListLiquidityProviderValidPartyID(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, lpStore, _ := setupLPTests(t)
 	mds := sqlstore.NewMarketData(connectionSource)
 
@@ -811,8 +798,8 @@ func testListLiquidityProviderValidPartyID(t *testing.T) {
 }
 
 func testListLiquidityProviderInvalidPartyID(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, lpStore, _ := setupLPTests(t)
 	mds := sqlstore.NewMarketData(connectionSource)
 
@@ -834,8 +821,8 @@ func testListLiquidityProviderInvalidPartyID(t *testing.T) {
 }
 
 func testListLiquidityProviderValidMarketID(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, lpStore, _ := setupLPTests(t)
 	mds := sqlstore.NewMarketData(connectionSource)
 
@@ -856,8 +843,8 @@ func testListLiquidityProviderValidMarketID(t *testing.T) {
 }
 
 func testListLiquidityProviderInvalidMarketID(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, lpStore, _ := setupLPTests(t)
 	mds := sqlstore.NewMarketData(connectionSource)
 
@@ -879,8 +866,8 @@ func testListLiquidityProviderInvalidMarketID(t *testing.T) {
 }
 
 func testListLiquidityProviderValidMarketIDValidPartyID(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, lpStore, _ := setupLPTests(t)
 	mds := sqlstore.NewMarketData(connectionSource)
 
@@ -903,8 +890,7 @@ func testListLiquidityProviderValidMarketIDValidPartyID(t *testing.T) {
 }
 
 func testListLiquidityProviderNoMarketIDNoPartyID(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lpStore, _ := setupLPTests(t)
 	mds := sqlstore.NewMarketData(connectionSource)

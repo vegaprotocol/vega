@@ -50,8 +50,7 @@ func addTestPUP(t *testing.T,
 }
 
 func TestProtocolUpgradeProposal(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	pupPending := entities.ProtocolUpgradeProposalStatus(eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_PENDING)
 	pupApproved := entities.ProtocolUpgradeProposalStatus(eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_APPROVED)

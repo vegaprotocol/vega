@@ -68,8 +68,7 @@ func TestFundingPeriod_AddFundingPeriod(t *testing.T) {
 }
 
 func testAddFundingPeriodShouldSucceedIfMarketExistsAndSequenceDoesNotExist(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupFundingPeriodTests(ctx, t)
 
@@ -89,8 +88,7 @@ func testAddFundingPeriodShouldSucceedIfMarketExistsAndSequenceDoesNotExist(t *t
 }
 
 func testAddFundingPeriodShouldUpdateIfMarketExistsAndSequenceExists(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupFundingPeriodTests(ctx, t)
 
@@ -138,8 +136,7 @@ func TestFundingPeriod_AddFundingPeriodDataPoint(t *testing.T) {
 }
 
 func testAddForExistingFundingPeriods(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupFundingPeriodTests(ctx, t)
 
@@ -175,8 +172,7 @@ func testShouldNotErrorIfNoFundingPeriod(t *testing.T) {
 	// Note: this test was changed from should error to should not error as we can not rely on the
 	// foreign key constraint to the funding_period table which has been dropped due to the
 	// funding_period_data_point table being migrated to a TimescaleDB hypertable.
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupFundingPeriodTests(ctx, t)
 
@@ -195,8 +191,7 @@ func testShouldNotErrorIfNoFundingPeriod(t *testing.T) {
 }
 
 func testShouldUpdateDataPointInSameBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := setupFundingPeriodTests(ctx, t)
 
@@ -404,8 +399,8 @@ func addFundingPeriodsAndDataPoints(t *testing.T, ctx context.Context, stores *f
 }
 
 func TestFundingPeriodListFundingPeriods(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	stores := setupFundingPeriodTests(ctx, t)
 
 	addFundingPeriodsAndDataPoints(t, ctx, stores)
@@ -541,8 +536,8 @@ func testListFundingPeriodPagination(t *testing.T, ctx context.Context, stores *
 }
 
 func TestFundingPeriod_ListDataPoints(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	stores := setupFundingPeriodTests(ctx, t)
 
 	addFundingPeriodsAndDataPoints(t, ctx, stores)

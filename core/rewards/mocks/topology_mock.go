@@ -51,10 +51,10 @@ func (mr *MockTopologyMockRecorder) GetRewardsScores(arg0, arg1, arg2, arg3 inte
 }
 
 // RecalcValidatorSet mocks base method.
-func (m *MockTopology) RecalcValidatorSet(arg0 context.Context, arg1 string, arg2 []*types.ValidatorData, arg3 types.StakeScoreParams) []*types.PartyContibutionScore {
+func (m *MockTopology) RecalcValidatorSet(arg0 context.Context, arg1 string, arg2 []*types.ValidatorData, arg3 types.StakeScoreParams) []*types.PartyContributionScore {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RecalcValidatorSet", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].([]*types.PartyContibutionScore)
+	ret0, _ := ret[0].([]*types.PartyContributionScore)
 	return ret0
 }
 

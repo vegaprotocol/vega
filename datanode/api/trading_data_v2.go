@@ -110,24 +110,8 @@ type TradingDataServiceV2 struct {
 	stopOrderService           *service.StopOrders
 	fundingPeriodService       *service.FundingPeriods
 	partyActivityStreak        *service.PartyActivityStreak
-}
-
-func (t *TradingDataServiceV2) GetPartyActivityStreak(ctx context.Context, req *v2.GetPartyActivityStreakRequest) (*v2.GetPartyActivityStreakResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("GetPartyActivityStreak")()
-
-	if !crypto.IsValidVegaPubKey(req.PartyId) {
-		return nil, formatE(ErrInvalidPartyID)
-	}
-
-	activityStreak, err := t.partyActivityStreak.Get(
-		ctx, entities.PartyID(req.PartyId), req.Epoch)
-	if err != nil {
-		return nil, formatE(err)
-	}
-
-	return &v2.GetPartyActivityStreakResponse{
-		ActivityStreak: activityStreak.ToProto(),
-	}, nil
+	referralProgramService     *service.ReferralPrograms
+	referralSetsService        *service.ReferralSets
 }
 
 // ListAccounts lists accounts matching the request.
@@ -4022,5 +4006,110 @@ func (t *TradingDataServiceV2) ListFundingPeriodDataPoints(ctx context.Context, 
 
 	return &v2.ListFundingPeriodDataPointsResponse{
 		FundingPeriodDataPoints: connection,
+	}, nil
+}
+
+func (t *TradingDataServiceV2) GetCurrentReferralProgram(ctx context.Context, _ *v2.GetCurrentReferralProgramRequest) (
+	*v2.GetCurrentReferralProgramResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetCurrentReferralProgram")()
+	referralProgram, err := t.referralProgramService.GetCurrentReferralProgram(ctx)
+	if err != nil {
+		return nil, formatE(ErrGetCurrentReferralProgram, err)
+	}
+
+	return &v2.GetCurrentReferralProgramResponse{
+		CurrentReferralProgram: referralProgram.ToProto(),
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListReferralSets(ctx context.Context, req *v2.ListReferralSetsRequest) (
+	*v2.ListReferralSetsResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListReferralSets")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	var id *entities.ReferralSetID
+
+	if req.ReferralSetId != nil {
+		id = ptr.From(entities.ReferralSetID(*req.ReferralSetId))
+	}
+
+	sets, pageInfo, err := t.referralSetsService.ListReferralSets(ctx, id, pagination)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	edges, err := makeEdges[*v2.ReferralSetEdge](sets)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	connection := &v2.ReferralSetConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListReferralSetsResponse{
+		ReferralSets: connection,
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListReferralSetReferees(ctx context.Context, req *v2.ListReferralSetRefereesRequest) (
+	*v2.ListReferralSetRefereesResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListReferralSetReferees")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	id := entities.ReferralSetID(req.ReferralSetId)
+
+	referees, pageInfo, err := t.referralSetsService.ListReferralSetReferees(ctx, id, pagination)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	edges, err := makeEdges[*v2.ReferralSetRefereeEdge](referees)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	connection := &v2.ReferralSetRefereeConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListReferralSetRefereesResponse{
+		ReferralSetReferees: connection,
+	}, nil
+}
+
+func (t *TradingDataServiceV2) GetReferralSetStats(ctx context.Context, req *v2.GetReferralSetStatsRequest) (
+	*v2.GetReferralSetStatsResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetReferralSetStats")()
+
+	id := entities.ReferralSetID(req.ReferralSetId)
+
+	var referee *entities.PartyID
+
+	if req.Referee != nil {
+		referee = ptr.From(entities.PartyID(*req.Referee))
+	}
+
+	stats, err := t.referralSetsService.GetReferralSetStats(ctx, id, req.AtEpoch, referee)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.GetReferralSetStatsResponse{
+		Stats: stats.ToProto(),
 	}, nil
 }

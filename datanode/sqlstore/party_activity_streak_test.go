@@ -24,8 +24,7 @@ func newPartyActivityStreakStores(t *testing.T) *partyActivityStreakStores {
 }
 
 func TestPartyActivityStreak(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	stores := newPartyActivityStreakStores(t)
 

@@ -75,11 +75,21 @@ func (e *SnapshotEngine) LoadState(_ context.Context, p *types.Payload) ([]types
 
 func (e *SnapshotEngine) loadStateFromSnapshot(state *snapshotpb.ActivityStreak) {
 	for _, v := range state.PartiesActivityStreak {
+		var rewardDistributionActivityMultiplier num.Decimal
+		if len(v.RewardDistributionMultiplier) > 0 {
+			rewardDistributionActivityMultiplier, _ = num.UnmarshalBinaryDecimal(v.RewardDistributionMultiplier)
+		}
+
+		var rewardVestingActivityMultiplier num.Decimal
+		if len(v.RewardVestingMultiplier) > 0 {
+			rewardVestingActivityMultiplier, _ = num.UnmarshalBinaryDecimal(v.RewardVestingMultiplier)
+		}
+
 		e.partiesActivity[v.Party] = &PartyActivity{
 			Active:                               v.Active,
 			Inactive:                             v.Inactive,
-			RewardDistributionActivityMultiplier: num.MustDecimalFromString(v.RewardDistributionMultiplier),
-			RewardVestingActivityMultiplier:      num.MustDecimalFromString(v.RewardVestingMultiplier),
+			RewardDistributionActivityMultiplier: rewardDistributionActivityMultiplier,
+			RewardVestingActivityMultiplier:      rewardVestingActivityMultiplier,
 		}
 	}
 }
@@ -99,12 +109,14 @@ func (e *SnapshotEngine) serialiseAll() ([]byte, error) {
 	}
 
 	for party, activity := range e.partiesActivity {
+		rewardDistributionMultiplier, _ := activity.RewardDistributionActivityMultiplier.MarshalBinary()
+		rewardVestingMultiplier, _ := activity.RewardVestingActivityMultiplier.MarshalBinary()
 		out.PartiesActivityStreak = append(out.PartiesActivityStreak, &snapshotpb.PartyActivityStreak{
 			Party:                        party,
 			Active:                       activity.Active,
 			Inactive:                     activity.Inactive,
-			RewardDistributionMultiplier: activity.RewardDistributionActivityMultiplier.String(),
-			RewardVestingMultiplier:      activity.RewardVestingActivityMultiplier.String(),
+			RewardDistributionMultiplier: rewardDistributionMultiplier,
+			RewardVestingMultiplier:      rewardVestingMultiplier,
 		})
 	}
 

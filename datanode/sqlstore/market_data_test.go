@@ -80,8 +80,7 @@ func Test_MarketData(t *testing.T) {
 }
 
 func shouldInsertAValidMarketDataRecord(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	md := sqlstore.NewMarketData(connectionSource)
@@ -125,8 +124,7 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 }
 
 func getLatestMarketData(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	store, err := setupMarketData(t, ctx)
 	if err != nil {
@@ -182,7 +180,7 @@ func getLatestMarketData(t *testing.T) {
 		},
 		MarketGrowth:    num.DecimalZero(),
 		LastTradedPrice: mustParseDecimal(t, "999992588"),
-		FundingRate:     nil,
+		ProductData:     nil,
 	}
 	got, err := store.GetMarketDataByID(ctx, "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
 	assert.NoError(t, err)
@@ -191,8 +189,7 @@ func getLatestMarketData(t *testing.T) {
 }
 
 func getAllForMarketBetweenDates(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	store, err := setupMarketData(t, ctx)
 	if err != nil {
@@ -424,8 +421,7 @@ func getAllForMarketBetweenDates(t *testing.T) {
 }
 
 func getForMarketFromDate(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	store, err := setupMarketData(t, ctx)
 	require.NoError(t, err)
@@ -632,8 +628,7 @@ func getForMarketFromDate(t *testing.T) {
 }
 
 func getForMarketToDate(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	store, err := setupMarketData(t, ctx)
 	require.NoError(t, err)
@@ -1013,6 +1008,6 @@ func csvToMarketData(t *testing.T, line []string, seqNum int) *entities.MarketDa
 		SyntheticTime:              syntheticTime,
 		MarketGrowth:               mustParseDecimal(t, line[csvColumnMarketGrowth]),
 		LastTradedPrice:            mustParseDecimal(t, line[csvColumnLastTradedPrice]),
-		FundingRate:                nil,
+		ProductData:                nil,
 	}
 }

@@ -43,8 +43,7 @@ func setupOracleDataTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.OracleData, 
 }
 
 func testAddAndRetrieveOracleDataWithError(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, od, conn := setupOracleDataTest(t)
 
@@ -71,8 +70,7 @@ func testAddAndRetrieveOracleDataWithError(t *testing.T) {
 }
 
 func testAddAndRetrieveOracleDataWithMetaData(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, od, conn := setupOracleDataTest(t)
 
@@ -99,8 +97,7 @@ func testAddAndRetrieveOracleDataWithMetaData(t *testing.T) {
 }
 
 func testAddOracleData(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, od, conn := setupOracleDataTest(t)
 
@@ -122,8 +119,7 @@ func testAddOracleData(t *testing.T) {
 }
 
 func testGetOracleDataBySpecID(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, od, conn := setupOracleDataTest(t)
 
@@ -154,8 +150,7 @@ func testGetOracleDataBySpecID(t *testing.T) {
 }
 
 func testGetOracleDataWithoutSpecID(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, od, conn := setupOracleDataTest(t)
 
@@ -186,8 +181,7 @@ func testGetOracleDataWithoutSpecID(t *testing.T) {
 }
 
 func testGetOracleDataByTxHash(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, od, conn := setupOracleDataTest(t)
 
@@ -248,7 +242,7 @@ func getTestOracleData() []*vegapb.OracleData {
 				},
 			},
 		},
-		//},
+		// },
 		{ // 1
 			ExternalData: &datapb.ExternalData{
 				Data: &datapb.Data{
@@ -436,8 +430,7 @@ func TestOracleData_GetOracleDataBySpecIDCursorPagination(t *testing.T) {
 }
 
 func testOracleDataGetBySpecNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
@@ -457,8 +450,7 @@ func testOracleDataGetBySpecNoPagination(t *testing.T) {
 }
 
 func testOracleDataGetBySpecFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
@@ -479,8 +471,7 @@ func testOracleDataGetBySpecFirst(t *testing.T) {
 }
 
 func testOracleDataGetBySpecLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
@@ -501,8 +492,7 @@ func testOracleDataGetBySpecLast(t *testing.T) {
 }
 
 func testOracleDataGetBySpecFirstAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
@@ -524,8 +514,7 @@ func testOracleDataGetBySpecFirstAfter(t *testing.T) {
 }
 
 func testOracleDataGetBySpecLastBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)

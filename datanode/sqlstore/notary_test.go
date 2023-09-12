@@ -39,8 +39,7 @@ func setupNotaryStoreTests(t *testing.T) (*sqlstore.Notary, *sqlstore.Blocks, sq
 }
 
 func testAddSignatures(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ws, bs, conn := setupNotaryStoreTests(t)
 
@@ -60,8 +59,7 @@ func testAddSignatures(t *testing.T) {
 }
 
 func testAddMultipleSignatures(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ws, bs, _ := setupNotaryStoreTests(t)
 
@@ -111,8 +109,7 @@ func getTestNodeSignature(t *testing.T, ctx context.Context, bs *sqlstore.Blocks
 }
 
 func testNoResource(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ws, _, _ := setupNotaryStoreTests(t)
 
@@ -122,8 +119,7 @@ func testNoResource(t *testing.T) {
 }
 
 func testSignatureGetByTx(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, bs, _ := setupNotaryStoreTests(t)
 
@@ -159,8 +155,7 @@ func TestNodeSignaturePagination(t *testing.T) {
 }
 
 func testNodeSignaturePaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -179,8 +174,7 @@ func testNodeSignaturePaginationNoPagination(t *testing.T) {
 }
 
 func testNodeSignaturePaginationFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	first := int32(3)
@@ -200,8 +194,7 @@ func testNodeSignaturePaginationFirst(t *testing.T) {
 }
 
 func testNodeSignaturePaginationLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	last := int32(3)
@@ -221,8 +214,7 @@ func testNodeSignaturePaginationLast(t *testing.T) {
 }
 
 func testNodeSignaturePaginationFirstAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	first := int32(3)
@@ -243,8 +235,7 @@ func testNodeSignaturePaginationFirstAfter(t *testing.T) {
 }
 
 func testNodeSignaturePaginationLastBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	last := int32(3)
@@ -265,8 +256,7 @@ func testNodeSignaturePaginationLastBefore(t *testing.T) {
 }
 
 func testNodeSignaturePaginationNoPaginationNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -285,8 +275,7 @@ func testNodeSignaturePaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testNodeSignaturePaginationFirstNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	first := int32(3)
@@ -306,8 +295,7 @@ func testNodeSignaturePaginationFirstNewestFirst(t *testing.T) {
 }
 
 func testNodeSignaturePaginationLastNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	last := int32(3)
@@ -327,8 +315,7 @@ func testNodeSignaturePaginationLastNewestFirst(t *testing.T) {
 }
 
 func testNodeSignaturePaginationFirstAfterNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	first := int32(3)
@@ -349,8 +336,7 @@ func testNodeSignaturePaginationFirstAfterNewestFirst(t *testing.T) {
 }
 
 func testNodeSignaturePaginationLastBeforeNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	last := int32(3)
