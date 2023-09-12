@@ -30,9 +30,7 @@ func setupReferralSetsTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Parties, *
 
 func TestReferralSets_AddReferralSet(t *testing.T) {
 	bs, ps, rs := setupReferralSetsTest(t)
-	ctx, rollback := tempTransaction(t)
-
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	block := addTestBlock(t, ctx, bs)
 	referrer := addTestParty(t, ctx, ps, block)
@@ -64,8 +62,7 @@ func TestReferralSets_AddReferralSet(t *testing.T) {
 
 func TestReferralSets_RefereeJoinedReferralSet(t *testing.T) {
 	bs, ps, rs := setupReferralSetsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	block := addTestBlock(t, ctx, bs)
 	referrer := addTestParty(t, ctx, ps, block)
@@ -167,8 +164,7 @@ func setupReferralSetsAndReferees(t *testing.T, ctx context.Context, bs *sqlstor
 
 func TestReferralSets_ListReferralSets(t *testing.T) {
 	bs, ps, rs := setupReferralSetsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	sets, _ := setupReferralSetsAndReferees(t, ctx, bs, ps, rs)
 
@@ -274,8 +270,7 @@ func TestReferralSets_ListReferralSets(t *testing.T) {
 
 func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 	bs, ps, rs := setupReferralSetsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	sets, referees := setupReferralSetsAndReferees(t, ctx, bs, ps, rs)
 	src := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -370,8 +365,6 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 
 func TestReferralSets_AddReferralSetStats(t *testing.T) {
 	bs, ps, rs := setupReferralSetsTest(t)
-	// ctx, rollback := tempTransaction(t)
-	// defer rollback()
 
 	ctx := context.Background()
 
@@ -533,8 +526,7 @@ func setupReferralStats(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, 
 
 func TestReferralSets_GetReferralSetStats(t *testing.T) {
 	bs, ps, rs := setupReferralSetsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	sets, stats := setupReferralStats(t, ctx, bs, ps, rs)
 

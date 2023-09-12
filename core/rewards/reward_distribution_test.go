@@ -36,9 +36,9 @@ func TestRankingRewardCalculator(t *testing.T) {
 		{StartRank: 4, ShareRatio: 0},
 	}
 
-	require.Equal(t, 0, len(rankingRewardCalculator([]*types.PartyContibutionScore{}, rankingTable, map[string]num.Decimal{})))
+	require.Equal(t, 0, len(rankingRewardCalculator([]*types.PartyContributionScore{}, rankingTable, map[string]num.Decimal{})))
 
-	partyContribution := []*types.PartyContibutionScore{
+	partyContribution := []*types.PartyContributionScore{
 		{Party: "p1", Score: num.DecimalFromFloat(0.6)},
 		{Party: "p2", Score: num.DecimalFromFloat(0.5)},
 		{Party: "p3", Score: num.DecimalFromFloat(0.1)},
@@ -62,9 +62,9 @@ func TestRankingRewardCalculator(t *testing.T) {
 }
 
 func TestProRataRewardCalculator(t *testing.T) {
-	require.Equal(t, 0, len(proRataRewardCalculator([]*types.PartyContibutionScore{}, map[string]num.Decimal{})))
+	require.Equal(t, 0, len(proRataRewardCalculator([]*types.PartyContributionScore{}, map[string]num.Decimal{})))
 
-	partyContribution := []*types.PartyContibutionScore{
+	partyContribution := []*types.PartyContributionScore{
 		{Party: "p1", Score: num.DecimalFromFloat(0.6)},
 		{Party: "p2", Score: num.DecimalFromFloat(0.5)},
 		{Party: "p3", Score: num.DecimalFromFloat(0.1)},
@@ -99,7 +99,7 @@ func TestProRataRewardCalculator(t *testing.T) {
 }
 
 func TestCapAtOne(t *testing.T) {
-	partyRewardScores := []*types.PartyContibutionScore{{Party: "p1", Score: num.DecimalFromFloat(0.1)}, {Party: "p2", Score: num.MustDecimalFromString("0.900000001")}}
+	partyRewardScores := []*types.PartyContributionScore{{Party: "p1", Score: num.DecimalFromFloat(0.1)}, {Party: "p2", Score: num.MustDecimalFromString("0.900000001")}}
 	total := num.DecimalFromFloat(0.1).Add(num.MustDecimalFromString("0.900000001"))
 
 	capAtOne(partyRewardScores, total)

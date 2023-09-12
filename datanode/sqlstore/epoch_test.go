@@ -50,8 +50,7 @@ func addTestEpoch(t *testing.T, ctx context.Context, es *sqlstore.Epochs,
 }
 
 func TestEpochs(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es := sqlstore.NewEpochs(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)

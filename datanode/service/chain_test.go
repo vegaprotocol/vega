@@ -28,7 +28,7 @@ import (
 func TestChainService(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ctx := context.Background()
-	defer ctrl.Finish()
+
 	store := mocks.NewMockChainStore(ctrl)
 	svc := service.NewChain(store)
 

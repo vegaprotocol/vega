@@ -29,7 +29,7 @@ import (
 
 func TestCandleSubscribe(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+
 	store := mocks.NewMockCandleStore(ctrl)
 	store.EXPECT().CandleExists(
 		gomock.Any(),
@@ -54,7 +54,7 @@ func TestCandleSubscribe(t *testing.T) {
 
 func TestCandleUnsubscribe(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+
 	mockStore := mocks.NewMockCandleStore(ctrl)
 	mockStore.EXPECT().CandleExists(
 		gomock.Any(),

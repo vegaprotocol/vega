@@ -624,7 +624,6 @@ func TestParkedOrder2(t *testing.T) {
 
 func TestInitFromSqlStore(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	ctx := context.Background()
 

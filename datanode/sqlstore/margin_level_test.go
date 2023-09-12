@@ -91,8 +91,7 @@ func setupMarginLevelTests(t *testing.T, ctx context.Context) (*testBlockSource,
 }
 
 func testInsertMarginLevels(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blockSource, ml, accountStore, conn := setupMarginLevelTests(t, ctx)
 	block := blockSource.getNextBlock(t, ctx)
@@ -121,8 +120,7 @@ func testInsertMarginLevels(t *testing.T) {
 }
 
 func testDuplicateMarginLevelInSameBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blockSource, ml, accountStore, conn := setupMarginLevelTests(t, ctx)
 	block := blockSource.getNextBlock(t, ctx)
@@ -171,8 +169,7 @@ func getMarginLevelWithMaintenanceProto(maintenanceMargin, partyID, marketID str
 }
 
 func testGetMarginLevelsByPartyID(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blockSource, ml, accountStore, conn := setupMarginLevelTests(t, ctx)
 	block := blockSource.getNextBlock(t, ctx)
@@ -254,8 +251,7 @@ func testGetMarginLevelsByPartyID(t *testing.T) {
 }
 
 func testGetMarginLevelsByMarketID(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blockSource, ml, accountStore, conn := setupMarginLevelTests(t, ctx)
 	block := blockSource.getNextBlock(t, ctx)
@@ -337,8 +333,7 @@ func testGetMarginLevelsByMarketID(t *testing.T) {
 }
 
 func testGetMarginLevelsByID(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blockSource, ml, accountStore, conn := setupMarginLevelTests(t, ctx)
 	block := blockSource.getNextBlock(t, ctx)
@@ -416,8 +411,7 @@ func testGetMarginLevelsByID(t *testing.T) {
 }
 
 func testGetMarginByTxHash(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blockSource, ml, accountStore, conn := setupMarginLevelTests(t, ctx)
 	block := blockSource.getNextBlock(t, ctx)
@@ -598,8 +592,7 @@ func populateMarginLevelPaginationTestData(t *testing.T, ctx context.Context) (*
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyNoCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)
@@ -636,8 +629,7 @@ func testGetMarginLevelsByIDPaginationWithPartyNoCursor(t *testing.T) {
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyNoCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)
@@ -672,8 +664,7 @@ func testGetMarginLevelsByIDPaginationWithPartyNoCursorNewestFirst(t *testing.T)
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketNoCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)
@@ -708,8 +699,7 @@ func testGetMarginLevelsByIDPaginationWithMarketNoCursor(t *testing.T) {
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketNoCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)
@@ -744,8 +734,7 @@ func testGetMarginLevelsByIDPaginationWithMarketNoCursorNewestFirst(t *testing.T
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyFirstNoAfterCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)
@@ -778,8 +767,7 @@ func testGetMarginLevelsByIDPaginationWithPartyFirstNoAfterCursor(t *testing.T) 
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyFirstNoAfterCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)
@@ -812,8 +800,7 @@ func testGetMarginLevelsByIDPaginationWithPartyFirstNoAfterCursorNewestFirst(t *
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketFirstNoAfterCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)
@@ -846,8 +833,7 @@ func testGetMarginLevelsByIDPaginationWithMarketFirstNoAfterCursor(t *testing.T)
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketFirstNoAfterCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)
@@ -880,8 +866,7 @@ func testGetMarginLevelsByIDPaginationWithMarketFirstNoAfterCursorNewestFirst(t 
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyLastNoBeforeCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)
@@ -914,8 +899,7 @@ func testGetMarginLevelsByIDPaginationWithPartyLastNoBeforeCursor(t *testing.T) 
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyLastNoBeforeCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)
@@ -948,8 +932,7 @@ func testGetMarginLevelsByIDPaginationWithPartyLastNoBeforeCursorNewestFirst(t *
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketLastNoBeforeCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)
@@ -982,8 +965,7 @@ func testGetMarginLevelsByIDPaginationWithMarketLastNoBeforeCursor(t *testing.T)
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketLastNoBeforeCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)
@@ -1016,8 +998,7 @@ func testGetMarginLevelsByIDPaginationWithMarketLastNoBeforeCursorNewestFirst(t 
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyFirstAndAfterCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)
@@ -1054,8 +1035,7 @@ func testGetMarginLevelsByIDPaginationWithPartyFirstAndAfterCursor(t *testing.T)
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyFirstAndAfterCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)
@@ -1092,8 +1072,7 @@ func testGetMarginLevelsByIDPaginationWithPartyFirstAndAfterCursorNewestFirst(t 
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketFirstAndAfterCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)
@@ -1130,8 +1109,7 @@ func testGetMarginLevelsByIDPaginationWithMarketFirstAndAfterCursor(t *testing.T
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketFirstAndAfterCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)
@@ -1168,8 +1146,7 @@ func testGetMarginLevelsByIDPaginationWithMarketFirstAndAfterCursorNewestFirst(t
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyLastAndBeforeCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)
@@ -1206,8 +1183,7 @@ func testGetMarginLevelsByIDPaginationWithPartyLastAndBeforeCursor(t *testing.T)
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyLastAndBeforeCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)
@@ -1244,8 +1220,7 @@ func testGetMarginLevelsByIDPaginationWithPartyLastAndBeforeCursorNewestFirst(t 
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketLastAndBeforeCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)
@@ -1282,8 +1257,7 @@ func testGetMarginLevelsByIDPaginationWithMarketLastAndBeforeCursor(t *testing.T
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketLastAndBeforeCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, ctx)

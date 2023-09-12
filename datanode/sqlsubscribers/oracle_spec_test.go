@@ -26,7 +26,6 @@ import (
 
 func TestOracleSpec_Push(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	store := mocks.NewMockOracleSpecStore(ctrl)
 

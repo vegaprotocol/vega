@@ -308,7 +308,7 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 		},
 	}
 
-	e.marketActivityTracker.EXPECT().CalculateMetricForIndividuals(gomock.Any()).AnyTimes().Return([]*types.PartyContibutionScore{
+	e.marketActivityTracker.EXPECT().CalculateMetricForIndividuals(gomock.Any()).AnyTimes().Return([]*types.PartyContributionScore{
 		{Party: "", Score: num.DecimalFromFloat(1)},
 	})
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
