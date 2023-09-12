@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"reflect"
 	"sync"
 	"time"
 
@@ -74,7 +75,7 @@ func NewEngine(log *logging.Logger, cfg Config, isValidator bool, client EthRead
 // Start starts the polling of the Ethereum bridges, listens to the events
 // they emit and forward it to the network.
 func (e *Engine) Start() {
-	if e.isValidator && e.client != nil {
+	if e.isValidator && !reflect.ValueOf(e.client).IsNil() {
 		go func() {
 			ctx, cancelEthereumQueries := context.WithCancel(context.Background())
 			defer cancelEthereumQueries()

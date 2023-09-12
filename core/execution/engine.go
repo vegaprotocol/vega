@@ -70,9 +70,10 @@ type Engine struct {
 	allMarkets    map[string]common.CommonMarket
 	allMarketsCpy []common.CommonMarket
 
-	collateral               common.Collateral
-	assets                   common.Assets
-	feeDiscountRewardService fee.FeeDiscountRewardService
+	collateral                    common.Collateral
+	assets                        common.Assets
+	referralDiscountRewardService fee.ReferralDiscountRewardService
+	volumeDiscountService         fee.VolumeDiscountService
 
 	broker                common.Broker
 	timeService           common.TimeService
@@ -126,7 +127,7 @@ type netParamsValues struct {
 	liquidityV2SLANonPerformanceBondPenaltyMax   num.Decimal
 	liquidityV2SLANonPerformanceBondPenaltySlope num.Decimal
 	liquidityV2StakeToCCYVolume                  num.Decimal
-	liquidityV2FeeCalculationTimeStep            time.Duration
+	liquidityV2ProvidersFeeCalculationTimeStep   time.Duration
 }
 
 func defaultNetParamsValues() netParamsValues {
@@ -155,7 +156,7 @@ func defaultNetParamsValues() netParamsValues {
 		liquidityV2SLANonPerformanceBondPenaltyMax:   num.DecimalFromInt64(-1),
 		liquidityV2SLANonPerformanceBondPenaltySlope: num.DecimalFromInt64(-1),
 		liquidityV2StakeToCCYVolume:                  num.DecimalFromInt64(-1),
-		liquidityV2FeeCalculationTimeStep:            time.Second * 5,
+		liquidityV2ProvidersFeeCalculationTimeStep:   time.Second * 5,
 	}
 }
 
@@ -171,31 +172,33 @@ func NewEngine(
 	stateVarEngine common.StateVarEngine,
 	marketActivityTracker *common.MarketActivityTracker,
 	assets common.Assets,
-	feeDiscountRewardService fee.FeeDiscountRewardService,
+	referralDiscountRewardService fee.ReferralDiscountRewardService,
+	volumeDiscountService fee.VolumeDiscountService,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(executionConfig.Level.Get())
 	e := &Engine{
-		log:                      log,
-		Config:                   executionConfig,
-		futureMarkets:            map[string]*future.Market{},
-		spotMarkets:              map[string]*spot.Market{},
-		allMarkets:               map[string]common.CommonMarket{},
-		timeService:              ts,
-		collateral:               collateral,
-		assets:                   assets,
-		broker:                   broker,
-		oracle:                   oracle,
-		npv:                      defaultNetParamsValues(),
-		generatedProviders:       map[string]struct{}{},
-		stateVarEngine:           stateVarEngine,
-		marketActivityTracker:    marketActivityTracker,
-		marketCPStates:           map[string]*types.CPMarketState{},
-		successors:               map[string][]string{},
-		isSuccessor:              map[string]string{},
-		skipRestoreSuccessors:    map[string]struct{}{},
-		feeDiscountRewardService: feeDiscountRewardService,
+		log:                           log,
+		Config:                        executionConfig,
+		futureMarkets:                 map[string]*future.Market{},
+		spotMarkets:                   map[string]*spot.Market{},
+		allMarkets:                    map[string]common.CommonMarket{},
+		timeService:                   ts,
+		collateral:                    collateral,
+		assets:                        assets,
+		broker:                        broker,
+		oracle:                        oracle,
+		npv:                           defaultNetParamsValues(),
+		generatedProviders:            map[string]struct{}{},
+		stateVarEngine:                stateVarEngine,
+		marketActivityTracker:         marketActivityTracker,
+		marketCPStates:                map[string]*types.CPMarketState{},
+		successors:                    map[string][]string{},
+		isSuccessor:                   map[string]string{},
+		skipRestoreSuccessors:         map[string]struct{}{},
+		referralDiscountRewardService: referralDiscountRewardService,
+		volumeDiscountService:         volumeDiscountService,
 	}
 
 	// set the eligibility for proposer bonus checker
@@ -665,7 +668,8 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 		e.marketActivityTracker,
 		ad,
 		e.peggedOrderCountUpdated,
-		e.feeDiscountRewardService,
+		e.referralDiscountRewardService,
+		e.volumeDiscountService,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -743,7 +747,8 @@ func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Marke
 		bad,
 		qad,
 		e.peggedOrderCountUpdated,
-		e.feeDiscountRewardService,
+		e.referralDiscountRewardService,
+		e.volumeDiscountService,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -883,7 +888,7 @@ func (e *Engine) propagateSLANetParams(_ context.Context, mkt *future.Market) {
 		mkt.OnMarketLiquidityV2StakeToCCYVolume(e.npv.liquidityV2StakeToCCYVolume)
 	}
 
-	mkt.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(e.npv.liquidityV2FeeCalculationTimeStep)
+	mkt.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(e.npv.liquidityV2ProvidersFeeCalculationTimeStep)
 }
 
 func (e *Engine) removeMarket(mktID string) {
@@ -1579,15 +1584,16 @@ func (e *Engine) OnMarketLiquidityV2StakeToCCYVolumeUpdate(_ context.Context, d 
 	return nil
 }
 
-func (e *Engine) OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(_ context.Context, t time.Duration) error {
+func (e *Engine) OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(_ context.Context, d time.Duration) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update market SLA providers fee calculation time step (liquidity v2)",
-			logging.Duration("providersFeeCalculationTimeStep", t),
+			logging.Duration("providersFeeCalculationTimeStep", d),
 		)
 	}
 	for _, m := range e.allMarketsCpy {
-		m.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(t)
+		m.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(d)
 	}
+	e.npv.liquidityV2ProvidersFeeCalculationTimeStep = d
 	return nil
 }
 

@@ -46,6 +46,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	"golang.org/x/exp/maps"
 )
 
 // LiquidityMonitor.
@@ -86,15 +87,16 @@ type Market struct {
 	priceFactor     *num.Uint
 
 	// own engines
-	matching                 *matching.CachedOrderBook
-	tradableInstrument       *markets.TradableInstrument
-	risk                     *risk.Engine
-	position                 *positions.SnapshotEngine
-	settlement               *settlement.SnapshotEngine
-	fee                      *fee.Engine
-	feeDiscountRewardService fee.FeeDiscountRewardService
-	liquidity                *common.MarketLiquidity
-	liquidityEngine          common.LiquidityEngine
+	matching                      *matching.CachedOrderBook
+	tradableInstrument            *markets.TradableInstrument
+	risk                          *risk.Engine
+	position                      *positions.SnapshotEngine
+	settlement                    *settlement.SnapshotEngine
+	fee                           *fee.Engine
+	referralDiscountRewardService fee.ReferralDiscountRewardService
+	volumeDiscountService         fee.VolumeDiscountService
+	liquidity                     *common.MarketLiquidity
+	liquidityEngine               common.LiquidityEngine
 
 	// deps engines
 	collateral common.Collateral
@@ -174,7 +176,8 @@ func NewMarket(
 	marketActivityTracker *common.MarketActivityTracker,
 	assetDetails *assets.Asset,
 	peggedOrderNotify func(int64),
-	feeDiscountRewardService fee.FeeDiscountRewardService,
+	referralDiscountRewardService fee.ReferralDiscountRewardService,
+	volumeDiscountService fee.VolumeDiscountService,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
 		return nil, common.ErrEmptyMarketID
@@ -244,8 +247,7 @@ func NewMarket(
 
 	liquidityEngine := liquidity.NewSnapshotEngine(
 		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel,
-		pMonitor, book, auctionState, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams,
-	)
+		pMonitor, book, auctionState, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams)
 
 	equityShares := common.NewEquityShares(num.DecimalZero())
 
@@ -275,45 +277,46 @@ func NewMarket(
 
 	marketType := mkt.MarketType()
 	market := &Market{
-		log:                      log,
-		idgen:                    nil,
-		mkt:                      mkt,
-		matching:                 book,
-		tradableInstrument:       tradableInstrument,
-		risk:                     riskEngine,
-		position:                 positionEngine,
-		settlement:               settleEngine,
-		collateral:               collateralEngine,
-		timeService:              timeService,
-		broker:                   broker,
-		fee:                      feeEngine,
-		liquidity:                marketLiquidity,
-		liquidityEngine:          liquidityEngine, // TODO karel - consider not having this
-		parties:                  map[string]struct{}{},
-		as:                       auctionState,
-		pMonitor:                 pMonitor,
-		lMonitor:                 lMonitor,
-		tsCalc:                   tsCalc,
-		peggedOrders:             common.NewPeggedOrders(log, timeService),
-		expiringOrders:           common.NewExpiringOrders(),
-		feeSplitter:              common.NewFeeSplitter(),
-		equityShares:             equityShares,
-		lastBestAskPrice:         num.UintZero(),
-		lastMidSellPrice:         num.UintZero(),
-		lastMidBuyPrice:          num.UintZero(),
-		lastBestBidPrice:         num.UintZero(),
-		stateVarEngine:           stateVarEngine,
-		marketActivityTracker:    marketActivityTracker,
-		priceFactor:              priceFactor,
-		positionFactor:           positionFactor,
-		nextMTM:                  time.Time{}, // default to zero time
-		linearSlippageFactor:     mkt.LinearSlippageFactor,
-		quadraticSlippageFactor:  mkt.QuadraticSlippageFactor,
-		maxStopOrdersPerParties:  num.UintZero(),
-		stopOrders:               stoporders.New(log),
-		expiringStopOrders:       common.NewExpiringOrders(),
-		perp:                     marketType == types.MarketTypePerp,
-		feeDiscountRewardService: feeDiscountRewardService,
+		log:                           log,
+		idgen:                         nil,
+		mkt:                           mkt,
+		matching:                      book,
+		tradableInstrument:            tradableInstrument,
+		risk:                          riskEngine,
+		position:                      positionEngine,
+		settlement:                    settleEngine,
+		collateral:                    collateralEngine,
+		timeService:                   timeService,
+		broker:                        broker,
+		fee:                           feeEngine,
+		liquidity:                     marketLiquidity,
+		liquidityEngine:               liquidityEngine, // TODO karel - consider not having this
+		parties:                       map[string]struct{}{},
+		as:                            auctionState,
+		pMonitor:                      pMonitor,
+		lMonitor:                      lMonitor,
+		tsCalc:                        tsCalc,
+		peggedOrders:                  common.NewPeggedOrders(log, timeService),
+		expiringOrders:                common.NewExpiringOrders(),
+		feeSplitter:                   common.NewFeeSplitter(),
+		equityShares:                  equityShares,
+		lastBestAskPrice:              num.UintZero(),
+		lastMidSellPrice:              num.UintZero(),
+		lastMidBuyPrice:               num.UintZero(),
+		lastBestBidPrice:              num.UintZero(),
+		stateVarEngine:                stateVarEngine,
+		marketActivityTracker:         marketActivityTracker,
+		priceFactor:                   priceFactor,
+		positionFactor:                positionFactor,
+		nextMTM:                       time.Time{}, // default to zero time
+		linearSlippageFactor:          mkt.LinearSlippageFactor,
+		quadraticSlippageFactor:       mkt.QuadraticSlippageFactor,
+		maxStopOrdersPerParties:       num.UintZero(),
+		stopOrders:                    stoporders.New(log),
+		expiringStopOrders:            common.NewExpiringOrders(),
+		perp:                          marketType == types.MarketTypePerp,
+		referralDiscountRewardService: referralDiscountRewardService,
+		volumeDiscountService:         volumeDiscountService,
 	}
 
 	assets, _ := mkt.GetAssets()
@@ -354,7 +357,9 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	m.updateLiquidityFee(ctx)
 }
 
-func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {}
+func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
+	m.liquidityEngine.OnEpochRestore(epoch)
+}
 
 func (m *Market) onEpochEndPartiesStats() {
 	if m.markPrice == nil {
@@ -608,13 +613,6 @@ func (m *Market) GetMarketData() types.MarketData {
 		mode = m.mkt.TradingMode
 	}
 
-	var fundingRate *num.Decimal
-
-	if m.perp {
-		t := m.timeService.GetTimeNow().UnixNano()
-		fundingRate = (m.tradableInstrument.Instrument.Product.(*products.Perpetual)).GetFundingRate(t)
-	}
-
 	return types.MarketData{
 		Market:                    m.GetID(),
 		BestBidPrice:              m.priceToMarketPrecision(bestBidPrice),
@@ -646,7 +644,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		LiquidityProviderFeeShare: m.equityShares.LpsToLiquidityProviderFeeShare(m.liquidityEngine.GetAverageLiquidityScores()),
 		NextMTM:                   m.nextMTM.UnixNano(),
 		MarketGrowth:              m.equityShares.GetMarketGrowth(),
-		FundingRate:               fundingRate,
+		ProductData:               m.tradableInstrument.Instrument.Product.GetData(m.timeService.GetTimeNow().UnixNano()),
 	}
 }
 
@@ -769,6 +767,27 @@ func (m *Market) GetID() string {
 func (m *Market) PostRestore(ctx context.Context) error {
 	// tell the matching engine about the markets price factor so it can finish restoring orders
 	m.matching.RestoreWithMarketPriceFactor(m.priceFactor)
+
+	// TODO(jeremy): This bit is here specifically to create account
+	// which should have been create with the normal process of
+	// submitting liquidity provisions for the market.
+	// should probably be removed in the near future (aft this release)
+	lpParties := maps.Keys(m.liquidityEngine.ProvisionsPerParty())
+	sort.Strings(lpParties)
+
+	for _, p := range lpParties {
+		_, err := m.collateral.GetOrCreatePartyLiquidityFeeAccount(
+			ctx, p, m.GetID(), m.GetSettlementAsset())
+		if err != nil {
+			m.log.Panic("couldn't create party liquidity fee account")
+		}
+	}
+
+	_, err := m.collateral.GetOrCreateLiquidityFeesBonusDistributionAccount(ctx, m.GetID(), m.GetSettlementAsset())
+	if err != nil {
+		m.log.Panic("failed to get bonus distribution account", logging.Error(err))
+	}
+
 	return nil
 }
 
@@ -1999,12 +2018,12 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 	)
 
 	if !m.as.InAuction() {
-		fees, err = m.fee.CalculateForContinuousMode(trades, m.feeDiscountRewardService)
+		fees, err = m.fee.CalculateForContinuousMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
 	} else if m.as.IsMonitorAuction() {
 		// we are in auction mode
-		fees, err = m.fee.CalculateForAuctionMode(trades, m.feeDiscountRewardService)
+		fees, err = m.fee.CalculateForAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
 	} else if m.as.IsFBA() {
-		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades, m.feeDiscountRewardService)
+		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
 	}
 
 	if err != nil {

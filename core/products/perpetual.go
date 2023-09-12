@@ -46,6 +46,13 @@ const (
 	dataPointSourceInternal dataPointSource = eventspb.FundingPeriodDataPoint_SOURCE_INTERNAL
 )
 
+type fundingData struct {
+	fundingPayment *num.Int
+	fundingRate    num.Decimal
+	internalTWAP   *num.Uint
+	externalTWAP   *num.Uint
+}
+
 type cachedTWAP struct {
 	log *logging.Logger
 
@@ -568,26 +575,36 @@ func (p *Perpetual) handleSettlementCue(ctx context.Context, t int64) {
 	}
 
 	// do the calculation
-	fundingPayment, fundingRate := p.calculateFundingPayment(t)
+	r := p.calculateFundingPayment(t)
 
 	// send it away!
 	fp := &num.Numeric{}
-	p.settlementDataListener(ctx, fp.SetInt(fundingPayment))
+	p.settlementDataListener(ctx, fp.SetInt(r.fundingPayment))
 
 	// now restart the interval
-	internalTWAP := p.internalTWAP.calculate(t)
-	externalTWAP := p.externalTWAP.calculate(t)
-	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t), ptr.From(fundingPayment.String()), ptr.From(fundingRate.String()), ptr.From(internalTWAP.String()), ptr.From(externalTWAP.String())))
+	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t),
+		ptr.From(r.fundingPayment.String()),
+		ptr.From(r.fundingRate.String()),
+		ptr.From(r.internalTWAP.String()),
+		ptr.From(r.externalTWAP.String())),
+	)
 	p.startNewFundingPeriod(ctx, t)
 }
 
-func (p *Perpetual) GetFundingRate(t int64) *num.Decimal {
-	if !p.haveData(t) {
-		return ptr.From(num.DecimalZero())
+func (p *Perpetual) GetData(t int64) *types.ProductData {
+	if !p.readyForData() {
+		return nil
 	}
 
-	_, fundingRate := p.calculateFundingPayment(t)
-	return fundingRate
+	r := p.calculateFundingPayment(t)
+	return &types.ProductData{
+		Data: &types.PerpetualData{
+			FundingPayment: r.fundingPayment.String(),
+			FundingRate:    r.fundingRate.String(),
+			ExternalTWAP:   r.externalTWAP.String(),
+			InternalTWAP:   r.internalTWAP.String(),
+		},
+	}
 }
 
 // restarts the funcing period at time st.
@@ -661,7 +678,7 @@ func (p *Perpetual) haveData(endAt int64) bool {
 
 // calculateFundingPayment returns the funding payment and funding rate for the interval between when the current funding period
 // started and the given time. Used on settlement-cues and for margin calculations.
-func (p *Perpetual) calculateFundingPayment(t int64) (*num.Int, *num.Decimal) {
+func (p *Perpetual) calculateFundingPayment(t int64) *fundingData {
 	internalTWAP := p.internalTWAP.calculate(t)
 	externalTWAP := p.externalTWAP.calculate(t)
 
@@ -696,7 +713,12 @@ func (p *Perpetual) calculateFundingPayment(t int64) (*num.Int, *num.Decimal) {
 			logging.String("funding-payment", fundingPayment.String()),
 			logging.String("funding-rate", fundingRate.String()))
 	}
-	return fundingPayment, &fundingRate
+	return &fundingData{
+		fundingPayment: fundingPayment,
+		fundingRate:    fundingRate,
+		externalTWAP:   externalTWAP,
+		internalTWAP:   internalTWAP,
+	}
 }
 
 func (p *Perpetual) calculateInterestTerm(externalTWAP, internalTWAP *num.Uint, delta int64) *num.Int {
@@ -736,7 +758,7 @@ func (p *Perpetual) GetMarginIncrease(t int64) *num.Uint {
 		return num.UintZero()
 	}
 
-	fundingPayment, _ := p.calculateFundingPayment(t)
+	fundingPayment := p.calculateFundingPayment(t).fundingPayment
 
 	if !fundingPayment.IsPositive() {
 		return num.UintZero()

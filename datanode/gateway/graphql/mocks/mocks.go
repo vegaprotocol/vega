@@ -400,6 +400,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetAsset(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAsset", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetAsset), varargs...)
 }
 
+// GetCurrentReferralProgram mocks base method.
+func (m *MockTradingDataServiceClientV2) GetCurrentReferralProgram(arg0 context.Context, arg1 *v2.GetCurrentReferralProgramRequest, arg2 ...grpc.CallOption) (*v2.GetCurrentReferralProgramResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetCurrentReferralProgram", varargs...)
+	ret0, _ := ret[0].(*v2.GetCurrentReferralProgramResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCurrentReferralProgram indicates an expected call of GetCurrentReferralProgram.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetCurrentReferralProgram(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentReferralProgram", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetCurrentReferralProgram), varargs...)
+}
+
 // GetDeposit mocks base method.
 func (m *MockTradingDataServiceClientV2) GetDeposit(arg0 context.Context, arg1 *v2.GetDepositRequest, arg2 ...grpc.CallOption) (*v2.GetDepositResponse, error) {
 	m.ctrl.T.Helper()
@@ -858,6 +878,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetProtocolUpgradeStatus(a
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProtocolUpgradeStatus", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetProtocolUpgradeStatus), varargs...)
+}
+
+// GetReferralSetStats mocks base method.
+func (m *MockTradingDataServiceClientV2) GetReferralSetStats(arg0 context.Context, arg1 *v2.GetReferralSetStatsRequest, arg2 ...grpc.CallOption) (*v2.GetReferralSetStatsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetReferralSetStats", varargs...)
+	ret0, _ := ret[0].(*v2.GetReferralSetStatsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetReferralSetStats indicates an expected call of GetReferralSetStats.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetReferralSetStats(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReferralSetStats", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetReferralSetStats), varargs...)
 }
 
 // GetRiskFactors mocks base method.
@@ -1698,6 +1738,46 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ListProtocolUpgradeProposa
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListProtocolUpgradeProposals", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListProtocolUpgradeProposals), varargs...)
+}
+
+// ListReferralSetReferees mocks base method.
+func (m *MockTradingDataServiceClientV2) ListReferralSetReferees(arg0 context.Context, arg1 *v2.ListReferralSetRefereesRequest, arg2 ...grpc.CallOption) (*v2.ListReferralSetRefereesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListReferralSetReferees", varargs...)
+	ret0, _ := ret[0].(*v2.ListReferralSetRefereesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListReferralSetReferees indicates an expected call of ListReferralSetReferees.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ListReferralSetReferees(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListReferralSetReferees", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListReferralSetReferees), varargs...)
+}
+
+// ListReferralSets mocks base method.
+func (m *MockTradingDataServiceClientV2) ListReferralSets(arg0 context.Context, arg1 *v2.ListReferralSetsRequest, arg2 ...grpc.CallOption) (*v2.ListReferralSetsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListReferralSets", varargs...)
+	ret0, _ := ret[0].(*v2.ListReferralSetsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListReferralSets indicates an expected call of ListReferralSets.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ListReferralSets(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListReferralSets", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListReferralSets), varargs...)
 }
 
 // ListRewardSummaries mocks base method.

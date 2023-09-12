@@ -138,6 +138,7 @@ message Payload {
     NewReferralProgram new_referral_program = 74;
     ReferralSets referral_sets = 75;
     ActivityStreak activity_streak = 76;
+    VolumeDiscountProgram volume_discount_program = 77;
   }
 }
 
@@ -1118,7 +1119,7 @@ message ReferralSet {
 
 message RunningVolume {
   uint64 epoch = 1;
-  string volume = 2;
+  bytes volume = 2;
 }
 
 message AssetLocked {
@@ -1144,6 +1145,24 @@ message PartyActivityStreak {
   string party = 1;
   uint64 active = 2;
   uint64 inactive = 3;
-  string reward_distribution_multiplier = 4;
-  string reward_vesting_multiplier = 5;
+  bytes reward_distribution_multiplier = 4;
+  bytes reward_vesting_multiplier = 5;
+}
+
+message VolumeDiscountProgram {
+  repeated string parties = 1;
+  repeated EpochPartyVolumes epoch_party_volumes = 2;
+  uint64 epoch_data_index = 3;
+  repeated PartyVolume average_party_volume = 4;
+  vega.VolumeDiscountProgram current_program = 5;
+  vega.VolumeDiscountProgram new_program = 6;
+}
+
+message EpochPartyVolumes {
+  repeated PartyVolume party_volume = 1;
+}
+
+message PartyVolume {
+  string party = 1;
+  bytes volume = 2;
 }

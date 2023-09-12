@@ -34,11 +34,11 @@ import (
 const maxWindowSize = 100
 
 type twPosition struct {
-	position               num.Decimal   // abs last recorded position
-	t                      time.Time     // time of last recorded open interest
-	currentEpochTWPosition num.Decimal   // current epoch's running time weightd open interest
-	previousEpochs         []num.Decimal // previous epochs' time weighted open interest
-	previousEpochsIdx      int           // index to the previousEpochs array
+	position               num.Decimal    // abs last recorded position
+	t                      time.Time      // time of last recorded open interest
+	currentEpochTWPosition num.Decimal    // current epoch's running time weightd open interest
+	previousEpochs         []*num.Decimal // previous epochs' time weighted open interest
+	previousEpochsIdx      int            // index to the previousEpochs array
 }
 
 type twNotionalPosition struct {
@@ -50,7 +50,7 @@ type twNotionalPosition struct {
 
 type m2mData struct {
 	runningTotal      num.Decimal
-	previousEpochs    []num.Decimal
+	previousEpochs    []*num.Decimal
 	previousEpochsIdx int
 }
 
@@ -548,8 +548,6 @@ func (mat *MarketActivityTracker) calculateMetricForIndividuals(asset string, pa
 // CalculateMetricForTeams returns a slice of metrics for the team and a slice of metrics for each team member.
 func (mat *MarketActivityTracker) calculateMetricForTeams(asset string, teams map[string][]string, marketsInScope []string, metric vega.DispatchMetric, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired num.Decimal, windowSize int, topN num.Decimal) ([]*types.PartyContibutionScore, map[string][]*types.PartyContibutionScore) {
 	teamScores := make([]*types.PartyContibutionScore, 0, len(teams))
-	teamMembersScores := map[string][]*types.PartyContibutionScore{}
-
 	teamKeys := make([]string, 0, len(teams))
 	for k := range teams {
 		teamKeys = append(teamKeys, k)
@@ -558,12 +556,12 @@ func (mat *MarketActivityTracker) calculateMetricForTeams(asset string, teams ma
 
 	ps := make(map[string][]*types.PartyContibutionScore, len(teamScores))
 	for _, t := range teamKeys {
-		ts, ps := mat.calculateMetricForTeam(asset, teams[t], marketsInScope, metric, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, windowSize, topN)
+		ts, teamMemberScores := mat.calculateMetricForTeam(asset, teams[t], marketsInScope, metric, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, windowSize, topN)
 		if ts.IsZero() {
 			continue
 		}
 		teamScores = append(teamScores, &types.PartyContibutionScore{Party: t, Score: ts})
-		teamMembersScores[t] = ps
+		ps[t] = teamMemberScores
 	}
 
 	return teamScores, ps
@@ -571,12 +569,30 @@ func (mat *MarketActivityTracker) calculateMetricForTeams(asset string, teams ma
 
 // calculateMetricForTeam returns the metric score for team and a slice of the score for each of its members.
 func (mat *MarketActivityTracker) calculateMetricForTeam(asset string, parties []string, marketsInScope []string, metric vega.DispatchMetric, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired num.Decimal, windowSize int, topN num.Decimal) (num.Decimal, []*types.PartyContibutionScore) {
+	return calculateMetricForTeamUtil(asset, parties, marketsInScope, metric, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired, windowSize, topN, mat.isEligibleForReward, mat.calculateMetricForParty)
+}
+
+func calculateMetricForTeamUtil(asset string,
+	parties []string,
+	marketsInScope []string,
+	metric vega.DispatchMetric,
+	minStakingBalanceRequired *num.Uint,
+	notionalTimeWeightedAveragePositionRequired num.Decimal,
+	windowSize int,
+	topN num.Decimal,
+	isEligibleForReward func(asset, party string, markets []string, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired num.Decimal) bool,
+	calculateMetricForParty func(asset, party string, marketsInScope []string, metric vega.DispatchMetric, windowSize int) num.Decimal,
+) (num.Decimal, []*types.PartyContibutionScore) {
 	teamPartyScores := []*types.PartyContibutionScore{}
 	for _, party := range parties {
-		if !mat.isEligibleForReward(asset, party, marketsInScope, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired) {
+		if !isEligibleForReward(asset, party, marketsInScope, minStakingBalanceRequired, notionalTimeWeightedAveragePositionRequired) {
 			continue
 		}
-		teamPartyScores = append(teamPartyScores, &types.PartyContibutionScore{Party: party, Score: mat.calculateMetricForParty(asset, party, marketsInScope, metric, windowSize)})
+		teamPartyScores = append(teamPartyScores, &types.PartyContibutionScore{Party: party, Score: calculateMetricForParty(asset, party, marketsInScope, metric, windowSize)})
+	}
+
+	if len(teamPartyScores) == 0 {
+		return num.DecimalZero(), []*types.PartyContibutionScore{}
 	}
 
 	sort.Slice(teamPartyScores, func(i, j int) bool {
@@ -590,7 +606,7 @@ func (mat *MarketActivityTracker) calculateMetricForTeam(asset string, parties [
 
 	total := num.DecimalZero()
 	for i := 0; i < maxIndex; i++ {
-		total.Add(teamPartyScores[i].Score)
+		total = total.Add(teamPartyScores[i].Score)
 	}
 
 	return total.Div(num.DecimalFromInt64(int64(maxIndex))), teamPartyScores
@@ -690,6 +706,14 @@ func (mat *MarketActivityTracker) clearNotionalTakerVolume() {
 	mat.partyTakerNotionalVolume = map[string]*num.Uint{}
 }
 
+func (mat *MarketActivityTracker) NotionalTakerVolumeForAllParties() map[types.PartyID]*num.Uint {
+	res := make(map[types.PartyID]*num.Uint, len(mat.partyTakerNotionalVolume))
+	for k, u := range mat.partyTakerNotionalVolume {
+		res[types.PartyID(k)] = u.Clone()
+	}
+	return res
+}
+
 func (mat *MarketActivityTracker) NotionalTakerVolumeForParty(party string) *num.Uint {
 	if _, ok := mat.partyTakerNotionalVolume[party]; !ok {
 		return num.UintZero()
@@ -710,8 +734,8 @@ func (mt *marketTracker) recordNotional(party string, pos num.Decimal, price *nu
 		return
 	}
 	notional := mt.twNotionalPosition[party]
-	t := num.DecimalFromInt64(int64(time.Sub(epochStartTime).Seconds()))
-	tn := num.DecimalFromInt64(int64(time.Sub(notional.t).Seconds()))
+	t := num.DecimalFromInt64(time.Sub(epochStartTime).Nanoseconds())
+	tn := num.DecimalFromInt64(time.Sub(notional.t).Nanoseconds())
 	tnOverT := num.DecimalZero()
 	if !t.IsZero() {
 		tnOverT = tn.Div(t)
@@ -724,9 +748,10 @@ func (mt *marketTracker) recordNotional(party string, pos num.Decimal, price *nu
 }
 
 func (mt *marketTracker) processNotionalEndOfEpoch(epochStartTime time.Time, endEpochTime time.Time) {
-	t := num.DecimalFromInt64(int64(endEpochTime.Sub(epochStartTime).Seconds()))
+	epochDurationNano := endEpochTime.Sub(epochStartTime).Nanoseconds()
+	t := num.DecimalFromInt64(epochDurationNano)
 	for _, twNotional := range mt.twNotionalPosition {
-		tn := num.DecimalFromInt64(int64(endEpochTime.Sub(twNotional.t).Seconds()))
+		tn := num.DecimalFromInt64(endEpochTime.Sub(twNotional.t).Nanoseconds())
 		tnOverT := num.DecimalZero()
 		if !t.IsZero() {
 			tnOverT = tn.Div(t)
@@ -756,14 +781,14 @@ func (mt *marketTracker) recordPosition(party string, pos num.Decimal, time time
 			position:               pos.Abs(),
 			t:                      time,
 			currentEpochTWPosition: num.DecimalZero(),
-			previousEpochs:         make([]num.Decimal, maxWindowSize),
+			previousEpochs:         make([]*num.Decimal, maxWindowSize),
 			previousEpochsIdx:      0,
 		}
 		return
 	}
 	toi := mt.timeWeightedPosition[party]
-	t := num.DecimalFromInt64(int64(time.Sub(epochStartTime).Seconds()))
-	tn := num.DecimalFromInt64(int64(time.Sub(toi.t).Seconds()))
+	t := num.DecimalFromInt64(time.Sub(epochStartTime).Nanoseconds())
+	tn := num.DecimalFromInt64(time.Sub(toi.t).Nanoseconds())
 	tnOverT := num.DecimalZero()
 	if !t.IsZero() {
 		tnOverT = tn.Div(t)
@@ -776,16 +801,17 @@ func (mt *marketTracker) recordPosition(party string, pos num.Decimal, time time
 // processPositionEndOfEpoch is called at the end of the epoch, calcualtes the time weight of the current position and moves it to the next epoch, and records
 // the time weighted position of the current epoch in the history.
 func (mt *marketTracker) processPositionEndOfEpoch(epochStartTime time.Time, endEpochTime time.Time) {
-	t := num.DecimalFromInt64(int64(endEpochTime.Sub(epochStartTime).Seconds()))
+	t := num.DecimalFromInt64(endEpochTime.Sub(epochStartTime).Nanoseconds())
 	for _, toi := range mt.timeWeightedPosition {
-		tn := num.DecimalFromInt64(int64(endEpochTime.Sub(toi.t).Seconds()))
+		tn := num.DecimalFromInt64(endEpochTime.Sub(toi.t).Nanoseconds())
 		tnOverT := num.DecimalZero()
 		if !t.IsZero() {
 			tnOverT = tn.Div(t)
 		}
 		toi.currentEpochTWPosition = toi.currentEpochTWPosition.Mul(num.DecimalOne().Sub(tnOverT)).Add((toi.position).Mul(tnOverT))
 		toi.t = endEpochTime
-		toi.previousEpochs[toi.previousEpochsIdx] = toi.currentEpochTWPosition
+		c := toi.currentEpochTWPosition.Copy()
+		toi.previousEpochs[toi.previousEpochsIdx] = &c
 		toi.previousEpochsIdx = (toi.previousEpochsIdx + 1) % maxWindowSize
 	}
 }
@@ -797,7 +823,7 @@ func (mt *marketTracker) recordM2M(party string, amount num.Decimal) {
 	if _, ok := mt.partyM2M[party]; !ok {
 		mt.partyM2M[party] = &m2mData{
 			runningTotal:      amount,
-			previousEpochs:    make([]num.Decimal, maxWindowSize),
+			previousEpochs:    make([]*num.Decimal, maxWindowSize),
 			previousEpochsIdx: 0,
 		}
 		return
@@ -810,11 +836,13 @@ func (mt *marketTracker) recordM2M(party string, amount num.Decimal) {
 func (mt *marketTracker) processM2MEndOfEpoch() {
 	for party, m2m := range mt.partyM2M {
 		p := mt.timeWeightedPosition[party].currentEpochTWPosition
+		var v num.Decimal
 		if p.IsZero() {
-			m2m.previousEpochs[m2m.previousEpochsIdx] = num.DecimalZero()
+			v = num.DecimalZero()
 		} else {
-			m2m.previousEpochs[m2m.previousEpochsIdx] = m2m.runningTotal.Div(p)
+			v = m2m.runningTotal.Div(p)
 		}
+		m2m.previousEpochs[m2m.previousEpochsIdx] = &v
 		m2m.previousEpochsIdx = (m2m.previousEpochsIdx + 1) % maxWindowSize
 		m2m.runningTotal = num.DecimalZero()
 	}
@@ -828,7 +856,12 @@ func (mt *marketTracker) getReturns(party string, windowSize int) ([]num.Decimal
 	m2mData := mt.partyM2M[party]
 	returns := make([]num.Decimal, 0, windowSize)
 	for i := 0; i < windowSize; i++ {
-		returns = append(returns, num.MaxD(num.DecimalZero(), m2mData.previousEpochs[(m2mData.previousEpochsIdx+maxWindowSize-i-1)%maxWindowSize]))
+		v := m2mData.previousEpochs[(m2mData.previousEpochsIdx+maxWindowSize-i-1)%maxWindowSize]
+		if v == nil {
+			returns = append(returns, num.DecimalZero())
+		} else {
+			returns = append(returns, num.MaxD(num.DecimalZero(), *v))
+		}
 	}
 	return returns, true
 }
@@ -896,10 +929,14 @@ func calcTotalForWindowU(data []*num.Uint, dataIdx int, windowSize int) num.Deci
 }
 
 // calcTotalForWindowD returns the total relevant data from the given slice starting from the given dataIdx-1, going back <window_size> elements.
-func calcTotalForWindowD(data []num.Decimal, dataIdx int, windowSize int) num.Decimal {
+func calcTotalForWindowD(data []*num.Decimal, dataIdx int, windowSize int) num.Decimal {
 	total := num.DecimalZero()
 	for i := 0; i < windowSize; i++ {
-		total = total.Add(data[(dataIdx+maxWindowSize-i-1)%maxWindowSize])
+		v := num.DecimalZero()
+		if data[(dataIdx+maxWindowSize-i-1)%maxWindowSize] != nil {
+			v = *data[(dataIdx+maxWindowSize-i-1)%maxWindowSize]
+		}
+		total = total.Add(v)
 	}
 	return total
 }

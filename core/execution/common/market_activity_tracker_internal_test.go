@@ -44,9 +44,10 @@ func TestSortedK(t *testing.T) {
 }
 
 func TestCalcTotalForWindowD(t *testing.T) {
-	data := make([]num.Decimal, maxWindowSize)
+	data := make([]*num.Decimal, maxWindowSize)
 	for i := int64(0); i < maxWindowSize; i++ {
-		data[i] = num.DecimalFromInt64(i)
+		d := num.DecimalFromInt64(i)
+		data[i] = &d
 	}
 	for idx := 0; idx < len(data); idx++ {
 		require.Equal(t, num.DecimalFromInt64(4950), calcTotalForWindowD(data, idx, maxWindowSize))
@@ -229,11 +230,12 @@ func TestGetPartiesForMetric(t *testing.T) {
 
 func TestGetRelativeReturnMetricTotal(t *testing.T) {
 	tracker := getDefaultTracker(t)
-	m2m := &m2mData{runningTotal: num.DecimalZero(), previousEpochs: make([]num.Decimal, maxWindowSize), previousEpochsIdx: 3}
+	m2m := &m2mData{runningTotal: num.DecimalZero(), previousEpochs: make([]*num.Decimal, maxWindowSize), previousEpochsIdx: 3}
 	tracker.partyM2M["p1"] = m2m
 
 	for i := int64(0); i < maxWindowSize; i++ {
-		m2m.previousEpochs[i] = num.DecimalFromInt64(i)
+		d := num.DecimalFromInt64(i)
+		m2m.previousEpochs[i] = &d
 	}
 	// nothing for party2
 	require.Equal(t, num.DecimalZero(), tracker.getRelativeReturnMetricTotal("p2", 5))
@@ -243,11 +245,12 @@ func TestGetRelativeReturnMetricTotal(t *testing.T) {
 
 func TestGetPositionMetricTotal(t *testing.T) {
 	tracker := getDefaultTracker(t)
-	position := &twPosition{position: num.DecimalZero(), t: time.Now(), currentEpochTWPosition: num.DecimalE(), previousEpochs: make([]num.Decimal, maxWindowSize), previousEpochsIdx: 3}
+	position := &twPosition{position: num.DecimalZero(), t: time.Now(), currentEpochTWPosition: num.DecimalE(), previousEpochs: make([]*num.Decimal, maxWindowSize), previousEpochsIdx: 3}
 	tracker.timeWeightedPosition["p1"] = position
 
 	for i := int64(0); i < maxWindowSize; i++ {
-		position.previousEpochs[i] = num.DecimalFromInt64(i)
+		d := num.DecimalFromInt64(i)
+		position.previousEpochs[i] = &d
 	}
 	// nothing for party2
 	require.Equal(t, num.DecimalZero(), tracker.getPositionMetricTotal("p2", 5))
@@ -1240,6 +1243,53 @@ func TestCalculateMetricForParty(t *testing.T) {
 	for _, dm := range ds {
 		require.Equal(t, num.DecimalZero(), tracker.calculateMetricForParty("a1", "p1", []string{}, dm, 1))
 	}
+}
+
+func TestCalculateMetricForTeamUtil(t *testing.T) {
+	isEligible := func(asset, party string, markets []string, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired num.Decimal) bool {
+		if party == "party1" || party == "party2" || party == "party3" || party == "party4" {
+			return true
+		}
+		return false
+	}
+	calculateMetricForParty := func(asset, party string, marketsInScope []string, metric vega.DispatchMetric, windowSize int) num.Decimal {
+		if party == "party1" {
+			return num.DecimalFromFloat(1.5)
+		}
+		if party == "party2" {
+			return num.DecimalFromFloat(2)
+		}
+		if party == "party3" {
+			return num.DecimalFromFloat(0.5)
+		}
+		if party == "party4" {
+			return num.DecimalFromFloat(2.5)
+		}
+		if party == "party5" {
+			return num.DecimalFromFloat(0.8)
+		}
+		return num.DecimalZero()
+	}
+
+	teamScore, partyScores := calculateMetricForTeamUtil("asset1", []string{"party1", "party2", "party3", "party4", "party5"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintOne(), num.DecimalOne(), 5, num.DecimalFromFloat(0.5), isEligible, calculateMetricForParty)
+	// we're indicating the the score of the team need to be the mean of the top 0.5 * number of participants = floor(0.5*5) = 2
+	// the top scores are 2.5 and 2 => team score should be 2.25
+	// 4 party scores expected (1-4) as party5 is not eligible
+	require.Equal(t, "2.25", teamScore.String())
+	require.Equal(t, 4, len(partyScores))
+	require.Equal(t, "party4", partyScores[0].Party)
+	require.Equal(t, "2.5", partyScores[0].Score.String())
+	require.Equal(t, "party2", partyScores[1].Party)
+	require.Equal(t, "2", partyScores[1].Score.String())
+	require.Equal(t, "party1", partyScores[2].Party)
+	require.Equal(t, "1.5", partyScores[2].Score.String())
+	require.Equal(t, "party3", partyScores[3].Party)
+	require.Equal(t, "0.5", partyScores[3].Score.String())
+
+	// lets repeat the check when there is no one eligible
+	teamScore, partyScores = calculateMetricForTeamUtil("asset1", []string{"party5"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintOne(), num.DecimalOne(), 5, num.DecimalFromFloat(0.5), isEligible, calculateMetricForParty)
+	require.Equal(t, "0", teamScore.String())
+	require.Equal(t, 0, len(partyScores))
 }
 
 type DummyEpochEngine struct {

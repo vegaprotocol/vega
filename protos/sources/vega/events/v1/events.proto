@@ -764,6 +764,27 @@ message ReferralSetCreated {
   int64 updated_at = 4;
 }
 
+message ReferralSetStatsUpdated {
+  // Unique ID of the set.
+  string set_id = 1;
+  // Epoch at which the set's statistics are updated.
+  uint64 at_epoch = 2;
+  // Running volume for the set based on the window length of the current
+  // referral program.
+  string referral_set_running_notional_taker_volume = 3;
+  // Referees' statistics for that epoch.
+  repeated RefereeStats referees_stats = 4;
+}
+
+message RefereeStats {
+  // Unique ID of the party.
+  string party_id = 1;
+  // Discount factor applied to the party.
+  string discount_factor = 2;
+  // Reward factor applied to the party.
+  string reward_factor = 3;
+}
+
 message RefereeJoinedReferralSet {
   // Unique ID of the referral set the referee joined.
   string set_id = 1;
@@ -789,6 +810,23 @@ message ReferralProgramEnded {
   // Program update version.
   uint64 version = 1;
   // Unique ID of the referral program.
+  string id = 2;
+}
+
+message VolumeDiscountProgramStarted {
+  // Volume discount program that has started.
+  vega.VolumeDiscountProgram program = 1;
+}
+
+message VolumeDiscountProgramUpdated {
+  // The updated volume discount program.
+  vega.VolumeDiscountProgram program = 1;
+}
+
+message VolumeDiscountProgramEnded {
+  // Program update version.
+  uint64 version = 1;
+  // Unique ID of the volume discount program.
   string id = 2;
 }
 
@@ -960,6 +998,18 @@ enum BusEventType {
   // Event indicating the updated activity streak for a party
   BUS_EVENT_TYPE_PARTY_ACTIVITY_STREAK = 72;
 
+  // Event indicating a volume discount program started.
+  BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_STARTED = 73;
+
+  // Event indicating a volume discount program has been updated.
+  BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_UPDATED = 74;
+
+  // Event indicating a volume discount program ended.
+  BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_ENDED = 75;
+
+  // Event indicating the updated activity streak for a party
+  BUS_EVENT_TYPE_REFERRAL_SET_STATS_UPDATED = 76;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1113,6 +1163,14 @@ message BusEvent {
     RefereeJoinedReferralSet referee_joined_referral_set = 169;
     // Event notifying of an update to a party's activity streak
     PartyActivityStreak party_activity_streak = 170;
+    // Event notifying that a volume discount program has started.
+    VolumeDiscountProgramStarted volume_discount_program_started = 171;
+    // Event notifying that a volume discount program has been updated.
+    VolumeDiscountProgramUpdated volume_discount_program_updated = 172;
+    // Event notifying that a volume discount program has ended.
+    VolumeDiscountProgramEnded volume_discount_program_ended = 173;
+    // Event notifying of an update to a referral set's statistics.
+    ReferralSetStatsUpdated referral_set_stats_updated = 174;
 
     // Market tick events
     MarketEvent market = 1001;

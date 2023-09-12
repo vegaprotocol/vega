@@ -137,6 +137,7 @@ const (
 	DistressedOrdersClosedEvent
 	ExpiredOrdersEvent
 	DistressedPositionsEvent
+	SpotLiquidityProvisionEvent
 	StopOrderEvent
 	FundingPeriodEvent
 	FundingPeriodDataPointEvent
@@ -150,6 +151,10 @@ const (
 	ReferralSetCreatedEvent
 	RefereeJoinedReferralSetEvent
 	PartyActivityStreakEvent
+	VolumeDiscountProgramStartedEvent
+	VolumeDiscountProgramEndedEvent
+	VolumeDiscountProgramUpdatedEvent
+	ReferralSetStatsUpdatedEvent
 )
 
 var (
@@ -234,6 +239,10 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_SET_CREATED:             ReferralSetCreatedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_REFERRAL_SET:      RefereeJoinedReferralSetEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_ACTIVITY_STREAK:            PartyActivityStreakEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_STARTED:  VolumeDiscountProgramStartedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_ENDED:    VolumeDiscountProgramEndedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_UPDATED:  VolumeDiscountProgramUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_SET_STATS_UPDATED:       ReferralSetStatsUpdatedEvent,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -309,6 +318,10 @@ var (
 		ReferralSetCreatedEvent:           eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_REFERRAL_SET,
 		RefereeJoinedReferralSetEvent:     eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_REFERRAL_SET,
 		PartyActivityStreakEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_ACTIVITY_STREAK,
+		VolumeDiscountProgramStartedEvent: eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_STARTED,
+		VolumeDiscountProgramEndedEvent:   eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_ENDED,
+		VolumeDiscountProgramUpdatedEvent: eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_UPDATED,
+		ReferralSetStatsUpdatedEvent:      eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_SET_STATS_UPDATED,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -385,6 +398,10 @@ var (
 		ReferralSetCreatedEvent:           "RefferralSetCreatedEvent",
 		RefereeJoinedReferralSetEvent:     "ReffereeJoinReferralSetEvent",
 		PartyActivityStreakEvent:          "PartyActivityStreakEvent",
+		VolumeDiscountProgramStartedEvent: "VolumeDiscountProgramStartedEvent",
+		VolumeDiscountProgramEndedEvent:   "VolumeDiscountProgramEndedEvent",
+		VolumeDiscountProgramUpdatedEvent: "VolumeDiscountProgramUpdatedEvent",
+		ReferralSetStatsUpdatedEvent:      "ReferralSetStatsUpdatedEvent",
 	}
 )
 
