@@ -173,6 +173,7 @@
 - [9276](https://github.com/vegaprotocol/vega/issues/9276) - Properly save stats in the positions snapshot
 - [9276](https://github.com/vegaprotocol/vega/issues/9276) - Properly save stats in the positions snapshot
 - [9305](https://github.com/vegaprotocol/vega/issues/9305) - Properly propagate `providersFeeCalculationTimeStep` parameter
+- [9374](https://github.com/vegaprotocol/vega/issues/9374) - `ListGovernanceData` ignored reference filter.
 
 ## 0.72.1
 

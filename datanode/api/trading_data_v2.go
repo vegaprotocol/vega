@@ -1995,15 +1995,32 @@ func (t *TradingDataServiceV2) ListGovernanceData(ctx context.Context, req *v2.L
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	proposals, pageInfo, err := t.governanceService.GetProposals(
-		ctx,
-		state,
-		req.ProposerPartyId,
-		(*entities.ProposalType)(req.ProposalType),
-		pagination,
+	var (
+		proposal  entities.Proposal
+		proposals []entities.Proposal
+		pageInfo  entities.PageInfo
 	)
-	if err != nil {
-		return nil, formatE(ErrGovernanceServiceGetProposals, errors.Wrapf(err, "ProposerPartyId: %s", ptr.UnBox(req.ProposerPartyId)))
+
+	if req.ProposalReference != nil {
+		proposal, err = t.governanceService.GetProposalByReference(ctx, *req.ProposalReference)
+		if err != nil {
+			return nil, formatE(ErrGovernanceServiceGet,
+				errors.Wrapf(err, "proposalReference: %s", ptr.UnBox(req.ProposalReference)))
+		}
+		proposals = []entities.Proposal{proposal}
+		pageInfo.StartCursor = proposal.Cursor().Encode()
+		pageInfo.EndCursor = proposal.Cursor().Encode()
+	} else {
+		proposals, pageInfo, err = t.governanceService.GetProposals(
+			ctx,
+			state,
+			req.ProposerPartyId,
+			(*entities.ProposalType)(req.ProposalType),
+			pagination,
+		)
+		if err != nil {
+			return nil, formatE(ErrGovernanceServiceGetProposals, errors.Wrapf(err, "ProposerPartyId: %s", ptr.UnBox(req.ProposerPartyId)))
+		}
 	}
 
 	edges, err := makeEdges[*v2.GovernanceDataEdge](proposals)
