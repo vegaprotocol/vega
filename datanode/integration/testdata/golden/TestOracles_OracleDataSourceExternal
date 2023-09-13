@@ -1,6 +1,6 @@
 {
 	"TestName": "TestOracles_OracleDataSourceExternal",
-	"Query": "{ oracleSpecsConnection { edges { node { dataSourceSpec { spec { id createdAt updatedAt status data { sourceType { ... on DataSourceDefinitionExternal { sourceType { ... on DataSourceSpecConfiguration { signers { signer { ... on ETHAddress { address } ... on PubKey { key } } } } } } } } } } } } } }",
+	"Query": "{ oracleSpecsConnection { edges { node { dataSourceSpec { spec { id createdAt updatedAt status data { sourceType { ... on DataSourceDefinitionExternal { sourceType { ... on DataSourceSpecConfiguration { signers { signer { ... on ETHAddress { address } ... on PubKey { key } } } filters { key { name  type } conditions { operator value } } } } } } } } } } } } }",
 	"Result": {
 		"oracleSpecsConnection": {
 			"edges": [
@@ -12,6 +12,20 @@
 								"data": {
 									"sourceType": {
 										"sourceType": {
+											"filters": [
+												{
+													"conditions": [
+														{
+															"operator": "OPERATOR_GREATER_THAN_OR_EQUAL",
+															"value": "0"
+														}
+													],
+													"key": {
+														"name": "oracle.test.settlement07116",
+														"type": "TYPE_INTEGER"
+													}
+												}
+											],
 											"signers": [
 												{
 													"signer": {
@@ -37,6 +51,20 @@
 								"data": {
 									"sourceType": {
 										"sourceType": {
+											"filters": [
+												{
+													"conditions": [
+														{
+															"operator": "OPERATOR_EQUALS",
+															"value": "True"
+														}
+													],
+													"key": {
+														"name": "oracle.test.terminationDDB00",
+														"type": "TYPE_BOOLEAN"
+													}
+												}
+											],
 											"signers": [
 												{
 													"signer": {
@@ -62,6 +90,20 @@
 								"data": {
 									"sourceType": {
 										"sourceType": {
+											"filters": [
+												{
+													"conditions": [
+														{
+															"operator": "OPERATOR_EQUALS",
+															"value": "True"
+														}
+													],
+													"key": {
+														"name": "oracle.test.terminationAEEF3",
+														"type": "TYPE_BOOLEAN"
+													}
+												}
+											],
 											"signers": [
 												{
 													"signer": {
@@ -87,6 +129,20 @@
 								"data": {
 									"sourceType": {
 										"sourceType": {
+											"filters": [
+												{
+													"conditions": [
+														{
+															"operator": "OPERATOR_EQUALS",
+															"value": "True"
+														}
+													],
+													"key": {
+														"name": "oracle.test.terminationA6CCC",
+														"type": "TYPE_BOOLEAN"
+													}
+												}
+											],
 											"signers": [
 												{
 													"signer": {
@@ -112,6 +168,20 @@
 								"data": {
 									"sourceType": {
 										"sourceType": {
+											"filters": [
+												{
+													"conditions": [
+														{
+															"operator": "OPERATOR_GREATER_THAN",
+															"value": "100"
+														}
+													],
+													"key": {
+														"name": "oracle.test.settlementD3915",
+														"type": "TYPE_INTEGER"
+													}
+												}
+											],
 											"signers": [
 												{
 													"signer": {
@@ -137,6 +207,20 @@
 								"data": {
 									"sourceType": {
 										"sourceType": {
+											"filters": [
+												{
+													"conditions": [
+														{
+															"operator": "OPERATOR_GREATER_THAN_OR_EQUAL",
+															"value": "0"
+														}
+													],
+													"key": {
+														"name": "oracle.test.settlementABBAF",
+														"type": "TYPE_INTEGER"
+													}
+												}
+											],
 											"signers": [
 												{
 													"signer": {
@@ -157,5 +241,5 @@
 			]
 		}
 	},
-	"Duration": 4470709
+	"Duration": 811395
 }
