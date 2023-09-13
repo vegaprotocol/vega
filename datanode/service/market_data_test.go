@@ -37,7 +37,6 @@ var (
 func TestInitialise(t *testing.T) {
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	// Set up mock store to have some initial data in it when we initialise
 	store := mocks.NewMockMarketDataStore(ctrl)
@@ -58,7 +57,6 @@ func TestInitialise(t *testing.T) {
 func TestAdd(t *testing.T) {
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	// Set up mock store to have some initial data in it when we initialise
 	store := mocks.NewMockMarketDataStore(ctrl)

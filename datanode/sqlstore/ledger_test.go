@@ -68,8 +68,7 @@ func addTestLedgerEntry(t *testing.T, ledger *sqlstore.Ledger,
 }
 
 func TestLedger(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	// Prepare environment entities.
 	blockStore := sqlstore.NewBlocks(connectionSource)

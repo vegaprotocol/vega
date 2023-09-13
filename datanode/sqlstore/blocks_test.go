@@ -66,8 +66,7 @@ func addTestBlockForHeightAndTime(t *testing.T, ctx context.Context, bs *sqlstor
 }
 
 func TestBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 
@@ -90,8 +89,7 @@ func TestBlock(t *testing.T) {
 }
 
 func TestGetLastBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 
@@ -107,8 +105,7 @@ func TestGetLastBlock(t *testing.T) {
 }
 
 func TestGetOldestHistoryBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 
@@ -124,8 +121,7 @@ func TestGetOldestHistoryBlock(t *testing.T) {
 }
 
 func TestGetOldestHistoryBlockWhenNoHistoryBlocks(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	// Query the first block
@@ -134,8 +130,7 @@ func TestGetOldestHistoryBlockWhenNoHistoryBlocks(t *testing.T) {
 }
 
 func TestGetLastBlockAfterRecovery(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 
@@ -154,8 +149,7 @@ func TestGetLastBlockAfterRecovery(t *testing.T) {
 }
 
 func TestGetLastBlockWhenNoBlocks(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 

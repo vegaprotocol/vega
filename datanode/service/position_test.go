@@ -38,7 +38,6 @@ var (
 func TestPositionAdd(t *testing.T) {
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	// Make a new store and add a position to it
 	store := mocks.NewMockPositionStore(ctrl)
@@ -63,7 +62,6 @@ func TestPositionAdd(t *testing.T) {
 func TestCache(t *testing.T) {
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	// Simulate store with one position in it
 	store := mocks.NewMockPositionStore(ctrl)
@@ -86,7 +84,6 @@ func TestCacheError(t *testing.T) {
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	notFoundErr := fmt.Errorf("nothing here i'm afraid")
-	defer ctrl.Finish()
 
 	// Simulate store with no positions in it
 	store := mocks.NewMockPositionStore(ctrl)

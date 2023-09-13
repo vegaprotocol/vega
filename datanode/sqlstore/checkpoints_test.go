@@ -40,8 +40,7 @@ func addCheckpoint(t *testing.T, ctx context.Context, ns *sqlstore.Checkpoints, 
 }
 
 func TestCheckpoints(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	checkpointStore := sqlstore.NewCheckpoints(connectionSource)
 	blockStore := sqlstore.NewBlocks(connectionSource)
@@ -61,8 +60,7 @@ func TestCheckpoints(t *testing.T) {
 }
 
 func TestCheckpointsSameHashAndBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	checkpointStore := sqlstore.NewCheckpoints(connectionSource)
 	blockStore := sqlstore.NewBlocks(connectionSource)
@@ -95,8 +93,7 @@ func TestCheckpointPagination(t *testing.T) {
 }
 
 func testCheckpointPaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 
@@ -115,8 +112,7 @@ func testCheckpointPaginationNoPagination(t *testing.T) {
 }
 
 func testCheckpointPaginationFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 
@@ -136,8 +132,7 @@ func testCheckpointPaginationFirst(t *testing.T) {
 }
 
 func testCheckpointPaginationLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 
@@ -157,8 +152,7 @@ func testCheckpointPaginationLast(t *testing.T) {
 }
 
 func testCheckpointPaginationFirstAndAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 
@@ -179,8 +173,7 @@ func testCheckpointPaginationFirstAndAfter(t *testing.T) {
 }
 
 func testCheckpointPaginationLastAndBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 
@@ -201,8 +194,7 @@ func testCheckpointPaginationLastAndBefore(t *testing.T) {
 }
 
 func testCheckpointPaginationNoPaginationNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 	checkpoints = entities.ReverseSlice(checkpoints)
@@ -222,8 +214,7 @@ func testCheckpointPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testCheckpointPaginationFirstNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 	checkpoints = entities.ReverseSlice(checkpoints)
@@ -244,8 +235,7 @@ func testCheckpointPaginationFirstNewestFirst(t *testing.T) {
 }
 
 func testCheckpointPaginationLastNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 	checkpoints = entities.ReverseSlice(checkpoints)
@@ -266,8 +256,7 @@ func testCheckpointPaginationLastNewestFirst(t *testing.T) {
 }
 
 func testCheckpointPaginationFirstAndAfterNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 	checkpoints = entities.ReverseSlice(checkpoints)
@@ -289,8 +278,7 @@ func testCheckpointPaginationFirstAndAfterNewestFirst(t *testing.T) {
 }
 
 func testCheckpointPaginationLastAndBeforeNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	cs, checkpoints := setupCheckpointPaginationTest(t, ctx)
 	checkpoints = entities.ReverseSlice(checkpoints)

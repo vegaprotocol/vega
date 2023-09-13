@@ -315,7 +315,7 @@ var (
 		ReferralProgramStartedEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_STARTED,
 		ReferralProgramEndedEvent:         eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_ENDED,
 		ReferralProgramUpdatedEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_UPDATED,
-		ReferralSetCreatedEvent:           eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_REFERRAL_SET,
+		ReferralSetCreatedEvent:           eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_SET_CREATED,
 		RefereeJoinedReferralSetEvent:     eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_REFERRAL_SET,
 		PartyActivityStreakEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_ACTIVITY_STREAK,
 		VolumeDiscountProgramStartedEvent: eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_STARTED,

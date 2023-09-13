@@ -65,8 +65,7 @@ func addRankingScore(t *testing.T, ctx context.Context, ps *sqlstore.Node, node 
 }
 
 func TestUpdateNodePubKey(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	ns := sqlstore.NewNode(connectionSource)
@@ -91,8 +90,7 @@ func TestUpdateNodePubKey(t *testing.T) {
 }
 
 func TestGetNodes(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	ns := sqlstore.NewNode(connectionSource)
@@ -141,8 +139,7 @@ func TestGetNodes(t *testing.T) {
 }
 
 func TestNodeGetByTxHash(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	ns := sqlstore.NewNode(connectionSource)
@@ -167,8 +164,7 @@ func TestNodeGetByTxHash(t *testing.T) {
 }
 
 func TestGetNodesJoiningAndLeaving(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	ns := sqlstore.NewNode(connectionSource)
@@ -199,8 +195,7 @@ func TestGetNodesJoiningAndLeaving(t *testing.T) {
 }
 
 func TestGetNodeData(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	ns := sqlstore.NewNode(connectionSource)
@@ -396,8 +391,7 @@ func addPaginationTestNodes(t *testing.T, ctx context.Context, ns *sqlstore.Node
 }
 
 func testNodePaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns := sqlstore.NewNode(connectionSource)
 	nodes := addPaginationTestNodes(t, ctx, ns)
@@ -427,8 +421,7 @@ func testNodePaginationNoPagination(t *testing.T) {
 }
 
 func testNodePaginationFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns := sqlstore.NewNode(connectionSource)
 	nodes := addPaginationTestNodes(t, ctx, ns)
@@ -451,8 +444,7 @@ func testNodePaginationFirst(t *testing.T) {
 }
 
 func testNodePaginationLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns := sqlstore.NewNode(connectionSource)
 	nodes := addPaginationTestNodes(t, ctx, ns)
@@ -476,8 +468,7 @@ func testNodePaginationLast(t *testing.T) {
 }
 
 func testNodePaginationFirstAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns := sqlstore.NewNode(connectionSource)
 	nodes := addPaginationTestNodes(t, ctx, ns)
@@ -502,8 +493,7 @@ func testNodePaginationFirstAfter(t *testing.T) {
 }
 
 func testNodePaginationLastBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns := sqlstore.NewNode(connectionSource)
 	nodes := addPaginationTestNodes(t, ctx, ns)
@@ -528,8 +518,7 @@ func testNodePaginationLastBefore(t *testing.T) {
 }
 
 func TestNode_AddRankingScoreInSameEpoch(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	ns := sqlstore.NewNode(connectionSource)

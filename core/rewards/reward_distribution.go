@@ -17,8 +17,8 @@ func findRank(rankingTable []*vega.Rank, ind int) uint32 {
 	return 0
 }
 
-func rankingRewardCalculator(partyMetric []*types.PartyContibutionScore, rankingTable []*vega.Rank, partyRewardFactor map[string]num.Decimal) []*types.PartyContibutionScore {
-	partyScores := []*types.PartyContibutionScore{}
+func rankingRewardCalculator(partyMetric []*types.PartyContributionScore, rankingTable []*vega.Rank, partyRewardFactor map[string]num.Decimal) []*types.PartyContributionScore {
+	partyScores := []*types.PartyContributionScore{}
 	sort.Slice(partyMetric, func(i, j int) bool {
 		return partyMetric[i].Score.GreaterThan(partyMetric[j].Score)
 	})
@@ -39,20 +39,20 @@ func rankingRewardCalculator(partyMetric []*types.PartyContibutionScore, ranking
 		if score.IsZero() {
 			continue
 		}
-		partyScores = append(partyScores, &types.PartyContibutionScore{Party: ps.Party, Score: score})
+		partyScores = append(partyScores, &types.PartyContributionScore{Party: ps.Party, Score: score})
 		totalScores = totalScores.Add(score)
 	}
 	if totalScores.IsZero() {
-		return []*types.PartyContibutionScore{}
+		return []*types.PartyContributionScore{}
 	}
 
 	normalise(partyScores, totalScores)
 	return partyScores
 }
 
-func proRataRewardCalculator(partyContribution []*types.PartyContibutionScore, partyRewardFactor map[string]num.Decimal) []*types.PartyContibutionScore {
+func proRataRewardCalculator(partyContribution []*types.PartyContributionScore, partyRewardFactor map[string]num.Decimal) []*types.PartyContributionScore {
 	total := num.DecimalZero()
-	partiesWithScore := []*types.PartyContibutionScore{}
+	partiesWithScore := []*types.PartyContributionScore{}
 	for _, metric := range partyContribution {
 		factor, ok := partyRewardFactor[metric.Party]
 		if !ok {
@@ -63,17 +63,17 @@ func proRataRewardCalculator(partyContribution []*types.PartyContibutionScore, p
 			continue
 		}
 		total = total.Add(score)
-		partiesWithScore = append(partiesWithScore, &types.PartyContibutionScore{Party: metric.Party, Score: score})
+		partiesWithScore = append(partiesWithScore, &types.PartyContributionScore{Party: metric.Party, Score: score})
 	}
 	if total.IsZero() {
-		return []*types.PartyContibutionScore{}
+		return []*types.PartyContributionScore{}
 	}
 
 	normalise(partiesWithScore, total)
 	return partiesWithScore
 }
 
-func normalise(partyRewardScores []*types.PartyContibutionScore, total num.Decimal) {
+func normalise(partyRewardScores []*types.PartyContributionScore, total num.Decimal) {
 	normalisedTotal := num.DecimalZero()
 	for _, p := range partyRewardScores {
 		p.Score = p.Score.Div(total)
@@ -86,7 +86,7 @@ func normalise(partyRewardScores []*types.PartyContibutionScore, total num.Decim
 	capAtOne(partyRewardScores, normalisedTotal)
 }
 
-func capAtOne(partyRewardScores []*types.PartyContibutionScore, total num.Decimal) {
+func capAtOne(partyRewardScores []*types.PartyContributionScore, total num.Decimal) {
 	if total.LessThanOrEqual(num.DecimalOne()) {
 		return
 	}

@@ -76,8 +76,8 @@ func (ts *TopologyStub) IsValidatorNodeID(nodeID string) bool {
 	return ok
 }
 
-func (ts *TopologyStub) RecalcValidatorSet(ctx context.Context, epochSeq string, delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams) []*types.PartyContibutionScore {
-	return []*types.PartyContibutionScore{}
+func (ts *TopologyStub) RecalcValidatorSet(ctx context.Context, epochSeq string, delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams) []*types.PartyContributionScore {
+	return []*types.PartyContributionScore{}
 }
 
 func (ts *TopologyStub) AllNodeIDs() []string {
