@@ -768,6 +768,35 @@ func (m *Market) PostRestore(ctx context.Context) error {
 	// tell the matching engine about the markets price factor so it can finish restoring orders
 	m.matching.RestoreWithMarketPriceFactor(m.priceFactor)
 
+	// TODO(jeremy): remove this after the 72 upgrade
+	oevents := []events.Event{}
+	for _, oid := range m.liquidityEngine.GetLegacyOrders() {
+		order, foundOnBook, err := m.getOrderByID(oid)
+		if err != nil {
+			continue // err here is ErrOrderNotFound
+		}
+		if !foundOnBook {
+			m.log.Panic("lp order was in the pegged order list?", logging.Order(order))
+		}
+
+		cancellation, err := m.matching.CancelOrder(order)
+		if cancellation == nil || err != nil {
+			m.log.Panic("Failure after cancel order from matching engine",
+				logging.String("party-id", order.Party),
+				logging.String("order-id", oid),
+				logging.String("market", m.mkt.ID),
+				logging.Error(err))
+		}
+
+		_ = m.position.UnregisterOrder(ctx, order)
+		order.Status = types.OrderStatusCancelled
+		oevents = append(oevents, events.NewOrderEvent(ctx, order))
+	}
+
+	if len(oevents) > 0 {
+		m.broker.SendBatch(oevents)
+	}
+
 	// TODO(jeremy): This bit is here specifically to create account
 	// which should have been create with the normal process of
 	// submitting liquidity provisions for the market.
