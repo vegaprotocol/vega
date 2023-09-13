@@ -11,7 +11,7 @@
             "args": [
                 "--godog.format",
                 "pretty",
-                "${workspaceFolder}/core/integration/features/liquidity-provision/lp-distressed-closeout.feature:107"
+                "${workspaceFolder}/core/integration/features/verified/0044-LIME-SLA.feature"
             ]
         }
     ]

@@ -100,7 +100,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 35569        | 80500          | 1             |
+      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 3556         | 80500          | 1             |
     # # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569036
 
     And the liquidity fee factor should be "0.02" for the market "ETH/MAR22"
@@ -119,7 +119,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 71138        | 80500          | 2             |
+      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 7113         | 80500          | 2             |
 
     Then the network moves ahead "6" blocks
 
@@ -154,6 +154,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount  |
       | lp1    | USD   | 2000000 |
+      | lp2    | USD   | 2000000 |
       | party1 | USD   | 100000  |
       | party2 | USD   | 100000  |
       | party3 | USD   | 100000  |
@@ -182,7 +183,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
 
     And the market data for the market "ETH/MAR23" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 35569        | 50000          | 1             |
+      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 3556         | 50000          | 1             |
 
     And the parties should have the following account balances:
       | party | asset | market id | margin | general | bond  |
