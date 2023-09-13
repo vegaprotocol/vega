@@ -118,6 +118,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | lp2   | USD   | ETH/MAR22 | 32013  | 57487   | 5000 |
       | lp2   | USD   | ETH/MAR23 | 0      | 57487   | 500  |
 
+  @SLABug
   Scenario: 002: lp1 and lp2 amend LP commitment
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount  |
@@ -150,7 +151,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | party1 | ETH/MAR22 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/MAR22 | sell | 10     | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/MAR22 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-    Then the network moves ahead "2" blocks
+      #Then the network moves ahead "2" blocks
 
     Then the opening auction period ends for market "ETH/MAR22"
 
@@ -175,7 +176,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | id   | party | market id | commitment amount | fee  | lp type   |
       | lp_1 | lp1   | ETH/MAR22 | 30000             | 0.02 | amendment |
     And the supplied stake should be "60000" for the market "ETH/MAR22"
-    Then the network moves ahead "1" blocks
+    Then the network moves ahead "10" blocks
     And the supplied stake should be "40000" for the market "ETH/MAR22"
 
     #AC: 0044-LIME-019, lp reduces commitment multi times
@@ -189,7 +190,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | id   | party | market id | commitment amount | fee  | lp type   |
       | lp_1 | lp1   | ETH/MAR22 | 27000             | 0.02 | amendment |
     And the supplied stake should be "40000" for the market "ETH/MAR22"
-    Then the network moves ahead "7" blocks
+    Then the network moves ahead "10" blocks
     And the supplied stake should be "37000" for the market "ETH/MAR22"
     #AC: 0044-LIME-022, lp reduces commitment, no penalty
     And the parties should have the following account balances:
@@ -249,15 +250,15 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     Then the network moves ahead "10" blocks
     And the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 0      | 994845  | 501  |
-      | lp2   | USD   | ETH/MAR22 | 0      | 998693  | 251  |
+      | lp1   | USD   | ETH/MAR22 | 0      | 994878  | 1001 |
+      | lp2   | USD   | ETH/MAR22 | 0      | 998699  | 502  |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode                    | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | 21341        | 752            | 6             |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | 21341        | 1503           | 6             |
 
     Then the following transfers should happen:
       | from   | to  | from account                | to account                     | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 26     | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 13     | USD   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 33     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 6      | USD   |
 
 

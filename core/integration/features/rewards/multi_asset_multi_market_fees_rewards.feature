@@ -68,7 +68,7 @@ Feature: Fees rewards with multiple markets and assets
     #complete the epoch to advance to a meaningful epoch (can't setup transfer to start at epoch 0)
     Then the network moves ahead "7" blocks
 
-  @FeeRound
+  @FeeRound @SLABug
   Scenario: all sort of fees with multiple assets and multiple markets pay rewards on epoch end
 
     Given the parties submit the following recurring transfers:
@@ -214,23 +214,22 @@ Feature: Fees rewards with multiple markets and assets
     And the market data for the market "BTC/DEC22" should be:
       | target stake | supplied stake |
       | 5150         | 15000          |
-    When the opening auction period ends for market "ETH/DEC21"
+
+    # End opening auctions
+    When the network moves ahead "2" blocks
     Then the following trades should be executed:
       | buyer  | price | size | seller |
       | party1 | 1000  | 60   | party2 |
 
-    When the opening auction period ends for market "ETH/DEC22"
-    Then the following trades should be executed:
+    And the following trades should be executed:
       | buyer  | price | size | seller |
       | party1 | 1050  | 30   | party2 |
 
-    When the opening auction period ends for market "BTC/DEC21"
-    Then the following trades should be executed:
+    And the following trades should be executed:
       | buyer  | price | size | seller |
       | party1 | 850   | 30   | party2 |
 
-    When the opening auction period ends for market "BTC/DEC22"
-    Then the following trades should be executed:
+    And the following trades should be executed:
       | buyer  | price | size | seller |
       | party1 | 1030  | 25   | party2 |
 

@@ -1,5 +1,6 @@
 Feature: Spot market
 
+  @SLABug
   Scenario: party submit liquidity, and amend/cancel it
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -87,9 +88,8 @@ Feature: Spot market
       | lpprov | BTC/ETH   | buy  | 12     | 10    | 0                | TYPE_LIMIT | TIF_GTC | lp-order1    |      |
       | lpprov | BTC/ETH   | sell | 6      | 20    | 0                | TYPE_LIMIT | TIF_GTC | lp-order2    |      |
 
-    Then the network moves ahead "3" blocks
+    When the network moves ahead "3" blocks
 
-    When the opening auction period ends for market "BTC/ETH"
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 360000  | 10        | 22        | 10           | 1000            | 0             |

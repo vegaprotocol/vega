@@ -124,7 +124,7 @@ Feature: test risk model parameter ranges
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 22    |
 
-  @Now @NoPerp
+  @Now @NoPerp @SLABug
   Scenario: 001, test different value of risk parameters within defined ranges in different market, AC: 0018-RSKM-001
 
     Given the liquidity monitoring parameters:
@@ -255,29 +255,19 @@ Feature: test risk model parameter ranges
       | party2 | ETH/MAR51 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-43 |
       | party2 | ETH/MAR51 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-44 |
 
-    When the opening auction period ends for market "ETH/MAR0"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR0"
-    When the opening auction period ends for market "ETH/MAR11"
+    When the network moves ahead "2" blocks
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR0"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR11"
-    When the opening auction period ends for market "ETH/MAR12"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR12"
-    When the opening auction period ends for market "ETH/MAR21"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR21"
-    When the opening auction period ends for market "ETH/MAR22"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
-    When the opening auction period ends for market "ETH/MAR31"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR31"
-    When the opening auction period ends for market "ETH/MAR32"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR32"
 
-    When the opening auction period ends for market "ETH/MAR41"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR41"
-    When the opening auction period ends for market "ETH/MAR42"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR42"
-    When the opening auction period ends for market "ETH/MAR43"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR43"
 
-    When the opening auction period ends for market "ETH/MAR51"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR51"
 
     And the market data for the market "ETH/MAR0" should be:
