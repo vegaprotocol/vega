@@ -131,6 +131,12 @@ type Engine struct {
 	slaEpochStart  time.Time
 
 	lastFeeDistribution time.Time
+
+	// FIXME(jerem): to remove in the future,
+	// this is neede for the compatibility layer from
+	// 72 > 73, as we would need to cancel all remaining LP
+	// order which are eventually still seating in the book.
+	legacyOrderIDs []string
 }
 
 // NewEngine returns a new Liquidity Engine.
@@ -180,6 +186,11 @@ func NewEngine(config Config,
 	e.ResetAverageLiquidityScores() // initialise
 
 	return e
+}
+
+func (e *Engine) GetLegacyOrders() (orders []string) {
+	orders, e.legacyOrderIDs = e.legacyOrderIDs, []string{}
+	return
 }
 
 func (e *Engine) SetLastFeeDistributionTime(t time.Time) {
