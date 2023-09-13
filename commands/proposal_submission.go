@@ -1362,9 +1362,8 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 
 				if ethOracle.Trigger != nil &&
 					ethOracle.Trigger.GetTimeTrigger() != nil &&
-					(ethOracle.Trigger.GetTimeTrigger().Initial == nil || *ethOracle.Trigger.GetTimeTrigger().Initial == 0) &&
-					(ethOracle.Trigger.GetTimeTrigger().Every == nil || *ethOracle.Trigger.GetTimeTrigger().Every == 0) {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.trigger.timetrigger.(initial|every)", parentProperty, name), ErrIsRequired)
+					(ethOracle.Trigger.GetTimeTrigger().Initial == nil || *ethOracle.Trigger.GetTimeTrigger().Initial == 0) {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.trigger.timetrigger.initial", parentProperty, name), ErrIsRequired)
 				}
 			} else {
 				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle", parentProperty, name), ErrIsRequired)
