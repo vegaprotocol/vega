@@ -67,7 +67,7 @@ type Product interface {
 
 	// snapshot specific
 	Serialize() *snapshotpb.Product
-	GetMarginIncrease(int64) *num.Int
+	GetMarginIncrease(int64) num.Decimal
 	GetData(t int64) *types.ProductData
 }
 

@@ -233,7 +233,7 @@ func (e *Engine) GetRiskFactors() *types.RiskFactor {
 	return e.factors
 }
 
-func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, price *num.Uint, increment *num.Int) ([]events.Risk, []events.Margin) {
+func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, price *num.Uint, increment num.Decimal) ([]events.Risk, []events.Margin) {
 	if len(evts) == 0 {
 		return nil, nil
 	}
@@ -291,7 +291,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 // UpdateMarginOnNewOrder calculate the new margin requirement for a single order
 // this is intended to be used when a new order is created in order to ensure the
 // party margin account is at least at the InitialMargin level before the order is added to the book.
-func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, markPrice *num.Uint, increment *num.Int) (events.Risk, events.Margin, error) {
+func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, markPrice *num.Uint, increment num.Decimal) (events.Risk, events.Margin, error) {
 	if evt == nil {
 		return nil, nil, nil
 	}
@@ -372,7 +372,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 // move monies later, we'll need to close out the party but that cannot be figured out
 // now only in later when we try to move monies from the general account.
 func (e *Engine) UpdateMarginsOnSettlement(
-	ctx context.Context, evts []events.Margin, markPrice *num.Uint, increment *num.Int,
+	ctx context.Context, evts []events.Margin, markPrice *num.Uint, increment num.Decimal,
 ) []events.Risk {
 	ret := make([]events.Risk, 0, len(evts))
 	now := e.timeSvc.GetTimeNow().UnixNano()
@@ -498,7 +498,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 // ExpectMargins is used in the case some parties are in a distressed positions
 // in this situation we will only check if the party margin is > to the maintenance margin.
 func (e *Engine) ExpectMargins(
-	evts []events.Margin, markPrice *num.Uint, increment *num.Int,
+	evts []events.Margin, markPrice *num.Uint, increment num.Decimal,
 ) (okMargins []events.Margin, distressedPositions []events.Margin) {
 	okMargins = make([]events.Margin, 0, len(evts)/2)
 	distressedPositions = make([]events.Margin, 0, len(evts)/2)
