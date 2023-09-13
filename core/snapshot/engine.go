@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/core/snapshot/tree"
 	"code.vegaprotocol.io/vega/core/types"
 	vegactx "code.vegaprotocol.io/vega/libs/context"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
@@ -517,10 +518,6 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 
 	treeKeysToSnapshot := make([]treeKeyToSnapshot, 0, len(e.registeredNamespaces))
 	for _, namespace := range e.registeredNamespaces {
-		// FIXME: This metric is not used the way it has been thought.
-		//  See https://github.com/vegaprotocol/vega/issues/8775
-		defer metrics.StartSnapshot(namespace.String())()
-
 		treeKeys := e.namespacesToTreeKeys[namespace]
 
 		for _, treeKey := range treeKeys {
@@ -534,12 +531,18 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 	treeKeysToSnapshotChan := make(chan treeKeyToSnapshot, numWorkers)
 	serializedStateChan := make(chan snapshotResult, numWorkers)
 
+	snapMetricsRecord := newSnapMetricsState()
+	defer func() {
+		blockHeight, _ := vgcontext.BlockHeightFromContext(ctx)
+		snapMetricsRecord.Report(uint64(blockHeight))
+	}()
+
 	// Start the gathering of providers state asynchronously.
 	wg := &sync.WaitGroup{}
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
 		go func() {
-			gatherState(e, treeKeysToSnapshotChan, serializedStateChan, &treeKeysCounter)
+			gatherState(e, treeKeysToSnapshotChan, serializedStateChan, &treeKeysCounter, snapMetricsRecord)
 			wg.Done()
 		}()
 	}

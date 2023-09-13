@@ -23,8 +23,12 @@ type snapshotResult struct {
 	updated  bool
 }
 
-func gatherState(e *Engine, treeKeysToSnapshotChan chan treeKeyToSnapshot, snapshotResultsChan chan<- snapshotResult, treeKeysCounter *atomic.Int64) {
+func gatherState(e *Engine, treeKeysToSnapshotChan chan treeKeyToSnapshot, snapshotResultsChan chan<- snapshotResult, treeKeysCounter *atomic.Int64, recordMetrics *snapMetricsState) {
 	for toSnapshot := range treeKeysToSnapshotChan {
+		// this is for metrics
+		startTime := time.Now()
+		currentNamespace := toSnapshot.namespace
+
 		treeKeyStr := string(toSnapshot.treeKey)
 
 		t0 := time.Now()
@@ -107,5 +111,8 @@ func gatherState(e *Engine, treeKeysToSnapshotChan chan treeKeyToSnapshot, snaps
 			close(treeKeysToSnapshotChan)
 			close(snapshotResultsChan)
 		}
+
+		timeTaken := time.Since(startTime)
+		recordMetrics.Register(currentNamespace.String(), timeTaken, len(state))
 	}
 }
