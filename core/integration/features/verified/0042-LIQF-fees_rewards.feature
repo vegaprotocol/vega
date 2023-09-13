@@ -283,24 +283,15 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee    | lp type    | error                           |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | -0.001 | submission | invalid liquidity provision fee |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | -0.001 | submission | invalid liquidity provision fee |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | -0.001 | submission | invalid liquidity provision fee |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | -0.001 | submission | invalid liquidity provision fee |
+      | lp1 | lp1 | ETH/MAR22 | 8000 | -0.001 | submission | invalid liquidity provision fee |
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee | lp type    |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0   | submission |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0   | submission |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0   | submission |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0   | submission |
+      | lp1 | lp1 | ETH/MAR22 | 8000 | 0 | submission |
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | lp type   |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | amendment |
+      | lp1 | lp1 | ETH/MAR22 | 8000 | 0.001 | amendment |
 
     And the parties place the following pegged iceberg orders:
       | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
