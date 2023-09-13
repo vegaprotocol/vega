@@ -24,7 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 )
 
-func TheReferralProgram(table *godog.Table, referralProgramConfig *referralcfg.Config, referralProgramEngine *referral.Engine) error {
+func TheReferralProgram(referralProgramConfig *referralcfg.Config, referralProgramEngine *referral.Engine, table *godog.Table) error {
 	row := parseReferralProgram(table)
 
 	benefitTiersConfigName := row.BenefitTiers()

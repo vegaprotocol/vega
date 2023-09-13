@@ -1,16 +1,16 @@
 {
   "stakingTiers": [
     {
-      "minimum_staked_tokens": "",
-      "referral_reward_multiplier": ""
+      "minimumStakedTokens": "",
+      "referralRewardMultiplier": ""
     },
     {
-      "minimum_staked_tokens": "",
-      "referral_reward_multiplier": ""
+      "minimumStakedTokens": "",
+      "referralRewardMultiplier": ""
     },
     {
-      "minimum_staked_tokens": "",
-      "referral_reward_multiplier": ""
+      "minimumStakedTokens": "",
+      "referralRewardMultiplier": ""
     }
   ]
 }

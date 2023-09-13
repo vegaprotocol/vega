@@ -495,7 +495,13 @@ func InitializeScenario(s *godog.ScenarioContext) {
 
 	// Referral program steps.
 	s.Step(`^the referral program:$`, func(table *godog.Table) error {
-		return steps.TheReferralProgram(table, referralProgramConfig, execsetup.referralProgram)
+		return steps.TheReferralProgram(referralProgramConfig, execsetup.referralProgram, table)
+	})
+	s.Step(`^the referral benefit tiers "([^"]*)":$`, func(name string, table *godog.Table) error {
+		return steps.TheReferralBenefitTiersConfiguration(referralProgramConfig, name, table)
+	})
+	s.Step(`^the referral staking tiers "([^"]*)":$`, func(name string, table *godog.Table) error {
+		return steps.TheReferralStakingTiersConfiguration(referralProgramConfig, name, table)
 	})
 
 	// Debug steps
