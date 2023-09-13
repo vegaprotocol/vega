@@ -503,6 +503,12 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the referral staking tiers "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.TheReferralStakingTiersConfiguration(referralProgramConfig, name, table)
 	})
+	s.Step(`^the parties create the following referral codes:$`, func(table *godog.Table) error {
+		return steps.PartiesCreateTheFollowingReferralCode(execsetup.referralProgram, table)
+	})
+	s.Step(`^the parties apply the following referral codes:$`, func(table *godog.Table) error {
+		return steps.PartiesApplyTheFollowingReferralCode(execsetup.referralProgram, table)
+	})
 
 	// Debug steps
 	s.Step(`^debug accounts$`, func() error {

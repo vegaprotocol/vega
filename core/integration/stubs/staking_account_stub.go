@@ -74,7 +74,7 @@ func NewStakingAccountStub() *StakingAccountStub {
 func (t *StakingAccountStub) GetAvailableBalance(party string) (*num.Uint, error) {
 	ret, ok := t.partyToStake[party]
 	if !ok {
-		return nil, fmt.Errorf("party not found")
+		return num.UintZero(), fmt.Errorf("party not found")
 	}
 	return ret, nil
 }
@@ -82,7 +82,7 @@ func (t *StakingAccountStub) GetAvailableBalance(party string) (*num.Uint, error
 func (t *StakingAccountStub) GetAvailableBalanceInRange(party string, from, _ time.Time) (*num.Uint, error) {
 	partyStake, ok := t.partyToStakeForEpoch[from.UnixNano()][party]
 	if !ok {
-		return nil, fmt.Errorf("party not found")
+		return num.UintZero(), fmt.Errorf("party not found")
 	}
 	return partyStake, nil
 }

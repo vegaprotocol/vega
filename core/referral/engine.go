@@ -585,6 +585,8 @@ func NewEngine(broker Broker, timeSvc TimeService, mat MarketActivityTracker, st
 
 		referralSetsNotionalVolumes: newRunningVolumes(),
 
+		referralProgramMinStakedVegaTokens: num.UintZero(),
+
 		sets:      map[types.ReferralSetID]*types.ReferralSet{},
 		referrers: map[types.PartyID]types.ReferralSetID{},
 		referees:  map[types.PartyID]types.ReferralSetID{},
