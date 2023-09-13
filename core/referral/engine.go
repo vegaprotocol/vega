@@ -440,7 +440,14 @@ func (e *Engine) loadReferralSetsFromSnapshot(setsProto *snapshotpb.ReferralSets
 				value: volumeNum,
 			})
 		}
-		e.referralSetsNotionalVolumes.runningVolumesBySet[setID] = runningVolumes
+
+		// set only if the running volume is not empty, or it will panic
+		// down the line when trying to add new ones.
+		// the creation of runningVolumeBySet is done in the Add method of the
+		// runningVolumes type.
+		if len(runningVolumes) > 0 {
+			e.referralSetsNotionalVolumes.runningVolumesBySet[setID] = runningVolumes
+		}
 
 		e.sets[setID] = newSet
 	}
