@@ -1767,6 +1767,7 @@ type ComplexityRoot struct {
 		TeamReferees                       func(childComplexity int, teamID string, pagination *v2.Pagination) int
 		Teams                              func(childComplexity int, teamID *string, partyID *string, pagination *v2.Pagination) int
 		Trades                             func(childComplexity int, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) int
+		Transfer                           func(childComplexity int, id string) int
 		TransfersConnection                func(childComplexity int, partyID *string, direction *TransferDirection, pagination *v2.Pagination) int
 		Withdrawal                         func(childComplexity int, id string) int
 		Withdrawals                        func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
@@ -2941,6 +2942,7 @@ type QueryResolver interface {
 	TeamRefereeHistory(ctx context.Context, referee string, pagination *v2.Pagination) (*v2.TeamRefereeHistoryConnection, error)
 	Trades(ctx context.Context, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) (*v2.TradeConnection, error)
 	TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
+	Transfer(ctx context.Context, id string) (*v1.Transfer, error)
 	Withdrawal(ctx context.Context, id string) (*vega.Withdrawal, error)
 	Withdrawals(ctx context.Context, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.WithdrawalsConnection, error)
 }
@@ -10417,6 +10419,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Trades(childComplexity, args["filter"].(*TradesFilter), args["pagination"].(*v2.Pagination), args["dateRange"].(*v2.DateRange)), true
 
+	case "Query.transfer":
+		if e.complexity.Query.Transfer == nil {
+			break
+		}
+
+		args, err := ec.field_Query_transfer_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Transfer(childComplexity, args["id"].(string)), true
+
 	case "Query.transfersConnection":
 		if e.complexity.Query.TransfersConnection == nil {
 			break
@@ -15284,6 +15298,21 @@ func (ec *executionContext) field_Query_trades_args(ctx context.Context, rawArgs
 		}
 	}
 	args["dateRange"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_transfer_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -63781,6 +63810,84 @@ func (ec *executionContext) fieldContext_Query_transfersConnection(ctx context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_transfer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_transfer(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Transfer(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v1.Transfer)
+	fc.Result = res
+	return ec.marshalOTransfer2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_transfer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Transfer_id(ctx, field)
+			case "from":
+				return ec.fieldContext_Transfer_from(ctx, field)
+			case "fromAccountType":
+				return ec.fieldContext_Transfer_fromAccountType(ctx, field)
+			case "to":
+				return ec.fieldContext_Transfer_to(ctx, field)
+			case "toAccountType":
+				return ec.fieldContext_Transfer_toAccountType(ctx, field)
+			case "asset":
+				return ec.fieldContext_Transfer_asset(ctx, field)
+			case "amount":
+				return ec.fieldContext_Transfer_amount(ctx, field)
+			case "reference":
+				return ec.fieldContext_Transfer_reference(ctx, field)
+			case "status":
+				return ec.fieldContext_Transfer_status(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_Transfer_timestamp(ctx, field)
+			case "kind":
+				return ec.fieldContext_Transfer_kind(ctx, field)
+			case "reason":
+				return ec.fieldContext_Transfer_reason(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Transfer", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_transfer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_withdrawal(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_withdrawal(ctx, field)
 	if err != nil {
@@ -99836,6 +99943,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_transfersConnection(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "transfer":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_transfer(ctx, field)
 				return res
 			}
 

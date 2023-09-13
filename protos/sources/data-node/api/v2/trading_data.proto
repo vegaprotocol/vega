@@ -224,6 +224,13 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Transfers"};
   }
 
+  // Get transfer by ID
+  //
+  // Get a specific transfer by ID
+  rpc GetTransferByID(GetTransferByIDRequest) returns (GetTransferByIDResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Transfers"};
+  }
+
   // Get network limits
   //
   // Get the network limits relating to asset and market creation
@@ -1611,6 +1618,18 @@ message TransferConnection {
   repeated TransferEdge edges = 1;
   // Page information that is used for fetching further pages.
   PageInfo page_info = 2;
+}
+
+// Request that is sent for getting a transfer by ID
+message GetTransferByIDRequest {
+  // Transfer ID to request data for.
+  string transfer_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response that is received when querying transfers by ID
+message GetTransferByIDResponse {
+  // page containing the transfer requested by ID.
+  vega.events.v1.Transfer transfer = 1;
 }
 
 // -- Network Limits --
