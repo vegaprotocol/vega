@@ -22,16 +22,18 @@ func (t TeamCreated) StreamMessage() *eventspb.BusEvent {
 	return busEvent
 }
 
-func NewTeamCreatedEvent(ctx context.Context, t *types.Team) *TeamCreated {
+func NewTeamCreatedEvent(ctx context.Context, epoch uint64, t *types.Team) *TeamCreated {
 	return &TeamCreated{
 		Base: newBase(ctx, TeamCreatedEvent),
 		e: eventspb.TeamCreated{
 			TeamId:    string(t.ID),
 			Referrer:  string(t.Referrer.PartyID),
-			Name:      ptr.From(t.Name),
+			Name:      t.Name,
 			TeamUrl:   ptr.From(t.TeamURL),
 			AvatarUrl: ptr.From(t.AvatarURL),
 			CreatedAt: t.CreatedAt.UnixNano(),
+			AtEpoch:   epoch,
+			Closed:    t.Closed,
 		},
 	}
 }
@@ -62,10 +64,10 @@ func NewTeamUpdatedEvent(ctx context.Context, t *types.Team) *TeamUpdated {
 		Base: newBase(ctx, TeamUpdatedEvent),
 		e: eventspb.TeamUpdated{
 			TeamId:    string(t.ID),
-			Name:      ptr.From(t.Name),
+			Name:      t.Name,
 			TeamUrl:   ptr.From(t.TeamURL),
 			AvatarUrl: ptr.From(t.AvatarURL),
-			CreatedAt: t.CreatedAt.UnixNano(),
+			Closed:    t.Closed,
 		},
 	}
 }

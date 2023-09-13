@@ -33,7 +33,7 @@ type RewardPayout struct {
 	RewardType              types.AccountType
 }
 
-func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq string, asset string, amount *num.Uint, percentageOfTotalReward num.Decimal, rewardType types.AccountType, market string) *RewardPayout {
+func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq, asset string, amount *num.Uint, percentageOfTotalReward num.Decimal, rewardType types.AccountType, market string) *RewardPayout {
 	return &RewardPayout{
 		Base:                    newBase(ctx, RewardPayoutEvent),
 		Party:                   party,

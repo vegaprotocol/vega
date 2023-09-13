@@ -807,6 +807,38 @@ type Query {
     pagination: Pagination
   ): SuccessorMarketConnection
 
+  """
+  List information about all teams or filter for a specific team ID or referrer, or referee's party ID
+  If no filter is provided all teams will be listed.
+  If a team ID is provided, only the team with that ID will be returned
+  If a party ID is provided, the team whose referrer party ID or a referee's party ID matches will be return
+  If both team ID and party ID is provided, only the team ID will be used.
+  """
+  teams(
+    "Optional team ID to filter for"
+    teamId: ID
+    "Optional referrer, or team referee to filter for"
+    partyId: ID
+    "Optional pagination information"
+    pagination: Pagination
+  ): TeamConnection
+
+  "List all referees for a team"
+  teamReferees(
+    "ID of the team to list referees for"
+    teamId: ID!
+    "Optional pagination information"
+    pagination: Pagination
+  ): TeamRefereeConnection
+
+  "List a referee's team history"
+  teamRefereeHistory(
+    "ID of the referee to list team history for"
+    referee: ID!
+    "Optional pagination information"
+    pagination: Pagination
+  ): TeamRefereeHistoryConnection
+
   "Get a list of all trades and apply any given filters to the results"
   trades(
     filter: TradesFilter
@@ -5842,4 +5874,94 @@ type RefereeStats {
   discountFactor: String!
   "Reward factor applied to the party."
   rewardFactor: String!
+}
+
+"Team record containing the team information."
+type Team {
+  "Unique ID of the team."
+  teamId: ID!
+  "Party ID that created the team."
+  referrer: ID!
+  "Name of the team."
+  name: String!
+  "Link to the team's homepage."
+  teamURL: String!
+  "Link to an image of the team's avatar."
+  avatarURL: String!
+  "Time in RFC3339Nano format when the team was created."
+  createdAt: Timestamp!
+  "Epoch at which the team was created."
+  createdAtEpoch: Int!
+  "Tells if a party can join the team or not."
+  closed: Boolean!
+}
+
+"Edge type containing a team cursor and its associated team data"
+type TeamEdge {
+  "Team data"
+  node: Team!
+  "Cursor identifying the team data"
+  cursor: String!
+}
+
+"Connection type for retrieving cursor-based paginated team data"
+type TeamConnection {
+  "Teams in this connection"
+  edges: [TeamEdge!]!
+  "Pagination information"
+  pageInfo: PageInfo!
+}
+
+"A team's referee info"
+type TeamReferee {
+  "Team ID."
+  teamId: ID!
+  "Party ID of the referee"
+  referee: ID!
+  "Time in RFC3339Nano format when the referee joined the team."
+  joinedAt: Timestamp!
+  "Epoch at which the referee joined the team."
+  joinedAtEpoch: Int!
+}
+
+"Edge type containing a team referee cursor and its associated team referee data"
+type TeamRefereeEdge {
+  "Team referee data"
+  node: TeamReferee!
+  "Cursor identifying the team referee data"
+  cursor: String!
+}
+
+"Connection type for retrieving cursor-based paginated team referee data"
+type TeamRefereeConnection {
+  "Team referees in this connection"
+  edges: [TeamRefereeEdge!]!
+  "Pagination information"
+  pageInfo: PageInfo!
+}
+
+"Referee's team history, i.e. which team a referee has been a member of."
+type TeamRefereeHistory {
+  "ID of the team the referee joined."
+  teamId: ID!
+  "Time in RFC3339Nano format when the referee joined the team."
+  joinedAt: Timestamp!
+  "Epoch at which the referee joined the team."
+  joinedAtEpoch: Int!
+}
+
+"Edge type containing a team referee history cursor and its associated team referee history data"
+type TeamRefereeHistoryEdge {
+  "Team referee history data"
+  node: TeamRefereeHistory!
+  "Cursor identifying the team referee history data"
+  cursor: String!
+}
+
+"Connection type for retrieving cursor-based paginated team referee history data"
+type TeamRefereeHistoryConnection {
+  "Team referee history in this connection"
+  edges: [TeamRefereeHistoryEdge!]!
+  "Pagination information"
+  pageInfo: PageInfo!
 }

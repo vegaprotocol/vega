@@ -448,6 +448,18 @@ type TradingDataServiceClient interface {
 	// List all referees that belong to a referral set.
 	ListReferralSetReferees(ctx context.Context, in *ListReferralSetRefereesRequest, opts ...grpc.CallOption) (*ListReferralSetRefereesResponse, error)
 	GetReferralSetStats(ctx context.Context, in *GetReferralSetStatsRequest, opts ...grpc.CallOption) (*GetReferralSetStatsResponse, error)
+	// List teams
+	//
+	// Get a list of all teams, or for a specific team by using team ID, or party ID of a referrer or referee
+	ListTeams(ctx context.Context, in *ListTeamsRequest, opts ...grpc.CallOption) (*ListTeamsResponse, error)
+	// List team referees
+	//
+	// Get a list of all referees for a given team ID
+	ListTeamReferees(ctx context.Context, in *ListTeamRefereesRequest, opts ...grpc.CallOption) (*ListTeamRefereesResponse, error)
+	// List referee team history
+	//
+	// Get a list of a referee's team history, i.e. the teams that a referee has been a member of and transferred from/to.
+	ListTeamRefereeHistory(ctx context.Context, in *ListTeamRefereeHistoryRequest, opts ...grpc.CallOption) (*ListTeamRefereeHistoryResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -1742,6 +1754,33 @@ func (c *tradingDataServiceClient) GetReferralSetStats(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ListTeams(ctx context.Context, in *ListTeamsRequest, opts ...grpc.CallOption) (*ListTeamsResponse, error) {
+	out := new(ListTeamsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListTeams", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListTeamReferees(ctx context.Context, in *ListTeamRefereesRequest, opts ...grpc.CallOption) (*ListTeamRefereesResponse, error) {
+	out := new(ListTeamRefereesResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListTeamReferees", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListTeamRefereeHistory(ctx context.Context, in *ListTeamRefereeHistoryRequest, opts ...grpc.CallOption) (*ListTeamRefereeHistoryResponse, error) {
+	out := new(ListTeamRefereeHistoryResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListTeamRefereeHistory", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
 	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
@@ -2212,6 +2251,18 @@ type TradingDataServiceServer interface {
 	// List all referees that belong to a referral set.
 	ListReferralSetReferees(context.Context, *ListReferralSetRefereesRequest) (*ListReferralSetRefereesResponse, error)
 	GetReferralSetStats(context.Context, *GetReferralSetStatsRequest) (*GetReferralSetStatsResponse, error)
+	// List teams
+	//
+	// Get a list of all teams, or for a specific team by using team ID, or party ID of a referrer or referee
+	ListTeams(context.Context, *ListTeamsRequest) (*ListTeamsResponse, error)
+	// List team referees
+	//
+	// Get a list of all referees for a given team ID
+	ListTeamReferees(context.Context, *ListTeamRefereesRequest) (*ListTeamRefereesResponse, error)
+	// List referee team history
+	//
+	// Get a list of a referee's team history, i.e. the teams that a referee has been a member of and transferred from/to.
+	ListTeamRefereeHistory(context.Context, *ListTeamRefereeHistoryRequest) (*ListTeamRefereeHistoryResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2575,6 +2626,15 @@ func (UnimplementedTradingDataServiceServer) ListReferralSetReferees(context.Con
 }
 func (UnimplementedTradingDataServiceServer) GetReferralSetStats(context.Context, *GetReferralSetStatsRequest) (*GetReferralSetStatsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetReferralSetStats not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListTeams(context.Context, *ListTeamsRequest) (*ListTeamsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTeams not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListTeamReferees(context.Context, *ListTeamRefereesRequest) (*ListTeamRefereesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTeamReferees not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListTeamRefereeHistory(context.Context, *ListTeamRefereeHistoryRequest) (*ListTeamRefereeHistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTeamRefereeHistory not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
@@ -4391,6 +4451,60 @@ func _TradingDataService_GetReferralSetStats_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ListTeams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTeamsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListTeams(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListTeams",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListTeams(ctx, req.(*ListTeamsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListTeamReferees_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTeamRefereesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListTeamReferees(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListTeamReferees",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListTeamReferees(ctx, req.(*ListTeamRefereesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListTeamRefereeHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTeamRefereeHistoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListTeamRefereeHistory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListTeamRefereeHistory",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListTeamRefereeHistory(ctx, req.(*ListTeamRefereeHistoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ExportNetworkHistory_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportNetworkHistoryRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -4764,6 +4878,18 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetReferralSetStats",
 			Handler:    _TradingDataService_GetReferralSetStats_Handler,
+		},
+		{
+			MethodName: "ListTeams",
+			Handler:    _TradingDataService_ListTeams_Handler,
+		},
+		{
+			MethodName: "ListTeamReferees",
+			Handler:    _TradingDataService_ListTeamReferees_Handler,
+		},
+		{
+			MethodName: "ListTeamRefereeHistory",
+			Handler:    _TradingDataService_ListTeamRefereeHistory_Handler,
 		},
 		{
 			MethodName: "Ping",

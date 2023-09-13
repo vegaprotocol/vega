@@ -644,3 +644,21 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetStats
   RefereeStats:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.RefereeStats
+  Team:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.Team
+  TeamEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamEdge
+  TeamConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamConnection
+  TeamReferee:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamReferee
+  TeamRefereeEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamRefereeEdge
+  TeamRefereeConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamRefereeConnection
+  TeamRefereeHistory:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamRefereeHistory
+  TeamRefereeHistoryEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamRefereeHistoryEdge
+  TeamRefereeHistoryConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamRefereeHistoryConnection

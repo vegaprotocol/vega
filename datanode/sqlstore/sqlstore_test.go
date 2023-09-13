@@ -24,7 +24,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
@@ -77,7 +77,7 @@ func tempTransaction(t *testing.T) context.Context {
 	t.Helper()
 
 	ctx, err := connectionSource.WithTransaction(context.Background())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Cleanup(func() {
 		_ = connectionSource.Rollback(ctx)
