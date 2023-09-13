@@ -112,6 +112,25 @@ type TradingDataServiceV2 struct {
 	partyActivityStreak        *service.PartyActivityStreak
 	referralProgramService     *service.ReferralPrograms
 	referralSetsService        *service.ReferralSets
+	teamsService               *service.Teams
+}
+
+func (t *TradingDataServiceV2) GetPartyActivityStreak(ctx context.Context, req *v2.GetPartyActivityStreakRequest) (*v2.GetPartyActivityStreakResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetPartyActivityStreak")()
+
+	if !crypto.IsValidVegaPubKey(req.PartyId) {
+		return nil, formatE(ErrInvalidPartyID)
+	}
+
+	activityStreak, err := t.partyActivityStreak.Get(
+		ctx, entities.PartyID(req.PartyId), req.Epoch)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.GetPartyActivityStreakResponse{
+		ActivityStreak: activityStreak.ToProto(),
+	}, nil
 }
 
 // ListAccounts lists accounts matching the request.
@@ -4128,5 +4147,136 @@ func (t *TradingDataServiceV2) GetReferralSetStats(ctx context.Context, req *v2.
 
 	return &v2.GetReferralSetStatsResponse{
 		Stats: stats.ToProto(),
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListTeams(ctx context.Context, req *v2.ListTeamsRequest) (*v2.ListTeamsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListTeams")()
+
+	if req.TeamId == nil && req.PartyId == nil {
+		pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+		if err != nil {
+			return nil, formatE(ErrInvalidPagination, err)
+		}
+
+		return listTeams(ctx, t.teamsService, pagination)
+	}
+
+	var (
+		teamID  entities.TeamID
+		partyID entities.PartyID
+	)
+
+	if req.TeamId != nil {
+		teamID = entities.TeamID(*req.TeamId)
+	}
+
+	if req.PartyId != nil {
+		partyID = entities.PartyID(*req.PartyId)
+	}
+
+	return listTeam(ctx, t.teamsService, teamID, partyID)
+}
+
+func listTeam(ctx context.Context, teamsService *service.Teams, teamID entities.TeamID, partyID entities.PartyID) (*v2.ListTeamsResponse, error) {
+	team, err := teamsService.GetTeam(ctx, teamID, partyID)
+	if err != nil {
+		return nil, formatE(ErrTeamNotFound, err)
+	}
+
+	edges, err := makeEdges[*v2.TeamEdge]([]entities.Team{team})
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	connection := &v2.TeamConnection{
+		Edges: edges,
+		PageInfo: &v2.PageInfo{
+			HasNextPage:     false,
+			HasPreviousPage: false,
+			StartCursor:     team.Cursor().Encode(),
+			EndCursor:       team.Cursor().Encode(),
+		},
+	}
+
+	return &v2.ListTeamsResponse{
+		Teams: connection,
+	}, nil
+}
+
+func listTeams(ctx context.Context, teamsService *service.Teams, pagination entities.CursorPagination) (*v2.ListTeamsResponse, error) {
+	teams, pageInfo, err := teamsService.ListTeams(ctx, pagination)
+	if err != nil {
+		return nil, formatE(ErrListTeams, err)
+	}
+	edges, err := makeEdges[*v2.TeamEdge](teams)
+	if err != nil {
+		return nil, formatE(err)
+	}
+	connection := &v2.TeamConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListTeamsResponse{
+		Teams: connection,
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListTeamReferees(ctx context.Context, req *v2.ListTeamRefereesRequest) (*v2.ListTeamRefereesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListTeamReferees")()
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	teamID := entities.TeamID(req.TeamId)
+
+	referees, pageInfo, err := t.teamsService.ListReferees(ctx, teamID, pagination)
+	if err != nil {
+		return nil, formatE(ErrListTeamReferees, err)
+	}
+
+	edges, err := makeEdges[*v2.TeamRefereeEdge](referees)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	connection := &v2.TeamRefereeConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListTeamRefereesResponse{
+		TeamReferees: connection,
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListTeamRefereeHistory(ctx context.Context, req *v2.ListTeamRefereeHistoryRequest) (*v2.ListTeamRefereeHistoryResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListTeamRefereeHistory")()
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	refereeID := entities.PartyID(req.Referee)
+
+	history, pageInfo, err := t.teamsService.ListRefereeHistory(ctx, refereeID, pagination)
+	if err != nil {
+		return nil, formatE(ErrListTeamRefereeHistory, err)
+	}
+
+	edges, err := makeEdges[*v2.TeamRefereeHistoryEdge](history)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	connection := &v2.TeamRefereeHistoryConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListTeamRefereeHistoryResponse{
+		TeamRefereeHistory: connection,
 	}, nil
 }
