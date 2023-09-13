@@ -35,7 +35,7 @@ pipeline {
                 description: 'Git branch, tag or hash of the vegaprotocol/devops-infra repository')
         string( name: 'DEVOPSSCRIPTS_BRANCH', defaultValue: 'main',
                 description: 'Git branch, tag or hash of the vegaprotocol/devopsscripts repository')
-        string( name: 'VEGA_MARKET_SIM_BRANCH', defaultValue: '',
+        string( name: 'VEGA_MARKET_SIM_BRANCH', defaultValue: 'develop',
                 description: 'Git branch, tag or hash of the vegaprotocol/vega-market-sim repository')
         string( name: 'JENKINS_SHARED_LIB_BRANCH', defaultValue: 'main',
                 description: 'Git branch, tag or hash of the vegaprotocol/jenkins-shared-library repository')
@@ -240,14 +240,6 @@ pipeline {
                     }
                 }
                 stage('Vega Market Sim') {
-                    when {
-                        anyOf {
-                            branch 'develop'
-                            expression {
-                                params.VEGA_MARKET_SIM_BRANCH
-                            }
-                        }
-                    }
                     steps {
                         script {
                             vegaMarketSim ignoreFailure: true,
