@@ -29,7 +29,6 @@ func Test_MarketUpdated_Push(t *testing.T) {
 
 func shouldCallMarketSQLStoreUpdate(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	store := mocks.NewMockMarketsStore(ctrl)
 

@@ -486,10 +486,10 @@ func (m *MockMarketActivityTracker) EXPECT() *MockMarketActivityTrackerMockRecor
 }
 
 // CalculateMetricForIndividuals mocks base method.
-func (m *MockMarketActivityTracker) CalculateMetricForIndividuals(arg0 *vega.DispatchStrategy) []*types.PartyContibutionScore {
+func (m *MockMarketActivityTracker) CalculateMetricForIndividuals(arg0 *vega.DispatchStrategy) []*types.PartyContributionScore {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CalculateMetricForIndividuals", arg0)
-	ret0, _ := ret[0].([]*types.PartyContibutionScore)
+	ret0, _ := ret[0].([]*types.PartyContributionScore)
 	return ret0
 }
 
@@ -500,11 +500,11 @@ func (mr *MockMarketActivityTrackerMockRecorder) CalculateMetricForIndividuals(a
 }
 
 // CalculateMetricForTeams mocks base method.
-func (m *MockMarketActivityTracker) CalculateMetricForTeams(arg0 *vega.DispatchStrategy) ([]*types.PartyContibutionScore, map[string][]*types.PartyContibutionScore) {
+func (m *MockMarketActivityTracker) CalculateMetricForTeams(arg0 *vega.DispatchStrategy) ([]*types.PartyContributionScore, map[string][]*types.PartyContributionScore) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CalculateMetricForTeams", arg0)
-	ret0, _ := ret[0].([]*types.PartyContibutionScore)
-	ret1, _ := ret[1].(map[string][]*types.PartyContibutionScore)
+	ret0, _ := ret[0].([]*types.PartyContributionScore)
+	ret1, _ := ret[1].(map[string][]*types.PartyContributionScore)
 	return ret0, ret1
 }
 

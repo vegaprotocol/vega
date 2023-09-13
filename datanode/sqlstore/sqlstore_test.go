@@ -73,13 +73,15 @@ func generateTendermintPublicKey() string {
 	return base64.StdEncoding.EncodeToString(hash[:])
 }
 
-func tempTransaction(t *testing.T) (context.Context, func()) {
+func tempTransaction(t *testing.T) context.Context {
 	t.Helper()
-	ctx := context.Background()
-	ctx, err := connectionSource.WithTransaction(ctx)
+
+	ctx, err := connectionSource.WithTransaction(context.Background())
 	assert.NoError(t, err)
-	cleanup := func() {
-		connectionSource.Rollback(ctx)
-	}
-	return ctx, cleanup
+
+	t.Cleanup(func() {
+		_ = connectionSource.Rollback(ctx)
+	})
+
+	return ctx
 }

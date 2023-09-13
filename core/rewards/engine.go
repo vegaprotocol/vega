@@ -41,8 +41,8 @@ type Broker interface {
 type MarketActivityTracker interface {
 	GetAllMarketIDs() []string
 	GetProposer(market string) string
-	CalculateMetricForIndividuals(ds *vega.DispatchStrategy) []*types.PartyContibutionScore
-	CalculateMetricForTeams(ds *vega.DispatchStrategy) ([]*types.PartyContibutionScore, map[string][]*types.PartyContibutionScore)
+	CalculateMetricForIndividuals(ds *vega.DispatchStrategy) []*types.PartyContributionScore
+	CalculateMetricForTeams(ds *vega.DispatchStrategy) ([]*types.PartyContributionScore, map[string][]*types.PartyContributionScore)
 }
 
 // TimeService notifies the reward engine at the end of an epoch.
@@ -75,7 +75,7 @@ type TimeService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/core/rewards Topology
 type Topology interface {
 	GetRewardsScores(ctx context.Context, epochSeq string, delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams) (*types.ScoreData, *types.ScoreData)
-	RecalcValidatorSet(ctx context.Context, epochSeq string, delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams) []*types.PartyContibutionScore
+	RecalcValidatorSet(ctx context.Context, epochSeq string, delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams) []*types.PartyContributionScore
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/transfers_mock.go -package mocks code.vegaprotocol.io/vega/core/rewards Transfers
@@ -344,7 +344,7 @@ func (e *Engine) getRewardMultiplierForParty(party string) num.Decimal {
 
 // calculateRewardTypeForAsset calculates the payout for a given asset and reward type.
 // for market based rewards, we only care about account for specific markets (as opposed to global account for an asset).
-func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset string, rewardType types.AccountType, account *types.Account, validatorData []*types.ValidatorData, validatorNormalisedScores map[string]num.Decimal, timestamp time.Time, factor num.Decimal, rankingScoresContributions []*types.PartyContibutionScore) *payout {
+func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset string, rewardType types.AccountType, account *types.Account, validatorData []*types.ValidatorData, validatorNormalisedScores map[string]num.Decimal, timestamp time.Time, factor num.Decimal, rankingScoresContributions []*types.PartyContributionScore) *payout {
 	switch rewardType {
 	case types.AccountTypeGlobalReward: // given to delegator based on stake
 		if asset == e.global.asset {

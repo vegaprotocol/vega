@@ -104,8 +104,8 @@ type Topology interface {
 }
 
 type MarketActivityTracker interface {
-	CalculateMetricForIndividuals(ds *vega.DispatchStrategy) []*types.PartyContibutionScore
-	CalculateMetricForTeams(ds *vega.DispatchStrategy) ([]*types.PartyContibutionScore, map[string][]*types.PartyContibutionScore)
+	CalculateMetricForIndividuals(ds *vega.DispatchStrategy) []*types.PartyContributionScore
+	CalculateMetricForTeams(ds *vega.DispatchStrategy) ([]*types.PartyContributionScore, map[string][]*types.PartyContributionScore)
 	GetMarketsWithEligibleProposer(asset string, markets []string, payoutAsset string, funder string) []*types.MarketContributionScore
 	MarkPaidProposer(asset, market, payoutAsset string, marketsInScope []string, funder string)
 }

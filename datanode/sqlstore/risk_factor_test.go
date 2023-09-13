@@ -39,8 +39,8 @@ func setupRiskFactorTests(t *testing.T) (*sqlstore.Blocks, *sqlstore.RiskFactors
 }
 
 func testUpdateMarketRiskFactors(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, rfStore := setupRiskFactorTests(t)
 
 	// Add a risk factor for market 'aa' in one block
@@ -80,8 +80,7 @@ func testUpdateMarketRiskFactors(t *testing.T) {
 }
 
 func testAddRiskFactor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, rfStore := setupRiskFactorTests(t)
 
@@ -103,8 +102,7 @@ func testAddRiskFactor(t *testing.T) {
 }
 
 func testUpsertDuplicateMarketInSameBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, rfStore := setupRiskFactorTests(t)
 
@@ -141,8 +139,7 @@ func getRiskFactorProto() *vega.RiskFactor {
 }
 
 func testGetMarketRiskFactors(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, rfStore := setupRiskFactorTests(t)
 

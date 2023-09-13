@@ -20,8 +20,7 @@ func addSnapshot(t *testing.T, ctx context.Context, ss *sqlstore.CoreSnapshotDat
 }
 
 func TestGetSnapshots(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ss := sqlstore.NewCoreSnapshotData(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)

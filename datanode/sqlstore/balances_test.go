@@ -60,8 +60,7 @@ func assertBalanceCorrect(t *testing.T, expected, actual *[]entities.AggregatedB
 }
 
 func TestBalances(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blockStore := sqlstore.NewBlocks(connectionSource)
 	assetStore := sqlstore.NewAssets(connectionSource)

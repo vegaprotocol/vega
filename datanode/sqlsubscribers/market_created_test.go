@@ -36,7 +36,6 @@ func Test_MarketCreated_Push(t *testing.T) {
 
 func shouldCallMarketSQLStoreAdd(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	store := mocks.NewMockMarketsStore(ctrl)
 

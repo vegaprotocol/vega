@@ -26,8 +26,7 @@ func setupReferralProgramTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Referra
 
 func TestReferralPrograms_AddReferralProgram(t *testing.T) {
 	bs, rs := setupReferralProgramTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	block := addTestBlock(t, ctx, bs)
 	block2 := addTestBlock(t, ctx, bs)
@@ -206,8 +205,7 @@ func getReferralEvents(t *testing.T, endTime time.Time) (*eventspb.ReferralProgr
 
 func TestReferralPrograms_UpdateReferralProgram(t *testing.T) {
 	bs, rs := setupReferralProgramTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	block := addTestBlock(t, ctx, bs)
 	endTime := block.VegaTime.Add(time.Hour)
@@ -251,8 +249,7 @@ func TestReferralPrograms_UpdateReferralProgram(t *testing.T) {
 
 func TestReferralPrograms_EndReferralProgram(t *testing.T) {
 	bs, rs := setupReferralProgramTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	block := addTestBlock(t, ctx, bs)
 	endTime := block.VegaTime.Add(time.Hour)
@@ -291,8 +288,7 @@ func TestReferralPrograms_EndReferralProgram(t *testing.T) {
 
 func TestReferralPrograms_GetCurrentReferralProgram(t *testing.T) {
 	bs, rs := setupReferralProgramTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	block := addTestBlock(t, ctx, bs)
 	endTime := block.VegaTime.Add(time.Hour)
