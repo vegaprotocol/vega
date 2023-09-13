@@ -52,6 +52,7 @@ func TestPeriodicSettlement(t *testing.T) {
 	t.Run("funding payments with interest rate clamped", testFundingPaymentsWithInterestRateClamped)
 	t.Run("terminate perps market test", testTerminateTrading)
 	t.Run("margin increase", testGetMarginIncrease)
+	t.Run("margin increase, negative payment", TestGetMarginIncreaseNegativePayment)
 	t.Run("test pathological case with out of order points", testOutOfOrderPointsBeforePeriodStart)
 	t.Run("test update perpetual", testUpdatePerpetual)
 }
@@ -711,6 +712,28 @@ func testGetMarginIncrease(t *testing.T) {
 	inc = perp.perpetual.GetMarginIncrease(lastPoint.t)
 	// margin increase is margin_factor * funding-payment = 0.5 * 10
 	assert.Equal(t, "5", inc.String())
+}
+
+func TestGetMarginIncreaseNegativePayment(t *testing.T) {
+	// margin factor is 0.5
+	perp := testPerpetualWithOpts(t, "0", "0", "0", "0.5")
+	defer perp.ctrl.Finish()
+	ctx := context.Background()
+
+	// test data
+	points := getTestDataPoints(t)
+
+	// start funding period
+	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
+	perp.perpetual.OnLeaveOpeningAuction(ctx, 1000)
+
+	// and: the difference in external/internal prices are is 10
+	submitDataWithDifference(t, perp, points, -10)
+
+	lastPoint := points[len(points)-1]
+	inc := perp.perpetual.GetMarginIncrease(lastPoint.t)
+	// margin increase is margin_factor * funding-payment = 0.5 * 10
+	assert.Equal(t, "-5", inc.String())
 }
 
 func testUpdatePerpetual(t *testing.T) {
