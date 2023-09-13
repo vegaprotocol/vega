@@ -747,24 +747,28 @@ func (p *Perpetual) calculateInterestTerm(externalTWAP, internalTWAP *num.Uint, 
 		)
 	}
 
-	result, _ := num.IntFromDecimal(clampedInterest)
+	result, overflow := num.IntFromDecimal(clampedInterest)
+	if overflow {
+		p.log.Panic("overflow converting interest term to Int", logging.String("clampedInterest", clampedInterest.String()))
+	}
 	return result
 }
 
-// GetMarginIncrease returns the estimated extra margin required to account for the next funding payment.
-func (p *Perpetual) GetMarginIncrease(t int64) *num.Uint {
+// GetMarginIncrease returns the estimated extra margin required to account for the next funding payment
+// for a party with a position of +1.
+func (p *Perpetual) GetMarginIncrease(t int64) *num.Int {
 	// if we have no data, or the funding factor is zero, then the margin increase will always be zero
 	if !p.haveData(t) || p.p.MarginFundingFactor.IsZero() {
-		return num.UintZero()
+		return num.IntZero()
 	}
 
 	fundingPayment := p.calculateFundingPayment(t).fundingPayment
 
-	if !fundingPayment.IsPositive() {
-		return num.UintZero()
-	}
 	// apply factor
 	fpD := num.DecimalFromInt(fundingPayment).Mul(p.p.MarginFundingFactor)
-	fp, _ := num.UintFromDecimal(fpD)
+	fp, overflow := num.IntFromDecimal(fpD)
+	if overflow {
+		p.log.Panic("overflow converting margin factor to Int", logging.String("fpD", fpD.String()))
+	}
 	return fp
 }

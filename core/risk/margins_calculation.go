@@ -54,7 +54,7 @@ func newMarginLevels(maintenance num.Decimal, scalingFactors *scalingFactorsUint
 
 // Implementation of the margin calculator per specs:
 // https://github.com/vegaprotocol/product/blob/master/specs/0019-margin-calculator.md
-func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types.RiskFactor, withPotentialBuyAndSell, auction bool, inc *num.Uint) *types.MarginLevels {
+func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types.RiskFactor, withPotentialBuyAndSell, auction bool, inc *num.Int) *types.MarginLevels {
 	var (
 		marginMaintenanceLng num.Decimal
 		marginMaintenanceSht num.Decimal
@@ -224,11 +224,20 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 		}
 	}
 
+	incD := num.DecimalZero()
 	if !inc.IsZero() {
-		incD := num.DecimalFromUint(inc)
+		// calculate margin increase based on position
+		// inc = margin-factor * funding-payment, s = position
+		// incD = max(0, inc * position)
+		s := num.DecimalFromInt64(m.Size()).Div(e.positionFactor)
+		incD = num.MaxD(num.DecimalZero(), num.DecimalFromInt(inc).Mul(s))
+	}
+
+	if !incD.IsZero() {
 		marginMaintenanceLng = marginMaintenanceLng.Add(incD)
 		marginMaintenanceSht = marginMaintenanceSht.Add(incD)
 	}
+
 	// the greatest liability is the most positive number
 	if marginMaintenanceLng.GreaterThan(marginMaintenanceSht) && marginMaintenanceLng.IsPositive() {
 		return newMarginLevels(marginMaintenanceLng, e.scalingFactorsUint)
@@ -238,8 +247,8 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 	}
 
 	// for some reason, margin is negative or zero, let's just use the increment if set:
-	if !inc.IsZero() {
-		return newMarginLevels(num.DecimalFromUint(inc), e.scalingFactorsUint)
+	if !incD.IsZero() {
+		return newMarginLevels(incD, e.scalingFactorsUint)
 	}
 
 	return &types.MarginLevels{
