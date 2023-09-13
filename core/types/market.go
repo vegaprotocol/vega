@@ -164,6 +164,8 @@ const (
 	AuctionTriggerLiquidityTargetNotMet AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET
 	// Governance triggered auction.
 	AuctionTriggerGovernanceSuspension AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_GOVERNANCE_SUSPENSION
+	// AuctionTriggerUnableToDeployLPOrders legacy liquidity provision supports.
+	AuctionTriggerUnableToDeployLPOrders AuctionTrigger = vegapb.AuctionTrigger_AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS
 )
 
 type InstrumentMetadata struct {
