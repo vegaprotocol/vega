@@ -705,27 +705,31 @@ message TeamCreated {
   string team_id = 1;
   // The party that created the team.
   string referrer = 2;
-  // Optional team name to be added to the referral banner.
-  optional string name = 3;
-  // Optional link to a team forum, discord, etc.
+  // Name of the team.
+  string name = 3;
+  // Link to the team's homepage.
   optional string team_url = 4;
-  // Optional link to an image to be used as the team avatar.
+  // Link to an image of the team's avatar.
   optional string avatar_url = 5;
   // Time in Unix nanoseconds when the team is created.
   int64 created_at = 6;
+  // Tells if a party can join the team or not.
+  bool closed = 7;
+  // Epoch at which the team was created.
+  uint64 at_epoch = 8;
 }
 
 message TeamUpdated {
   // The unique identifier for the updated team.
   string team_id = 1;
-  // Optional team name to be added to the referral banner.
-  optional string name = 2;
-  // Optional link to a team forum, discord, etc.
+  // Name of the team.
+  string name = 2;
+  // Link to the team's homepage.
   optional string team_url = 3;
-  // Optional link to an image to be used as the team avatar.
+  // Link to an image of the team's avatar.
   optional string avatar_url = 4;
-  // Time in Unix nanoseconds when the team is created.
-  int64 created_at = 5;
+  // Tells if a party can join the team or not.
+  bool closed = 5;
 }
 
 message RefereeSwitchedTeam {

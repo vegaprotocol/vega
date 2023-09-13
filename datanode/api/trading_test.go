@@ -150,6 +150,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	partyActivityStreak := service.NewPartyActivityStreak(sqlstore.NewPartyActivityStreaks(sqlConn))
 	referralProgramService := service.NewReferralPrograms(sqlstore.NewReferralPrograms(sqlConn))
 	referralSetsService := service.NewReferralSets(sqlstore.NewReferralSets(sqlConn))
+	teamsService := service.NewTeams(sqlstore.NewTeams(sqlConn))
 
 	g := api.NewGRPCServer(
 		logger,
@@ -197,6 +198,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 		partyActivityStreak,
 		referralProgramService,
 		referralSetsService,
+		teamsService,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")
