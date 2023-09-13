@@ -299,6 +299,12 @@ var (
 
 	// Referral Programs.
 	ErrGetCurrentReferralProgram = errors.New("failed to get current referral program")
+
+	// Teams.
+	ErrTeamNotFound           = errors.New("failed to retrieve team")
+	ErrListTeams              = errors.New("failed to list teams")
+	ErrListTeamReferees       = errors.New("failed to list team referees")
+	ErrListTeamRefereeHistory = errors.New("failed to list team referee history")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.
