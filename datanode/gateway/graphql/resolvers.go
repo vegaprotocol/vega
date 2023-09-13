@@ -514,6 +514,18 @@ func (r *VegaResolverRoot) BenefitTier() BenefitTierResolver {
 	return (*benefitTierResolver)(r)
 }
 
+func (r *VegaResolverRoot) Team() TeamResolver {
+	return (*teamResolver)(r)
+}
+
+func (r *VegaResolverRoot) TeamReferee() TeamRefereeResolver {
+	return (*teamRefereeResolver)(r)
+}
+
+func (r *VegaResolverRoot) TeamRefereeHistory() TeamRefereeHistoryResolver {
+	return (*teamRefereeHistoryResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -1548,6 +1560,43 @@ func (r *myQueryResolver) ReferralSetReferees(ctx context.Context, id string, pa
 	}
 
 	return resp.ReferralSetReferees, nil
+}
+
+func (r *myQueryResolver) Teams(ctx context.Context, teamID *string, partyID *string, pagination *v2.Pagination) (*v2.TeamConnection, error) {
+	teams, err := r.tradingDataClientV2.ListTeams(ctx, &v2.ListTeamsRequest{
+		PartyId:    partyID,
+		TeamId:     teamID,
+		Pagination: pagination,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return teams.Teams, nil
+}
+
+func (r *myQueryResolver) TeamReferees(ctx context.Context, teamID string, pagination *v2.Pagination) (*v2.TeamRefereeConnection, error) {
+	referees, err := r.tradingDataClientV2.ListTeamReferees(ctx, &v2.ListTeamRefereesRequest{
+		TeamId:     teamID,
+		Pagination: pagination,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return referees.TeamReferees, nil
+}
+
+func (r *myQueryResolver) TeamRefereeHistory(ctx context.Context, referee string, pagination *v2.Pagination) (*v2.TeamRefereeHistoryConnection, error) {
+	history, err := r.tradingDataClientV2.ListTeamRefereeHistory(ctx, &v2.ListTeamRefereeHistoryRequest{
+		Referee:    referee,
+		Pagination: pagination,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return history.TeamRefereeHistory, nil
 }
 
 // END: Root Resolver

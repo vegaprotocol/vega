@@ -55,6 +55,7 @@ type SQLSubscribers struct {
 	partyActivityStreakStore  *sqlstore.PartyActivityStreaks
 	referralProgramStore      *sqlstore.ReferralPrograms
 	referralSetsStore         *sqlstore.ReferralSets
+	teamsStore                *sqlstore.Teams
 
 	// Services
 	candleService               *candlesv2.Svc
@@ -98,6 +99,7 @@ type SQLSubscribers struct {
 	partyActivityStreakService  *service.PartyActivityStreak
 	referralProgramService      *service.ReferralPrograms
 	referralSetsService         *service.ReferralSets
+	teamsService                *service.Teams
 
 	// Subscribers
 	accountSub              *sqlsubscribers.Account
@@ -139,6 +141,7 @@ type SQLSubscribers struct {
 	partyActivityStreakSub  *sqlsubscribers.PartyActivityStreak
 	referralProgramSub      *sqlsubscribers.ReferralProgram
 	referralSetsSub         *sqlsubscribers.ReferralSets
+	teamsSub                *sqlsubscribers.Teams
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -233,6 +236,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.partyActivityStreakStore = sqlstore.NewPartyActivityStreaks(transactionalConnectionSource)
 	s.referralProgramStore = sqlstore.NewReferralPrograms(transactionalConnectionSource)
 	s.referralSetsStore = sqlstore.NewReferralSets(transactionalConnectionSource)
+	s.teamsStore = sqlstore.NewTeams(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
@@ -279,6 +283,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.fundingPeriodService = service.NewFundingPeriods(s.fundingPeriodStore)
 	s.referralProgramService = service.NewReferralPrograms(s.referralProgramStore)
 	s.referralSetsService = service.NewReferralSets(s.referralSetsStore)
+	s.teamsService = service.NewTeams(s.teamsStore)
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		s.marketDepthService,
@@ -335,4 +340,5 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.partyActivityStreakSub = sqlsubscribers.NewPartyActivityStreak(s.partyActivityStreakService)
 	s.referralProgramSub = sqlsubscribers.NewReferralProgram(s.referralProgramService)
 	s.referralSetsSub = sqlsubscribers.NewReferralSets(s.referralSetsService)
+	s.teamsSub = sqlsubscribers.NewTeams(s.teamsService)
 }

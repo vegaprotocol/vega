@@ -12,7 +12,14 @@ func TheCurrentEpochIs(broker *stubs.BrokerStub, epoch string) error {
 		return err
 	}
 	last := broker.GetCurrentEpoch()
-	if ce := last.Epoch().GetSeq(); ce != seq {
+
+	// If we haven't had an epoch event yet
+	// assume we are on epoch 0
+	ce := uint64(0)
+	if last != nil {
+		ce = last.Epoch().GetSeq()
+	}
+	if ce != seq {
 		return fmt.Errorf("expected current epoch to be %d, instead saw %d", seq, ce)
 	}
 	return nil

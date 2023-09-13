@@ -25,7 +25,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   ];
   host: "https://api.testnet.vega.xyz";
   consumes: "application/json";
-  responses: { // can add more keys here to specify common errors between all endpoints, can also be overwritten per rpc call
+  responses: {// can add more keys here to specify common errors between all endpoints, can also be overwritten per rpc call
     key: "500";
     value: {
       description: "An internal server error";
@@ -757,6 +757,27 @@ service TradingDataService {
 
   rpc GetReferralSetStats(GetReferralSetStatsRequest) returns (GetReferralSetStatsResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referral program"};
+  }
+
+  // List teams
+  //
+  // Get a list of all teams, or for a specific team by using team ID, or party ID of a referrer or referee
+  rpc ListTeams(ListTeamsRequest) returns (ListTeamsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Teams"};
+  }
+
+  // List team referees
+  //
+  // Get a list of all referees for a given team ID
+  rpc ListTeamReferees(ListTeamRefereesRequest) returns (ListTeamRefereesResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Teams"};
+  }
+
+  // List referee team history
+  //
+  // Get a list of a referee's team history, i.e. the teams that a referee has been a member of and transferred from/to.
+  rpc ListTeamRefereeHistory(ListTeamRefereeHistoryRequest) returns (ListTeamRefereeHistoryResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Teams"};
   }
 
   // Export network history as CSV
@@ -3653,4 +3674,138 @@ message ReferralSetStats {
   string referral_set_running_notional_taker_volume = 3;
   // Referees' statistics for that epoch.
   repeated vega.events.v1.RefereeStats referees_stats = 4;
+}
+
+// Team record containing the team information.
+message Team {
+  // ID of the created team.
+  string team_id = 1;
+  // Party ID that created the team.
+  string referrer = 2;
+  // Name of the team.
+  string name = 3;
+  // Link to the team's homepage.
+  optional string team_url = 4;
+  // Link to an image of the team's avatar.
+  optional string avatar_url = 5;
+  // Time in Unix nanoseconds when the team was created.
+  int64 created_at = 6;
+  // Tells if a party can join the team or not.
+  bool closed = 7;
+  // Epoch at which the team was created.
+  uint64 created_at_epoch = 8;
+}
+
+// Team data item with the corresponding cursor.
+message TeamEdge {
+  // Team data
+  Team node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Page of team data and corresponding page information.
+message TeamConnection {
+  // Page of team data and their corresponding cursors.
+  repeated TeamEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+// Request to list all teams
+message ListTeamsRequest {
+  // Optional team ID to filter for a specific team
+  optional string team_id = 1;
+  // Optional party ID to filter by a specific referrer, or referee
+  optional string party_id = 2;
+  // Optional pagination information to limit the data that is returned.
+  optional Pagination pagination = 3;
+}
+
+// Response for the list teams request containing the team information.
+message ListTeamsResponse {
+  // Page of team data and corresponding page information.
+  TeamConnection teams = 1;
+}
+
+// Request that is sent when listing the referees for a given team.
+message ListTeamRefereesRequest {
+  // Team ID to list referees for.
+  string team_id = 1 [(google.api.field_behavior) = REQUIRED];
+  // Optional pagination control
+  optional Pagination pagination = 2;
+}
+
+// A team's referee info
+message TeamReferee {
+  // ID of the team the referee joined.
+  string team_id = 1;
+  // Party that joined the team.
+  string referee = 2;
+  // Time in Unix nanoseconds when the party joined a team.
+  int64 joined_at = 3;
+  // Epoch at which the party joined the team.
+  uint64 joined_at_epoch = 4;
+}
+
+// Team referee data item with the corresponding cursor.
+message TeamRefereeEdge {
+  // Team referee data
+  TeamReferee node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Page of team referee data and corresponding page information.
+message TeamRefereeConnection {
+  // Page of team referee data and their corresponding cursors.
+  repeated TeamRefereeEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+// Response that is sent when listing the referees for a given team.
+message ListTeamRefereesResponse {
+  // Page of team referee data and corresponding page information.
+  TeamRefereeConnection team_referees = 1;
+}
+
+// A referee's team change information
+message TeamRefereeHistory {
+  // ID of the team the referee joined.
+  string team_id = 1;
+  // Time in Unix nanoseconds when the party joined a team.
+  int64 joined_at = 2;
+  // Epoch at which the party joined the team.
+  uint64 joined_at_epoch = 3;
+}
+
+// Team referee history data item with the corresponding cursor.
+message TeamRefereeHistoryEdge {
+  // Team referee data
+  TeamRefereeHistory node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Page of history data about a referee's team membership and corresponding page information.
+message TeamRefereeHistoryConnection {
+  // Page of team referee history data and their corresponding cursors.
+  repeated TeamRefereeHistoryEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+// Request that is sent when listing the referee history for a given team.
+message ListTeamRefereeHistoryRequest {
+  // Party ID to list referee history for.
+  string referee = 1 [(google.api.field_behavior) = REQUIRED];
+  // Optional pagination control
+  optional Pagination pagination = 2;
+}
+
+// Response that is sent when listing the referee history for a given team.
+message ListTeamRefereeHistoryResponse {
+  // Page of team referee history data and corresponding page information.
+  TeamRefereeHistoryConnection team_referee_history = 1;
 }
