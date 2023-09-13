@@ -57,7 +57,7 @@ Feature: Trader below initial margin, but above maintenance can submit an order 
       | party5 | ETH/DEC20 | buy  | 10     | 100   | 1                | TYPE_LIMIT | TIF_FOK | ref-1     |
       | party4 | ETH/DEC20 | buy  | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | party4 | ETH/DEC20 | sell | 10     | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
-       Then debug detailed orderbook volumes for market "ETH/DEC20"
+
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general       |
       | party4 | ETH   | ETH/DEC20 | 132    | 9999999999868 |

@@ -117,8 +117,8 @@ Feature: Simple test creating a perpetual market.
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search       | initial      | release      |
       | trader1 | ETH/DEC19 | 94501904587 | 103952095045 | 113402285504 | 132302666421 |
-    And debug orders
-    And debug detailed orderbook volumes for market "ETH/DEC19"
+
+
     # example of how to use the oracle
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value      | time offset |

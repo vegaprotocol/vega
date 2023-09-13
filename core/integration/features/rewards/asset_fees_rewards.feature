@@ -87,7 +87,6 @@ Feature: Fees reward calculations for a single asset, single market
 
     And the accumulated infrastructure fees should be "0" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
-    # Then debug detailed orderbook volumes for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
       | 1000       | TRADING_MODE_CONTINUOUS |

@@ -39,7 +39,7 @@ Feature: Simple Spot Order between two parties match successfully
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
     And the mark price should be "10000" for the market "BTC/ETH"
 
-    Then debug trades
+
 
     And the following trades should be executed:
       | buyer  | price | size   | seller |

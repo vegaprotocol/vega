@@ -81,7 +81,7 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 100000  | 864       | 1154      | 1012920      | 1000000000     | 60            |
 
-    Then debug detailed orderbook volumes for market "ETH/MAR22"
+
 
     And the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |

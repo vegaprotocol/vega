@@ -63,4 +63,4 @@ Feature: Ensure distressed status events are correctly emitted, both for safe an
     And the parties should have the following profit and loss:
       | party           | volume | unrealised pnl | realised pnl | status                     |
       | designatedLoser | 290    | -8700          | 0            | POSITION_STATUS_DISTRESSED |
-    #And debug all events
+

@@ -563,7 +563,7 @@ Feature: Simple example of successor markets
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
     Then the insurance pool balance should be "6460" for the market "ETH/DEC20"
     And the global insurance pool balance should be "6461" for the asset "USD"
-    Then debug transfers
+
 # make LP commitment while market is still pending
     Then the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | lp type    |

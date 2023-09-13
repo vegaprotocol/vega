@@ -71,8 +71,8 @@ Feature: Basic feature-file matching the system-test setup like for like
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search       | initial      | release      |
       | trader1 | ETH/DEC19 | 94501904587 | 103952095045 | 113402285504 | 132302666421 |
-    And debug orders
-    And debug detailed orderbook volumes for market "ETH/DEC19"
+
+
 
   @SystemTestBase
   Scenario: 002 Funding insurance pool balance by closing a trader out - note this scenario is a template. It does not actually close out the trader, it's just the first steps from the system test. With this scenario, we can check margin requirements before and after MTM settlement
@@ -117,9 +117,9 @@ Feature: Basic feature-file matching the system-test setup like for like
     And the parties should have the following margin levels:
       | party           | market id | maintenance    | search         | initial        | release        |
       | designatedloser | ETH/DEC20 | 14552408502557 | 16007649352812 | 17462890203068 | 20373371903579 |
-    Then debug detailed orderbook volumes for market "ETH/DEC20"
-    And debug orders
-    And debug detailed orderbook volumes for market "ETH/DEC20"
+
+
+
 
 @SystemTestBase
   Scenario: 003 Funding insurance pool 
