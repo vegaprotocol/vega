@@ -403,20 +403,3 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     Then the parties should have the following account balances:
       | party | asset | market id | margin  | general  | bond  |
       | lp1   | USD   | ETH/JAN23 | 2806398 | 17013602 | 22500 |
-
-
-
-# And the network moves ahead "1" epochs
-
-# # LP is paid
-# And the parties should have the following account balances:
-#   | party | asset | market id | margin | general | bond  |
-#   | lp1   | USD   | ETH/JAN23 | 533536 | 1416484 | 50000 |
-
-# Then the parties submit the following liquidity provision:
-#   | id   | party | market id | commitment amount | fee  | lp type    |
-#   | lp_2 | lp2   | ETH/JAN23 | 50000             | 0.02 | submission |
-# And the parties place the following pegged iceberg orders:
-#   | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset | reference |
-#   | lp2   | ETH/JAN23 | 2         | 1                    | buy  | BID              | 100    | 0      | lp-b-2    |
-#   | lp2   | ETH/JAN23 | 2         | 1                    | sell | ASK              | 100    | 0      | lp-s-2    |
