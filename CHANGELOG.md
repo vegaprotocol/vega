@@ -7,6 +7,7 @@
 - [8679](https://github.com/vegaprotocol/vega/issues/8679) - Snapshot configuration `load-from-block-height` no longer accept `-1` as value. To reload from the latest snapshot, it should be valued `0`.
 - [8679](https://github.com/vegaprotocol/vega/issues/8679) - Snapshot configuration `snapshot-keep-recent` only accept values from `1` (included) to `10` (included) .
 - [8944](https://github.com/vegaprotocol/vega/issues/8944) - Asset ID field on the `ExportLedgerEntriesRequest gRPC API` for exporting ledger entries has changed type to make it optional.
+
 ### 🗑️ Deprecation
 
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -93,6 +94,7 @@
 - [9078](https://github.com/vegaprotocol/vega/issues/9078) - Add activity streak `API`.
 - [9351](https://github.com/vegaprotocol/vega/issues/9351) - Avoid using strings in market activity tracker snapshot and checkpoint
 - [9079](https://github.com/vegaprotocol/vega/issues/9079) - Add API to get the current referral program
+- [8916](https://github.com/vegaprotocol/vega/issues/8916) - Add data node `API` for teams.
 
 ### 🐛 Fixes
 

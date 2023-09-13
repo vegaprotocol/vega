@@ -253,12 +253,12 @@ func (e *Engine) moveMembers(ctx context.Context, startEpochTime time.Time, epoc
 	e.teamSwitches = map[types.PartyID]teamSwitch{}
 }
 
-func (e *Engine) notifyTeamCreated(ctx context.Context, teamToAdd *types.Team) {
-	e.broker.Send(events.NewTeamCreatedEvent(ctx, teamToAdd))
+func (e *Engine) notifyTeamCreated(ctx context.Context, createdTeam *types.Team) {
+	e.broker.Send(events.NewTeamCreatedEvent(ctx, e.currentEpoch, createdTeam))
 }
 
-func (e *Engine) notifyTeamUpdated(ctx context.Context, teamsToUpdate *types.Team) {
-	e.broker.Send(events.NewTeamUpdatedEvent(ctx, teamsToUpdate))
+func (e *Engine) notifyTeamUpdated(ctx context.Context, updatedTeam *types.Team) {
+	e.broker.Send(events.NewTeamUpdatedEvent(ctx, updatedTeam))
 }
 
 func (e *Engine) notifyRefereeSwitchedTeam(ctx context.Context, move teamSwitch, membership *types.Membership) {
