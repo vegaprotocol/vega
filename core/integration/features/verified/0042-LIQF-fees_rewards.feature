@@ -33,7 +33,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     Given the average block duration is "2"
 
-  Scenario: 001: 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades (0042-LIQF-001)
+  Scenario: 001: basic test case, 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
@@ -79,12 +79,6 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | sell | 1100  | 1      |
       | sell | 1102  | 4      |
 
-    #volume = ceiling(liquidity_obligation x liquidity-normalised-proportion / price)
-    #priceLvel at 898: 10000 * (1/3) / 898 = 4
-    #priceLvel at 999: 10000 * (2/3) / 999 = 7
-    #priceLvel at 1001: 10000 * (2/3) / 1001 = 7
-    #priceLvel at 1102: 10000 * (1/3) / 1102 = 4
-
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
       | lp1   | 1                 | 10000                   |
@@ -107,7 +101,6 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
       | lp1   | ETH/MAR22 | 1         | 1                    | sell | MID              | 1          | 1      |
       | lp1   | ETH/MAR22 | 1         | 1                    | buy  | MID              | 1          | 1      |
-
 
     Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -178,7 +171,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | from  | to  | from account                   | to account           | market id | amount | asset |
       | lp1   | lp1 | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 28     | USD   |
 
-  Scenario: 002: 2 LPs joining at start, equal commitments (0042-LIQF-002)
+  Scenario: 002: The resulting liquidity-fee-factor is always equal to one of the liquidity provider's individually nominated fee factors  (0042-LIQF-002)
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
@@ -279,7 +272,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 8      | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 8      | USD   |
 
-  Scenario: 003: 2 LPs joining at start, unequal commitments (0042-LIQF-003)
+  Scenario: 003: The resulting liquidity-fee-factor is never less than zero (0042-LIQF-003)
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
@@ -289,11 +282,17 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party2 | USD   | 100000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | lp type    |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | submission |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | submission |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | submission |
-      | lp1 | lp1   | ETH/MAR22 | 8000              | 0.001 | submission |
+      | id  | party | market id | commitment amount | fee    | lp type    | error                           |
+      | lp1 | lp1 | ETH/MAR22 | 8000 | -0.001 | submission | invalid liquidity provision fee |
+
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee | lp type    |
+      | lp1 | lp1 | ETH/MAR22 | 8000 | 0 | submission |
+
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | lp type   |
+      | lp1 | lp1 | ETH/MAR22 | 8000 | 0.001 | amendment |
+
     And the parties place the following pegged iceberg orders:
       | party | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
       | lp1   | ETH/MAR22 | 2         | 1                    | buy  | MID              | 2          | 1      |
@@ -553,8 +552,6 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | name             | value |
       | prices.ETH.value | 1200  |
 
-    # check lp fee distribution at s
-
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
     Then the following transfers should happen:
@@ -562,7 +559,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 19     | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 0      | USD   |
 
-  Scenario: 007 3 LPs joining at start, unequal commitments, check Liquidity fee factors are recalculated every time the liquidity demand estimate changes.(0042-LIQF-005)
+  Scenario: 007 3 LPs joining at start, unequal commitments, check Liquidity fee factors are recalculated every time the liquidity demand estimate changes.(0042-LIQF-001, 0042-LIQF-005)
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
