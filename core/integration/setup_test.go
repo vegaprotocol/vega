@@ -24,7 +24,9 @@ import (
 	"code.vegaprotocol.io/vega/core/evtforward"
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/execution/common"
+	referralcfg "code.vegaprotocol.io/vega/core/integration/steps/referral"
 	"code.vegaprotocol.io/vega/core/notary"
+	"code.vegaprotocol.io/vega/core/referral"
 	"code.vegaprotocol.io/vega/core/rewards"
 	"code.vegaprotocol.io/vega/core/teams"
 	"code.vegaprotocol.io/vega/core/validators"
@@ -68,7 +70,10 @@ func (DummyASVM) GetRewardsVestingMultiplier(_ string) num.Decimal {
 	return num.MustDecimalFromString("0.01")
 }
 
-var marketConfig = market.NewMarketConfig()
+var (
+	marketConfig          = market.NewMarketConfig()
+	referralProgramConfig = referralcfg.NewReferralProgramConfig()
+)
 
 type executionTestSetup struct {
 	cfg              execution.Config
@@ -105,9 +110,11 @@ type executionTestSetup struct {
 	insurancePoolDepositsOverStep map[string]*num.Int
 	eventsBefore                  int
 
-	ntry           *notary.SnapshotNotary
-	stateVarEngine *stubs.StateVarStub
-	witness        *validators.Witness
+	ntry            *notary.SnapshotNotary
+	stateVarEngine  *stubs.StateVarStub
+	witness         *validators.Witness
+	teamsEngine     *teams.Engine
+	referralProgram *referral.Engine
 }
 
 func newExecutionTestSetup() *executionTestSetup {
@@ -116,6 +123,8 @@ func newExecutionTestSetup() *executionTestSetup {
 	} else if execsetup == nil {
 		execsetup = &executionTestSetup{}
 	}
+
+	ctx := context.Background()
 
 	ctrl := gomock.NewController(&reporter)
 	execsetup.ctrl = ctrl
@@ -137,7 +146,9 @@ func newExecutionTestSetup() *executionTestSetup {
 			Quantum: num.MustDecimalFromString("1"),
 		},
 	}
-	execsetup.collateralEngine.EnableAsset(context.Background(), vegaAsset)
+	if err := execsetup.collateralEngine.EnableAsset(ctx, vegaAsset); err != nil {
+		panic(fmt.Errorf("could not enable asset %q: %w", vegaAsset, err))
+	}
 
 	usdt := types.Asset{
 		ID: "USDT",
@@ -147,7 +158,9 @@ func newExecutionTestSetup() *executionTestSetup {
 			Quantum: num.MustDecimalFromString("1"),
 		},
 	}
-	execsetup.collateralEngine.EnableAsset(context.Background(), usdt)
+	if err := execsetup.collateralEngine.EnableAsset(ctx, usdt); err != nil {
+		panic(fmt.Errorf("could not enable asset %q: %w", usdt, err))
+	}
 
 	usdc := types.Asset{
 		ID: "USDC",
@@ -157,7 +170,9 @@ func newExecutionTestSetup() *executionTestSetup {
 			Quantum: num.MustDecimalFromString("1"),
 		},
 	}
-	execsetup.collateralEngine.EnableAsset(context.Background(), usdc)
+	if err := execsetup.collateralEngine.EnableAsset(ctx, usdc); err != nil {
+		panic(fmt.Errorf("could not enable asset %q: %w", usdc, err))
+	}
 
 	execsetup.epochEngine = epochtime.NewService(execsetup.log, epochtime.NewDefaultConfig(), execsetup.broker)
 
@@ -166,11 +181,14 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.stakingAccount = stubs.NewStakingAccountStub()
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.stakingAccount.OnEpochEvent, execsetup.stakingAccount.OnEpochRestore)
 
-	teams := teams.NewEngine(execsetup.epochEngine, execsetup.broker, execsetup.timeService)
-	marketActivityTracker := common.NewMarketActivityTracker(execsetup.log, execsetup.epochEngine, teams, execsetup.stakingAccount)
+	execsetup.teamsEngine = teams.NewEngine(execsetup.epochEngine, execsetup.broker, execsetup.timeService)
+	marketActivityTracker := common.NewMarketActivityTracker(execsetup.log, execsetup.epochEngine, execsetup.teamsEngine, execsetup.stakingAccount)
+	execsetup.referralProgram = referral.NewEngine(execsetup.broker, execsetup.timeService, marketActivityTracker, execsetup.stakingAccount)
+	execsetup.epochEngine.NotifyOnEpoch(execsetup.referralProgram.OnEpoch, execsetup.referralProgram.OnEpochRestore)
+
 	commander := stubs.NewCommanderStub()
 	execsetup.netDeposits = num.UintZero()
-	execsetup.witness = validators.NewWitness(context.Background(), execsetup.log, validators.NewDefaultConfig(), execsetup.topology, commander, execsetup.timeService)
+	execsetup.witness = validators.NewWitness(ctx, execsetup.log, validators.NewDefaultConfig(), execsetup.topology, commander, execsetup.timeService)
 
 	execsetup.ntry = notary.NewWithSnapshot(execsetup.log, notary.NewDefaultConfig(), execsetup.topology, execsetup.broker, commander)
 	execsetup.assetsEngine = stubs.NewAssetStub()
@@ -209,7 +227,7 @@ func newExecutionTestSetup() *executionTestSetup {
 		execsetup.broker,
 	)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.executionEngine.OnEpochEvent, execsetup.executionEngine.OnEpochRestore)
-	execsetup.positionPlugin = plugins.NewPositions(context.Background())
+	execsetup.positionPlugin = plugins.NewPositions(ctx)
 	execsetup.broker.Subscribe(execsetup.positionPlugin)
 
 	execsetup.block = helpers.NewBlock()

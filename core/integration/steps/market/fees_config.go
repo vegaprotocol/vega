@@ -16,6 +16,7 @@ import (
 	"embed"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/integration/steps/helpers"
 	"code.vegaprotocol.io/vega/core/integration/steps/market/defaults"
 	types "code.vegaprotocol.io/vega/protos/vega"
 
@@ -39,7 +40,7 @@ func newFeesConfig(unmarshaler *defaults.Unmarshaler) *feesConfig {
 		config: map[string]*types.Fees{},
 	}
 
-	contentReaders := defaults.ReadAll(defaultFeesConfigs, defaultFeesConfigFileNames)
+	contentReaders := helpers.ReadAll(defaultFeesConfigs, defaultFeesConfigFileNames)
 	for name, contentReader := range contentReaders {
 		feesConfig, err := unmarshaler.UnmarshalFeesConfig(contentReader)
 		if err != nil {

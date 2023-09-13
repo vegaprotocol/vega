@@ -16,6 +16,7 @@ import (
 	"embed"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/integration/steps/helpers"
 	"github.com/jinzhu/copier"
 
 	"code.vegaprotocol.io/vega/core/integration/steps/market/defaults"
@@ -40,7 +41,7 @@ func newPriceMonitoring(unmarshaler *defaults.Unmarshaler) *priceMonitoring {
 		config: map[string]*types.PriceMonitoringSettings{},
 	}
 
-	contentReaders := defaults.ReadAll(defaultPriceMonitoring, defaultPriceMonitoringFileNames)
+	contentReaders := helpers.ReadAll(defaultPriceMonitoring, defaultPriceMonitoringFileNames)
 	for name, contentReader := range contentReaders {
 		pm, err := unmarshaler.UnmarshalPriceMonitoring(contentReader)
 		if err != nil {

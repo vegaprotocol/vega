@@ -493,6 +493,11 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		reporter.Fatalf("fail step invoked")
 	})
 
+	// Referral program steps.
+	s.Step(`^the referral program:$`, func(table *godog.Table) error {
+		return steps.TheReferralProgram(table, referralProgramConfig, execsetup.referralProgram)
+	})
+
 	// Debug steps
 	s.Step(`^debug accounts$`, func() error {
 		steps.DebugAccounts(execsetup.broker, execsetup.log)
