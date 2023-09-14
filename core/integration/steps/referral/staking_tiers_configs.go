@@ -43,7 +43,6 @@ func newStakingTiersConfigs() *stakingTiersConfig {
 
 func (f *stakingTiersConfig) Add(name string, stakingTiers []*types.StakingTier) {
 	f.config[name] = stakingTiers
-	return
 }
 
 func (f *stakingTiersConfig) Get(name string) ([]*types.StakingTier, error) {

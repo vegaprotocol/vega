@@ -98,7 +98,7 @@ func compareRefereesStats(expectedRefereesStats, foundRefereesStats map[types.Pa
 		if errStr != "" {
 			errStr += ", and "
 		}
-		errStr = "unexpected parties: " + strings.Join(unexpectedParties, ", ")
+		errStr += "unexpected parties: " + strings.Join(unexpectedParties, ", ")
 	}
 	if errStr != "" {
 		return errors.New(errStr)

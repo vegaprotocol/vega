@@ -43,7 +43,6 @@ func newBenefitTiersConfigs() *benefitTiersConfig {
 
 func (f *benefitTiersConfig) Add(name string, benefitTiers []*types.BenefitTier) {
 	f.config[name] = benefitTiers
-	return
 }
 
 func (f *benefitTiersConfig) Get(name string) ([]*types.BenefitTier, error) {

@@ -90,7 +90,6 @@ func TheFollowingTradesShouldBeExecuted(
 				(!hasSellerInfraFeeReferrerDiscount || sellerInfraFeeReferrerDiscount == num.MustDecimalFromString(v.SellerFee.InfrastructureFeeReferrerDiscount)) &&
 				(!hasSellerMakerFeeReferrerDiscount || sellerMakerFeeReferrerDiscount == num.MustDecimalFromString(v.SellerFee.MakerFeeReferrerDiscount)) &&
 				(!hasSellerLiqFeeReferrerDiscount || sellerLiqFeeReferrerDiscount == num.MustDecimalFromString(v.SellerFee.LiquidityFeeReferrerDiscount)) {
-
 				found = true
 			}
 		}

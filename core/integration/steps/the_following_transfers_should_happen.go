@@ -19,7 +19,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
-	types "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 func TheFollowingTransfersShouldHappen(
@@ -66,10 +66,13 @@ func errMissingTransfer(row transferRow) error {
 	)
 }
 
-func matchTransfers(ledgerEntries []*types.LedgerEntry, row transferRow) (bool, []uint64) {
+func matchTransfers(ledgerEntries []*vegapb.LedgerEntry, row transferRow) (bool, []uint64) {
 	divergingAmounts := []uint64{}
 	for _, transfer := range ledgerEntries {
 		if transfer.FromAccount.ID() == row.FromAccountID() && transfer.ToAccount.ID() == row.ToAccountID() {
+			if row.Type() != "" && transfer.Type != vegapb.TransferType(vegapb.TransferType_value[row.Type()]) {
+				continue
+			}
 			if stringToU64(transfer.Amount) == row.Amount() {
 				return true, nil
 			}
@@ -88,7 +91,9 @@ func parseTransferTable(table *godog.Table) []RowWrapper {
 		"market id",
 		"amount",
 		"asset",
-	}, []string{})
+	}, []string{
+		"type",
+	})
 }
 
 type transferRow struct {
@@ -99,7 +104,7 @@ func (r transferRow) From() string {
 	return r.row.MustStr("from")
 }
 
-func (r transferRow) FromAccount() types.AccountType {
+func (r transferRow) FromAccount() vegapb.AccountType {
 	return r.row.MustAccount("from account")
 }
 
@@ -111,7 +116,11 @@ func (r transferRow) To() string {
 	return r.row.MustStr("to")
 }
 
-func (r transferRow) ToAccount() types.AccountType {
+func (r transferRow) Type() string {
+	return r.row.Str("type")
+}
+
+func (r transferRow) ToAccount() vegapb.AccountType {
 	return r.row.MustAccount("to account")
 }
 
