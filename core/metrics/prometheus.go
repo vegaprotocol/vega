@@ -56,7 +56,11 @@ var (
 	// Total time counters for each request type per API.
 	apiRequestTimeCounter *prometheus.CounterVec
 	// Total time spent snapshoting.
-	snapshotTimeCounter *prometheus.CounterVec
+	snapshotTimeGauge *prometheus.GaugeVec
+	// Size of the snapshot per namespace.
+	snapshotSizeGauge *prometheus.GaugeVec
+	// Height of the last snapshot.
+	snapshotBlockHeightCounter prometheus.Gauge
 	// Core HTTP bindings that we will check against when updating HTTP metrics.
 	httpBindings *protos.Bindings
 )
@@ -236,7 +240,7 @@ func Start(conf Config) {
 		return
 	}
 	if err := setupMetrics(); err != nil {
-		panic("could not set up metrics")
+		panic(fmt.Sprintf("could not set up metrics: %v", err))
 	}
 	http.Handle(conf.Path, promhttp.Handler())
 	go func() {
@@ -481,8 +485,8 @@ func setupMetrics() error {
 
 	// snapshots times
 	h, err = addInstrument(
-		Counter,
-		"snapshot_time_total",
+		Gauge,
+		"snapshot_time_seconds",
 		Namespace("vega"),
 		Vectors("engine"),
 		Help("Total time spent snapshotting state"),
@@ -490,11 +494,44 @@ func setupMetrics() error {
 	if err != nil {
 		return err
 	}
-	snap, err := h.CounterVec()
+	snap, err := h.GaugeVec()
 	if err != nil {
 		return err
 	}
-	snapshotTimeCounter = snap
+	snapshotTimeGauge = snap
+
+	// snapshots sizes
+	h, err = addInstrument(
+		Gauge,
+		"snapshot_size_bytes",
+		Namespace("vega"),
+		Vectors("engine"),
+		Help("Total size of the snapshotting state"),
+	)
+	if err != nil {
+		return err
+	}
+	snapSize, err := h.GaugeVec()
+	if err != nil {
+		return err
+	}
+	snapshotSizeGauge = snapSize
+
+	// snapshots block heights
+	h, err = addInstrument(
+		Gauge,
+		"snapshot_block_height",
+		Namespace("vega"),
+		Help("Block height of the last snapshot"),
+	)
+	if err != nil {
+		return err
+	}
+	snapBlockHeight, err := h.Gauge()
+	if err != nil {
+		return err
+	}
+	snapshotBlockHeightCounter = snapBlockHeight
 
 	return nil
 }
@@ -603,13 +640,34 @@ func StartAPIRequestAndTimeGRPC(request string) func() {
 	}
 }
 
+func RegisterSnapshotNamespaces(
+	namespace string,
+	timeTaken time.Duration,
+	size int,
+) {
+	if snapshotTimeGauge == nil || snapshotSizeGauge == nil {
+		return
+	}
+	snapshotTimeGauge.WithLabelValues(namespace).Set(timeTaken.Seconds())
+	snapshotSizeGauge.WithLabelValues(namespace).Set(float64(size))
+}
+
+func RegisterSnapshotBlockHeight(
+	blockHeight uint64,
+) {
+	if snapshotBlockHeightCounter == nil {
+		return
+	}
+	snapshotBlockHeightCounter.Set(float64(blockHeight))
+}
+
 func StartSnapshot(namespace string) func() {
 	startTime := time.Now()
 	return func() {
-		if snapshotTimeCounter == nil {
+		if snapshotTimeGauge == nil {
 			return
 		}
 		duration := time.Since(startTime).Seconds()
-		snapshotTimeCounter.WithLabelValues(namespace).Add(duration)
+		snapshotTimeGauge.WithLabelValues(namespace).Set(duration)
 	}
 }

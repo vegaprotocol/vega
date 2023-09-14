@@ -171,6 +171,14 @@ func (e *snapshotV1) loadProvisions(ctx context.Context, provisions []*typespb.L
 		}
 		e.provisions.Set(v.PartyId, provision)
 		evts = append(evts, events.NewLiquidityProvisionEvent(ctx, provision))
+
+		for _, v := range v.Buys {
+			e.legacyOrderIDs = append(e.legacyOrderIDs, v.OrderId)
+		}
+
+		for _, v := range v.Sells {
+			e.legacyOrderIDs = append(e.legacyOrderIDs, v.OrderId)
+		}
 	}
 
 	var err error
