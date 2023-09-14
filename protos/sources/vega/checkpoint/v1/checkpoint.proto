@@ -213,26 +213,47 @@ message MarketTracker {
 message MarketActivityTracker {
   string market = 1;
   string asset = 2;
-  // To be deprecated
   repeated PartyFees maker_fees_received = 3;
   repeated PartyFees maker_fees_paid = 4;
   repeated PartyFees lp_fees = 5;
-  // end deprecation
   string proposer = 6;
   repeated string bonus_paid = 7;
   string value_traded = 8;
   bool ready_to_delete = 9;
 
-  repeated PartyFeeData maker_fees_received_history = 10;
-  repeated PartyFeeData maker_fees_paid_history = 11;
-  repeated PartyFeeData lp_fees_history = 12;
-  repeated TWPositionData time_weighted_position_history = 13;
-  repeated ReturnsData returns_data = 14;
-  repeated TWNotionalPosition time_weighted_notional_position = 15;
+  repeated TWPositionData time_weighted_position = 10;
+  repeated TWNotionalData time_weighted_notional = 11;
+  repeated ReturnsData returns_data = 12;
 
-  DataWithHistory total_maker_fees_received = 16;
-  DataWithHistory total_maker_fees_paid = 17;
-  DataWithHistory total_lp_fees = 18;
+  repeated EpochPartyFees maker_fees_received_history = 13;
+  repeated EpochPartyFees maker_fees_paid_history = 14;
+  repeated EpochPartyFees lp_fees_history = 15;
+
+  repeated EpochTimeWeightPositionData time_weighted_position_data_history = 16;
+  repeated EpochTimeWeightedNotionalData time_weighted_notional_data_history = 17;
+  repeated EpochReturnsData returns_data_history = 18;
+}
+
+message EpochTimeWeightPositionData {
+  repeated PartyTimeWeightedPosition party_time_weighted_positions = 1;
+}
+
+message EpochTimeWeightedNotionalData {
+  repeated PartyTimeWeightedNotional party_time_weighted_notionals = 1;
+}
+
+message PartyTimeWeightedNotional {
+  string party = 1;
+  bytes tw_notional = 2;
+}
+
+message PartyTimeWeightedPosition {
+  string party = 1;
+  uint64 tw_position = 2;
+}
+
+message EpochPartyFees {
+  repeated PartyFeesHistory party_fees = 1;
 }
 
 message TakerNotionalVolume {
@@ -240,40 +261,37 @@ message TakerNotionalVolume {
   bytes volume = 2;
 }
 
-message ReturnsData {
-  string party = 1;
-  DataWithHistory data = 2;
+message EpochReturnsData {
+  repeated ReturnsData returns = 1;
 }
 
-message TWNotionalPosition {
+message ReturnsData {
   string party = 1;
-  bytes position = 2;
-  int64 time = 3;
-  bytes price = 4;
-  bytes tw_notional_position = 5;
+  bytes return = 2;
 }
 
 message TWPositionData {
   string party = 1;
-  bytes position = 2;
+  uint64 position = 2;
   int64 time = 3;
-  DataWithHistory data = 4;
+  uint64 tw_position = 4;
 }
 
-message DataWithHistory {
-  bytes running_total = 1;
-  repeated bytes previous_epochs = 2;
-  uint64 previous_epochs_index = 3;
-}
-
-message PartyFeeData {
+message TWNotionalData {
   string party = 1;
-  DataWithHistory data = 2;
+  bytes notional = 2;
+  int64 time = 3;
+  bytes tw_notional = 4;
 }
 
 message PartyFees {
   string party = 1;
   string fee = 2;
+}
+
+message PartyFeesHistory {
+  string party = 1;
+  bytes fee = 2;
 }
 
 message AssetAction {

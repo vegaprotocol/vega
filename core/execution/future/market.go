@@ -1036,6 +1036,20 @@ func (m *Market) closeCancelledMarket(ctx context.Context) error {
 	return nil
 }
 
+func (m *Market) recordPositionActivity(t *types.Transfer) {
+	if t == nil || t.Amount == nil || t.Amount.Amount == nil {
+		return
+	}
+	amt := t.Amount.Amount.ToDecimal()
+	if t.Type == types.TransferTypeMTMLoss || t.Type == types.TransferTypePerpFundingLoss {
+		amt = t.Amount.Amount.ToDecimal().Mul(num.DecimalMinusOne())
+	}
+	if t.Type == types.TransferTypeMTMWin || t.Type == types.TransferTypeMTMLoss ||
+		t.Type == types.TransferTypePerpFundingWin || t.Type == types.TransferTypePerpFundingLoss {
+		m.marketActivityTracker.RecordM2M(m.settlementAsset, t.Owner, t.Market, amt)
+	}
+}
+
 func (m *Market) closeMarket(ctx context.Context, t time.Time, finalState types.MarketState, settlementPriceInAsset *num.Uint) error {
 	positions, round, err := m.settlement.Settle(t, settlementPriceInAsset)
 	if err != nil {
@@ -1046,9 +1060,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time, finalState types.
 	}
 
 	for _, t := range positions {
-		if t.Type == types.TransferTypeMTMWin {
-			m.marketActivityTracker.RecordM2M(m.settlementAsset, t.Owner, t.Market, t.Amount.Amount.ToDecimal())
-		}
+		m.recordPositionActivity(t)
 	}
 
 	transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions, round)
@@ -2156,7 +2168,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
 
 		for _, mp := range m.position.Update(ctx, trade, conf.PassiveOrdersAffected[idx], conf.Order) {
-			m.marketActivityTracker.RecordPosition(m.settlementAsset, mp.Party(), m.mkt.ID, num.DecimalFromInt64(mp.Size()).Div(m.positionFactor), mp.Price(), m.timeService.GetTimeNow())
+			m.marketActivityTracker.RecordPosition(m.settlementAsset, mp.Party(), m.mkt.ID, mp.Size(), mp.Price(), m.positionFactor, m.timeService.GetTimeNow())
 		}
 
 		// Record open interest change
@@ -2196,12 +2208,7 @@ func (m *Market) confirmMTM(ctx context.Context, skipMargin bool) {
 	settle := m.settlement.SettleMTM(ctx, mp, evts)
 
 	for _, t := range settle {
-		if t.Transfer() != nil && (t.Transfer().Type == types.TransferTypeMTMWin ||
-			t.Transfer().Type == types.TransferTypeMTMLoss ||
-			t.Transfer().Type == types.TransferTypePerpFundingWin ||
-			t.Transfer().Type == types.TransferTypePerpFundingLoss) {
-			m.marketActivityTracker.RecordM2M(m.settlementAsset, t.Party(), t.Transfer().Market, t.Transfer().Amount.Amount.ToDecimal())
-		}
+		m.recordPositionActivity(t.Transfer())
 	}
 
 	// let the product know about the mark-price, incase its the sort of product that cares
@@ -3922,9 +3929,7 @@ func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Num
 	}
 
 	for _, t := range transfers {
-		if t.Transfer() != nil && t.Transfer().Type == types.TransferTypeMTMWin {
-			m.marketActivityTracker.RecordM2M(m.settlementAsset, t.Party(), t.Transfer().Market, t.Transfer().Amount.Amount.ToDecimal())
-		}
+		m.recordPositionActivity(t.Transfer())
 	}
 
 	margins, ledgerMovements, err := m.collateral.PerpsFundingSettlement(ctx, m.GetID(), transfers, m.settlementAsset, round)
