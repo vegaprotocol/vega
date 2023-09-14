@@ -248,7 +248,7 @@ pipeline {
                                 vegaVersion: commitHash,
                                 vegaMarketSim: params.VEGA_MARKET_SIM_BRANCH,
                                 jenkinsSharedLib: params.JENKINS_SHARED_LIB_BRANCH,
-                                branchRun: commitHash != "develop"
+                                branchRun: isPRBuild()
                         }
                     }
                 }
