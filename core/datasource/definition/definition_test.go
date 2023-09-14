@@ -154,6 +154,12 @@ func TestDefinitionIntoProto(t *testing.T) {
 								Name: "test-key-name-0",
 								Type: common.SpecPropertyKeyType(5),
 							},
+							Conditions: []*common.SpecCondition{
+								{
+									Operator: common.SpecConditionOperator(0),
+									Value:    "12",
+								},
+							},
 						},
 					},
 				})
@@ -171,6 +177,10 @@ func TestDefinitionIntoProto(t *testing.T) {
 			assert.IsType(t, &datapb.PropertyKey{}, filters[0].Key)
 			assert.Equal(t, "test-key-name-0", filters[0].Key.Name)
 			assert.Equal(t, datapb.PropertyKey_Type(5), filters[0].Key.Type)
+			assert.Equal(t, 1, len(filters[0].Conditions))
+			assert.IsType(t, &datapb.Condition{}, filters[0].Conditions[0])
+			assert.Equal(t, datapb.Condition_OPERATOR_UNSPECIFIED, filters[0].Conditions[0].Operator)
+			assert.Equal(t, "12", filters[0].Conditions[0].Value)
 			assert.IsType(t, &vegapb.EthCallTrigger{}, eo.Trigger)
 			assert.Equal(t, uint64(256), eo.RequiredConfirmations)
 		})

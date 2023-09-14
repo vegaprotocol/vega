@@ -128,6 +128,14 @@ type BusEvent struct {
 	Event Event `json:"event"`
 }
 
+// Condition describes the condition that must be validated by the data source engine
+type Condition struct {
+	// The type of comparison to make on the value.
+	Operator v1.Condition_Operator `json:"operator"`
+	// The value to compare against.
+	Value *string `json:"value"`
+}
+
 // A mode where Vega tries to execute orders as soon as they are received
 type ContinuousTrading struct {
 	// Size of an increment in price in terms of the quote currency
@@ -366,6 +374,16 @@ type FeeEstimate struct {
 	TotalFeeAmount string `json:"totalFeeAmount"`
 }
 
+// Filter describes the conditions under which oracle data is considered of
+// interest or not.
+type Filter struct {
+	// key is the data source data property key targeted by the filter.
+	Key *PropertyKey `json:"key"`
+	// The conditions that should be matched by the data to be
+	// considered of interest.
+	Conditions []*Condition `json:"conditions"`
+}
+
 // Configuration of a market liquidity monitoring parameters
 type LiquidityMonitoringParameters struct {
 	// Specifies parameters related to target stake calculation
@@ -442,6 +460,11 @@ type NodeSet struct {
 	Demoted []string `json:"demoted"`
 	// Total number of nodes allowed in the node set
 	Maximum *int `json:"maximum"`
+}
+
+type Normaliser struct {
+	Name       string `json:"Name"`
+	Expression string `json:"Expression"`
 }
 
 // The equity like share of liquidity fee for each liquidity provider
@@ -547,6 +570,17 @@ type PriceMonitoringTrigger struct {
 	// breach its theoretical level over the specified horizon at the specified
 	// probability level (> 0)
 	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
+}
+
+// PropertyKey describes the property key contained in a source data.
+type PropertyKey struct {
+	// The name of the property.
+	Name *string `json:"name"`
+	// The type of the property.
+	Type v1.PropertyKey_Type `json:"type"`
+	// An optional decimal place to be applied on the provided value.
+	// Valid only for PropertyType of type DECIMAL, INTEGER.
+	NumberDecimalPlaces *int `json:"numberDecimalPlaces"`
 }
 
 type ProposalVote struct {

@@ -111,6 +111,18 @@ func TestDataSourceDefinitionGetOracle(t *testing.T) {
 										Name: "test-key",
 										Type: v1.PropertyKey_Type(1),
 									},
+									Conditions: []*datapb.Condition{
+										{
+											Operator: datapb.Condition_OPERATOR_EQUALS,
+											Value:    "12",
+										},
+									},
+								},
+							},
+							Normalisers: []*vegapb.Normaliser{
+								{
+									Name:       "test-normaliser-name",
+									Expression: "test-normaliser-expression",
 								},
 							},
 						},
@@ -129,7 +141,11 @@ func TestDataSourceDefinitionGetOracle(t *testing.T) {
 			assert.Equal(t, 1, len(r.Filters))
 			filters := r.Filters
 			assert.Equal(t, 1, len(filters))
-			assert.Equal(t, 0, len(filters[0].Conditions))
+			assert.Equal(t, 1, len(filters[0].Conditions))
+			assert.Equal(t, "test-key", filters[0].Key.Name)
+			assert.Equal(t, 1, len(r.Normalisers))
+			assert.Equal(t, "test-normaliser-name", r.Normalisers[0].Name)
+			assert.Equal(t, "test-normaliser-expression", r.Normalisers[0].Expression)
 		})
 	})
 
@@ -449,7 +465,9 @@ func TestDataSourceDefinitionGetConditions(t *testing.T) {
 
 		assert.IsType(t, r, []entities.Condition{})
 		assert.NotNil(t, r)
-		assert.Equal(t, 0, len(r))
+		assert.Equal(t, 1, len(r))
+		assert.Equal(t, "12", r[0].Value)
+		assert.Equal(t, datapb.Condition_OPERATOR_EQUALS, r[0].Operator)
 	})
 
 	t.Run("non-empry internal data source definition", func(t *testing.T) {
