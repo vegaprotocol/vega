@@ -49,29 +49,7 @@ func (mat *MarketActivityTracker) Stopped() bool {
 	return false
 }
 
-func totalToProto(data *feeData) *checkpoint.DataWithHistory {
-	d := &checkpoint.DataWithHistory{
-		PreviousEpochs:      make([][]byte, 0, len(data.previousEpochs)),
-		PreviousEpochsIndex: uint64(data.previousEpochsIdx),
-	}
-
-	if data.runningTotal != nil {
-		b := data.runningTotal.Bytes()
-		d.RunningTotal = b[:]
-	}
-
-	for _, u := range data.previousEpochs {
-		var v []byte
-		if u != nil {
-			b := u.Bytes()
-			v = b[:]
-		}
-		d.PreviousEpochs = append(d.PreviousEpochs, v)
-	}
-	return d
-}
-
-func returnsDataToProto(partyM2MData map[string]*m2mData) []*checkpoint.ReturnsData {
+func returnsDataToProto(partyM2MData map[string]num.Decimal) []*checkpoint.ReturnsData {
 	parties := make([]string, 0, len(partyM2MData))
 	for k := range partyM2MData {
 		parties = append(parties, k)
@@ -79,76 +57,107 @@ func returnsDataToProto(partyM2MData map[string]*m2mData) []*checkpoint.ReturnsD
 	sort.Strings(parties)
 	data := make([]*checkpoint.ReturnsData, 0, len(parties))
 	for _, party := range parties {
-		pd := partyM2MData[party]
-		pdProto := &checkpoint.ReturnsData{
-			Party: party,
-			Data: &checkpoint.DataWithHistory{
-				PreviousEpochs:      make([][]byte, 0, len(pd.previousEpochs)),
-				PreviousEpochsIndex: uint64(pd.previousEpochsIdx),
-			},
-		}
-		pdProto.Data.RunningTotal, _ = pd.runningTotal.MarshalBinary()
-		for _, u := range pd.previousEpochs {
-			var binary []byte
-			if u != nil {
-				binary, _ = u.MarshalBinary()
-			}
-			pdProto.Data.PreviousEpochs = append(pdProto.Data.PreviousEpochs, binary)
-		}
-		data = append(data, pdProto)
+		rd := &checkpoint.ReturnsData{Party: party}
+		rd.Return, _ = partyM2MData[party].MarshalBinary()
+		data = append(data, rd)
 	}
 	return data
 }
 
-func twNotionalToProto(twNotional map[string]*twNotionalPosition) []*checkpoint.TWNotionalPosition {
+func epochReturnDataToProto(epochData []map[string]num.Decimal) []*checkpoint.EpochReturnsData {
+	ret := make([]*checkpoint.EpochReturnsData, 0, len(epochData))
+	for _, v := range epochData {
+		ed := make([]*checkpoint.ReturnsData, 0, len(v))
+		keys := make([]string, 0, len(v))
+		for k := range v {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, party := range keys {
+			retData := &checkpoint.ReturnsData{
+				Party: party,
+			}
+			retData.Return, _ = v[party].MarshalBinary()
+			ed = append(ed, retData)
+		}
+		ret = append(ret, &checkpoint.EpochReturnsData{Returns: ed})
+	}
+	return ret
+}
+
+func timeWeightedNotionalToProto(twNotional map[string]*twNotional) []*checkpoint.TWNotionalData {
 	parties := make([]string, 0, len(twNotional))
 	for k := range twNotional {
 		parties = append(parties, k)
 	}
 	sort.Strings(parties)
-	data := make([]*checkpoint.TWNotionalPosition, 0, len(parties))
+	data := make([]*checkpoint.TWNotionalData, 0, len(parties))
 	for _, party := range parties {
 		pd := twNotional[party]
-		pdProto := &checkpoint.TWNotionalPosition{
+		pdProto := &checkpoint.TWNotionalData{
 			Party: party,
 			Time:  pd.t.UnixNano(),
 		}
-		pdProto.Position, _ = pd.position.MarshalBinary()
-		if pd.price != nil {
-			b := pd.price.Bytes()
-			pdProto.Price = b[:]
-		}
-		pdProto.TwNotionalPosition, _ = pd.currentEpochTWNotional.MarshalBinary()
+		b := pd.notional.Bytes()
+		pdProto.Notional = b[:]
+		twb := pd.currentEpochTWNotional.Bytes()
+		pdProto.TwNotional = twb[:]
 		data = append(data, pdProto)
 	}
 	return data
 }
 
-func positionHistoryToProto(partyPositionHistory map[string]*twPosition) []*checkpoint.TWPositionData {
-	parties := make([]string, 0, len(partyPositionHistory))
-	for k := range partyPositionHistory {
+func timeWeightedNotionalHistoryToProto(partyNotionalHistory []map[string]*num.Uint) []*checkpoint.EpochTimeWeightedNotionalData {
+	ret := make([]*checkpoint.EpochTimeWeightedNotionalData, 0, len(partyNotionalHistory))
+	for _, v := range partyNotionalHistory {
+		keys := make([]string, 0, len(v))
+		for k := range v {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		epochData := &checkpoint.EpochTimeWeightedNotionalData{PartyTimeWeightedNotionals: make([]*checkpoint.PartyTimeWeightedNotional, 0, len(keys))}
+		for _, party := range keys {
+			partyData := &checkpoint.PartyTimeWeightedNotional{Party: party}
+			b := v[party].Bytes()
+			partyData.TwNotional = b[:]
+			epochData.PartyTimeWeightedNotionals = append(epochData.PartyTimeWeightedNotionals, partyData)
+		}
+		ret = append(ret, epochData)
+	}
+	return ret
+}
+
+func timeWeightedPositionHistoryToProto(partyPositionsHistory []map[string]uint64) []*checkpoint.EpochTimeWeightPositionData {
+	ret := make([]*checkpoint.EpochTimeWeightPositionData, 0, len(partyPositionsHistory))
+	for _, v := range partyPositionsHistory {
+		keys := make([]string, 0, len(v))
+		for k := range v {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		epochData := &checkpoint.EpochTimeWeightPositionData{PartyTimeWeightedPositions: make([]*checkpoint.PartyTimeWeightedPosition, 0, len(keys))}
+		for _, party := range keys {
+			epochData.PartyTimeWeightedPositions = append(epochData.PartyTimeWeightedPositions, &checkpoint.PartyTimeWeightedPosition{Party: party, TwPosition: v[party]})
+		}
+		ret = append(ret, epochData)
+	}
+	return ret
+}
+
+func timeWeightedPositionToProto(partyPositions map[string]*twPosition) []*checkpoint.TWPositionData {
+	parties := make([]string, 0, len(partyPositions))
+	for k := range partyPositions {
 		parties = append(parties, k)
 	}
 	sort.Strings(parties)
 	data := make([]*checkpoint.TWPositionData, 0, len(parties))
 	for _, party := range parties {
-		pd := partyPositionHistory[party]
+		pd := partyPositions[party]
 		pdProto := &checkpoint.TWPositionData{
-			Party: party,
-			Time:  pd.t.UnixNano(),
-			Data: &checkpoint.DataWithHistory{
-				PreviousEpochs:      make([][]byte, 0, len(pd.previousEpochs)),
-				PreviousEpochsIndex: uint64(pd.previousEpochsIdx),
-			},
-		}
-		pdProto.Position, _ = pd.position.MarshalBinary()
-		pdProto.Data.RunningTotal, _ = pd.currentEpochTWPosition.MarshalBinary()
-		for _, u := range pd.previousEpochs {
-			var binary []byte
-			if u != nil {
-				binary, _ = u.MarshalBinary()
-			}
-			pdProto.Data.PreviousEpochs = append(pdProto.Data.PreviousEpochs, binary)
+			Party:      party,
+			Time:       pd.t.UnixNano(),
+			Position:   pd.position,
+			TwPosition: pd.currentEpochTWPosition,
 		}
 		data = append(data, pdProto)
 	}
@@ -171,35 +180,35 @@ func takerNotionalToProto(takerNotional map[string]*num.Uint) []*checkpoint.Take
 	return ret
 }
 
-func marketFeesToProto(partyFees map[string]*feeData) []*checkpoint.PartyFeeData {
+func marketFeesHistoryToProto(feeHistory []map[string]*num.Uint) []*checkpoint.EpochPartyFees {
+	data := make([]*checkpoint.EpochPartyFees, 0, len(feeHistory))
+	for _, v := range feeHistory {
+		keys := make([]string, 0, len(v))
+		for k := range v {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		partyFees := &checkpoint.EpochPartyFees{PartyFees: make([]*checkpoint.PartyFeesHistory, 0, len(keys))}
+		for _, party := range keys {
+			pfh := &checkpoint.PartyFeesHistory{Party: party}
+			b := v[party].Bytes()
+			pfh.Fee = b[:]
+			partyFees.PartyFees = append(partyFees.PartyFees, pfh)
+		}
+		data = append(data, partyFees)
+	}
+	return data
+}
+
+func marketFeesToProto(partyFees map[string]*num.Uint) []*checkpoint.PartyFees {
 	parties := make([]string, 0, len(partyFees))
 	for k := range partyFees {
 		parties = append(parties, k)
 	}
 	sort.Strings(parties)
-	pf := make([]*checkpoint.PartyFeeData, 0, len(parties))
+	pf := make([]*checkpoint.PartyFees, 0, len(parties))
 	for _, party := range parties {
-		pfd := partyFees[party]
-		pfdProto := &checkpoint.PartyFeeData{
-			Party: party,
-			Data: &checkpoint.DataWithHistory{
-				PreviousEpochs:      make([][]byte, 0, len(pfd.previousEpochs)),
-				PreviousEpochsIndex: uint64(pfd.previousEpochsIdx),
-			},
-		}
-		if pfd.runningTotal != nil {
-			b := pfd.runningTotal.Bytes()
-			pfdProto.Data.RunningTotal = b[:]
-		}
-		for _, u := range pfd.previousEpochs {
-			var v []byte
-			if u != nil {
-				b := u.Bytes()
-				v = b[:]
-			}
-			pfdProto.Data.PreviousEpochs = append(pfdProto.Data.PreviousEpochs, v)
-		}
-		pf = append(pf, pfdProto)
+		pf = append(pf, &checkpoint.PartyFees{Party: party, Fee: partyFees[party].String()})
 	}
 	return pf
 }
@@ -212,21 +221,24 @@ func (mt *marketTracker) IntoProto(market string) *checkpoint.MarketActivityTrac
 	sort.Strings(paid)
 
 	return &checkpoint.MarketActivityTracker{
-		Asset:                        mt.asset,
-		Market:                       market,
-		MakerFeesReceivedHistory:     marketFeesToProto(mt.makerFeesReceived),
-		MakerFeesPaidHistory:         marketFeesToProto(mt.makerFeesReceived),
-		LpFeesHistory:                marketFeesToProto(mt.lpFees),
-		TimeWeightedPositionHistory:  positionHistoryToProto(mt.timeWeightedPosition),
-		TimeWeightedNotionalPosition: twNotionalToProto(mt.twNotionalPosition),
-		ReturnsData:                  returnsDataToProto(mt.partyM2M),
-		TotalMakerFeesReceived:       totalToProto(mt.totalMakerFeesReceived),
-		TotalMakerFeesPaid:           totalToProto(mt.totalMakerFeesPaid),
-		TotalLpFees:                  totalToProto(mt.totalLpFees),
-		ValueTraded:                  mt.valueTraded.String(),
-		Proposer:                     mt.proposer,
-		BonusPaid:                    paid,
-		ReadyToDelete:                mt.readyToDelete,
+		Market:                          market,
+		Asset:                           mt.asset,
+		MakerFeesReceived:               marketFeesToProto(mt.makerFeesReceived),
+		MakerFeesPaid:                   marketFeesToProto(mt.makerFeesPaid),
+		LpFees:                          marketFeesToProto(mt.lpFees),
+		Proposer:                        mt.proposer,
+		BonusPaid:                       paid,
+		ValueTraded:                     mt.valueTraded.String(),
+		ReadyToDelete:                   mt.readyToDelete,
+		TimeWeightedPosition:            timeWeightedPositionToProto(mt.twPosition),
+		TimeWeightedNotional:            timeWeightedNotionalToProto(mt.twNotional),
+		ReturnsData:                     returnsDataToProto(mt.partyM2M),
+		MakerFeesReceivedHistory:        marketFeesHistoryToProto(mt.epochMakerFeesReceived),
+		MakerFeesPaidHistory:            marketFeesHistoryToProto(mt.epochMakerFeesPaid),
+		LpFeesHistory:                   marketFeesHistoryToProto(mt.epochLpFees),
+		TimeWeightedPositionDataHistory: timeWeightedPositionHistoryToProto(mt.epochTimeWeightedPosition),
+		TimeWeightedNotionalDataHistory: timeWeightedNotionalHistoryToProto(mt.epochTimeWeightedNotional),
+		ReturnsDataHistory:              epochReturnDataToProto(mt.epochPartyM2M),
 	}
 }
 
@@ -300,215 +312,172 @@ func (mat *MarketActivityTracker) LoadState(ctx context.Context, p *types.Payloa
 func marketTrackerFromProto(tracker *checkpoint.MarketActivityTracker) *marketTracker {
 	valueTrades, _ := num.UintFromString(tracker.ValueTraded, 10)
 	mft := &marketTracker{
-		makerFeesReceived:    map[string]*feeData{},
-		makerFeesPaid:        map[string]*feeData{},
-		lpFees:               map[string]*feeData{},
-		timeWeightedPosition: map[string]*twPosition{},
-		partyM2M:             map[string]*m2mData{},
-		twNotionalPosition:   map[string]*twNotionalPosition{},
-		totalMakerFeesReceived: &feeData{
-			runningTotal:   num.UintZero(),
-			previousEpochs: make([]*num.Uint, maxWindowSize),
-		},
-		totalMakerFeesPaid: &feeData{
-			runningTotal:   num.UintZero(),
-			previousEpochs: make([]*num.Uint, maxWindowSize),
-		},
-		totalLpFees: &feeData{
-			runningTotal:   num.UintZero(),
-			previousEpochs: make([]*num.Uint, maxWindowSize),
-		},
-		valueTraded:   valueTrades,
-		proposer:      tracker.Proposer,
-		proposersPaid: map[string]struct{}{},
-		asset:         tracker.Asset,
-		readyToDelete: tracker.ReadyToDelete,
+		asset:                  tracker.Asset,
+		proposer:               tracker.Proposer,
+		proposersPaid:          map[string]struct{}{},
+		readyToDelete:          tracker.ReadyToDelete,
+		valueTraded:            valueTrades,
+		makerFeesReceived:      map[string]*num.Uint{},
+		makerFeesPaid:          map[string]*num.Uint{},
+		lpFees:                 map[string]*num.Uint{},
+		totalMakerFeesReceived: num.UintZero(),
+		totalMakerFeesPaid:     num.UintZero(),
+		totalLpFees:            num.UintZero(),
+		twPosition:             map[string]*twPosition{},
+		partyM2M:               map[string]num.Decimal{},
+		twNotional:             map[string]*twNotional{},
+
+		epochTotalMakerFeesReceived: []*num.Uint{},
+		epochTotalMakerFeesPaid:     []*num.Uint{},
+		epochTotalLpFees:            []*num.Uint{},
+		epochMakerFeesReceived:      []map[string]*num.Uint{},
+		epochMakerFeesPaid:          []map[string]*num.Uint{},
+		epochLpFees:                 []map[string]*num.Uint{},
+		epochPartyM2M:               []map[string]num.Decimal{},
+		epochTimeWeightedPosition:   []map[string]uint64{},
+		epochTimeWeightedNotional:   []map[string]*num.Uint{},
+		allPartiesCache:             map[string]struct{}{},
 	}
 
 	for _, bpfpa := range tracker.BonusPaid {
 		mft.proposersPaid[bpfpa] = struct{}{}
 	}
 
-	// legacy support for upgrading from an old snapshot/checkpoint
 	if len(tracker.MakerFeesReceived) > 0 {
 		total := num.UintZero()
 		for _, mf := range tracker.MakerFeesReceived {
-			fd := &feeData{
-				previousEpochs:    make([]*num.Uint, maxWindowSize),
-				previousEpochsIdx: 0,
-			}
-			fd.runningTotal, _ = num.UintFromString(mf.Fee, 10)
-			total.AddSum(fd.runningTotal)
-			mft.makerFeesReceived[mf.Party] = fd
+			fee, _ := num.UintFromString(mf.Fee, 10)
+			total.AddSum(fee)
+			mft.makerFeesReceived[mf.Party] = fee
+			mft.allPartiesCache[mf.Party] = struct{}{}
 		}
-		mft.totalMakerFeesReceived = &feeData{
-			runningTotal:      total,
-			previousEpochs:    make([]*num.Uint, maxWindowSize),
-			previousEpochsIdx: 0,
-		}
+		mft.totalMakerFeesReceived = total
 	}
 
 	if len(tracker.MakerFeesPaid) > 0 {
 		total := num.UintZero()
 		for _, mf := range tracker.MakerFeesPaid {
-			fd := &feeData{
-				previousEpochs:    make([]*num.Uint, maxWindowSize),
-				previousEpochsIdx: 0,
-			}
-			fd.runningTotal, _ = num.UintFromString(mf.Fee, 10)
-			total.AddSum(fd.runningTotal)
-			mft.makerFeesPaid[mf.Party] = fd
+			fee, _ := num.UintFromString(mf.Fee, 10)
+			total.AddSum(fee)
+			mft.makerFeesPaid[mf.Party] = fee
+			mft.allPartiesCache[mf.Party] = struct{}{}
 		}
-		mft.totalMakerFeesPaid = &feeData{
-			runningTotal:      total,
-			previousEpochs:    make([]*num.Uint, maxWindowSize),
-			previousEpochsIdx: 0,
-		}
+		mft.totalMakerFeesPaid = total
 	}
 
 	if len(tracker.LpFees) > 0 {
 		total := num.UintZero()
 		for _, mf := range tracker.LpFees {
-			fd := &feeData{
-				previousEpochs:    make([]*num.Uint, maxWindowSize),
-				previousEpochsIdx: 0,
-			}
-			fd.runningTotal, _ = num.UintFromString(mf.Fee, 10)
-			total.AddSum(fd.runningTotal)
-			mft.makerFeesPaid[mf.Party] = fd
+			fee, _ := num.UintFromString(mf.Fee, 10)
+			total.AddSum(fee)
+			mft.lpFees[mf.Party] = fee
+			mft.allPartiesCache[mf.Party] = struct{}{}
 		}
-
-		mft.totalLpFees = &feeData{
-			runningTotal:      total,
-			previousEpochs:    make([]*num.Uint, maxWindowSize),
-			previousEpochsIdx: 0,
-		}
+		mft.totalLpFees = total
 	}
-	// end of legacy support
 
-	if len(tracker.TimeWeightedNotionalPosition) > 0 {
-		for _, tp := range tracker.TimeWeightedNotionalPosition {
-			var position num.Decimal
-			position, _ = num.UnmarshalBinaryDecimal(tp.Position)
-			var price *num.Uint
-			if len(tp.Price) > 0 {
-				price = num.UintFromBytes(tp.Price)
-			}
-			currentEpochTWNotional, _ := num.UnmarshalBinaryDecimal(tp.TwNotionalPosition)
-			data := &twNotionalPosition{
+	if len(tracker.TimeWeightedPosition) > 0 {
+		for _, tp := range tracker.TimeWeightedPosition {
+			mft.twPosition[tp.Party] = &twPosition{
+				position:               tp.Position,
 				t:                      time.Unix(0, tp.Time),
-				position:               position,
-				price:                  price,
-				currentEpochTWNotional: currentEpochTWNotional,
+				currentEpochTWPosition: tp.TwPosition,
 			}
-			mft.twNotionalPosition[tp.Party] = data
+			mft.allPartiesCache[tp.Party] = struct{}{}
 		}
 	}
 
-	if len(tracker.TimeWeightedPositionHistory) > 0 {
-		for _, td := range tracker.TimeWeightedPositionHistory {
-			position, _ := num.UnmarshalBinaryDecimal(td.Position)
-			current, _ := num.UnmarshalBinaryDecimal(td.Data.RunningTotal)
-			data := &twPosition{
-				t:                      time.Unix(0, td.Time),
-				position:               position,
-				previousEpochsIdx:      int(td.Data.PreviousEpochsIndex),
-				currentEpochTWPosition: current,
-				previousEpochs:         make([]*num.Decimal, 0, maxWindowSize),
+	if len(tracker.TimeWeightedNotional) > 0 {
+		for _, tn := range tracker.TimeWeightedNotional {
+			mft.twNotional[tn.Party] = &twNotional{
+				notional:               num.UintFromBytes(tn.Notional),
+				t:                      time.Unix(0, tn.Time),
+				currentEpochTWNotional: num.UintFromBytes(tn.TwNotional),
 			}
-			for _, v := range td.Data.PreviousEpochs {
-				if len(v) > 0 {
-					d, _ := num.UnmarshalBinaryDecimal(v)
-					data.previousEpochs = append(data.previousEpochs, &d)
-				} else {
-					data.previousEpochs = append(data.previousEpochs, nil)
-				}
-			}
-			mft.timeWeightedPosition[td.Party] = data
+			mft.allPartiesCache[tn.Party] = struct{}{}
 		}
 	}
 
 	if len(tracker.ReturnsData) > 0 {
 		for _, rd := range tracker.ReturnsData {
-			runningTotal, _ := num.UnmarshalBinaryDecimal(rd.Data.RunningTotal)
-			data := &m2mData{
-				previousEpochsIdx: int(rd.Data.PreviousEpochsIndex),
-				previousEpochs:    make([]*num.Decimal, 0, maxWindowSize),
-				runningTotal:      runningTotal,
-			}
-			for _, v := range rd.Data.PreviousEpochs {
-				if len(v) > 0 {
-					d, _ := num.UnmarshalBinaryDecimal(v)
-					data.previousEpochs = append(data.previousEpochs, &d)
-				} else {
-					data.previousEpochs = append(data.previousEpochs, nil)
-				}
-			}
-			mft.partyM2M[rd.Party] = data
+			ret, _ := num.UnmarshalBinaryDecimal(rd.Return)
+			mft.partyM2M[rd.Party] = ret
+			mft.allPartiesCache[rd.Party] = struct{}{}
 		}
 	}
 
-	loadFeesHistory(tracker.MakerFeesPaidHistory, mft.makerFeesPaid)
-	loadFeesHistory(tracker.MakerFeesReceivedHistory, mft.makerFeesReceived)
-	loadFeesHistory(tracker.LpFeesHistory, mft.lpFees)
+	mft.epochMakerFeesPaid = loadFeesHistory(tracker.MakerFeesPaidHistory, mft.allPartiesCache)
+	mft.epochMakerFeesReceived = loadFeesHistory(tracker.MakerFeesReceivedHistory, mft.allPartiesCache)
+	mft.epochLpFees = loadFeesHistory(tracker.LpFeesHistory, mft.allPartiesCache)
 
-	if tracker.TotalLpFees != nil {
-		mft.totalLpFees = loadTotalFee(tracker.TotalLpFees)
+	mft.epochTotalMakerFeesPaid = updateTotalHistory(mft.epochMakerFeesPaid)
+	mft.epochTotalMakerFeesReceived = updateTotalHistory(mft.epochMakerFeesReceived)
+	mft.epochTotalLpFees = updateTotalHistory(mft.epochLpFees)
+
+	if len(tracker.TimeWeightedPositionDataHistory) > 0 {
+		for _, etwnd := range tracker.TimeWeightedPositionDataHistory {
+			m := make(map[string]uint64, len(etwnd.PartyTimeWeightedPositions))
+			for _, partyPositions := range etwnd.PartyTimeWeightedPositions {
+				m[partyPositions.Party] = partyPositions.TwPosition
+				mft.allPartiesCache[partyPositions.Party] = struct{}{}
+			}
+			mft.epochTimeWeightedPosition = append(mft.epochTimeWeightedPosition, m)
+		}
 	}
-	if tracker.TotalMakerFeesPaid != nil {
-		mft.totalMakerFeesPaid = loadTotalFee(tracker.TotalMakerFeesPaid)
+
+	if len(tracker.TimeWeightedNotionalDataHistory) > 0 {
+		for _, etwnd := range tracker.TimeWeightedNotionalDataHistory {
+			m := make(map[string]*num.Uint, len(etwnd.PartyTimeWeightedNotionals))
+			for _, partyNotionals := range etwnd.PartyTimeWeightedNotionals {
+				m[partyNotionals.Party] = num.UintFromBytes(partyNotionals.TwNotional)
+				mft.allPartiesCache[partyNotionals.Party] = struct{}{}
+			}
+			mft.epochTimeWeightedNotional = append(mft.epochTimeWeightedNotional, m)
+		}
 	}
-	if tracker.TotalMakerFeesReceived != nil {
-		mft.totalMakerFeesReceived = loadTotalFee(tracker.TotalMakerFeesReceived)
+
+	if len(tracker.ReturnsDataHistory) > 0 {
+		for _, erd := range tracker.ReturnsDataHistory {
+			returns := make(map[string]num.Decimal, len(erd.Returns))
+			for _, rd := range erd.Returns {
+				ret, _ := num.UnmarshalBinaryDecimal(rd.Return)
+				returns[rd.Party] = ret
+				mft.allPartiesCache[rd.Party] = struct{}{}
+			}
+			mft.epochPartyM2M = append(mft.epochPartyM2M, returns)
+		}
 	}
 
 	mft.asset = tracker.Asset
 	return mft
 }
 
-func loadTotalFee(cpFeesData *checkpoint.DataWithHistory) *feeData {
-	var runningTotal *num.Uint
-	if len(cpFeesData.RunningTotal) > 0 {
-		runningTotal = num.UintFromBytes(cpFeesData.RunningTotal)
-	}
-
-	fd := &feeData{
-		runningTotal:      runningTotal,
-		previousEpochsIdx: int(cpFeesData.GetPreviousEpochsIndex()),
-		previousEpochs:    make([]*num.Uint, maxWindowSize),
-	}
-	for i, v := range cpFeesData.PreviousEpochs {
-		if len(v) > 0 {
-			fd.previousEpochs[i] = num.UintFromBytes(v)
-		} else {
-			fd.previousEpochs[i] = nil
+func updateTotalHistory(data []map[string]*num.Uint) []*num.Uint {
+	ret := make([]*num.Uint, 0, len(data))
+	for _, v := range data {
+		total := num.UintZero()
+		for _, u := range v {
+			total.AddSum(u)
 		}
+		ret = append(ret, total)
 	}
-
-	return fd
+	return ret
 }
 
-func loadFeesHistory(cpFeesData []*checkpoint.PartyFeeData, feesData map[string]*feeData) {
+func loadFeesHistory(cpFeesData []*checkpoint.EpochPartyFees, allParties map[string]struct{}) []map[string]*num.Uint {
+	feeData := make([]map[string]*num.Uint, 0, len(cpFeesData))
 	for _, pfd := range cpFeesData {
-		var runningTotal *num.Uint
-		if len(pfd.Data.RunningTotal) > 0 {
-			runningTotal = num.UintFromBytes(pfd.Data.RunningTotal)
+		epochTotal := num.UintZero()
+		m := make(map[string]*num.Uint, len(pfd.PartyFees))
+		for _, pfh := range pfd.PartyFees {
+			fee := num.UintFromBytes(pfh.Fee)
+			m[pfh.Party] = fee
+			epochTotal.AddSum(fee)
+			allParties[pfh.Party] = struct{}{}
 		}
-		data := &feeData{
-			runningTotal:      runningTotal,
-			previousEpochsIdx: int(pfd.Data.PreviousEpochsIndex),
-			previousEpochs:    make([]*num.Uint, 0, maxWindowSize),
-		}
-		for _, v := range pfd.Data.PreviousEpochs {
-			if len(v) == 0 {
-				data.previousEpochs = append(data.previousEpochs, nil)
-			} else {
-				d := num.UintFromBytes(v)
-				data.previousEpochs = append(data.previousEpochs, d)
-			}
-		}
-		feesData[pfd.Party] = data
+		feeData = append(feeData, m)
 	}
+	return feeData
 }
 
 func (mat *MarketActivityTracker) restore(tracker *snapshot.MarketTracker) {
