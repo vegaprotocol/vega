@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"golang.org/x/exp/slices"
 )
@@ -44,6 +45,27 @@ func ReferralSetCreatedEventFromStream(ctx context.Context, be *eventspb.BusEven
 type ReferralSetStatsUpdated struct {
 	*Base
 	e eventspb.ReferralSetStatsUpdated
+}
+
+func (t ReferralSetStatsUpdated) Unwrap() *types.ReferralSetStats {
+	volume, _ := num.UintFromString(t.e.ReferralSetRunningNotionalTakerVolume, 10)
+	stats := map[types.PartyID]*types.RefereeStats{}
+
+	for _, stat := range t.e.RefereesStats {
+		discountFactor, _ := num.DecimalFromString(stat.DiscountFactor)
+		rewardFactor, _ := num.DecimalFromString(stat.RewardFactor)
+		stats[types.PartyID(stat.PartyId)] = &types.RefereeStats{
+			DiscountFactor: discountFactor,
+			RewardFactor:   rewardFactor,
+		}
+	}
+
+	return &types.ReferralSetStats{
+		AtEpoch:                  t.e.AtEpoch,
+		SetID:                    types.ReferralSetID(t.e.SetId),
+		ReferralSetRunningVolume: volume,
+		RefereesStats:            stats,
+	}
 }
 
 func (t ReferralSetStatsUpdated) StreamMessage() *eventspb.BusEvent {

@@ -509,6 +509,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties apply the following referral codes:$`, func(table *godog.Table) error {
 		return steps.PartiesApplyTheFollowingReferralCode(execsetup.referralProgram, table)
 	})
+	s.Step(`the referral set stats for code "([^"]+)" at epoch (\d+) should have a running volume of (\d+):`, func(code, epoch, volume string, table *godog.Table) error {
+		return steps.TheReferralSetStatsShouldBe(execsetup.broker, code, epoch, volume, table)
+	})
 
 	// Debug steps
 	s.Step(`^debug accounts$`, func() error {

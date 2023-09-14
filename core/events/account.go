@@ -15,10 +15,9 @@ package events
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/core/types"
 	ptypes "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-
-	"code.vegaprotocol.io/vega/core/types"
 )
 
 type Acc struct {
