@@ -18,14 +18,13 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/datasource/common"
-	verrors "code.vegaprotocol.io/vega/libs/errors"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
 var (
 	ErrCallSpecIsNil      = errors.New("ethereum call spec proto is nil")
-	ErrInvalidEthereumAbi = errors.New("is not a valid ethereum address")
+	ErrInvalidEthereumAbi = errors.New("is not a valid ethereum abi definition")
 	ErrInvalidCallTrigger = errors.New("ethereum call trigger not valid")
 	ErrInvalidCallArgs    = errors.New("ethereum call args not valid")
 	ErrInvalidFilters     = errors.New("ethereum call filters not valid")
@@ -49,7 +48,7 @@ func SpecFromProto(proto *vegapb.EthCallSpec) (Spec, error) {
 
 	trigger, err := TriggerFromProto(proto.Trigger)
 	if err != nil {
-		return Spec{}, verrors.Join(ErrInvalidCallTrigger, err)
+		return Spec{}, errors.Join(ErrInvalidCallTrigger, err)
 	}
 
 	filters := common.SpecFiltersFromProto(proto.Filters)
@@ -60,7 +59,7 @@ func SpecFromProto(proto *vegapb.EthCallSpec) (Spec, error) {
 	for _, protoArg := range proto.Args {
 		jsonArg, err := protoArg.MarshalJSON()
 		if err != nil {
-			return Spec{}, verrors.Join(ErrInvalidCallArgs, err)
+			return Spec{}, errors.Join(ErrInvalidCallArgs, err)
 		}
 		jsonArgs = append(jsonArgs, string(jsonArg))
 	}
