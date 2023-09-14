@@ -909,11 +909,11 @@ func TestPositionMetric(t *testing.T) {
 	tracker.MarketProposed("a1", "m1", "p1")
 
 	// 100 seconds into the epoch record a position of 100
-	tracker.RecordPosition("a1", "p1", "m1", num.DecimalFromInt64(100), num.NewUint(1), epochStartTime.Add(100*time.Second))
+	tracker.RecordPosition("a1", "p1", "m1", 100, num.NewUint(1), num.DecimalOne(), epochStartTime.Add(100*time.Second))
 
 	// 200 seconds later record another position
 	// pBar = 100 * 300/400 = 75
-	tracker.RecordPosition("a1", "p1", "m1", num.DecimalFromInt64(-200), num.NewUint(2), epochStartTime.Add(400*time.Second))
+	tracker.RecordPosition("a1", "p1", "m1", -200, num.NewUint(2), num.DecimalOne(), epochStartTime.Add(400*time.Second))
 
 	// now end the epoch after 600 seconds
 	// pBar = (1 - 600/1000) * 75 + 200 * 600/1000 = 150
@@ -948,7 +948,7 @@ func TestPositionMetric(t *testing.T) {
 
 	// 600 seconds into the epoch new position is recorded for p1
 	// pBar = 0 * 150 + 1 * 200 = 200
-	tracker.RecordPosition("a1", "p1", "m1", num.DecimalFromInt64(100), num.NewUint(3), epochStartTime.Add(1600*time.Second))
+	tracker.RecordPosition("a1", "p1", "m1", 100, num.NewUint(3), num.DecimalOne(), epochStartTime.Add(1600*time.Second))
 
 	// end the epoch
 	// pBar = 0.6 * 200 + 0.4 * 100 = 160
@@ -1011,8 +1011,8 @@ func TestRelativeReturnMetric(t *testing.T) {
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 	tracker.MarketProposed("a1", "m1", "p1")
 
-	tracker.RecordPosition("a1", "p1", "m1", num.DecimalFromInt64(100), num.NewUint(1), epochStartTime.Add(100*time.Second))
-	tracker.RecordPosition("a1", "p1", "m1", num.DecimalFromInt64(-200), num.NewUint(2), epochStartTime.Add(400*time.Second))
+	tracker.RecordPosition("a1", "p1", "m1", 100, num.NewUint(1), num.DecimalOne(), epochStartTime.Add(100*time.Second))
+	tracker.RecordPosition("a1", "p1", "m1", -200, num.NewUint(2), num.DecimalOne(), epochStartTime.Add(400*time.Second))
 
 	tracker.RecordM2M("a1", "p1", "m1", num.DecimalFromInt64(100))
 	tracker.RecordM2M("a1", "p1", "m1", num.DecimalFromInt64(-120))
@@ -1060,7 +1060,7 @@ func TestRelativeReturnMetric(t *testing.T) {
 
 	// lets run another epoch and make some loss
 	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: epochStartTime.Add(1000 * time.Second)})
-	tracker.RecordPosition("a1", "p1", "m1", num.DecimalFromInt64(100), num.NewUint(2), epochStartTime.Add(1600*time.Second))
+	tracker.RecordPosition("a1", "p1", "m1", 100, num.NewUint(2), num.DecimalOne(), epochStartTime.Add(1600*time.Second))
 	tracker.RecordM2M("a1", "p1", "m1", num.DecimalFromInt64(-8))
 
 	// end the epoch
@@ -1104,12 +1104,12 @@ func setupDefaultTrackerForTest(t *testing.T) *common.MarketActivityTracker {
 	tracker.MarketProposed("asset1", "market4", "me4")
 	tracker.MarketProposed("asset2", "market3", "me3")
 
-	tracker.RecordPosition("asset1", "p1", "market1", num.DecimalFromInt64(100), num.NewUint(1), time.Now())
-	tracker.RecordPosition("asset1", "p1", "market2", num.DecimalFromInt64(200), num.NewUint(2), time.Now())
-	tracker.RecordPosition("asset1", "p2", "market1", num.DecimalFromInt64(300), num.NewUint(3), time.Now())
-	tracker.RecordPosition("asset1", "p3", "market2", num.DecimalFromInt64(400), num.NewUint(4), time.Now())
-	tracker.RecordPosition("asset1", "p3", "market4", num.DecimalFromInt64(500), num.NewUint(5), time.Now())
-	tracker.RecordPosition("asset2", "p4", "market3", num.DecimalFromInt64(600), num.NewUint(6), time.Now())
+	tracker.RecordPosition("asset1", "p1", "market1", 100, num.NewUint(1), num.DecimalOne(), time.Now())
+	tracker.RecordPosition("asset1", "p1", "market2", 200, num.NewUint(2), num.DecimalOne(), time.Now())
+	tracker.RecordPosition("asset1", "p2", "market1", 300, num.NewUint(3), num.DecimalOne(), time.Now())
+	tracker.RecordPosition("asset1", "p3", "market2", 400, num.NewUint(4), num.DecimalOne(), time.Now())
+	tracker.RecordPosition("asset1", "p3", "market4", 500, num.NewUint(5), num.DecimalOne(), time.Now())
+	tracker.RecordPosition("asset2", "p4", "market3", 600, num.NewUint(6), num.DecimalOne(), time.Now())
 
 	tracker.RecordM2M("asset1", "p1", "market1", num.DecimalOne())
 	tracker.RecordM2M("asset1", "p1", "market2", num.DecimalFromInt64(5))
