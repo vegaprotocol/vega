@@ -55,8 +55,7 @@ Feature: Ensure we can enter and leave liquidity auction
     And the network moves ahead "1" blocks
 
     # enter price monitoring auction
-    #Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC19"
-    #And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
+    Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
 
 
     # now we move add back some volume
