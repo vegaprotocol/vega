@@ -1567,6 +1567,20 @@ func (mr *MockLiquidityEngineMockRecorder) GetLastFeeDistributionTime() *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastFeeDistributionTime", reflect.TypeOf((*MockLiquidityEngine)(nil).GetLastFeeDistributionTime))
 }
 
+// GetLegacyOrders mocks base method.
+func (m *MockLiquidityEngine) GetLegacyOrders() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLegacyOrders")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetLegacyOrders indicates an expected call of GetLegacyOrders.
+func (mr *MockLiquidityEngineMockRecorder) GetLegacyOrders() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLegacyOrders", reflect.TypeOf((*MockLiquidityEngine)(nil).GetLegacyOrders))
+}
+
 // IsLiquidityProvider mocks base method.
 func (m *MockLiquidityEngine) IsLiquidityProvider(arg0 string) bool {
 	m.ctrl.T.Helper()

@@ -72,8 +72,8 @@ func (f *Future) SubmitDataPoint(_ context.Context, _ *num.Uint, _ int64) error 
 func (f *Future) OnLeaveOpeningAuction(_ context.Context, _ int64) {
 }
 
-func (f *Future) GetMarginIncrease(_ int64) *num.Uint {
-	return num.UintZero()
+func (f *Future) GetMarginIncrease(_ int64) num.Decimal {
+	return num.DecimalZero()
 }
 
 func (f *Future) NotifyOnSettlementData(listener func(context.Context, *num.Numeric)) {
