@@ -291,7 +291,7 @@ func (f Filter) ToProto() *datapb.Filter {
 
 func FiltersFromProto(filters []*datapb.Filter) []Filter {
 	if len(filters) == 0 {
-		return nil
+		return []Filter{}
 	}
 
 	results := make([]Filter, 0, len(filters))

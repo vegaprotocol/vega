@@ -110,6 +110,7 @@ func NewDataSourceDefinition(tp DataSourceContentType) *DataSourceDefinition {
 						Abi:     "",
 						Args:    []*structpb.Value{},
 						Trigger: &EthCallTrigger{},
+						Normalisers: []*Normaliser{},
 						Filters: []*datapb.Filter{},
 					},
 				},

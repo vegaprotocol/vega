@@ -18,7 +18,7 @@ import (
 
 func TestOracles(t *testing.T) {
 	queries := map[string]string{
-		"OracleDataSourceExternal":     `{ oracleSpecsConnection { edges { node { dataSourceSpec { spec { id createdAt updatedAt status data { sourceType { ... on DataSourceDefinitionExternal { sourceType { ... on DataSourceSpecConfiguration { signers { signer { ... on ETHAddress { address } ... on PubKey { key } } } } } } } } } } } } } }`,
+		"OracleDataSourceExternal":     `{ oracleSpecsConnection { edges { node { dataSourceSpec { spec { id createdAt updatedAt status data { sourceType { ... on DataSourceDefinitionExternal { sourceType { ... on DataSourceSpecConfiguration { signers { signer { ... on ETHAddress { address } ... on PubKey { key } } } filters { key { name  type } conditions { operator value } } } } } } } } } } } } }`,
 		"OracleDataConnectionExternal": `{ oracleSpecsConnection { edges { node { dataConnection { edges { node { externalData { data { matchedSpecIds broadcastAt } } } } } } } } }`,
 	}
 
@@ -29,6 +29,7 @@ func TestOracles(t *testing.T) {
 	}
 
 	queries = map[string]string{
+		"OracleDataSourceExternalEthereum":     `{ oracleSpecsConnection { edges { node { dataSourceSpec { spec { id createdAt updatedAt status data { sourceType { ... on DataSourceDefinitionExternal { sourceType { ... on EthCallSpec { Abi Args Address Method RequiredConfirmations Normalisers { Name Expression } Filters { key { name  type } conditions { operator value } } } } } } } } } } } } }`,
 		"OracleDataConnectionExternalEthereum": `{ oracleSpecsConnection { edges { node { dataConnection { edges { node { externalData { data { matchedSpecIds broadcastAt } } } } } } } } }`,
 	}
 

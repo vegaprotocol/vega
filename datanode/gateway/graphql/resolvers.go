@@ -33,7 +33,6 @@ import (
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	data "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	v1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
@@ -214,8 +213,12 @@ func (r *VegaResolverRoot) Withdrawal() WithdrawalResolver {
 	return (*myWithdrawalResolver)(r)
 }
 
-func (r *VegaResolverRoot) PropertyKey() PropertyKeyResolver {
-	return (*myPropertyKeyResolver)(r)
+func (r *VegaResolverRoot) DataSourceSpecConfigurationTime() DataSourceSpecConfigurationTimeResolver {
+	return (*myDataSourceSpecConfigurationTimeResolver)(r)
+}
+
+func (r *VegaResolverRoot) DataSourceSpecConfigurationTimeTrigger() DataSourceSpecConfigurationTimeTriggerResolver {
+	return (*myDataSourceSpecConfigurationTimeTriggerResolver)(r)
 }
 
 func (r *VegaResolverRoot) LiquidityOrderReference() LiquidityOrderReferenceResolver {
@@ -2304,40 +2307,81 @@ func (m *myDataSourceSpecConfigurationResolver) Signers(_ context.Context, obj *
 	return resolveSigners(obj.Signers), nil
 }
 
-// END: DataSourceSpecConfiguration Resolver
+func (m *myDataSourceSpecConfigurationResolver) Filters(ctx context.Context, obj *vega.DataSourceSpecConfiguration) ([]*Filter, error) {
+	if obj != nil {
+		return resolveFilters(obj.Filters)
+	}
+
+	return nil, errors.New("dataSourceSpecConfiguration object is empty")
+}
+
+// END: DataSourceSpecConfiguration Resolver.
+
+// BEGIN: DataSourceSpecConfigurationTime Resolver.
+type myDataSourceSpecConfigurationTimeResolver VegaResolverRoot
+
+func (m *myDataSourceSpecConfigurationTimeResolver) Conditions(ctx context.Context, obj *vega.DataSourceSpecConfigurationTime) ([]*Condition, error) {
+	if obj != nil {
+		if obj.Conditions != nil {
+			return resolveConditions(obj.Conditions), nil
+		}
+		return nil, errors.New("conditions in internal data source time object are empty")
+	}
+	return nil, errors.New("internal data source time object is empty")
+}
+
+// END: DataSourceSpecConfigurationTime Resolver.
+
+// BEGIN: DataSourceSpecConfigurationTimeTriggerResolver.
+type myDataSourceSpecConfigurationTimeTriggerResolver VegaResolverRoot
+
+func (m *myDataSourceSpecConfigurationTimeTriggerResolver) Conditions(ctx context.Context, obj *vega.DataSourceSpecConfigurationTimeTrigger) ([]*Condition, error) {
+	if obj != nil {
+		if obj.Conditions != nil {
+			return resolveConditions(obj.Conditions), nil
+		}
+		return nil, errors.New("conditions in internal data source time trigger object are empty")
+	}
+	return nil, errors.New("internal data source time trigger object is empty")
+}
+
+// END: DataSourceSpecConfigurationTimeTriggerResolver.
 
 // BEGIN: EthCallSpec Resolver.
 type ethCallSpecResolver VegaResolverRoot
 
-func (m *ethCallSpecResolver) Abi(ctx context.Context, obj *vega.EthCallSpec) ([]string, error) {
+func (m *ethCallSpecResolver) Abi(ctx context.Context, obj *vegapb.EthCallSpec) ([]string, error) {
 	if obj != nil {
 		if len(obj.Abi) > 0 {
 			return []string{obj.Abi}, nil
 		}
 	}
-	return nil, errors.New("ethereum spec object is empty")
+	return nil, errors.New("abi in ethereum spec object is empty")
 }
 
-func (m *ethCallSpecResolver) Args(ctx context.Context, obj *vega.EthCallSpec) ([]string, error) {
+func (m *ethCallSpecResolver) Args(ctx context.Context, obj *vegapb.EthCallSpec) ([]string, error) {
 	if obj != nil {
-		if obj.Args != nil {
-			argsStr := []string{}
-			for _, arg := range obj.Args {
-				argsStr = append(argsStr, arg.String())
+		jsonArgs := []string{}
+		for _, arg := range obj.Args {
+			jsonArg, err := arg.MarshalJSON()
+			if err != nil {
+				return nil, fmt.Errorf("unable to marshal args: %s", arg)
 			}
-			return argsStr, nil
+			jsonArgs = append(jsonArgs, string(jsonArg))
 		}
+		return jsonArgs, nil
 	}
 	return nil, errors.New("ethereum spec object is empty")
 }
 
-func (m *ethCallSpecResolver) Trigger(ctx context.Context, obj *vega.EthCallSpec) (*EthCallTrigger, error) {
+func (m *ethCallSpecResolver) Trigger(_ context.Context, obj *vegapb.EthCallSpec) (*EthCallTrigger, error) {
 	if obj != nil {
 		if obj.Trigger != nil {
 			return &EthCallTrigger{
-				Trigger: resolveTrigger(obj.Trigger),
+				Trigger: resolveTrigger(obj.Trigger.Trigger),
 			}, nil
 		}
+		return nil, errors.New("trigger in ethereum spec object is empty")
 	}
 
 	return nil, errors.New("ethereum spec object is empty")
@@ -2351,7 +2395,32 @@ func (m *ethCallSpecResolver) RequiredConfirmations(ctx context.Context, obj *ve
 	return int(0), errors.New("ethereum spec object is empty")
 }
 
+func (m *ethCallSpecResolver) Normalisers(ctx context.Context, obj *vegapb.EthCallSpec) ([]*Normaliser, error) {
+	if obj != nil {
+		if obj.Normalisers != nil {
+			return resolveNormalisers(obj.Normalisers), nil
+		}
+
+		return nil, errors.New("normalisers in ethereum spec object are empty")
+	}
+
+	return nil, errors.New("ethereum spec object is empty")
+}
+
+func (m *ethCallSpecResolver) Filters(ctx context.Context, obj *vegapb.EthCallSpec) ([]*Filter, error) {
+	if obj != nil {
+		if obj.Filters != nil {
+			return resolveFilters(obj.Filters)
+		}
+
+		return nil, errors.New("filters in ethereum spec object are empty")
+	}
+
+	return nil, errors.New("ethereum spec object is empty")
+}
+
 // END: EthCallSpec resolver.
+
 // BEGIN: Price Level Resolver
 
 type myPriceLevelResolver VegaResolverRoot
@@ -3254,19 +3323,6 @@ func getParty(ctx context.Context, _ *logging.Logger, client TradingDataServiceC
 		return nil, err
 	}
 	return res.Party, nil
-}
-
-// Market Data Resolvers.
-type myPropertyKeyResolver VegaResolverRoot
-
-func (r *myPropertyKeyResolver) NumberDecimalPlaces(ctx context.Context, obj *data.PropertyKey) (*int, error) {
-	ndp := obj.NumberDecimalPlaces
-	if ndp == nil {
-		return nil, nil
-	}
-	indp := new(int)
-	*indp = int(*ndp)
-	return indp, nil
 }
 
 func (r *myQueryResolver) GetMarketDataHistoryConnectionByID(ctx context.Context, marketID string, start, end *int64, pagination *v2.Pagination) (*v2.MarketDataConnection, error) {
