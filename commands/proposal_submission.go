@@ -1578,7 +1578,7 @@ func checkSLAParams(config *protoTypes.LiquiditySLAParameters, parent string) Er
 	lppr, err := num.DecimalFromString(config.PriceRange)
 	if err != nil {
 		errs.AddForProperty(fmt.Sprintf("%s.price_range", parent), ErrIsNotValidNumber)
-	} else if lppr.LessThan(num.DecimalOne()) || lppr.GreaterThan(num.DecimalFromFloat(100)) {
+	} else if lppr.LessThan(num.DecimalZero()) || lppr.GreaterThan(num.DecimalFromFloat(1)) {
 		errs.AddForProperty(fmt.Sprintf("%s.price_range", parent), ErrMustBeWithinRange0100)
 	}
 

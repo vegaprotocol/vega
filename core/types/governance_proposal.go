@@ -113,9 +113,9 @@ const (
 	// ProposalErrorInvalidStateUpdate indicates that a market state update has failed.
 	ProposalErrorInvalidStateUpdate ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_MARKET_STATE_UPDATE
 	// ProposalErrorInvalidSLAParams indicates that liquidity provision SLA params are invalid.
-	ProposalErrorInvalidSLAParams ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_MISSING_SLA_PARAMS
+	ProposalErrorMissingSLAParams ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_MISSING_SLA_PARAMS
 	// ProposalErrorMissingSLAParams indicates that mandatory SLA params for a new or update spot market is missing.
-	ProposalErrorMissingSLAParams ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_SLA_PARAMS
+	ProposalErrorInvalidSLAParams ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_SLA_PARAMS
 	// ProposalErrorInvalidPerpsProduct Market proposal market contained invalid product definition.
 	ProposalErrorInvalidPerpsProduct ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_PERPETUAL_PRODUCT
 	// ProposalErrorInvalidReferralProgram is returned when the referral program proposal is not valid.
