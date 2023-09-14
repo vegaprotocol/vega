@@ -145,7 +145,7 @@ type TradingDataServiceClient interface {
 	// Get transfer by ID
 	//
 	// Get a specific transfer by ID
-	GetTransferByID(ctx context.Context, in *GetTransferByIDRequest, opts ...grpc.CallOption) (*GetTransferByIDResponse, error)
+	GetTransfer(ctx context.Context, in *GetTransferRequest, opts ...grpc.CallOption) (*GetTransferResponse, error)
 	// Get network limits
 	//
 	// Get the network limits relating to asset and market creation
@@ -909,9 +909,9 @@ func (c *tradingDataServiceClient) ListTransfers(ctx context.Context, in *ListTr
 	return out, nil
 }
 
-func (c *tradingDataServiceClient) GetTransferByID(ctx context.Context, in *GetTransferByIDRequest, opts ...grpc.CallOption) (*GetTransferByIDResponse, error) {
-	out := new(GetTransferByIDResponse)
-	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetTransferByID", in, out, opts...)
+func (c *tradingDataServiceClient) GetTransfer(ctx context.Context, in *GetTransferRequest, opts ...grpc.CallOption) (*GetTransferResponse, error) {
+	out := new(GetTransferResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetTransfer", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1961,7 +1961,7 @@ type TradingDataServiceServer interface {
 	// Get transfer by ID
 	//
 	// Get a specific transfer by ID
-	GetTransferByID(context.Context, *GetTransferByIDRequest) (*GetTransferByIDResponse, error)
+	GetTransfer(context.Context, *GetTransferRequest) (*GetTransferResponse, error)
 	// Get network limits
 	//
 	// Get the network limits relating to asset and market creation
@@ -2422,8 +2422,8 @@ func (UnimplementedTradingDataServiceServer) GetMarketDataHistoryByID(context.Co
 func (UnimplementedTradingDataServiceServer) ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTransfers not implemented")
 }
-func (UnimplementedTradingDataServiceServer) GetTransferByID(context.Context, *GetTransferByIDRequest) (*GetTransferByIDResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTransferByID not implemented")
+func (UnimplementedTradingDataServiceServer) GetTransfer(context.Context, *GetTransferRequest) (*GetTransferResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransfer not implemented")
 }
 func (UnimplementedTradingDataServiceServer) GetNetworkLimits(context.Context, *GetNetworkLimitsRequest) (*GetNetworkLimitsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNetworkLimits not implemented")
@@ -3110,20 +3110,20 @@ func _TradingDataService_ListTransfers_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingDataService_GetTransferByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTransferByIDRequest)
+func _TradingDataService_GetTransfer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTransferRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TradingDataServiceServer).GetTransferByID(ctx, in)
+		return srv.(TradingDataServiceServer).GetTransfer(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/datanode.api.v2.TradingDataService/GetTransferByID",
+		FullMethod: "/datanode.api.v2.TradingDataService/GetTransfer",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServiceServer).GetTransferByID(ctx, req.(*GetTransferByIDRequest))
+		return srv.(TradingDataServiceServer).GetTransfer(ctx, req.(*GetTransferRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -4654,8 +4654,8 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_ListTransfers_Handler,
 		},
 		{
-			MethodName: "GetTransferByID",
-			Handler:    _TradingDataService_GetTransferByID_Handler,
+			MethodName: "GetTransfer",
+			Handler:    _TradingDataService_GetTransfer_Handler,
 		},
 		{
 			MethodName: "GetNetworkLimits",

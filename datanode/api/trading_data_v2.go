@@ -2116,8 +2116,8 @@ func (t *TradingDataServiceV2) ListVotes(ctx context.Context, req *v2.ListVotesR
 	}, nil
 }
 
-func (t *TradingDataServiceV2) GetTransferByID(ctx context.Context, req *v2.GetTransferByIDRequest) (*v2.GetTransferByIDResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("GetTransferByIDV2")()
+func (t *TradingDataServiceV2) GetTransfer(ctx context.Context, req *v2.GetTransferRequest) (*v2.GetTransferResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetTransferV2")()
 	if len(req.TransferId) == 0 {
 		return nil, formatE(ErrMissingTransferID)
 	}
@@ -2125,8 +2125,8 @@ func (t *TradingDataServiceV2) GetTransferByID(ctx context.Context, req *v2.GetT
 	if err != nil {
 		return nil, formatE(err)
 	}
-	return &v2.GetTransferByIDResponse{
-		Transfer: transfer.ToProto(),
+	return &v2.GetTransferResponse{
+		Transfer: transfer.ToProto(ctx, t.accountService),
 	}, nil
 }
 

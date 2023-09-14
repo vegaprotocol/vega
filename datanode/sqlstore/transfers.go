@@ -175,10 +175,11 @@ func (t *Transfers) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]
 }
 
 func (t *Transfers) GetByID(ctx context.Context, id string) (entities.Transfer, error) {
-	var t entities.Transfer
+	var tr entities.Transfer
 	query := `SELECT * FROM transfers_current WHERE id=$1`
 
-	return t, t.wrapE(pgxscan.Get(ctx, ps.Connection, &t, query, entities.TransferID(id)))
+	err := pgxscan.Get(ctx, t.Connection, &tr, query, entities.TransferID(id))
+	return tr, t.wrapE(err)
 }
 
 func (t *Transfers) getTransfers(ctx context.Context, pagination entities.CursorPagination, where string, args ...interface{}) ([]entities.Transfer,

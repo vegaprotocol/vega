@@ -47,6 +47,82 @@ func TestTransfersPagination(t *testing.T) {
 	t.Run("should return the specified page of results if last and before are provided", testTransferPaginationLastBefore)
 }
 
+func TestTrasferByID(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	now := time.Now()
+	block := getTestBlock(t, ctx, now)
+	accounts := sqlstore.NewAccounts(connectionSource)
+	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
+
+	transfers := sqlstore.NewTransfers(connectionSource)
+	id := "deadd0d0"
+
+	reason := "test by id"
+	sourceTransferProto := &eventspb.Transfer{
+		Id:              id,
+		From:            accountFrom.PartyID.String(),
+		FromAccountType: accountFrom.Type,
+		To:              accountTo.PartyID.String(),
+		ToAccountType:   accountTo.Type,
+		Asset:           accountFrom.AssetID.String(),
+		Amount:          "30",
+		Reference:       "Ref1",
+		Status:          eventspb.Transfer_STATUS_PENDING,
+		Timestamp:       block.VegaTime.UnixNano(),
+		Kind: &eventspb.Transfer_Recurring{Recurring: &eventspb.RecurringTransfer{
+			StartEpoch: 10,
+			EndEpoch:   nil,
+			Factor:     "0.1",
+			DispatchStrategy: &vega.DispatchStrategy{
+				AssetForMetric: "deadd0d0",
+				Markets:        []string{"beefdead", "feebaad"},
+				Metric:         vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+			},
+		}},
+		Reason: &reason,
+	}
+
+	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
+	transfers.Upsert(ctx, transfer)
+
+	sourceTransferProto2 := &eventspb.Transfer{
+		Id:              id,
+		From:            accountFrom.PartyID.String(),
+		FromAccountType: accountFrom.Type,
+		To:              accountTo.PartyID.String(),
+		ToAccountType:   accountTo.Type,
+		Asset:           accountFrom.AssetID.String(),
+		Amount:          "30",
+		Reference:       "Ref1",
+		Status:          eventspb.Transfer_STATUS_DONE,
+		Timestamp:       block.VegaTime.UnixNano(),
+		Kind: &eventspb.Transfer_Recurring{Recurring: &eventspb.RecurringTransfer{
+			StartEpoch: 10,
+			EndEpoch:   nil,
+			Factor:     "0.1",
+		}},
+	}
+
+	transfer, _ = entities.TransferFromProto(ctx, sourceTransferProto2, generateTxHash(), block.VegaTime, accounts)
+	transfers.Upsert(ctx, transfer)
+
+	retrieved, err := transfers.GetByID(ctx, id)
+	if err != nil {
+		t.Fatalf("f%s", err)
+	}
+	retrievedTransferProto, _ := retrieved.ToProto(ctx, accounts)
+	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
+
+	retrievedByParty, _, err := transfers.GetTransfersToParty(ctx, accountTo.PartyID, entities.CursorPagination{})
+	if err != nil {
+		t.Fatalf("f%s", err)
+	}
+	assert.Equal(t, 1, len(retrievedByParty))
+	retrievedTransferProto, _ = retrievedByParty[0].ToProto(ctx, accounts)
+	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
+}
+
 func testTransfersGetTransferToOrFromParty(t *testing.T) {
 	ctx := tempTransaction(t)
 

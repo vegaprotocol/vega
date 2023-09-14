@@ -45,6 +45,8 @@ http:
       get: "/api/v2/market/data/{market_id}"
     - selector: datanode.api.v2.TradingDataService.ListTransfers
       get: "/api/v2/transfers"
+    - selector: datanode.api.v2.TradingDataService.GetTransfer
+      get: "/api/v2/transfer/{transfer_id}"
     - selector: datanode.api.v2.TradingDataService.GetNetworkLimits
       get: "/api/v2/network/limits"
     - selector: datanode.api.v2.TradingDataService.ListCandleData

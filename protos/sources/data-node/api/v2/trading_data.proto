@@ -227,7 +227,7 @@ service TradingDataService {
   // Get transfer by ID
   //
   // Get a specific transfer by ID
-  rpc GetTransferByID(GetTransferByIDRequest) returns (GetTransferByIDResponse) {
+  rpc GetTransfer(GetTransferRequest) returns (GetTransferResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Transfers"};
   }
 
@@ -1621,14 +1621,14 @@ message TransferConnection {
 }
 
 // Request that is sent for getting a transfer by ID
-message GetTransferByIDRequest {
+message GetTransferRequest {
   // Transfer ID to request data for.
   string transfer_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Response that is received when querying transfers by ID
-message GetTransferByIDResponse {
-  // page containing the transfer requested by ID.
+message GetTransferResponse {
+  // Transfer requested by ID.
   vega.events.v1.Transfer transfer = 1;
 }
 
