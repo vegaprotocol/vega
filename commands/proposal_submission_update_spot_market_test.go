@@ -1055,7 +1055,7 @@ func testUpdateSpotMarketChangeSubmissionWithValidLpRangeSucceeds(t *testing.T) 
 
 func testUpdateSpotMarketChangeSubmissionWithInvalidLpRangeFails(t *testing.T) {
 	priceRanges := []string{"banana", "-1", "0", "101"}
-	errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBePositive, commands.ErrMustBePositive, commands.ErrMustBeAtMost100}
+	errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBeWithinRange0120, commands.ErrMustBeWithinRange0120, commands.ErrMustBeWithinRange0120}
 
 	for i, v := range priceRanges {
 		err := checkProposalSubmission(&commandspb.ProposalSubmission{
