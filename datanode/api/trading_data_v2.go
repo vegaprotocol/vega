@@ -2125,8 +2125,12 @@ func (t *TradingDataServiceV2) GetTransfer(ctx context.Context, req *v2.GetTrans
 	if err != nil {
 		return nil, formatE(err)
 	}
+	tp, err := transfer.ToProto(ctx, t.accountService)
+	if err != nil {
+		return nil, formatE(err)
+	}
 	return &v2.GetTransferResponse{
-		Transfer: transfer.ToProto(ctx, t.accountService),
+		Transfer: tp,
 	}, nil
 }
 
