@@ -29,6 +29,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/referral"
 	"code.vegaprotocol.io/vega/core/snapshot"
+	"code.vegaprotocol.io/vega/core/teams"
 	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	"go.uber.org/zap"
 
@@ -2262,10 +2263,17 @@ func (app *App) ApplyReferralCode(ctx context.Context, tx abci.Tx) error {
 
 	// it's OK to switch team if the party was already a referrer / referee
 	if err != nil &&
-		!errors.Is(err, referral.ErrIsAlreadyAReferee(partyID)) &&
-		!errors.Is(err, referral.ErrIsAlreadyAReferrer(partyID)) {
+		err.Error() != referral.ErrIsAlreadyAReferee(partyID).Error() &&
+		err.Error() != referral.ErrIsAlreadyAReferrer(partyID).Error() {
 		return fmt.Errorf("could not apply the referral code: %w", err)
 	}
 
-	return app.teamsEngine.JoinTeam(ctx, partyID, params)
+	teamID := types.TeamID(params.Id)
+	err = app.teamsEngine.JoinTeam(ctx, partyID, params)
+	// this is ok as well, as not all referral sets are teams as well
+	if err != nil && err.Error() == teams.ErrNoTeamMatchesID(teamID).Error() {
+		return fmt.Errorf("couldn't join team: %w", err)
+	}
+
+	return nil
 }
