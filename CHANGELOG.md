@@ -177,6 +177,7 @@
 - [9305](https://github.com/vegaprotocol/vega/issues/9305) - Properly propagate `providersFeeCalculationTimeStep` parameter
 - [9374](https://github.com/vegaprotocol/vega/issues/9374) - `ListGovernanceData` ignored reference filter.
 - [9385](https://github.com/vegaprotocol/vega/issues/9385) - Support deprecated liquidity auction type for compatibility
+- [9398](https://github.com/vegaprotocol/vega/issues/9398) - Fix division by zero panic in market liquidity
 
 ## 0.72.1
 

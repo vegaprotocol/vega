@@ -154,6 +154,10 @@ func (m *MarketLiquidity) applyPendingProvisions(
 
 		// min(-proposedCommitmentVariation, bondAccountBalance)
 		commitmentVariation := num.MinD(proposedCommitmentVariation.Neg(), acc.Balance.ToDecimal())
+		if commitmentVariation.IsZero() {
+			continue
+		}
+
 		commitmentVariationPerParty[partyID] = commitmentVariation
 		sumOfCommitmentVariations = sumOfCommitmentVariations.Add(commitmentVariation)
 	}
