@@ -2271,7 +2271,7 @@ func (app *App) ApplyReferralCode(ctx context.Context, tx abci.Tx) error {
 	teamID := types.TeamID(params.Id)
 	err = app.teamsEngine.JoinTeam(ctx, partyID, params)
 	// this is ok as well, as not all referral sets are teams as well
-	if err != nil && err.Error() == teams.ErrNoTeamMatchesID(teamID).Error() {
+	if err != nil && err.Error() != teams.ErrNoTeamMatchesID(teamID).Error() {
 		return fmt.Errorf("couldn't join team: %w", err)
 	}
 
