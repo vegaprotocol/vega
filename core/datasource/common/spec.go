@@ -63,7 +63,7 @@ func SpecConditionFromProto(protoCondition *datapb.Condition) *SpecCondition {
 type SpecConditions []*SpecCondition
 
 func (sc SpecConditions) IntoProto() []*datapb.Condition {
-	protoConditions := make([]*datapb.Condition, 0, len(sc))
+	protoConditions := []*datapb.Condition{}
 	for _, condition := range sc {
 		protoConditions = append(protoConditions, condition.IntoProto())
 	}
@@ -82,7 +82,7 @@ func (sc SpecConditions) String() string {
 }
 
 func SpecConditionsFromProto(protoConditions []*datapb.Condition) []*SpecCondition {
-	conditions := make([]*SpecCondition, 0, len(protoConditions))
+	conditions := []*SpecCondition{}
 	for _, protoCondition := range protoConditions {
 		conditions = append(conditions, SpecConditionFromProto(protoCondition))
 	}

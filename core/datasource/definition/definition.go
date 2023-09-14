@@ -66,10 +66,11 @@ func New(tp ContentType) *Definition {
 	case ContentTypeEthOracle:
 		return NewWith(
 			ethcallcommon.Spec{
-				AbiJson:  []byte{},
-				ArgsJson: []string{},
-				Trigger:  &ethcallcommon.TimeTrigger{},
-				Filters:  common.SpecFilters{},
+				AbiJson:     []byte{},
+				ArgsJson:    []string{},
+				Trigger:     &ethcallcommon.TimeTrigger{},
+				Normalisers: map[string]string{},
+				Filters:     common.SpecFilters{},
 			})
 	case ContentTypeInternalTimeTermination:
 		return NewWith(

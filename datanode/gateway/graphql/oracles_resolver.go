@@ -14,6 +14,7 @@ package gql
 
 import (
 	"context"
+	"errors"
 
 	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -71,16 +72,18 @@ func (o *oracleDataResolver) ExternalData(_ context.Context, obj *vegapb.OracleD
 }
 
 func resolveTrigger(obj any) (trigger TriggerKind) {
-	switch trig := obj.(type) {
-	case *vegapb.EthCallTrigger_TimeTrigger:
-		if trig.TimeTrigger != nil {
-			init := int64(*trig.TimeTrigger.Initial)
-			every := int64(*trig.TimeTrigger.Every)
-			until := int64(*trig.TimeTrigger.Until)
-			trigger = &EthTimeTrigger{
-				Initial: &init,
-				Every:   &every,
-				Until:   &until,
+	if obj != nil {
+		switch trig := obj.(type) {
+		case *vegapb.EthCallTrigger_TimeTrigger:
+			if trig.TimeTrigger != nil {
+				init := int64(trig.TimeTrigger.GetInitial())
+				every := int64(trig.TimeTrigger.GetEvery())
+				until := int64(trig.TimeTrigger.GetUntil())
+				trigger = &EthTimeTrigger{
+					Initial: &init,
+					Every:   &every,
+					Until:   &until,
+				}
 			}
 		}
 	}
@@ -102,6 +105,100 @@ func resolveSigner(obj any) (signer SignerKind) {
 	case *v1.Signer_EthAddress:
 		signer = &ETHAddress{Address: &sig.EthAddress.Address}
 	}
+	return
+}
+
+func resolveFilters(obj []*v1.Filter) (filters []*Filter, e error) {
+	filters = []*Filter{}
+	if obj != nil {
+		for _, f := range obj {
+			if f != nil {
+				filter, err := resolveFilter(f)
+				if err != nil {
+					e = err
+					return
+				}
+				filters = append(filters, filter)
+			}
+		}
+		return
+	}
+
+	return
+}
+
+func resolveFilter(obj *v1.Filter) (filter *Filter, e error) {
+	filter = &Filter{
+		Key:        &PropertyKey{},
+		Conditions: []*Condition{},
+	}
+
+	if obj.Key != nil {
+		filter.Key = &PropertyKey{
+			Name: &obj.Key.Name,
+			Type: obj.Key.Type,
+		}
+
+		if obj.Key.NumberDecimalPlaces != nil {
+			indp := new(int)
+			*indp = int(*obj.Key.NumberDecimalPlaces)
+			filter.Key.NumberDecimalPlaces = indp
+		}
+	} else {
+		e = errors.New("Property key is empty")
+		return
+	}
+
+	if obj.Conditions != nil || len(obj.Conditions) > 0 {
+		filter.Conditions = resolveConditions(obj.Conditions)
+	} else {
+		e = errors.New("Conditions list is empty")
+		return
+	}
+
+	return
+}
+
+func resolveConditions(obj []*v1.Condition) (conditions []*Condition) {
+	conditions = []*Condition{}
+	for _, c := range obj {
+		conditions = append(
+			conditions,
+			&Condition{
+				Operator: c.Operator,
+				Value:    &c.Value,
+			},
+		)
+	}
+	return
+}
+
+func resolveNormalisers(obj []*vegapb.Normaliser) (normalisers []*Normaliser) {
+	if obj != nil {
+		for _, n := range obj {
+			normalisers = append(normalisers, resolveNormaliser(n))
+		}
+		return
+	}
+
+	normalisers = []*Normaliser{}
+	return
+}
+
+func resolveNormaliser(obj any) (normaliser *Normaliser) {
+	normaliser = &Normaliser{}
+
+	// if obj != nil {
+	switch norm := obj.(type) {
+	case *vegapb.Normaliser:
+		normaliser = &Normaliser{
+			Name:       norm.Name,
+			Expression: norm.Expression,
+		}
+		// return
+	}
+	//}
+
 	return
 }
 

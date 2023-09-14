@@ -125,7 +125,7 @@ func testGetSpecByID(t *testing.T) {
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
-	assert.Equal(t, 5, rowCount)
+	assert.Equal(t, 6, rowCount)
 
 	got, err := os.GetSpecByID(ctx, "DEADBEEF")
 	require.NoError(t, err)
@@ -142,6 +142,15 @@ func testGetSpecByID(t *testing.T) {
 	require.NoError(t, err)
 
 	want = entities.DataSourceSpecFromProto(specProtos[4].ExternalDataSourceSpec.Spec, got.ExternalDataSourceSpec.Spec.TxHash, block.VegaTime)
+	want.UpdatedAt = want.UpdatedAt.Truncate(time.Microsecond)
+	want.CreatedAt = want.CreatedAt.Truncate(time.Microsecond)
+	s = got.ExternalDataSourceSpec.Spec
+	assert.Equal(t, want, s)
+
+	got, err = os.GetSpecByID(ctx, "beef000e")
+	require.NoError(t, err)
+
+	want = entities.DataSourceSpecFromProto(specProtos[5].ExternalDataSourceSpec.Spec, got.ExternalDataSourceSpec.Spec.TxHash, block.VegaTime)
 	want.UpdatedAt = want.UpdatedAt.Truncate(time.Microsecond)
 	want.CreatedAt = want.CreatedAt.Truncate(time.Microsecond)
 	s = got.ExternalDataSourceSpec.Spec
@@ -169,7 +178,7 @@ func testGetSpecByTxHash(t *testing.T) {
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
-	assert.Equal(t, 5, rowCount)
+	assert.Equal(t, 6, rowCount)
 
 	foundSpecs, err := os.GetByTxHash(ctx, specs[0].ExternalDataSourceSpec.Spec.TxHash)
 	require.NoError(t, err)
@@ -330,6 +339,44 @@ func getTestSpecs() []*vegapb.OracleSpec {
 										},
 									},
 								},
+								Trigger: &vegapb.EthCallTrigger{
+									Trigger: &vegapb.EthCallTrigger_TimeTrigger{
+										TimeTrigger: &vegapb.EthTimeTrigger{
+											Initial: &timeNow,
+										},
+									},
+								},
+								RequiredConfirmations: 256,
+								Filters: []*datapb.Filter{
+									{
+										Key: &datapb.PropertyKey{
+											Name: "test-key-name-0",
+											Type: dstypes.SpecPropertyKeyType(2),
+										},
+									},
+								},
+							},
+						},
+					),
+					Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
+				},
+			},
+		},
+		{
+			ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
+				Spec: &vegapb.DataSourceSpec{
+					Id:        "beef000e",
+					CreatedAt: time.Now().UnixNano(),
+					UpdatedAt: time.Now().UnixNano(),
+					Data: vegapb.NewDataSourceDefinition(
+						vegapb.DataSourceContentTypeEthOracle,
+					).SetOracleConfig(
+						&vega.DataSourceDefinitionExternal_EthOracle{
+							EthOracle: &vegapb.EthCallSpec{
+								Address: "some-eth-address",
+								Abi:     "{\"string-value\"}",
+								Method:  "test-method",
+								// Args: []*structpb.Value{},
 								Trigger: &vegapb.EthCallTrigger{
 									Trigger: &vegapb.EthCallTrigger_TimeTrigger{
 										TimeTrigger: &vegapb.EthTimeTrigger{

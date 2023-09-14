@@ -342,12 +342,6 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega/data/v1.InternalTimeTrigger
   OracleSpec:
     model: code.vegaprotocol.io/vega/protos/vega.OracleSpec
-  Filter:
-    model: code.vegaprotocol.io/vega/protos/vega/data/v1.Filter
-  PropertyKey:
-    model: code.vegaprotocol.io/vega/protos/vega/data/v1.PropertyKey
-  Condition:
-    model: code.vegaprotocol.io/vega/protos/vega/data/v1.Condition
   OracleData:
     model: code.vegaprotocol.io/vega/protos/vega.OracleData
     fields:
