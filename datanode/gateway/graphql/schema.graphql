@@ -858,6 +858,9 @@ type Query {
     pagination: Pagination
   ): TransferConnection
 
+  "Find a transfer using its ID"
+  transfer("ID of the transfer" id: ID!): Transfer
+
   "Find a withdrawal using its ID"
   withdrawal("ID of the withdrawal" id: ID!): Withdrawal
 

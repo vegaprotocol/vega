@@ -95,6 +95,7 @@
 - [9351](https://github.com/vegaprotocol/vega/issues/9351) - Avoid using strings in market activity tracker snapshot and checkpoint
 - [9079](https://github.com/vegaprotocol/vega/issues/9079) - Add API to get the current referral program
 - [8916](https://github.com/vegaprotocol/vega/issues/8916) - Add data node `API` for teams.
+- [7461](https://github.com/vegaprotocol/vega/issues/7461) - Add endpoint to get transfer by ID.
 
 ### 🐛 Fixes
 

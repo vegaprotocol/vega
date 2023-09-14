@@ -700,6 +700,17 @@ func (r *myQueryResolver) TransfersConnection(ctx context.Context, partyID *stri
 	return r.r.transfersConnection(ctx, partyID, direction, pagination)
 }
 
+func (r *myQueryResolver) Transfer(ctx context.Context, id string) (*eventspb.Transfer, error) {
+	req := v2.GetTransferRequest{
+		TransferId: id,
+	}
+	resp, err := r.tradingDataClientV2.GetTransfer(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Transfer, nil
+}
+
 func (r *myQueryResolver) LastBlockHeight(ctx context.Context) (string, error) {
 	resp, err := r.tradingProxyClient.LastBlockHeight(ctx, &vegaprotoapi.LastBlockHeightRequest{})
 	if err != nil {
