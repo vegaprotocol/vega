@@ -835,18 +835,16 @@ func (b *BrokerStub) GetMarketSettlementAccount(market string) (vegapb.Account, 
 }
 
 // GetPartyGeneralAccount returns the latest event WRT the party's general account.
-func (b *BrokerStub) GetPartyGeneralAccount(party, asset string) (ga vegapb.Account, err error) {
+func (b *BrokerStub) GetPartyGeneralAccount(party, asset string) (vegapb.Account, error) {
 	batch := b.GetAccountEvents()
-	err = errors.New("account does not exist")
 	for _, e := range batch {
 		v := e.Account()
 		if v.Owner == party && v.Type == vegapb.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
-			ga = v
-			err = nil
+			return v, nil
 		}
 	}
 
-	return
+	return vegapb.Account{}, errors.New("account does not exist")
 }
 
 // GetPartyVestingAccount returns the latest event WRT the party's general account.
@@ -950,6 +948,28 @@ func (b *BrokerStub) GetPartyBondAccountForMarket(party, asset, marketID string)
 		}
 	}
 	return
+}
+
+func (b *BrokerStub) GetPartyVestingAccountForMarket(party, asset, marketID string) (vegapb.Account, error) {
+	batch := b.GetAccountEvents()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == party && v.Type == vegapb.AccountType_ACCOUNT_TYPE_VESTING_REWARDS && v.Asset == asset && v.MarketId == marketID {
+			return v, nil
+		}
+	}
+	return vegapb.Account{}, errors.New("account does not exist")
+}
+
+func (b *BrokerStub) GetPartyVestedAccountForMarket(party, asset, marketID string) (vegapb.Account, error) {
+	batch := b.GetAccountEvents()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == party && v.Type == vegapb.AccountType_ACCOUNT_TYPE_VESTED_REWARDS && v.Asset == asset && v.MarketId == marketID {
+			return v, nil
+		}
+	}
+	return vegapb.Account{}, errors.New("account does not exist")
 }
 
 func (b *BrokerStub) ClearOrderByReference(party, ref string) error {
