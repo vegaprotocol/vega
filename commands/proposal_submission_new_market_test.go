@@ -5491,7 +5491,7 @@ func testFutureMarketSubmissionWithInternalTimeTriggerSettlementDataFails(t *tes
 
 func TestNewMarketChangeSubmissionWithInvalidLpRangeFails(t *testing.T) {
 	priceRanges := []string{"banana", "-1", "0", "101"}
-	errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBeWithinRange0120, commands.ErrMustBeWithinRange0120, commands.ErrMustBeWithinRange0120}
+	errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBeWithinRangeGT0LT20, commands.ErrMustBeWithinRangeGT0LT20, commands.ErrMustBeWithinRangeGT0LT20}
 
 	for i, v := range priceRanges {
 		err := checkProposalSubmission(&commandspb.ProposalSubmission{
@@ -5681,7 +5681,7 @@ func TestNewMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds(t
 
 func testNewMarketChangeSubmissionWithInvalidLpRangeFails(t *testing.T) {
 	priceRanges := []string{"banana", "-1", "0", "101"}
-	errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBeWithinRange0120, commands.ErrMustBeWithinRange0120, commands.ErrMustBeWithinRange0120}
+	errors := []error{commands.ErrIsNotValidNumber, commands.ErrMustBeWithinRangeGT0LT20, commands.ErrMustBeWithinRangeGT0LT20, commands.ErrMustBeWithinRangeGT0LT20}
 
 	for i, v := range priceRanges {
 		err := checkProposalSubmission(&commandspb.ProposalSubmission{

@@ -816,9 +816,13 @@ func (m *MarketLiquidity) validOrdersPriceRange() (*num.Uint, *num.Uint, error) 
 	return lowerBound, upperBound, nil
 }
 
-func (m *MarketLiquidity) UpdateMarketConfig(risk liquidity.RiskModel, monitor liquidity.PriceMonitor, slaParams *types.LiquiditySLAParams) {
+func (m *MarketLiquidity) UpdateMarketConfig(risk liquidity.RiskModel, monitor liquidity.PriceMonitor) {
+	m.liquidityEngine.UpdateMarketConfig(risk, monitor)
+}
+
+func (m *MarketLiquidity) UpdateSLAParameters(slaParams *types.LiquiditySLAParams) {
 	m.priceRange = slaParams.PriceRange
-	m.liquidityEngine.UpdateMarketConfig(risk, monitor, slaParams)
+	m.liquidityEngine.UpdateSLAParameters(slaParams)
 }
 
 func (m *MarketLiquidity) OnMinLPStakeQuantumMultiple(minLPStakeQuantumMultiple num.Decimal) {

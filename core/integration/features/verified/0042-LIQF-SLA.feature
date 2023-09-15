@@ -1,7 +1,6 @@
 Feature: Calculating SLA Performance
 
   Background:
-    
     Given the markets:
       | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params    |
       | ETH/DEC23 | ETH        | USD   | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e-3                   | 0                         | default-basic |
@@ -12,6 +11,7 @@ Feature: Calculating SLA Performance
       | market.liquidity.providersFeeCalculationTimeStep | 1s    |
       | validators.epoch.length                          | 58s   |
       | market.liquidity.stakeToCcyVolume                | 1     |
+
     And the average block duration is "1"
 
     Given the parties deposit on asset's general account the following amount:
@@ -372,6 +372,16 @@ Feature: Calculating SLA Performance
       | party | reference      |
       | lp1   | lp1-ice-buy-2  |
       | lp1   | lp1-ice-sell-2 |
+
+    # Update the market by increasing 'performance hysteresis epochs'. This will take effect for next epoch and
+    # no penalty should be applied.
+    Given the liquidity sla params named "updated-sla-params":
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1           | 0.5                          | 2                             | 1                      |
+    And the markets are updated:
+      | id        | sla params         | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC23 | updated-sla-params | 1e-3                   | 0                         |
+
     And the network moves ahead "1" epochs
     And the parties place the following pegged iceberg orders:
       | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset | reference      |
@@ -385,13 +395,6 @@ Feature: Calculating SLA Performance
       | party2 | ETH/DEC23 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the accumulated liquidity fees should be "100" for the market "ETH/DEC23"
 
-    # Update the market by increasing 'performance hysteresis epochs'. No penalty should be applied.
-    Given the liquidity sla params named "updated-sla-params":
-      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
-      | 1           | 0.5                          | 2                             | 1                      |
-    And the markets are updated:
-      | id        | sla params         | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC23 | updated-sla-params | 1e-3                   | 0                         |
     When the network moves ahead "1" epochs
     Then the following transfers should happen:
       | from | to  | from account                   | to account                     | market id | amount | asset |
@@ -594,13 +597,12 @@ Feature: Calculating SLA Performance
     Given the liquidity sla params named "scenario-sla-params":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 1           | 0.5                          | 3                             | 1                      |
-    And the markets are updated:
-      | id        | sla params          | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC23 | scenario-sla-params | 1e-3                   | 0                         |
-
     And the following network parameters are set:
       | name                    | value |
       | validators.epoch.length | 1m58s |
+    And the markets are updated:
+      | id        | sla params          | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC23 | scenario-sla-params | 1e-3                   | 0                         |
 
     # Setup the market with 2 LPs who are initially meeting their commitment
     Given the parties submit the following liquidity provision:
