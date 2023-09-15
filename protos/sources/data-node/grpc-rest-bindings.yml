@@ -168,7 +168,7 @@ http:
     - selector: datanode.api.v2.TradingDataService.ListReferralSets
       get: "/api/v2/referral-sets"
     - selector: datanode.api.v2.TradingDataService.ListReferralSetReferees
-      get: "/api/v2/referral-sets/{referral_set_id}/referees"
+      get: "/api/v2/referral-sets/referees"
     - selector: datanode.api.v2.TradingDataService.GetReferralSetStats
       get: "/api/v2/referral-sets/stats/{referral_set_id}"
     - selector: datanode.api.v2.TradingDataService.ListTeams

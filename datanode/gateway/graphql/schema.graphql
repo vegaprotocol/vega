@@ -768,13 +768,21 @@ type Query {
   referralSets(
     "Optional referral set ID to fetch information for"
     id: ID
+    "Optional referrer party ID to filter for. If referral set ID is provided, this parameter is ignored."
+    referrer: ID
+    "Optional referee party ID to filter for. If referral set ID, or referrer is provided, this parameter is ignored."
+    referee: ID
     "Optional pagination information"
     pagination: Pagination
   ): ReferralSetConnection!
 
   referralSetReferees(
-    "Referral set ID to fetch referees for"
-    id: ID!
+    "Optional referral set ID to fetch referees for"
+    id: ID
+    "Optional referrer party ID to filter for. If referral set ID is provided, this parameter is ignored."
+    referrer: ID
+    "Optional referee party ID to filter for. If referral set ID, or referrer is provided, this parameter is ignored."
+    referee: ID
     "Optional pagination information"
     pagination: Pagination
   ): ReferralSetRefereeConnection!

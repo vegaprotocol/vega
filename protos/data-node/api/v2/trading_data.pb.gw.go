@@ -3510,29 +3510,12 @@ func local_request_TradingDataService_ListReferralSets_0(ctx context.Context, ma
 }
 
 var (
-	filter_TradingDataService_ListReferralSetReferees_0 = &utilities.DoubleArray{Encoding: map[string]int{"referral_set_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_ListReferralSetReferees_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
 func request_TradingDataService_ListReferralSetReferees_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ListReferralSetRefereesRequest
 	var metadata runtime.ServerMetadata
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["referral_set_id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "referral_set_id")
-	}
-
-	protoReq.ReferralSetId, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "referral_set_id", err)
-	}
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
@@ -3549,23 +3532,6 @@ func request_TradingDataService_ListReferralSetReferees_0(ctx context.Context, m
 func local_request_TradingDataService_ListReferralSetReferees_0(ctx context.Context, marshaler runtime.Marshaler, server TradingDataServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ListReferralSetRefereesRequest
 	var metadata runtime.ServerMetadata
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["referral_set_id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "referral_set_id")
-	}
-
-	protoReq.ReferralSetId, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "referral_set_id", err)
-	}
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
@@ -5718,7 +5684,7 @@ func RegisterTradingDataServiceHandlerServer(ctx context.Context, mux *runtime.S
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/ListReferralSetReferees", runtime.WithHTTPPathPattern("/api/v2/referral-sets/{referral_set_id}/referees"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/ListReferralSetReferees", runtime.WithHTTPPathPattern("/api/v2/referral-sets/referees"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -7699,7 +7665,7 @@ func RegisterTradingDataServiceHandlerClient(ctx context.Context, mux *runtime.S
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/ListReferralSetReferees", runtime.WithHTTPPathPattern("/api/v2/referral-sets/{referral_set_id}/referees"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/ListReferralSetReferees", runtime.WithHTTPPathPattern("/api/v2/referral-sets/referees"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -8001,7 +7967,7 @@ var (
 
 	pattern_TradingDataService_ListReferralSets_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v2", "referral-sets"}, ""))
 
-	pattern_TradingDataService_ListReferralSetReferees_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"api", "v2", "referral-sets", "referral_set_id", "referees"}, ""))
+	pattern_TradingDataService_ListReferralSetReferees_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v2", "referral-sets", "referees"}, ""))
 
 	pattern_TradingDataService_GetReferralSetStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v2", "referral-sets", "stats", "referral_set_id"}, ""))
 
