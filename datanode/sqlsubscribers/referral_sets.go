@@ -11,17 +11,17 @@ import (
 type (
 	ReferralSetCreatedEvent interface {
 		events.Event
-		GetReferralSetCreated() *eventspb.ReferralSetCreated
+		GetProtoEvent() *eventspb.ReferralSetCreated
 	}
 
 	RefereeJoinedReferralSetEvent interface {
 		events.Event
-		GetRefereeJoinedReferralSet() *eventspb.RefereeJoinedReferralSet
+		GetProtoEvent() *eventspb.RefereeJoinedReferralSet
 	}
 
 	ReferralSetStatsUpdatedEvent interface {
 		events.Event
-		GetReferralSetStatsUpdated() *eventspb.ReferralSetStatsUpdated
+		GetProtoEvent() *eventspb.ReferralSetStatsUpdated
 	}
 
 	ReferralSetsStore interface {
@@ -64,17 +64,17 @@ func (rs *ReferralSets) Push(ctx context.Context, evt events.Event) error {
 }
 
 func (rs *ReferralSets) consumeReferralSetCreatedEvent(ctx context.Context, e ReferralSetCreatedEvent) error {
-	referralSet := entities.ReferralSetFromProto(e.GetReferralSetCreated(), rs.vegaTime)
+	referralSet := entities.ReferralSetFromProto(e.GetProtoEvent(), rs.vegaTime)
 	return rs.store.AddReferralSet(ctx, referralSet)
 }
 
 func (rs *ReferralSets) consumeRefereeJoinedReferralSetEvent(ctx context.Context, e RefereeJoinedReferralSetEvent) error {
-	referralSetReferee := entities.ReferralSetRefereeFromProto(e.GetRefereeJoinedReferralSet(), rs.vegaTime)
+	referralSetReferee := entities.ReferralSetRefereeFromProto(e.GetProtoEvent(), rs.vegaTime)
 	return rs.store.RefereeJoinedReferralSet(ctx, referralSetReferee)
 }
 
 func (rs *ReferralSets) consumeReferralSetStatsUpdated(ctx context.Context, e ReferralSetStatsUpdatedEvent) error {
-	stats, err := entities.ReferralSetStatsFromProto(e.GetReferralSetStatsUpdated(), rs.vegaTime)
+	stats, err := entities.ReferralSetStatsFromProto(e.GetProtoEvent(), rs.vegaTime)
 	if err != nil {
 		return err
 	}

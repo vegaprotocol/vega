@@ -23,6 +23,10 @@ func (t ReferralSetCreated) StreamMessage() *eventspb.BusEvent {
 	return busEvent
 }
 
+func (t ReferralSetCreated) GetProtoEvent() *eventspb.ReferralSetCreated {
+	return &t.e
+}
+
 func NewReferralSetCreatedEvent(ctx context.Context, set *types.ReferralSet) *ReferralSetCreated {
 	return &ReferralSetCreated{
 		Base: newBase(ctx, ReferralSetCreatedEvent),
@@ -66,6 +70,10 @@ func (t ReferralSetStatsUpdated) Unwrap() *types.ReferralSetStats {
 		ReferralSetRunningVolume: volume,
 		RefereesStats:            stats,
 	}
+}
+
+func (t ReferralSetStatsUpdated) GetProtoEvent() *eventspb.ReferralSetStatsUpdated {
+	return &t.e
 }
 
 func (t ReferralSetStatsUpdated) StreamMessage() *eventspb.BusEvent {
@@ -122,6 +130,10 @@ func (t RefereeJoinedReferralSet) StreamMessage() *eventspb.BusEvent {
 	}
 
 	return busEvent
+}
+
+func (t RefereeJoinedReferralSet) GetProtoEvent() *eventspb.RefereeJoinedReferralSet {
+	return &t.e
 }
 
 func NewRefereeJoinedReferralSetEvent(ctx context.Context, setID types.ReferralSetID, membership *types.Membership) *RefereeJoinedReferralSet {

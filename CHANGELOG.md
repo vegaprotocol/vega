@@ -184,6 +184,7 @@
 - [9398](https://github.com/vegaprotocol/vega/issues/9398) - Fix division by zero panic in market liquidity
 - [9413](https://github.com/vegaprotocol/vega/issues/9413) - Fix range validation for SLA parameters
 - [9433](https://github.com/vegaprotocol/vega/issues/9433) - fix referral set snapshot
+- [9432](https://github.com/vegaprotocol/vega/issues/9432) - fix referral set not saved to database.
 
 ## 0.72.1
 
