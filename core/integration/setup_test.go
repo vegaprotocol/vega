@@ -293,6 +293,10 @@ func newExecutionTestSetup() *executionTestSetup {
 			Param:   netparams.MarketLiquidityProvidersFeeCalculationTimeStep,
 			Watcher: execsetup.executionEngine.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep,
 		},
+		netparams.WatchParam{
+			Param:   netparams.ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch,
+			Watcher: execsetup.referralProgram.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate,
+		},
 	)
 	return execsetup
 }
