@@ -121,7 +121,7 @@ Feature: test negative PDP (position decimal places)
             | 10         | TRADING_MODE_CONTINUOUS | 360000  | 8         | 13        | 3556         | 35569          | 10            |
         # target stake = 10*10*10*3.5569036=3556
 
-        Then debug detailed orderbook volumes for market "USD/DEC22"
+
 
         And the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond  |

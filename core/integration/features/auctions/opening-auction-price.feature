@@ -340,7 +340,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
     Then the market data for the market "ETH/DEC19" should be:
       | trading mode            |
       | TRADING_MODE_CONTINUOUS |
-    Then debug trades
+
     ## We're seeing these events twice for some reason
     Then the following trades should be executed:
       | buyer  | price | size | seller |

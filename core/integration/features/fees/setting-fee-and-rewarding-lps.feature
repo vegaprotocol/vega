@@ -108,7 +108,7 @@ Feature: Test liquidity provider reward distribution
 
     # opening auction + time window
     Then time is updated to "2019-11-30T00:10:05Z"
-    Then debug transfers
+
     Then the following transfers should happen:
       | from   | to  | from account                | to account                     | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/DEC21 | 20     | ETH   |
@@ -185,7 +185,7 @@ Feature: Test liquidity provider reward distribution
       | buyer  | price | size | seller |
       | party1 | 1000  | 90   | party2 |
 
-    And debug all events
+
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the mark price should be "1000" for the market "ETH/DEC21"
     And the open interest should be "90" for the market "ETH/DEC21"
@@ -299,7 +299,7 @@ Feature: Test liquidity provider reward distribution
 
     Then the accumulated liquidity fees should be "1" for the market "ETH/DEC22"
 
-    Then debug transfers
+
     # observe that lp2 gets lower share of the fees despite the same commitment amount (that is due to their orders being much wider than those of lp1)
     Then the following transfers should happen:
       | from   | to  | from account                | to account                     | market id | amount | asset |
@@ -320,7 +320,7 @@ Feature: Test liquidity provider reward distribution
       | 1000       | TRADING_MODE_CONTINUOUS | 10000   | 893       | 1120      | 995                   | 1000             | 1005                    |
     And the accumulated liquidity fees should be "1" for the market "ETH/DEC22"
 
-    Then debug transfers
+
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -329,7 +329,7 @@ Feature: Test liquidity provider reward distribution
     Then the accumulated liquidity fees should be "41" for the market "ETH/DEC22"
 
     When the network moves ahead "6" blocks
-    Then debug transfers
+
     # all the fees go to lp2
     Then the following transfers should happen:
       | from   | to  | from account                | to account                     | market id | amount | asset |

@@ -104,7 +104,7 @@ Feature: Distressed parties should not have general balance left
       | party   | equity like share  | average entry valuation |
       | lpprov  | 0.6428571428571429 | 10000                  |
       | party3  | 0.3571428571428571 | 60000.0000000000000556 |
-    Then debug transfers
+
     And the following trades should be executed:
       | buyer  | price | size | seller |
       | party5 | 120   | 20    | party1 |
@@ -128,7 +128,7 @@ Feature: Distressed parties should not have general balance left
       | party  | asset | market id | margin | general       |
       | party3 | ETH   | ETH/DEC20 | 3152   | 1040          |
       | party4 | ETH   | ETH/DEC20 | 160    | 9999999999640 |
-    Then debug detailed orderbook volumes for market "ETH/DEC20"
+
     ## Now let's increase the mark price so party3 gets distressed
     When the parties place the following orders "1" blocks apart:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
