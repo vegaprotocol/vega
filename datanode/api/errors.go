@@ -188,6 +188,7 @@ var (
 	ErrDepositServiceGet = errors.New("failed to get deposit")
 	// TransferService...
 	ErrTransferServiceGet = errors.New("failed to get transfer")
+	ErrMissingTransferID  = errors.New("missing transfer id")
 	// NetworkLimits...
 	ErrGetNetworkLimits = errors.New("failed to get network limits")
 	// ErrGetNetworkParameters is returned when the network parameters cannot be retrieved.

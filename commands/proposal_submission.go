@@ -880,6 +880,7 @@ func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Err
 	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "proposal_submission.terms.change.update_market.changes"))
 	errs.Merge(checkUpdateInstrument(changes.Instrument))
 	errs.Merge(checkUpdateRiskParameters(changes))
+	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "proposal_submission.terms.change.update_market.changes.sla_params"))
 
 	return errs
 }
@@ -1577,23 +1578,21 @@ func checkSLAParams(config *protoTypes.LiquiditySLAParameters, parent string) Er
 	lppr, err := num.DecimalFromString(config.PriceRange)
 	if err != nil {
 		errs.AddForProperty(fmt.Sprintf("%s.price_range", parent), ErrIsNotValidNumber)
-	} else if lppr.IsNegative() || lppr.IsZero() {
-		errs.AddForProperty(fmt.Sprintf("%s.price_range", parent), ErrMustBePositive)
-	} else if lppr.GreaterThan(num.DecimalFromInt64(100)) {
-		errs.AddForProperty(fmt.Sprintf("%s.price_range", parent), ErrMustBeAtMost100)
+	} else if lppr.IsZero() || lppr.LessThan(num.DecimalZero()) || lppr.GreaterThan(num.DecimalFromFloat(1)) {
+		errs.AddForProperty(fmt.Sprintf("%s.price_range", parent), fmt.Errorf("must be in range 0.1 and 20"))
 	}
 
 	commitmentMinTimeFraction, err := num.DecimalFromString(config.CommitmentMinTimeFraction)
 	if err != nil {
 		errs.AddForProperty(fmt.Sprintf("%s.commitment_min_time_fraction", parent), ErrIsNotValidNumber)
-	} else if commitmentMinTimeFraction.IsNegative() || commitmentMinTimeFraction.GreaterThan(num.DecimalOne()) {
+	} else if commitmentMinTimeFraction.LessThan(num.DecimalZero()) || commitmentMinTimeFraction.GreaterThan(num.DecimalOne()) {
 		errs.AddForProperty(fmt.Sprintf("%s.commitment_min_time_fraction", parent), ErrMustBeWithinRange01)
 	}
 
 	slaCompetitionFactor, err := num.DecimalFromString(config.SlaCompetitionFactor)
 	if err != nil {
 		errs.AddForProperty(fmt.Sprintf("%s.sla_competition_factor", parent), ErrIsNotValidNumber)
-	} else if slaCompetitionFactor.IsNegative() || slaCompetitionFactor.GreaterThan(num.DecimalOne()) {
+	} else if slaCompetitionFactor.LessThan(num.DecimalZero()) || slaCompetitionFactor.GreaterThan(num.DecimalOne()) {
 		errs.AddForProperty(fmt.Sprintf("%s.sla_competition_factor", parent), ErrMustBeWithinRange01)
 	}
 
