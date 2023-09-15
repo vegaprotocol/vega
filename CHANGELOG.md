@@ -181,7 +181,7 @@
 - [9385](https://github.com/vegaprotocol/vega/issues/9385) - Support deprecated liquidity auction type for compatibility
 - [9398](https://github.com/vegaprotocol/vega/issues/9398) - Fix division by zero panic in market liquidity
 - [9413](https://github.com/vegaprotocol/vega/issues/9413) - Fix range validation for SLA parameters
-- [9433](https://github.com/vegaprotocol/vega/issues/9433) - fix referral set deserialisation
+- [9433](https://github.com/vegaprotocol/vega/issues/9433) - fix referral set snapshot
 
 ## 0.72.1
 
