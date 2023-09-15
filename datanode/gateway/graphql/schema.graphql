@@ -3943,25 +3943,25 @@ type EthCallTrigger {
 union TriggerKind = EthTimeTrigger
 
 type EthTimeTrigger {
-  Initial: Timestamp
-  Every: Timestamp
-  Until: Timestamp
+  initial: Timestamp
+  every: Int
+  until: Timestamp
 }
 
 type Normaliser {
-  Name: String!
-  Expression: String!
+  name: String!
+  expression: String!
 }
 
 type EthCallSpec {
-  Address: String!
-  Abi: [String!]
-  Method: String!
-  Args: [String!]
-  Trigger: EthCallTrigger!
-  RequiredConfirmations: Int!
-  Normalisers: [Normaliser!]
-  Filters: [Filter!]
+  address: String!
+  abi: [String!]
+  method: String!
+  args: [String!]
+  trigger: EthCallTrigger!
+  requiredConfirmations: Int!
+  normalisers: [Normaliser!]
+  filters: [Filter!]
 }
 
 type InstrumentConfiguration {

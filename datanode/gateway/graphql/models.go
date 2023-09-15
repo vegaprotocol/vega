@@ -339,9 +339,9 @@ type EthCallTrigger struct {
 }
 
 type EthTimeTrigger struct {
-	Initial *int64 `json:"Initial"`
-	Every   *int64 `json:"Every"`
-	Until   *int64 `json:"Until"`
+	Initial *int64 `json:"initial"`
+	Every   *int   `json:"every"`
+	Until   *int64 `json:"until"`
 }
 
 func (EthTimeTrigger) IsTriggerKind() {}
@@ -463,8 +463,8 @@ type NodeSet struct {
 }
 
 type Normaliser struct {
-	Name       string `json:"Name"`
-	Expression string `json:"Expression"`
+	Name       string `json:"name"`
+	Expression string `json:"expression"`
 }
 
 // The equity like share of liquidity fee for each liquidity provider

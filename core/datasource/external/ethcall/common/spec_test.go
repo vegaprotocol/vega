@@ -14,6 +14,8 @@ package common_test
 
 import (
 	"errors"
+	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -65,6 +67,7 @@ func TestEthCallSpecFromProto(t *testing.T) {
 
 	t.Run("non-empty with error", func(t *testing.T) {
 		timeNow := uint64(time.Now().UnixNano())
+		every := uint64(2)
 		protoSource := &vegapb.EthCallSpec{
 			Address: "test-eth-address",
 			Abi:     "5",
@@ -76,6 +79,8 @@ func TestEthCallSpecFromProto(t *testing.T) {
 				Trigger: &vegapb.EthCallTrigger_TimeTrigger{
 					TimeTrigger: &vegapb.EthTimeTrigger{
 						Initial: &timeNow,
+						Every: &every,
+						Until: &timeNow,
 					},
 				},
 			},
@@ -116,7 +121,9 @@ func TestEthCallSpecFromProto(t *testing.T) {
 		assert.Equal(t, "test-key", ds.Filters[0].Key.Name)
 		assert.Equal(t, dscommon.SpecPropertyKeyType(1), ds.Filters[0].Key.Type)
 		assert.NotNil(t, ds.Trigger)
-		assert.IsType(t, &vegapb.EthCallTrigger_TimeTrigger{}, ds.Trigger.IntoTriggerProto().Trigger)
+		tr := ds.Trigger.IntoTriggerProto().Trigger
+		assert.IsType(t, &vegapb.EthCallTrigger_TimeTrigger{}, tr)
+		assert.Equal(t, fmt.Sprintf("initial(%s) every(2) until(%s)", strconv.FormatUint(timeNow, 10), strconv.FormatUint(timeNow, 10)), ds.Trigger.String())
 	})
 
 	t.Run("non-empty", func(t *testing.T) {
