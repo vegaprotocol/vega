@@ -787,6 +787,8 @@ message RefereeStats {
   string discount_factor = 2;
   // Reward factor applied to the party.
   string reward_factor = 3;
+  // Current referee notional taker volume
+  string epoch_notional_taker_volume = 4;
 }
 
 message RefereeJoinedReferralSet {

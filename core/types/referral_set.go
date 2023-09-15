@@ -28,4 +28,5 @@ type ReferralSetStats struct {
 type RefereeStats struct {
 	DiscountFactor num.Decimal
 	RewardFactor   num.Decimal
+	TakerVolume    *num.Uint
 }
