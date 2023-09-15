@@ -16,6 +16,7 @@ import (
 	"embed"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/integration/steps/helpers"
 	"github.com/jinzhu/copier"
 
 	"code.vegaprotocol.io/vega/core/integration/steps/market/defaults"
@@ -40,9 +41,9 @@ func newLiquiditySLAParams(unmarshaler *defaults.Unmarshaler) *slaParams {
 		config: map[string]*types.LiquiditySLAParameters{},
 	}
 
-	contentReaders := defaults.ReadAll(defaultLiquiditySLAParams, defaultLiquiditySLAParamsFileNames)
+	contentReaders := helpers.ReadAll(defaultLiquiditySLAParams, defaultLiquiditySLAParamsFileNames)
 	for name, contentReader := range contentReaders {
-		sla, err := unmarshaler.UnmarshalLliquiditySLAParams(contentReader)
+		sla, err := unmarshaler.UnmarshalLiquiditySLAParams(contentReader)
 		if err != nil {
 			panic(fmt.Errorf("couldn't unmarshal default SLA params %s: %v", name, err))
 		}

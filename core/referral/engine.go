@@ -465,19 +465,22 @@ func (e *Engine) computeReferralSetsStats(ctx context.Context, epoch types.Epoch
 		e.referralSetsNotionalVolumes.Add(epoch.Seq, setID, volumeForEpoch)
 	}
 
+	partiesTakerVolume := map[types.PartyID]*num.Uint{}
+
 	for partyID, setID := range e.referees {
 		volumeForEpoch := e.marketActivityTracker.NotionalTakerVolumeForParty(string(partyID))
 		e.referralSetsNotionalVolumes.Add(epoch.Seq, setID, volumeForEpoch)
+		partiesTakerVolume[partyID] = volumeForEpoch
 	}
 
 	if e.programHasEnded {
 		return
 	}
 
-	e.computeFactorsByReferee(ctx, epoch.Seq)
+	e.computeFactorsByReferee(ctx, epoch.Seq, partiesTakerVolume)
 }
 
-func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64) {
+func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, takerVolumePerParty map[types.PartyID]*num.Uint) {
 	e.factorsByReferee = map[types.PartyID]*types.RefereeStats{}
 
 	allStats := map[types.ReferralSetID]*types.ReferralSetStats{}
@@ -507,7 +510,13 @@ func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64) {
 		setStats := allStats[setID]
 		runningVolumeForSet := setStats.ReferralSetRunningVolume
 
-		refereeStats := &types.RefereeStats{}
+		partyTakerVolume := num.UintZero()
+		if takerVolume := takerVolumePerParty[party]; takerVolume != nil {
+			partyTakerVolume = takerVolume
+		}
+		refereeStats := &types.RefereeStats{
+			TakerVolume: partyTakerVolume,
+		}
 		e.factorsByReferee[party] = refereeStats
 		setStats.RefereesStats[party] = refereeStats
 
@@ -575,6 +584,8 @@ func NewEngine(broker Broker, timeSvc TimeService, mat MarketActivityTracker, st
 		programHasEnded: true,
 
 		referralSetsNotionalVolumes: newRunningVolumes(),
+
+		referralProgramMinStakedVegaTokens: num.UintZero(),
 
 		sets:      map[types.ReferralSetID]*types.ReferralSet{},
 		referrers: map[types.PartyID]types.ReferralSetID{},

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"golang.org/x/exp/slices"
 )
@@ -46,6 +47,27 @@ type ReferralSetStatsUpdated struct {
 	e eventspb.ReferralSetStatsUpdated
 }
 
+func (t ReferralSetStatsUpdated) Unwrap() *types.ReferralSetStats {
+	volume, _ := num.UintFromString(t.e.ReferralSetRunningNotionalTakerVolume, 10)
+	stats := map[types.PartyID]*types.RefereeStats{}
+
+	for _, stat := range t.e.RefereesStats {
+		discountFactor, _ := num.DecimalFromString(stat.DiscountFactor)
+		rewardFactor, _ := num.DecimalFromString(stat.RewardFactor)
+		stats[types.PartyID(stat.PartyId)] = &types.RefereeStats{
+			DiscountFactor: discountFactor,
+			RewardFactor:   rewardFactor,
+		}
+	}
+
+	return &types.ReferralSetStats{
+		AtEpoch:                  t.e.AtEpoch,
+		SetID:                    types.ReferralSetID(t.e.SetId),
+		ReferralSetRunningVolume: volume,
+		RefereesStats:            stats,
+	}
+}
+
 func (t ReferralSetStatsUpdated) StreamMessage() *eventspb.BusEvent {
 	busEvent := newBusEventFromBase(t.Base)
 	busEvent.Event = &eventspb.BusEvent_ReferralSetStatsUpdated{
@@ -59,9 +81,10 @@ func NewReferralSetStatsUpdatedEvent(ctx context.Context, update *types.Referral
 	refereesStats := make([]*eventspb.RefereeStats, 0, len(update.RefereesStats))
 	for partyID, stat := range update.RefereesStats {
 		refereesStats = append(refereesStats, &eventspb.RefereeStats{
-			PartyId:        string(partyID),
-			DiscountFactor: stat.DiscountFactor.String(),
-			RewardFactor:   stat.RewardFactor.String(),
+			PartyId:                  string(partyID),
+			DiscountFactor:           stat.DiscountFactor.String(),
+			RewardFactor:             stat.RewardFactor.String(),
+			EpochNotionalTakerVolume: stat.TakerVolume.String(),
 		})
 	}
 

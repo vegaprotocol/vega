@@ -80,7 +80,7 @@ Feature: check pegged GTT and GTC in auction
     # enter price monitoring auction
     Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
-    Then debug detailed orderbook volumes for market "ETH/DEC19"
+
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |

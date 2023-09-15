@@ -1767,6 +1767,7 @@ type ComplexityRoot struct {
 		TeamReferees                       func(childComplexity int, teamID string, pagination *v2.Pagination) int
 		Teams                              func(childComplexity int, teamID *string, partyID *string, pagination *v2.Pagination) int
 		Trades                             func(childComplexity int, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) int
+		Transfer                           func(childComplexity int, id string) int
 		TransfersConnection                func(childComplexity int, partyID *string, direction *TransferDirection, pagination *v2.Pagination) int
 		Withdrawal                         func(childComplexity int, id string) int
 		Withdrawals                        func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
@@ -2941,6 +2942,7 @@ type QueryResolver interface {
 	TeamRefereeHistory(ctx context.Context, referee string, pagination *v2.Pagination) (*v2.TeamRefereeHistoryConnection, error)
 	Trades(ctx context.Context, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) (*v2.TradeConnection, error)
 	TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
+	Transfer(ctx context.Context, id string) (*v1.Transfer, error)
 	Withdrawal(ctx context.Context, id string) (*vega.Withdrawal, error)
 	Withdrawals(ctx context.Context, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.WithdrawalsConnection, error)
 }
@@ -5017,56 +5019,56 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Erc20WithdrawalDetails.ReceiverAddress(childComplexity), true
 
-	case "EthCallSpec.Abi":
+	case "EthCallSpec.abi":
 		if e.complexity.EthCallSpec.Abi == nil {
 			break
 		}
 
 		return e.complexity.EthCallSpec.Abi(childComplexity), true
 
-	case "EthCallSpec.Address":
+	case "EthCallSpec.address":
 		if e.complexity.EthCallSpec.Address == nil {
 			break
 		}
 
 		return e.complexity.EthCallSpec.Address(childComplexity), true
 
-	case "EthCallSpec.Args":
+	case "EthCallSpec.args":
 		if e.complexity.EthCallSpec.Args == nil {
 			break
 		}
 
 		return e.complexity.EthCallSpec.Args(childComplexity), true
 
-	case "EthCallSpec.Filters":
+	case "EthCallSpec.filters":
 		if e.complexity.EthCallSpec.Filters == nil {
 			break
 		}
 
 		return e.complexity.EthCallSpec.Filters(childComplexity), true
 
-	case "EthCallSpec.Method":
+	case "EthCallSpec.method":
 		if e.complexity.EthCallSpec.Method == nil {
 			break
 		}
 
 		return e.complexity.EthCallSpec.Method(childComplexity), true
 
-	case "EthCallSpec.Normalisers":
+	case "EthCallSpec.normalisers":
 		if e.complexity.EthCallSpec.Normalisers == nil {
 			break
 		}
 
 		return e.complexity.EthCallSpec.Normalisers(childComplexity), true
 
-	case "EthCallSpec.RequiredConfirmations":
+	case "EthCallSpec.requiredConfirmations":
 		if e.complexity.EthCallSpec.RequiredConfirmations == nil {
 			break
 		}
 
 		return e.complexity.EthCallSpec.RequiredConfirmations(childComplexity), true
 
-	case "EthCallSpec.Trigger":
+	case "EthCallSpec.trigger":
 		if e.complexity.EthCallSpec.Trigger == nil {
 			break
 		}
@@ -5080,21 +5082,21 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EthCallTrigger.Trigger(childComplexity), true
 
-	case "EthTimeTrigger.Every":
+	case "EthTimeTrigger.every":
 		if e.complexity.EthTimeTrigger.Every == nil {
 			break
 		}
 
 		return e.complexity.EthTimeTrigger.Every(childComplexity), true
 
-	case "EthTimeTrigger.Initial":
+	case "EthTimeTrigger.initial":
 		if e.complexity.EthTimeTrigger.Initial == nil {
 			break
 		}
 
 		return e.complexity.EthTimeTrigger.Initial(childComplexity), true
 
-	case "EthTimeTrigger.Until":
+	case "EthTimeTrigger.until":
 		if e.complexity.EthTimeTrigger.Until == nil {
 			break
 		}
@@ -7642,14 +7644,14 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NodesConnection.PageInfo(childComplexity), true
 
-	case "Normaliser.Expression":
+	case "Normaliser.expression":
 		if e.complexity.Normaliser.Expression == nil {
 			break
 		}
 
 		return e.complexity.Normaliser.Expression(childComplexity), true
 
-	case "Normaliser.Name":
+	case "Normaliser.name":
 		if e.complexity.Normaliser.Name == nil {
 			break
 		}
@@ -10416,6 +10418,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Trades(childComplexity, args["filter"].(*TradesFilter), args["pagination"].(*v2.Pagination), args["dateRange"].(*v2.DateRange)), true
+
+	case "Query.transfer":
+		if e.complexity.Query.Transfer == nil {
+			break
+		}
+
+		args, err := ec.field_Query_transfer_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Transfer(childComplexity, args["id"].(string)), true
 
 	case "Query.transfersConnection":
 		if e.complexity.Query.TransfersConnection == nil {
@@ -15284,6 +15298,21 @@ func (ec *executionContext) field_Query_trades_args(ctx context.Context, rawArgs
 		}
 	}
 	args["dateRange"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_transfer_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -28411,8 +28440,8 @@ func (ec *executionContext) fieldContext_Erc20WithdrawalDetails_receiverAddress(
 	return fc, nil
 }
 
-func (ec *executionContext) _EthCallSpec_Address(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EthCallSpec_Address(ctx, field)
+func (ec *executionContext) _EthCallSpec_address(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthCallSpec_address(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -28442,7 +28471,7 @@ func (ec *executionContext) _EthCallSpec_Address(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_EthCallSpec_Address(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EthCallSpec_address(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EthCallSpec",
 		Field:      field,
@@ -28455,8 +28484,8 @@ func (ec *executionContext) fieldContext_EthCallSpec_Address(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _EthCallSpec_Abi(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EthCallSpec_Abi(ctx, field)
+func (ec *executionContext) _EthCallSpec_abi(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthCallSpec_abi(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -28483,7 +28512,7 @@ func (ec *executionContext) _EthCallSpec_Abi(ctx context.Context, field graphql.
 	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_EthCallSpec_Abi(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EthCallSpec_abi(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EthCallSpec",
 		Field:      field,
@@ -28496,8 +28525,8 @@ func (ec *executionContext) fieldContext_EthCallSpec_Abi(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _EthCallSpec_Method(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EthCallSpec_Method(ctx, field)
+func (ec *executionContext) _EthCallSpec_method(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthCallSpec_method(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -28527,7 +28556,7 @@ func (ec *executionContext) _EthCallSpec_Method(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_EthCallSpec_Method(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EthCallSpec_method(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EthCallSpec",
 		Field:      field,
@@ -28540,8 +28569,8 @@ func (ec *executionContext) fieldContext_EthCallSpec_Method(ctx context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _EthCallSpec_Args(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EthCallSpec_Args(ctx, field)
+func (ec *executionContext) _EthCallSpec_args(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthCallSpec_args(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -28568,7 +28597,7 @@ func (ec *executionContext) _EthCallSpec_Args(ctx context.Context, field graphql
 	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_EthCallSpec_Args(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EthCallSpec_args(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EthCallSpec",
 		Field:      field,
@@ -28581,8 +28610,8 @@ func (ec *executionContext) fieldContext_EthCallSpec_Args(ctx context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _EthCallSpec_Trigger(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EthCallSpec_Trigger(ctx, field)
+func (ec *executionContext) _EthCallSpec_trigger(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthCallSpec_trigger(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -28612,7 +28641,7 @@ func (ec *executionContext) _EthCallSpec_Trigger(ctx context.Context, field grap
 	return ec.marshalNEthCallTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐEthCallTrigger(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_EthCallSpec_Trigger(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EthCallSpec_trigger(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EthCallSpec",
 		Field:      field,
@@ -28629,8 +28658,8 @@ func (ec *executionContext) fieldContext_EthCallSpec_Trigger(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _EthCallSpec_RequiredConfirmations(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EthCallSpec_RequiredConfirmations(ctx, field)
+func (ec *executionContext) _EthCallSpec_requiredConfirmations(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthCallSpec_requiredConfirmations(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -28660,7 +28689,7 @@ func (ec *executionContext) _EthCallSpec_RequiredConfirmations(ctx context.Conte
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_EthCallSpec_RequiredConfirmations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EthCallSpec_requiredConfirmations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EthCallSpec",
 		Field:      field,
@@ -28673,8 +28702,8 @@ func (ec *executionContext) fieldContext_EthCallSpec_RequiredConfirmations(ctx c
 	return fc, nil
 }
 
-func (ec *executionContext) _EthCallSpec_Normalisers(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EthCallSpec_Normalisers(ctx, field)
+func (ec *executionContext) _EthCallSpec_normalisers(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthCallSpec_normalisers(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -28701,7 +28730,7 @@ func (ec *executionContext) _EthCallSpec_Normalisers(ctx context.Context, field 
 	return ec.marshalONormaliser2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNormaliserᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_EthCallSpec_Normalisers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EthCallSpec_normalisers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EthCallSpec",
 		Field:      field,
@@ -28709,10 +28738,10 @@ func (ec *executionContext) fieldContext_EthCallSpec_Normalisers(ctx context.Con
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "Name":
-				return ec.fieldContext_Normaliser_Name(ctx, field)
-			case "Expression":
-				return ec.fieldContext_Normaliser_Expression(ctx, field)
+			case "name":
+				return ec.fieldContext_Normaliser_name(ctx, field)
+			case "expression":
+				return ec.fieldContext_Normaliser_expression(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Normaliser", field.Name)
 		},
@@ -28720,8 +28749,8 @@ func (ec *executionContext) fieldContext_EthCallSpec_Normalisers(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _EthCallSpec_Filters(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EthCallSpec_Filters(ctx, field)
+func (ec *executionContext) _EthCallSpec_filters(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthCallSpec_filters(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -28748,7 +28777,7 @@ func (ec *executionContext) _EthCallSpec_Filters(ctx context.Context, field grap
 	return ec.marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐFilterᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_EthCallSpec_Filters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EthCallSpec_filters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EthCallSpec",
 		Field:      field,
@@ -28811,8 +28840,8 @@ func (ec *executionContext) fieldContext_EthCallTrigger_trigger(ctx context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _EthTimeTrigger_Initial(ctx context.Context, field graphql.CollectedField, obj *EthTimeTrigger) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EthTimeTrigger_Initial(ctx, field)
+func (ec *executionContext) _EthTimeTrigger_initial(ctx context.Context, field graphql.CollectedField, obj *EthTimeTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthTimeTrigger_initial(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -28839,7 +28868,7 @@ func (ec *executionContext) _EthTimeTrigger_Initial(ctx context.Context, field g
 	return ec.marshalOTimestamp2ᚖint64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_EthTimeTrigger_Initial(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EthTimeTrigger_initial(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EthTimeTrigger",
 		Field:      field,
@@ -28852,8 +28881,8 @@ func (ec *executionContext) fieldContext_EthTimeTrigger_Initial(ctx context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _EthTimeTrigger_Every(ctx context.Context, field graphql.CollectedField, obj *EthTimeTrigger) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EthTimeTrigger_Every(ctx, field)
+func (ec *executionContext) _EthTimeTrigger_every(ctx context.Context, field graphql.CollectedField, obj *EthTimeTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthTimeTrigger_every(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -28875,26 +28904,26 @@ func (ec *executionContext) _EthTimeTrigger_Every(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int64)
+	res := resTmp.(*int)
 	fc.Result = res
-	return ec.marshalOTimestamp2ᚖint64(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_EthTimeTrigger_Every(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EthTimeTrigger_every(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EthTimeTrigger",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Timestamp does not have child fields")
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _EthTimeTrigger_Until(ctx context.Context, field graphql.CollectedField, obj *EthTimeTrigger) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EthTimeTrigger_Until(ctx, field)
+func (ec *executionContext) _EthTimeTrigger_until(ctx context.Context, field graphql.CollectedField, obj *EthTimeTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthTimeTrigger_until(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -28921,7 +28950,7 @@ func (ec *executionContext) _EthTimeTrigger_Until(ctx context.Context, field gra
 	return ec.marshalOTimestamp2ᚖint64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_EthTimeTrigger_Until(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EthTimeTrigger_until(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EthTimeTrigger",
 		Field:      field,
@@ -46256,8 +46285,8 @@ func (ec *executionContext) fieldContext_NodesConnection_pageInfo(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _Normaliser_Name(ctx context.Context, field graphql.CollectedField, obj *Normaliser) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Normaliser_Name(ctx, field)
+func (ec *executionContext) _Normaliser_name(ctx context.Context, field graphql.CollectedField, obj *Normaliser) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Normaliser_name(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -46287,7 +46316,7 @@ func (ec *executionContext) _Normaliser_Name(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Normaliser_Name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Normaliser_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Normaliser",
 		Field:      field,
@@ -46300,8 +46329,8 @@ func (ec *executionContext) fieldContext_Normaliser_Name(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Normaliser_Expression(ctx context.Context, field graphql.CollectedField, obj *Normaliser) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Normaliser_Expression(ctx, field)
+func (ec *executionContext) _Normaliser_expression(ctx context.Context, field graphql.CollectedField, obj *Normaliser) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Normaliser_expression(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -46331,7 +46360,7 @@ func (ec *executionContext) _Normaliser_Expression(ctx context.Context, field gr
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Normaliser_Expression(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Normaliser_expression(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Normaliser",
 		Field:      field,
@@ -63775,6 +63804,84 @@ func (ec *executionContext) fieldContext_Query_transfersConnection(ctx context.C
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_transfersConnection_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_transfer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_transfer(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Transfer(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v1.Transfer)
+	fc.Result = res
+	return ec.marshalOTransfer2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_transfer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Transfer_id(ctx, field)
+			case "from":
+				return ec.fieldContext_Transfer_from(ctx, field)
+			case "fromAccountType":
+				return ec.fieldContext_Transfer_fromAccountType(ctx, field)
+			case "to":
+				return ec.fieldContext_Transfer_to(ctx, field)
+			case "toAccountType":
+				return ec.fieldContext_Transfer_toAccountType(ctx, field)
+			case "asset":
+				return ec.fieldContext_Transfer_asset(ctx, field)
+			case "amount":
+				return ec.fieldContext_Transfer_amount(ctx, field)
+			case "reference":
+				return ec.fieldContext_Transfer_reference(ctx, field)
+			case "status":
+				return ec.fieldContext_Transfer_status(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_Transfer_timestamp(ctx, field)
+			case "kind":
+				return ec.fieldContext_Transfer_kind(ctx, field)
+			case "reason":
+				return ec.fieldContext_Transfer_reason(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Transfer", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_transfer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -88791,14 +88898,14 @@ func (ec *executionContext) _EthCallSpec(ctx context.Context, sel ast.SelectionS
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("EthCallSpec")
-		case "Address":
+		case "address":
 
-			out.Values[i] = ec._EthCallSpec_Address(ctx, field, obj)
+			out.Values[i] = ec._EthCallSpec_address(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "Abi":
+		case "abi":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -88807,7 +88914,7 @@ func (ec *executionContext) _EthCallSpec(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._EthCallSpec_Abi(ctx, field, obj)
+				res = ec._EthCallSpec_abi(ctx, field, obj)
 				return res
 			}
 
@@ -88815,14 +88922,14 @@ func (ec *executionContext) _EthCallSpec(ctx context.Context, sel ast.SelectionS
 				return innerFunc(ctx)
 
 			})
-		case "Method":
+		case "method":
 
-			out.Values[i] = ec._EthCallSpec_Method(ctx, field, obj)
+			out.Values[i] = ec._EthCallSpec_method(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "Args":
+		case "args":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -88831,7 +88938,7 @@ func (ec *executionContext) _EthCallSpec(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._EthCallSpec_Args(ctx, field, obj)
+				res = ec._EthCallSpec_args(ctx, field, obj)
 				return res
 			}
 
@@ -88839,7 +88946,7 @@ func (ec *executionContext) _EthCallSpec(ctx context.Context, sel ast.SelectionS
 				return innerFunc(ctx)
 
 			})
-		case "Trigger":
+		case "trigger":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -88848,7 +88955,7 @@ func (ec *executionContext) _EthCallSpec(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._EthCallSpec_Trigger(ctx, field, obj)
+				res = ec._EthCallSpec_trigger(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -88859,7 +88966,7 @@ func (ec *executionContext) _EthCallSpec(ctx context.Context, sel ast.SelectionS
 				return innerFunc(ctx)
 
 			})
-		case "RequiredConfirmations":
+		case "requiredConfirmations":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -88868,7 +88975,7 @@ func (ec *executionContext) _EthCallSpec(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._EthCallSpec_RequiredConfirmations(ctx, field, obj)
+				res = ec._EthCallSpec_requiredConfirmations(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -88879,7 +88986,7 @@ func (ec *executionContext) _EthCallSpec(ctx context.Context, sel ast.SelectionS
 				return innerFunc(ctx)
 
 			})
-		case "Normalisers":
+		case "normalisers":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -88888,7 +88995,7 @@ func (ec *executionContext) _EthCallSpec(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._EthCallSpec_Normalisers(ctx, field, obj)
+				res = ec._EthCallSpec_normalisers(ctx, field, obj)
 				return res
 			}
 
@@ -88896,7 +89003,7 @@ func (ec *executionContext) _EthCallSpec(ctx context.Context, sel ast.SelectionS
 				return innerFunc(ctx)
 
 			})
-		case "Filters":
+		case "filters":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -88905,7 +89012,7 @@ func (ec *executionContext) _EthCallSpec(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._EthCallSpec_Filters(ctx, field, obj)
+				res = ec._EthCallSpec_filters(ctx, field, obj)
 				return res
 			}
 
@@ -88962,17 +89069,17 @@ func (ec *executionContext) _EthTimeTrigger(ctx context.Context, sel ast.Selecti
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("EthTimeTrigger")
-		case "Initial":
+		case "initial":
 
-			out.Values[i] = ec._EthTimeTrigger_Initial(ctx, field, obj)
+			out.Values[i] = ec._EthTimeTrigger_initial(ctx, field, obj)
 
-		case "Every":
+		case "every":
 
-			out.Values[i] = ec._EthTimeTrigger_Every(ctx, field, obj)
+			out.Values[i] = ec._EthTimeTrigger_every(ctx, field, obj)
 
-		case "Until":
+		case "until":
 
-			out.Values[i] = ec._EthTimeTrigger_Until(ctx, field, obj)
+			out.Values[i] = ec._EthTimeTrigger_until(ctx, field, obj)
 
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -94376,16 +94483,16 @@ func (ec *executionContext) _Normaliser(ctx context.Context, sel ast.SelectionSe
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Normaliser")
-		case "Name":
+		case "name":
 
-			out.Values[i] = ec._Normaliser_Name(ctx, field, obj)
+			out.Values[i] = ec._Normaliser_name(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "Expression":
+		case "expression":
 
-			out.Values[i] = ec._Normaliser_Expression(ctx, field, obj)
+			out.Values[i] = ec._Normaliser_expression(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -99836,6 +99943,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_transfersConnection(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "transfer":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_transfer(ctx, field)
 				return res
 			}
 

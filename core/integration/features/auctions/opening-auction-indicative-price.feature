@@ -69,7 +69,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | trading mode            |
       | TRADING_MODE_CONTINUOUS |
     ## We're seeing these events twice for some reason
-    Then debug trades
+
     Then the following trades should be executed:
       | buyer  | price | size | seller |
       | party1 | 10000 | 3    | party2 |

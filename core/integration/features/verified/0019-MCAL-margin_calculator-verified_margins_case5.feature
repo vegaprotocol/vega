@@ -65,7 +65,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | party1 | ETH/DEC19 | sell | 13 | 9000000 | 2 | TYPE_LIMIT | TIF_GTC | ref-1 |
     And "party1" should have general account balance of "182599138" for asset "ETH"
 
-    Then debug trades
+
     And the following trades should be executed:
       | buyer     | price    | size | seller |
       | buySideMM | 10000000 | 1    | party1 |

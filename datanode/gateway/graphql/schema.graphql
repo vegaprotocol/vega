@@ -858,6 +858,9 @@ type Query {
     pagination: Pagination
   ): TransferConnection
 
+  "Find a transfer using its ID"
+  transfer("ID of the transfer" id: ID!): Transfer
+
   "Find a withdrawal using its ID"
   withdrawal("ID of the withdrawal" id: ID!): Withdrawal
 
@@ -3939,26 +3942,62 @@ type EthCallTrigger {
 
 union TriggerKind = EthTimeTrigger
 
+"""
+Trigger for an Ethereum call based on the Ethereum block timestamp. Can be
+one-off or repeating.
+"""
 type EthTimeTrigger {
-  Initial: Timestamp
-  Every: Timestamp
-  Until: Timestamp
+  "Trigger when the Ethereum time is greater or equal to this time, in Unix seconds."
+  initial: Timestamp
+  """
+  Repeat the call every n seconds after the initial call. If no time for
+  initial call was specified, begin repeating immediately.
+  """
+  every: Int
+  """
+  If repeating, stop once Ethereum time is greater than this time, in Unix
+  seconds. If not set, then repeat indefinitely.
+  """
+  until: Timestamp
 }
 
+"""
+Normaliser to convert the data returned from the contract method
+into a standard format.
+"""
 type Normaliser {
-  Name: String!
-  Expression: String!
+  name: String!
+  expression: String!
 }
 
+"""
+Specifies a data source that derives its content from calling a read method
+on an Ethereum contract.
+"""
 type EthCallSpec {
-  Address: String!
-  Abi: [String!]
-  Method: String!
-  Args: [String!]
-  Trigger: EthCallTrigger!
-  RequiredConfirmations: Int!
-  Normalisers: [Normaliser!]
-  Filters: [Filter!]
+  "Ethereum address of the contract to call."
+  address: String!
+  "The ABI of that contract."
+  abi: [String!]
+  "Name of the method on the contract to call."
+  method: String!
+  """
+  List of arguments to pass to method call.
+  Protobuf 'Value' wraps an arbitrary JSON type that is mapped to an Ethereum
+  type according to the ABI.
+  """
+  args: [String!]
+  "Conditions for determining when to call the contract method."
+  trigger: EthCallTrigger!
+  "Number of confirmations required before the query is considered verified."
+  requiredConfirmations: Int!
+  """
+  Normalisers are used to convert the data returned from the contract method
+  into a standard format.
+  """
+  normalisers: [Normaliser!]
+  "Filters the data returned from the contract method."
+  filters: [Filter!]
 }
 
 type InstrumentConfiguration {

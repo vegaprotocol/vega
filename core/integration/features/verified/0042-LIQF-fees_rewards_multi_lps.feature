@@ -137,7 +137,7 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
     And the accumulated liquidity fees should be "600000" for the market "ETH/MAR22"
     Then the network moves ahead "11" blocks
 
-    Then debug transfers
+
     And the following transfers should happen:
       | from   | to     | from account            | to account                       | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 5      | USD |

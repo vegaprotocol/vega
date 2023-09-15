@@ -493,6 +493,26 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		reporter.Fatalf("fail step invoked")
 	})
 
+	// Referral program steps.
+	s.Step(`^the referral program:$`, func(table *godog.Table) error {
+		return steps.TheReferralProgram(referralProgramConfig, execsetup.referralProgram, table)
+	})
+	s.Step(`^the referral benefit tiers "([^"]*)":$`, func(name string, table *godog.Table) error {
+		return steps.TheReferralBenefitTiersConfiguration(referralProgramConfig, name, table)
+	})
+	s.Step(`^the referral staking tiers "([^"]*)":$`, func(name string, table *godog.Table) error {
+		return steps.TheReferralStakingTiersConfiguration(referralProgramConfig, name, table)
+	})
+	s.Step(`^the parties create the following referral codes:$`, func(table *godog.Table) error {
+		return steps.PartiesCreateTheFollowingReferralCode(execsetup.referralProgram, table)
+	})
+	s.Step(`^the parties apply the following referral codes:$`, func(table *godog.Table) error {
+		return steps.PartiesApplyTheFollowingReferralCode(execsetup.referralProgram, table)
+	})
+	s.Step(`the referral set stats for code "([^"]+)" at epoch (\d+) should have a running volume of (\d+):`, func(code, epoch, volume string, table *godog.Table) error {
+		return steps.TheReferralSetStatsShouldBe(execsetup.broker, code, epoch, volume, table)
+	})
+
 	// Debug steps
 	s.Step(`^debug accounts$`, func() error {
 		steps.DebugAccounts(execsetup.broker, execsetup.log)

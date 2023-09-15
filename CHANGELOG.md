@@ -95,6 +95,7 @@
 - [9351](https://github.com/vegaprotocol/vega/issues/9351) - Avoid using strings in market activity tracker snapshot and checkpoint
 - [9079](https://github.com/vegaprotocol/vega/issues/9079) - Add API to get the current referral program
 - [8916](https://github.com/vegaprotocol/vega/issues/8916) - Add data node `API` for teams.
+- [7461](https://github.com/vegaprotocol/vega/issues/7461) - Add endpoint to get transfer by ID.
 
 ### 🐛 Fixes
 
@@ -178,6 +179,7 @@
 - [9374](https://github.com/vegaprotocol/vega/issues/9374) - `ListGovernanceData` ignored reference filter.
 - [9385](https://github.com/vegaprotocol/vega/issues/9385) - Support deprecated liquidity auction type for compatibility
 - [9398](https://github.com/vegaprotocol/vega/issues/9398) - Fix division by zero panic in market liquidity
+- [9413](https://github.com/vegaprotocol/vega/issues/9413) - Fix range validation for SLA parameters
 
 ## 0.72.1
 

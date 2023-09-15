@@ -16,6 +16,7 @@ import (
 	"embed"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/integration/steps/helpers"
 	"github.com/jinzhu/copier"
 
 	"code.vegaprotocol.io/vega/core/integration/steps/market/defaults"
@@ -40,7 +41,7 @@ func newMarginCalculators(unmarshaler *defaults.Unmarshaler) *marginCalculators 
 		config: map[string]*types.MarginCalculator{},
 	}
 
-	contentReaders := defaults.ReadAll(defaultMarginCalculators, defaultMarginCalculatorFileNames)
+	contentReaders := helpers.ReadAll(defaultMarginCalculators, defaultMarginCalculatorFileNames)
 	for name, contentReader := range contentReaders {
 		marginCalculator, err := unmarshaler.UnmarshalMarginCalculator(contentReader)
 		if err != nil {
