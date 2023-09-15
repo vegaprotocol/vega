@@ -3615,6 +3615,10 @@ message ListReferralSetsRequest {
   optional string referral_set_id = 1;
   // pagination information to limit the data that is returned.
   optional Pagination pagination = 2;
+  // Referrer to filter by. If referrer set ID is provided, this field is ignored.
+  optional string referrer = 3;
+  // Referee to filter by. If referrer set ID or referrer is provided, this field is ignored.
+  optional string referee = 4;
 }
 
 // Response containing information about a referral set or sets
@@ -3654,9 +3658,13 @@ message ReferralSetRefereeConnection {
 // Request to retrieve information about a referral set's referees
 message ListReferralSetRefereesRequest {
   // Referral set ID to retrieve information for
-  string referral_set_id = 1;
+  optional string referral_set_id = 1;
   // Pagination information to limit the data that is returned.
   optional Pagination pagination = 2;
+  // Referrer to filter by. If referrer set ID is provided, this field is ignored.
+  optional string referrer = 3;
+  // Referee to filter by. If referrer set ID or referrer is provided, this field is ignored.
+  optional string referee = 4;
 }
 
 // Response containing information about a referral set's referees

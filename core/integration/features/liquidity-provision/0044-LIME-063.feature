@@ -33,7 +33,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
 
     And the liquidity sla params named "SLA-22":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
-      | 0.5         | 0.6                          | 1                             | 1.0                    |
+      | 0.5 | 0.6 | 1 | 1.0 |
     And the liquidity sla params named "SLA-23":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 0           | 0.6                          | 1                             | 1.0                    |
@@ -189,6 +189,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
       | lp1  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 206    | USD   |
       | lp2  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 310    | USD   |
     And the insurance pool balance should be "1546" for the market "ETH/MAR22"
+
 
 
 

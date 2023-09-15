@@ -4087,13 +4087,25 @@ func (t *TradingDataServiceV2) ListReferralSets(ctx context.Context, req *v2.Lis
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	var id *entities.ReferralSetID
+	var (
+		id       *entities.ReferralSetID
+		referrer *entities.PartyID
+		referee  *entities.PartyID
+	)
 
 	if req.ReferralSetId != nil {
 		id = ptr.From(entities.ReferralSetID(*req.ReferralSetId))
 	}
 
-	sets, pageInfo, err := t.referralSetsService.ListReferralSets(ctx, id, pagination)
+	if req.Referrer != nil {
+		referrer = ptr.From(entities.PartyID(*req.Referrer))
+	}
+
+	if req.Referee != nil {
+		referee = ptr.From(entities.PartyID(*req.Referee))
+	}
+
+	sets, pageInfo, err := t.referralSetsService.ListReferralSets(ctx, id, referrer, referee, pagination)
 	if err != nil {
 		return nil, formatE(err)
 	}
@@ -4123,9 +4135,25 @@ func (t *TradingDataServiceV2) ListReferralSetReferees(ctx context.Context, req 
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	id := entities.ReferralSetID(req.ReferralSetId)
+	var (
+		id       *entities.ReferralSetID
+		referrer *entities.PartyID
+		referee  *entities.PartyID
+	)
 
-	referees, pageInfo, err := t.referralSetsService.ListReferralSetReferees(ctx, id, pagination)
+	if req.ReferralSetId != nil {
+		id = ptr.From(entities.ReferralSetID(*req.ReferralSetId))
+	}
+
+	if req.Referrer != nil {
+		referrer = ptr.From(entities.PartyID(*req.Referrer))
+	}
+
+	if req.Referee != nil {
+		referee = ptr.From(entities.PartyID(*req.Referee))
+	}
+
+	referees, pageInfo, err := t.referralSetsService.ListReferralSetReferees(ctx, id, referrer, referee, pagination)
 	if err != nil {
 		return nil, formatE(err)
 	}
