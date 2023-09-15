@@ -90,7 +90,7 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
 
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
 
-    Then debug detailed orderbook volumes for market "ETH/DEC20"
+
 
     Then the order book should have the following volumes for market "ETH/DEC20":
       | side | price | volume |

@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/integration/steps/helpers"
 	"github.com/jinzhu/copier"
 
 	"code.vegaprotocol.io/vega/core/integration/steps/market/defaults"
@@ -113,7 +114,7 @@ func (c *oracleConfigs) CheckName(name string) string {
 }
 
 func (c *oracleConfigs) futureOracleSpecs(unmarshaler *defaults.Unmarshaler) {
-	contentReaders := defaults.ReadAll(defaultOracleConfigs, defaultOracleConfigFileNames)
+	contentReaders := helpers.ReadAll(defaultOracleConfigs, defaultOracleConfigFileNames)
 	for name, contentReader := range contentReaders {
 		future, err := unmarshaler.UnmarshalDataSourceConfig(contentReader)
 		if err != nil {
@@ -126,7 +127,7 @@ func (c *oracleConfigs) futureOracleSpecs(unmarshaler *defaults.Unmarshaler) {
 }
 
 func (c *oracleConfigs) perpetualOracleSpecs(unmarshaler *defaults.Unmarshaler) {
-	contentReaders := defaults.ReadAll(defaultOraclePerpsConfigs, defaultPerpsOracleConfigFileNames)
+	contentReaders := helpers.ReadAll(defaultOraclePerpsConfigs, defaultPerpsOracleConfigFileNames)
 	for name, contentReader := range contentReaders {
 		perp, err := unmarshaler.UnmarshalPerpsDataSourceConfig(contentReader)
 		if err != nil {

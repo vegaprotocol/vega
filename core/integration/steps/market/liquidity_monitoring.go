@@ -16,6 +16,7 @@ import (
 	"embed"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/integration/steps/helpers"
 	"code.vegaprotocol.io/vega/core/integration/steps/market/defaults"
 	"code.vegaprotocol.io/vega/core/types"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
@@ -40,7 +41,7 @@ func newLiquidityMonitoring(unmarshaler *defaults.Unmarshaler) *liquidityMonitor
 		config: map[string]*vegapb.LiquidityMonitoringParameters{},
 	}
 
-	contentReaders := defaults.ReadAll(defaultLiquidityMonitoring, defaultLiquidityMonitoringFileNames)
+	contentReaders := helpers.ReadAll(defaultLiquidityMonitoring, defaultLiquidityMonitoringFileNames)
 	for name, contentReader := range contentReaders {
 		liqMonParams, err := unmarshaler.UnmarshalLiquidityMonitoring(contentReader)
 		if err != nil {

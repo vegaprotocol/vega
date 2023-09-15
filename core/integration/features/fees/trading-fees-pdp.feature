@@ -302,7 +302,7 @@ Feature: Fees calculations
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 1002 = 1.002 = 2 (rounded up to nearest whole value)
 
     Then the following trades should be executed:
-      | buyer    | price | size | seller  | aggressor side | buyer fee | seller fee | infrastructure fee | maker fee | liquidity fee |
+      | buyer    | price | size | seller  | aggressor side | buyer fee | seller fee | seller infrastructure fee | seller maker fee | seller liquidity fee |
       | trader3a | 1002  | 200  | trader4 | sell           | 0         | 19         | 5                  | 11        | 3             |
       | trader3b | 1002  | 100  | trader4 | sell           | 0         | 11         | 3                  | 6         | 2             |
 

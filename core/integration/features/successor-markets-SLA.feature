@@ -122,7 +122,7 @@ Feature: Simple example of successor markets
     And the insurance pool balance should be "6977" for the market "ETH/DEC19"
     And the global insurance pool balance should be "0" for the asset "USD"
 
-    Then debug transfers
+
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general     |

@@ -203,6 +203,13 @@ func (r RowWrapper) Decimal(name string) num.Decimal {
 	return value
 }
 
+func (r RowWrapper) DecimalB(name string) (num.Decimal, bool) {
+	if !r.HasColumn(name) {
+		return num.DecimalZero(), false
+	}
+	return r.Decimal(name), true
+}
+
 func Decimal(rawValue string) (num.Decimal, error) {
 	return num.DecimalFromString(rawValue)
 }

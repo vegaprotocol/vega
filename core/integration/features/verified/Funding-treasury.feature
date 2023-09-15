@@ -167,7 +167,7 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | party            | asset | market id | margin | general |
       | designatedLooser | USD   | ETH/DEC19 | 0      | 0       |
 
-    Then debug transfers
+
     # then we make sure the insurance pool collected the funds (however they get later spent on MTM payment to closeout-facilitating party)
     Then the following transfers should happen:
       | from             | to              | from account            | to account                       | market id | amount | asset |
