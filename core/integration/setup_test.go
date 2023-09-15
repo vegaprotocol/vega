@@ -238,92 +238,9 @@ func newExecutionTestSetup() *executionTestSetup {
 
 	execsetup.netParams = netparams.New(execsetup.log, netparams.NewDefaultConfig(), execsetup.broker)
 	if err := execsetup.registerNetParamsCallbacks(); err != nil {
-		panic(err)
+		panic(fmt.Errorf("failed to register network parameters: %w", err))
 	}
 
-	execsetup.netParams.Watch(
-		netparams.WatchParam{
-			Param:   netparams.FloatingPointUpdatesDuration,
-			Watcher: execsetup.stateVarEngine.OnFloatingPointUpdatesDurationUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.TransferFeeFactor,
-			Watcher: execsetup.banking.OnTransferFeeFactorUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.TransferMinTransferQuantumMultiple,
-			Watcher: execsetup.banking.OnMinTransferQuantumMultiple,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MaxPeggedOrders,
-			Watcher: execsetup.executionEngine.OnMaxPeggedOrderUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarkPriceUpdateMaximumFrequency,
-			Watcher: execsetup.executionEngine.OnMarkPriceUpdateMaximumFrequency,
-		},
-		netparams.WatchParam{
-			Param:   netparams.SpamProtectionMaxStopOrdersPerMarket,
-			Watcher: execsetup.executionEngine.OnMarketPartiesMaximumStopOrdersUpdate,
-		},
-
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityEarlyExitPenalty,
-			Watcher: execsetup.executionEngine.OnMarketLiquidityV2EarlyExitPenaltyUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquiditySLANonPerformanceBondPenaltyMax,
-			Watcher: execsetup.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquiditySLANonPerformanceBondPenaltySlope,
-			Watcher: execsetup.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityBondPenaltyParameter,
-			Watcher: execsetup.executionEngine.OnMarketLiquidityV2BondPenaltyUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
-			Watcher: execsetup.executionEngine.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityStakeToCCYVolume,
-			Watcher: execsetup.executionEngine.OnMarketLiquidityV2StakeToCCYVolumeUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityProvidersFeeCalculationTimeStep,
-			Watcher: execsetup.executionEngine.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep,
-		},
-		netparams.WatchParam{
-			Param:   netparams.ReferralProgramMinStakedVegaTokens,
-			Watcher: execsetup.referralProgram.OnReferralProgramMinStakedVegaTokensUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch,
-			Watcher: execsetup.referralProgram.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.ReferralProgramMaxReferralRewardProportion,
-			Watcher: execsetup.referralProgram.OnReferralProgramMaxReferralRewardProportionUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.ReferralProgramMinStakedVegaTokens,
-			Watcher: execsetup.teamsEngine.OnReferralProgramMinStakedVegaTokensUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.RewardsActivityStreakBenefitTiers,
-			Watcher: execsetup.activityStreak.OnBenefitTiersUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.RewardsActivityStreakMinQuantumOpenVolume,
-			Watcher: execsetup.activityStreak.OnMinQuantumOpenNationalVolumeUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.RewardsActivityStreakMinQuantumTradeVolume,
-			Watcher: execsetup.activityStreak.OnMinQuantumTradeVolumeUpdate,
-		},
-	)
 	return execsetup
 }
 
@@ -452,11 +369,85 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Param:   netparams.MarketSuccessorLaunchWindow,
 			Watcher: execsetup.executionEngine.OnSuccessorMarketTimeWindowUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.FloatingPointUpdatesDuration,
+			Watcher: execsetup.stateVarEngine.OnFloatingPointUpdatesDurationUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.TransferFeeFactor,
+			Watcher: execsetup.banking.OnTransferFeeFactorUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.TransferMinTransferQuantumMultiple,
+			Watcher: execsetup.banking.OnMinTransferQuantumMultiple,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MaxPeggedOrders,
+			Watcher: execsetup.executionEngine.OnMaxPeggedOrderUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarkPriceUpdateMaximumFrequency,
+			Watcher: execsetup.executionEngine.OnMarkPriceUpdateMaximumFrequency,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMaxStopOrdersPerMarket,
+			Watcher: execsetup.executionEngine.OnMarketPartiesMaximumStopOrdersUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityEarlyExitPenalty,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2EarlyExitPenaltyUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquiditySLANonPerformanceBondPenaltyMax,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquiditySLANonPerformanceBondPenaltySlope,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityBondPenaltyParameter,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2BondPenaltyUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityStakeToCCYVolume,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2StakeToCCYVolumeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityProvidersFeeCalculationTimeStep,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep,
+		},
+		netparams.WatchParam{
+			Param:   netparams.ReferralProgramMinStakedVegaTokens,
+			Watcher: execsetup.referralProgram.OnReferralProgramMinStakedVegaTokensUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch,
+			Watcher: execsetup.referralProgram.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.ReferralProgramMaxReferralRewardProportion,
+			Watcher: execsetup.referralProgram.OnReferralProgramMaxReferralRewardProportionUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.ReferralProgramMinStakedVegaTokens,
+			Watcher: execsetup.teamsEngine.OnReferralProgramMinStakedVegaTokensUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.RewardsActivityStreakBenefitTiers,
+			Watcher: execsetup.activityStreak.OnBenefitTiersUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.RewardsActivityStreakMinQuantumOpenVolume,
+			Watcher: execsetup.activityStreak.OnMinQuantumOpenNationalVolumeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.RewardsActivityStreakMinQuantumTradeVolume,
+			Watcher: execsetup.activityStreak.OnMinQuantumTradeVolumeUpdate,
+		},
 	)
-}
-
-type DummyActivityStreak struct{}
-
-func (*DummyActivityStreak) GetRewardsDistributionMultiplier(party string) num.Decimal {
-	return num.DecimalOne()
 }
