@@ -1757,8 +1757,8 @@ type ComplexityRoot struct {
 		ProposalsConnection                func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		ProtocolUpgradeProposals           func(childComplexity int, inState *v1.ProtocolUpgradeProposalStatus, approvedBy *string, pagination *v2.Pagination) int
 		ProtocolUpgradeStatus              func(childComplexity int) int
-		ReferralSetReferees                func(childComplexity int, id string, pagination *v2.Pagination) int
-		ReferralSets                       func(childComplexity int, id *string, pagination *v2.Pagination) int
+		ReferralSetReferees                func(childComplexity int, id *string, referrer *string, referee *string, pagination *v2.Pagination) int
+		ReferralSets                       func(childComplexity int, id *string, referrer *string, referee *string, pagination *v2.Pagination) int
 		Statistics                         func(childComplexity int) int
 		StopOrder                          func(childComplexity int, id string) int
 		StopOrders                         func(childComplexity int, filter *v2.StopOrderFilter, pagination *v2.Pagination) int
@@ -2931,8 +2931,8 @@ type QueryResolver interface {
 	ProposalsConnection(ctx context.Context, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) (*v2.GovernanceDataConnection, error)
 	ProtocolUpgradeStatus(ctx context.Context) (*ProtocolUpgradeStatus, error)
 	ProtocolUpgradeProposals(ctx context.Context, inState *v1.ProtocolUpgradeProposalStatus, approvedBy *string, pagination *v2.Pagination) (*v2.ProtocolUpgradeProposalConnection, error)
-	ReferralSets(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.ReferralSetConnection, error)
-	ReferralSetReferees(ctx context.Context, id string, pagination *v2.Pagination) (*v2.ReferralSetRefereeConnection, error)
+	ReferralSets(ctx context.Context, id *string, referrer *string, referee *string, pagination *v2.Pagination) (*v2.ReferralSetConnection, error)
+	ReferralSetReferees(ctx context.Context, id *string, referrer *string, referee *string, pagination *v2.Pagination) (*v2.ReferralSetRefereeConnection, error)
 	Statistics(ctx context.Context) (*v12.Statistics, error)
 	StopOrder(ctx context.Context, id string) (*v1.StopOrderEvent, error)
 	StopOrders(ctx context.Context, filter *v2.StopOrderFilter, pagination *v2.Pagination) (*v2.StopOrderConnection, error)
@@ -10314,7 +10314,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.ReferralSetReferees(childComplexity, args["id"].(string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Query.ReferralSetReferees(childComplexity, args["id"].(*string), args["referrer"].(*string), args["referee"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.referralSets":
 		if e.complexity.Query.ReferralSets == nil {
@@ -10326,7 +10326,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.ReferralSets(childComplexity, args["id"].(*string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Query.ReferralSets(childComplexity, args["id"].(*string), args["referrer"].(*string), args["referee"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.statistics":
 		if e.complexity.Query.Statistics == nil {
@@ -15070,24 +15070,42 @@ func (ec *executionContext) field_Query_protocolUpgradeProposals_args(ctx contex
 func (ec *executionContext) field_Query_referralSetReferees_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
+	var arg0 *string
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["id"] = arg0
-	var arg1 *v2.Pagination
-	if tmp, ok := rawArgs["pagination"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+	var arg1 *string
+	if tmp, ok := rawArgs["referrer"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("referrer"))
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["pagination"] = arg1
+	args["referrer"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["referee"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("referee"))
+		arg2, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["referee"] = arg2
+	var arg3 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg3, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg3
 	return args, nil
 }
 
@@ -15103,15 +15121,33 @@ func (ec *executionContext) field_Query_referralSets_args(ctx context.Context, r
 		}
 	}
 	args["id"] = arg0
-	var arg1 *v2.Pagination
-	if tmp, ok := rawArgs["pagination"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+	var arg1 *string
+	if tmp, ok := rawArgs["referrer"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("referrer"))
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["pagination"] = arg1
+	args["referrer"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["referee"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("referee"))
+		arg2, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["referee"] = arg2
+	var arg3 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg3, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg3
 	return args, nil
 }
 
@@ -63114,7 +63150,7 @@ func (ec *executionContext) _Query_referralSets(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ReferralSets(rctx, fc.Args["id"].(*string), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Query().ReferralSets(rctx, fc.Args["id"].(*string), fc.Args["referrer"].(*string), fc.Args["referee"].(*string), fc.Args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -63175,7 +63211,7 @@ func (ec *executionContext) _Query_referralSetReferees(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ReferralSetReferees(rctx, fc.Args["id"].(string), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Query().ReferralSetReferees(rctx, fc.Args["id"].(*string), fc.Args["referrer"].(*string), fc.Args["referee"].(*string), fc.Args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
