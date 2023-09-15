@@ -407,7 +407,7 @@ func (e *Engine) loadReferralSetsFromSnapshot(setsProto *snapshotpb.ReferralSets
 		newSet := &types.ReferralSet{
 			ID:        setID,
 			CreatedAt: time.Unix(0, setProto.CreatedAt),
-			UpdatedAt: time.Unix(0, setProto.CreatedAt),
+			UpdatedAt: time.Unix(0, setProto.UpdatedAt),
 			Referrer: &types.Membership{
 				PartyID:        types.PartyID(setProto.Referrer.PartyId),
 				JoinedAt:       time.Unix(0, setProto.Referrer.JoinedAt),
