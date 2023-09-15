@@ -29,7 +29,7 @@ func TestOracles(t *testing.T) {
 	}
 
 	queries = map[string]string{
-		"OracleDataSourceExternalEthereum":     `{ oracleSpecsConnection { edges { node { dataSourceSpec { spec { id createdAt updatedAt status data { sourceType { ... on DataSourceDefinitionExternal { sourceType { ... on EthCallSpec { Abi Args Address Method RequiredConfirmations Normalisers { Name Expression } Filters { key { name  type } conditions { operator value } } } } } } } } } } } } }`,
+		"OracleDataSourceExternalEthereum":     `{ oracleSpecsConnection { edges { node { dataSourceSpec { spec { id createdAt updatedAt status data { sourceType { ... on DataSourceDefinitionExternal { sourceType { ... on EthCallSpec { abi args address method requiredConfirmations normalisers { name expression } trigger { trigger { ... on EthTimeTrigger { initial every until } } } filters { key { name  type } conditions { operator value } } } } } } } } } } } } }`,
 		"OracleDataConnectionExternalEthereum": `{ oracleSpecsConnection { edges { node { dataConnection { edges { node { externalData { data { matchedSpecIds broadcastAt } } } } } } } } }`,
 	}
 

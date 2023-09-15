@@ -77,7 +77,7 @@ func resolveTrigger(obj any) (trigger TriggerKind) {
 		case *vegapb.EthCallTrigger_TimeTrigger:
 			if trig.TimeTrigger != nil {
 				init := int64(trig.TimeTrigger.GetInitial())
-				every := int64(trig.TimeTrigger.GetEvery())
+				every := int(trig.TimeTrigger.GetEvery())
 				until := int64(trig.TimeTrigger.GetUntil())
 				trigger = &EthTimeTrigger{
 					Initial: &init,
