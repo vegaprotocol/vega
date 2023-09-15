@@ -117,7 +117,7 @@ Feature: Test change of SLA market parameter
     Then the markets are updated:
       | id        | risk model            | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/MAR22 | log-normal-risk-model | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA-22-2   |
-    Then the network moves ahead "1" epochs
+    Then the network moves ahead "3" epochs
 
     Then the following transfers should happen:
       | from | to     | from account      | to account             | market id | amount | asset |
