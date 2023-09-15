@@ -59,9 +59,10 @@ func NewReferralSetStatsUpdatedEvent(ctx context.Context, update *types.Referral
 	refereesStats := make([]*eventspb.RefereeStats, 0, len(update.RefereesStats))
 	for partyID, stat := range update.RefereesStats {
 		refereesStats = append(refereesStats, &eventspb.RefereeStats{
-			PartyId:        string(partyID),
-			DiscountFactor: stat.DiscountFactor.String(),
-			RewardFactor:   stat.RewardFactor.String(),
+			PartyId:                  string(partyID),
+			DiscountFactor:           stat.DiscountFactor.String(),
+			RewardFactor:             stat.RewardFactor.String(),
+			EpochNotionalTakerVolume: stat.TakerVolume.String(),
 		})
 	}
 
