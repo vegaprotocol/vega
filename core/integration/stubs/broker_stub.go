@@ -909,6 +909,21 @@ func (b *BrokerStub) ReferralSetStats() []*types.ReferralSetStats {
 	return stats
 }
 
+func (b *BrokerStub) PartyActivityStreaks() []eventspb.PartyActivityStreak {
+	batch := b.GetBatch(events.PartyActivityStreakEvent)
+
+	stats := make([]eventspb.PartyActivityStreak, 0, len(batch))
+	for _, event := range batch {
+		switch et := event.(type) {
+		case *events.PartyActivityStreak:
+			stats = append(stats, et.Proto())
+		case events.PartyActivityStreak:
+			stats = append(stats, et.Proto())
+		}
+	}
+	return stats
+}
+
 func (b *BrokerStub) GetPartyBondAccount(party, asset string) (ba vegapb.Account, err error) {
 	batch := b.GetAccountEvents()
 	err = errors.New("account does not exist")
