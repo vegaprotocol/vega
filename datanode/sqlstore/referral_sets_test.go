@@ -166,10 +166,10 @@ func TestReferralSets_ListReferralSets(t *testing.T) {
 	bs, ps, rs := setupReferralSetsTest(t)
 	ctx := tempTransaction(t)
 
-	sets, _ := setupReferralSetsAndReferees(t, ctx, bs, ps, rs)
+	sets, referees := setupReferralSetsAndReferees(t, ctx, bs, ps, rs)
 
 	t.Run("Should return all referral sets", func(t *testing.T) {
-		got, pageInfo, err := rs.ListReferralSets(ctx, nil, helpers.DefaultNoPagination())
+		got, pageInfo, err := rs.ListReferralSets(ctx, nil, nil, nil, helpers.DefaultNoPagination())
 		require.NoError(t, err)
 		want := sets[:]
 		assert.Equal(t, want, got)
@@ -186,7 +186,42 @@ func TestReferralSets_ListReferralSets(t *testing.T) {
 		r := rand.New(src)
 
 		want := sets[r.Intn(len(sets))]
-		got, pageInfo, err := rs.ListReferralSets(ctx, &want.ID, entities.CursorPagination{})
+		got, pageInfo, err := rs.ListReferralSets(ctx, &want.ID, nil, nil, entities.CursorPagination{})
+		require.NoError(t, err)
+		assert.Equal(t, want, got[0])
+		assert.Equal(t, entities.PageInfo{
+			HasNextPage:     false,
+			HasPreviousPage: false,
+			StartCursor:     want.Cursor().Encode(),
+			EndCursor:       want.Cursor().Encode(),
+		}, pageInfo)
+	})
+
+	t.Run("Should return the requested referral set by referrer", func(t *testing.T) {
+		src := rand.New(rand.NewSource(time.Now().UnixNano()))
+		r := rand.New(src)
+
+		want := sets[r.Intn(len(sets))]
+		got, pageInfo, err := rs.ListReferralSets(ctx, nil, &want.Referrer, nil, entities.CursorPagination{})
+		require.NoError(t, err)
+		assert.Equal(t, want, got[0])
+		assert.Equal(t, entities.PageInfo{
+			HasNextPage:     false,
+			HasPreviousPage: false,
+			StartCursor:     want.Cursor().Encode(),
+			EndCursor:       want.Cursor().Encode(),
+		}, pageInfo)
+	})
+
+	t.Run("Should return the requested referral set by referee", func(t *testing.T) {
+		src := rand.New(rand.NewSource(time.Now().UnixNano()))
+		r := rand.New(src)
+
+		want := sets[r.Intn(len(sets))]
+		refs := referees[want.ID.String()]
+		wantReferee := refs[r.Intn(len(refs))]
+
+		got, pageInfo, err := rs.ListReferralSets(ctx, nil, nil, &wantReferee.Referee, entities.CursorPagination{})
 		require.NoError(t, err)
 		assert.Equal(t, want, got[0])
 		assert.Equal(t, entities.PageInfo{
@@ -202,7 +237,7 @@ func TestReferralSets_ListReferralSets(t *testing.T) {
 		cursor, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 		require.NoError(t, err)
 
-		got, pageInfo, err := rs.ListReferralSets(ctx, nil, cursor)
+		got, pageInfo, err := rs.ListReferralSets(ctx, nil, nil, nil, cursor)
 		require.NoError(t, err)
 		want := sets[:first]
 		assert.Equal(t, want, got)
@@ -219,7 +254,7 @@ func TestReferralSets_ListReferralSets(t *testing.T) {
 		cursor, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 		require.NoError(t, err)
 
-		got, pageInfo, err := rs.ListReferralSets(ctx, nil, cursor)
+		got, pageInfo, err := rs.ListReferralSets(ctx, nil, nil, nil, cursor)
 		require.NoError(t, err)
 		want := sets[len(sets)-int(last):]
 		assert.Equal(t, want, got)
@@ -237,7 +272,7 @@ func TestReferralSets_ListReferralSets(t *testing.T) {
 		cursor, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 		require.NoError(t, err)
 
-		got, pageInfo, err := rs.ListReferralSets(ctx, nil, cursor)
+		got, pageInfo, err := rs.ListReferralSets(ctx, nil, nil, nil, cursor)
 		require.NoError(t, err)
 		want := sets[3:6]
 		assert.Equal(t, want, got)
@@ -255,7 +290,7 @@ func TestReferralSets_ListReferralSets(t *testing.T) {
 		cursor, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 		require.NoError(t, err)
 
-		got, pageInfo, err := rs.ListReferralSets(ctx, nil, cursor)
+		got, pageInfo, err := rs.ListReferralSets(ctx, nil, nil, nil, cursor)
 		require.NoError(t, err)
 		want := sets[4:7]
 		assert.Equal(t, want, got)
@@ -281,7 +316,34 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 
 	t.Run("Should return all referees in a set if no pagination", func(t *testing.T) {
 		want := refs[:]
-		got, pageInfo, err := rs.ListReferralSetReferees(ctx, set.ID, helpers.DefaultNoPagination())
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, helpers.DefaultNoPagination())
+		require.NoError(t, err)
+		assert.Equal(t, want, got)
+		assert.Equal(t, entities.PageInfo{
+			HasNextPage:     false,
+			HasPreviousPage: false,
+			StartCursor:     want[0].Cursor().Encode(),
+			EndCursor:       want[len(want)-1].Cursor().Encode(),
+		}, pageInfo)
+	})
+
+	t.Run("Should return all referees in a set by referrer if no pagination", func(t *testing.T) {
+		want := refs[:]
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, nil, &set.Referrer, nil, helpers.DefaultNoPagination())
+		require.NoError(t, err)
+		assert.Equal(t, want, got)
+		assert.Equal(t, entities.PageInfo{
+			HasNextPage:     false,
+			HasPreviousPage: false,
+			StartCursor:     want[0].Cursor().Encode(),
+			EndCursor:       want[len(want)-1].Cursor().Encode(),
+		}, pageInfo)
+	})
+
+	t.Run("Should return referee in a set", func(t *testing.T) {
+		want := []entities.ReferralSetReferee{refs[r.Intn(len(refs))]}
+
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, nil, nil, &want[0].Referee, helpers.DefaultNoPagination())
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 		assert.Equal(t, entities.PageInfo{
@@ -297,7 +359,7 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 		cursor, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 		require.NoError(t, err)
 
-		got, pageInfo, err := rs.ListReferralSetReferees(ctx, set.ID, cursor)
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, cursor)
 		require.NoError(t, err)
 		want := refs[:first]
 		assert.Equal(t, want, got)
@@ -314,7 +376,7 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 		cursor, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 		require.NoError(t, err)
 
-		got, pageInfo, err := rs.ListReferralSetReferees(ctx, set.ID, cursor)
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, cursor)
 		require.NoError(t, err)
 		want := refs[len(refs)-int(last):]
 		assert.Equal(t, want, got)
@@ -332,7 +394,7 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 		cursor, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 		require.NoError(t, err)
 
-		got, pageInfo, err := rs.ListReferralSetReferees(ctx, set.ID, cursor)
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, cursor)
 		require.NoError(t, err)
 		want := refs[3:6]
 		assert.Equal(t, want, got)
@@ -350,7 +412,7 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 		cursor, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 		require.NoError(t, err)
 
-		got, pageInfo, err := rs.ListReferralSetReferees(ctx, set.ID, cursor)
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, cursor)
 		require.NoError(t, err)
 		want := refs[4:7]
 		assert.Equal(t, want, got)
