@@ -90,23 +90,3 @@ Feature: Simple example of successor markets
       | lpprov1 | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/DEC19 | 908    | USD   |
       | lpprov1 | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/DEC19 | 736    | USD   |
 
-
-# @SLADebug
-# Scenario: Reproduce opening auction without LP with upfront LP submission
-#   Given the markets:
-#     | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params |
-#     | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec19Oracle     | 0.1                    | 0                         | 0              | 0                       |                  |                         |                   | SLA        |
-#   When the parties submit the following liquidity provision:
-#     | id  | party   | market id | commitment amount | fee | lp type    |
-#     | lp1 | lpprov1 | ETH/DEC19 | 9000              | 0.1 | submission |
-#     | lp1 | lpprov1 | ETH/DEC19 | 9000              | 0.1 | submission |
-#   And the parties place the following orders:
-#     | party   | market id | side | volume | price | resulting trades | type       | tif     |
-#     | trader1 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-#     | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-
-#   And the opening auction period ends for market "ETH/DEC19"
-#   And the network moves ahead "20" blocks
-#   #And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-#   Then the market data for the market "ETH/DEC19" should be:
-#     | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
