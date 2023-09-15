@@ -34,9 +34,9 @@ Feature: Referral benefits set correctly
       | USDT | 1              |
       | USDC | 2              |
     And the markets:
-      | id       | quote name | asset | risk model                    | margin calculator         | auction duration | fees        | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/USDT | ETH        | USDT  | default-log-normal-risk-model | default-margin-calculator | 1                | fees-config | default-none     | default-eth-for-future | 1e-3                   | 0                         | default-futures |
-      | ETH/USDC | ETH        | USDC  | default-log-normal-risk-model | default-margin-calculator | 1                | fees-config | default-none     | default-eth-for-future | 1e-3                   | 0                         | default-futures |
+      | id       | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/USDT | ETH        | USDT  | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e-3                   | 0                         | default-futures |
+      | ETH/USDC | ETH        | USDC  | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e-3                   | 0                         | default-futures |
     
     # Initialise the parties
     Given the parties deposit on asset's general account the following amount:
