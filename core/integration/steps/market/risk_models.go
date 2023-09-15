@@ -16,6 +16,7 @@ import (
 	"embed"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/integration/steps/helpers"
 	"github.com/jinzhu/copier"
 
 	"code.vegaprotocol.io/vega/core/integration/steps/market/defaults"
@@ -53,7 +54,7 @@ func newRiskModels(unmarshaler *defaults.Unmarshaler) *riskModels {
 		logNormal: map[string]*vegapb.TradableInstrument_LogNormalRiskModel{},
 	}
 
-	simpleRiskModelReaders := defaults.ReadAll(defaultSimpleRiskModels, defaultSimpleRiskModelFileNames)
+	simpleRiskModelReaders := helpers.ReadAll(defaultSimpleRiskModels, defaultSimpleRiskModelFileNames)
 	for name, contentReader := range simpleRiskModelReaders {
 		instrument, err := unmarshaler.UnmarshalRiskModel(contentReader)
 		if err != nil {
@@ -64,7 +65,7 @@ func newRiskModels(unmarshaler *defaults.Unmarshaler) *riskModels {
 		}
 	}
 
-	logNormalRiskModelReaders := defaults.ReadAll(defaultLogNormalRiskModels, defaultLogNormalRiskModelFileNames)
+	logNormalRiskModelReaders := helpers.ReadAll(defaultLogNormalRiskModels, defaultLogNormalRiskModelFileNames)
 	for name, contentReader := range logNormalRiskModelReaders {
 		instrument, err := unmarshaler.UnmarshalRiskModel(contentReader)
 		if err != nil {

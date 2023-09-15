@@ -79,7 +79,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | sellSideProvider | ETH/DEC19 | sell | 290    | 150   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
 
-    # Then debug detailed orderbook volumes for market "ETH/DEC19"
+
 
     Then the parties cancel the following orders:
       | party  | reference |

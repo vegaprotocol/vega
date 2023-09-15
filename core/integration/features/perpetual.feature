@@ -5,7 +5,6 @@ Feature: Simple test creating a perpetual market.
       | id  | decimal places |
       | ETH | 18             |
       | USD | 0              |
-
     And the perpetual oracles from "0xCAFECAFE1":
       | name        | asset | settlement property | settlement type | schedule property | schedule type  | margin funding factor | interest rate | clamp lower bound | clamp upper bound | quote name | settlement decimals |
       | perp-oracle | ETH   | perp.ETH.value      | TYPE_INTEGER    | perp.funding.cue  | TYPE_TIMESTAMP | 0                     | 0             | 0                 | 0                 | ETH        | 18                  |
@@ -17,19 +16,19 @@ Feature: Simple test creating a perpetual market.
       | id        | quote name | asset | risk model            | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | market type | sla params |
       | ETH/DEC19 | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | perp-oracle        | 0.1                    | 0                         | 5              | 5                       | perp        | SLA        |
     And the following network parameters are set:
-      | name                                               | value    |
-      | network.markPriceUpdateMaximumFrequency            | 0s       |
-      | market.liquidity.targetstake.triggering.ratio      | 0        |
-      | market.stake.target.timeWindow                     | 10s      |
-      | market.stake.target.scalingFactor                  | 5        |
-      | market.auction.minimumDuration                     | 1        |
-      | market.fee.factors.infrastructureFee               | 0.001    |
-      | market.fee.factors.makerFee                        | 0.004    |
-      | market.value.windowLength                          | 60s      |
-      | market.liquidity.bondPenaltyParameter            | 0.1      |
-      | validators.epoch.length                            | 5s       |
-      | limits.markets.maxPeggedOrders                     | 2        |
-      | market.liquidity.providersFeeCalculationTimeStep | 5s |
+      | name                                             | value |
+      | network.markPriceUpdateMaximumFrequency          | 0s    |
+      | market.liquidity.targetstake.triggering.ratio    | 0     |
+      | market.stake.target.timeWindow                   | 10s   |
+      | market.stake.target.scalingFactor                | 5     |
+      | market.auction.minimumDuration                   | 1     |
+      | market.fee.factors.infrastructureFee             | 0.001 |
+      | market.fee.factors.makerFee                      | 0.004 |
+      | market.value.windowLength                        | 60s   |
+      | market.liquidity.bondPenaltyParameter            | 0.1   |
+      | validators.epoch.length                          | 5s    |
+      | limits.markets.maxPeggedOrders                   | 2     |
+      | market.liquidity.providersFeeCalculationTimeStep | 5s    |
 
     And the average block duration is "1"
 
@@ -76,8 +75,7 @@ Feature: Simple test creating a perpetual market.
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search       | initial      | release      |
       | trader1 | ETH/DEC19 | 94501904587 | 103952095045 | 113402285504 | 132302666421 |
-    And debug orders
-    And debug detailed orderbook volumes for market "ETH/DEC19"
+
     # example of how to use the oracle
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value      | time offset |
@@ -117,8 +115,8 @@ Feature: Simple test creating a perpetual market.
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search       | initial      | release      |
       | trader1 | ETH/DEC19 | 94501904587 | 103952095045 | 113402285504 | 132302666421 |
-    And debug orders
-    And debug detailed orderbook volumes for market "ETH/DEC19"
+
+
     # example of how to use the oracle
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value      | time offset |

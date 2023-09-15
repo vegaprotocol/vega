@@ -113,7 +113,7 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | mark price | best static bid price | static mid price | best static offer price |
       | 3500000000 | 810000000             | 4500000000       | 8190000000              |
     # LP orders change as the mid price changed
-    Then debug detailed orderbook volumes for market "DAI/DEC22"
+
     And the order book should have the following volumes for market "DAI/DEC22":
       | side | price      | volume |
       | sell | 8200000000 | 1      |

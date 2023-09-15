@@ -87,7 +87,6 @@ Feature: Fees reward calculations for a single asset, single market
 
     And the accumulated infrastructure fees should be "0" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
-    # Then debug detailed orderbook volumes for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
       | 1000       | TRADING_MODE_CONTINUOUS |
@@ -393,7 +392,7 @@ Feature: Fees reward calculations for a single asset, single market
 # liquidity_fee = fee_factor[liquidity] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.001 0000000000000000000000000000000000000000000000000000000000000000 1002 = 1.002 = 2 (rounded up to nearest whole value)
 
     Then the following trades should be executed:
-      | buyer    | price | size | seller  | aggressor side | buyer fee | seller fee | infrastructure fee | maker fee | liquidity fee |
+      | buyer    | price | size | seller  | aggressor side | buyer fee | seller fee | seller infrastructure fee | seller maker fee | seller liquidity fee |
       | trader3a | 1002  | 2    | trader4 | sell           | 0         | 19         | 5                  | 11        | 3             |
       | trader3b | 1002  | 1    | trader4 | sell           | 0         | 11         | 3                  | 6         | 2             |
 

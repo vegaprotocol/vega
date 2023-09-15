@@ -21,9 +21,9 @@ import (
 	"code.vegaprotocol.io/vega/libs/broker"
 
 	"code.vegaprotocol.io/vega/core/events"
-	vtypes "code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types"
 	proto "code.vegaprotocol.io/vega/protos/vega"
-	types "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
@@ -243,9 +243,9 @@ func (b *BrokerStub) ClearTransferResponseEvents() {
 }
 
 // GetTransfers returns ledger entries, mutable argument specifies if these should be all the scenario events or events that can be cleared by the user.
-func (b *BrokerStub) GetTransfers(mutable bool) []*types.LedgerEntry {
+func (b *BrokerStub) GetTransfers(mutable bool) []*vegapb.LedgerEntry {
 	transferEvents := b.GetLedgerMovements(mutable)
-	transfers := []*types.LedgerEntry{}
+	transfers := []*vegapb.LedgerEntry{}
 	for _, e := range transferEvents {
 		for _, response := range e.LedgerMovements() {
 			transfers = append(transfers, response.GetEntries()...)
@@ -281,9 +281,9 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy ma
 	}
 
 	// first get all active orders
-	activeOrders := map[string]*types.Order{}
+	activeOrders := map[string]*vegapb.Order{}
 	for _, e := range batch {
-		var ord *types.Order
+		var ord *vegapb.Order
 		switch et := e.(type) {
 		case *events.Order:
 			ord = et.Order()
@@ -297,7 +297,7 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy ma
 			continue
 		}
 
-		if ord.Status == types.Order_STATUS_ACTIVE {
+		if ord.Status == vegapb.Order_STATUS_ACTIVE {
 			activeOrders[ord.Id] = ord
 		} else {
 			delete(activeOrders, ord.Id)
@@ -310,7 +310,7 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy ma
 		if _, ok := expForMarket[id]; ok {
 			continue
 		}
-		if v.Side == types.Side_SIDE_BUY {
+		if v.Side == vegapb.Side_SIDE_BUY {
 			buy[v.Price] = buy[v.Price] + v.Remaining
 			continue
 		}
@@ -320,14 +320,14 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy ma
 	return sell, buy
 }
 
-func (b *BrokerStub) GetActiveOrderDepth(marketID string) (sell []*types.Order, buy []*types.Order) {
+func (b *BrokerStub) GetActiveOrderDepth(marketID string) (sell []*vegapb.Order, buy []*vegapb.Order) {
 	batch := b.GetImmBatch(events.OrderEvent)
 	if len(batch) == 0 {
 		return nil, nil
 	}
-	active := make(map[string]*types.Order, len(batch))
+	active := make(map[string]*vegapb.Order, len(batch))
 	for _, e := range batch {
-		var ord *types.Order
+		var ord *vegapb.Order
 		switch et := e.(type) {
 		case *events.Order:
 			ord = et.Order()
@@ -339,7 +339,7 @@ func (b *BrokerStub) GetActiveOrderDepth(marketID string) (sell []*types.Order, 
 		if ord.MarketId != marketID {
 			continue
 		}
-		if ord.Status == types.Order_STATUS_ACTIVE {
+		if ord.Status == vegapb.Order_STATUS_ACTIVE {
 			active[ord.Id] = ord
 		} else {
 			delete(active, ord.Id)
@@ -349,9 +349,9 @@ func (b *BrokerStub) GetActiveOrderDepth(marketID string) (sell []*types.Order, 
 	if len(active)%2 == 1 {
 		c++
 	}
-	sell, buy = make([]*types.Order, 0, c), make([]*types.Order, 0, c)
+	sell, buy = make([]*vegapb.Order, 0, c), make([]*vegapb.Order, 0, c)
 	for _, ord := range active {
-		if ord.Side == types.Side_SIDE_BUY {
+		if ord.Side == vegapb.Side_SIDE_BUY {
 			buy = append(buy, ord)
 			continue
 		}
@@ -361,7 +361,7 @@ func (b *BrokerStub) GetActiveOrderDepth(marketID string) (sell []*types.Order, 
 	return sell, buy
 }
 
-func (b *BrokerStub) GetMarket(marketID string) *types.Market {
+func (b *BrokerStub) GetMarket(marketID string) *vegapb.Market {
 	batch := b.GetBatch(events.MarketUpdatedEvent)
 	if len(batch) == 0 {
 		return nil
@@ -387,12 +387,12 @@ func (b *BrokerStub) GetMarket(marketID string) *types.Market {
 	return nil
 }
 
-func (b *BrokerStub) GetLastMarketUpdateState(marketID string) *types.Market {
+func (b *BrokerStub) GetLastMarketUpdateState(marketID string) *vegapb.Market {
 	batch := b.GetBatch(events.MarketUpdatedEvent)
 	if len(batch) == 0 {
 		return nil
 	}
-	var r *types.Market
+	var r *vegapb.Market
 	for _, evt := range batch {
 		switch me := evt.(type) {
 		case *events.MarketUpdated:
@@ -410,9 +410,9 @@ func (b *BrokerStub) GetLastMarketUpdateState(marketID string) *types.Market {
 	return r
 }
 
-func (b *BrokerStub) GetOrdersByPartyAndMarket(party, market string) []types.Order {
+func (b *BrokerStub) GetOrdersByPartyAndMarket(party, market string) []vegapb.Order {
 	orders := b.GetOrderEvents()
-	ret := []types.Order{}
+	ret := []vegapb.Order{}
 	for _, oe := range orders {
 		if o := oe.Order(); o.MarketId == market && o.PartyId == party {
 			ret = append(ret, *o)
@@ -446,16 +446,16 @@ func (b *BrokerStub) GetOrderEvents() []events.Order {
 	if len(batch) == 0 {
 		return nil
 	}
-	last := map[string]*vtypes.Order{}
+	last := map[string]*types.Order{}
 	ret := make([]events.Order, 0, len(batch))
 	for _, e := range batch {
-		var o *vtypes.Order
+		var o *types.Order
 		switch et := e.(type) {
 		case *events.Order:
-			o, _ = vtypes.OrderFromProto(et.Order())
+			o, _ = types.OrderFromProto(et.Order())
 			ret = append(ret, *et)
 		case events.Order:
-			o, _ = vtypes.OrderFromProto(et.Order())
+			o, _ = types.OrderFromProto(et.Order())
 			ret = append(ret, et)
 		}
 		last[o.ID] = o
@@ -471,7 +471,7 @@ func (b *BrokerStub) GetOrderEvents() []events.Order {
 		}
 		for _, id := range ids {
 			if o, ok := last[id]; ok {
-				o.Status = types.Order_STATUS_EXPIRED
+				o.Status = vegapb.Order_STATUS_EXPIRED
 				fe := events.NewOrderEvent(context.Background(), o)
 				ret = append(ret, *fe)
 			}
@@ -536,13 +536,13 @@ func (b *BrokerStub) GetAccountEvents() []events.Acc {
 	return s
 }
 
-func (b *BrokerStub) GetDeposits() []types.Deposit {
+func (b *BrokerStub) GetDeposits() []vegapb.Deposit {
 	// Use GetImmBatch so that clearing events doesn't affact this method
 	batch := b.GetImmBatch(events.DepositEvent)
 	if len(batch) == 0 {
 		return nil
 	}
-	ret := make([]types.Deposit, 0, len(batch))
+	ret := make([]vegapb.Deposit, 0, len(batch))
 	for _, e := range batch {
 		switch et := e.(type) {
 		case *events.Deposit:
@@ -552,13 +552,13 @@ func (b *BrokerStub) GetDeposits() []types.Deposit {
 	return ret
 }
 
-func (b *BrokerStub) GetWithdrawals() []types.Withdrawal {
+func (b *BrokerStub) GetWithdrawals() []vegapb.Withdrawal {
 	// Use GetImmBatch so that clearing events doesn't affact this method
 	batch := b.GetImmBatch(events.WithdrawalEvent)
 	if len(batch) == 0 {
 		return nil
 	}
-	ret := make([]types.Withdrawal, 0, len(batch))
+	ret := make([]vegapb.Withdrawal, 0, len(batch))
 	for _, e := range batch {
 		switch et := e.(type) {
 		case *events.Withdrawal:
@@ -606,12 +606,12 @@ func (b *BrokerStub) GetCurrentEpoch() *events.EpochEvent {
 	return nil
 }
 
-func (b *BrokerStub) GetDelegationBalance(epochSeq string) []types.Delegation {
+func (b *BrokerStub) GetDelegationBalance(epochSeq string) []vegapb.Delegation {
 	evts := b.GetDelegationBalanceEvents(epochSeq)
-	balances := make([]types.Delegation, 0, len(evts))
+	balances := make([]vegapb.Delegation, 0, len(evts))
 
 	for _, e := range evts {
-		balances = append(balances, types.Delegation{
+		balances = append(balances, vegapb.Delegation{
 			Party:    e.Party,
 			NodeId:   e.NodeID,
 			EpochSeq: e.EpochSeq,
@@ -667,9 +667,9 @@ func (b *BrokerStub) GetValidatorScores(epochSeq string) map[string]events.Valid
 	return scores
 }
 
-func (b *BrokerStub) GetAccounts() []types.Account {
+func (b *BrokerStub) GetAccounts() []vegapb.Account {
 	evts := b.GetAccountEvents()
-	accounts := make([]types.Account, 0, len(evts))
+	accounts := make([]vegapb.Account, 0, len(evts))
 	for _, a := range evts {
 		accounts = append(accounts, a.Account())
 	}
@@ -694,153 +694,153 @@ func (b *BrokerStub) GetAuctionEvents() []events.Auction {
 	return ret
 }
 
-func (b *BrokerStub) GetMarginByPartyAndMarket(partyID, marketID string) (types.MarginLevels, error) {
+func (b *BrokerStub) GetMarginByPartyAndMarket(partyID, marketID string) (vegapb.MarginLevels, error) {
 	batch := b.GetBatch(events.MarginLevelsEvent)
-	mapped := map[string]map[string]types.MarginLevels{}
+	mapped := map[string]map[string]vegapb.MarginLevels{}
 	for _, e := range batch {
 		switch et := e.(type) {
 		case *events.MarginLevels:
 			ml := et.MarginLevels()
 			if _, ok := mapped[ml.PartyId]; !ok {
-				mapped[ml.PartyId] = map[string]types.MarginLevels{}
+				mapped[ml.PartyId] = map[string]vegapb.MarginLevels{}
 			}
 			mapped[ml.PartyId][ml.MarketId] = ml
 		case events.MarginLevels:
 			ml := et.MarginLevels()
 			if _, ok := mapped[ml.PartyId]; !ok {
-				mapped[ml.PartyId] = map[string]types.MarginLevels{}
+				mapped[ml.PartyId] = map[string]vegapb.MarginLevels{}
 			}
 			mapped[ml.PartyId][ml.MarketId] = ml
 		}
 	}
 	mkts, ok := mapped[partyID]
 	if !ok {
-		return types.MarginLevels{}, fmt.Errorf("no margin levels for party (%v)", partyID)
+		return vegapb.MarginLevels{}, fmt.Errorf("no margin levels for party (%v)", partyID)
 	}
 	ml, ok := mkts[marketID]
 	if !ok {
-		return types.MarginLevels{}, fmt.Errorf("party (%v) have no margin levels for market (%v)", partyID, marketID)
+		return vegapb.MarginLevels{}, fmt.Errorf("party (%v) have no margin levels for market (%v)", partyID, marketID)
 	}
 	return ml, nil
 }
 
-func (b *BrokerStub) GetMarketInsurancePoolAccount(market string) (types.Account, error) {
+func (b *BrokerStub) GetMarketInsurancePoolAccount(market string) (vegapb.Account, error) {
 	batch := b.GetAccountEvents()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == "*" && v.MarketId == market && v.Type == types.AccountType_ACCOUNT_TYPE_INSURANCE {
+		if v.Owner == "*" && v.MarketId == market && v.Type == vegapb.AccountType_ACCOUNT_TYPE_INSURANCE {
 			return v, nil
 		}
 	}
-	return types.Account{}, errors.New("account does not exist")
+	return vegapb.Account{}, errors.New("account does not exist")
 }
 
-func (b *BrokerStub) GetStakingRewardAccount(asset string) (types.Account, error) {
+func (b *BrokerStub) GetStakingRewardAccount(asset string) (vegapb.Account, error) {
 	batch := b.GetAccountEvents()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == "*" && v.Asset == asset && v.Type == types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD {
+		if v.Owner == "*" && v.Asset == asset && v.Type == vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD {
 			return v, nil
 		}
 	}
-	return types.Account{}, errors.New("account does not exist")
+	return vegapb.Account{}, errors.New("account does not exist")
 }
 
-func (b *BrokerStub) GetAssetNetworkTreasuryAccount(asset string) (types.Account, error) {
+func (b *BrokerStub) GetAssetNetworkTreasuryAccount(asset string) (vegapb.Account, error) {
 	batch := b.GetAccountEvents()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == "*" && v.Asset == asset && v.Type == types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY {
+		if v.Owner == "*" && v.Asset == asset && v.Type == vegapb.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY {
 			return v, nil
 		}
 	}
-	return types.Account{}, errors.New("account does not exist")
+	return vegapb.Account{}, errors.New("account does not exist")
 }
 
-func (b *BrokerStub) GetMarketLPLiquidityFeePoolAccount(party, market string) (types.Account, error) {
+func (b *BrokerStub) GetMarketLPLiquidityFeePoolAccount(party, market string) (vegapb.Account, error) {
 	batch := b.GetAccountEvents()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == party && v.MarketId == market && v.Type == types.AccountType_ACCOUNT_TYPE_LP_LIQUIDITY_FEES {
+		if v.Owner == party && v.MarketId == market && v.Type == vegapb.AccountType_ACCOUNT_TYPE_LP_LIQUIDITY_FEES {
 			return v, nil
 		}
 	}
-	return types.Account{}, errors.New("account does not exist")
+	return vegapb.Account{}, errors.New("account does not exist")
 }
 
-func (b *BrokerStub) GetAssetGlobalInsuranceAccount(asset string) (types.Account, error) {
+func (b *BrokerStub) GetAssetGlobalInsuranceAccount(asset string) (vegapb.Account, error) {
 	batch := b.GetAccountEvents()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == "*" && v.Asset == asset && v.Type == types.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE {
+		if v.Owner == "*" && v.Asset == asset && v.Type == vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE {
 			return v, nil
 		}
 	}
-	return types.Account{}, errors.New("account does not exist")
+	return vegapb.Account{}, errors.New("account does not exist")
 }
 
-func (b *BrokerStub) GetMarketLPLiquidityBondAccount(party, market string) (types.Account, error) {
+func (b *BrokerStub) GetMarketLPLiquidityBondAccount(party, market string) (vegapb.Account, error) {
 	batch := b.GetAccountEvents()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == party && v.MarketId == market && v.Type == types.AccountType_ACCOUNT_TYPE_BOND {
+		if v.Owner == party && v.MarketId == market && v.Type == vegapb.AccountType_ACCOUNT_TYPE_BOND {
 			return v, nil
 		}
 	}
-	return types.Account{}, errors.New("account does not exist")
+	return vegapb.Account{}, errors.New("account does not exist")
 }
 
-func (b *BrokerStub) GetMarketLiquidityFeePoolAccount(market string) (types.Account, error) {
+func (b *BrokerStub) GetMarketLiquidityFeePoolAccount(market string) (vegapb.Account, error) {
 	batch := b.GetAccountEvents()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == "*" && v.MarketId == market && v.Type == types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY {
+		if v.Owner == "*" && v.MarketId == market && v.Type == vegapb.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY {
 			return v, nil
 		}
 	}
-	return types.Account{}, errors.New("account does not exist")
+	return vegapb.Account{}, errors.New("account does not exist")
 }
 
-func (b *BrokerStub) GetMarketInfrastructureFeePoolAccount(asset string) (types.Account, error) {
+func (b *BrokerStub) GetMarketInfrastructureFeePoolAccount(asset string) (vegapb.Account, error) {
 	batch := b.GetAccountEvents()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == "*" && v.Asset == asset && v.Type == types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE {
+		if v.Owner == "*" && v.Asset == asset && v.Type == vegapb.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE {
 			return v, nil
 		}
 	}
-	return types.Account{}, errors.New("account does not exist")
+	return vegapb.Account{}, errors.New("account does not exist")
 }
 
-func (b *BrokerStub) GetPartyMarginAccount(party, market string) (types.Account, error) {
+func (b *BrokerStub) GetPartyMarginAccount(party, market string) (vegapb.Account, error) {
 	batch := b.GetAccountEvents()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == party && v.Type == types.AccountType_ACCOUNT_TYPE_MARGIN && v.MarketId == market {
+		if v.Owner == party && v.Type == vegapb.AccountType_ACCOUNT_TYPE_MARGIN && v.MarketId == market {
 			return v, nil
 		}
 	}
-	return types.Account{}, errors.New("account does not exist")
+	return vegapb.Account{}, errors.New("account does not exist")
 }
 
-func (b *BrokerStub) GetMarketSettlementAccount(market string) (types.Account, error) {
+func (b *BrokerStub) GetMarketSettlementAccount(market string) (vegapb.Account, error) {
 	batch := b.GetAccountEvents()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == "*" && v.MarketId == market && v.Type == types.AccountType_ACCOUNT_TYPE_SETTLEMENT {
+		if v.Owner == "*" && v.MarketId == market && v.Type == vegapb.AccountType_ACCOUNT_TYPE_SETTLEMENT {
 			return v, nil
 		}
 	}
-	return types.Account{}, errors.New("account does not exist")
+	return vegapb.Account{}, errors.New("account does not exist")
 }
 
 // GetPartyGeneralAccount returns the latest event WRT the party's general account.
-func (b *BrokerStub) GetPartyGeneralAccount(party, asset string) (ga types.Account, err error) {
+func (b *BrokerStub) GetPartyGeneralAccount(party, asset string) (ga vegapb.Account, err error) {
 	batch := b.GetAccountEvents()
 	err = errors.New("account does not exist")
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == party && v.Type == types.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
+		if v.Owner == party && v.Type == vegapb.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
 			ga = v
 			err = nil
 		}
@@ -850,12 +850,12 @@ func (b *BrokerStub) GetPartyGeneralAccount(party, asset string) (ga types.Accou
 }
 
 // GetPartyVestingAccount returns the latest event WRT the party's general account.
-func (b *BrokerStub) GetPartyVestingAccount(party, asset string) (ga types.Account, err error) {
+func (b *BrokerStub) GetPartyVestingAccount(party, asset string) (ga vegapb.Account, err error) {
 	batch := b.GetAccountEvents()
 	err = errors.New("account does not exist")
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == party && v.Type == types.AccountType_ACCOUNT_TYPE_VESTING_REWARDS && v.Asset == asset {
+		if v.Owner == party && v.Type == vegapb.AccountType_ACCOUNT_TYPE_VESTING_REWARDS && v.Asset == asset {
 			ga = v
 			err = nil
 		}
@@ -864,12 +864,12 @@ func (b *BrokerStub) GetPartyVestingAccount(party, asset string) (ga types.Accou
 }
 
 // GetPartyGeneralAccount returns the latest event WRT the party's general account.
-func (b *BrokerStub) GetPartyHoldingAccount(party, asset string) (ga types.Account, err error) {
+func (b *BrokerStub) GetPartyHoldingAccount(party, asset string) (ga vegapb.Account, err error) {
 	batch := b.GetAccountEvents()
 	err = errors.New("account does not exist")
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == party && v.Type == types.AccountType_ACCOUNT_TYPE_HOLDING && v.Asset == asset {
+		if v.Owner == party && v.Type == vegapb.AccountType_ACCOUNT_TYPE_HOLDING && v.Asset == asset {
 			ga = v
 			err = nil
 		}
@@ -879,9 +879,9 @@ func (b *BrokerStub) GetPartyHoldingAccount(party, asset string) (ga types.Accou
 }
 
 // GetRewardAccountBalance returns the latest event WRT the reward accounts with the given type for the asset.
-func (b *BrokerStub) GetRewardAccountBalance(accountType, asset string) (ga types.Account, err error) {
+func (b *BrokerStub) GetRewardAccountBalance(accountType, asset string) (ga vegapb.Account, err error) {
 	batch := b.GetAccountEvents()
-	at := types.AccountType(proto.AccountType_value[accountType])
+	at := vegapb.AccountType(proto.AccountType_value[accountType])
 	err = errors.New("account does not exist")
 	for _, e := range batch {
 		v := e.Account()
@@ -894,12 +894,27 @@ func (b *BrokerStub) GetRewardAccountBalance(accountType, asset string) (ga type
 	return
 }
 
-func (b *BrokerStub) GetPartyBondAccount(party, asset string) (ba types.Account, err error) {
+func (b *BrokerStub) ReferralSetStats() []*types.ReferralSetStats {
+	batch := b.GetBatch(events.ReferralSetStatsUpdatedEvent)
+
+	stats := make([]*types.ReferralSetStats, 0, len(batch))
+	for _, event := range batch {
+		switch et := event.(type) {
+		case *events.ReferralSetStatsUpdated:
+			stats = append(stats, et.Unwrap())
+		case events.ReferralSetStatsUpdated:
+			stats = append(stats, et.Unwrap())
+		}
+	}
+	return stats
+}
+
+func (b *BrokerStub) GetPartyBondAccount(party, asset string) (ba vegapb.Account, err error) {
 	batch := b.GetAccountEvents()
 	err = errors.New("account does not exist")
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == party && v.Type == types.AccountType_ACCOUNT_TYPE_BOND && v.Asset == asset {
+		if v.Owner == party && v.Type == vegapb.AccountType_ACCOUNT_TYPE_BOND && v.Asset == asset {
 			// may not be the latest ballence, so keep iterating
 			ba = v
 			err = nil
@@ -908,12 +923,12 @@ func (b *BrokerStub) GetPartyBondAccount(party, asset string) (ba types.Account,
 	return
 }
 
-func (b *BrokerStub) GetPartyBondAccountForMarket(party, asset, marketID string) (ba types.Account, err error) {
+func (b *BrokerStub) GetPartyBondAccountForMarket(party, asset, marketID string) (ba vegapb.Account, err error) {
 	batch := b.GetAccountEvents()
 	err = errors.New("account does not exist")
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == party && v.Type == types.AccountType_ACCOUNT_TYPE_BOND && v.Asset == asset && v.MarketId == marketID {
+		if v.Owner == party && v.Type == vegapb.AccountType_ACCOUNT_TYPE_BOND && v.Asset == asset && v.MarketId == marketID {
 			// may not be the latest ballence, so keep iterating
 			ba = v
 			err = nil
@@ -927,7 +942,7 @@ func (b *BrokerStub) ClearOrderByReference(party, ref string) error {
 	data := b.data[events.OrderEvent]
 	cleared := make([]events.Event, 0, cap(data))
 	for _, evt := range data {
-		var o *types.Order
+		var o *vegapb.Order
 		switch e := evt.(type) {
 		case *events.Order:
 			o = e.Order()
@@ -945,7 +960,7 @@ func (b *BrokerStub) ClearOrderByReference(party, ref string) error {
 	return nil
 }
 
-func (b *BrokerStub) GetFirstByReference(party, ref string) (types.Order, error) {
+func (b *BrokerStub) GetFirstByReference(party, ref string) (vegapb.Order, error) {
 	data := b.GetOrderEvents()
 	for _, o := range data {
 		v := o.Order()
@@ -953,13 +968,13 @@ func (b *BrokerStub) GetFirstByReference(party, ref string) (types.Order, error)
 			return *v, nil
 		}
 	}
-	return types.Order{}, fmt.Errorf("no order for party %v and reference %v", party, ref)
+	return vegapb.Order{}, fmt.Errorf("no order for party %v and reference %v", party, ref)
 }
 
-func (b *BrokerStub) GetByReference(party, ref string) (types.Order, error) {
+func (b *BrokerStub) GetByReference(party, ref string) (vegapb.Order, error) {
 	data := b.GetOrderEvents()
 
-	var last types.Order // we need the most recent event, the order object is not updated (copy v pointer, issue 2353)
+	var last vegapb.Order // we need the most recent event, the order object is not updated (copy v pointer, issue 2353)
 	matched := false
 	for _, o := range data {
 		v := o.Order()
@@ -971,7 +986,7 @@ func (b *BrokerStub) GetByReference(party, ref string) (types.Order, error) {
 	if matched {
 		return last, nil
 	}
-	return types.Order{}, fmt.Errorf("no order for party %v and reference %v", party, ref)
+	return vegapb.Order{}, fmt.Errorf("no order for party %v and reference %v", party, ref)
 }
 
 func (b *BrokerStub) GetStopByReference(party, ref string) (eventspb.StopOrderEvent, error) {
@@ -1023,9 +1038,9 @@ func (b *BrokerStub) GetLPSErrors() []events.TxErr {
 	return ret
 }
 
-func (b *BrokerStub) GetTrades() []types.Trade {
+func (b *BrokerStub) GetTrades() []vegapb.Trade {
 	data := b.GetTradeEvents()
-	trades := make([]types.Trade, 0, len(data))
+	trades := make([]vegapb.Trade, 0, len(data))
 	for _, t := range data {
 		trades = append(trades, t.Trade())
 	}

@@ -266,7 +266,7 @@ Feature: Fees when amend trades
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
       | 1000       | TRADING_MODE_CONTINUOUS |
-    And debug transfers
+
 
     And the following transfers should happen:
       | from    | to       | from account            | to account                       | market id | amount | asset |

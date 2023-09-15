@@ -149,7 +149,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | buy  | 990   | 1      |
       | buy  | 900   | 1      |
 
-    Then debug transfers
+
 
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
