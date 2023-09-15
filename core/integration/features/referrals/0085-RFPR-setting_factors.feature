@@ -22,13 +22,16 @@ Feature: Referral benefits set correctly
 
     # Initialise the markets and network parameters
     Given the following network parameters are set:
-      | name                                    | value |
-      | market.fee.factors.infrastructureFee    | 0.001 |
-      | market.fee.factors.makerFee             | 0.001 |
-      | network.markPriceUpdateMaximumFrequency | 0s    |
-      | market.auction.minimumDuration          | 1     |
-      | validators.epoch.length                 | 5s    |
-      | limits.markets.maxPeggedOrders          | 4     |
+      | name                                                    | value   |
+      | market.fee.factors.infrastructureFee                    | 0.001   |
+      | market.fee.factors.makerFee                             | 0.001   |
+      | network.markPriceUpdateMaximumFrequency                 | 0s      |
+      | market.auction.minimumDuration                          | 1       |
+      | validators.epoch.length                                 | 5s      |
+      | limits.markets.maxPeggedOrders                          | 4       |
+      | referralProgram.minStakedVegaTokens                     | 0       |
+      | referralProgram.maxPartyNotionalVolumeByQuantumPerEpoch | 1000000 |
+
     And the following assets are registered:
       | id   | decimal places |
       | USDT | 1              |
@@ -99,11 +102,6 @@ Feature: Referral benefits set correctly
     And the network moves ahead "1" epochs
     And the current epoch is "2"
     # ISSUE: Would expect to see the referees taker volume contribute to the sets running volume here
-    Then the referral set stats for code "referral-code-1" at epoch 1 should have a running volume of 0:
+    Then the referral set stats for code "referral-code-1" at epoch 1 should have a running volume of 100000:
       | party    | reward factor | discount factor |
-      | referee1 | 0             | 0               |
-    When the network moves ahead "1" epochs
-    # ISSUE: Would expect to see the referees taker volume contribute to the sets running volume here
-    Then the referral set stats for code "referral-code-1" at epoch 2 should have a running volume of 0:
-      | party    | reward factor | discount factor |
-      | referee1 | 0             | 0               |
+      | referee1 | 0.3           | 0.1             |
