@@ -216,7 +216,8 @@ type LiquidityEngine interface {
 	CalculateSuppliedStakeWithoutPending() *num.Uint
 	UpdatePartyCommitment(string, *num.Uint) (*types.LiquidityProvision, error)
 	EndBlock(*num.Uint, *num.Uint, num.Decimal)
-	UpdateMarketConfig(liquidity.RiskModel, liquidity.PriceMonitor, *types.LiquiditySLAParams)
+	UpdateMarketConfig(liquidity.RiskModel, liquidity.PriceMonitor)
+	UpdateSLAParameters(*types.LiquiditySLAParams)
 	OnNonPerformanceBondPenaltySlopeUpdate(num.Decimal)
 	OnNonPerformanceBondPenaltyMaxUpdate(num.Decimal)
 	OnMinProbabilityOfTradingLPOrdersUpdate(num.Decimal)
@@ -241,7 +242,8 @@ type MarketLiquidityEngine interface {
 	SubmitLiquidityProvision(context.Context, *types.LiquidityProvisionSubmission, string, string, types.MarketState) error
 	AmendLiquidityProvision(context.Context, *types.LiquidityProvisionAmendment, string, string, types.MarketState) error
 	CancelLiquidityProvision(context.Context, string) error
-	UpdateMarketConfig(liquidity.RiskModel, liquidity.PriceMonitor, *types.LiquiditySLAParams)
+	UpdateMarketConfig(liquidity.RiskModel, liquidity.PriceMonitor)
+	UpdateSLAParameters(*types.LiquiditySLAParams)
 	OnEarlyExitPenalty(num.Decimal)
 	OnMinLPStakeQuantumMultiple(num.Decimal)
 	OnBondPenaltyFactorUpdate(num.Decimal)
@@ -282,6 +284,8 @@ type CommonMarket interface {
 	BlockEnd(context.Context)
 	UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error
 
+	IsOpeningAuction() bool
+
 	// network param updates
 	OnMarketPartiesMaximumStopOrdersUpdate(context.Context, *num.Uint)
 	OnMarketMinLpStakeQuantumMultipleUpdate(context.Context, num.Decimal)
@@ -297,6 +301,7 @@ type CommonMarket interface {
 	OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(num.Decimal)
 	OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(num.Decimal)
 	OnMarketLiquidityV2StakeToCCYVolume(d num.Decimal)
+	OnMarketLiquidityV2BondPenaltyFactorUpdate(d num.Decimal)
 	OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(t time.Duration)
 
 	// liquidity provision

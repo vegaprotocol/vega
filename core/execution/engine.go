@@ -232,6 +232,11 @@ func (e *Engine) ReloadConf(cfg Config) {
 
 func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	for _, m := range e.allMarketsCpy {
+		// propagate SLA parameters to markets at a start of a epoch
+		if epoch.Action == vega.EpochAction_EPOCH_ACTION_START {
+			e.propagateSLANetParams(ctx, m)
+		}
+
 		m.OnEpochEvent(ctx, epoch)
 	}
 }
@@ -863,7 +868,7 @@ func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mk
 	return nil
 }
 
-func (e *Engine) propagateSLANetParams(_ context.Context, mkt *future.Market) {
+func (e *Engine) propagateSLANetParams(_ context.Context, mkt common.CommonMarket) {
 	if !e.npv.liquidityV2BondPenaltyFactor.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
 		mkt.OnMarketLiquidityV2BondPenaltyFactorUpdate(e.npv.liquidityV2BondPenaltyFactor)
 	}
@@ -888,7 +893,9 @@ func (e *Engine) propagateSLANetParams(_ context.Context, mkt *future.Market) {
 		mkt.OnMarketLiquidityV2StakeToCCYVolume(e.npv.liquidityV2StakeToCCYVolume)
 	}
 
-	mkt.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(e.npv.liquidityV2ProvidersFeeCalculationTimeStep)
+	if e.npv.liquidityV2ProvidersFeeCalculationTimeStep != 0 {
+		mkt.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(e.npv.liquidityV2ProvidersFeeCalculationTimeStep)
+	}
 }
 
 func (e *Engine) removeMarket(mktID string) {
@@ -1491,7 +1498,7 @@ func (e *Engine) OnMarkPriceUpdateMaximumFrequency(ctx context.Context, d time.D
 	return nil
 }
 
-// SLA liquidity - currently only used in spots.
+// OnMarketLiquidityV2BondPenaltyUpdate stores net param on execution engine and applies to markets at the start of new epoch.
 func (e *Engine) OnMarketLiquidityV2BondPenaltyUpdate(_ context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update market liquidity bond penalty (liquidity v2)",
@@ -1499,15 +1506,19 @@ func (e *Engine) OnMarketLiquidityV2BondPenaltyUpdate(_ context.Context, d num.D
 		)
 	}
 
-	for _, m := range e.futureMarketsCpy {
-		m.OnMarketLiquidityV2BondPenaltyFactorUpdate(d)
+	// Set immediately during opening auction
+	for _, mkt := range e.allMarketsCpy {
+		if mkt.IsOpeningAuction() {
+			mkt.OnMarketLiquidityV2BondPenaltyFactorUpdate(d)
+		}
 	}
-	e.npv.liquidityV2BondPenaltyFactor = d
 
+	e.npv.liquidityV2BondPenaltyFactor = d
 	return nil
 }
 
-// SLA liquidity - currently only used in spots.
+// OnMarketLiquidityV2EarlyExitPenaltyUpdate stores net param on execution engine and applies to markets
+// at the start of new epoch.
 func (e *Engine) OnMarketLiquidityV2EarlyExitPenaltyUpdate(_ context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update market liquidity early exit penalty (liquidity v2)",
@@ -1515,14 +1526,19 @@ func (e *Engine) OnMarketLiquidityV2EarlyExitPenaltyUpdate(_ context.Context, d 
 		)
 	}
 
-	for _, m := range e.allMarketsCpy {
-		m.OnMarketLiquidityV2EarlyExitPenaltyUpdate(d)
+	// Set immediately during opening auction
+	for _, mkt := range e.allMarketsCpy {
+		if mkt.IsOpeningAuction() {
+			mkt.OnMarketLiquidityV2EarlyExitPenaltyUpdate(d)
+		}
 	}
+
 	e.npv.liquidityV2EarlyExitPenalty = d
 	return nil
 }
 
-// SLA liquidity - currently only used in spots.
+// OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate stores net param on execution engine and
+// applies at the start of new epoch.
 func (e *Engine) OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate(_ context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update liquidity provision max liquidity fee factor (liquidity v2)",
@@ -1530,15 +1546,19 @@ func (e *Engine) OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate(_ conte
 		)
 	}
 
-	for _, m := range e.allMarketsCpy {
-		m.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate(d)
+	// Set immediately during opening auction
+	for _, mkt := range e.allMarketsCpy {
+		if mkt.IsOpeningAuction() {
+			mkt.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate(d)
+		}
 	}
-	e.npv.liquidityV2MaxLiquidityFee = d
 
+	e.npv.liquidityV2MaxLiquidityFee = d
 	return nil
 }
 
-// SLA liquidity - currently only used in spots.
+// OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate stores net param on execution engine and applies to markets at the
+// start of new epoch.
 func (e *Engine) OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(_ context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update market SLA non performance bond penalty slope (liquidity v2)",
@@ -1546,15 +1566,19 @@ func (e *Engine) OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(_ co
 		)
 	}
 
-	for _, m := range e.allMarketsCpy {
-		m.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(d)
+	// Set immediately during opening auction
+	for _, mkt := range e.allMarketsCpy {
+		if mkt.IsOpeningAuction() {
+			mkt.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(d)
+		}
 	}
-	e.npv.liquidityV2SLANonPerformanceBondPenaltySlope = d
 
+	e.npv.liquidityV2SLANonPerformanceBondPenaltySlope = d
 	return nil
 }
 
-// SLA liquidity - currently only used in spots.
+// OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate stores net param on execution engine and applies to markets
+// at the start of new epoch.
 func (e *Engine) OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(_ context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update market SLA non performance bond penalty max (liquidity v2)",
@@ -1562,14 +1586,19 @@ func (e *Engine) OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(_ cont
 		)
 	}
 
-	for _, m := range e.allMarketsCpy {
-		m.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(d)
+	for _, m := range e.futureMarketsCpy {
+		// Set immediately during opening auction
+		if m.IsOpeningAuction() {
+			m.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(d)
+		}
 	}
-	e.npv.liquidityV2SLANonPerformanceBondPenaltyMax = d
 
+	e.npv.liquidityV2SLANonPerformanceBondPenaltyMax = d
 	return nil
 }
 
+// OnMarketLiquidityV2StakeToCCYVolumeUpdate stores net param on execution engine and applies to markets
+// at the start of new epoch.
 func (e *Engine) OnMarketLiquidityV2StakeToCCYVolumeUpdate(_ context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update market stake to CCYVolume (liquidity v2)",
@@ -1577,22 +1606,33 @@ func (e *Engine) OnMarketLiquidityV2StakeToCCYVolumeUpdate(_ context.Context, d 
 		)
 	}
 
-	for _, m := range e.allMarketsCpy {
-		m.OnMarketLiquidityV2StakeToCCYVolume(d)
+	for _, m := range e.futureMarketsCpy {
+		// Set immediately during opening auction
+		if m.IsOpeningAuction() {
+			m.OnMarketLiquidityV2StakeToCCYVolume(d)
+		}
 	}
+
 	e.npv.liquidityV2StakeToCCYVolume = d
 	return nil
 }
 
+// OnMarketLiquidityV2ProvidersFeeCalculationTimeStep stores net param on execution engine and applies to markets
+// at the start of new epoch.
 func (e *Engine) OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(_ context.Context, d time.Duration) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update market SLA providers fee calculation time step (liquidity v2)",
 			logging.Duration("providersFeeCalculationTimeStep", d),
 		)
 	}
-	for _, m := range e.allMarketsCpy {
-		m.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(d)
+
+	for _, m := range e.futureMarketsCpy {
+		// Set immediately during opening auction
+		if m.IsOpeningAuction() {
+			m.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(d)
+		}
 	}
+
 	e.npv.liquidityV2ProvidersFeeCalculationTimeStep = d
 	return nil
 }

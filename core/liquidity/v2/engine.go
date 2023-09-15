@@ -447,9 +447,12 @@ func (e *Engine) IsProbabilityOfTradingInitialised() bool {
 	return e.suppliedEngine.IsProbabilityOfTradingInitialised()
 }
 
-func (e *Engine) UpdateMarketConfig(model RiskModel, monitor PriceMonitor, slaParams *types.LiquiditySLAParams) {
-	e.onSLAParamsUpdate(slaParams)
+func (e *Engine) UpdateMarketConfig(model RiskModel, monitor PriceMonitor) {
 	e.suppliedEngine.UpdateMarketConfig(model, monitor)
+}
+
+func (e *Engine) UpdateSLAParameters(slaParams *types.LiquiditySLAParams) {
+	e.onSLAParamsUpdate(slaParams)
 }
 
 func (e *Engine) SetGetStaticPricesFunc(f func() (num.Decimal, num.Decimal, error)) {

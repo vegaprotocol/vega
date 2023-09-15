@@ -303,6 +303,9 @@ Feature: Fees reward calculations for a single asset, single market
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 1                             | 1.0                    |
+    And the following network parameters are set:
+      | name                                               | value |
+      | market.liquidity.providersFeeCalculationTimeStep   | 10s   |
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
