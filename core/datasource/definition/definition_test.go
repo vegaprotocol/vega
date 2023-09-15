@@ -146,6 +146,8 @@ func TestDefinitionIntoProto(t *testing.T) {
 					Method: "method",
 					Trigger: &ethcallcommon.TimeTrigger{
 						Initial: uint64(timeNow.UnixNano()),
+						Every:   2,
+						Until:   uint64(timeNow.UnixNano()),
 					},
 					RequiredConfirmations: 256,
 					Filters: []*common.SpecFilter{
@@ -182,6 +184,9 @@ func TestDefinitionIntoProto(t *testing.T) {
 			assert.Equal(t, datapb.Condition_OPERATOR_UNSPECIFIED, filters[0].Conditions[0].Operator)
 			assert.Equal(t, "12", filters[0].Conditions[0].Value)
 			assert.IsType(t, &vegapb.EthCallTrigger{}, eo.Trigger)
+			assert.Equal(t, uint64(2), eo.Trigger.GetTimeTrigger().GetEvery())
+			assert.Equal(t, uint64(timeNow.UnixNano()), eo.Trigger.GetTimeTrigger().GetInitial())
+			assert.Equal(t, uint64(timeNow.UnixNano()), eo.Trigger.GetTimeTrigger().GetUntil())
 			assert.Equal(t, uint64(256), eo.RequiredConfirmations)
 		})
 	})

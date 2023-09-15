@@ -1,6 +1,6 @@
 {
 	"TestName": "TestOracles_OracleDataSourceExternalEthereum",
-	"Query": "{ oracleSpecsConnection { edges { node { dataSourceSpec { spec { id createdAt updatedAt status data { sourceType { ... on DataSourceDefinitionExternal { sourceType { ... on EthCallSpec { Abi Args Address Method RequiredConfirmations Normalisers { Name Expression } Filters { key { name  type } conditions { operator value } } } } } } } } } } } } }",
+	"Query": "{ oracleSpecsConnection { edges { node { dataSourceSpec { spec { id createdAt updatedAt status data { sourceType { ... on DataSourceDefinitionExternal { sourceType { ... on EthCallSpec { abi args address method requiredConfirmations normalisers { name expression } trigger { trigger { ... on EthTimeTrigger { initial every until } } } filters { key { name  type } conditions { operator value } } } } } } } } } } } } }",
 	"Result": {
 		"oracleSpecsConnection": {
 			"edges": [
@@ -109,5 +109,5 @@
 			]
 		}
 	},
-	"Duration": 526620
+	"Duration": 877043
 }

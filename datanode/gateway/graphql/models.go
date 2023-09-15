@@ -338,10 +338,17 @@ type EthCallTrigger struct {
 	Trigger TriggerKind `json:"trigger"`
 }
 
+// Trigger for an Ethereum call based on the Ethereum block timestamp. Can be
+// one-off or repeating.
 type EthTimeTrigger struct {
-	Initial *int64 `json:"Initial"`
-	Every   *int64 `json:"Every"`
-	Until   *int64 `json:"Until"`
+	// Trigger when the Ethereum time is greater or equal to this time, in Unix seconds.
+	Initial *int64 `json:"initial"`
+	// Repeat the call every n seconds after the initial call. If no time for
+	// initial call was specified, begin repeating immediately.
+	Every *int `json:"every"`
+	// If repeating, stop once Ethereum time is greater than this time, in Unix
+	// seconds. If not set, then repeat indefinitely.
+	Until *int64 `json:"until"`
 }
 
 func (EthTimeTrigger) IsTriggerKind() {}
@@ -462,9 +469,11 @@ type NodeSet struct {
 	Maximum *int `json:"maximum"`
 }
 
+// Normaliser to convert the data returned from the contract method
+// into a standard format.
 type Normaliser struct {
-	Name       string `json:"Name"`
-	Expression string `json:"Expression"`
+	Name       string `json:"name"`
+	Expression string `json:"expression"`
 }
 
 // The equity like share of liquidity fee for each liquidity provider
