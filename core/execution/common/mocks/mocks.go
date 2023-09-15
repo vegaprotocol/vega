@@ -1853,15 +1853,15 @@ func (mr *MockLiquidityEngineMockRecorder) UpdateAverageLiquidityScores(arg0, ar
 }
 
 // UpdateMarketConfig mocks base method.
-func (m *MockLiquidityEngine) UpdateMarketConfig(arg0 liquidity.RiskModel, arg1 liquidity.PriceMonitor, arg2 *types.LiquiditySLAParams) {
+func (m *MockLiquidityEngine) UpdateMarketConfig(arg0 liquidity.RiskModel, arg1 liquidity.PriceMonitor) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateMarketConfig", arg0, arg1, arg2)
+	m.ctrl.Call(m, "UpdateMarketConfig", arg0, arg1)
 }
 
 // UpdateMarketConfig indicates an expected call of UpdateMarketConfig.
-func (mr *MockLiquidityEngineMockRecorder) UpdateMarketConfig(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockLiquidityEngineMockRecorder) UpdateMarketConfig(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMarketConfig", reflect.TypeOf((*MockLiquidityEngine)(nil).UpdateMarketConfig), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMarketConfig", reflect.TypeOf((*MockLiquidityEngine)(nil).UpdateMarketConfig), arg0, arg1)
 }
 
 // UpdatePartyCommitment mocks base method.
@@ -1877,6 +1877,18 @@ func (m *MockLiquidityEngine) UpdatePartyCommitment(arg0 string, arg1 *num.Uint)
 func (mr *MockLiquidityEngineMockRecorder) UpdatePartyCommitment(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePartyCommitment", reflect.TypeOf((*MockLiquidityEngine)(nil).UpdatePartyCommitment), arg0, arg1)
+}
+
+// UpdateSLAParameters mocks base method.
+func (m *MockLiquidityEngine) UpdateSLAParameters(arg0 *types.LiquiditySLAParams) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateSLAParameters", arg0)
+}
+
+// UpdateSLAParameters indicates an expected call of UpdateSLAParameters.
+func (mr *MockLiquidityEngineMockRecorder) UpdateSLAParameters(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSLAParameters", reflect.TypeOf((*MockLiquidityEngine)(nil).UpdateSLAParameters), arg0)
 }
 
 // V1StateProvider mocks base method.
@@ -2284,15 +2296,27 @@ func (mr *MockMarketLiquidityEngineMockRecorder) SubmitLiquidityProvision(arg0, 
 }
 
 // UpdateMarketConfig mocks base method.
-func (m *MockMarketLiquidityEngine) UpdateMarketConfig(arg0 liquidity.RiskModel, arg1 liquidity.PriceMonitor, arg2 *types.LiquiditySLAParams) {
+func (m *MockMarketLiquidityEngine) UpdateMarketConfig(arg0 liquidity.RiskModel, arg1 liquidity.PriceMonitor) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateMarketConfig", arg0, arg1, arg2)
+	m.ctrl.Call(m, "UpdateMarketConfig", arg0, arg1)
 }
 
 // UpdateMarketConfig indicates an expected call of UpdateMarketConfig.
-func (mr *MockMarketLiquidityEngineMockRecorder) UpdateMarketConfig(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockMarketLiquidityEngineMockRecorder) UpdateMarketConfig(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMarketConfig", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).UpdateMarketConfig), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMarketConfig", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).UpdateMarketConfig), arg0, arg1)
+}
+
+// UpdateSLAParameters mocks base method.
+func (m *MockMarketLiquidityEngine) UpdateSLAParameters(arg0 *types.LiquiditySLAParams) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateSLAParameters", arg0)
+}
+
+// UpdateSLAParameters indicates an expected call of UpdateSLAParameters.
+func (mr *MockMarketLiquidityEngineMockRecorder) UpdateSLAParameters(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSLAParameters", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).UpdateSLAParameters), arg0)
 }
 
 // MockTeams is a mock of Teams interface.

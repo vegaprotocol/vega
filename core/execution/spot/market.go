@@ -256,6 +256,10 @@ func NewMarket(
 	return market, nil
 }
 
+func (m *Market) IsOpeningAuction() bool {
+	return m.as.IsOpeningAuction()
+}
+
 func (m *Market) GetPartiesStats() *types.MarketStats {
 	return &types.MarketStats{}
 }
@@ -272,8 +276,14 @@ func (m *Market) Update(ctx context.Context, config *types.Market) error {
 		return err
 	}
 	m.pMonitor.UpdateSettings(riskModel, m.mkt.PriceMonitoringSettings)
-	m.liquidity.UpdateMarketConfig(riskModel, m.pMonitor, config.LiquiditySLAParams)
+	m.liquidity.UpdateMarketConfig(riskModel, m.pMonitor)
 	m.updateLiquidityFee(ctx)
+
+	// update immediately during opening auction
+	if m.as.IsOpeningAuction() {
+		m.liquidity.UpdateSLAParameters(m.mkt.LiquiditySLAParams)
+	}
+
 	return nil
 }
 
@@ -2846,6 +2856,7 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 		return
 	}
 	if epoch.Action == vega.EpochAction_EPOCH_ACTION_START {
+		m.liquidity.UpdateSLAParameters(m.mkt.LiquiditySLAParams)
 		m.liquidity.OnEpochStart(ctx, m.timeService.GetTimeNow(), m.markPrice, m.midPrice(), m.getTargetStake(), m.positionFactor)
 	} else if epoch.Action == vega.EpochAction_EPOCH_ACTION_END {
 		m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow())

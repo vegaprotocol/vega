@@ -450,7 +450,6 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 	if err != nil {
 		panic(err)
 	}
-
 	m := types.Market{
 		TradingMode:           types.MarketTradingModeContinuous,
 		State:                 types.MarketStateActive,

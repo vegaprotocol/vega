@@ -63,7 +63,7 @@ var (
 	ErrMustBeGreaterThanEnactmentTimestamp             = errors.New("must be greater than proposal_submission.terms.enactment_timestamp")
 	ErrMustBeWithinRange1366                           = errors.New("must be between 1 and 366")
 	ErrMustBeAtMost500                                 = errors.New("must be at most 500")
-	ErrMustBeWithinRange0120                           = errors.New("must be in range 0.1 and 20")
+	ErrMustBeWithinRangeGT0LT20                        = errors.New("price range must be strictly greater than 0 and less than or equal to 20")
 )
 
 type Errors map[string][]error

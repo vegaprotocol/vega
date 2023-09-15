@@ -564,12 +564,23 @@ message PeggedOrders {
   repeated vega.Order parked_orders = 2;
 }
 
+message SLANetworkParams {
+  string bond_penalty_factor = 1;
+  string early_exit_penalty = 2;
+  string max_liquidity_fee = 3;
+  string non_performance_bond_penalty_max = 4;
+  string non_performance_bond_penalty_slope = 5;
+  string stake_to_ccy_volume = 6;
+  int64 providers_fee_calculation_time_step = 7;
+}
+
 message ExecutionMarkets {
   repeated Market markets = 1;
   repeated SpotMarket spot_markets = 2;
   repeated vega.checkpoint.v1.MarketState settled_markets = 3;
   repeated Successors successors = 4;
   repeated string market_ids = 5;
+  SLANetworkParams sla_network_params = 6;
 }
 
 message Successors {
