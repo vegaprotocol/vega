@@ -2116,6 +2116,24 @@ func (t *TradingDataServiceV2) ListVotes(ctx context.Context, req *v2.ListVotesR
 	}, nil
 }
 
+func (t *TradingDataServiceV2) GetTransfer(ctx context.Context, req *v2.GetTransferRequest) (*v2.GetTransferResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetTransferV2")()
+	if len(req.TransferId) == 0 {
+		return nil, formatE(ErrMissingTransferID)
+	}
+	transfer, err := t.transfersService.GetByID(ctx, req.TransferId)
+	if err != nil {
+		return nil, formatE(err)
+	}
+	tp, err := transfer.ToProto(ctx, t.accountService)
+	if err != nil {
+		return nil, formatE(err)
+	}
+	return &v2.GetTransferResponse{
+		Transfer: tp,
+	}, nil
+}
+
 // ListTransfers lists transfers using cursor pagination. If a pubkey is provided, it will list transfers for that pubkey.
 func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTransfersRequest) (*v2.ListTransfersResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListTransfersV2")()
