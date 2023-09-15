@@ -146,8 +146,8 @@ func TestDefinitionIntoProto(t *testing.T) {
 					Method: "method",
 					Trigger: &ethcallcommon.TimeTrigger{
 						Initial: uint64(timeNow.UnixNano()),
-						Every: 2,
-						Until: uint64(timeNow.UnixNano()),
+						Every:   2,
+						Until:   uint64(timeNow.UnixNano()),
 					},
 					RequiredConfirmations: 256,
 					Filters: []*common.SpecFilter{

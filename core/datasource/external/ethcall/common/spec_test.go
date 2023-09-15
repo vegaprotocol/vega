@@ -79,8 +79,8 @@ func TestEthCallSpecFromProto(t *testing.T) {
 				Trigger: &vegapb.EthCallTrigger_TimeTrigger{
 					TimeTrigger: &vegapb.EthTimeTrigger{
 						Initial: &timeNow,
-						Every: &every,
-						Until: &timeNow,
+						Every:   &every,
+						Until:   &timeNow,
 					},
 				},
 			},
