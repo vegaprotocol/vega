@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"os"
 
+	"code.vegaprotocol.io/vega/core/activitystreak"
 	"code.vegaprotocol.io/vega/core/banking"
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/delegation"
@@ -115,6 +116,7 @@ type executionTestSetup struct {
 	witness         *validators.Witness
 	teamsEngine     *teams.Engine
 	referralProgram *referral.Engine
+	activityStreak  *activitystreak.Engine
 }
 
 func newExecutionTestSetup() *executionTestSetup {
@@ -197,10 +199,10 @@ func newExecutionTestSetup() *executionTestSetup {
 
 	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine, execsetup.timeService)
 
+	execsetup.activityStreak = activitystreak.New(execsetup.log, execsetup.executionEngine, execsetup.broker)
+	execsetup.epochEngine.NotifyOnEpoch(execsetup.activityStreak.OnEpochEvent, execsetup.activityStreak.OnEpochRestore)
 	vesting := vesting.New(execsetup.log, execsetup.collateralEngine, DummyASVM{}, execsetup.broker, execsetup.assetsEngine)
-	// TODO fix activity streak
-	activityStreak := &DummyActivityStreak{}
-	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, marketActivityTracker, execsetup.topology, vesting, execsetup.banking, activityStreak)
+	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, marketActivityTracker, execsetup.topology, vesting, execsetup.banking, execsetup.activityStreak)
 
 	execsetup.oracleEngine = spec.NewEngine(
 		execsetup.log, spec.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
@@ -294,8 +296,32 @@ func newExecutionTestSetup() *executionTestSetup {
 			Watcher: execsetup.executionEngine.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep,
 		},
 		netparams.WatchParam{
+			Param:   netparams.ReferralProgramMinStakedVegaTokens,
+			Watcher: execsetup.referralProgram.OnReferralProgramMinStakedVegaTokensUpdate,
+		},
+		netparams.WatchParam{
 			Param:   netparams.ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch,
 			Watcher: execsetup.referralProgram.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.ReferralProgramMaxReferralRewardProportion,
+			Watcher: execsetup.referralProgram.OnReferralProgramMaxReferralRewardProportionUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.ReferralProgramMinStakedVegaTokens,
+			Watcher: execsetup.teamsEngine.OnReferralProgramMinStakedVegaTokensUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.RewardsActivityStreakBenefitTiers,
+			Watcher: execsetup.activityStreak.OnBenefitTiersUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.RewardsActivityStreakMinQuantumOpenVolume,
+			Watcher: execsetup.activityStreak.OnMinQuantumOpenNationalVolumeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.RewardsActivityStreakMinQuantumTradeVolume,
+			Watcher: execsetup.activityStreak.OnMinQuantumTradeVolumeUpdate,
 		},
 	)
 	return execsetup

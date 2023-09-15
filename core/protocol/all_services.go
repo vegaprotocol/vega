@@ -824,12 +824,16 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.referralProgram.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate,
 		},
 		{
-			Param:   netparams.ReferralProgramMinStakedVegaTokens,
-			Watcher: svcs.teamsEngine.OnReferralProgramMinStakedVegaTokensUpdate,
+			Param:   netparams.ReferralProgramMaxReferralRewardProportion,
+			Watcher: svcs.referralProgram.OnReferralProgramMaxReferralRewardProportionUpdate,
 		},
 		{
 			Param:   netparams.ReferralProgramMinStakedVegaTokens,
 			Watcher: svcs.referralProgram.OnReferralProgramMinStakedVegaTokensUpdate,
+		},
+		{
+			Param:   netparams.ReferralProgramMinStakedVegaTokens,
+			Watcher: svcs.teamsEngine.OnReferralProgramMinStakedVegaTokensUpdate,
 		},
 		{
 			Param:   netparams.RewardsActivityStreakBenefitTiers,
@@ -842,10 +846,6 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.RewardsActivityStreakMinQuantumTradeVolume,
 			Watcher: svcs.activityStreak.OnMinQuantumTradeVolumeUpdate,
-		},
-		{
-			Param:   netparams.ReferralProgramMaxReferralRewardProportion,
-			Watcher: svcs.referralProgram.OnReferralProgramMaxReferralRewardProportionUpdate,
 		},
 	}
 
