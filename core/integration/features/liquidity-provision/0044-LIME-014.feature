@@ -107,3 +107,51 @@ Feature: Test LP SLA Bond penalty;
       | lp1  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 1050   | USD   |
       | lp2  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 2400   | USD   |
 
+    And the parties should have the following account balances:
+      | party | asset | market id | margin | general | bond |
+      | lp1   | USD   | ETH/MAR22 | 0      | 96000   | 2950 |
+      | lp2   | USD   | ETH/MAR22 | 0      | 96000   | 1600 |
+
+    #if commitmnet min time fraction is 0, then LP will not get SLA bond penalty for not supplying volume on the book
+    Given the liquidity sla params named "updated-sla-params":
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1           | 0                            | 2                             | 1                      |
+    And the markets are updated:
+      | id        | sla params         | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR22 | updated-sla-params | 1e-3                   | 0                         |
+
+    And the network moves ahead "1" epochs
+    And the insurance pool balance should be "3450" for the market "ETH/MAR22"
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    And the network moves ahead "1" epochs
+
+    # currently LP is not getting SLA bond penalty, nor the liquidity fee (for not supplying volumes on the book and LP_min_time = 0)
+    Then the following transfers should happen:
+      | from | to     | from account                   | to account             | market id | amount | asset |
+      | lp1  | market | ACCOUNT_TYPE_BOND              | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 0      | USD   |
+      | lp2  | market | ACCOUNT_TYPE_BOND              | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 0      | USD   |
+      | lp1  | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 12     | USD   |
+      | lp2  | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 7      | USD   |
+
+    And the parties should have the following account balances:
+      | party | asset | market id | margin | general | bond |
+      | lp1   | USD   | ETH/MAR22 | 0      | 96000   | 2950 |
+      | lp2   | USD   | ETH/MAR22 | 0      | 96000   | 1600 |
+    And the insurance pool balance should be "3469" for the market "ETH/MAR22"
+
+# if LP is getting the liquidity fee (for not supplying volumes on the book and LP_min_time = 0), then it should look like this
+# Then the following transfers should happen:
+#   | from | to     | from account                   | to account             | market id | amount | asset |
+#   | lp1  | market | ACCOUNT_TYPE_BOND              | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 0      | USD   |
+#   | lp2  | market | ACCOUNT_TYPE_BOND              | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 0      | USD   |
+
+# And the parties should have the following account balances:
+#   | party | asset | market id | margin | general | bond |
+#   | lp1   | USD   | ETH/MAR22 | 0      | 96012   | 2950 |
+#   | lp2   | USD   | ETH/MAR22 | 0      | 96007   | 1600 |
+# And the insurance pool balance should be "3450" for the market "ETH/MAR22"
+
+
