@@ -3,10 +3,9 @@ package ethcall
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
-
-	verrors "code.vegaprotocol.io/vega/libs/errors"
 
 	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
 	ethcallcommon "code.vegaprotocol.io/vega/core/datasource/external/ethcall/common"
@@ -29,7 +28,7 @@ type Call struct {
 func NewCall(spec ethcallcommon.Spec) (Call, error) {
 	abiJSON, err := CanonicalizeJSON(spec.AbiJson)
 	if err != nil {
-		return Call{}, verrors.Join(
+		return Call{}, errors.Join(
 			ethcallcommon.ErrInvalidEthereumAbi,
 			fmt.Errorf("unable to canonicalize abi JSON: %w", err))
 	}
@@ -37,28 +36,28 @@ func NewCall(spec ethcallcommon.Spec) (Call, error) {
 	reader := bytes.NewReader(abiJSON)
 	abi, err := abi.JSON(reader)
 	if err != nil {
-		return Call{}, verrors.Join(
+		return Call{}, errors.Join(
 			ethcallcommon.ErrInvalidEthereumAbi,
 			fmt.Errorf("unable to parse abi JSON: %w", err))
 	}
 
 	args, err := JsonArgsToAny(spec.Method, spec.ArgsJson, spec.AbiJson)
 	if err != nil {
-		return Call{}, verrors.Join(
+		return Call{}, errors.Join(
 			ethcallcommon.ErrInvalidCallArgs,
 			fmt.Errorf("unable to deserialize args: %w", err))
 	}
 
 	packedArgs, err := abi.Pack(spec.Method, args...)
 	if err != nil {
-		return Call{}, verrors.Join(
+		return Call{}, errors.Join(
 			ethcallcommon.ErrInvalidCallArgs,
 			fmt.Errorf("failed to pack inputs: %w", err))
 	}
 
 	filters, err := dscommon.NewFilters(spec.Filters, true)
 	if err != nil {
-		return Call{}, verrors.Join(
+		return Call{}, errors.Join(
 			ethcallcommon.ErrInvalidFilters,
 			fmt.Errorf("failed to create filters: %w", err))
 	}
