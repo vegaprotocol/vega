@@ -478,6 +478,7 @@ message SpotMarket {
   bool closed = 18;
   StopOrders stop_orders = 19;
   repeated vega.Order expiring_stop_orders = 20;
+  vega.events.v1.FeeStats fee_stats = 21;
 }
 
 message Market {
@@ -507,6 +508,7 @@ message Market {
   StopOrders stop_orders = 24;
   repeated vega.Order expiring_stop_orders = 25;
   Product product = 26;
+  vega.events.v1.FeeStats fee_stats = 27;
 }
 
 // eventually support multiple products

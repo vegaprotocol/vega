@@ -20,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 var (
@@ -46,6 +47,8 @@ type Engine struct {
 	feeCfg         types.Fees
 	f              factors
 	positionFactor num.Decimal
+
+	feeStats *FeeStats
 }
 
 type factors struct {
@@ -64,8 +67,36 @@ func New(log *logging.Logger, cfg Config, feeCfg types.Fees, asset string, posit
 		cfg:            cfg,
 		asset:          asset,
 		positionFactor: positionFactor,
+		feeStats:       NewFeeStats(),
 	}
 	return e, e.UpdateFeeFactors(e.feeCfg)
+}
+
+func NewFromState(
+	log *logging.Logger,
+	cfg Config,
+	feeCfg types.Fees,
+	asset string,
+	positionFactor num.Decimal,
+	feeStats *eventspb.FeeStats,
+) (*Engine, error) {
+	e, err := New(log, cfg, feeCfg, asset, positionFactor)
+	if err != nil {
+		return nil, err
+	}
+
+	e.feeStats = NewFeeStatsFromProto(feeStats)
+
+	return e, nil
+}
+
+func (e *Engine) GetState() *eventspb.FeeStats {
+	return e.feeStats.ToProto(e.asset)
+}
+
+func (e *Engine) GetFeesStatsOnEpochEnd() (feeStats *eventspb.FeeStats) {
+	feeStats, e.feeStats = e.feeStats.ToProto(e.asset), NewFeeStats()
+	return
 }
 
 // ReloadConf is used in order to reload the internal configuration of
@@ -587,6 +618,24 @@ func (e *Engine) applyDiscountsAndRewards(taker string, fees *types.Fee, referra
 		LiquidityFeeReferrerDiscount:      referralLfDiscount,
 	}
 
+	e.feeStats.RegisterRefereeDiscount(
+		taker,
+		num.Sum(
+			referralMakerDiscount,
+			referralInfDiscount,
+			referralLfDiscount,
+		),
+	)
+
+	e.feeStats.RegisterVolumeDiscount(
+		taker,
+		num.Sum(
+			volumeMakerDiscount,
+			volumeInfDiscount,
+			volumeLfDiscount,
+		),
+	)
+
 	// calculate rewards
 	factor := referral.RewardsFactorMultiplierAppliedForParty(types.PartyID(taker))
 	if factor.IsZero() {
@@ -602,6 +651,16 @@ func (e *Engine) applyDiscountsAndRewards(taker string, fees *types.Fee, referra
 	mf = mf.Sub(mf, referrerReward.MakerFeeReferrerReward)
 	inf = inf.Sub(inf, referrerReward.InfrastructureFeeReferrerReward)
 	lf = lf.Sub(lf, referrerReward.LiquidityFeeReferrerReward)
+
+	e.feeStats.RegisterReferrerReward(
+		string(referrer),
+		taker,
+		num.Sum(
+			referrerReward.MakerFeeReferrerReward,
+			referrerReward.InfrastructureFeeReferrerReward,
+			referrerReward.LiquidityFeeReferrerReward,
+		),
+	)
 
 	f.MakerFee = mf
 	f.InfrastructureFee = inf
