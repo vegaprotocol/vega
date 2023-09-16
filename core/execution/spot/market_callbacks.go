@@ -102,3 +102,7 @@ func (m *Market) OnMarketLiquidityV2StakeToCCYVolume(d num.Decimal) {
 func (m *Market) OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(d time.Duration) {
 	m.liquidity.OnProvidersFeeCalculationTimeStep(d)
 }
+
+func (m *Market) OnMarketLiquidityV2BondPenaltyFactorUpdate(d num.Decimal) {
+	m.liquidity.OnBondPenaltyFactorUpdate(d)
+}

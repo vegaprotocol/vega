@@ -1,6 +1,6 @@
 module code.vegaprotocol.io/vega
 
-go 1.19
+go 1.20
 
 require (
 	code.vegaprotocol.io/quant v0.2.5

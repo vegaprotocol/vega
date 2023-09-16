@@ -231,7 +231,8 @@ func TestSLAPerformanceSingleEpochFeePenalty(t *testing.T) {
 					slaParams.PerformanceHysteresisEpochs = *tC.performanceHysteresisEpochs
 				}
 
-				te.engine.UpdateMarketConfig(te.riskModel, te.priceMonitor, slaParams)
+				te.engine.UpdateMarketConfig(te.riskModel, te.priceMonitor)
+				te.engine.UpdateSLAParameters(slaParams)
 
 				idGen := &stubIDGen{}
 				ctx := context.Background()
@@ -322,7 +323,8 @@ func TestSLAPerformanceMultiEpochFeePenalty(t *testing.T) {
 
 			slaParams := te.defaultSLAParams.DeepClone()
 			slaParams.PerformanceHysteresisEpochs = 4
-			te.engine.UpdateMarketConfig(te.riskModel, te.priceMonitor, slaParams)
+			te.engine.UpdateMarketConfig(te.riskModel, te.priceMonitor)
+			te.engine.UpdateSLAParameters(slaParams)
 
 			idGen := &stubIDGen{}
 			ctx := context.Background()
@@ -474,7 +476,9 @@ func TestSLAPerformanceBondPenalty(t *testing.T) {
 			if tC.commitmentMinTimeFraction != nil {
 				slaParams.CommitmentMinTimeFraction = *tC.commitmentMinTimeFraction
 			}
-			te.engine.UpdateMarketConfig(te.riskModel, te.priceMonitor, slaParams)
+			te.engine.UpdateMarketConfig(te.riskModel, te.priceMonitor)
+			te.engine.UpdateSLAParameters(slaParams)
+
 			if tC.nonPerformanceBondPenaltySlope != nil {
 				te.engine.OnNonPerformanceBondPenaltySlopeUpdate(*tC.nonPerformanceBondPenaltySlope)
 			}

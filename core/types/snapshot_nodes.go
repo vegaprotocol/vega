@@ -383,12 +383,23 @@ type Successors struct {
 	SuccessorMarkets []string
 }
 
+type SLANetworkParams struct {
+	BondPenaltyFactor               num.Decimal
+	EarlyExitPenalty                num.Decimal
+	MaxLiquidityFee                 num.Decimal
+	NonPerformanceBondPenaltyMax    num.Decimal
+	NonPerformanceBondPenaltySlope  num.Decimal
+	StakeToCCYVolume                num.Decimal
+	ProvidersFeeCalculationTimeStep time.Duration
+}
+
 type ExecutionMarkets struct {
-	Markets        []*ExecMarket
-	SpotMarkets    []*ExecSpotMarket
-	SettledMarkets []*CPMarketState
-	Successors     []*Successors
-	AllMarketIDs   []string
+	Markets          []*ExecMarket
+	SpotMarkets      []*ExecSpotMarket
+	SettledMarkets   []*CPMarketState
+	Successors       []*Successors
+	AllMarketIDs     []string
+	SLANetworkParams SLANetworkParams
 }
 
 type ExecMarket struct {
@@ -3585,12 +3596,44 @@ func ExecutionMarketsFromProto(em *snapshot.ExecutionMarkets) *ExecutionMarkets 
 		allMarkets = em.MarketIds
 	}
 
+	var slaNetworkParams SLANetworkParams
+	if em.SlaNetworkParams != nil {
+		bondPenalty, _ := num.DecimalFromString(em.SlaNetworkParams.BondPenaltyFactor)
+		earlyExitPenalty, _ := num.DecimalFromString(em.SlaNetworkParams.EarlyExitPenalty)
+		maxLiquidityFee, _ := num.DecimalFromString(em.SlaNetworkParams.MaxLiquidityFee)
+		nonPerformanceBondPenaltyMax, _ := num.DecimalFromString(em.SlaNetworkParams.NonPerformanceBondPenaltyMax)
+		nonPerformanceBondPenaltySlope, _ := num.DecimalFromString(em.SlaNetworkParams.NonPerformanceBondPenaltySlope)
+		stakeToCCYVolume, _ := num.DecimalFromString(em.SlaNetworkParams.StakeToCcyVolume)
+
+		slaNetworkParams = SLANetworkParams{
+			BondPenaltyFactor:               bondPenalty,
+			EarlyExitPenalty:                earlyExitPenalty,
+			MaxLiquidityFee:                 maxLiquidityFee,
+			NonPerformanceBondPenaltyMax:    nonPerformanceBondPenaltyMax,
+			NonPerformanceBondPenaltySlope:  nonPerformanceBondPenaltySlope,
+			StakeToCCYVolume:                stakeToCCYVolume,
+			ProvidersFeeCalculationTimeStep: time.Duration(em.SlaNetworkParams.ProvidersFeeCalculationTimeStep),
+		}
+	} else {
+		// default values for old snapshot compatibility
+		slaNetworkParams = SLANetworkParams{
+			BondPenaltyFactor:               num.DecimalFromFloat(0.1),
+			EarlyExitPenalty:                num.DecimalFromFloat(0.1),
+			MaxLiquidityFee:                 num.DecimalFromFloat(1),
+			NonPerformanceBondPenaltyMax:    num.DecimalFromFloat(0.5),
+			NonPerformanceBondPenaltySlope:  num.DecimalFromFloat(2),
+			StakeToCCYVolume:                num.DecimalFromFloat(1),
+			ProvidersFeeCalculationTimeStep: time.Minute * 60,
+		}
+	}
+
 	return &ExecutionMarkets{
-		Markets:        mkts,
-		SpotMarkets:    spots,
-		SettledMarkets: settled,
-		Successors:     successors,
-		AllMarketIDs:   allMarkets,
+		Markets:          mkts,
+		SpotMarkets:      spots,
+		SettledMarkets:   settled,
+		Successors:       successors,
+		AllMarketIDs:     allMarkets,
+		SLANetworkParams: slaNetworkParams,
 	}
 }
 
@@ -3611,12 +3654,22 @@ func (e ExecutionMarkets) IntoProto() *snapshot.ExecutionMarkets {
 	for _, s := range e.Successors {
 		successors = append(successors, s.IntoProto())
 	}
+
 	return &snapshot.ExecutionMarkets{
 		Markets:        mkts,
 		SpotMarkets:    spots,
 		SettledMarkets: settled,
 		Successors:     successors,
 		MarketIds:      e.AllMarketIDs,
+		SlaNetworkParams: &snapshot.SLANetworkParams{
+			BondPenaltyFactor:               e.SLANetworkParams.BondPenaltyFactor.String(),
+			EarlyExitPenalty:                e.SLANetworkParams.EarlyExitPenalty.String(),
+			MaxLiquidityFee:                 e.SLANetworkParams.MaxLiquidityFee.String(),
+			NonPerformanceBondPenaltyMax:    e.SLANetworkParams.NonPerformanceBondPenaltyMax.String(),
+			NonPerformanceBondPenaltySlope:  e.SLANetworkParams.NonPerformanceBondPenaltySlope.String(),
+			StakeToCcyVolume:                e.SLANetworkParams.StakeToCCYVolume.String(),
+			ProvidersFeeCalculationTimeStep: int64(e.SLANetworkParams.ProvidersFeeCalculationTimeStep),
+		},
 	}
 }
 

@@ -126,8 +126,8 @@ type Market struct {
 	lastMidBuyPrice  *num.Uint
 	lastMidSellPrice *num.Uint
 
-	lastMarketValueProxy    num.Decimal
 	bondPenaltyFactor       num.Decimal
+	lastMarketValueProxy    num.Decimal
 	marketValueWindowLength time.Duration
 
 	// Liquidity Fee
@@ -345,6 +345,7 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 
 	switch epoch.Action {
 	case vegapb.EpochAction_EPOCH_ACTION_START:
+		m.liquidity.UpdateSLAParameters(m.mkt.LiquiditySLAParams)
 		m.liquidity.OnEpochStart(ctx, m.timeService.GetTimeNow(), m.markPrice, m.midPrice(), m.getTargetStake(), m.positionFactor)
 	case vegapb.EpochAction_EPOCH_ACTION_END:
 		// compute parties stats for the previous epoch
@@ -359,6 +360,10 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 
 func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
 	m.liquidityEngine.OnEpochRestore(epoch)
+}
+
+func (m *Market) IsOpeningAuction() bool {
+	return m.as.IsOpeningAuction()
 }
 
 func (m *Market) onEpochEndPartiesStats() {
@@ -495,7 +500,7 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	m.linearSlippageFactor = m.mkt.LinearSlippageFactor
 	m.quadraticSlippageFactor = m.mkt.QuadraticSlippageFactor
 	m.lMonitor.UpdateParameters(m.mkt.LiquidityMonitoringParameters)
-	m.liquidity.UpdateMarketConfig(m.tradableInstrument.RiskModel, m.pMonitor, m.mkt.LiquiditySLAParams)
+	m.liquidity.UpdateMarketConfig(m.tradableInstrument.RiskModel, m.pMonitor)
 
 	// if we're already in trading terminated, not point to listen to trading termination oracle
 	if m.perp {
@@ -516,6 +521,11 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	}
 	// We know the risk model has been updated, so we have to recalculate margin requirements
 	m.recheckMargin(ctx, m.position.Positions())
+
+	// update immediately during opening auction
+	if m.as.IsOpeningAuction() {
+		m.liquidity.UpdateSLAParameters(m.mkt.LiquiditySLAParams)
+	}
 
 	return nil
 }

@@ -656,7 +656,7 @@ func validateLPSLAParams(slaParams *types.LiquiditySLAParams) (types.ProposalErr
 		return types.ProposalErrorMissingSLAParams, fmt.Errorf("liquidity provision SLA must be provided")
 	}
 	if slaParams.PriceRange.IsZero() || slaParams.PriceRange.LessThan(num.DecimalZero()) || slaParams.PriceRange.GreaterThan(num.DecimalFromFloat(20)) {
-		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("price range must be in range [0.1, 20]")
+		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("price range must be strictly greater than 0 and less than or equal to 20")
 	}
 	if slaParams.CommitmentMinTimeFraction.LessThan(num.DecimalZero()) || slaParams.CommitmentMinTimeFraction.GreaterThan(num.DecimalOne()) {
 		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("commitment min time fraction must be in range [0, 1]")

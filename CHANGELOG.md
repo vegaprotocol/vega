@@ -97,6 +97,7 @@
 - [8916](https://github.com/vegaprotocol/vega/issues/8916) - Add data node `API` for teams.
 - [7461](https://github.com/vegaprotocol/vega/issues/7461) - Add endpoint to get transfer by ID.
 - [9417](https://github.com/vegaprotocol/vega/issues/9417) - Add additional filters for referral set `APIs`.
+- [9375](https://github.com/vegaprotocol/vega/issues/9375) - Apply SLA parameters at epoch boundary.
 
 ### 🐛 Fixes
 
@@ -114,6 +115,7 @@
 - [8792](https://github.com/vegaprotocol/vega/issues/8792) - Fix panic when starting null block chain node.
 - [8739](https://github.com/vegaprotocol/vega/issues/8739) - Cancel orders for rejected markets.
 - [9118](https://github.com/vegaprotocol/vega/issues/9118) - Improve list stop orders error message
+- [9406](https://github.com/vegaprotocol/vega/issues/9105) - Fix Ethereum oracle validation failing unexpectedly when using go 1.19 
 - [9105](https://github.com/vegaprotocol/vega/issues/9105) - Truncate virtual stake decimal places
 - [9348](https://github.com/vegaprotocol/vega/issues/9348) - Nil pointer error in Ethereum call engine when running with null block chain
 - [8800](https://github.com/vegaprotocol/vega/issues/8800) - `expiresAt` is always null in the Stop Orders `API`.
@@ -181,6 +183,8 @@
 - [9385](https://github.com/vegaprotocol/vega/issues/9385) - Support deprecated liquidity auction type for compatibility
 - [9398](https://github.com/vegaprotocol/vega/issues/9398) - Fix division by zero panic in market liquidity
 - [9413](https://github.com/vegaprotocol/vega/issues/9413) - Fix range validation for SLA parameters
+- [9433](https://github.com/vegaprotocol/vega/issues/9433) - fix referral set snapshot
+- [9432](https://github.com/vegaprotocol/vega/issues/9432) - fix referral set not saved to database.
 
 ## 0.72.1
 
