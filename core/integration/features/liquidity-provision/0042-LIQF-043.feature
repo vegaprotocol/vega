@@ -120,7 +120,6 @@ Feature: Test LP fee distribution in LP mechanics in 0042
       | market | lp1    | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 18     | USD   |
       | market | lp2    | ACCOUNT_TYPE_FEES_LIQUIDITY                    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ETH/MAR22 | 11     | USD   |
       | lp1    | lp1    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ACCOUNT_TYPE_GENERAL                           | ETH/MAR22 | 18     | USD   |
-      | lp2    | lp2    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ACCOUNT_TYPE_GENERAL                           | ETH/MAR22 | 0      | USD   |
       | lp2    | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES                 | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ETH/MAR22 | 11     | USD   |
       | market | lp1    | ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION | ACCOUNT_TYPE_GENERAL                           | ETH/MAR22 | 11     | USD   |
 
