@@ -145,11 +145,11 @@ func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
 
 	switch c := terms.Change.(type) {
 	case *protoTypes.ProposalTerms_NewMarket:
-		errs.Merge(checkNewMarketChanges(c, terms.EnactmentTimestamp))
+		errs.Merge(checkNewMarketChanges(c))
 	case *protoTypes.ProposalTerms_UpdateMarket:
-		errs.Merge(checkUpdateMarketChanges(c, terms.EnactmentTimestamp))
+		errs.Merge(checkUpdateMarketChanges(c))
 	case *protoTypes.ProposalTerms_NewSpotMarket:
-		errs.Merge(checkNewSpotMarketChanges(c, terms.EnactmentTimestamp))
+		errs.Merge(checkNewSpotMarketChanges(c))
 	case *protoTypes.ProposalTerms_UpdateSpotMarket:
 		errs.Merge(checkUpdateSpotMarketChanges(c))
 	case *protoTypes.ProposalTerms_UpdateNetworkParameter:
@@ -725,7 +725,7 @@ func checkERC20UpdateAssetSource(s *protoTypes.AssetDetailsUpdate_Erc20) Errors 
 	return errs
 }
 
-func checkNewSpotMarketChanges(change *protoTypes.ProposalTerms_NewSpotMarket, enactmentTimestamp int64) Errors {
+func checkNewSpotMarketChanges(change *protoTypes.ProposalTerms_NewSpotMarket) Errors {
 	errs := NewErrors()
 
 	if change.NewSpotMarket == nil {
@@ -766,13 +766,13 @@ func checkNewSpotMarketChanges(change *protoTypes.ProposalTerms_NewSpotMarket, e
 	}
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.new_spot_market.changes"))
 	errs.Merge(checkTargetStakeParams(changes.TargetStakeParameters, "proposal_submission.terms.change.new_spot_market.changes"))
-	errs.Merge(checkNewInstrument(changes.Instrument, "proposal_submission.terms.change.new_spot_market.changes.instrument", enactmentTimestamp))
+	errs.Merge(checkNewInstrument(changes.Instrument, "proposal_submission.terms.change.new_spot_market.changes.instrument"))
 	errs.Merge(checkNewSpotRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.SlaParams, "proposal_submission.terms.change.new_spot_market.changes.sla_params"))
 	return errs
 }
 
-func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket, enactmentTimestamp int64) Errors {
+func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 	errs := NewErrors()
 
 	if change.NewMarket == nil {
@@ -828,14 +828,14 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket, enactment
 
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
 	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
-	errs.Merge(checkNewInstrument(changes.Instrument, "proposal_submission.terms.change.new_market.changes.instrument", enactmentTimestamp))
+	errs.Merge(checkNewInstrument(changes.Instrument, "proposal_submission.terms.change.new_market.changes.instrument"))
 	errs.Merge(checkNewRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "proposal_submission.terms.change.new_market.changes.sla_params"))
 
 	return errs
 }
 
-func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket, enactmentTimestamp int64) Errors {
+func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Errors {
 	errs := NewErrors()
 
 	if change.UpdateMarket == nil {
@@ -878,7 +878,7 @@ func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket, ena
 
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.update_market.changes"))
 	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "proposal_submission.terms.change.update_market.changes"))
-	errs.Merge(checkUpdateInstrument(changes.Instrument, enactmentTimestamp))
+	errs.Merge(checkUpdateInstrument(changes.Instrument))
 	errs.Merge(checkUpdateRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "proposal_submission.terms.change.update_market.changes.sla_params"))
 
@@ -999,7 +999,7 @@ func checkTargetStakeParams(targetStakeParameters *protoTypes.TargetStakeParamet
 	return errs
 }
 
-func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent string, enactmentTimestamp int64) Errors {
+func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent string) Errors {
 	errs := NewErrors()
 
 	if instrument == nil {
@@ -1019,9 +1019,9 @@ func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent s
 
 	switch product := instrument.Product.(type) {
 	case *protoTypes.InstrumentConfiguration_Future:
-		errs.Merge(checkNewFuture(product.Future, enactmentTimestamp))
+		errs.Merge(checkNewFuture(product.Future))
 	case *protoTypes.InstrumentConfiguration_Perpetual:
-		errs.Merge(checkNewPerps(product.Perpetual, enactmentTimestamp))
+		errs.Merge(checkNewPerps(product.Perpetual))
 	case *protoTypes.InstrumentConfiguration_Spot:
 		errs.Merge(checkNewSpot(product.Spot))
 	default:
@@ -1031,7 +1031,7 @@ func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent s
 	return errs
 }
 
-func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration, enactmentTimestamp int64) Errors {
+func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration) Errors {
 	errs := NewErrors()
 
 	if instrument == nil {
@@ -1048,9 +1048,9 @@ func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration,
 
 	switch product := instrument.Product.(type) {
 	case *protoTypes.UpdateInstrumentConfiguration_Future:
-		errs.Merge(checkUpdateFuture(product.Future, enactmentTimestamp))
+		errs.Merge(checkUpdateFuture(product.Future))
 	case *protoTypes.UpdateInstrumentConfiguration_Perpetual:
-		errs.Merge(checkUpdatePerps(product.Perpetual, enactmentTimestamp))
+		errs.Merge(checkUpdatePerps(product.Perpetual))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product", ErrIsNotValid)
 	}
@@ -1058,7 +1058,7 @@ func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration,
 	return errs
 }
 
-func checkNewFuture(future *protoTypes.FutureProduct, enactmentTimestamp int64) Errors {
+func checkNewFuture(future *protoTypes.FutureProduct) Errors {
 	errs := NewErrors()
 
 	if future == nil {
@@ -1072,14 +1072,14 @@ func checkNewFuture(future *protoTypes.FutureProduct, enactmentTimestamp int64) 
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
-	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.future", true, enactmentTimestamp))
-	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.new_market.changes.instrument.product.future", false, enactmentTimestamp))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.future", true))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.new_market.changes.instrument.product.future", false))
 	errs.Merge(checkNewOracleBinding(future))
 
 	return errs
 }
 
-func checkNewPerps(perps *protoTypes.PerpetualProduct, enactmentTimestamp int64) Errors {
+func checkNewPerps(perps *protoTypes.PerpetualProduct) Errors {
 	errs := NewErrors()
 
 	if perps == nil {
@@ -1151,8 +1151,8 @@ func checkNewPerps(perps *protoTypes.PerpetualProduct, enactmentTimestamp int64)
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound", ErrMustBeGTEClampLowerBound)
 	}
 
-	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true, enactmentTimestamp))
-	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementSchedule, "data_source_spec_for_settlement_schedule", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true, enactmentTimestamp))
+	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true))
+	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementSchedule, "data_source_spec_for_settlement_schedule", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true))
 	errs.Merge(checkNewPerpsOracleBinding(perps))
 
 	return errs
@@ -1180,7 +1180,7 @@ func checkNewSpot(spot *protoTypes.SpotProduct) Errors {
 	return errs
 }
 
-func checkUpdateFuture(future *protoTypes.UpdateFutureProduct, enactmentTimestamp int64) Errors {
+func checkUpdateFuture(future *protoTypes.UpdateFutureProduct) Errors {
 	errs := NewErrors()
 
 	if future == nil {
@@ -1191,14 +1191,14 @@ func checkUpdateFuture(future *protoTypes.UpdateFutureProduct, enactmentTimestam
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
-	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future", true, enactmentTimestamp))
-	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.update_market.changes.instrument.product.future", false, enactmentTimestamp))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future", true))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.update_market.changes.instrument.product.future", false))
 	errs.Merge(checkUpdateOracleBinding(future))
 
 	return errs
 }
 
-func checkUpdatePerps(perps *protoTypes.UpdatePerpetualProduct, enactmentTimestamp int64) Errors {
+func checkUpdatePerps(perps *protoTypes.UpdatePerpetualProduct) Errors {
 	errs := NewErrors()
 
 	if perps == nil {
@@ -1209,15 +1209,14 @@ func checkUpdatePerps(perps *protoTypes.UpdatePerpetualProduct, enactmentTimesta
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
-	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future", true, enactmentTimestamp))
-	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementSchedule, "data_source_spec_for_settlement_schedule", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true, enactmentTimestamp))
+	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future", true))
+	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementSchedule, "data_source_spec_for_settlement_schedule", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true))
 	errs.Merge(checkUpdatePerpsOracleBinding(perps))
 
 	return errs
 }
 
 func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentProperty string, tryToSettle bool,
-	enactmentTimestamp int64,
 ) Errors {
 	errs := NewErrors()
 	if spec == nil {
@@ -1360,13 +1359,6 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 
 				if ethOracle.Trigger == nil {
 					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.trigger", parentProperty, name), ErrIsRequired)
-				}
-
-				if ethOracle.Trigger != nil &&
-					ethOracle.Trigger.GetTimeTrigger() != nil &&
-					(ethOracle.Trigger.GetTimeTrigger().Initial == nil || *ethOracle.Trigger.GetTimeTrigger().Initial == 0) {
-					defaultTriggerInitialTime := uint64(enactmentTimestamp)
-					ethOracle.Trigger.GetTimeTrigger().Initial = &defaultTriggerInitialTime
 				}
 			} else {
 				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle", parentProperty, name), ErrIsRequired)
