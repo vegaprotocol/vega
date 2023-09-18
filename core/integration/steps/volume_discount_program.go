@@ -22,15 +22,6 @@ import (
 	"github.com/cucumber/godog"
 )
 
-type volumeDiscountLevel struct {
-	minimumVolume  uint64
-	discountFactor float64
-}
-
-type volumeDiscountProgram struct {
-	vdps []volumeDiscountLevel
-}
-
 func VolumeDiscountProgramTiers(
 	tiers map[string][]*types.VolumeBenefitTier,
 	volumeDiscountTierName string,
@@ -40,8 +31,10 @@ func VolumeDiscountProgramTiers(
 	vbts := make([]*types.VolumeBenefitTier, 0, len(rows))
 	for _, r := range rows {
 		row := volumeDiscountTiersRow{row: r}
-		p := &types.VolumeBenefitTier{MinimumRunningNotionalTakerVolume: row.volume(),
-			VolumeDiscountFactor: row.factor()}
+		p := &types.VolumeBenefitTier{
+			MinimumRunningNotionalTakerVolume: row.volume(),
+			VolumeDiscountFactor:              row.factor(),
+		}
 
 		vbts = append(vbts, p)
 	}
@@ -88,7 +81,6 @@ func VolumeDiscountProgram(
 			vdp.VolumeBenefitTiers = tier
 		}
 		vde.UpdateProgram(&vdp)
-		break
 	}
 	return nil
 }

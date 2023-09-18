@@ -621,7 +621,6 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the party "([^"]*)" has the following discount factor "([^"]*)"$`, func(party, discountFactor string) error {
 		return steps.PartyHasTheFollowingDiscountFactor(party, discountFactor, execsetup.volumeDiscountProgram)
 	})
-
 }
 
 func reconcileAccounts() error {
