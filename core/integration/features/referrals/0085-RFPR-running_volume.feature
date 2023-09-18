@@ -30,62 +30,62 @@ Feature: Calculating referral set running volumes
 
     # Initialise the markets
     And the following assets are registered:
-      | id   | decimal places |
-      | USDT | 1              |
-      | USDC | 2              |
+      | id    | decimal places | quantum |
+      | USD11 | 1              | 1       |
+      | USD24 | 2              | 10      |
     And the markets:
-      | id       | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | decimal places | position decimal places |
-      | ETH/USDT | ETH        | USDT  | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e-3                   | 0                         | default-futures | 0              | 0                       |
-      | ETH/USDC | ETH        | USDC  | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e-3                   | 0                         | default-futures | 1              | 1                       |
+      | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | decimal places | position decimal places |
+      | ETH/USD11 | ETH        | USD11 | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e-3                   | 0                         | default-futures | 0              | 0                       |
+      | ETH/USD24 | ETH        | USD24 | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e-3                   | 0                         | default-futures | 1              | 1                       |
     And the liquidity monitoring parameters:
       | name       | triggering ratio | time window | scaling factor |
       | lqm-params | 1.0              | 3600s       | 1              |
     When the markets are updated:
-      | id       | liquidity monitoring | linear slippage factor | quadratic slippage factor |
-      | ETH/USDT | lqm-params           | 1e-3                   | 0                         |
-      | ETH/USDC | lqm-params           | 1e-3                   | 0                         |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/USD11 | lqm-params           | 1e-3                   | 0                         |
+      | ETH/USD24 | lqm-params           | 1e-3                   | 0                         |
 
     # Initialise the parties
     Given the parties deposit on asset's general account the following amount:
       | party     | asset | amount      |
-      | lpprov    | USDC  | 10000000000 |
-      | aux1      | USDC  | 10000000    |
-      | aux2      | USDC  | 10000000    |
-      | referrer1 | USDC  | 10000000    |
-      | referee1  | USDC  | 10000000    |
-      | referee2  | USDC  | 10000000    |
-      | lpprov    | USDT  | 10000000000 |
-      | aux1      | USDT  | 10000000    |
-      | aux2      | USDT  | 10000000    |
-      | referrer1 | USDT  | 10000000    |
-      | referee1  | USDT  | 10000000    |
-      | referee2  | USDT  | 10000000    |
+      | lpprov    | USD24 | 10000000000 |
+      | aux1      | USD24 | 10000000    |
+      | aux2      | USD24 | 10000000    |
+      | referrer1 | USD24 | 10000000    |
+      | referee1  | USD24 | 10000000    |
+      | referee2  | USD24 | 10000000    |
+      | lpprov    | USD11 | 10000000000 |
+      | aux1      | USD11 | 10000000    |
+      | aux2      | USD11 | 10000000    |
+      | referrer1 | USD11 | 10000000    |
+      | referee1  | USD11 | 10000000    |
+      | referee2  | USD11 | 10000000    |
 
     # Exit opening auctions
     Given the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee  | lp type    |
-      | lp1 | lpprov | ETH/USDT  | 1000000           | 0.01 | submission |
-      | lp2 | lpprov | ETH/USDC  | 10000000          | 0.01 | submission |
+      | lp1 | lpprov | ETH/USD11 | 1000000           | 0.01 | submission |
+      | lp2 | lpprov | ETH/USD24 | 10000000          | 0.01 | submission |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/USDT  | 5000      | 1000                 | buy  | BID              | 10000  | 1      |
-      | lpprov | ETH/USDT  | 5000      | 1000                 | sell | ASK              | 10000  | 1      |
-      | lpprov | ETH/USDC  | 50000     | 10000                | buy  | BID              | 100000 | 10     |
-      | lpprov | ETH/USDC  | 50000     | 10000                | sell | ASK              | 100000 | 10     |
+      | lpprov | ETH/USD11 | 5000      | 1000                 | buy  | BID              | 10000  | 1      |
+      | lpprov | ETH/USD11 | 5000      | 1000                 | sell | ASK              | 10000  | 1      |
+      | lpprov | ETH/USD24 | 50000     | 10000                | buy  | BID              | 100000 | 10     |
+      | lpprov | ETH/USD24 | 50000     | 10000                | sell | ASK              | 100000 | 10     |
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux1  | ETH/USDT  | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux1  | ETH/USDT  | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/USDT  | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/USDT  | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux1  | ETH/USDC  | buy  | 1      | 9900  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux1  | ETH/USDC  | buy  | 1      | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/USDC  | sell | 1      | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/USDC  | sell | 1      | 11000 | 0                | TYPE_LIMIT | TIF_GTC |
-    And the opening auction period ends for market "ETH/USDT"
-    And the opening auction period ends for market "ETH/USDC"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/USDT"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/USDC"
+      | aux1  | ETH/USD11 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux1  | ETH/USD11 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/USD11 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/USD11 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux1  | ETH/USD24 | buy  | 1      | 9900  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux1  | ETH/USD24 | buy  | 1      | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/USD24 | sell | 1      | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/USD24 | sell | 1      | 11000 | 0                | TYPE_LIMIT | TIF_GTC |
+    And the opening auction period ends for market "ETH/USD11"
+    And the opening auction period ends for market "ETH/USD24"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/USD11"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/USD24"
 
     # Create the referral set and codes
     Given the parties create the following referral codes:
@@ -102,8 +102,8 @@ Feature: Calculating referral set running volumes
     
     Given the parties place the following orders:
       | party   | market id | side         | volume | price | resulting trades | type       | tif     |
-      | <party> | ETH/USDT  | <maker side> | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux1    | ETH/USDT  | <taker side> | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | <party> | ETH/USD11 | <maker side> | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux1    | ETH/USD11 | <taker side> | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
     Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 0:
       | party    | reward factor | discount factor |
@@ -124,8 +124,8 @@ Feature: Calculating referral set running volumes
     
     Given the parties place the following orders:
       | party   | market id | side         | volume | price | resulting trades | type       | tif     |
-      | aux1    | ETH/USDT  | <maker side> | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | <party> | ETH/USDT  | <taker side> | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1    | ETH/USD11 | <maker side> | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | <party> | ETH/USD11 | <taker side> | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
     Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 100000:
       | party    | reward factor | discount factor |
@@ -147,19 +147,19 @@ Feature: Calculating referral set running volumes
     # Cancel the liquidity commitment triggering an auction
     Given the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | lp type      |
-      | lp1 | lpprov | ETH/USDT  | 0                 | 0.001 | cancellation |
+      | lp1 | lpprov | ETH/USD11 | 0                 | 0.001 | cancellation |
     And the network moves ahead "1" epochs
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/USDT"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/USD11"
 
     When the parties place the following orders:
       | party   | market id | side         | volume | price | resulting trades | type       | tif     |
-      | aux1    | ETH/USDT  | <maker side> | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | <party> | ETH/USDT  | <taker side> | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux1    | ETH/USD11 | <maker side> | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | <party> | ETH/USD11 | <taker side> | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | lp type    |
-      | lp2 | lpprov | ETH/USDT  | 1000000           | 0.001 | submission |
+      | lp2 | lpprov | ETH/USD11 | 1000000           | 0.001 | submission |
     And the network moves ahead "1" epochs
-    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/USDT"
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/USD11"
     And the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 0:
       | party    | reward factor | discount factor |
       | referee1 | 0             | 0               |
@@ -182,8 +182,8 @@ Feature: Calculating referral set running volumes
       | referralProgram.maxPartyNotionalVolumeByQuantumPerEpoch | 1000  |
     And the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux1    | ETH/USDT  | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | <party> | ETH/USDT  | sell | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1    | ETH/USD11 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | <party> | ETH/USD11 | sell | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
     Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 1000:
       | party    | reward factor | discount factor |
@@ -205,8 +205,8 @@ Feature: Calculating referral set running volumes
       | referralProgram.maxPartyNotionalVolumeByQuantumPerEpoch | 1000  |
     And the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux1    | ETH/USDT  | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | <party> | ETH/USDT  | sell | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1    | ETH/USD11 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | <party> | ETH/USD11 | sell | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the following network parameters are set:
       | name                                                    | value |
       | referralProgram.maxPartyNotionalVolumeByQuantumPerEpoch | 5000  |
@@ -228,12 +228,12 @@ Feature: Calculating referral set running volumes
 
     Given the parties place the following orders:
       | party   | market id | side         | volume | price | resulting trades | type       | tif     |
-      | aux1    | ETH/USDT  | <maker side> | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | <party> | ETH/USDT  | <taker side> | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-      | aux1    | ETH/USDC  | <maker side> | 10     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | <party> | ETH/USDC  | <taker side> | 10     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1    | ETH/USD11 | <maker side> | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | <party> | ETH/USD11 | <taker side> | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1    | ETH/USD24 | <maker side> | 10     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | <party> | ETH/USD24 | <taker side> | 10     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 110000:
+    Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 20000:
       | party    | reward factor | discount factor |
       | referee1 | 0.1           | 0.1             |
       | referee2 | 0.1           | 0.1             |
@@ -252,20 +252,20 @@ Feature: Calculating referral set running volumes
 
     Given the parties place the following orders:
       | party     | market id | side         | volume | price | resulting trades | type       | tif     |
-      | aux1      | ETH/USDT  | <maker side> | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | referrer1 | ETH/USDT  | <taker side> | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-      | aux1      | ETH/USDT  | <maker side> | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | referee1  | ETH/USDT  | <taker side> | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-      | aux1      | ETH/USDT  | <maker side> | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | referee2  | ETH/USDT  | <taker side> | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-      | aux1      | ETH/USDC  | <maker side> | 10     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | referrer1 | ETH/USDC  | <taker side> | 10     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
-      | aux1      | ETH/USDC  | <maker side> | 10     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | referee1  | ETH/USDC  | <taker side> | 10     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
-      | aux1      | ETH/USDC  | <maker side> | 10     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | referee2  | ETH/USDC  | <taker side> | 10     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1      | ETH/USD11 | <maker side> | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referrer1 | ETH/USD11 | <taker side> | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1      | ETH/USD11 | <maker side> | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee1  | ETH/USD11 | <taker side> | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1      | ETH/USD11 | <maker side> | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee2  | ETH/USD11 | <taker side> | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1      | ETH/USD24 | <maker side> | 10     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | referrer1 | ETH/USD24 | <taker side> | 10     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1      | ETH/USD24 | <maker side> | 10     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee1  | ETH/USD24 | <taker side> | 10     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1      | ETH/USD24 | <maker side> | 10     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee2  | ETH/USD24 | <taker side> | 10     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 330000:
+    Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 60000:
       | party    | reward factor | discount factor |
       | referee1 | 0.1           | 0.1             |
       | referee2 | 0.1           | 0.1             |
@@ -282,20 +282,20 @@ Feature: Calculating referral set running volumes
 
     Given the parties place the following orders:
       | party     | market id | side         | volume | price | resulting trades | type       | tif     |
-      | aux1      | ETH/USDT  | <maker side> | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | referrer1 | ETH/USDT  | <taker side> | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-      | aux1      | ETH/USDT  | <maker side> | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | referee1  | ETH/USDT  | <taker side> | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-      | aux1      | ETH/USDT  | <maker side> | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | referee2  | ETH/USDT  | <taker side> | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-      | aux1      | ETH/USDC  | <maker side> | 10     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | referrer1 | ETH/USDC  | <taker side> | 10     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
-      | aux1      | ETH/USDC  | <maker side> | 10     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | referee1  | ETH/USDC  | <taker side> | 10     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
-      | aux1      | ETH/USDC  | <maker side> | 10     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | referee2  | ETH/USDC  | <taker side> | 10     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1      | ETH/USD11 | <maker side> | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referrer1 | ETH/USD11 | <taker side> | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1      | ETH/USD11 | <maker side> | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee1  | ETH/USD11 | <taker side> | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1      | ETH/USD11 | <maker side> | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee2  | ETH/USD11 | <taker side> | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1      | ETH/USD24 | <maker side> | 10     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | referrer1 | ETH/USD24 | <taker side> | 10     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1      | ETH/USD24 | <maker side> | 10     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee1  | ETH/USD24 | <taker side> | 10     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1      | ETH/USD24 | <maker side> | 10     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee2  | ETH/USD24 | <taker side> | 10     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 330000:
+    Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 60000:
       | party    | reward factor | discount factor |
       | referee1 | 0.1           | 0.1             |
       | referee2 | 0.1           | 0.1             |
@@ -316,8 +316,8 @@ Feature: Calculating referral set running volumes
 
     Given the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux1     | ETH/USDT  | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | referee1 | ETH/USDT  | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1     | ETH/USD11 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee1 | ETH/USD11 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
     Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of <running volume 1>:
       | party    | reward factor | discount factor |
@@ -326,8 +326,8 @@ Feature: Calculating referral set running volumes
 
     Given the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux1     | ETH/USDT  | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | referee1 | ETH/USDT  | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1     | ETH/USD11 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee1 | ETH/USD11 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
     Then the referral set stats for code "referral-code-1" at epoch "2" should have a running volume of <running volume 2>:
       | party    | reward factor | discount factor |
@@ -336,8 +336,8 @@ Feature: Calculating referral set running volumes
 
     Given the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux1     | ETH/USDT  | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | referee1 | ETH/USDT  | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1     | ETH/USD11 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee1 | ETH/USD11 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
     Then the referral set stats for code "referral-code-1" at epoch "3" should have a running volume of <running volume 3>:
       | party    | reward factor | discount factor |
@@ -346,8 +346,8 @@ Feature: Calculating referral set running volumes
 
     Given the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux1     | ETH/USDT  | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | referee1 | ETH/USDT  | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1     | ETH/USD11 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee1 | ETH/USD11 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
     Then the referral set stats for code "referral-code-1" at epoch "4" should have a running volume of <running volume 4>:
       | party    | reward factor | discount factor |
