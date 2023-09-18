@@ -31,6 +31,7 @@ import (
 	"code.vegaprotocol.io/vega/core/teams"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/vesting"
+	"code.vegaprotocol.io/vega/core/volumediscount"
 	"code.vegaprotocol.io/vega/libs/num"
 
 	"code.vegaprotocol.io/vega/core/datasource/spec"
@@ -73,6 +74,7 @@ func (DummyASVM) GetRewardsVestingMultiplier(_ string) num.Decimal {
 var (
 	marketConfig          = market.NewMarketConfig()
 	referralProgramConfig = referralcfg.NewReferralProgramConfig()
+	volumeDiscountTiers   = map[string][]*types.VolumeBenefitTier{}
 )
 
 type executionTestSetup struct {
@@ -110,11 +112,12 @@ type executionTestSetup struct {
 	insurancePoolDepositsOverStep map[string]*num.Int
 	eventsBefore                  int
 
-	ntry            *notary.SnapshotNotary
-	stateVarEngine  *stubs.StateVarStub
-	witness         *validators.Witness
-	teamsEngine     *teams.Engine
-	referralProgram *referral.Engine
+	ntry                  *notary.SnapshotNotary
+	stateVarEngine        *stubs.StateVarStub
+	witness               *validators.Witness
+	teamsEngine           *teams.Engine
+	referralProgram       *referral.Engine
+	volumeDiscountProgram *volumediscount.Engine
 }
 
 func newExecutionTestSetup() *executionTestSetup {
@@ -210,6 +213,9 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.stateVarEngine = stubs.NewStateVar()
 	// @TODO stub assets engine and pass it in
 
+	execsetup.volumeDiscountProgram = volumediscount.New(execsetup.broker, marketActivityTracker)
+	execsetup.epochEngine.NotifyOnEpoch(execsetup.volumeDiscountProgram.OnEpoch, execsetup.volumeDiscountProgram.OnEpochRestore)
+
 	execsetup.executionEngine = newExEng(
 		execution.NewEngine(
 			execsetup.log,
@@ -222,7 +228,7 @@ func newExecutionTestSetup() *executionTestSetup {
 			marketActivityTracker,
 			execsetup.assetsEngine, // assets
 			&stubs.ReferralDiscountRewardService{},
-			&stubs.VolumeDiscountService{},
+			execsetup.volumeDiscountProgram,
 		),
 		execsetup.broker,
 	)
