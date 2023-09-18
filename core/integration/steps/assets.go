@@ -33,7 +33,6 @@ func RegisterAsset(tbl *godog.Table, asset *stubs.AssetStub, col *collateral.Eng
 			aid,
 			row.MustU64("decimal places"),
 		)
-		fmt.Println(aRow.quantum())
 		err := col.EnableAsset(context.Background(), types.Asset{
 			ID: aid,
 			Details: &types.AssetDetails{
