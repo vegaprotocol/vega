@@ -1,4 +1,4 @@
-Feature: Test LP SLA Bond penalty;
+Feature: At the start of an epoch, each parties volume_discount_factor is reevaluated and fixed for the epoch (0084-VDPR-012).
 
   Background:
 
@@ -29,11 +29,11 @@ Feature: Test LP SLA Bond penalty;
       | 3000     | 0.010  |
     And the volume discount program:
       | id       | tiers    | closing timestamp | window length |
-      | id1      | VDP-01   | 9999999990        | 3             |
+      | id1      | VDP-01   | 9999999990        | 4             |
 
     And the following assets are registered:
       | id  | decimal places |
-      | USD | 0              |
+      | ETH | 0              |
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.0004    | 0.001              |
@@ -47,7 +47,7 @@ Feature: Test LP SLA Bond penalty;
 
     And the markets:
       | id        | quote name | asset | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/MAR22 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
+      | ETH/MAR24 | ETH        | ETH   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
 
     And the following network parameters are set:
       | name                                                  | value |
@@ -62,47 +62,56 @@ Feature: Test LP SLA Bond penalty;
 
     Given the average block duration is "1"
   @Now
-  Scenario: 001: 
+  Scenario: 001: Check that the volume discount factor is updated after each epoch
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
-      | lp1    | USD   | 100000 |
-      | party1 | USD   | 100000 |
-      | party2 | USD   | 100000 |
-      | party3 | USD   | 100000 |
+      | lp1    | ETH   | 10000000 |
+      | party1 | ETH   | 10000000 |
+      | party2 | ETH   | 10000000 |
+      | party3 | ETH   | 10000000 |
 
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee   | lp type    |
-      | lp_1 | lp1   | ETH/MAR22 | 4000              | 0.02  | submission |
+      | lp_1 | lp1   | ETH/MAR24 | 100000            | 0.02  | submission |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/MAR22 | buy  | 10     | 900   | 0                | TYPE_LIMIT | TIF_GTC |
-      | party1 | ETH/MAR22 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/MAR22 | sell | 10     | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/MAR22 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | lp1    | ETH/MAR22 | buy  | 10     | 990   | 0                | TYPE_LIMIT | TIF_GTC |
-      | lp1    | ETH/MAR22 | sell | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/MAR24 | buy  | 10     | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/MAR24 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | lp1    | ETH/MAR24 | buy  | 100    | 990   | 0                | TYPE_LIMIT | TIF_GTC |
+      | lp1    | ETH/MAR24 | sell | 100    | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR24 | sell | 10     | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR24 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
-    Then the opening auction period ends for market "ETH/MAR22"
+    Then the opening auction period ends for market "ETH/MAR24"
     And the following trades should be executed:
       | buyer  | price | size | seller |
       | party1 | 1000  | 1    | party2 |
-
-    And the market data for the market "ETH/MAR22" should be:
+    And the market data for the market "ETH/MAR24" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 3556         | 4000           | 1             |
-    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 1 x 1 x 3.5569036 =3556
-
+      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 3556         | 100000         | 1             |
     And the party "party3" has the following discount factor "0"
 
+    Then the parties place the following orders:
+    | party  | market id | side | volume | price | resulting trades | type        | tif     |
+    | party3 | ETH/MAR24 | buy  | 2      | 0     | 1                | TYPE_MARKET | TIF_IOC |
+    | party3 | ETH/MAR24 | sell | 2      | 0     | 1                | TYPE_MARKET | TIF_IOC |
+    And the market data for the market "ETH/MAR24" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 10670        | 100000         | 1             |
     When the network moves ahead "1" epochs
+    And the party "party3" has the following discount factor "0.001"
 
-        Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party3 | ETH/MAR22 | sell | 9      | 990   | 1                | TYPE_LIMIT | TIF_GTC |
-      | party3 | ETH/MAR22 | buy  | 9      | 1010  | 1                | TYPE_LIMIT | TIF_GTC |
-
+    Then the parties place the following orders:
+    | party  | market id | side | volume | price | resulting trades | type        | tif     |
+    | party3 | ETH/MAR24 | buy  | 2      | 0     | 1                | TYPE_MARKET | TIF_IOC |
+    | party3 | ETH/MAR24 | sell | 2      | 0     | 1                | TYPE_MARKET | TIF_IOC |
     When the network moves ahead "1" epochs
+    And the party "party3" has the following discount factor "0.005"
 
+    Then the parties place the following orders:
+    | party  | market id | side | volume | price | resulting trades | type        | tif     |
+    | party3 | ETH/MAR24 | buy  | 20     | 0     | 1                | TYPE_MARKET | TIF_IOC |
+    | party3 | ETH/MAR24 | sell | 20     | 0     | 1                | TYPE_MARKET | TIF_IOC |
+    When the network moves ahead "1" epochs
     And the party "party3" has the following discount factor "0.01"
-
