@@ -1140,6 +1140,7 @@ type ComplexityRoot struct {
 		Instrument                    func(childComplexity int) int
 		LinearSlippageFactor          func(childComplexity int) int
 		LiquidityMonitoringParameters func(childComplexity int) int
+		LiquiditySLAParameters        func(childComplexity int) int
 		Metadata                      func(childComplexity int) int
 		PositionDecimalPlaces         func(childComplexity int) int
 		PriceMonitoringParameters     func(childComplexity int) int
@@ -2301,9 +2302,12 @@ type ComplexityRoot struct {
 
 	UpdateMarketConfiguration struct {
 		Instrument                    func(childComplexity int) int
+		LinearSlippageFactor          func(childComplexity int) int
 		LiquidityMonitoringParameters func(childComplexity int) int
+		LiquiditySlaParameters        func(childComplexity int) int
 		Metadata                      func(childComplexity int) int
 		PriceMonitoringParameters     func(childComplexity int) int
+		QuadraticSlippageFactor       func(childComplexity int) int
 		RiskParameters                func(childComplexity int) int
 	}
 
@@ -2688,6 +2692,7 @@ type NewMarketResolver interface {
 	LinearSlippageFactor(ctx context.Context, obj *vega.NewMarket) (string, error)
 	QuadraticSlippageFactor(ctx context.Context, obj *vega.NewMarket) (string, error)
 	SuccessorConfiguration(ctx context.Context, obj *vega.NewMarket) (*vega.SuccessorConfiguration, error)
+	LiquiditySLAParameters(ctx context.Context, obj *vega.NewMarket) (*vega.LiquiditySLAParameters, error)
 }
 type NewSpotMarketResolver interface {
 	Instrument(ctx context.Context, obj *vega.NewSpotMarket) (*vega.InstrumentConfiguration, error)
@@ -7134,6 +7139,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NewMarket.LiquidityMonitoringParameters(childComplexity), true
+
+	case "NewMarket.liquiditySLAParameters":
+		if e.complexity.NewMarket.LiquiditySLAParameters == nil {
+			break
+		}
+
+		return e.complexity.NewMarket.LiquiditySLAParameters(childComplexity), true
 
 	case "NewMarket.metadata":
 		if e.complexity.NewMarket.Metadata == nil {
@@ -12645,12 +12657,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UpdateMarketConfiguration.Instrument(childComplexity), true
 
+	case "UpdateMarketConfiguration.linearSlippageFactor":
+		if e.complexity.UpdateMarketConfiguration.LinearSlippageFactor == nil {
+			break
+		}
+
+		return e.complexity.UpdateMarketConfiguration.LinearSlippageFactor(childComplexity), true
+
 	case "UpdateMarketConfiguration.liquidityMonitoringParameters":
 		if e.complexity.UpdateMarketConfiguration.LiquidityMonitoringParameters == nil {
 			break
 		}
 
 		return e.complexity.UpdateMarketConfiguration.LiquidityMonitoringParameters(childComplexity), true
+
+	case "UpdateMarketConfiguration.liquiditySLAParameters":
+		if e.complexity.UpdateMarketConfiguration.LiquiditySlaParameters == nil {
+			break
+		}
+
+		return e.complexity.UpdateMarketConfiguration.LiquiditySlaParameters(childComplexity), true
 
 	case "UpdateMarketConfiguration.metadata":
 		if e.complexity.UpdateMarketConfiguration.Metadata == nil {
@@ -12665,6 +12691,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.UpdateMarketConfiguration.PriceMonitoringParameters(childComplexity), true
+
+	case "UpdateMarketConfiguration.quadraticSlippageFactor":
+		if e.complexity.UpdateMarketConfiguration.QuadraticSlippageFactor == nil {
+			break
+		}
+
+		return e.complexity.UpdateMarketConfiguration.QuadraticSlippageFactor(childComplexity), true
 
 	case "UpdateMarketConfiguration.riskParameters":
 		if e.complexity.UpdateMarketConfiguration.RiskParameters == nil {
@@ -43227,6 +43260,57 @@ func (ec *executionContext) fieldContext_NewMarket_successorConfiguration(ctx co
 				return ec.fieldContext_SuccessorConfiguration_insurancePoolFraction(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type SuccessorConfiguration", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewMarket_liquiditySLAParameters(ctx context.Context, field graphql.CollectedField, obj *vega.NewMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NewMarket_liquiditySLAParameters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewMarket().LiquiditySLAParameters(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.LiquiditySLAParameters)
+	fc.Result = res
+	return ec.marshalOLiquiditySLAParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquiditySLAParameters(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NewMarket_liquiditySLAParameters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewMarket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "priceRange":
+				return ec.fieldContext_LiquiditySLAParameters_priceRange(ctx, field)
+			case "commitmentMinTimeFraction":
+				return ec.fieldContext_LiquiditySLAParameters_commitmentMinTimeFraction(ctx, field)
+			case "performanceHysteresisEpochs":
+				return ec.fieldContext_LiquiditySLAParameters_performanceHysteresisEpochs(ctx, field)
+			case "slaCompetitionFactor":
+				return ec.fieldContext_LiquiditySLAParameters_slaCompetitionFactor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquiditySLAParameters", field.Name)
 		},
 	}
 	return fc, nil
@@ -79113,6 +79197,12 @@ func (ec *executionContext) fieldContext_UpdateMarket_updateMarketConfiguration(
 				return ec.fieldContext_UpdateMarketConfiguration_liquidityMonitoringParameters(ctx, field)
 			case "riskParameters":
 				return ec.fieldContext_UpdateMarketConfiguration_riskParameters(ctx, field)
+			case "linearSlippageFactor":
+				return ec.fieldContext_UpdateMarketConfiguration_linearSlippageFactor(ctx, field)
+			case "quadraticSlippageFactor":
+				return ec.fieldContext_UpdateMarketConfiguration_quadraticSlippageFactor(ctx, field)
+			case "liquiditySLAParameters":
+				return ec.fieldContext_UpdateMarketConfiguration_liquiditySLAParameters(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UpdateMarketConfiguration", field.Name)
 		},
@@ -79350,6 +79440,145 @@ func (ec *executionContext) fieldContext_UpdateMarketConfiguration_riskParameter
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type UpdateMarketRiskParameters does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdateMarketConfiguration_linearSlippageFactor(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateMarketConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdateMarketConfiguration_linearSlippageFactor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LinearSlippageFactor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdateMarketConfiguration_linearSlippageFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdateMarketConfiguration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdateMarketConfiguration_quadraticSlippageFactor(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateMarketConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdateMarketConfiguration_quadraticSlippageFactor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.QuadraticSlippageFactor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdateMarketConfiguration_quadraticSlippageFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdateMarketConfiguration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdateMarketConfiguration_liquiditySLAParameters(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateMarketConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdateMarketConfiguration_liquiditySLAParameters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiquiditySlaParameters, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.LiquiditySLAParameters)
+	fc.Result = res
+	return ec.marshalOLiquiditySLAParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquiditySLAParameters(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdateMarketConfiguration_liquiditySLAParameters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdateMarketConfiguration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "priceRange":
+				return ec.fieldContext_LiquiditySLAParameters_priceRange(ctx, field)
+			case "commitmentMinTimeFraction":
+				return ec.fieldContext_LiquiditySLAParameters_commitmentMinTimeFraction(ctx, field)
+			case "performanceHysteresisEpochs":
+				return ec.fieldContext_LiquiditySLAParameters_performanceHysteresisEpochs(ctx, field)
+			case "slaCompetitionFactor":
+				return ec.fieldContext_LiquiditySLAParameters_slaCompetitionFactor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquiditySLAParameters", field.Name)
 		},
 	}
 	return fc, nil
@@ -93548,6 +93777,23 @@ func (ec *executionContext) _NewMarket(ctx context.Context, sel ast.SelectionSet
 				return innerFunc(ctx)
 
 			})
+		case "liquiditySLAParameters":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewMarket_liquiditySLAParameters(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -104777,6 +105023,24 @@ func (ec *executionContext) _UpdateMarketConfiguration(ctx context.Context, sel 
 				return innerFunc(ctx)
 
 			})
+		case "linearSlippageFactor":
+
+			out.Values[i] = ec._UpdateMarketConfiguration_linearSlippageFactor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "quadraticSlippageFactor":
+
+			out.Values[i] = ec._UpdateMarketConfiguration_quadraticSlippageFactor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "liquiditySLAParameters":
+
+			out.Values[i] = ec._UpdateMarketConfiguration_liquiditySLAParameters(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
