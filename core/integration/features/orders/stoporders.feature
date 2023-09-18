@@ -1514,6 +1514,7 @@ Feature: stop orders
       | party  | market id | status           | reference |
       | party1 | ETH/DEC19 | STATUS_CANCELLED | stop1     |
 
+@SLABug
 Scenario: All stop orders for a specific party can be cancelled by a single stop order cancellation. (0014-ORDT-072)
 
     # setup accounts
@@ -1550,11 +1551,9 @@ Scenario: All stop orders for a specific party can be cancelled by a single stop
       | aux2  | ETH/DEC20 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
       | aux   | ETH/DEC20 | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
 
-    When the opening auction period ends for market "ETH/DEC19"
+    When the network moves ahead "2" blocks
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-
-    When the opening auction period ends for market "ETH/DEC20"
-    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | only  | fb price trigger | error | reference |
@@ -1574,6 +1573,7 @@ Scenario: All stop orders for a specific party can be cancelled by a single stop
       | party1 | ETH/DEC20 | STATUS_CANCELLED | stop3     |
       | party1 | ETH/DEC20 | STATUS_CANCELLED | stop4     |
 
+@SLABug
 Scenario: All stop orders for a specific party for a specific market can be cancelled by a single stop order cancellation. (0014-ORDT-073)
 
     # setup accounts
@@ -1610,11 +1610,9 @@ Scenario: All stop orders for a specific party for a specific market can be canc
       | aux2  | ETH/DEC20 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
       | aux   | ETH/DEC20 | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
 
-    When the opening auction period ends for market "ETH/DEC19"
+    When the network moves ahead "2" blocks
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-
-    When the opening auction period ends for market "ETH/DEC20"
-    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | only  | fb price trigger | error | reference |

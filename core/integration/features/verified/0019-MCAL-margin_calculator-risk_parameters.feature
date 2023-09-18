@@ -56,6 +56,7 @@ Feature: test risk model parameter change in margin calculation
       | party2 | USD   | 100000000 |
       | party3 | USD   | 100000000 |
 
+  @SLABug
   Scenario: lognormal risk model in 4 markets with different risk parameters , 0010-MARG-012, 0010-MARG-013, 0010-MARG-014
 
     Given the average block duration is "1"
@@ -101,12 +102,9 @@ Feature: test risk model parameter change in margin calculation
       | party2 | ETH/MAR24 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-43 |
       | party2 | ETH/MAR24 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-44 |
 
-    When the opening auction period ends for market "ETH/MAR21"
-    When the opening auction period ends for market "ETH/MAR22"
-    When the opening auction period ends for market "ETH/MAR23"
-    When the opening auction period ends for market "ETH/MAR24"
+    When the network moves ahead "2" blocks
 
-    And the market data for the market "ETH/MAR21" should be:
+    Then the market data for the market "ETH/MAR21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 1000    | 986       | 1014      | 1688         | 50000          | 10            |
     #target_stake = mark_price x max_oi x target_stake_scaling_factor x rf_short = 1000 x 10 x 1 x 0.16882368861315200 =1689

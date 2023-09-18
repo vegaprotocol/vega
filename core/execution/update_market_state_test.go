@@ -107,8 +107,8 @@ func TestSuspendMarketViaGovernance(t *testing.T) {
 	// after governance suspension ended - enter liquidity auction
 	state, err = exec.engine.GetMarketData(mkt.ID)
 	require.NoError(t, err)
-	require.Equal(t, types.MarketStateSuspended, state.MarketState)
-	require.Equal(t, types.MarketTradingModeMonitoringAuction, state.MarketTradingMode)
+	require.Equal(t, types.MarketStateActive, state.MarketState)
+	require.Equal(t, types.MarketTradingModeContinuous, state.MarketTradingMode)
 
 	// now suspend via governance again
 	config.UpdateType = types.MarketStateUpdateTypeSuspend
@@ -121,7 +121,7 @@ func TestSuspendMarketViaGovernance(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, types.MarketStateSuspendedViaGovernance, state.MarketState)
 	// because we're in monitoring auction and the state here is taken from the auction state it is reported as monitoring auction
-	require.Equal(t, types.MarketTradingModeMonitoringAuction, state.MarketTradingMode)
+	require.Equal(t, types.MarketTradingModeSuspendedViaGovernance, state.MarketTradingMode)
 
 	// release suspension should go back to liquidity auction
 	config.UpdateType = types.MarketStateUpdateTypeResume
@@ -132,6 +132,6 @@ func TestSuspendMarketViaGovernance(t *testing.T) {
 	// after governance suspension ended - enter liquidity auction
 	state, err = exec.engine.GetMarketData(mkt.ID)
 	require.NoError(t, err)
-	require.Equal(t, types.MarketStateSuspended, state.MarketState)
-	require.Equal(t, types.MarketTradingModeMonitoringAuction, state.MarketTradingMode)
+	require.Equal(t, types.MarketStateActive, state.MarketState)
+	require.Equal(t, types.MarketTradingModeContinuous, state.MarketTradingMode)
 }

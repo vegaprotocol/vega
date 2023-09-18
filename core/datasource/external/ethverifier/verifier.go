@@ -264,6 +264,7 @@ func (s *Verifier) OnTick(ctx context.Context, t time.Time) {
 			}
 
 			s.oracleEngine.BroadcastData(ctx, common.Data{
+				EthKey:  callResult.SpecId,
 				Signers: nil,
 				Data:    result.Normalised,
 				MetaData: map[string]string{

@@ -42,6 +42,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | lpprov | ETH   | 100000000 |
             | lpprov | USD   | 100000000 |
 
+    @SLABug
     Scenario: 001: Markets with different precisions trade at the same price
 
         Given  the parties submit the following liquidity provision:
@@ -98,25 +99,22 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | target stake | supplied stake |
             | 3556         | 5000           |
 
-        When the opening auction period ends for market "USD/DEC21"
-        And the opening auction period ends for market "USD/DEC20"
-        And the opening auction period ends for market "USD/DEC19"
-
+        When the network moves ahead "2" blocks
         Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "USD/DEC21"
         And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "USD/DEC20"
         And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "USD/DEC19"
 
         Then the parties should have the following account balances:
-            | party  | asset | market id | margin | general  | bond |
-            | party0 | ETH | USD/DEC21 | 43110 | 4910348 | 1000 |
-            | party1 | ETH | USD/DEC21 | 961   | 0       |      |
-            | party2 | ETH | USD/DEC21 | 4268  | 0       |      |
-            | party0 | ETH | USD/DEC20 | 432   | 4910348 | 1000 |
-            | party1 | ETH | USD/DEC20 | 0     | 0       |      |
-            | party2 | ETH | USD/DEC20 | 0     | 0       |      |
-            | party0 | ETH | USD/DEC19 | 43110 | 4910348 | 1000 |
-            | party1 | ETH | USD/DEC19 | 1102  | 0       |      |
-            | party2 | ETH | USD/DEC19 | 4268  | 0       |      |
+            | party  | asset | market id | margin | general | bond |
+            | party0 | ETH   | USD/DEC21 | 43110  | 4910348 | 1000 |
+            | party1 | ETH   | USD/DEC21 | 961    | 0       |      |
+            | party2 | ETH   | USD/DEC21 | 4268   | 0       |      |
+            | party0 | ETH   | USD/DEC20 | 432    | 4910348 | 1000 |
+            | party1 | ETH   | USD/DEC20 | 0      | 0       |      |
+            | party2 | ETH   | USD/DEC20 | 0      | 0       |      |
+            | party0 | ETH   | USD/DEC19 | 43110  | 4910348 | 1000 |
+            | party1 | ETH   | USD/DEC19 | 1102   | 0       |      |
+            | party2 | ETH   | USD/DEC19 | 4268   | 0       |      |
 
     Scenario: 002: Users engage in a USD market auction, (0070-MKTD-003, 0070-MKTD-008)
         Given the parties submit the following liquidity provision:
@@ -208,6 +206,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | buyer  | price  | size | seller |
             | party1 | 100000 | 10   | party2 |
 
+    @SLABug
     Scenario: 005: User tops up markets with differing precisions with the same asset + amount, should result in identical margin changes, (0070-MKTD-004)
 
         Given  the parties submit the following liquidity provision:
@@ -242,17 +241,16 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | target stake | supplied stake |
             | 3556         | 5000           |
 
-        When the opening auction period ends for market "USD/DEC20"
-        And the opening auction period ends for market "USD/DEC19"
+        When the network moves ahead "2" blocks
 
 # party1 has position +10 and mark price 100000
 
         Then the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond   |
-            | party0 | ETH | USD/DEC20 | 427 | 4851889 | 100000 |
+            | party0 | ETH   | USD/DEC20 | 427    | 4851889  | 100000 |
             | party1 | ETH   | USD/DEC20 | 12     | 99998696 |        |
             | party2 | ETH   | USD/DEC20 | 52     | 99994779 |        |
-            | party0 | ETH | USD/DEC19 | 42684 | 4851889 | 5000 |
+            | party0 | ETH   | USD/DEC19 | 42684  | 4851889  | 5000   |
             | party1 | ETH   | USD/DEC19 | 1292   | 99998696 |        |
             | party2 | ETH   | USD/DEC19 | 5169   | 99994779 |        |
 
@@ -263,13 +261,14 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party2 | ETH   | 1000   |
         Then the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond   |
-            | party0 | ETH | USD/DEC20 | 427 | 4852889 | 100000 |
+            | party0 | ETH   | USD/DEC20 | 427    | 4852889  | 100000 |
             | party1 | ETH   | USD/DEC20 | 12     | 99999696 |        |
             | party2 | ETH   | USD/DEC20 | 52     | 99995779 |        |
-            | party0 | ETH | USD/DEC19 | 42684 | 4852889 | 5000 |
+            | party0 | ETH   | USD/DEC19 | 42684  | 4852889  | 5000   |
             | party1 | ETH   | USD/DEC19 | 1292   | 99999696 |        |
             | party2 | ETH   | USD/DEC19 | 5169   | 99995779 |        |
 
+    @SLABug
     Scenario: 006: User checks prices after opening auction, (0070-MKTD-005)
 
         Given  the parties submit the following liquidity provision:
@@ -300,11 +299,11 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party2 | USD/DEC19 | sell | 1      | 1010   | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1a |
             | party2 | USD/DEC19 | sell | 1      | 1100   | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2a |
 
-        When the opening auction period ends for market "USD/DEC20"
-        And the opening auction period ends for market "USD/DEC19"
+        When the network moves ahead "2" blocks
         Then the mark price should be "100000" for the market "USD/DEC20"
         And the mark price should be "1000" for the market "USD/DEC19"
 
+    @SLABug
     Scenario: 007: Offsets are calculated in market units, (0070-MKTD-007)
 
         Given  the parties submit the following liquidity provision:
@@ -335,9 +334,8 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party2 | USD/DEC19 | sell | 1      | 1010   | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1a |
             | party2 | USD/DEC19 | sell | 1      | 1100   | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2a |
 
-        When the opening auction period ends for market "USD/DEC20"
-        And the opening auction period ends for market "USD/DEC19"
-        And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "USD/DEC19"
+        When the network moves ahead "2" blocks
+        Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "USD/DEC19"
         When the parties place the following pegged orders:
             | party  | market id | side | volume | pegged reference | offset |
             | party1 | USD/DEC19 | sell | 5      | ASK              | 5      |

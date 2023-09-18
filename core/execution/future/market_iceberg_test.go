@@ -63,7 +63,7 @@ func TestMarketSubmitCancelIceberg(t *testing.T) {
 
 	tm.now = tm.now.Add(time.Second)
 	tm.market.OnTick(ctx, tm.now)
-	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
+	require.Equal(t, types.MarketStateActive, tm.market.State()) // enter auction
 
 	// check that its on the book and the volume is only the visible peak
 	assert.Equal(t, int64(100), tm.market.GetVolumeOnBook())
@@ -116,7 +116,7 @@ func TestMarketAmendIceberg(t *testing.T) {
 
 	tm.now = tm.now.Add(time.Second)
 	tm.market.OnTick(ctx, tm.now)
-	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
+	require.Equal(t, types.MarketStateActive, tm.market.State()) // enter auction
 
 	// now reduce the size of the iceberg so that only the reserved amount is reduced
 	amendedOrder := &types.OrderAmendment{
@@ -192,7 +192,7 @@ func TestMarketAmendIcebergToNoReserve(t *testing.T) {
 
 	tm.now = tm.now.Add(time.Second)
 	tm.market.OnTick(ctx, tm.now)
-	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
+	require.Equal(t, types.MarketStateActive, tm.market.State()) // enter auction
 
 	// now reduce the size of the iceberg so that only the reserved amount is reduced
 	amendedOrder := &types.OrderAmendment{

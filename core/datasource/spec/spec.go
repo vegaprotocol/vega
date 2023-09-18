@@ -165,6 +165,12 @@ func (s *Spec) MatchData(data common.Data) (bool, error) {
 		return false, nil
 	}
 
+	// Don't broadcast ethcall data based unless it's 'EthKey' matches
+	// (which is currently the SpecID - see comment on the datasource.common.Data struct)
+	if data.EthKey != "" && data.EthKey != string(s.id) {
+		return false, nil
+	}
+
 	// if it is internal time data and we have a time-trigger check that we're past it
 	if ok, tt := isInternalTimeTrigger(data); ok && s.triggers[0] != nil {
 		if !s.triggers.IsTriggered(tt) {

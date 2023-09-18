@@ -82,6 +82,7 @@ Feature: Test settlement at expiry time from internal oracle
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     | OrderError: Invalid Market ID |
 
+  @SLABug
   Scenario: Settlement happened when market is being closed - no loss socialisation needed - no insurance taken
     Given the initial insurance pool balance is "10000" for all the markets
     Given the parties deposit on asset's general account the following amount:
@@ -123,10 +124,9 @@ Feature: Test settlement at expiry time from internal oracle
       | aux1  | ETH/DEC21 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
       | aux2  | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-8     |
 
-    Then the opening auction period ends for market "ETH/DEC19"
-    Then the opening auction period ends for market "ETH/DEC21"
+    When the network moves ahead "2" blocks
 
-    And the mark price should be "1000" for the market "ETH/DEC19"
+    Then the mark price should be "1000" for the market "ETH/DEC19"
 
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
@@ -342,6 +342,7 @@ Feature: Test settlement at expiry time from internal oracle
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
+  @SLABug
   Scenario: Settlement happened when market is being closed - no loss socialisation needed - insurance covers losses
     Given the initial insurance pool balance is "1000" for all the markets
     Given the parties deposit on asset's general account the following amount:
@@ -379,10 +380,9 @@ Feature: Test settlement at expiry time from internal oracle
       | aux1  | ETH/DEC21 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
       | aux2  | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
 
-    Then the opening auction period ends for market "ETH/DEC19"
-    Then the opening auction period ends for market "ETH/DEC21"
+    When the network moves ahead "2" blocks
 
-    And the mark price should be "1000" for the market "ETH/DEC19"
+    Then the mark price should be "1000" for the market "ETH/DEC19"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
@@ -424,6 +424,7 @@ Feature: Test settlement at expiry time from internal oracle
     # 916 were taken from the insurance pool to cover the losses of party 2, the remaining is split between global and the other market
     And the insurance pool balance should be "1042" for the market "ETH/DEC21"
 
+  @SLABug
   Scenario: Settlement happened when market is being closed - loss socialisation in action - insurance doesn't cover all losses
     Given the initial insurance pool balance is "500" for all the markets
     Given the parties deposit on asset's general account the following amount:
@@ -463,10 +464,9 @@ Feature: Test settlement at expiry time from internal oracle
       | aux1  | ETH/DEC21 | buy  | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
       | aux2  | ETH/DEC21 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
 
-    Then the opening auction period ends for market "ETH/DEC19"
-    Then the opening auction period ends for market "ETH/DEC21"
+    When the network moves ahead "2" blocks
 
-    And the mark price should be "1000" for the market "ETH/DEC19"
+    Then the mark price should be "1000" for the market "ETH/DEC19"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"

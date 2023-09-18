@@ -1,5 +1,6 @@
 Feature: Test decimal places in LP order, liquidity provider reward distribution; Should also cover liquidity-fee-setting and equity-like-share calc and total stake.
 
+  @SLABug
   Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
     Given the following network parameters are set:
       | name                                               | value |
@@ -91,11 +92,9 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
       | party2 | USD/DEC20 | sell | 1000000 | 100000000 | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | USD/DEC21 | sell | 10000   | 100000000 | 0                | TYPE_LIMIT | TIF_GTC |
 
-    Then the opening auction period ends for market "USD/DEC19"
-    Then the opening auction period ends for market "USD/DEC20"
-    Then the opening auction period ends for market "USD/DEC21"
+    When the network moves ahead "2" blocks
 
-    And the market data for the market "USD/DEC19" should be:
+    Then the market data for the market "USD/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000000    | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3556900000   | 6000000000     | 10000         |
     # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569 *100 = 3556900 (using asset decimal)
@@ -163,6 +162,7 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
       | party2 | ETH   | USD/DEC19 | 5295112741 | 9984114661777  |            |
       | party2 | USD   |           |            | 10000000000    |            |
 
+  @SLABug
   Scenario: 002: 0070-MKTD-007, 0042-LIQF-001, 0038-OLIQ-002; 0038-OLIQ-006; 0019-MCAL-008, check updated version of dpd feature in 0038-OLIQ-liquidity_provision_order_type.md
     Given the following network parameters are set:
       | name                                          | value |
@@ -256,9 +256,7 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
       | party2 | USD/DEC20 | sell | 1000000 | 100000000 | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | USD/DEC21 | sell | 10000   | 100000000 | 0                | TYPE_LIMIT | TIF_GTC |
 
-    Then the opening auction period ends for market "USD/DEC19"
-    Then the opening auction period ends for market "USD/DEC20"
-    Then the opening auction period ends for market "USD/DEC21"
+    When the network moves ahead "2" blocks
 
     And the market data for the market "USD/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |

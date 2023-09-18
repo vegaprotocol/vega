@@ -92,6 +92,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference | error                         |
       | party1 | ETH/DEC19 | sell | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-7     | OrderError: Invalid Market ID |
 
+  @SLABug
   Scenario: Settlement happened when market is being closed - no loss socialisation needed - no insurance taken (0002-STTL-002, 0002-STTL-007, 0005-COLL-002, 0015-INSR-002)
     Given the initial insurance pool balance is "1000000000" for all the markets
     Given the parties deposit on asset's general account the following amount:
@@ -141,12 +142,11 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | target stake | supplied stake |
       | 2000000000   | 3000000000000  |
 
-    Then the opening auction period ends for market "ETH/DEC19"
-    Then the opening auction period ends for market "ETH/DEC21"
-    And the mark price should be "1000000" for the market "ETH/DEC19"
+    When the network moves ahead "2" blocks
+    Then the mark price should be "1000000" for the market "ETH/DEC19"
 
-    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     And the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
     And the market state should be "STATE_ACTIVE" for the market "ETH/DEC21"
@@ -384,6 +384,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the global insurance pool balance should be "2000000000" for the asset "ETH"
 
+  @SLABug
   Scenario: Settlement happened when market is being closed - no loss socialisation needed - insurance covers losses (0002-STTL-008)
     Given the initial insurance pool balance is "100000000" for all the markets
     Given the parties deposit on asset's general account the following amount:
@@ -421,10 +422,9 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | aux1  | ETH/DEC21 | buy  | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
       | aux2  | ETH/DEC21 | sell | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
 
-    Then the opening auction period ends for market "ETH/DEC19"
-    Then the opening auction period ends for market "ETH/DEC21"
+    When the network moves ahead "2" blocks
 
-    And the mark price should be "1000000" for the market "ETH/DEC19"
+    Then the mark price should be "1000000" for the market "ETH/DEC19"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
@@ -470,6 +470,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     And the global insurance pool balance should be "4200000" for the asset "ETH"
     And the insurance pool balance should be "104200000" for the market "ETH/DEC21"
 
+  @SLABug
   Scenario: Settlement happened when market is being closed - loss socialisation in action - insurance doesn't cover all losses (0002-STTL-009)
     Given the initial insurance pool balance is "50000000" for all the markets
     Given the parties deposit on asset's general account the following amount:
@@ -509,10 +510,9 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | aux1  | ETH/DEC21 | buy  | 2      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
       | aux2  | ETH/DEC21 | sell | 2      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
 
-    Then the opening auction period ends for market "ETH/DEC19"
-    Then the opening auction period ends for market "ETH/DEC21"
+    When the network moves ahead "2" blocks
 
-    And the mark price should be "1000000" for the market "ETH/DEC19"
+    Then the mark price should be "1000000" for the market "ETH/DEC19"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"

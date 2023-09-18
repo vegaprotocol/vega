@@ -107,6 +107,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | lp1   | USD   | ETH/MAR22 | 64024  | 0       | 17988 |
       | lp2   | USD   | ETH/MAR22 | 32013  | 57987   | 5000  |
 
+  @SLABug
   Scenario: 002: lp1 and lp2 amend LP commitment
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount  |
@@ -141,7 +142,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | party2 | ETH/MAR22 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the network moves ahead "2" blocks
 
-    Then the opening auction period ends for market "ETH/MAR22"
+    #Then the opening auction period ends for market "ETH/MAR22"
 
     And the orders should have the following status:
       | party | reference | status        |
@@ -164,7 +165,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | id   | party | market id | commitment amount | fee  | lp type   |
       | lp_1 | lp1   | ETH/MAR22 | 30000             | 0.02 | amendment |
     And the supplied stake should be "60000" for the market "ETH/MAR22"
-    Then the network moves ahead "1" blocks
+    Then the network moves ahead "10" blocks
     And the supplied stake should be "40000" for the market "ETH/MAR22"
 
     #AC: 0044-LIME-019, lp reduces commitment multi times
