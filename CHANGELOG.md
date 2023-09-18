@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.73.0
+## 0.73.0
 
 ### 🚨 Breaking changes
 
@@ -191,6 +191,7 @@
 - [9449](https://github.com/vegaprotocol/vega/issues/9449) - if expiration is empty, never expire a discount/reward program
 - [9263](https://github.com/vegaprotocol/vega/issues/9263) - save dispatch strategy details in the database and allow for its retrieval.
 - [9374](https://github.com/vegaprotocol/vega/issues/9374) - `ListGovernanceData` returns an error instead of results.
+
 
 ## 0.72.1
 
