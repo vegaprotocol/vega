@@ -120,6 +120,10 @@ func (m *MarketLiquidity) processBondPenalties(
 		amount := penalty.Bond.Mul(provision.CommitmentAmount.ToDecimal())
 		amountUint, _ := num.UintFromDecimal(amount)
 
+		if amountUint.IsZero() {
+			continue
+		}
+
 		transfer := m.NewTransfer(partyID, types.TransferTypeSLAPenaltyBondApply, amountUint)
 
 		bondLedgerMovement, err := m.bondUpdate(ctx, transfer)
@@ -171,7 +175,7 @@ func (m *MarketLiquidity) distributeFeesAndCalculateBonuses(
 		accruedFeeAmount := perPartAccruedFees[partyID]
 
 		// if all parties have a full penalty then transfer all accrued fees to insurance pool.
-		if slaPenalties.AllPartiesHaveFullFeePenalty {
+		if slaPenalties.AllPartiesHaveFullFeePenalty && !accruedFeeAmount.IsZero() {
 			transfer := m.NewTransfer(partyID, types.TransferTypeSLAPenaltyLpFeeApply, accruedFeeAmount)
 			allTransfers.transfers = append(allTransfers.transfers, transfer)
 			continue
@@ -184,8 +188,11 @@ func (m *MarketLiquidity) distributeFeesAndCalculateBonuses(
 		// (1-feePenalty) x accruedFeeAmount.
 		netDistributionAmount := oneMinusPenalty.Mul(accruedFeeAmount.ToDecimal())
 		netDistributionAmountUint, _ := num.UintFromDecimal(netDistributionAmount)
-		netFeeDistributeTransfer := m.NewTransfer(partyID, types.TransferTypeLiquidityFeeNetDistribute, netDistributionAmountUint)
-		allTransfers.transfers = append(allTransfers.transfers, netFeeDistributeTransfer)
+
+		if !netDistributionAmountUint.IsZero() {
+			netFeeDistributeTransfer := m.NewTransfer(partyID, types.TransferTypeLiquidityFeeNetDistribute, netDistributionAmountUint)
+			allTransfers.transfers = append(allTransfers.transfers, netFeeDistributeTransfer)
+		}
 
 		// transfer unpaid accrued fee to bonus account
 		// accruedFeeAmount - netDistributionAmountUint
@@ -254,8 +261,10 @@ func (m *MarketLiquidity) distributePerformanceBonuses(
 		amountD := bonus.Mul(bonusDistributionAcc.Balance.ToDecimal())
 		amount, _ := num.UintFromDecimal(amountD)
 
-		transfer := m.NewTransfer(partyID, types.TransferTypeSlaPerformanceBonusDistribute, amount)
-		bonusTransfers.transfers = append(bonusTransfers.transfers, transfer)
+		if !amount.IsZero() {
+			transfer := m.NewTransfer(partyID, types.TransferTypeSlaPerformanceBonusDistribute, amount)
+			bonusTransfers.transfers = append(bonusTransfers.transfers, transfer)
+		}
 
 		remainingBalance.Sub(remainingBalance, amount)
 	}

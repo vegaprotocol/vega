@@ -132,11 +132,9 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     Then the following transfers should happen:
       | from   | to     | from account                   | to account                     | market id | amount | asset |
       | market | lp1    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 19     | USD   |
-      | market | lp2    | ACCOUNT_TYPE_FEES_LIQUIDITY    | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 0      | USD   |
       | lp1    | market | ACCOUNT_TYPE_BOND              | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 40000  | USD   |
       | lp2    | market | ACCOUNT_TYPE_BOND              | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 250    | USD   |
       | lp1    | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 19     | USD   |
-      | lp2    | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE         | ETH/MAR22 | 0      | USD   |
 
     And the insurance pool balance should be "40269" for the market "ETH/MAR22"
 

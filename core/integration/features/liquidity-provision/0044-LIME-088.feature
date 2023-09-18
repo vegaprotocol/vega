@@ -114,6 +114,5 @@ Feature: Test LP SLA Bond penalty on change of SLA market parameter: price range
     # bond penalty for lp2 should be 0.6*1600=960
     Then the following transfers should happen:
       | from | to     | from account      | to account             | market id | amount | asset |
-      | lp1  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 0      | USD   |
       | lp2  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 960    | USD   |
 

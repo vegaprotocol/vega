@@ -116,7 +116,6 @@ Feature: Test LP, when market is in opening auction, in terms of the liquidity t
 
     Then the following transfers should happen:
       | from | to     | from account      | to account             | market id | amount | asset |
-      | lp1  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 0      | USD   |
       | lp2  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 3600   | USD   |
 
 
