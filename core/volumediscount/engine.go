@@ -114,7 +114,7 @@ func (e *Engine) applyProgramUpdate(ctx context.Context, startEpochTime time.Tim
 	// epoch starts. It can happen when the proposal updating the volume discount
 	// program doesn't specify an end date that is to close to the enactment
 	// time.
-	if e.currentProgram != nil && !e.currentProgram.EndOfProgramTimestamp.After(startEpochTime) {
+	if e.currentProgram != nil && !e.currentProgram.EndOfProgramTimestamp.IsZero() && !e.currentProgram.EndOfProgramTimestamp.After(startEpochTime) {
 		e.notifyVolumeDiscountProgramEnded(ctx)
 		e.endCurrentProgram()
 	}
