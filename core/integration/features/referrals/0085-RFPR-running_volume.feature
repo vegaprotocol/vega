@@ -105,7 +105,7 @@ Feature: Calculating referral set running volumes
       | <party> | ETH/USDT  | <maker side> | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux1    | ETH/USDT  | <taker side> | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    Then the referral set stats for code "referral-code-1" at epoch 1 should have a running volume of 0:
+    Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 0:
       | party    | reward factor | discount factor |
       | referee1 | 0             | 0               |
       | referee2 | 0             | 0               |
@@ -127,7 +127,7 @@ Feature: Calculating referral set running volumes
       | aux1    | ETH/USDT  | <maker side> | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | <party> | ETH/USDT  | <taker side> | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    Then the referral set stats for code "referral-code-1" at epoch 1 should have a running volume of 100000:
+    Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 100000:
       | party    | reward factor | discount factor |
       | referee1 | 0.1           | 0.1             |
       | referee2 | 0.1           | 0.1             |
@@ -160,7 +160,7 @@ Feature: Calculating referral set running volumes
       | lp2 | lpprov | ETH/USDT  | 1000000           | 0.001 | submission |
     And the network moves ahead "1" epochs
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/USDT"
-    And the referral set stats for code "referral-code-1" at epoch 1 should have a running volume of 0:
+    And the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 0:
       | party    | reward factor | discount factor |
       | referee1 | 0             | 0               |
       | referee2 | 0             | 0               |
@@ -185,7 +185,7 @@ Feature: Calculating referral set running volumes
       | aux1    | ETH/USDT  | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | <party> | ETH/USDT  | sell | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    Then the referral set stats for code "referral-code-1" at epoch 1 should have a running volume of 1000:
+    Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 1000:
       | party    | reward factor | discount factor |
       | referee1 | 0.1           | 0.1             |
       | referee2 | 0.1           | 0.1             |
@@ -211,7 +211,7 @@ Feature: Calculating referral set running volumes
       | name                                                    | value |
       | referralProgram.maxPartyNotionalVolumeByQuantumPerEpoch | 5000  |
     And the network moves ahead "1" epochs
-    Then the referral set stats for code "referral-code-1" at epoch 1 should have a running volume of 5000:
+    Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 5000:
       | party    | reward factor | discount factor |
       | referee1 | 0.1           | 0.1             |
       | referee2 | 0.1           | 0.1             |
@@ -233,7 +233,7 @@ Feature: Calculating referral set running volumes
       | aux1    | ETH/USDC  | <maker side> | 10     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
       | <party> | ETH/USDC  | <taker side> | 10     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    Then the referral set stats for code "referral-code-1" at epoch 1 should have a running volume of 110000:
+    Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 110000:
       | party    | reward factor | discount factor |
       | referee1 | 0.1           | 0.1             |
       | referee2 | 0.1           | 0.1             |
@@ -265,7 +265,7 @@ Feature: Calculating referral set running volumes
       | aux1      | ETH/USDC  | <maker side> | 10     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
       | referee2  | ETH/USDC  | <taker side> | 10     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    Then the referral set stats for code "referral-code-1" at epoch 1 should have a running volume of 330000:
+    Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 330000:
       | party    | reward factor | discount factor |
       | referee1 | 0.1           | 0.1             |
       | referee2 | 0.1           | 0.1             |
@@ -295,7 +295,7 @@ Feature: Calculating referral set running volumes
       | aux1      | ETH/USDC  | <maker side> | 10     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
       | referee2  | ETH/USDC  | <taker side> | 10     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    Then the referral set stats for code "referral-code-1" at epoch 1 should have a running volume of 330000:
+    Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of 330000:
       | party    | reward factor | discount factor |
       | referee1 | 0.1           | 0.1             |
       | referee2 | 0.1           | 0.1             |
@@ -319,7 +319,7 @@ Feature: Calculating referral set running volumes
       | aux1     | ETH/USDT  | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | referee1 | ETH/USDT  | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    Then the referral set stats for code "referral-code-1" at epoch 1 should have a running volume of <running volume 1>:
+    Then the referral set stats for code "referral-code-1" at epoch "1" should have a running volume of <running volume 1>:
       | party    | reward factor | discount factor |
       | referee1 | 0.1           | 0.1             |
       | referee2 | 0.1           | 0.1             |
@@ -329,7 +329,7 @@ Feature: Calculating referral set running volumes
       | aux1     | ETH/USDT  | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | referee1 | ETH/USDT  | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    Then the referral set stats for code "referral-code-1" at epoch 2 should have a running volume of <running volume 2>:
+    Then the referral set stats for code "referral-code-1" at epoch "2" should have a running volume of <running volume 2>:
       | party    | reward factor | discount factor |
       | referee1 | 0.1           | 0.1             |
       | referee2 | 0.1           | 0.1             |
@@ -339,7 +339,7 @@ Feature: Calculating referral set running volumes
       | aux1     | ETH/USDT  | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | referee1 | ETH/USDT  | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    Then the referral set stats for code "referral-code-1" at epoch 3 should have a running volume of <running volume 3>:
+    Then the referral set stats for code "referral-code-1" at epoch "3" should have a running volume of <running volume 3>:
       | party    | reward factor | discount factor |
       | referee1 | 0.1           | 0.1             |
       | referee2 | 0.1           | 0.1             |
@@ -349,7 +349,7 @@ Feature: Calculating referral set running volumes
       | aux1     | ETH/USDT  | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | referee1 | ETH/USDT  | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    Then the referral set stats for code "referral-code-1" at epoch 4 should have a running volume of <running volume 4>:
+    Then the referral set stats for code "referral-code-1" at epoch "4" should have a running volume of <running volume 4>:
       | party    | reward factor | discount factor |
       | referee1 | 0.1           | 0.1             |
       | referee2 | 0.1           | 0.1             |
