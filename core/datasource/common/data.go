@@ -28,7 +28,7 @@ type Data struct {
 	// EthKey is currently just the spec id, which is suboptimal as multiple specs calling the same
 	// contracts at the same time will duplicate data. This is a temporary solution until we have
 	// a better method of making a key of (contract address, args, block height/time + previous height/time)
-	// 'previous' being required so that recievers can check if the their trigger would have fired.
+	// 'previous' being required so that receivers can check if the their trigger would have fired.
 	EthKey   string
 	Signers  []*Signer
 	Data     map[string]string
