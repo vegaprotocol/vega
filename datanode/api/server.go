@@ -129,6 +129,7 @@ type GRPCServer struct {
 	referralProgramService     *service.ReferralPrograms
 	referralSetsService        *service.ReferralSets
 	teamsService               *service.Teams
+	vestingStatsService        *service.VestingStats
 
 	eventObserver *eventObserver
 
@@ -185,6 +186,7 @@ func NewGRPCServer(
 	referralProgramService *service.ReferralPrograms,
 	referralSetsService *service.ReferralSets,
 	teamsService *service.Teams,
+	vestingStatsService *service.VestingStats,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -238,6 +240,7 @@ func NewGRPCServer(
 		referralProgramService:     referralProgramService,
 		referralSetsService:        referralSetsService,
 		teamsService:               teamsService,
+		vestingStatsService:        vestingStatsService,
 
 		eventObserver: &eventObserver{
 			log:          log,

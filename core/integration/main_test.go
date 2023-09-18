@@ -515,6 +515,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`the activity streaks at epoch (\d+) should be:`, func(epoch string, table *godog.Table) error {
 		return steps.TheActivityStreaksShouldBe(execsetup.broker, epoch, table)
 	})
+	s.Step(`the vesting stats at epoch (\d+) should be:`, func(epoch string, table *godog.Table) error {
+		return steps.TheVestingStatsShouldBe(execsetup.broker, epoch, table)
+	})
 
 	// Debug steps
 	s.Step(`^debug accounts$`, func() error {

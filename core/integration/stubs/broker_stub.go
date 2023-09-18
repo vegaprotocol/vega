@@ -907,6 +907,21 @@ func (b *BrokerStub) ReferralSetStats() []*types.ReferralSetStats {
 	return stats
 }
 
+func (b *BrokerStub) VestingStats() []eventspb.VestingStatsUpdated {
+	batch := b.GetBatch(events.VestingStatsUpdatedEvent)
+
+	stats := make([]eventspb.VestingStatsUpdated, 0, len(batch))
+	for _, event := range batch {
+		switch et := event.(type) {
+		case *events.VestingStatsUpdated:
+			stats = append(stats, et.Proto())
+		case events.VestingStatsUpdated:
+			stats = append(stats, et.Proto())
+		}
+	}
+	return stats
+}
+
 func (b *BrokerStub) PartyActivityStreaks() []eventspb.PartyActivityStreak {
 	batch := b.GetBatch(events.PartyActivityStreakEvent)
 
