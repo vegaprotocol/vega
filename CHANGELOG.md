@@ -187,6 +187,7 @@
 - [9332](https://github.com/vegaprotocol/vega/issues/9332) - Ethereum oracles sending data to unintended destinations
 - [9433](https://github.com/vegaprotocol/vega/issues/9433) - fix referral set snapshot
 - [9432](https://github.com/vegaprotocol/vega/issues/9432) - fix referral set not saved to database.
+- [9263](https://github.com/vegaprotocol/vega/issues/9263) - save dispatch strategy details in the database and allow for its retrieval. 
 
 ## 0.72.1
 
