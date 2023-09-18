@@ -99,6 +99,7 @@
 - [9417](https://github.com/vegaprotocol/vega/issues/9417) - Add additional filters for referral set `APIs`.
 - [9375](https://github.com/vegaprotocol/vega/issues/9375) - Apply SLA parameters at epoch boundary.
 - [9279](https://github.com/vegaprotocol/vega/issues/9279) - Remove checks for best bid/ask when leaving opening auction.
+- [9456](https://github.com/vegaprotocol/vega/issues/9456) - Add liquidity `SLA` parameters to `NewMarket` and `UpdateMarketConfiguration` proposals in `GraphQL`.
 
 ### 🐛 Fixes
 
