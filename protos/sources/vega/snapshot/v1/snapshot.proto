@@ -1184,6 +1184,12 @@ message VolumeDiscountProgram {
   repeated PartyVolume average_party_volume = 4;
   vega.VolumeDiscountProgram current_program = 5;
   vega.VolumeDiscountProgram new_program = 6;
+  repeated VolumeDiscountStats factors_by_party = 7;
+}
+
+message VolumeDiscountStats {
+  string party = 1;
+  string discount_factor = 2;
 }
 
 message EpochPartyVolumes {

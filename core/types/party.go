@@ -16,6 +16,10 @@ import vegapb "code.vegaprotocol.io/vega/protos/vega"
 
 type PartyID string
 
+func (p PartyID) String() string {
+	return string(p)
+}
+
 type Party struct {
 	Id string
 }

@@ -8,6 +8,10 @@ import (
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
+type VolumeDiscountStats struct {
+	DiscountFactor num.Decimal
+}
+
 type VolumeDiscountProgram struct {
 	ID                    string
 	Version               uint64

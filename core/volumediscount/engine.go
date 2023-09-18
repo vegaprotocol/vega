@@ -21,6 +21,9 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 )
 
 const MaximumWindowLength uint64 = 100
@@ -37,6 +40,8 @@ type Engine struct {
 	currentProgram       *types.VolumeDiscountProgram
 	newProgram           *types.VolumeDiscountProgram
 	programHasEnded      bool
+
+	factorsByParty map[types.PartyID]types.VolumeDiscountStats
 }
 
 func New(broker Broker, marketActivityTracker MarketActivityTracker) *Engine {
@@ -48,6 +53,7 @@ func New(broker Broker, marketActivityTracker MarketActivityTracker) *Engine {
 		avgVolumePerParty:     map[types.PartyID]num.Decimal{},
 		parties:               map[types.PartyID]struct{}{},
 		programHasEnded:       true,
+		factorsByParty:        map[types.PartyID]types.VolumeDiscountStats{},
 	}
 }
 
@@ -55,11 +61,12 @@ func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 	switch ep.Action {
 	case vegapb.EpochAction_EPOCH_ACTION_START:
 		e.applyProgramUpdate(ctx, ep.StartTime)
-		if e.currentProgram != nil {
-			e.calculatePartiesVolumeForWindow(int(e.currentProgram.WindowLength))
-		}
 	case vegapb.EpochAction_EPOCH_ACTION_END:
 		e.updateNotionalVolumeForEpoch()
+		if !e.programHasEnded {
+			e.calculatePartiesVolumeForWindow(int(e.currentProgram.WindowLength))
+			e.computeFactorsByParty(ctx, ep.Seq)
+		}
 	}
 }
 
@@ -86,15 +93,12 @@ func (e *Engine) VolumeDiscountFactorForParty(party types.PartyID) num.Decimal {
 		return num.DecimalZero()
 	}
 
-	notionalVolume := e.avgVolumePerParty[party]
-	tiersLen := len(e.currentProgram.VolumeBenefitTiers)
-	for i := tiersLen - 1; i >= 0; i-- {
-		tier := e.currentProgram.VolumeBenefitTiers[i]
-		if notionalVolume.GreaterThanOrEqual(tier.MinimumRunningNotionalTakerVolume.ToDecimal()) {
-			return tier.VolumeDiscountFactor
-		}
+	factors, ok := e.factorsByParty[party]
+	if !ok {
+		return num.DecimalZero()
 	}
-	return num.DecimalZero()
+
+	return factors.DiscountFactor
 }
 
 func (e *Engine) TakerNotionalForParty(party types.PartyID) num.Decimal {
@@ -167,4 +171,38 @@ func (e *Engine) updateNotionalVolumeForEpoch() {
 		e.parties[pi] = struct{}{}
 	}
 	e.epochDataIndex = (e.epochDataIndex + 1) % int(MaximumWindowLength)
+}
+
+func (e *Engine) computeFactorsByParty(ctx context.Context, epoch uint64) {
+	e.factorsByParty = map[types.PartyID]types.VolumeDiscountStats{}
+
+	parties := maps.Keys(e.avgVolumePerParty)
+	slices.Sort(parties)
+
+	tiersLen := len(e.currentProgram.VolumeBenefitTiers)
+
+	evt := &eventspb.VolumeDiscountStatsUpdated{
+		AtEpoch: epoch,
+		Stats:   make([]*eventspb.PartyVolumeDiscountStats, 0, len(e.avgVolumePerParty)),
+	}
+
+	for _, party := range parties {
+		notionalVolume := e.avgVolumePerParty[party]
+		for i := tiersLen - 1; i >= 0; i-- {
+			tier := e.currentProgram.VolumeBenefitTiers[i]
+			if notionalVolume.GreaterThanOrEqual(tier.MinimumRunningNotionalTakerVolume.ToDecimal()) {
+				e.factorsByParty[party] = types.VolumeDiscountStats{
+					DiscountFactor: tier.VolumeDiscountFactor,
+				}
+				evt.Stats = append(evt.Stats, &eventspb.PartyVolumeDiscountStats{
+					PartyId:        party.String(),
+					DiscountFactor: tier.VolumeDiscountFactor.String(),
+					RunningVolume:  notionalVolume.String(),
+				})
+				break
+			}
+		}
+	}
+
+	e.broker.Send(events.NewVolumeDiscountStatsUpdatedEvent(ctx, evt))
 }

@@ -1597,31 +1597,32 @@ func setupTestSQLMigrations() (int64, fs.FS) {
 
 	var highestMigrationNumber int64
 	err = filepath.Walk(sourceMigrationsDir, func(path string, info os.FileInfo, err error) error {
-		if info != nil && !info.IsDir() {
-			if strings.HasSuffix(info.Name(), ".sql") {
-				split := strings.Split(info.Name(), "_")
-				if len(split) < 2 {
-					return errors.New("expected sql filename of form <version>_<name>.sql")
-				}
+		if err != nil || (info != nil && info.IsDir()) {
+			return nil //nolint:nilerr
+		}
+		if strings.HasSuffix(info.Name(), ".sql") {
+			split := strings.Split(info.Name(), "_")
+			if len(split) < 2 {
+				return errors.New("expected sql filename of form <version>_<name>.sql")
+			}
 
-				migrationNum, err := strconv.Atoi(split[0])
-				if err != nil {
-					return fmt.Errorf("expected first part of file name to be integer, is %s", split[0])
-				}
+			migrationNum, err := strconv.Atoi(split[0])
+			if err != nil {
+				return fmt.Errorf("expected first part of file name to be integer, is %s", split[0])
+			}
 
-				if int64(migrationNum) > highestMigrationNumber {
-					highestMigrationNumber = int64(migrationNum)
-				}
+			if int64(migrationNum) > highestMigrationNumber {
+				highestMigrationNumber = int64(migrationNum)
+			}
 
-				data, err := os.ReadFile(filepath.Join(sourceMigrationsDir, info.Name()))
-				if err != nil {
-					return fmt.Errorf("failed to read file:%w", err)
-				}
+			data, err := os.ReadFile(filepath.Join(sourceMigrationsDir, info.Name()))
+			if err != nil {
+				return fmt.Errorf("failed to read file:%w", err)
+			}
 
-				err = os.WriteFile(filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir, info.Name()), data, fs.ModePerm)
-				if err != nil {
-					return fmt.Errorf("failed to write file:%w", err)
-				}
+			err = os.WriteFile(filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir, info.Name()), data, fs.ModePerm)
+			if err != nil {
+				return fmt.Errorf("failed to write file:%w", err)
 			}
 		}
 		return nil

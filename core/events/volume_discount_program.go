@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
@@ -108,4 +109,42 @@ func VolumeDiscountProgramEndedEventFromStream(ctx context.Context, be *eventspb
 		Base: newBaseFromBusEvent(ctx, VolumeDiscountProgramEndedEvent, be),
 		e:    be.GetVolumeDiscountProgramEnded(),
 	}
+}
+
+type VolumeDiscountStatsUpdated struct {
+	*Base
+	vdsu eventspb.VolumeDiscountStatsUpdated
+}
+
+func NewVolumeDiscountStatsUpdatedEvent(ctx context.Context, vdsu *eventspb.VolumeDiscountStatsUpdated) *VolumeDiscountStatsUpdated {
+	order := &VolumeDiscountStatsUpdated{
+		Base: newBase(ctx, VolumeDiscountStatsUpdatedEvent),
+		vdsu: *vdsu,
+	}
+	return order
+}
+
+func (p *VolumeDiscountStatsUpdated) VolumeDiscountStatsUpdated() *eventspb.VolumeDiscountStatsUpdated {
+	return ptr.From(p.vdsu)
+}
+
+func (p VolumeDiscountStatsUpdated) Proto() eventspb.VolumeDiscountStatsUpdated {
+	return p.vdsu
+}
+
+func (p VolumeDiscountStatsUpdated) StreamMessage() *eventspb.BusEvent {
+	busEvent := newBusEventFromBase(p.Base)
+	busEvent.Event = &eventspb.BusEvent_VolumeDiscountStatsUpdated{
+		VolumeDiscountStatsUpdated: ptr.From(p.vdsu),
+	}
+
+	return busEvent
+}
+
+func VolumeDiscountStatsUpdatedEventFromStream(ctx context.Context, be *eventspb.BusEvent) *VolumeDiscountStatsUpdated {
+	order := &VolumeDiscountStatsUpdated{
+		Base: newBaseFromBusEvent(ctx, VolumeDiscountStatsUpdatedEvent, be),
+		vdsu: ptr.UnBox(be.GetVolumeDiscountStatsUpdated()),
+	}
+	return order
 }

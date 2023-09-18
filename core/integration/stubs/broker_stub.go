@@ -936,6 +936,21 @@ func (b *BrokerStub) VestingStats() []eventspb.VestingStatsUpdated {
 	return stats
 }
 
+func (b *BrokerStub) VolumeDiscountStats() []eventspb.VolumeDiscountStatsUpdated {
+	batch := b.GetBatch(events.VolumeDiscountStatsUpdatedEvent)
+
+	stats := make([]eventspb.VolumeDiscountStatsUpdated, 0, len(batch))
+	for _, event := range batch {
+		switch et := event.(type) {
+		case *events.VolumeDiscountStatsUpdated:
+			stats = append(stats, et.Proto())
+		case events.VolumeDiscountStatsUpdated:
+			stats = append(stats, et.Proto())
+		}
+	}
+	return stats
+}
+
 func (b *BrokerStub) PartyActivityStreaks() []eventspb.PartyActivityStreak {
 	batch := b.GetBatch(events.PartyActivityStreakEvent)
 
