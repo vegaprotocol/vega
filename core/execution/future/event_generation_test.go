@@ -427,7 +427,7 @@ func TestEvents_PeggedOrderNotAbleToRepriceDueToMargin(t *testing.T) {
 
 	// Check we have the right amount of events
 	// assert.Equal(t, uint64(6), tm.orderEventCount)
-	assert.Equal(t, uint64(4), tm.orderEventCount)
+	assert.Equal(t, uint64(5), tm.orderEventCount)
 	// assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
 	assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
 
@@ -435,7 +435,7 @@ func TestEvents_PeggedOrderNotAbleToRepriceDueToMargin(t *testing.T) {
 	// assert.Equal(t, int64(2), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, int64(3), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
-	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 }
 
 func TestEvents_EnteringAuctionParksAllPegs(t *testing.T) {

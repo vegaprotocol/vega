@@ -132,6 +132,7 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
 
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
 
+  @SLABug
   Scenario: 002 Replicate a scenario from Lewis, linear slippage factor = 1e0, quadratic slippage factor = 1e2
     Given the parties deposit on asset's general account the following amount:
       | party   | asset | amount         |
@@ -187,8 +188,8 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | traderB | USD   | ETH/DEC21 | 3100294 | 0       | 0    |
 
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger                          | target stake | supplied stake | open interest |
-      | 50         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 199186       | 150000         | 112           |
+      | mark price | trading mode            | target stake | supplied stake | open interest |
+      | 50         | TRADING_MODE_CONTINUOUS | 199186       | 150000         | 112           |
 
     # traderB has both LP pegged orders, limit order, and positions
     # margin for pegged orders long: 5173*0.801225765*50=207237.0441
@@ -205,8 +206,8 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | traderB | ETH/DEC21 | 62745519    | 94118278 | 125491038 | 188236557 |
 
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger                          | target stake | supplied stake | open interest |
-      | 50         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 199186       | 150000         | 112           |
+      | mark price | trading mode            | target stake | supplied stake | open interest |
+      | 50         | TRADING_MODE_CONTINUOUS | 199186       | 150000         | 112           |
 #supplied stake is only updated with bond account at the end of epoch
 
     And the insurance pool balance should be "0" for the market "ETH/DEC21"

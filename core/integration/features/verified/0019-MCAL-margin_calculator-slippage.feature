@@ -20,6 +20,7 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
             | ETH/MAR23 | ETH        | USD   | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future       | 100                    | 100                       | default-futures |
 
 
+    @SLABug
     Scenario: Check slippage-factors yield the correct maximum slippage for a specific market state (0019-MCAL-011)(0019-MCAL-012)
 
         # Create position, order book, and mark price conditions matching the spec
@@ -47,7 +48,7 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
 
 
         # Checks for 0019-MCAL-012
-        When the opening auction period ends for market "ETH/FEB23"
+        When the network moves ahead "2" blocks
         # Check mark-price matches the specification
         Then the mark price should be "15900" for the market "ETH/FEB23"
         # Check order book matches the specification
@@ -64,7 +65,8 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
 
 
         # Checks for 0019-MCAL-013
-        When the opening auction period ends for market "ETH/MAR23"
+        # Network has moved ahead to leave ETH/FEB23 opening auction, ends this opening auction, too
+        # When the opening auction period ends for market "ETH/MAR23"
         # Check mark-price matches the specification
         Then the mark price should be "15900" for the market "ETH/MAR23"
         # Check order book matches the specification

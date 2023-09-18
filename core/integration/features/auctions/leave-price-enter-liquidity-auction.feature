@@ -10,6 +10,7 @@ Feature: Leave a monitoring auction, enter a liquidity auction
       | market.auction.minimumDuration | 1     |
       | limits.markets.maxPeggedOrders | 1500  |
 
+  @SLABug
   Scenario:
     Given the parties deposit on asset's general account the following amount:
       | party   | asset | amount     |
@@ -95,5 +96,5 @@ Feature: Leave a monitoring auction, enter a liquidity auction
       | party1 | ETH/DEC19 | sell | 125    | 95000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-5    |
 
     And time is updated to "2019-11-30T00:10:00Z"
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
-    And the market state should be "STATE_SUSPENDED" for the market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    And the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"

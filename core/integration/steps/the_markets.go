@@ -103,6 +103,7 @@ func TheMarkets(
 		if err := executionEngine.SubmitMarket(context.Background(), &markets[i], "proposerID", now); err != nil {
 			return nil, fmt.Errorf("couldn't submit market(%s): %v", markets[i].ID, err)
 		}
+		// only start opening auction if the market is explicitly marked to leave opening auction now
 		if !row.HasColumn("is passed") || row.Bool("is passed") {
 			if err := executionEngine.StartOpeningAuction(context.Background(), markets[i].ID); err != nil {
 				return nil, fmt.Errorf("could not start opening auction for market %s: %v", markets[i].ID, err)

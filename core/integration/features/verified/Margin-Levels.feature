@@ -23,6 +23,7 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 4     |
 
+  @SLABug
   Scenario: 0010-MARG-015,0010-MARG-016,0010-MARG-017
     Given the parties deposit on asset's general account the following amount:
       | party       | asset | amount        |
@@ -60,9 +61,10 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | lprov      | ETH/DEC20 | sell | 100    | 1005  | 0                | TYPE_LIMIT | TIF_GTC |
       | lprov      | ETH/DEC20 | buy  | 100000 | 1     | 0                | TYPE_LIMIT | TIF_GTC |
 
-    When the opening auction period ends for market "ETH/DEC19"
-    When the opening auction period ends for market "ETH/DEC20"
-    And the mark price should be "10" for the market "ETH/DEC19"
+    When the network moves ahead "2" blocks
+    #When the opening auction period ends for market "ETH/DEC19"
+    #When the opening auction period ends for market "ETH/DEC20"
+    Then the mark price should be "10" for the market "ETH/DEC19"
     And the mark price should be "10" for the market "ETH/DEC20"
 
     # setup trader2 position to be ready to takeover trader3's position once trader3 is closed out

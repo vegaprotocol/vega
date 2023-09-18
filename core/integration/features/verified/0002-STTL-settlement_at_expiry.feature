@@ -85,6 +85,7 @@ Feature: Test settlement at expiry (0016-PFUT-012)
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     | OrderError: Invalid Market ID |
 
+  @SLABug
   Scenario: Settlement happened when market is being closed - no loss socialisation needed - no insurance taken (0002-STTL-002, 0002-STTL-007, 0005-COLL-002, 0015-INSR-002)
     Given the initial insurance pool balance is "10000" for all the markets
     Given the parties deposit on asset's general account the following amount:
@@ -126,18 +127,17 @@ Feature: Test settlement at expiry (0016-PFUT-012)
       | aux1  | ETH/DEC21 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
       | aux2  | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
 
-    Then the opening auction period ends for market "ETH/DEC19"
-    Then the opening auction period ends for market "ETH/DEC21"
+    When the network moves ahead "2" blocks
 
-    And the mark price should be "1000" for the market "ETH/DEC19"
+    Then the mark price should be "1000" for the market "ETH/DEC19"
 
-    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     And the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
     And the market state should be "STATE_ACTIVE" for the market "ETH/DEC21"
 
-    Then the network moves ahead "2" blocks
+    When the network moves ahead "2" blocks
 
     # The market considered here ("ETH/DEC19") relies on "0xCAFECAFE" oracle, checking that broadcasting events from "0xCAFECAFE1" should have no effect on it apart from insurance pool transfer
     And the oracles broadcast data signed with "0xCAFECAFE1":

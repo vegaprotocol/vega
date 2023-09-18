@@ -98,6 +98,7 @@
 - [7461](https://github.com/vegaprotocol/vega/issues/7461) - Add endpoint to get transfer by ID.
 - [9417](https://github.com/vegaprotocol/vega/issues/9417) - Add additional filters for referral set `APIs`.
 - [9375](https://github.com/vegaprotocol/vega/issues/9375) - Apply SLA parameters at epoch boundary.
+- [9279](https://github.com/vegaprotocol/vega/issues/9279) - Remove checks for best bid/ask when leaving opening auction.
 
 ### 🐛 Fixes
 
