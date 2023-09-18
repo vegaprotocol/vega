@@ -97,7 +97,7 @@ Feature: Calculating referral set running volumes
       | referee2 | referral-code-1 |
 
 
-  Scenario Outline: Referral set member is the maker of a trade during continuous trading (0085-RFPR-048)
+  Scenario Outline: Referral set member is the maker of a trade during continuous trading (0083-RFPR-048)
     # Expectation: the members taker volume is not increased, and thus we see no increase in the sets taker volume
     
     Given the parties place the following orders:
@@ -119,7 +119,7 @@ Feature: Calculating referral set running volumes
       | referee1  | sell       | buy        |
 
 
-  Scenario Outline: Referral set member is the taker of a trade during continuous trading (0085-RFPR-031)
+  Scenario Outline: Referral set member is the taker of a trade during continuous trading (0083-RFPR-031)
     # Expectation: the members taker volume is increased, and thus we see an increase in the sets taker volume
     
     Given the parties place the following orders:
@@ -141,7 +141,7 @@ Feature: Calculating referral set running volumes
       | referee1  | sell       | buy        |
 
 
-  Scenario Outline: Referral set member participates in a trade when exiting an auction (0085-RFPR-032)
+  Scenario Outline: Referral set member participates in a trade when exiting an auction (0083-RFPR-032)
     # Expectation: the members taker volume is not increased, and thus we see no increase in the sets taker volume
 
     # Cancel the liquidity commitment triggering an auction
@@ -174,7 +174,7 @@ Feature: Calculating referral set running volumes
       | referee1  | sell       | buy        |
 
 
-  Scenario Outline: Referral set member has an epoch taker volume greater than the cap (0085-RFPR-034)
+  Scenario Outline: Referral set member has an epoch taker volume greater than the cap (0083-RFPR-034)
     # Expectation: the sets running volume is capped to the network parameter
 
     Given the following network parameters are set:
@@ -197,7 +197,7 @@ Feature: Calculating referral set running volumes
       | referee1  |
 
 
-  Scenario: Referral set member has an epoch taker volume greater than the cap, but the cap is increased before the end of the epoch (0085-RFPR-050)
+  Scenario: Referral set member has an epoch taker volume greater than the cap, but the cap is increased before the end of the epoch (0083-RFPR-050)
     # Expectation: the sets running volume is capped to the most recent network parameter
 
     Given the following network parameters are set:
@@ -223,7 +223,7 @@ Feature: Calculating referral set running volumes
       | referee1  |
 
 
-  Scenario Outline: Referral set member participates in multiple markets with different quantum settlement assets (0085-RFPR-049)
+  Scenario Outline: Referral set member participates in multiple markets with different quantum settlement assets (0083-RFPR-049)
     # Expectation: the members taker volume is increased correctly, and thus we see an increase in the sets taker volume
 
     Given the parties place the following orders:
@@ -247,7 +247,7 @@ Feature: Calculating referral set running volumes
       | referee1  | sell       | buy        |
 
 
-  Scenario Outline: Multiple referees generate volume in multiple markets with different settlement assets (and quantum) (0085-RFPR-033)
+  Scenario Outline: Multiple referees generate volume in multiple markets with different settlement assets (and quantum) (0083-RFPR-033)
     # Expectation: each members taker volume is increased correctly, and thus we see an increase in the sets taker volume
 
     Given the parties place the following orders:
@@ -277,7 +277,7 @@ Feature: Calculating referral set running volumes
       | sell       | buy        |
 
 
-  Scenario Outline: Members generate consistent taker volume over a number of epochs (0085-RFPR-035)
+  Scenario Outline: Members generate consistent taker volume over a number of epochs (0083-RFPR-035)
     # Expectation: only epoch taker volume from the last n epochs should contribute to the sets running taker volume
 
     Given the referral program:
