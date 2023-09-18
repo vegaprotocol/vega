@@ -588,11 +588,7 @@ func (e *Engine) applyDiscountsAndRewards(taker string, fees *types.Fee, referra
 	}
 
 	// calculate rewards
-	referrer, err := referral.GetReferrer(types.PartyID(taker))
-	if err != nil {
-		return f, nil
-	}
-	factor := referral.RewardsFactorMultiplierAppliedForParty(referrer)
+	factor := referral.RewardsFactorMultiplierAppliedForParty(types.PartyID(taker))
 	if factor.IsZero() {
 		return f, nil
 	}
