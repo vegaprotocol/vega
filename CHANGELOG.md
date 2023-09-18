@@ -218,6 +218,7 @@
 - [9412](https://github.com/vegaprotocol/vega/issues/9412) - Use vote close time for opening auction start time.
 - [9487](https://github.com/vegaprotocol/vega/issues/9487) - Reset auction trigger appropriately when market is resumed via governance.
 - [9489](https://github.com/vegaprotocol/vega/issues/9489) - A referrer cannot join another team.
+- [9441](https://github.com/vegaprotocol/vega/issues/9441) - fix occasional double close of channel in integration tests
 - [9074](https://github.com/vegaprotocol/vega/issues/9074) - Fix error response for `CSV` exports.
 - [9512](https://github.com/vegaprotocol/vega/issues/9512) - Allow hysteresis period to be set to 0.
 - [9526](https://github.com/vegaprotocol/vega/issues/9526) - Rename go enum value `REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION` to match `db` schema

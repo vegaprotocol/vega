@@ -107,12 +107,9 @@ func TestMain(m *testing.M) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
-	stopper := make(chan struct{})
-
 	go func() {
 		defer wg.Done()
-		if err := runTestNode(ctx, cfg, vegaHome, stopper); err != nil {
-			close(stopper)
+		if err := runTestNode(ctx, cfg, vegaHome); err != nil {
 			cfunc()
 			log.Fatal("running test node: ", err)
 		}
@@ -120,13 +117,12 @@ func TestMain(m *testing.M) {
 
 	client = graphql.NewClient(fmt.Sprintf("http://localhost:%v/graphql", cfg.Gateway.Port))
 	if err = waitForEpoch(client, lastEpoch, playbackTimeout); err != nil {
-		close(stopper)
 		cfunc()
 		log.Fatal("problem piping event stream: ", err)
 	}
 	// normal run - services should be terminated properly
 	if blockWhenDone == nil || !*blockWhenDone {
-		go handleSignal(ctx, cfunc, stopper)
+		go handleSignal(ctx, cfunc)
 	}
 
 	// Cheesy sleep to give everything chance to percolate
@@ -151,25 +147,22 @@ func TestMain(m *testing.M) {
 		os.Exit(0)
 	}
 
-	// this will close the stopper channel
 	cfunc()
 	wg.Wait()
 }
 
-func handleSignal(ctx context.Context, cfunc func(), sCh chan struct{}) {
+func handleSignal(ctx context.Context, cfunc func()) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
 	for {
 		select {
 		case sig := <-c:
 			log.Printf("Received %+v signal", sig)
-			close(sCh) // close stopper channel
-			cfunc()    // cancel context
+			cfunc() // cancel context
 			return
 		case <-ctx.Done():
 			// context was cancelled for some reason, close stopper channel
 			log.Printf("Context cancelled")
-			close(sCh)
 			return
 		}
 	}
@@ -266,7 +259,7 @@ func newTestConfig(postgresRuntimePath string) (*config.Config, error) {
 	return &cfg, nil
 }
 
-func runTestNode(ctx context.Context, cfg *config.Config, vegaHome string, stopper chan struct{}) error {
+func runTestNode(ctx context.Context, cfg *config.Config, vegaHome string) error {
 	vegaPaths := paths.New(vegaHome)
 
 	loader, err := config.InitialiseLoader(vegaPaths)
@@ -289,11 +282,6 @@ func runTestNode(ctx context.Context, cfg *config.Config, vegaHome string, stopp
 		Version:     "test",
 		VersionHash: "",
 	}
-
-	go func() {
-		<-stopper
-		cmd.Stop()
-	}()
 
 	if err = cmd.Run(ctx, configWatcher, vegaPaths, []string{}); err != nil {
 		return fmt.Errorf("couldn't run node: %w", err)
