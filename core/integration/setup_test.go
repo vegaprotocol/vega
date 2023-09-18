@@ -32,6 +32,7 @@ import (
 	"code.vegaprotocol.io/vega/core/teams"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/vesting"
+	"code.vegaprotocol.io/vega/core/volumediscount"
 	"code.vegaprotocol.io/vega/libs/num"
 
 	"code.vegaprotocol.io/vega/core/datasource/spec"
@@ -111,13 +112,14 @@ type executionTestSetup struct {
 	insurancePoolDepositsOverStep map[string]*num.Int
 	eventsBefore                  int
 
-	notary          *notary.SnapshotNotary
-	stateVarEngine  *stubs.StateVarStub
-	witness         *validators.Witness
-	teamsEngine     *teams.Engine
-	referralProgram *referral.Engine
-	activityStreak  *activitystreak.Engine
-	vesting         *vesting.Engine
+	notary                *notary.SnapshotNotary
+	stateVarEngine        *stubs.StateVarStub
+	witness               *validators.Witness
+	teamsEngine           *teams.Engine
+	referralProgram       *referral.Engine
+	volumeDiscountProgram *volumediscount.Engine
+	activityStreak        *activitystreak.Engine
+	vesting               *vesting.Engine
 }
 
 func newExecutionTestSetup() *executionTestSetup {
@@ -176,6 +178,9 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.referralProgram = referral.NewEngine(execsetup.broker, execsetup.timeService, marketActivityTracker, execsetup.stakingAccount)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.referralProgram.OnEpoch, execsetup.referralProgram.OnEpochRestore)
 
+	execsetup.volumeDiscountProgram = volumediscount.New(execsetup.broker, marketActivityTracker)
+	execsetup.epochEngine.NotifyOnEpoch(execsetup.volumeDiscountProgram.OnEpoch, execsetup.volumeDiscountProgram.OnEpochRestore)
+
 	execsetup.executionEngine = newExEng(
 		execution.NewEngine(
 			execsetup.log,
@@ -187,7 +192,7 @@ func newExecutionTestSetup() *executionTestSetup {
 			execsetup.stateVarEngine,
 			marketActivityTracker,
 			execsetup.assetsEngine, // assets
-			&stubs.ReferralDiscountRewardService{},
+			execsetup.referralProgram,
 			&stubs.VolumeDiscountService{},
 		),
 		execsetup.broker,
