@@ -116,7 +116,7 @@
 - [8792](https://github.com/vegaprotocol/vega/issues/8792) - Fix panic when starting null block chain node.
 - [8739](https://github.com/vegaprotocol/vega/issues/8739) - Cancel orders for rejected markets.
 - [9118](https://github.com/vegaprotocol/vega/issues/9118) - Improve list stop orders error message
-- [9406](https://github.com/vegaprotocol/vega/issues/9105) - Fix Ethereum oracle validation failing unexpectedly when using go 1.19 
+- [9406](https://github.com/vegaprotocol/vega/issues/9105) - Fix Ethereum oracle validation failing unexpectedly when using go 1.19
 - [9105](https://github.com/vegaprotocol/vega/issues/9105) - Truncate virtual stake decimal places
 - [9348](https://github.com/vegaprotocol/vega/issues/9348) - Nil pointer error in Ethereum call engine when running with null block chain
 - [8800](https://github.com/vegaprotocol/vega/issues/8800) - `expiresAt` is always null in the Stop Orders `API`.
@@ -188,7 +188,8 @@
 - [9433](https://github.com/vegaprotocol/vega/issues/9433) - fix referral set snapshot
 - [9432](https://github.com/vegaprotocol/vega/issues/9432) - fix referral set not saved to database.
 - [9449](https://github.com/vegaprotocol/vega/issues/9449) - if expiration is empty, never expire a discount/reward program
-- [9263](https://github.com/vegaprotocol/vega/issues/9263) - save dispatch strategy details in the database and allow for its retrieval. 
+- [9263](https://github.com/vegaprotocol/vega/issues/9263) - save dispatch strategy details in the database and allow for its retrieval.
+- [9374](https://github.com/vegaprotocol/vega/issues/9374) - `ListGovernanceData` returns an error instead of results.
 
 ## 0.72.1
 
