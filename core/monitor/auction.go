@@ -303,7 +303,8 @@ func (a *AuctionState) AuctionExtended(ctx context.Context, now time.Time) *even
 func (a *AuctionState) AuctionStarted(ctx context.Context, now time.Time) *events.Auction {
 	a.start = false
 	end := int64(0)
-	if a.begin == nil {
+	// Either an auction was just started, or a market in opening auction passed the vote, the real opening auction starts now.
+	if a.begin == nil || (a.trigger == types.AuctionTriggerOpening && a.begin.Before(now)) {
 		a.begin = &now
 	}
 	if a.end != nil && a.end.Duration > 0 {

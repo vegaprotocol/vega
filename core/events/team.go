@@ -22,6 +22,10 @@ func (t TeamCreated) StreamMessage() *eventspb.BusEvent {
 	return busEvent
 }
 
+func (t TeamCreated) TeamCreated() *eventspb.TeamCreated {
+	return &t.e
+}
+
 func NewTeamCreatedEvent(ctx context.Context, epoch uint64, t *types.Team) *TeamCreated {
 	return &TeamCreated{
 		Base: newBase(ctx, TeamCreatedEvent),
@@ -59,6 +63,10 @@ func (t TeamUpdated) StreamMessage() *eventspb.BusEvent {
 	return busEvent
 }
 
+func (t TeamUpdated) TeamUpdated() *eventspb.TeamUpdated {
+	return &t.e
+}
+
 func NewTeamUpdatedEvent(ctx context.Context, t *types.Team) *TeamUpdated {
 	return &TeamUpdated{
 		Base: newBase(ctx, TeamUpdatedEvent),
@@ -93,6 +101,10 @@ func (t RefereeSwitchedTeam) StreamMessage() *eventspb.BusEvent {
 	return busEvent
 }
 
+func (t RefereeSwitchedTeam) RefereeSwitchedTeam() *eventspb.RefereeSwitchedTeam {
+	return &t.e
+}
+
 func NewRefereeSwitchedTeamEvent(ctx context.Context, from, to types.TeamID, membership *types.Membership) *RefereeSwitchedTeam {
 	return &RefereeSwitchedTeam{
 		Base: newBase(ctx, RefereeSwitchedTeamEvent),
@@ -125,6 +137,10 @@ func (t RefereeJoinedTeam) StreamMessage() *eventspb.BusEvent {
 	}
 
 	return busEvent
+}
+
+func (t RefereeJoinedTeam) RefereeJoinedTeam() *eventspb.RefereeJoinedTeam {
+	return &t.e
 }
 
 func NewRefereeJoinedTeamEvent(ctx context.Context, teamID types.TeamID, membership *types.Membership) *RefereeJoinedTeam {

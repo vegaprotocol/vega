@@ -29,6 +29,7 @@ var (
 	defaultLiquiditySLAParamsFileNames = []string{
 		"defaults/liquidity-sla-params/default-basic.json",
 		"defaults/liquidity-sla-params/default-futures.json",
+		"defaults/liquidity-sla-params/default-st.json",
 	}
 )
 

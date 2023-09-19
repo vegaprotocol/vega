@@ -92,10 +92,10 @@ func defaultNetParams() map[string]value {
 		RewardMarketCreationQuantumMultiple:       NewDecimal(gteD1, DecimalLT(num.MustDecimalFromString("1e20"))).Mutable(true).MustUpdate("10000000"),
 
 		MarketLiquidityBondPenaltyParameter:              NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("0.1"),
-		MarketLiquidityEarlyExitPenalty:                  NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("0.1"),
+		MarketLiquidityEarlyExitPenalty:                  NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("0.05"),
 		MarketLiquidityMaximumLiquidityFeeFactorLevel:    NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("1"),
-		MarketLiquiditySLANonPerformanceBondPenaltyMax:   NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.5"),
-		MarketLiquiditySLANonPerformanceBondPenaltySlope: NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("2"),
+		MarketLiquiditySLANonPerformanceBondPenaltyMax:   NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.05"),
+		MarketLiquiditySLANonPerformanceBondPenaltySlope: NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("1"),
 		MarketLiquidityStakeToCCYVolume:                  NewDecimal(gteD0, lteD100).Mutable(true).MustUpdate("1"),
 
 		// @TODO karel add validation
@@ -280,15 +280,15 @@ func defaultNetParams() map[string]value {
 		RewardsVestingBonusMultiplier: NewJSON(&proto.VestingBenefitTiers{}, types.CheckUntypedVestingBenefitTier).Mutable(true).MustUpdate(`{"tiers": [{"minimum_quantum_balance": "1000", "reward_multiplier": "1.05"}]}`),
 
 		// Referral program
-		ReferralProgramMaxReferralTiers:                        NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10))).Mutable(true).MustUpdate("0"),
-		ReferralProgramMaxReferralRewardFactor:                 NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
-		ReferralProgramMaxReferralDiscountFactor:               NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
-		ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch: NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("0"),
+		ReferralProgramMaxReferralTiers:                        NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10))).Mutable(true).MustUpdate("10"),
+		ReferralProgramMaxReferralRewardFactor:                 NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("1"),
+		ReferralProgramMaxReferralDiscountFactor:               NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("1"),
+		ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch: NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("1000000"),
 		ReferralProgramMinStakedVegaTokens:                     NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("1000000000000000000"),
 		ReferralProgramMaxReferralRewardProportion:             NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.5"),
 
-		VolumeDiscountProgramMaxVolumeDiscountFactor: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
-		VolumeDiscountProgramMaxBenefitTiers:         NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10))).Mutable(true).MustUpdate("0"),
+		VolumeDiscountProgramMaxVolumeDiscountFactor: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("1"),
+		VolumeDiscountProgramMaxBenefitTiers:         NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10))).Mutable(true).MustUpdate("10"),
 
 		RewardsActivityStreakBenefitTiers:          NewJSON(&proto.ActivityStreakBenefitTiers{}, types.CheckUntypedActivityStreakBenefitTier).Mutable(true).MustUpdate(`{"tiers": [{"minimum_activity_streak": 1, "reward_multiplier": "1.05", "vesting_multiplier": "1.05"}, {"minimum_activity_streak": 7, "reward_multiplier": "1.10", "vesting_multiplier": "1.10"}, {"minimum_activity_streak": 31, "reward_multiplier": "1.10", "vesting_multiplier": "1.15"}, {"minimum_activity_streak": 365, "reward_multiplier": "1.20", "vesting_multiplier": "1.20"}]}`),
 		RewardsActivityStreakMinQuantumOpenVolume:  NewUint().Mutable(true).MustUpdate("100000000000000000000"),

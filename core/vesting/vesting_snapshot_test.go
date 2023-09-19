@@ -117,7 +117,8 @@ func epochsForward(t *testing.T, v *testSnapshotEngine) {
 
 	// expect at least 3 transfers and events call, 1 per epoch move
 	v.col.EXPECT().TransferVestedRewards(gomock.Any(), gomock.Any()).Times(3).Return(nil, nil)
-	v.broker.EXPECT().Send(gomock.Any()).Times(3)
+	v.col.EXPECT().GetAllVestingQuantumBalance(gomock.Any()).AnyTimes().Return(num.UintZero())
+	v.broker.EXPECT().Send(gomock.Any()).Times(6)
 
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,

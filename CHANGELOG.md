@@ -177,6 +177,7 @@
 - [9313](https://github.com/vegaprotocol/vega/issues/9313) - `ListLedgerEntries` transfers type filter works as expected with open to and from filters.
 - [9198](https://github.com/vegaprotocol/vega/issues/9198) - Fix panic during LP amendment applications
 - [9196](https://github.com/vegaprotocol/vega/issues/9196) - `API` documentation should specify the time format.
+- [9294](https://github.com/vegaprotocol/vega/issues/9294) - Data node panics when many markets use the same data source
 - [9203](https://github.com/vegaprotocol/vega/issues/9203) - Do not remove LPs from the parties map if they are an LP without an open position
 - [9202](https://github.com/vegaprotocol/vega/issues/9202) - Fix `ELS` not calculated when leaving opening auction.
 - [9276](https://github.com/vegaprotocol/vega/issues/9276) - Properly save stats in the positions snapshot
@@ -198,6 +199,8 @@
 - [9466](https://github.com/vegaprotocol/vega/issues/9466) - `ListReferralSets` returns error when there are no stats available.
 - [9341](https://github.com/vegaprotocol/vega/issues/9341) - Fix checkpoint loading
 - [9472](https://github.com/vegaprotocol/vega/issues/9472) - `ListTeams` returns error when filtering by referrer or team.
+- [9477](https://github.com/vegaprotocol/vega/issues/947y) - Teams data not persisted to the database.
+- [9412](https://github.com/vegaprotocol/vega/issues/9412) - Use vote close time for opening auction start time.
 
 ## 0.72.1
 
