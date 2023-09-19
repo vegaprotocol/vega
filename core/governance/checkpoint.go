@@ -18,6 +18,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution"
+	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
@@ -25,6 +26,7 @@ import (
 	checkpointpb "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 
 	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/libs/ptr"
 )
 
 type enactmentTime struct {
@@ -102,6 +104,10 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 				enct.shouldNotVerify = true
 			}
 			enct.current = prop.Terms.EnactmentTimestamp
+
+			if prop.NewMarket().Changes.LiquiditySLAParameters == nil {
+				prop.NewMarket().Changes.LiquiditySLAParameters = ptr.From(liquidity.DefaultSLAParameters)
+			}
 
 			toSubmit, err := e.intoToSubmit(ctx, prop, enct, true)
 			if err != nil {
