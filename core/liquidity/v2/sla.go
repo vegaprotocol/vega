@@ -7,6 +7,13 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
+var DefaultSLAParameters = types.LiquiditySLAParams{
+	PriceRange:                  num.MustDecimalFromString("0.05"),
+	CommitmentMinTimeFraction:   num.MustDecimalFromString("0.95"),
+	PerformanceHysteresisEpochs: 1,
+	SlaCompetitionFactor:        num.MustDecimalFromString("0.90"),
+}
+
 // ResetSLAEpoch should be called at the beginning of epoch to reset per epoch performance calculations.
 // Returns a newly added/amended liquidity provisions (pending provisions are automatically applied and the start of a new epoch).
 func (e *Engine) ResetSLAEpoch(

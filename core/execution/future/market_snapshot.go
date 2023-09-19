@@ -35,6 +35,7 @@ import (
 	"code.vegaprotocol.io/vega/core/settlement"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	"golang.org/x/exp/maps"
 )
@@ -130,12 +131,7 @@ func NewMarketFromSnapshot(
 	// TODO(jeremy): remove this once the upgrade with the .73 have run on mainnet
 	// this is required to support the migration to SLA liquidity
 	if !(mkt.LiquiditySLAParams != nil) {
-		mkt.LiquiditySLAParams = &types.LiquiditySLAParams{
-			PriceRange:                  num.MustDecimalFromString("0.05"),
-			CommitmentMinTimeFraction:   num.MustDecimalFromString("0.95"),
-			PerformanceHysteresisEpochs: 1,
-			SlaCompetitionFactor:        num.MustDecimalFromString("0.90"),
-		}
+		mkt.LiquiditySLAParams = ptr.From(liquidity.DefaultSLAParameters)
 	}
 
 	liquidityEngine := liquidity.NewSnapshotEngine(
