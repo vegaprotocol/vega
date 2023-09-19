@@ -43,6 +43,8 @@ func TestOracleSpec(t *testing.T) {
 	t.Run("Matching presence of missing properties fails", testOracleSpecMatchingPropertiesPresenceFails)
 	t.Run("Matching with inconvertible type fails", testOracleSpecMatchingWithInconvertibleTypeFails)
 	t.Run("Verifying binding of property works", testOracleSpecVerifyingBindingWorks)
+	t.Run("Verifying eth oracle key mismatch fails", testEthOracleSpecMismatchedEthKeysFails)
+	t.Run("Verifying eth oracle key match works", testEthOracleSpecMatchedEthKeysSucceeds)
 }
 
 func testBuiltInOracleSpecCreatingWithoutPubKeysSucceeds(t *testing.T) {
@@ -209,6 +211,90 @@ func testOracleSpecCreatingWithFiltersWithInconvertibleTypeFails(t *testing.T) {
 			assert.Nil(t, spec)
 		})
 	}
+}
+
+func testEthOracleSpecMismatchedEthKeysFails(t *testing.T) {
+	// given
+	spec, _ := dsspec.New(datasource.Spec{
+		ID: "somekey",
+		Data: datasource.NewDefinition(
+			datasource.ContentTypeOracle,
+		).SetOracleConfig(
+			&signedoracle.SpecConfiguration{
+				Signers: nil,
+				Filters: []*common.SpecFilter{
+					{
+						Key: &common.SpecPropertyKey{
+							Name: "prices.BTC.value",
+							Type: datapb.PropertyKey_TYPE_INTEGER,
+						},
+						Conditions: []*common.SpecCondition{
+							{
+								Value:    "42",
+								Operator: datapb.Condition_OPERATOR_EQUALS,
+							},
+						},
+					},
+				},
+			},
+		),
+	})
+
+	data := common.Data{
+		EthKey: "someotherkey",
+		Data: map[string]string{
+			"prices.BTC.value": "42",
+		},
+	}
+
+	// when
+	matched, err := spec.MatchData(data)
+
+	// then
+	require.NoError(t, err)
+	assert.False(t, matched)
+}
+
+func testEthOracleSpecMatchedEthKeysSucceeds(t *testing.T) {
+	// given
+	spec, _ := dsspec.New(datasource.Spec{
+		ID: "somekey",
+		Data: datasource.NewDefinition(
+			datasource.ContentTypeOracle,
+		).SetOracleConfig(
+			&signedoracle.SpecConfiguration{
+				Signers: nil,
+				Filters: []*common.SpecFilter{
+					{
+						Key: &common.SpecPropertyKey{
+							Name: "prices.BTC.value",
+							Type: datapb.PropertyKey_TYPE_INTEGER,
+						},
+						Conditions: []*common.SpecCondition{
+							{
+								Value:    "42",
+								Operator: datapb.Condition_OPERATOR_EQUALS,
+							},
+						},
+					},
+				},
+			},
+		),
+	})
+
+	data := common.Data{
+		EthKey: "somekey",
+		Data: map[string]string{
+			"prices.BTC.value": "42",
+		},
+	}
+
+	// when
+	matched, err := spec.MatchData(data)
+
+	// then
+	require.NoError(t, err)
+	assert.True(t, matched)
 }
 
 func testOracleSpecMatchingUnauthorizedPubKeysFails(t *testing.T) {

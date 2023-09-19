@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"os"
 
+	"code.vegaprotocol.io/vega/core/activitystreak"
 	"code.vegaprotocol.io/vega/core/banking"
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/delegation"
@@ -112,11 +113,13 @@ type executionTestSetup struct {
 	insurancePoolDepositsOverStep map[string]*num.Int
 	eventsBefore                  int
 
-	ntry                  *notary.SnapshotNotary
-	stateVarEngine        *stubs.StateVarStub
-	witness               *validators.Witness
-	teamsEngine           *teams.Engine
-	referralProgram       *referral.Engine
+	notary          *notary.SnapshotNotary
+	stateVarEngine  *stubs.StateVarStub
+	witness         *validators.Witness
+	teamsEngine     *teams.Engine
+	referralProgram *referral.Engine
+	activityStreak  *activitystreak.Engine
+	vesting         *vesting.Engine
 	volumeDiscountProgram *volumediscount.Engine
 }
 
@@ -134,84 +137,47 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.cfg = execution.NewDefaultConfig()
 	execsetup.cfg.Position.StreamPositionVerbose = true
 	execsetup.cfg.Risk.StreamMarginLevelsVerbose = true
+
+	execsetup.netDeposits = num.UintZero()
+	execsetup.block = helpers.NewBlock()
+
 	execsetup.log = logging.NewTestLogger()
-	execsetup.timeService = stubs.NewTimeStub()
+
 	execsetup.broker = stubs.NewBrokerStub()
-	execsetup.collateralEngine = collateral.New(
-		execsetup.log, collateral.NewDefaultConfig(), execsetup.timeService, execsetup.broker,
-	)
+	execsetup.positionPlugin = plugins.NewPositions(ctx)
+	execsetup.broker.Subscribe(execsetup.positionPlugin)
 
-	vegaAsset := types.Asset{
-		ID: "VEGA",
-		Details: &types.AssetDetails{
-			Name:    "VEGA",
-			Symbol:  "VEGA",
-			Quantum: num.MustDecimalFromString("1"),
-		},
-	}
-	if err := execsetup.collateralEngine.EnableAsset(ctx, vegaAsset); err != nil {
-		panic(fmt.Errorf("could not enable asset %q: %w", vegaAsset, err))
-	}
-
-	usdt := types.Asset{
-		ID: "USDT",
-		Details: &types.AssetDetails{
-			Name:    "USDT",
-			Symbol:  "USDT",
-			Quantum: num.MustDecimalFromString("1"),
-		},
-	}
-	if err := execsetup.collateralEngine.EnableAsset(ctx, usdt); err != nil {
-		panic(fmt.Errorf("could not enable asset %q: %w", usdt, err))
-	}
-
-	usdc := types.Asset{
-		ID: "USDC",
-		Details: &types.AssetDetails{
-			Name:    "USDC",
-			Symbol:  "USDC",
-			Quantum: num.MustDecimalFromString("1"),
-		},
-	}
-	if err := execsetup.collateralEngine.EnableAsset(ctx, usdc); err != nil {
-		panic(fmt.Errorf("could not enable asset %q: %w", usdc, err))
-	}
-
+	execsetup.timeService = stubs.NewTimeStub()
 	execsetup.epochEngine = epochtime.NewService(execsetup.log, epochtime.NewDefaultConfig(), execsetup.broker)
 
+	commander := stubs.NewCommanderStub()
+
+	execsetup.collateralEngine = collateral.New(execsetup.log, collateral.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
+	enableAssets(ctx, execsetup.collateralEngine)
+
+	execsetup.netParams = netparams.New(execsetup.log, netparams.NewDefaultConfig(), execsetup.broker)
+
 	execsetup.topology = stubs.NewTopologyStub("nodeID", execsetup.broker)
+
+	execsetup.witness = validators.NewWitness(ctx, execsetup.log, validators.NewDefaultConfig(), execsetup.topology, commander, execsetup.timeService)
+
+	eventForwarder := evtforward.NewNoopEngine(execsetup.log, evtforward.NewDefaultConfig())
+
+	execsetup.oracleEngine = spec.NewEngine(execsetup.log, spec.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
+	execsetup.builtinOracle = spec.NewBuiltin(execsetup.oracleEngine, execsetup.timeService)
 
 	execsetup.stakingAccount = stubs.NewStakingAccountStub()
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.stakingAccount.OnEpochEvent, execsetup.stakingAccount.OnEpochRestore)
 
-	execsetup.teamsEngine = teams.NewEngine(execsetup.epochEngine, execsetup.broker, execsetup.timeService)
+	execsetup.stateVarEngine = stubs.NewStateVar()
 	marketActivityTracker := common.NewMarketActivityTracker(execsetup.log, execsetup.epochEngine, execsetup.teamsEngine, execsetup.stakingAccount)
+
+	execsetup.notary = notary.NewWithSnapshot(execsetup.log, notary.NewDefaultConfig(), execsetup.topology, execsetup.broker, commander)
+
+	execsetup.assetsEngine = stubs.NewAssetStub()
+
 	execsetup.referralProgram = referral.NewEngine(execsetup.broker, execsetup.timeService, marketActivityTracker, execsetup.stakingAccount)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.referralProgram.OnEpoch, execsetup.referralProgram.OnEpochRestore)
-
-	commander := stubs.NewCommanderStub()
-	execsetup.netDeposits = num.UintZero()
-	execsetup.witness = validators.NewWitness(ctx, execsetup.log, validators.NewDefaultConfig(), execsetup.topology, commander, execsetup.timeService)
-
-	execsetup.ntry = notary.NewWithSnapshot(execsetup.log, notary.NewDefaultConfig(), execsetup.topology, execsetup.broker, commander)
-	execsetup.assetsEngine = stubs.NewAssetStub()
-	ethSourceNoop := evtforward.NewNoopEngine(execsetup.log, evtforward.NewDefaultConfig())
-	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.ntry, execsetup.broker, execsetup.topology, execsetup.epochEngine, marketActivityTracker, stubs.NewBridgeViewStub(), ethSourceNoop)
-
-	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine, execsetup.timeService)
-
-	vesting := vesting.New(execsetup.log, execsetup.collateralEngine, DummyASVM{}, execsetup.broker, execsetup.assetsEngine)
-	// TODO fix activity streak
-	activityStreak := &DummyActivityStreak{}
-	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, marketActivityTracker, execsetup.topology, vesting, execsetup.banking, activityStreak)
-
-	execsetup.oracleEngine = spec.NewEngine(
-		execsetup.log, spec.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
-
-	execsetup.builtinOracle = spec.NewBuiltin(execsetup.oracleEngine, execsetup.timeService)
-
-	execsetup.stateVarEngine = stubs.NewStateVar()
-	// @TODO stub assets engine and pass it in
 
 	execsetup.volumeDiscountProgram = volumediscount.New(execsetup.broker, marketActivityTracker)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.volumeDiscountProgram.OnEpoch, execsetup.volumeDiscountProgram.OnEpochRestore)
@@ -233,81 +199,74 @@ func newExecutionTestSetup() *executionTestSetup {
 		execsetup.broker,
 	)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.executionEngine.OnEpochEvent, execsetup.executionEngine.OnEpochRestore)
-	execsetup.positionPlugin = plugins.NewPositions(ctx)
-	execsetup.broker.Subscribe(execsetup.positionPlugin)
 
-	execsetup.block = helpers.NewBlock()
+	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.notary, execsetup.broker, execsetup.topology, execsetup.epochEngine, marketActivityTracker, stubs.NewBridgeViewStub(), eventForwarder)
+
+	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine, execsetup.timeService)
+
+	execsetup.activityStreak = activitystreak.New(execsetup.log, execsetup.executionEngine, execsetup.broker)
+	execsetup.epochEngine.NotifyOnEpoch(execsetup.activityStreak.OnEpochEvent, execsetup.activityStreak.OnEpochRestore)
+
+	execsetup.vesting = vesting.New(execsetup.log, execsetup.collateralEngine, DummyASVM{}, execsetup.broker, execsetup.assetsEngine)
+	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, marketActivityTracker, execsetup.topology, execsetup.vesting, execsetup.banking, execsetup.activityStreak)
+
+	// register this after the rewards engine is created to make sure the on epoch is called in the right order.
+	execsetup.epochEngine.NotifyOnEpoch(execsetup.vesting.OnEpochEvent, execsetup.vesting.OnEpochRestore)
 
 	execsetup.registerTimeServiceCallbacks()
 
-	execsetup.netParams = netparams.New(execsetup.log, netparams.NewDefaultConfig(), execsetup.broker)
+	execsetup.teamsEngine = teams.NewEngine(execsetup.epochEngine, execsetup.broker, execsetup.timeService)
+
 	if err := execsetup.registerNetParamsCallbacks(); err != nil {
-		panic(err)
+		panic(fmt.Errorf("failed to register network parameters: %w", err))
 	}
 
-	execsetup.netParams.Watch(
-		netparams.WatchParam{
-			Param:   netparams.FloatingPointUpdatesDuration,
-			Watcher: execsetup.stateVarEngine.OnFloatingPointUpdatesDurationUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.TransferFeeFactor,
-			Watcher: execsetup.banking.OnTransferFeeFactorUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.TransferMinTransferQuantumMultiple,
-			Watcher: execsetup.banking.OnMinTransferQuantumMultiple,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MaxPeggedOrders,
-			Watcher: execsetup.executionEngine.OnMaxPeggedOrderUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarkPriceUpdateMaximumFrequency,
-			Watcher: execsetup.executionEngine.OnMarkPriceUpdateMaximumFrequency,
-		},
-		netparams.WatchParam{
-			Param:   netparams.SpamProtectionMaxStopOrdersPerMarket,
-			Watcher: execsetup.executionEngine.OnMarketPartiesMaximumStopOrdersUpdate,
-		},
-
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityEarlyExitPenalty,
-			Watcher: execsetup.executionEngine.OnMarketLiquidityV2EarlyExitPenaltyUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquiditySLANonPerformanceBondPenaltyMax,
-			Watcher: execsetup.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquiditySLANonPerformanceBondPenaltySlope,
-			Watcher: execsetup.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityBondPenaltyParameter,
-			Watcher: execsetup.executionEngine.OnMarketLiquidityV2BondPenaltyUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
-			Watcher: execsetup.executionEngine.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityStakeToCCYVolume,
-			Watcher: execsetup.executionEngine.OnMarketLiquidityV2StakeToCCYVolumeUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityProvidersFeeCalculationTimeStep,
-			Watcher: execsetup.executionEngine.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep,
-		},
-	)
 	return execsetup
+}
+
+func enableAssets(ctx context.Context, collateralEngine *collateral.Engine) {
+	vegaAsset := types.Asset{
+		ID: "VEGA",
+		Details: &types.AssetDetails{
+			Name:    "VEGA",
+			Symbol:  "VEGA",
+			Quantum: num.MustDecimalFromString("1"),
+		},
+	}
+	if err := collateralEngine.EnableAsset(ctx, vegaAsset); err != nil {
+		panic(fmt.Errorf("could not enable asset %q: %w", vegaAsset, err))
+	}
+
+	usdt := types.Asset{
+		ID: "USDT",
+		Details: &types.AssetDetails{
+			Name:    "USDT",
+			Symbol:  "USDT",
+			Quantum: num.MustDecimalFromString("1"),
+		},
+	}
+	if err := collateralEngine.EnableAsset(ctx, usdt); err != nil {
+		panic(fmt.Errorf("could not enable asset %q: %w", usdt, err))
+	}
+
+	usdc := types.Asset{
+		ID: "USDC",
+		Details: &types.AssetDetails{
+			Name:    "USDC",
+			Symbol:  "USDC",
+			Quantum: num.MustDecimalFromString("1"),
+		},
+	}
+	if err := collateralEngine.EnableAsset(ctx, usdc); err != nil {
+		panic(fmt.Errorf("could not enable asset %q: %w", usdc, err))
+	}
 }
 
 func (e *executionTestSetup) registerTimeServiceCallbacks() {
 	e.timeService.NotifyOnTick(
 		e.epochEngine.OnTick,
 		e.witness.OnTick,
-		e.ntry.OnTick,
+		e.notary.OnTick,
 		e.banking.OnTick,
 		e.delegationEngine.OnTick,
 		e.builtinOracle.OnTick,
@@ -428,11 +387,85 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Param:   netparams.MarketSuccessorLaunchWindow,
 			Watcher: execsetup.executionEngine.OnSuccessorMarketTimeWindowUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.FloatingPointUpdatesDuration,
+			Watcher: execsetup.stateVarEngine.OnFloatingPointUpdatesDurationUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.TransferFeeFactor,
+			Watcher: execsetup.banking.OnTransferFeeFactorUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.TransferMinTransferQuantumMultiple,
+			Watcher: execsetup.banking.OnMinTransferQuantumMultiple,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MaxPeggedOrders,
+			Watcher: execsetup.executionEngine.OnMaxPeggedOrderUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarkPriceUpdateMaximumFrequency,
+			Watcher: execsetup.executionEngine.OnMarkPriceUpdateMaximumFrequency,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMaxStopOrdersPerMarket,
+			Watcher: execsetup.executionEngine.OnMarketPartiesMaximumStopOrdersUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityEarlyExitPenalty,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2EarlyExitPenaltyUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquiditySLANonPerformanceBondPenaltyMax,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquiditySLANonPerformanceBondPenaltySlope,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityBondPenaltyParameter,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2BondPenaltyUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityStakeToCCYVolume,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2StakeToCCYVolumeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityProvidersFeeCalculationTimeStep,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep,
+		},
+		netparams.WatchParam{
+			Param:   netparams.ReferralProgramMinStakedVegaTokens,
+			Watcher: execsetup.referralProgram.OnReferralProgramMinStakedVegaTokensUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch,
+			Watcher: execsetup.referralProgram.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.ReferralProgramMaxReferralRewardProportion,
+			Watcher: execsetup.referralProgram.OnReferralProgramMaxReferralRewardProportionUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.ReferralProgramMinStakedVegaTokens,
+			Watcher: execsetup.teamsEngine.OnReferralProgramMinStakedVegaTokensUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.RewardsActivityStreakBenefitTiers,
+			Watcher: execsetup.activityStreak.OnBenefitTiersUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.RewardsActivityStreakMinQuantumOpenVolume,
+			Watcher: execsetup.activityStreak.OnMinQuantumOpenNationalVolumeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.RewardsActivityStreakMinQuantumTradeVolume,
+			Watcher: execsetup.activityStreak.OnMinQuantumTradeVolumeUpdate,
+		},
 	)
-}
-
-type DummyActivityStreak struct{}
-
-func (*DummyActivityStreak) GetRewardsDistributionMultiplier(party string) num.Decimal {
-	return num.DecimalOne()
 }

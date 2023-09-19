@@ -3034,14 +3034,14 @@ func (t *TradingDataServiceV2) computeLiquidationPriceRange(
 
 	return &v2.LiquidationEstimate{
 		WorstCase: &v2.LiquidationPrice{
-			OpenVolumeOnly:      wPositionOnly.String(),
-			IncludingBuyOrders:  wWithBuy.String(),
-			IncludingSellOrders: wWithSell.String(),
+			OpenVolumeOnly:      wPositionOnly.Round(0).String(),
+			IncludingBuyOrders:  wWithBuy.Round(0).String(),
+			IncludingSellOrders: wWithSell.Round(0).String(),
 		},
 		BestCase: &v2.LiquidationPrice{
-			OpenVolumeOnly:      bPositionOnly.String(),
-			IncludingBuyOrders:  bWithBuy.String(),
-			IncludingSellOrders: bWithSell.String(),
+			OpenVolumeOnly:      bPositionOnly.Round(0).String(),
+			IncludingBuyOrders:  bWithBuy.Round(0).String(),
+			IncludingSellOrders: bWithSell.Round(0).String(),
 		},
 	}, nil
 }

@@ -212,8 +212,7 @@ func newServices(
 	)
 
 	if svcs.conf.IsValidator() {
-		svcs.topology = validators.NewTopology(
-			svcs.log, svcs.conf.Validators, validators.WrapNodeWallets(nodeWallets), svcs.broker, svcs.conf.IsValidator(), svcs.commander, svcs.erc20MultiSigTopology, svcs.timeService)
+		svcs.topology = validators.NewTopology(svcs.log, svcs.conf.Validators, validators.WrapNodeWallets(nodeWallets), svcs.broker, svcs.conf.IsValidator(), svcs.commander, svcs.erc20MultiSigTopology, svcs.timeService)
 	} else {
 		svcs.topology = validators.NewTopology(svcs.log, svcs.conf.Validators, nil, svcs.broker, svcs.conf.IsValidator(), nil, svcs.erc20MultiSigTopology, svcs.timeService)
 	}
@@ -824,12 +823,16 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.referralProgram.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate,
 		},
 		{
-			Param:   netparams.ReferralProgramMinStakedVegaTokens,
-			Watcher: svcs.teamsEngine.OnReferralProgramMinStakedVegaTokensUpdate,
+			Param:   netparams.ReferralProgramMaxReferralRewardProportion,
+			Watcher: svcs.referralProgram.OnReferralProgramMaxReferralRewardProportionUpdate,
 		},
 		{
 			Param:   netparams.ReferralProgramMinStakedVegaTokens,
 			Watcher: svcs.referralProgram.OnReferralProgramMinStakedVegaTokensUpdate,
+		},
+		{
+			Param:   netparams.ReferralProgramMinStakedVegaTokens,
+			Watcher: svcs.teamsEngine.OnReferralProgramMinStakedVegaTokensUpdate,
 		},
 		{
 			Param:   netparams.RewardsActivityStreakBenefitTiers,
@@ -842,10 +845,6 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.RewardsActivityStreakMinQuantumTradeVolume,
 			Watcher: svcs.activityStreak.OnMinQuantumTradeVolumeUpdate,
-		},
-		{
-			Param:   netparams.ReferralProgramMaxReferralRewardProportion,
-			Watcher: svcs.referralProgram.OnReferralProgramMaxReferralRewardProportionUpdate,
 		},
 	}
 
