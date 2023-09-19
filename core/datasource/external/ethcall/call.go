@@ -121,3 +121,11 @@ func (c Call) triggered(prevEthBlock blockish, currentEthBlock blockish) bool {
 	}
 	return false
 }
+
+func (c Call) initialTime() uint64 {
+	switch trigger := c.spec.Trigger.(type) {
+	case ethcallcommon.TimeTrigger:
+		return trigger.Initial
+	}
+	return 0
+}
