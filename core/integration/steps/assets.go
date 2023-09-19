@@ -25,34 +25,44 @@ import (
 )
 
 func RegisterAsset(tbl *godog.Table, asset *stubs.AssetStub, col *collateral.Engine) error {
-	rows := StrictParseTable(tbl, []string{
-		"id",
-		"decimal places",
-	}, nil)
-	toEnable := []string{}
+	rows := parseAssetsTable(tbl)
 	for _, row := range rows {
+		aRow := assetRow{row: row}
 		aid := row.MustStr("id")
 		asset.Register(
 			aid,
 			row.MustU64("decimal places"),
 		)
-		toEnable = append(toEnable, aid)
-	}
-	return enableAssets(toEnable, col)
-}
-
-func enableAssets(ids []string, collateralEngine *collateral.Engine) error {
-	for _, assetToEnable := range ids {
-		err := collateralEngine.EnableAsset(context.Background(), types.Asset{
-			ID: assetToEnable,
+		err := col.EnableAsset(context.Background(), types.Asset{
+			ID: aid,
 			Details: &types.AssetDetails{
-				Quantum: num.DecimalOne(),
-				Symbol:  assetToEnable,
+				Quantum: aRow.quantum(),
+				Symbol:  aid,
 			},
 		})
 		if err != nil && err != collateral.ErrAssetAlreadyEnabled {
-			return fmt.Errorf("couldn't enable asset(%s): %v", assetToEnable, err)
+			return fmt.Errorf("couldn't enable asset(%s): %v", aid, err)
 		}
 	}
 	return nil
+}
+
+func parseAssetsTable(table *godog.Table) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"id",
+		"decimal places",
+	}, []string{
+		"quantum",
+	})
+}
+
+type assetRow struct {
+	row RowWrapper
+}
+
+func (r assetRow) quantum() num.Decimal {
+	if !r.row.HasColumn("quantum") {
+		return num.DecimalOne()
+	}
+	return r.row.MustDecimal("quantum")
 }

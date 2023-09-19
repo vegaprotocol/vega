@@ -316,15 +316,6 @@ func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, 
 				SettledMarkets: cpStates,
 				Successors:     successors,
 				AllMarketIDs:   allMarketIDs,
-				SLANetworkParams: types.SLANetworkParams{
-					BondPenaltyFactor:               e.npv.liquidityV2BondPenaltyFactor,
-					EarlyExitPenalty:                e.npv.liquidityV2EarlyExitPenalty,
-					MaxLiquidityFee:                 e.npv.liquidityV2MaxLiquidityFee,
-					NonPerformanceBondPenaltyMax:    e.npv.liquidityV2SLANonPerformanceBondPenaltyMax,
-					NonPerformanceBondPenaltySlope:  e.npv.liquidityV2SLANonPerformanceBondPenaltySlope,
-					StakeToCCYVolume:                e.npv.liquidityV2StakeToCCYVolume,
-					ProvidersFeeCalculationTimeStep: e.npv.liquidityV2ProvidersFeeCalculationTimeStep,
-				},
 			},
 		},
 	}
@@ -383,23 +374,10 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 				e.allMarketsCpy = append(e.allMarketsCpy, mkt)
 			}
 		}
-
-		e.restoreSLAParameters(pl.ExecutionMarkets.SLANetworkParams)
-
 		return append(providers, spotProviders...), err
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
-}
-
-func (e *Engine) restoreSLAParameters(parameters types.SLANetworkParams) {
-	e.npv.liquidityV2BondPenaltyFactor = parameters.BondPenaltyFactor
-	e.npv.liquidityV2EarlyExitPenalty = parameters.EarlyExitPenalty
-	e.npv.liquidityV2MaxLiquidityFee = parameters.MaxLiquidityFee
-	e.npv.liquidityV2ProvidersFeeCalculationTimeStep = parameters.ProvidersFeeCalculationTimeStep
-	e.npv.liquidityV2SLANonPerformanceBondPenaltyMax = parameters.NonPerformanceBondPenaltyMax
-	e.npv.liquidityV2SLANonPerformanceBondPenaltySlope = parameters.NonPerformanceBondPenaltySlope
-	e.npv.liquidityV2StakeToCCYVolume = parameters.StakeToCCYVolume
 }
 
 func (e *Engine) restoreSuccessorMaps(successors []*types.Successors) {

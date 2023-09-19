@@ -246,6 +246,7 @@ func testProcessEthereumOracleQueryOK(t *testing.T) {
 	onQueryResultVerified(resourceToCheck, true)
 
 	oracleData := common.Data{
+		EthKey:   "testspec",
 		Signers:  nil,
 		Data:     okResult().Normalised,
 		MetaData: map[string]string{"eth-block-height": "1", "eth-block-time": "100"},

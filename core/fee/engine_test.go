@@ -139,6 +139,7 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
 	discountRewardService.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	eng.UpdateFeeFactors(types.Fees{
@@ -222,7 +223,8 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscountsAndRewardsBySide(t *te
 	discountRewardService.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalFromFloat(0.5)).AnyTimes()
 	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalFromFloat(0.25)).AnyTimes()
 	discountRewardService.EXPECT().GetReferrer(types.PartyID(aggressor)).Return(types.PartyID("referrer"), nil).AnyTimes()
-	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(types.PartyID("referrer")).Return(num.DecimalFromFloat(0.3)).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(types.PartyID("party1")).Return(num.DecimalFromFloat(0.3)).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(types.PartyID("party2")).Return(num.DecimalFromFloat(0.3)).AnyTimes()
 
 	ft, err := eng.CalculateForContinuousMode(trades, discountRewardService, volumeDiscountService)
 	assert.NotNil(t, ft)
@@ -328,7 +330,8 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscountsAndRewardsBySideMultip
 	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalFromFloat(0.25)).AnyTimes()
 	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID("referrer"), nil).AnyTimes()
 	discountRewardService.EXPECT().GetReferrer(types.PartyID(aggressor)).Return(types.PartyID("referrer"), nil).AnyTimes()
-	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(types.PartyID("referrer")).Return(num.DecimalFromFloat(0.3)).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(aggressor).Return(num.DecimalFromFloat(0.3)).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalFromFloat(0.3)).AnyTimes()
 
 	ft, err := eng.CalculateForContinuousMode(trades, discountRewardService, volumeDiscountService)
 	assert.NotNil(t, ft)
@@ -459,8 +462,10 @@ func testCalcContinuousTrading(t *testing.T) {
 	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
 	discountRewardService.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
-	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID("party1"), errors.New("not a referrer")).AnyTimes()
+
 	trades := []*types.Trade{
 		{
 			Aggressor: types.SideSell,
@@ -548,6 +553,7 @@ func testCalcAuctionTrading(t *testing.T) {
 	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
 	discountRewardService.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	trades := []*types.Trade{
@@ -627,7 +633,8 @@ func TestCalcAuctionTradingWithDiscountsAndRewards(t *testing.T) {
 			return types.PartyID(""), errors.New("No referrer")
 		}
 	}).AnyTimes()
-	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(types.PartyID("referrer")).Return(num.DecimalFromFloat(0.5)).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(types.PartyID("party1")).Return(num.DecimalFromFloat(0.5)).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(types.PartyID("party2")).Return(num.DecimalZero()).AnyTimes()
 
 	trades := []*types.Trade{
 		{
@@ -723,6 +730,7 @@ func testCalcBatchAuctionTradingSameBatch(t *testing.T) {
 	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
 	discountRewardService.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	trades := []*types.Trade{
@@ -784,6 +792,7 @@ func testCalcBatchAuctionTradingDifferentBatches(t *testing.T) {
 	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
 	discountRewardService.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	trades := []*types.Trade{

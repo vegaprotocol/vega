@@ -87,10 +87,12 @@ func New(
 	broker Broker,
 ) *Engine {
 	return &Engine{
-		log:             log,
-		partiesActivity: map[string]*PartyActivity{},
-		marketStats:     marketStats,
-		broker:          broker,
+		log:                          log,
+		marketStats:                  marketStats,
+		partiesActivity:              map[string]*PartyActivity{},
+		broker:                       broker,
+		minQuantumOpenNotionalVolume: num.UintZero(),
+		minQuantumTradeVolume:        num.UintZero(),
 	}
 }
 

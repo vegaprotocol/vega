@@ -96,3 +96,7 @@ func (r *newMarketResolver) Metadata(_ context.Context, obj *types.NewMarket) ([
 func (r *newMarketResolver) SuccessorConfiguration(ctx context.Context, obj *types.NewMarket) (*types.SuccessorConfiguration, error) {
 	return obj.Changes.Successor, nil
 }
+
+func (r *newMarketResolver) LiquiditySLAParameters(ctx context.Context, obj *types.NewMarket) (*types.LiquiditySLAParameters, error) {
+	return obj.Changes.LiquiditySlaParameters, nil
+}

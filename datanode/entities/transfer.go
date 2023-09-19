@@ -34,24 +34,22 @@ type _Transfer struct{}
 type TransferID = ID[_Transfer]
 
 type Transfer struct {
-	ID                  TransferID
-	TxHash              TxHash
-	VegaTime            time.Time
-	FromAccountID       AccountID
-	ToAccountID         AccountID
-	AssetID             AssetID
-	Amount              decimal.Decimal
-	Reference           string
-	Status              TransferStatus
-	TransferType        TransferType
-	DeliverOn           *time.Time
-	StartEpoch          *uint64
-	EndEpoch            *uint64
-	Factor              *decimal.Decimal
-	DispatchMetric      *vega.DispatchMetric
-	DispatchMetricAsset *string
-	DispatchMarkets     []string
-	Reason              *string
+	ID               TransferID
+	TxHash           TxHash
+	VegaTime         time.Time
+	FromAccountID    AccountID
+	ToAccountID      AccountID
+	AssetID          AssetID
+	Amount           decimal.Decimal
+	Reference        string
+	Status           TransferStatus
+	TransferType     TransferType
+	DeliverOn        *time.Time
+	StartEpoch       *uint64
+	EndEpoch         *uint64
+	Factor           *decimal.Decimal
+	DispatchStrategy *vega.DispatchStrategy
+	Reason           *string
 }
 
 func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*eventspb.Transfer, error) {
@@ -88,14 +86,7 @@ func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*e
 			StartEpoch: *t.StartEpoch,
 			Factor:     t.Factor.String(),
 		}
-		if t.DispatchMetricAsset != nil {
-			recurringTransfer.DispatchStrategy = &vega.DispatchStrategy{
-				AssetForMetric: *t.DispatchMetricAsset,
-				Metric:         *t.DispatchMetric,
-				Markets:        t.DispatchMarkets,
-			}
-		}
-
+		recurringTransfer.DispatchStrategy = t.DispatchStrategy
 		if t.EndEpoch != nil {
 			endEpoch := *t.EndEpoch
 			recurringTransfer.EndEpoch = &endEpoch
@@ -198,9 +189,7 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 		transfer.TransferType = Recurring
 		transfer.StartEpoch = &v.Recurring.StartEpoch
 		if v.Recurring.DispatchStrategy != nil {
-			transfer.DispatchMetric = &v.Recurring.DispatchStrategy.Metric
-			transfer.DispatchMetricAsset = &v.Recurring.DispatchStrategy.AssetForMetric
-			transfer.DispatchMarkets = v.Recurring.DispatchStrategy.Markets
+			transfer.DispatchStrategy = v.Recurring.DispatchStrategy
 		}
 
 		if v.Recurring.EndEpoch != nil {

@@ -139,6 +139,7 @@ message Payload {
     ReferralSets referral_sets = 75;
     ActivityStreak activity_streak = 76;
     VolumeDiscountProgram volume_discount_program = 77;
+    LiquidityV2Parameters liquidity_v2_parameters = 78;
   }
 }
 
@@ -906,6 +907,19 @@ message LiquidityScores {
 message LiquidityScore {
   string score = 1;
   string party_id = 2;
+}
+
+message LiquidityV2Parameters {
+  // Market ID these liquidity parameters apply to. Required for key generation
+  string market_id = 1;
+  // market specific SLA parameters, will be different than the ones in the market
+  // snapshot since they apply at the end of an epoch
+  vega.LiquiditySLAParameters market_sla_parameters = 2;
+  // network wide SLA parameters, will be different than network paramters in the
+  // snapshot since they apply at the end of an epoch
+  string stake_to_volume = 3;
+  string bond_penalty_slope = 4;
+  string bond_penalty_max = 5;
 }
 
 message LiquidityV2Provisions {

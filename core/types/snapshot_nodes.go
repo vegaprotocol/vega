@@ -360,6 +360,10 @@ type PayloadLiquidityV2Scores struct {
 	Scores *snapshot.LiquidityV2Scores
 }
 
+type PayloadLiquidityV2Parameters struct {
+	Parameters *snapshot.LiquidityV2Parameters
+}
+
 type PayloadSpotLiquidityTarget struct {
 	Target *snapshot.SpotLiquidityTarget
 }
@@ -394,12 +398,11 @@ type SLANetworkParams struct {
 }
 
 type ExecutionMarkets struct {
-	Markets          []*ExecMarket
-	SpotMarkets      []*ExecSpotMarket
-	SettledMarkets   []*CPMarketState
-	Successors       []*Successors
-	AllMarketIDs     []string
-	SLANetworkParams SLANetworkParams
+	Markets        []*ExecMarket
+	SpotMarkets    []*ExecSpotMarket
+	SettledMarkets []*CPMarketState
+	Successors     []*Successors
+	AllMarketIDs   []string
 }
 
 type ExecMarket struct {
@@ -936,6 +939,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadActivityStreakFromProto(dt)
 	case *snapshot.Payload_VolumeDiscountProgram:
 		ret.Data = PayloadVolumeDiscountProgramFromProto(dt)
+	case *snapshot.Payload_LiquidityV2Parameters:
+		ret.Data = PayloadLiquidityV2ParamsFromProto(dt)
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}
@@ -1112,6 +1117,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_ActivityStreak:
 		ret.Data = dt
 	case *snapshot.Payload_VolumeDiscountProgram:
+		ret.Data = dt
+	case *snapshot.Payload_LiquidityV2Parameters:
 		ret.Data = dt
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
@@ -1349,6 +1356,28 @@ func (*PayloadLiquidityV2Supplied) Namespace() SnapshotNamespace {
 
 func (p *PayloadLiquidityV2Supplied) Key() string {
 	return fmt.Sprintf("supplied:%v", p.Supplied.MarketId)
+}
+
+func PayloadLiquidityV2ParamsFromProto(s *snapshot.Payload_LiquidityV2Parameters) *PayloadLiquidityV2Parameters {
+	return &PayloadLiquidityV2Parameters{
+		Parameters: s.LiquidityV2Parameters,
+	}
+}
+
+func (*PayloadLiquidityV2Parameters) isPayload() {}
+
+func (p *PayloadLiquidityV2Parameters) plToProto() interface{} {
+	return &snapshot.Payload_LiquidityV2Parameters{
+		LiquidityV2Parameters: p.Parameters,
+	}
+}
+
+func (*PayloadLiquidityV2Parameters) Namespace() SnapshotNamespace {
+	return LiquidityV2Snapshot
+}
+
+func (p *PayloadLiquidityV2Parameters) Key() string {
+	return fmt.Sprintf("parameters:%v", p.Parameters.MarketId)
 }
 
 func PayloadLiquidityV2ScoresFromProto(s *snapshot.Payload_LiquidityV2Scores) *PayloadLiquidityV2Scores {
@@ -3596,44 +3625,12 @@ func ExecutionMarketsFromProto(em *snapshot.ExecutionMarkets) *ExecutionMarkets 
 		allMarkets = em.MarketIds
 	}
 
-	var slaNetworkParams SLANetworkParams
-	if em.SlaNetworkParams != nil {
-		bondPenalty, _ := num.DecimalFromString(em.SlaNetworkParams.BondPenaltyFactor)
-		earlyExitPenalty, _ := num.DecimalFromString(em.SlaNetworkParams.EarlyExitPenalty)
-		maxLiquidityFee, _ := num.DecimalFromString(em.SlaNetworkParams.MaxLiquidityFee)
-		nonPerformanceBondPenaltyMax, _ := num.DecimalFromString(em.SlaNetworkParams.NonPerformanceBondPenaltyMax)
-		nonPerformanceBondPenaltySlope, _ := num.DecimalFromString(em.SlaNetworkParams.NonPerformanceBondPenaltySlope)
-		stakeToCCYVolume, _ := num.DecimalFromString(em.SlaNetworkParams.StakeToCcyVolume)
-
-		slaNetworkParams = SLANetworkParams{
-			BondPenaltyFactor:               bondPenalty,
-			EarlyExitPenalty:                earlyExitPenalty,
-			MaxLiquidityFee:                 maxLiquidityFee,
-			NonPerformanceBondPenaltyMax:    nonPerformanceBondPenaltyMax,
-			NonPerformanceBondPenaltySlope:  nonPerformanceBondPenaltySlope,
-			StakeToCCYVolume:                stakeToCCYVolume,
-			ProvidersFeeCalculationTimeStep: time.Duration(em.SlaNetworkParams.ProvidersFeeCalculationTimeStep),
-		}
-	} else {
-		// default values for old snapshot compatibility
-		slaNetworkParams = SLANetworkParams{
-			BondPenaltyFactor:               num.DecimalFromFloat(0.1),
-			EarlyExitPenalty:                num.DecimalFromFloat(0.1),
-			MaxLiquidityFee:                 num.DecimalFromFloat(1),
-			NonPerformanceBondPenaltyMax:    num.DecimalFromFloat(0.5),
-			NonPerformanceBondPenaltySlope:  num.DecimalFromFloat(2),
-			StakeToCCYVolume:                num.DecimalFromFloat(1),
-			ProvidersFeeCalculationTimeStep: time.Minute * 60,
-		}
-	}
-
 	return &ExecutionMarkets{
-		Markets:          mkts,
-		SpotMarkets:      spots,
-		SettledMarkets:   settled,
-		Successors:       successors,
-		AllMarketIDs:     allMarkets,
-		SLANetworkParams: slaNetworkParams,
+		Markets:        mkts,
+		SpotMarkets:    spots,
+		SettledMarkets: settled,
+		Successors:     successors,
+		AllMarketIDs:   allMarkets,
 	}
 }
 
@@ -3661,15 +3658,6 @@ func (e ExecutionMarkets) IntoProto() *snapshot.ExecutionMarkets {
 		SettledMarkets: settled,
 		Successors:     successors,
 		MarketIds:      e.AllMarketIDs,
-		SlaNetworkParams: &snapshot.SLANetworkParams{
-			BondPenaltyFactor:               e.SLANetworkParams.BondPenaltyFactor.String(),
-			EarlyExitPenalty:                e.SLANetworkParams.EarlyExitPenalty.String(),
-			MaxLiquidityFee:                 e.SLANetworkParams.MaxLiquidityFee.String(),
-			NonPerformanceBondPenaltyMax:    e.SLANetworkParams.NonPerformanceBondPenaltyMax.String(),
-			NonPerformanceBondPenaltySlope:  e.SLANetworkParams.NonPerformanceBondPenaltySlope.String(),
-			StakeToCcyVolume:                e.SLANetworkParams.StakeToCCYVolume.String(),
-			ProvidersFeeCalculationTimeStep: int64(e.SLANetworkParams.ProvidersFeeCalculationTimeStep),
-		},
 	}
 }
 

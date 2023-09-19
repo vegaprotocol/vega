@@ -62,6 +62,18 @@ func TestEngineSnapshotV2(t *testing.T) {
 		Fee:              num.DecimalFromFloat(0.5),
 	}
 
+	// change the SLA parameters values that were not set in initialisation
+	slaParams := &types.LiquiditySLAParams{
+		PriceRange:                  num.DecimalFromFloat(0.9), // priceRange
+		CommitmentMinTimeFraction:   num.DecimalFromFloat(0.9), // commitmentMinTimeFraction
+		SlaCompetitionFactor:        num.DecimalFromFloat(0.9), // slaCompetitionFactor,
+		PerformanceHysteresisEpochs: 7,                         // performanceHysteresisEpochs
+	}
+	originalEngine.engine.UpdateSLAParameters(slaParams)
+	originalEngine.engine.OnNonPerformanceBondPenaltyMaxUpdate(num.DecimalFromFloat(0.9))
+	originalEngine.engine.OnNonPerformanceBondPenaltySlopeUpdate(num.DecimalFromFloat(0.8))
+	originalEngine.engine.OnStakeToCcyVolumeUpdate(num.DecimalFromFloat(0.7))
+
 	// Adding some state.
 	originalEngine.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	originalEngine.auctionState.EXPECT().IsOpeningAuction().Return(false).AnyTimes()

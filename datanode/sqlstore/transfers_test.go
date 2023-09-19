@@ -512,6 +512,18 @@ func testTransfersAddAndRetrieveRecurringTransfer(t *testing.T) {
 			StartEpoch: 10,
 			EndEpoch:   nil,
 			Factor:     "0.1",
+			DispatchStrategy: &vega.DispatchStrategy{
+				AssetForMetric:     "asset",
+				Metric:             vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+				Markets:            []string{"m1", "m2"},
+				EntityScope:        vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+				IndividualScope:    vega.IndividualScope_INDIVIDUAL_SCOPE_ALL,
+				StakingRequirement: "1000",
+				NotionalTimeWeightedAveragePositionRequirement: "2000",
+				WindowLength:         2,
+				LockPeriod:           3,
+				DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA,
+			},
 		}},
 	}
 
@@ -775,22 +787,20 @@ func addTransfers(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, transf
 
 		amount, _ := decimal.NewFromString("10")
 		transfer := entities.Transfer{
-			ID:                  entities.TransferID(fmt.Sprintf("deadbeef%02d", i+1)),
-			VegaTime:            vegaTime,
-			FromAccountID:       accountFrom.ID,
-			ToAccountID:         accountTo.ID,
-			AssetID:             entities.AssetID(""),
-			Amount:              amount,
-			Reference:           "",
-			Status:              0,
-			TransferType:        0,
-			DeliverOn:           nil,
-			StartEpoch:          nil,
-			EndEpoch:            nil,
-			Factor:              nil,
-			DispatchMetric:      nil,
-			DispatchMetricAsset: nil,
-			DispatchMarkets:     nil,
+			ID:               entities.TransferID(fmt.Sprintf("deadbeef%02d", i+1)),
+			VegaTime:         vegaTime,
+			FromAccountID:    accountFrom.ID,
+			ToAccountID:      accountTo.ID,
+			AssetID:          entities.AssetID(""),
+			Amount:           amount,
+			Reference:        "",
+			Status:           0,
+			TransferType:     0,
+			DeliverOn:        nil,
+			StartEpoch:       nil,
+			EndEpoch:         nil,
+			Factor:           nil,
+			DispatchStrategy: nil,
 		}
 
 		err := transferStore.Upsert(ctx, &transfer)
