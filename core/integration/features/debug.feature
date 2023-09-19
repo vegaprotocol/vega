@@ -31,12 +31,12 @@ Feature: Simple example of successor markets
       | market.fee.factors.infrastructureFee                | 0.001 |
       | market.fee.factors.makerFee                         | 0.004 |
       | market.value.windowLength                           | 60s   |
-      | market.liquidity.bondPenaltyParameter | 0.2 |
+      | market.liquidity.bondPenaltyParameter               | 0.2   |
       | market.liquidity.stakeToCcyVolume                   | 1     |
       | market.liquidity.successorLaunchWindowLength        | 1h    |
       | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.19  |
       | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 1     |
-      | validators.epoch.length | 2s |
+      | validators.epoch.length                             | 2s    |
       | market.liquidity.providersFeeCalculationTimeStep    | 2s    |
     And the liquidity sla params named "SLA":
       | price range        | commitment min time fraction | performance hysteresis epochs | sla competition factor |
@@ -61,8 +61,8 @@ Feature: Simple example of successor markets
       | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec19Oracle     | 0.1                    | 0                         | 0              | 0                       |                  |                         |                   | SLA        |
     When the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC19 | buy  | 1 | 1000 | 0 | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | sell | 1 | 1000 | 0 | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
     #When the network moves ahead "2" blocks
     Then the market data for the market "ETH/DEC19" should be:
       | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
