@@ -75,7 +75,7 @@ Feature: Evaluating trader activity
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/USD.1.10"
 
 
-  Scenario Outline: Party trades during continuous trading
+  Scenario Outline: Party trades during continuous trading (0086-ASPR-004)(0086-ASPR-006)
     # Expectation: traders activity streak should be incremented if they fulfill the trade volume requirement
 
     # Test Cases:
@@ -107,7 +107,7 @@ Feature: Evaluating trader activity
       | trader1 | aux1    | 11   | 1          | 0            | 2           |
 
 
-  Scenario Outline: Party trades when exiting an auction
+  Scenario Outline: Party trades when exiting an auction (0086-ASPR-004)(0086-ASPR-006)
     # Expectation: traders activity streak should be incremented if they fulfill the trade volume requirement
 
     # Test Cases:
@@ -149,7 +149,7 @@ Feature: Evaluating trader activity
       | trader1 | aux1    | 11   | 1          | 0            | 2           |
 
 
-  Scenario Outline: Party opens position in market
+  Scenario Outline: Party opens position in market (0086-ASPR-005)(0086-ASPR-006)
     # Expectation: traders activity streak should be incremented if they fulfill the open volume requirement
 
     # Test Cases:
@@ -158,7 +158,7 @@ Feature: Evaluating trader activity
     # - long position does meet the open volume requirement
     # - short position does meet the open volume requirement
 
-    # Test cares about trade volume so set open volume requirement high
+    # Test cares about open volume so set trade volume requirement high
     Given the following network parameters are set:
       | name                                         | value            |
       | rewards.activityStreak.minQuantumTradeVolume | 1000000000000000 |
@@ -171,18 +171,46 @@ Feature: Evaluating trader activity
       | aux1    | ETH/USD.0.1 | <counterparty side> | <size> | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader1 | ETH/USD.0.1 | <trader side>       | <size> | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    ### TO BE REMOVED - SIMPLE CHECK TO SENSE CHECK OPEN POSITION
-    Then the parties should have the following profit and loss:
-      | party   | volume     | unrealised pnl | realised pnl |
-      | trader1 | <position> | 0              | 0            |
-    And the activity streaks at epoch 1 should be:
+    Then the activity streaks at epoch 1 should be:
       | party   | active for   | inactive for   | reward multiplier | vesting multiplier |
       | trader1 | <active for> | <inactive for> | <multipliers>     | <multipliers>      |
     
     Examples:
-      | trader side | counterparty side | size | active for | inactive for | multipliers | position |
-      | buy         | sell              | 1    | 0          | 1            | 1           | 1        |
-      | sell        | buy               | 1    | 0          | 1            | 1           | -1       |
-      | buy         | sell              | 11   | 1          | 0            | 2           | 11       |
-      | sell        | buy               | 11   | 1          | 0            | 2           | -11      |
+      | trader side | counterparty side | size | active for | inactive for | multipliers |
+      | buy         | sell              | 1    | 0          | 1            | 1           |
+      | sell        | buy               | 1    | 0          | 1            | 1           |
+      | buy         | sell              | 11   | 1          | 0            | 2           |
+      | sell        | buy               | 11   | 1          | 0            | 2           |
+
+
+  Scenario Outline: Party splits trading between two markets using different settlement assets (0086-ASPR-004)(0086-ASPR-005)
+    # Expectation: parties activity streak should be incremented if they fulfill the trade volume or open volume requirements
+
+    # Test Cases:
+    # - party meets the open volume requirement but not the trade volume requirement
+    # - party meets the trade volume requirement but not the open volume requirement
+    # - party meets both the trade volume requirement and the open volume requirement
+
+    Given the following network parameters are set:
+      | name                                         | value              |
+      | rewards.activityStreak.minQuantumOpenVolume  | <min open volume>  |
+      | rewards.activityStreak.minQuantumTradeVolume | <min trade volume> |
+    Then the network moves ahead "1" blocks
+    And the parties place the following orders:
+      | party   | market id    | side | volume | price | resulting trades | type       | tif     |
+      | aux1    | ETH/USD.0.1  | buy  | 6      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/USD.0.1  | sell | 6      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1    | ETH/USD.1.10 | buy  | 60     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/USD.1.10 | sell | 60     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
+    When the network moves ahead "1" epochs
+    Then the activity streaks at epoch 1 should be:
+      | party   | active for | inactive for | reward multiplier | vesting multiplier |
+      | trader1 | 1          | 0            | 2                 | 2                  |
+    
+    Examples:
+      | min open volume  | min trade volume |
+      | 10000            | 1000000000000000 |
+      | 1000000000000000 | 10000            |
+      | 10000            | 10000            |
+
 
