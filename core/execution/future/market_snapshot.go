@@ -141,7 +141,6 @@ func NewMarketFromSnapshot(
 	liquidityEngine := liquidity.NewSnapshotEngine(
 		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel,
 		pMonitor, book, as, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams)
-
 	equityShares := common.NewEquitySharesFromSnapshot(em.EquityShare)
 
 	marketLiquidity := common.NewMarketLiquidity(
