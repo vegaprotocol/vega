@@ -193,7 +193,7 @@ func newExecutionTestSetup() *executionTestSetup {
 			execsetup.stateVarEngine,
 			marketActivityTracker,
 			execsetup.assetsEngine, // assets
-			&stubs.ReferralDiscountRewardService{},
+			execsetup.referralProgram,
 			execsetup.volumeDiscountProgram,
 		),
 		execsetup.broker,
