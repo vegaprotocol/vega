@@ -12,22 +12,22 @@ import (
 type (
 	TeamCreatedEvent interface {
 		events.Event
-		TeamCreated() eventspb.TeamCreated
+		TeamCreated() *eventspb.TeamCreated
 	}
 
 	TeamUpdateEvent interface {
 		events.Event
-		TeamUpdated() eventspb.TeamUpdated
+		TeamUpdated() *eventspb.TeamUpdated
 	}
 
 	RefereeJoinedTeam interface {
 		events.Event
-		RefereeJoinedTeam() eventspb.RefereeJoinedTeam
+		RefereeJoinedTeam() *eventspb.RefereeJoinedTeam
 	}
 
 	RefereeSwitchedTeam interface {
 		events.Event
-		RefereeSwitchedTeam() eventspb.RefereeSwitchedTeam
+		RefereeSwitchedTeam() *eventspb.RefereeSwitchedTeam
 	}
 
 	TeamStore interface {
@@ -75,24 +75,24 @@ func (t *Teams) Push(ctx context.Context, evt events.Event) error {
 
 func (t *Teams) consumeTeamCreatedEvent(ctx context.Context, e TeamCreatedEvent) error {
 	createdEvt := e.TeamCreated()
-	created := entities.TeamCreatedFromProto(&createdEvt, t.vegaTime)
+	created := entities.TeamCreatedFromProto(createdEvt, t.vegaTime)
 	return errors.Wrap(t.store.AddTeam(ctx, created), "adding team")
 }
 
 func (t *Teams) consumeTeamUpdateEvent(ctx context.Context, e TeamUpdateEvent) error {
 	updatedEvt := e.TeamUpdated()
-	updated := entities.TeamUpdatedFromProto(&updatedEvt, t.vegaTime)
+	updated := entities.TeamUpdatedFromProto(updatedEvt, t.vegaTime)
 	return errors.Wrap(t.store.UpdateTeam(ctx, updated), "updating team")
 }
 
 func (t *Teams) consumeRefereeJoinedTeamEvent(ctx context.Context, e RefereeJoinedTeam) error {
 	joinedEvt := e.RefereeJoinedTeam()
-	referee := entities.TeamRefereeFromProto(&joinedEvt, t.vegaTime)
+	referee := entities.TeamRefereeFromProto(joinedEvt, t.vegaTime)
 	return errors.Wrap(t.store.RefereeJoinedTeam(ctx, referee), "adding referee to team")
 }
 
 func (t *Teams) consumeRefereeSwitchedTeamEvent(ctx context.Context, e RefereeSwitchedTeam) error {
 	switchedEvt := e.RefereeSwitchedTeam()
-	switched := entities.TeamRefereeHistoryFromProto(&switchedEvt, t.vegaTime)
+	switched := entities.TeamRefereeHistoryFromProto(switchedEvt, t.vegaTime)
 	return errors.Wrap(t.store.RefereeSwitchedTeam(ctx, switched), "updating referee history")
 }

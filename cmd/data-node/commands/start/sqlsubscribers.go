@@ -187,6 +187,7 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.partyActivityStreakSub,
 		s.referralProgramSub,
 		s.referralSetsSub,
+		s.teamsSub,
 	}
 }
 
