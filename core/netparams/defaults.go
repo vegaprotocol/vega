@@ -92,10 +92,10 @@ func defaultNetParams() map[string]value {
 		RewardMarketCreationQuantumMultiple:       NewDecimal(gteD1, DecimalLT(num.MustDecimalFromString("1e20"))).Mutable(true).MustUpdate("10000000"),
 
 		MarketLiquidityBondPenaltyParameter:              NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("0.1"),
-		MarketLiquidityEarlyExitPenalty:                  NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("0.1"),
+		MarketLiquidityEarlyExitPenalty:                  NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("0.05"),
 		MarketLiquidityMaximumLiquidityFeeFactorLevel:    NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("1"),
-		MarketLiquiditySLANonPerformanceBondPenaltyMax:   NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.5"),
-		MarketLiquiditySLANonPerformanceBondPenaltySlope: NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("2"),
+		MarketLiquiditySLANonPerformanceBondPenaltyMax:   NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.05"),
+		MarketLiquiditySLANonPerformanceBondPenaltySlope: NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("1"),
 		MarketLiquidityStakeToCCYVolume:                  NewDecimal(gteD0, lteD100).Mutable(true).MustUpdate("1"),
 
 		// @TODO karel add validation
