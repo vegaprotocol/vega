@@ -224,17 +224,12 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 		}
 	}
 
-	if !inc.IsZero() {
+	if !inc.IsZero() && !openVolume.IsZero() {
 		// calculate margin increase based on position
-		// inc = margin-factor * funding-payment, s = position
-		// incD = max(0, inc * position)
-		s := num.DecimalFromInt64(m.Size()).Div(e.positionFactor)
-		inc = num.MaxD(num.DecimalZero(), inc.Mul(s))
-	}
-
-	if !inc.IsZero() {
-		marginMaintenanceLng = marginMaintenanceLng.Add(inc)
-		marginMaintenanceSht = marginMaintenanceSht.Add(inc)
+		// incD = max(0, inc * open volume)
+		incD := num.MaxD(num.DecimalZero(), inc.Mul(openVolume))
+		marginMaintenanceLng = marginMaintenanceLng.Add(incD)
+		marginMaintenanceSht = marginMaintenanceSht.Add(incD)
 	}
 
 	// the greatest liability is the most positive number
@@ -258,7 +253,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 	}
 }
 
-func CalculateMaintenanceMarginWithSlippageFactors(sizePosition int64, buyOrders, sellOrders []*OrderInfo, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort num.Decimal, auction bool) num.Decimal {
+func CalculateMaintenanceMarginWithSlippageFactors(sizePosition int64, buyOrders, sellOrders []*OrderInfo, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, fundingPaymntPerUnitPosition num.Decimal, auction bool) num.Decimal {
 	buySumProduct, sellSumProduct := num.DecimalZero(), num.DecimalZero()
 	sizeSells, sizeBuys := int64(0), int64(0)
 	for _, o := range buyOrders {
@@ -281,15 +276,14 @@ func CalculateMaintenanceMarginWithSlippageFactors(sizePosition int64, buyOrders
 			sizeSells += size
 		}
 	}
-
-	return computeMaintenanceMargin(sizePosition, sizeBuys, sizeSells, buySumProduct, sellSumProduct, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, auction, true, true, num.MaxUint(), num.MaxUint())
+	return computeMaintenanceMargin(sizePosition, sizeBuys, sizeSells, buySumProduct, sellSumProduct, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, fundingPaymntPerUnitPosition, auction, true, true, num.MaxUint(), num.MaxUint())
 }
 
 func calculateSlippageFactor(slippageVolume, linearSlippageFactor, quadraticSlippageFactor num.Decimal) num.Decimal {
 	return linearSlippageFactor.Mul(slippageVolume.Abs()).Add(quadraticSlippageFactor.Mul(slippageVolume.Mul(slippageVolume)))
 }
 
-func computeMaintenanceMargin(sizePosition, buySize, sellSize int64, buySumProduct, sellSumProduct, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort num.Decimal, auction, longNoExit, shortNoExit bool, longSlippagePerUnit, shortSlippagePerUnit *num.Uint) num.Decimal {
+func computeMaintenanceMargin(sizePosition, buySize, sellSize int64, buySumProduct, sellSumProduct, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, fundingPaymntPerUnitPosition num.Decimal, auction, longNoExit, shortNoExit bool, longSlippagePerUnit, shortSlippagePerUnit *num.Uint) num.Decimal {
 	var (
 		marginMaintenanceLng num.Decimal
 		marginMaintenanceSht num.Decimal
@@ -354,6 +348,14 @@ func computeMaintenanceMargin(sizePosition, buySize, sellSize int64, buySumProdu
 				marginMaintenanceSht = marginMaintenanceSht.Add(maintenanceMarginShortOpenOrders)
 			}
 		}
+	}
+
+	if !fundingPaymntPerUnitPosition.IsZero() && !openVolume.IsZero() {
+		// calculate margin increase based on position
+		// incD = max(0, inc * open volume)
+		incD := num.MaxD(num.DecimalZero(), fundingPaymntPerUnitPosition.Mul(openVolume))
+		marginMaintenanceLng = marginMaintenanceLng.Add(incD)
+		marginMaintenanceSht = marginMaintenanceSht.Add(incD)
 	}
 
 	// the greatest liability is the most positive number
