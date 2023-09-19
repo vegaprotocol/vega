@@ -130,8 +130,32 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 		return nil, types.ErrInconsistentNamespaceKeys // it's the only possible key/namespace combo here
 	}
 
+	// network parameters than did not exist pre-upgrade and we want to make sure we propagate properly
+	// during upgrade
+	upgrade := map[string]string{
+		MarketLiquidityBondPenaltyParameter:              "0.1",
+		MarketLiquidityEarlyExitPenalty:                  "1",
+		MarketLiquidityMaximumLiquidityFeeFactorLevel:    "1",
+		MarketLiquiditySLANonPerformanceBondPenaltyMax:   "0.5",
+		MarketLiquiditySLANonPerformanceBondPenaltySlope: "2",
+		MarketLiquidityProvidersFeeCalculationTimeStep:   "1h",
+		MarketLiquidityStakeToCCYVolume:                  "1",
+	}
+
 	for _, kv := range np.NetParams.Params {
+		if _, ok := upgrade[kv.Key]; ok {
+			// if it is in the snapshot then we have restored from the matching version of core and we do not need to do anything
+			delete(upgrade, kv.Key)
+		}
+
 		if err := s.UpdateOptionalValidation(ctx, kv.Key, kv.Value, false, false); err != nil {
+			return nil, err
+		}
+	}
+
+	// for all the new network parameters update with default parameters
+	for k, v := range upgrade {
+		if err := s.UpdateOptionalValidation(ctx, k, v, false, false); err != nil {
 			return nil, err
 		}
 	}
