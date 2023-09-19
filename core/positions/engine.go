@@ -78,10 +78,13 @@ type openInterestRecord struct {
 // RecordLatest will save the new openInterest for a party
 // but also register it as the lowest if it goes below
 // the existing lowest openInterest.
-func (o *openInterestRecord) RecordLatest(new uint64) {
-	o.Latest = new
-	if o.Lowest > new {
-		o.Lowest = new
+func (o *openInterestRecord) RecordLatest(new int64) {
+	if new < 0 {
+		new = -new
+	}
+	o.Latest = uint64(new)
+	if o.Lowest > uint64(new) {
+		o.Lowest = uint64(new)
 	}
 }
 
@@ -291,11 +294,7 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade, passiveO
 	}
 
 	pos.UpdateOnOrderChange(e.log, passiveOrder.Side, passiveOrder.Price, trade.Size, false)
-	var posSize uint64
-	if pos.size > 0 {
-		posSize = uint64(pos.size)
-	}
-	e.partiesOpenInterest[pos.partyID].RecordLatest(posSize)
+	e.partiesOpenInterest[pos.partyID].RecordLatest(pos.size)
 	e.partiesTradedSize[pos.partyID] += uint64(size)
 
 	e.positionUpdated(ctx, pos)
@@ -358,16 +357,9 @@ func (e *Engine) Update(ctx context.Context, trade *types.Trade, passiveOrder, a
 	e.positionUpdated(ctx, buyer)
 	e.positionUpdated(ctx, seller)
 
-	var buyerSize, sellerSize uint64
-	if buyer.size > 0 {
-		buyerSize = uint64(buyer.size)
-	}
-	if seller.size > 0 {
-		sellerSize = uint64(seller.size)
-	}
-	e.partiesOpenInterest[buyer.partyID].RecordLatest(buyerSize)
+	e.partiesOpenInterest[buyer.partyID].RecordLatest(buyer.size)
 	e.partiesTradedSize[buyer.partyID] += trade.Size
-	e.partiesOpenInterest[seller.partyID].RecordLatest(sellerSize)
+	e.partiesOpenInterest[seller.partyID].RecordLatest(seller.size)
 	e.partiesTradedSize[seller.partyID] += trade.Size
 
 	if e.log.GetLevel() == logging.DebugLevel {
