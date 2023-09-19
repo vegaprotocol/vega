@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.73.0
+## 0.73.0
 
 ### 🚨 Breaking changes
 
