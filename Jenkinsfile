@@ -12,6 +12,7 @@ def scmVars = null
 def version = 'UNKNOWN'
 def versionHash = 'UNKNOWN'
 def commitHash = 'UNKNOWN'
+def isDraft = false
 
 
 pipeline {
@@ -59,6 +60,10 @@ pipeline {
                     script {
                         publicIP = agent.getPublicIP()
                         print("Jenkins Agent public IP is: " + publicIP)
+                        if (pullRequest?.draft) {
+                            isDraft = true
+                        }
+                        print("PR Draft: " + isDraft)
                     }
                 }
             }
