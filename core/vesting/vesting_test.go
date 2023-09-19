@@ -105,12 +105,14 @@ func TestDistributeAfterDelay(t *testing.T) {
 	// this is multiplied by the quantume, so it will make it 100% of the quantum
 	v.OnRewardVestingMinimumTransferUpdate(context.Background(), num.MustDecimalFromString("1"))
 
+	v.col.EXPECT().GetAllVestingQuantumBalance(gomock.Any()).AnyTimes().Return(num.UintZero())
+
 	// set the asvm to return always 1
 	v.asvm.EXPECT().GetRewardsVestingMultiplier(gomock.Any()).AnyTimes().Return(num.MustDecimalFromString("1"))
 
 	// set asset to return proper quantum
 	v.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(dummyAsset{quantum: 10}), nil)
-
+	v.broker.EXPECT().Send(gomock.Any()).Times(1)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
@@ -121,12 +123,15 @@ func TestDistributeAfterDelay(t *testing.T) {
 	// then the remain 10,
 	// and it'll be all
 	v.AddReward("party1", "eth", num.NewUint(100), 3)
+	v.broker.EXPECT().Send(gomock.Any()).Times(1)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
+	v.broker.EXPECT().Send(gomock.Any()).Times(1)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
+	v.broker.EXPECT().Send(gomock.Any()).Times(1)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
@@ -143,7 +148,7 @@ func TestDistributeAfterDelay(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
@@ -161,13 +166,14 @@ func TestDistributeAfterDelay(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
 
 	// try it again and nothing happen
+	v.broker.EXPECT().Send(gomock.Any()).Times(1)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
@@ -183,12 +189,14 @@ func TestDistributeWithNoDelay(t *testing.T) {
 	// this is multiplied by the quantume, so it will make it 100% of the quantum
 	v.OnRewardVestingMinimumTransferUpdate(context.Background(), num.MustDecimalFromString("1"))
 
+	v.col.EXPECT().GetAllVestingQuantumBalance(gomock.Any()).AnyTimes().Return(num.UintZero())
+
 	// set the asvm to return always 1
 	v.asvm.EXPECT().GetRewardsVestingMultiplier(gomock.Any()).AnyTimes().Return(num.MustDecimalFromString("1"))
 
 	// set asset to return proper quantum
 	v.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(dummyAsset{quantum: 10}), nil)
-
+	v.broker.EXPECT().Send(gomock.Any()).Times(1)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
@@ -211,7 +219,7 @@ func TestDistributeWithNoDelay(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
@@ -229,13 +237,14 @@ func TestDistributeWithNoDelay(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
 
 	// try it again and nothing happen
+	v.broker.EXPECT().Send(gomock.Any()).Times(1)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
@@ -251,12 +260,14 @@ func TestDistributeWithStreakRate(t *testing.T) {
 	// this is multiplied by the quantume, so it will make it 100% of the quantum
 	v.OnRewardVestingMinimumTransferUpdate(context.Background(), num.MustDecimalFromString("1"))
 
+	v.col.EXPECT().GetAllVestingQuantumBalance(gomock.Any()).AnyTimes().Return(num.UintZero())
+
 	// set the asvm to return always 1
 	v.asvm.EXPECT().GetRewardsVestingMultiplier(gomock.Any()).AnyTimes().Return(num.MustDecimalFromString("1.1"))
 
 	// set asset to return proper quantum
 	v.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(dummyAsset{quantum: 10}), nil)
-
+	v.broker.EXPECT().Send(gomock.Any()).Times(1)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
@@ -281,7 +292,7 @@ func TestDistributeWithStreakRate(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
@@ -299,13 +310,14 @@ func TestDistributeWithStreakRate(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
 
 	// try it again and nothing happen
+	v.broker.EXPECT().Send(gomock.Any()).Times(1)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
@@ -321,12 +333,14 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 	// this is multiplied by the quantume, so it will make it 100% of the quantum
 	v.OnRewardVestingMinimumTransferUpdate(context.Background(), num.MustDecimalFromString("1"))
 
+	v.col.EXPECT().GetAllVestingQuantumBalance(gomock.Any()).AnyTimes().Return(num.UintZero())
+
 	// set the asvm to return always 1
 	v.asvm.EXPECT().GetRewardsVestingMultiplier(gomock.Any()).AnyTimes().Return(num.MustDecimalFromString("1"))
 
 	// set asset to return proper quantum
 	v.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(dummyAsset{quantum: 10}), nil)
-
+	v.broker.EXPECT().Send(gomock.Any()).Times(1)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
@@ -336,6 +350,7 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 	v.AddReward("party1", "eth", num.NewUint(100), 2)
 	// then another for 1 epoch
 	v.AddReward("party1", "eth", num.NewUint(100), 1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(1)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
@@ -352,7 +367,7 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	// this will deliver 100 more as well ready to be paid
 	v.OnEpochEvent(context.Background(), types.Epoch{
@@ -371,7 +386,7 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
@@ -390,7 +405,7 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
@@ -408,13 +423,14 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
 
 	// try it again and nothing happen
+	v.broker.EXPECT().Send(gomock.Any()).Times(1)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})

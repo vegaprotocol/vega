@@ -63,34 +63,36 @@ type Engine struct {
 	// keeps track of the lowest openInterest
 	// per party over a whole epoch
 	// should be reseted by the market on new epochs
-	partiesOpenInterest map[string]*openInterestRecord
+	partiesLowestVolume map[string]*openVolumeRecord
 
 	// keep track of the traded volume during the epoch
 	// will be reset
 	partiesTradedSize map[string]uint64
 }
 
-type openInterestRecord struct {
-	Latest uint64
-	Lowest uint64
+type openVolumeRecord struct {
+	Latest  uint64
+	Highest uint64
 }
 
 // RecordLatest will save the new openInterest for a party
 // but also register it as the lowest if it goes below
 // the existing lowest openInterest.
-func (o *openInterestRecord) RecordLatest(new uint64) {
-	o.Latest = new
-	if o.Lowest > new {
-		o.Lowest = new
+func (o *openVolumeRecord) RecordLatest(buy, sell int64) {
+	new := buy + sell
+
+	o.Latest = uint64(new)
+	if o.Highest < uint64(new) {
+		o.Highest = uint64(new)
 	}
 }
 
 // Reset will be used at the end of the epoch,
 // in order to set the lowest for the epoch to
 // be the latest of the previous epoch.
-func (o *openInterestRecord) Reset() uint64 {
-	lowest := o.Lowest
-	o.Lowest = o.Latest
+func (o *openVolumeRecord) Reset() uint64 {
+	lowest := o.Highest
+	o.Highest = o.Latest
 
 	return lowest
 }
@@ -110,7 +112,7 @@ func New(log *logging.Logger, config Config, marketID string, broker Broker) *En
 		broker:              broker,
 		updatedPositions:    map[string]struct{}{},
 		distressedPos:       map[string]struct{}{},
-		partiesOpenInterest: map[string]*openInterestRecord{},
+		partiesLowestVolume: map[string]*openVolumeRecord{},
 		partiesTradedSize:   map[string]uint64{},
 	}
 	e.positionUpdated = e.bufferPosition
@@ -212,11 +214,12 @@ func (e *Engine) RegisterOrder(ctx context.Context, order *types.Order) *MarketP
 		// append the pointer to the slice as well
 		e.positionsCpy = append(e.positionsCpy, pos)
 		// create the entry in the open interest map
-		e.partiesOpenInterest[order.Party] = &openInterestRecord{}
+		e.partiesLowestVolume[order.Party] = &openVolumeRecord{}
 	}
 
 	pos.RegisterOrder(e.log, order)
 	e.positionUpdated(ctx, pos)
+	e.partiesLowestVolume[pos.partyID].RecordLatest(pos.buy, pos.sell)
 	return pos
 }
 
@@ -230,6 +233,7 @@ func (e *Engine) UnregisterOrder(ctx context.Context, order *types.Order) *Marke
 	}
 	pos.UnregisterOrder(e.log, order)
 	e.positionUpdated(ctx, pos)
+	e.partiesLowestVolume[pos.partyID].RecordLatest(pos.buy, pos.sell)
 	return pos
 }
 
@@ -245,6 +249,7 @@ func (e *Engine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.
 
 	pos.AmendOrder(e.log, originalOrder, newOrder)
 	e.positionUpdated(ctx, pos)
+	e.partiesLowestVolume[pos.partyID].RecordLatest(pos.buy, pos.sell)
 	return pos
 }
 
@@ -291,11 +296,7 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade, passiveO
 	}
 
 	pos.UpdateOnOrderChange(e.log, passiveOrder.Side, passiveOrder.Price, trade.Size, false)
-	var posSize uint64
-	if pos.size > 0 {
-		posSize = uint64(pos.size)
-	}
-	e.partiesOpenInterest[pos.partyID].RecordLatest(posSize)
+	e.partiesLowestVolume[pos.partyID].RecordLatest(pos.buy, pos.sell)
 	e.partiesTradedSize[pos.partyID] += uint64(size)
 
 	e.positionUpdated(ctx, pos)
@@ -358,16 +359,9 @@ func (e *Engine) Update(ctx context.Context, trade *types.Trade, passiveOrder, a
 	e.positionUpdated(ctx, buyer)
 	e.positionUpdated(ctx, seller)
 
-	var buyerSize, sellerSize uint64
-	if buyer.size > 0 {
-		buyerSize = uint64(buyer.size)
-	}
-	if seller.size > 0 {
-		sellerSize = uint64(seller.size)
-	}
-	e.partiesOpenInterest[buyer.partyID].RecordLatest(buyerSize)
+	e.partiesLowestVolume[buyer.partyID].RecordLatest(buyer.buy, buyer.sell)
 	e.partiesTradedSize[buyer.partyID] += trade.Size
-	e.partiesOpenInterest[seller.partyID].RecordLatest(sellerSize)
+	e.partiesLowestVolume[seller.partyID].RecordLatest(seller.buy, seller.sell)
 	e.partiesTradedSize[seller.partyID] += trade.Size
 
 	if e.log.GetLevel() == logging.DebugLevel {
@@ -393,7 +387,7 @@ func (e *Engine) RemoveDistressed(parties []events.MarketPosition) []events.Mark
 		// remove from the map
 		delete(e.positions, party)
 		delete(e.distressedPos, party)
-		delete(e.partiesOpenInterest, party)
+		delete(e.partiesLowestVolume, party)
 		// remove from the slice
 		for i := range e.positionsCpy {
 			if e.positionsCpy[i].Party() == party {
@@ -582,7 +576,7 @@ func (e *Engine) GetOpenPositionCount() uint64 {
 func (e *Engine) GetPartiesLowestOpenInterestForEpoch() map[string]uint64 {
 	out := map[string]uint64{}
 
-	for party, oi := range e.partiesOpenInterest {
+	for party, oi := range e.partiesLowestVolume {
 		out[party] = oi.Reset()
 	}
 
@@ -600,7 +594,7 @@ func (e *Engine) GetPartiesTradedVolumeForEpoch() (out map[string]uint64) {
 func (e *Engine) remove(p *MarketPosition) {
 	// delete from the map first
 	delete(e.positions, p.partyID)
-	delete(e.partiesOpenInterest, p.partyID)
+	delete(e.partiesLowestVolume, p.partyID)
 	delete(e.distressedPos, p.partyID) // in case party was previously flagged as distressed
 
 	// remove from the slice

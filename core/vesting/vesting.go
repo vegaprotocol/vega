@@ -22,7 +22,9 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	proto "code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/vesting Collateral,ActivityStreakVestingMultiplier,Broker,Assets
@@ -132,6 +134,7 @@ func (e *Engine) OnRewardVestingMinimumTransferUpdate(
 
 func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	if epoch.Action == proto.EpochAction_EPOCH_ACTION_END {
+		e.broadcastRewardBonusMultipliers(ctx, epoch.Seq)
 		e.moveLocked()
 		e.distributeVested(ctx)
 		e.clearup()
@@ -327,4 +330,23 @@ func (e *Engine) clearup() {
 			delete(e.state, party)
 		}
 	}
+}
+
+func (e *Engine) broadcastRewardBonusMultipliers(ctx context.Context, seq uint64) {
+	evt := &eventspb.VestingStatsUpdated{
+		AtEpoch: seq,
+		Stats:   make([]*eventspb.PartyVestingStats, 0, len(e.state)),
+	}
+
+	parties := maps.Keys(e.state)
+	slices.Sort(parties)
+
+	for _, party := range parties {
+		evt.Stats = append(evt.Stats, &eventspb.PartyVestingStats{
+			PartyId:               party,
+			RewardBonusMultiplier: e.GetRewardBonusMultiplier(party).String(),
+		})
+	}
+
+	e.broker.Send(events.NewVestingStatsUpdatedEvent(ctx, evt))
 }

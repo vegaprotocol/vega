@@ -56,6 +56,7 @@ type SQLSubscribers struct {
 	referralProgramStore      *sqlstore.ReferralPrograms
 	referralSetsStore         *sqlstore.ReferralSets
 	teamsStore                *sqlstore.Teams
+	vestingStatsStore         *sqlstore.VestingStats
 
 	// Services
 	candleService               *candlesv2.Svc
@@ -100,6 +101,7 @@ type SQLSubscribers struct {
 	referralProgramService      *service.ReferralPrograms
 	referralSetsService         *service.ReferralSets
 	teamsService                *service.Teams
+	vestingStatsService         *service.VestingStats
 
 	// Subscribers
 	accountSub              *sqlsubscribers.Account
@@ -142,6 +144,7 @@ type SQLSubscribers struct {
 	referralProgramSub      *sqlsubscribers.ReferralProgram
 	referralSetsSub         *sqlsubscribers.ReferralSets
 	teamsSub                *sqlsubscribers.Teams
+	vestingStatsSub         *sqlsubscribers.VestingStatsUpdated
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -238,6 +241,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.referralProgramStore = sqlstore.NewReferralPrograms(transactionalConnectionSource)
 	s.referralSetsStore = sqlstore.NewReferralSets(transactionalConnectionSource)
 	s.teamsStore = sqlstore.NewTeams(transactionalConnectionSource)
+	s.vestingStatsStore = sqlstore.NewVestingStats(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
@@ -285,6 +289,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.referralProgramService = service.NewReferralPrograms(s.referralProgramStore)
 	s.referralSetsService = service.NewReferralSets(s.referralSetsStore)
 	s.teamsService = service.NewTeams(s.teamsStore)
+	s.vestingStatsService = service.NewVestingStats(s.vestingStatsStore)
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		s.marketDepthService,
@@ -342,4 +347,5 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.referralProgramSub = sqlsubscribers.NewReferralProgram(s.referralProgramService)
 	s.referralSetsSub = sqlsubscribers.NewReferralSets(s.referralSetsService)
 	s.teamsSub = sqlsubscribers.NewTeams(s.teamsService)
+	s.vestingStatsSub = sqlsubscribers.NewVestingStatsUpdated(s.vestingStatsService)
 }

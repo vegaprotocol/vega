@@ -41,6 +41,7 @@ type (
 	ReferralPrograms struct{ *sqlstore.ReferralPrograms }
 	ReferralSets     struct{ *sqlstore.ReferralSets }
 	Teams            struct{ *sqlstore.Teams }
+	VestingStats     struct{ *sqlstore.VestingStats }
 )
 
 type (
@@ -142,4 +143,8 @@ func NewReferralSets(store *sqlstore.ReferralSets) *ReferralSets {
 
 func NewTeams(store *sqlstore.Teams) *Teams {
 	return &Teams{Teams: store}
+}
+
+func NewVestingStats(store *sqlstore.VestingStats) *VestingStats {
+	return &VestingStats{VestingStats: store}
 }

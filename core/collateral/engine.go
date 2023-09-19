@@ -136,14 +136,18 @@ func (e *Engine) GetAllVestingQuantumBalance(party string) *num.Uint {
 
 	for asset, details := range e.enabledAssets {
 		// vesting balance
+		quantum := num.DecimalOne()
+		if !details.Details.Quantum.IsZero() {
+			quantum = details.Details.Quantum
+		}
 		if acc, ok := e.accs[e.accountID(noMarket, party, asset, types.AccountTypeVestingRewards)]; ok {
-			quantumBalance, _ := num.UintFromDecimal(acc.Balance.ToDecimal().Div(details.Details.Quantum))
+			quantumBalance, _ := num.UintFromDecimal(acc.Balance.ToDecimal().Div(quantum))
 			balance.AddSum(quantumBalance)
 		}
 
 		// vested balance
 		if acc, ok := e.accs[e.accountID(noMarket, party, asset, types.AccountTypeVestedRewards)]; ok {
-			quantumBalance, _ := num.UintFromDecimal(acc.Balance.ToDecimal().Div(details.Details.Quantum))
+			quantumBalance, _ := num.UintFromDecimal(acc.Balance.ToDecimal().Div(quantum))
 			balance.AddSum(quantumBalance)
 		}
 	}
