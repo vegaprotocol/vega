@@ -195,6 +195,7 @@
 - [9374](https://github.com/vegaprotocol/vega/issues/9374) - `ListGovernanceData` returns an error instead of results.
 - [9461](https://github.com/vegaprotocol/vega/issues/9461) - Do not make SLA related transfers for 0 amount.
 - [9462](https://github.com/vegaprotocol/vega/issues/9462) - Add missing proposal error `enum` values to the database.
+- [9466](https://github.com/vegaprotocol/vega/issues/9466) - `ListReferralSets` returns error when there are no stats available.
 
 ## 0.72.1
 

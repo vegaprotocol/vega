@@ -65623,14 +65623,11 @@ func (ec *executionContext) _ReferralSet_stats(ctx context.Context, field graphq
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*v2.ReferralSetStats)
 	fc.Result = res
-	return ec.marshalNReferralSetStats2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSetStats(ctx, field.Selections, res)
+	return ec.marshalOReferralSetStats2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSetStats(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ReferralSet_stats(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -100769,9 +100766,6 @@ func (ec *executionContext) _ReferralSet(ctx context.Context, sel ast.SelectionS
 					}
 				}()
 				res = ec._ReferralSet_stats(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			}
 
@@ -109268,20 +109262,6 @@ func (ec *executionContext) marshalNReferralSetRefereeEdge2ᚕᚖcodeᚗvegaprot
 	return ret
 }
 
-func (ec *executionContext) marshalNReferralSetStats2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSetStats(ctx context.Context, sel ast.SelectionSet, v v2.ReferralSetStats) graphql.Marshaler {
-	return ec._ReferralSetStats(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNReferralSetStats2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSetStats(ctx context.Context, sel ast.SelectionSet, v *v2.ReferralSetStats) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._ReferralSetStats(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNReward2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReward(ctx context.Context, sel ast.SelectionSet, v *vega.Reward) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -114594,6 +114574,13 @@ func (ec *executionContext) marshalOReferralSetRefereeEdge2ᚖcodeᚗvegaprotoco
 		return graphql.Null
 	}
 	return ec._ReferralSetRefereeEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOReferralSetStats2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSetStats(ctx context.Context, sel ast.SelectionSet, v *v2.ReferralSetStats) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ReferralSetStats(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReward(ctx context.Context, sel ast.SelectionSet, v []*vega.Reward) graphql.Marshaler {

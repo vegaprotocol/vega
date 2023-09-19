@@ -5875,7 +5875,7 @@ type ReferralSet {
   Referral set statistics for the latest or specific epoch.
   If provided the results can be filtered for a specific referee
   """
-  stats(epoch: Int, referee: ID): ReferralSetStats!
+  stats(epoch: Int, referee: ID): ReferralSetStats
 }
 
 "Edge type containing the referral set and cursor information returned by a ReferralSetConnection"
