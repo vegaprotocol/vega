@@ -609,6 +609,22 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties should have the following aggregated position changes for market "([^)]+)":$`, func(mkt string, table *godog.Table) error {
 		return steps.PartiesShouldHaveTheFollowingPositionStatusAgg(execsetup.broker, mkt, table)
 	})
+
+	s.Step(`^the volume discount program tiers named "([^"]*)":$`, func(vdp string, table *godog.Table) error {
+		return steps.VolumeDiscountProgramTiers(volumeDiscountTiers, vdp, table)
+	})
+
+	s.Step(`^the volume discount program:$`, func(table *godog.Table) error {
+		return steps.VolumeDiscountProgram(execsetup.volumeDiscountProgram, volumeDiscountTiers, table)
+	})
+
+	s.Step(`^the party "([^"]*)" has the following discount factor "([^"]*)"$`, func(party, discountFactor string) error {
+		return steps.PartyHasTheFollowingDiscountFactor(party, discountFactor, execsetup.volumeDiscountProgram)
+	})
+
+	s.Step(`^the party "([^"]*)" has the following taker notional "([^"]*)"$`, func(party, notional string) error {
+		return steps.PartyHasTheFollowingTakerNotional(party, notional, execsetup.volumeDiscountProgram)
+	})
 }
 
 func reconcileAccounts() error {

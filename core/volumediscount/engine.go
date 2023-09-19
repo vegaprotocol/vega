@@ -94,8 +94,11 @@ func (e *Engine) VolumeDiscountFactorForParty(party types.PartyID) num.Decimal {
 			return tier.VolumeDiscountFactor
 		}
 	}
-
 	return num.DecimalZero()
+}
+
+func (e *Engine) TakerNotionalForParty(party types.PartyID) num.Decimal {
+	return e.avgVolumePerParty[party]
 }
 
 func (e *Engine) applyProgramUpdate(ctx context.Context, startEpochTime time.Time) {
