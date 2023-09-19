@@ -197,6 +197,7 @@
 - [9462](https://github.com/vegaprotocol/vega/issues/9462) - Add missing proposal error `enum` values to the database.
 - [9466](https://github.com/vegaprotocol/vega/issues/9466) - `ListReferralSets` returns error when there are no stats available.
 - [9341](https://github.com/vegaprotocol/vega/issues/9341) - Fix checkpoint loading
+- [9472](https://github.com/vegaprotocol/vega/issues/9472) - `ListTeams` returns error when filtering by referrer or team.
 
 ## 0.72.1
 
