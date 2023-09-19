@@ -75,6 +75,7 @@ func (DummyASVM) GetRewardsVestingMultiplier(_ string) num.Decimal {
 var (
 	marketConfig          = market.NewMarketConfig()
 	referralProgramConfig = referralcfg.NewReferralProgramConfig()
+	volumeDiscountTiers   = map[string][]*types.VolumeBenefitTier{}
 )
 
 type executionTestSetup struct {
@@ -117,9 +118,9 @@ type executionTestSetup struct {
 	witness               *validators.Witness
 	teamsEngine           *teams.Engine
 	referralProgram       *referral.Engine
-	volumeDiscountProgram *volumediscount.Engine
 	activityStreak        *activitystreak.Engine
 	vesting               *vesting.Engine
+	volumeDiscountProgram *volumediscount.Engine
 }
 
 func newExecutionTestSetup() *executionTestSetup {
@@ -193,7 +194,7 @@ func newExecutionTestSetup() *executionTestSetup {
 			marketActivityTracker,
 			execsetup.assetsEngine, // assets
 			execsetup.referralProgram,
-			&stubs.VolumeDiscountService{},
+			execsetup.volumeDiscountProgram,
 		),
 		execsetup.broker,
 	)
