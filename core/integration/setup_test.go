@@ -113,13 +113,13 @@ type executionTestSetup struct {
 	insurancePoolDepositsOverStep map[string]*num.Int
 	eventsBefore                  int
 
-	notary          *notary.SnapshotNotary
-	stateVarEngine  *stubs.StateVarStub
-	witness         *validators.Witness
-	teamsEngine     *teams.Engine
-	referralProgram *referral.Engine
-	activityStreak  *activitystreak.Engine
-	vesting         *vesting.Engine
+	notary                *notary.SnapshotNotary
+	stateVarEngine        *stubs.StateVarStub
+	witness               *validators.Witness
+	teamsEngine           *teams.Engine
+	referralProgram       *referral.Engine
+	activityStreak        *activitystreak.Engine
+	vesting               *vesting.Engine
 	volumeDiscountProgram *volumediscount.Engine
 }
 
