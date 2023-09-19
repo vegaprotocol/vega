@@ -304,7 +304,8 @@ func testShouldReturnTeamIfTeamIDProvided(t *testing.T) {
 	want := teams[rand.Intn(len(teams))]
 	got, err := ts.GetTeam(ctx, want.ID, "")
 	require.NoError(t, err)
-	assert.Equal(t, want, got)
+	require.NotNil(t, got)
+	assert.Equal(t, want, *got)
 }
 
 func testShouldReturnTeamIfReferrerPartyIDProvided(t *testing.T) {
@@ -317,7 +318,8 @@ func testShouldReturnTeamIfReferrerPartyIDProvided(t *testing.T) {
 
 	got, err := ts.GetTeam(ctx, "", want.Referrer)
 	require.NoError(t, err)
-	assert.Equal(t, want, got)
+	require.NotNil(t, got)
+	assert.Equal(t, want, *got)
 }
 
 func testShouldReturnTeamIfRefereePartyIDProvided(t *testing.T) {
@@ -333,7 +335,8 @@ func testShouldReturnTeamIfRefereePartyIDProvided(t *testing.T) {
 
 	got, err := ts.GetTeam(ctx, "", wantMember.PartyID)
 	require.NoError(t, err)
-	assert.Equal(t, wantTeam, got)
+	require.NotNil(t, got)
+	assert.Equal(t, wantTeam, *got)
 }
 
 func testShouldReturnErrorIfNoTeamIDOrPartyIDProvided(t *testing.T) {

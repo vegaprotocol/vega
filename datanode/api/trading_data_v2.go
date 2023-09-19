@@ -25,6 +25,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/georgysavva/scany/pgxscan"
+
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 
 	"golang.org/x/sync/errgroup"
@@ -4227,10 +4229,22 @@ func (t *TradingDataServiceV2) ListTeams(ctx context.Context, req *v2.ListTeamsR
 func listTeam(ctx context.Context, teamsService *service.Teams, teamID entities.TeamID, partyID entities.PartyID) (*v2.ListTeamsResponse, error) {
 	team, err := teamsService.GetTeam(ctx, teamID, partyID)
 	if err != nil {
-		return nil, formatE(ErrTeamNotFound, err)
+		if pgxscan.NotFound(err) {
+			return &v2.ListTeamsResponse{
+				Teams: &v2.TeamConnection{
+					Edges: []*v2.TeamEdge{},
+				},
+			}, nil
+		}
+
+		return nil, formatE(ErrListTeams, err)
 	}
 
-	edges, err := makeEdges[*v2.TeamEdge]([]entities.Team{team})
+	if team == nil {
+		return nil, nil
+	}
+
+	edges, err := makeEdges[*v2.TeamEdge]([]entities.Team{*team})
 	if err != nil {
 		return nil, formatE(err)
 	}

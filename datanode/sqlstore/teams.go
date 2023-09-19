@@ -121,13 +121,13 @@ func (t *Teams) RefereeSwitchedTeam(ctx context.Context, referee *entities.Refer
 	return err
 }
 
-func (t *Teams) GetTeam(ctx context.Context, teamID entities.TeamID, partyID entities.PartyID) (entities.Team, error) {
+func (t *Teams) GetTeam(ctx context.Context, teamID entities.TeamID, partyID entities.PartyID) (*entities.Team, error) {
 	defer metrics.StartSQLQuery("Teams", "GetTeam")()
 
 	var team entities.Team
 
 	if teamID == "" && partyID == "" {
-		return team, fmt.Errorf("either teamID or partyID must be provided")
+		return nil, fmt.Errorf("either teamID or partyID must be provided")
 	}
 
 	var args []interface{}
@@ -141,10 +141,10 @@ func (t *Teams) GetTeam(ctx context.Context, teamID entities.TeamID, partyID ent
 	}
 
 	if err := pgxscan.Get(ctx, t.Connection, &team, query, args...); err != nil {
-		return team, err
+		return nil, err
 	}
 
-	return team, nil
+	return &team, nil
 }
 
 func (t *Teams) ListTeams(ctx context.Context, pagination entities.CursorPagination) ([]entities.Team, entities.PageInfo, error) {
