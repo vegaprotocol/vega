@@ -18,6 +18,9 @@ import (
 	"strconv"
 	"time"
 
+	dsdefinition "code.vegaprotocol.io/vega/core/datasource/definition"
+	ethcallcommon "code.vegaprotocol.io/vega/core/datasource/external/ethcall/common"
+
 	"code.vegaprotocol.io/vega/core/datasource"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/netparams"
@@ -418,6 +421,9 @@ func validateSpot(spot *types.SpotProduct, decimals uint64, assets Assets, deepC
 }
 
 func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool) (types.ProposalError, error) {
+	future.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(future.DataSourceSpecForSettlementData, et)
+	future.DataSourceSpecForTradingTermination = setDatasourceDefinitionDefaults(future.DataSourceSpecForTradingTermination, et)
+
 	settlData := &future.DataSourceSpecForSettlementData
 	if settlData == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
@@ -514,6 +520,9 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 }
 
 func validatePerps(perps *types.PerpsProduct, decimals uint64, assets Assets, et *enactmentTime, currentTime time.Time, deepCheck bool) (types.ProposalError, error) {
+	perps.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementData, et)
+	perps.DataSourceSpecForSettlementSchedule = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementSchedule, et)
+
 	settlData := &perps.DataSourceSpecForSettlementData
 	if settlData == nil {
 		return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecForSettlementData
@@ -859,6 +868,9 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, mkt types.Market, e
 		return types.ProposalErrorInvalidFutureProduct, ErrUpdateMarketDifferentProduct
 	}
 
+	future.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(future.DataSourceSpecForSettlementData, et)
+	future.DataSourceSpecForTradingTermination = setDatasourceDefinitionDefaults(future.DataSourceSpecForTradingTermination, et)
+
 	settlData := &future.DataSourceSpecForSettlementData
 	if settlData == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
@@ -960,6 +972,10 @@ func validateUpdatePerps(perps *types.UpdatePerpsProduct, mkt types.Market, et *
 	if mkt.GetPerps() == nil {
 		return types.ProposalErrorInvalidPerpsProduct, ErrUpdateMarketDifferentProduct
 	}
+
+	perps.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementData, et)
+	perps.DataSourceSpecForSettlementSchedule = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementSchedule, et)
+
 	settlData := &perps.DataSourceSpecForSettlementData
 	if settlData == nil {
 		return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecForSettlementData
@@ -1044,4 +1060,22 @@ func validateUpdatePerps(perps *types.UpdatePerpsProduct, mkt types.Market, et *
 	}
 
 	return types.ProposalErrorUnspecified, nil
+}
+
+func setDatasourceDefinitionDefaults(def dsdefinition.Definition, et *enactmentTime) dsdefinition.Definition {
+	if def.IsEthCallSpec() {
+		spec := def.GetEthCallSpec()
+		if spec.Trigger != nil {
+			switch trigger := spec.Trigger.(type) {
+			case ethcallcommon.TimeTrigger:
+				if trigger.Initial == 0 {
+					trigger.Initial = uint64(et.current)
+				}
+				spec.Trigger = trigger
+			}
+		}
+		def.DataSourceType = spec
+	}
+
+	return def
 }

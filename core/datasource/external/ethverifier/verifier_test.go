@@ -89,6 +89,7 @@ func TestVerifier(t *testing.T) {
 	t.Run("testProcessEthereumOracleChainEventWithGlobalError", testProcessEthereumOracleChainEventWithGlobalError)
 	t.Run("testProcessEthereumOracleChainEventWithLocalError", testProcessEthereumOracleChainEventWithLocalError)
 	t.Run("testProcessEthereumOracleChainEventWithMismatchedError", testProcessEthereumOracleChainEventWithMismatchedError)
+	t.Run("testProcessEthereumOracleQueryWithBlockTimeBeforeInitialTime", testProcessEthereumOracleQueryWithBlockTimeBeforeInitialTime)
 }
 
 func testProcessEthereumOracleChainEventWithGlobalError(t *testing.T) {
@@ -224,6 +225,7 @@ func testProcessEthereumOracleQueryOK(t *testing.T) {
 	eov.ethCallEngine.EXPECT().GetRequiredConfirmations("testspec").Return(uint64(5), nil)
 
 	eov.ts.EXPECT().GetTimeNow().Times(1)
+	eov.ethCallEngine.EXPECT().GetInitialTriggerTime("testspec").Return(uint64(90), nil)
 	eov.ethConfirmations.EXPECT().CheckRequiredConfirmations(uint64(1), uint64(5)).Return(nil)
 
 	var onQueryResultVerified func(interface{}, bool)
@@ -255,6 +257,30 @@ func testProcessEthereumOracleQueryOK(t *testing.T) {
 	eov.oracleBroadcaster.EXPECT().BroadcastData(gomock.Any(), oracleData)
 
 	eov.onTick(context.Background(), time.Unix(10, 0))
+}
+
+func testProcessEthereumOracleQueryWithBlockTimeBeforeInitialTime(t *testing.T) {
+	eov := getTestEthereumOracleVerifier(t)
+	defer eov.ctrl.Finish()
+	assert.NotNil(t, eov)
+
+	result := okResult()
+	eov.ethCallEngine.EXPECT().CallSpec(gomock.Any(), "testspec", uint64(1)).Return(result, nil)
+
+	eov.ts.EXPECT().GetTimeNow().Times(1)
+	eov.ethCallEngine.EXPECT().GetInitialTriggerTime("testspec").Return(uint64(110), nil)
+
+	var checkResult error
+	eov.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(1).
+		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time) error {
+			checkResult = toCheck.Check(context.Background())
+			return nil
+		})
+
+	err := eov.ProcessEthereumContractCallResult(generateDummyCallEvent())
+	assert.NoError(t, err)
+	assert.ErrorContains(t, checkResult, "is before the specification's initial time")
 }
 
 func testProcessEthereumOracleQueryResultMismatch(t *testing.T) {
@@ -290,6 +316,7 @@ func testProcessEthereumOracleFilterMismatch(t *testing.T) {
 	eov.ethCallEngine.EXPECT().GetRequiredConfirmations("testspec").Return(uint64(5), nil)
 
 	eov.ts.EXPECT().GetTimeNow().Times(1)
+	eov.ethCallEngine.EXPECT().GetInitialTriggerTime("testspec").Return(uint64(90), nil)
 	eov.ethConfirmations.EXPECT().CheckRequiredConfirmations(uint64(1), uint64(5)).Return(nil)
 
 	var checkResult error
@@ -315,6 +342,7 @@ func testProcessEthereumOracleInsufficientConfirmations(t *testing.T) {
 	eov.ethCallEngine.EXPECT().GetRequiredConfirmations("testspec").Return(uint64(5), nil)
 
 	eov.ts.EXPECT().GetTimeNow().Times(1)
+	eov.ethCallEngine.EXPECT().GetInitialTriggerTime("testspec").Return(uint64(90), nil)
 	eov.ethConfirmations.EXPECT().CheckRequiredConfirmations(uint64(1), uint64(5)).Return(eth.ErrMissingConfirmations)
 
 	var checkResult error
@@ -341,6 +369,7 @@ func testProcessEthereumOracleQueryDuplicateIgnored(t *testing.T) {
 	eov.ethCallEngine.EXPECT().GetRequiredConfirmations("testspec").Return(uint64(5), nil)
 
 	eov.ts.EXPECT().GetTimeNow().Times(1)
+	eov.ethCallEngine.EXPECT().GetInitialTriggerTime("testspec").Return(uint64(90), nil)
 	eov.ethConfirmations.EXPECT().CheckRequiredConfirmations(uint64(1), uint64(5)).Return(nil)
 
 	var checkResult error

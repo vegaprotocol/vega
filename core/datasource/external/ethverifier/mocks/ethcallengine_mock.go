@@ -50,6 +50,21 @@ func (mr *MockEthCallEngineMockRecorder) CallSpec(arg0, arg1, arg2 interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CallSpec", reflect.TypeOf((*MockEthCallEngine)(nil).CallSpec), arg0, arg1, arg2)
 }
 
+// GetInitialTriggerTime mocks base method.
+func (m *MockEthCallEngine) GetInitialTriggerTime(arg0 string) (uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInitialTriggerTime", arg0)
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInitialTriggerTime indicates an expected call of GetInitialTriggerTime.
+func (mr *MockEthCallEngineMockRecorder) GetInitialTriggerTime(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInitialTriggerTime", reflect.TypeOf((*MockEthCallEngine)(nil).GetInitialTriggerTime), arg0)
+}
+
 // GetRequiredConfirmations mocks base method.
 func (m *MockEthCallEngine) GetRequiredConfirmations(arg0 string) (uint64, error) {
 	m.ctrl.T.Helper()

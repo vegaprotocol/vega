@@ -232,6 +232,18 @@ func (s *Definition) GetEthCallSpec() ethcallcommon.Spec {
 	return ethcallcommon.Spec{}
 }
 
+func (s *Definition) IsEthCallSpec() bool {
+	data := s.Content()
+	if data != nil {
+		switch data.(type) {
+		case ethcallcommon.Spec:
+			return true
+		}
+	}
+
+	return false
+}
+
 // Definition is also a `Timer`.
 func (s *Definition) GetTimeTriggers() common.InternalTimeTriggers {
 	data := s.Content()

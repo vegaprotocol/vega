@@ -54,6 +54,7 @@ type EthCallEngine interface {
 	MakeResult(specID string, bytes []byte) (ethcall.Result, error)
 	CallSpec(ctx context.Context, id string, atBlock uint64) (ethcall.Result, error)
 	GetRequiredConfirmations(specId string) (uint64, error)
+	GetInitialTriggerTime(id string) (uint64, error)
 	StartAtHeight(height uint64, timestamp uint64)
 	Start()
 }
@@ -209,6 +210,16 @@ func (s *Verifier) checkCallEventResult(ctx context.Context, callEvent ethcall.C
 
 	if !bytes.Equal(callEvent.Result, checkResult.Bytes) {
 		return fmt.Errorf("mismatched results for block %d", callEvent.BlockHeight)
+	}
+
+	initialTriggerTime, err := s.ethEngine.GetInitialTriggerTime(callEvent.SpecId)
+	if err != nil {
+		return fmt.Errorf("failed to get initial trigger time: %w", err)
+	}
+
+	if callEvent.BlockTime < initialTriggerTime {
+		return fmt.Errorf("call event block time %d is before the specification's initial time %d",
+			callEvent.BlockTime, initialTriggerTime)
 	}
 
 	requiredConfirmations, err := s.ethEngine.GetRequiredConfirmations(callEvent.SpecId)

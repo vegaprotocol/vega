@@ -1216,7 +1216,8 @@ func checkUpdatePerps(perps *protoTypes.UpdatePerpetualProduct) Errors {
 	return errs
 }
 
-func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentProperty string, tryToSettle bool) Errors {
+func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentProperty string, tryToSettle bool,
+) Errors {
 	errs := NewErrors()
 	if spec == nil {
 		return errs.FinalAddForProperty(fmt.Sprintf("%s.%s", parentProperty, name), ErrIsRequired)
@@ -1358,13 +1359,6 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 
 				if ethOracle.Trigger == nil {
 					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.trigger", parentProperty, name), ErrIsRequired)
-				}
-
-				if ethOracle.Trigger != nil &&
-					ethOracle.Trigger.GetTimeTrigger() != nil &&
-					(ethOracle.Trigger.GetTimeTrigger().Initial == nil || *ethOracle.Trigger.GetTimeTrigger().Initial == 0) &&
-					(ethOracle.Trigger.GetTimeTrigger().Every == nil || *ethOracle.Trigger.GetTimeTrigger().Every == 0) {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.trigger.timetrigger.(initial|every)", parentProperty, name), ErrIsRequired)
 				}
 			} else {
 				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle", parentProperty, name), ErrIsRequired)
