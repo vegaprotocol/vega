@@ -52,6 +52,7 @@ type snapshotV2 struct {
 	serialisedPerformances      []byte
 	serialisedSupplied          []byte
 	serialisedScores            []byte
+	serialisedParemeters        []byte
 
 	// Keys need to be computed when the engine is instantiated as they are dynamic.
 	hashKeys             []string
@@ -60,6 +61,7 @@ type snapshotV2 struct {
 	performancesKey      string
 	scoresKey            string
 	suppliedKey          string
+	paramsKey            string
 }
 
 func (e *snapshotV2) Namespace() types.SnapshotNamespace {
@@ -91,6 +93,8 @@ func (e *snapshotV2) LoadState(ctx context.Context, p *types.Payload) ([]types.S
 		return nil, e.loadSupplied(pl.Supplied, p)
 	case *types.PayloadLiquidityV2Scores:
 		return nil, e.loadScores(pl.Scores, p)
+	case *types.PayloadLiquidityV2Parameters:
+		return nil, e.loadParameters(pl.Parameters, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
@@ -122,6 +126,8 @@ func (e *snapshotV2) serialise(k string) ([]byte, error) {
 		buf, err = e.serialiseSupplied()
 	case e.scoresKey:
 		buf, err = e.serialiseScores()
+	case e.paramsKey:
+		buf, err = e.serialiseParameters()
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -145,6 +151,8 @@ func (e *snapshotV2) serialise(k string) ([]byte, error) {
 		e.serialisedSupplied = buf
 	case e.scoresKey:
 		e.serialisedScores = buf
+	case e.paramsKey:
+		e.serialisedParemeters = buf
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -297,6 +305,22 @@ func (e *snapshotV2) serialiseScores() ([]byte, error) {
 	return e.marshalPayload(payload)
 }
 
+func (e *snapshotV2) serialiseParameters() ([]byte, error) {
+	payload := &snapshotpb.Payload{
+		Data: &snapshotpb.Payload_LiquidityV2Parameters{
+			LiquidityV2Parameters: &snapshotpb.LiquidityV2Parameters{
+				MarketId:            e.market,
+				MarketSlaParameters: e.slaParams.IntoProto(),
+				StakeToVolume:       e.stakeToCcyVolume.String(),
+				BondPenaltySlope:    e.nonPerformanceBondPenaltySlope.String(),
+				BondPenaltyMax:      e.nonPerformanceBondPenaltyMax.String(),
+			},
+		},
+	}
+
+	return e.marshalPayload(payload)
+}
+
 func (e *snapshotV2) marshalPayload(payload *snapshotpb.Payload) ([]byte, error) {
 	buf, err := proto.Marshal(payload)
 	if err != nil {
@@ -419,6 +443,25 @@ func (e *snapshotV2) loadScores(ls *snapshotpb.LiquidityV2Scores, p *types.Paylo
 	return err
 }
 
+func (e *snapshotV2) loadParameters(ls *snapshotpb.LiquidityV2Parameters, p *types.Payload) error {
+	var err error
+
+	// market SLA parameters
+	e.slaParams = types.LiquiditySLAParamsFromProto(ls.MarketSlaParameters)
+
+	// now network SLA parameters
+	bondMax, _ := num.DecimalFromString(ls.BondPenaltyMax)
+	bondSlope, _ := num.DecimalFromString(ls.BondPenaltySlope)
+	stakeToVolume, _ := num.DecimalFromString(ls.StakeToVolume)
+
+	e.nonPerformanceBondPenaltyMax = bondMax
+	e.nonPerformanceBondPenaltySlope = bondSlope
+	e.stakeToCcyVolume = stakeToVolume
+
+	e.serialisedScores, err = proto.Marshal(p.IntoProto())
+	return err
+}
+
 func (e *snapshotV2) buildHashKeys(market string) {
 	e.provisionsKey = (&types.PayloadLiquidityV2Provisions{
 		Provisions: &snapshotpb.LiquidityV2Provisions{
@@ -450,12 +493,19 @@ func (e *snapshotV2) buildHashKeys(market string) {
 		},
 	}).Key()
 
+	e.paramsKey = (&types.PayloadLiquidityV2Parameters{
+		Parameters: &snapshotpb.LiquidityV2Parameters{
+			MarketId: market,
+		},
+	}).Key()
+
 	e.hashKeys = append([]string{},
 		e.provisionsKey,
 		e.pendingProvisionsKey,
 		e.performancesKey,
 		e.suppliedKey,
 		e.scoresKey,
+		e.paramsKey,
 	)
 }
 

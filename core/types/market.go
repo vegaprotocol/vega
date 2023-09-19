@@ -936,7 +936,10 @@ type Market struct {
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
 	LinearSlippageFactor          num.Decimal
 	QuadraticSlippageFactor       num.Decimal
-	LiquiditySLAParams            *LiquiditySLAParams
+
+	// market liquitity parameters, may not match those in the liquidity engine after a market update
+	// since they are only applied at the end of the epoch
+	LiquiditySLAParams *LiquiditySLAParams
 
 	TradingMode           MarketTradingMode
 	State                 MarketState

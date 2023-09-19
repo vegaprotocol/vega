@@ -122,9 +122,11 @@ type Engine struct {
 	nonPerformanceBondPenaltySlope num.Decimal
 	nonPerformanceBondPenaltyMax   num.Decimal
 
+	// sla related market parameters
+	slaParams *types.LiquiditySLAParams
+
 	openPlusPriceRange  num.Decimal
 	openMinusPriceRange num.Decimal
-	slaParams           *types.LiquiditySLAParams
 
 	// fields related to SLA commitment
 	slaPerformance map[string]*slaPerformance
