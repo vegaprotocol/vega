@@ -75,7 +75,7 @@ func (rs *ReferralSets) ListReferralSets(ctx context.Context, referralSetID *ent
 		pageInfo entities.PageInfo
 	)
 
-	query := `SELECT DISTINCT rs.id, rs.referrer, rs.created_at, rs.updated_at, rs.vega_time
+	query := `SELECT DISTINCT rs.id as id, rs.referrer as referrer, rs.created_at as created_at, rs.updated_at as updated_at, rs.vega_time as vega_time
 			  FROM referral_sets rs
 			  LEFT JOIN referral_set_referees r on rs.id = r.referral_set_id` // LEFT JOIN because a referral set may not have any referees joined yet.
 
@@ -117,10 +117,10 @@ func (rs *ReferralSets) AddReferralSetStats(ctx context.Context, stats *entities
 	return err
 }
 
-func (rs *ReferralSets) GetReferralSetStats(ctx context.Context, setID entities.ReferralSetID, atEpoch *uint64, referee *entities.PartyID) (entities.ReferralSetStats, error) {
+func (rs *ReferralSets) GetReferralSetStats(ctx context.Context, setID entities.ReferralSetID, atEpoch *uint64, referee *entities.PartyID) (*entities.ReferralSetStats, error) {
 	defer metrics.StartSQLQuery("ReferralSets", "GetReferralSetStats")()
 	var (
-		stats entities.ReferralSetStats
+		stats []*entities.ReferralSetStats
 		query string
 		args  []interface{}
 	)
@@ -149,29 +149,41 @@ func (rs *ReferralSets) GetReferralSetStats(ctx context.Context, setID entities.
 	}
 
 	if referee == nil {
-		if err := pgxscan.Get(ctx, rs.Connection, &stats, query, args...); err != nil {
-			return stats, err
+		if err := pgxscan.Select(ctx, rs.Connection, &stats, query, args...); err != nil {
+			return nil, err
+		}
+		if len(stats) == 0 {
+			return nil, nil
 		}
 	} else {
-		var refStats entities.ReferralSetRefereeStats
-		if err := pgxscan.Get(ctx, rs.Connection, &refStats, query, args...); err != nil {
-			return stats, err
+		var refStats []*entities.ReferralSetRefereeStats
+		if err := pgxscan.Select(ctx, rs.Connection, &refStats, query, args...); err != nil {
+			return nil, err
 		}
 
-		stats.SetID = refStats.SetID
-		stats.AtEpoch = refStats.AtEpoch
-		stats.ReferralSetRunningNotionalTakerVolume = refStats.ReferralSetRunningNotionalTakerVolume
-		stats.RefereesStats = []*events.RefereeStats{
+		if len(refStats) == 0 {
+			return nil, nil
+		}
+
+		stat := entities.ReferralSetStats{}
+		refStat := refStats[0]
+
+		stat.SetID = refStat.SetID
+		stat.AtEpoch = refStat.AtEpoch
+		stat.ReferralSetRunningNotionalTakerVolume = refStat.ReferralSetRunningNotionalTakerVolume
+		stat.RefereesStats = []*events.RefereeStats{
 			{
-				PartyId:        refStats.PartyID,
-				DiscountFactor: refStats.DiscountFactor,
-				RewardFactor:   refStats.RewardFactor,
+				PartyId:        refStat.PartyID,
+				DiscountFactor: refStat.DiscountFactor,
+				RewardFactor:   refStat.RewardFactor,
 			},
 		}
-		stats.VegaTime = refStats.VegaTime
+		stat.VegaTime = refStat.VegaTime
+
+		stats = append(stats, &stat)
 	}
 
-	return stats, nil
+	return stats[0], nil
 }
 
 func (rs *ReferralSets) ListReferralSetReferees(ctx context.Context, referralSetID *entities.ReferralSetID, referrer, referee *entities.PartyID, pagination entities.CursorPagination) (

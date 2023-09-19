@@ -609,7 +609,8 @@ func TestReferralSets_GetReferralSetStats(t *testing.T) {
 		want := testStats[0]
 		got, err := rs.GetReferralSetStats(ctx, set.ID, nil, nil)
 		require.NoError(t, err)
-		assert.Equal(t, want, got)
+		require.NotNil(t, got)
+		assert.Equal(t, want, *got)
 	})
 
 	t.Run("Should return the stats for the specified epoch if an epoch is provided", func(t *testing.T) {
@@ -619,7 +620,8 @@ func TestReferralSets_GetReferralSetStats(t *testing.T) {
 
 		got, err := rs.GetReferralSetStats(ctx, set.ID, &wantEpoch, nil)
 		require.NoError(t, err)
-		assert.Equal(t, want, got)
+		require.NotNil(t, got)
+		assert.Equal(t, want, *got)
 	})
 
 	t.Run("Should return the stats for the most current and referee if no epoch and a referee is provided", func(t *testing.T) {
@@ -637,7 +639,8 @@ func TestReferralSets_GetReferralSetStats(t *testing.T) {
 		}
 		got, err := rs.GetReferralSetStats(ctx, set.ID, nil, &referee)
 		require.NoError(t, err)
-		assert.Equal(t, want, got)
+		require.NotNil(t, got)
+		assert.Equal(t, want, *got)
 	})
 
 	t.Run("Should return the stats for the specified epoch and referee if they are provided", func(t *testing.T) {
@@ -655,6 +658,7 @@ func TestReferralSets_GetReferralSetStats(t *testing.T) {
 		}
 		got, err := rs.GetReferralSetStats(ctx, set.ID, &want.AtEpoch, &referee)
 		require.NoError(t, err)
-		assert.Equal(t, want, got)
+		require.NotNil(t, got)
+		assert.Equal(t, want, *got)
 	})
 }

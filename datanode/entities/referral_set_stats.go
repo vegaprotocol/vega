@@ -51,6 +51,10 @@ func ReferralSetStatsFromProto(protos *eventspb.ReferralSetStatsUpdated, vegaTim
 }
 
 func (rss *ReferralSetStats) ToProto() *v2.ReferralSetStats {
+	if rss == nil {
+		return nil
+	}
+
 	return &v2.ReferralSetStats{
 		SetId:                                 rss.SetID.String(),
 		AtEpoch:                               rss.AtEpoch,
