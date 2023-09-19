@@ -73,9 +73,11 @@ func VolumeDiscountProgram(
 		row := volumeDiscountRow{row: r}
 		vdp.ID = row.id()
 		vdp.WindowLength = row.windowLength()
-		vdp.EndOfProgramTimestamp = time.Unix(int64(row.closingTimestamp()), 0)
-
-		// get the name of the tier group and look it up
+		if row.closingTimestamp() == 0 {
+			vdp.EndOfProgramTimestamp = time.Time{}
+		} else {
+			vdp.EndOfProgramTimestamp = time.Unix(int64(row.closingTimestamp()), 0)
+		}
 		tierName := row.tiers()
 		if tier := tiers[tierName]; tier != nil {
 			vdp.VolumeBenefitTiers = tier

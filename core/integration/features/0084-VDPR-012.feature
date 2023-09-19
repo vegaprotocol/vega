@@ -29,7 +29,7 @@ Feature: At the start of an epoch, each parties volume_discount_factor is reeval
       | 3000     | 0.010  |
     And the volume discount program:
       | id       | tiers    | closing timestamp | window length |
-      | id1      | VDP-01   | 9999999990        | 4             |
+      | id1      | VDP-01   | 0                 | 4             |
 
     And the following assets are registered:
       | id  | decimal places |
