@@ -2960,6 +2960,19 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		return nil, formatE(fmt.Errorf("can't parse quadratic slippage factor: %s", mktProto.QuadraticSlippageFactor), err)
 	}
 
+	fundingPaymentPerUnitPosition := num.DecimalZero()
+	if perpData := mktData.ProductData.GetPerpetualData(); perpData != nil {
+		fundingPaymentPerUnitPosition, err = num.DecimalFromString(perpData.FundingPayment)
+		if err != nil {
+			return nil, formatE(fmt.Errorf("can't parse funding payment from perpetual product data: %s", perpData.FundingPayment), err)
+		}
+	}
+
+	fundingPaymentScaled, err := t.scaleDecimalFromMarketToAssetPrice(ctx, mkt, fundingPaymentPerUnitPosition)
+	if err != nil {
+		return nil, formatE(fmt.Errorf("failed to scale funding payment from market to asset"), err)
+	}
+
 	marginEstimate := t.computeMarginRange(
 		req.MarketId,
 		req.OpenVolume,
@@ -2970,9 +2983,11 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		linearSlippageFactor,
 		quadraticSlippageFactor,
 		rf,
+		fundingPaymentScaled,
 		auction,
 		asset,
-		mkt.TradableInstrument.MarginCalculator.ScalingFactors)
+		mkt.TradableInstrument.MarginCalculator.ScalingFactors,
+	)
 
 	var liquidationEstimate *v2.LiquidationEstimate
 	if req.CollateralAvailable != nil && len(*req.CollateralAvailable) > 0 {
@@ -2985,6 +3000,7 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 			positionFactor,
 			linearSlippageFactor,
 			quadraticSlippageFactor,
+			fundingPaymentScaled,
 			rf)
 
 		if err != nil {
@@ -3004,12 +3020,13 @@ func (t *TradingDataServiceV2) computeMarginRange(
 	buyOrders, sellOrders []*risk.OrderInfo,
 	marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor num.Decimal,
 	riskFactors entities.RiskFactor,
+	fundingPaymntPerUnitPosition num.Decimal,
 	auction bool,
 	asset string,
 	scalingFactors *vega.ScalingFactors,
 ) *v2.MarginEstimate {
-	worst := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short, auction)
-	best := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short, auction)
+	worst := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short, fundingPaymntPerUnitPosition, auction)
+	best := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short, fundingPaymntPerUnitPosition, auction)
 
 	return &v2.MarginEstimate{
 		WorstCase: implyMarginLevels(worst, scalingFactors, "", market, asset),
@@ -3021,15 +3038,16 @@ func (t *TradingDataServiceV2) computeLiquidationPriceRange(
 	collateralAvailable num.Decimal,
 	openVolume int64,
 	buyOrders, sellOrders []*risk.OrderInfo,
-	marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor num.Decimal,
+	marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, fundingPaymntPerUnitPosition num.Decimal,
 	riskFactors entities.RiskFactor,
+
 ) (*v2.LiquidationEstimate, error) {
-	bPositionOnly, bWithBuy, bWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short)
+	bPositionOnly, bWithBuy, bWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short, fundingPaymntPerUnitPosition)
 	if err != nil {
 		return nil, err
 	}
 
-	wPositionOnly, wWithBuy, wWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short)
+	wPositionOnly, wWithBuy, wWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short, fundingPaymntPerUnitPosition)
 	if err != nil {
 		return nil, err
 	}
