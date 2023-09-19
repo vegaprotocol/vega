@@ -124,3 +124,12 @@ func PartyHasTheFollowingDiscountFactor(party, discountFactor string, vde *volum
 	}
 	return nil
 }
+
+func PartyHasTheFollowingTakerNotional(party, notional string, vde *volumediscount.Engine) error {
+	tn := vde.TakerNotionalForParty(types.PartyID(party))
+	tn2, _ := num.DecimalFromString(notional)
+	if !tn.Equal(tn2) {
+		return fmt.Errorf("%s has the taker notional of %s when we expected %s", party, tn, tn2)
+	}
+	return nil
+}
