@@ -193,6 +193,7 @@
 - [9263](https://github.com/vegaprotocol/vega/issues/9263) - save dispatch strategy details in the database and allow for its retrieval.
 - [9374](https://github.com/vegaprotocol/vega/issues/9374) - `ListGovernanceData` returns an error instead of results.
 - [9461](https://github.com/vegaprotocol/vega/issues/9461) - Do not make SLA related transfers for 0 amount.
+- [9462](https://github.com/vegaprotocol/vega/issues/9462) - Add missing proposal error `enum` values to the database.
 
 ## 0.72.1
 
