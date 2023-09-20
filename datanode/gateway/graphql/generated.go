@@ -154,6 +154,7 @@ type ResolverRoot interface {
 	UpdateNetworkParameter() UpdateNetworkParameterResolver
 	UpdateSpotMarket() UpdateSpotMarketResolver
 	UpdateSpotMarketConfiguration() UpdateSpotMarketConfigurationResolver
+	VolumeDiscountProgram() VolumeDiscountProgramResolver
 	Vote() VoteResolver
 	Withdrawal() WithdrawalResolver
 	DateRange() DateRangeResolver
@@ -1778,6 +1779,7 @@ type ComplexityRoot struct {
 		BalanceChanges                     func(childComplexity int, filter *v2.AccountFilter, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		CoreSnapshots                      func(childComplexity int, pagination *v2.Pagination) int
 		CurrentReferralProgram             func(childComplexity int) int
+		CurrentVolumeDiscountProgram       func(childComplexity int) int
 		Deposit                            func(childComplexity int, id string) int
 		Deposits                           func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		Entities                           func(childComplexity int, txHash string) int
@@ -2452,6 +2454,15 @@ type ComplexityRoot struct {
 		VolumeDiscountFactor              func(childComplexity int) int
 	}
 
+	VolumeDiscountProgram struct {
+		BenefitTiers          func(childComplexity int) int
+		EndOfProgramTimestamp func(childComplexity int) int
+		EndedAt               func(childComplexity int) int
+		Id                    func(childComplexity int) int
+		Version               func(childComplexity int) int
+		WindowLength          func(childComplexity int) int
+	}
+
 	Vote struct {
 		Datetime               func(childComplexity int) int
 		EquityLikeShareWeight  func(childComplexity int) int
@@ -2982,6 +2993,7 @@ type QueryResolver interface {
 	BalanceChanges(ctx context.Context, filter *v2.AccountFilter, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedBalanceConnection, error)
 	CoreSnapshots(ctx context.Context, pagination *v2.Pagination) (*v2.CoreSnapshotConnection, error)
 	CurrentReferralProgram(ctx context.Context) (*v2.ReferralProgram, error)
+	CurrentVolumeDiscountProgram(ctx context.Context) (*v2.VolumeDiscountProgram, error)
 	Deposit(ctx context.Context, id string) (*vega.Deposit, error)
 	Deposits(ctx context.Context, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.DepositsConnection, error)
 	Entities(ctx context.Context, txHash string) (*v2.ListEntitiesResponse, error)
@@ -3243,6 +3255,11 @@ type UpdateSpotMarketConfigurationResolver interface {
 	TargetStakeParameters(ctx context.Context, obj *vega.UpdateSpotMarketConfiguration) (*TargetStakeParameters, error)
 	RiskParameters(ctx context.Context, obj *vega.UpdateSpotMarketConfiguration) (RiskModel, error)
 	LiquiditySLAParams(ctx context.Context, obj *vega.UpdateSpotMarketConfiguration) (*vega.LiquiditySLAParameters, error)
+}
+type VolumeDiscountProgramResolver interface {
+	Version(ctx context.Context, obj *v2.VolumeDiscountProgram) (int, error)
+
+	WindowLength(ctx context.Context, obj *v2.VolumeDiscountProgram) (int, error)
 }
 type VoteResolver interface {
 	Party(ctx context.Context, obj *vega.Vote) (*vega.Party, error)
@@ -10176,6 +10193,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.CurrentReferralProgram(childComplexity), true
 
+	case "Query.currentVolumeDiscountProgram":
+		if e.complexity.Query.CurrentVolumeDiscountProgram == nil {
+			break
+		}
+
+		return e.complexity.Query.CurrentVolumeDiscountProgram(childComplexity), true
+
 	case "Query.deposit":
 		if e.complexity.Query.Deposit == nil {
 			break
@@ -13370,6 +13394,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.VolumeBenefitTier.VolumeDiscountFactor(childComplexity), true
+
+	case "VolumeDiscountProgram.benefitTiers":
+		if e.complexity.VolumeDiscountProgram.BenefitTiers == nil {
+			break
+		}
+
+		return e.complexity.VolumeDiscountProgram.BenefitTiers(childComplexity), true
+
+	case "VolumeDiscountProgram.endOfProgramTimestamp":
+		if e.complexity.VolumeDiscountProgram.EndOfProgramTimestamp == nil {
+			break
+		}
+
+		return e.complexity.VolumeDiscountProgram.EndOfProgramTimestamp(childComplexity), true
+
+	case "VolumeDiscountProgram.endedAt":
+		if e.complexity.VolumeDiscountProgram.EndedAt == nil {
+			break
+		}
+
+		return e.complexity.VolumeDiscountProgram.EndedAt(childComplexity), true
+
+	case "VolumeDiscountProgram.id":
+		if e.complexity.VolumeDiscountProgram.Id == nil {
+			break
+		}
+
+		return e.complexity.VolumeDiscountProgram.Id(childComplexity), true
+
+	case "VolumeDiscountProgram.version":
+		if e.complexity.VolumeDiscountProgram.Version == nil {
+			break
+		}
+
+		return e.complexity.VolumeDiscountProgram.Version(childComplexity), true
+
+	case "VolumeDiscountProgram.windowLength":
+		if e.complexity.VolumeDiscountProgram.WindowLength == nil {
+			break
+		}
+
+		return e.complexity.VolumeDiscountProgram.WindowLength(childComplexity), true
 
 	case "Vote.datetime":
 		if e.complexity.Vote.Datetime == nil {
@@ -62638,6 +62704,61 @@ func (ec *executionContext) fieldContext_Query_currentReferralProgram(ctx contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_currentVolumeDiscountProgram(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_currentVolumeDiscountProgram(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().CurrentVolumeDiscountProgram(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.VolumeDiscountProgram)
+	fc.Result = res
+	return ec.marshalOVolumeDiscountProgram2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐVolumeDiscountProgram(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_currentVolumeDiscountProgram(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_VolumeDiscountProgram_id(ctx, field)
+			case "version":
+				return ec.fieldContext_VolumeDiscountProgram_version(ctx, field)
+			case "benefitTiers":
+				return ec.fieldContext_VolumeDiscountProgram_benefitTiers(ctx, field)
+			case "endOfProgramTimestamp":
+				return ec.fieldContext_VolumeDiscountProgram_endOfProgramTimestamp(ctx, field)
+			case "windowLength":
+				return ec.fieldContext_VolumeDiscountProgram_windowLength(ctx, field)
+			case "endedAt":
+				return ec.fieldContext_VolumeDiscountProgram_endedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type VolumeDiscountProgram", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_deposit(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_deposit(ctx, field)
 	if err != nil {
@@ -83693,9 +83814,9 @@ func (ec *executionContext) _UpdateVolumeDiscountProgram_benefitTiers(ctx contex
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*VolumeBenefitTier)
+	res := resTmp.([]*vega.VolumeBenefitTier)
 	fc.Result = res
-	return ec.marshalNVolumeBenefitTier2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐVolumeBenefitTierᚄ(ctx, field.Selections, res)
+	return ec.marshalNVolumeBenefitTier2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVolumeBenefitTierᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_UpdateVolumeDiscountProgram_benefitTiers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -83805,7 +83926,7 @@ func (ec *executionContext) fieldContext_UpdateVolumeDiscountProgram_windowLengt
 	return fc, nil
 }
 
-func (ec *executionContext) _VolumeBenefitTier_minimumRunningNotionalTakerVolume(ctx context.Context, field graphql.CollectedField, obj *VolumeBenefitTier) (ret graphql.Marshaler) {
+func (ec *executionContext) _VolumeBenefitTier_minimumRunningNotionalTakerVolume(ctx context.Context, field graphql.CollectedField, obj *vega.VolumeBenefitTier) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_VolumeBenefitTier_minimumRunningNotionalTakerVolume(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -83849,7 +83970,7 @@ func (ec *executionContext) fieldContext_VolumeBenefitTier_minimumRunningNotiona
 	return fc, nil
 }
 
-func (ec *executionContext) _VolumeBenefitTier_volumeDiscountFactor(ctx context.Context, field graphql.CollectedField, obj *VolumeBenefitTier) (ret graphql.Marshaler) {
+func (ec *executionContext) _VolumeBenefitTier_volumeDiscountFactor(ctx context.Context, field graphql.CollectedField, obj *vega.VolumeBenefitTier) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_VolumeBenefitTier_volumeDiscountFactor(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -83888,6 +84009,273 @@ func (ec *executionContext) fieldContext_VolumeBenefitTier_volumeDiscountFactor(
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VolumeDiscountProgram_id(ctx context.Context, field graphql.CollectedField, obj *v2.VolumeDiscountProgram) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VolumeDiscountProgram_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VolumeDiscountProgram_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VolumeDiscountProgram",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VolumeDiscountProgram_version(ctx context.Context, field graphql.CollectedField, obj *v2.VolumeDiscountProgram) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VolumeDiscountProgram_version(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.VolumeDiscountProgram().Version(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VolumeDiscountProgram_version(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VolumeDiscountProgram",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VolumeDiscountProgram_benefitTiers(ctx context.Context, field graphql.CollectedField, obj *v2.VolumeDiscountProgram) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VolumeDiscountProgram_benefitTiers(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BenefitTiers, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.VolumeBenefitTier)
+	fc.Result = res
+	return ec.marshalNVolumeBenefitTier2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVolumeBenefitTierᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VolumeDiscountProgram_benefitTiers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VolumeDiscountProgram",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "minimumRunningNotionalTakerVolume":
+				return ec.fieldContext_VolumeBenefitTier_minimumRunningNotionalTakerVolume(ctx, field)
+			case "volumeDiscountFactor":
+				return ec.fieldContext_VolumeBenefitTier_volumeDiscountFactor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type VolumeBenefitTier", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VolumeDiscountProgram_endOfProgramTimestamp(ctx context.Context, field graphql.CollectedField, obj *v2.VolumeDiscountProgram) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VolumeDiscountProgram_endOfProgramTimestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndOfProgramTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VolumeDiscountProgram_endOfProgramTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VolumeDiscountProgram",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VolumeDiscountProgram_windowLength(ctx context.Context, field graphql.CollectedField, obj *v2.VolumeDiscountProgram) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VolumeDiscountProgram_windowLength(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.VolumeDiscountProgram().WindowLength(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VolumeDiscountProgram_windowLength(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VolumeDiscountProgram",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VolumeDiscountProgram_endedAt(ctx context.Context, field graphql.CollectedField, obj *v2.VolumeDiscountProgram) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_VolumeDiscountProgram_endedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int64)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖint64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_VolumeDiscountProgram_endedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VolumeDiscountProgram",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -102222,6 +102610,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "currentVolumeDiscountProgram":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_currentVolumeDiscountProgram(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "deposit":
 			field := field
 
@@ -108923,7 +109331,7 @@ func (ec *executionContext) _UpdateVolumeDiscountProgram(ctx context.Context, se
 
 var volumeBenefitTierImplementors = []string{"VolumeBenefitTier"}
 
-func (ec *executionContext) _VolumeBenefitTier(ctx context.Context, sel ast.SelectionSet, obj *VolumeBenefitTier) graphql.Marshaler {
+func (ec *executionContext) _VolumeBenefitTier(ctx context.Context, sel ast.SelectionSet, obj *vega.VolumeBenefitTier) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, volumeBenefitTierImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -108945,6 +109353,92 @@ func (ec *executionContext) _VolumeBenefitTier(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var volumeDiscountProgramImplementors = []string{"VolumeDiscountProgram"}
+
+func (ec *executionContext) _VolumeDiscountProgram(ctx context.Context, sel ast.SelectionSet, obj *v2.VolumeDiscountProgram) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, volumeDiscountProgramImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("VolumeDiscountProgram")
+		case "id":
+
+			out.Values[i] = ec._VolumeDiscountProgram_id(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "version":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._VolumeDiscountProgram_version(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "benefitTiers":
+
+			out.Values[i] = ec._VolumeDiscountProgram_benefitTiers(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "endOfProgramTimestamp":
+
+			out.Values[i] = ec._VolumeDiscountProgram_endOfProgramTimestamp(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "windowLength":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._VolumeDiscountProgram_windowLength(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "endedAt":
+
+			out.Values[i] = ec._VolumeDiscountProgram_endedAt(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -113762,7 +114256,7 @@ func (ec *executionContext) marshalNValidatorStatus2codeᚗvegaprotocolᚗioᚋv
 	return res
 }
 
-func (ec *executionContext) marshalNVolumeBenefitTier2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐVolumeBenefitTierᚄ(ctx context.Context, sel ast.SelectionSet, v []*VolumeBenefitTier) graphql.Marshaler {
+func (ec *executionContext) marshalNVolumeBenefitTier2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVolumeBenefitTierᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.VolumeBenefitTier) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -113786,7 +114280,7 @@ func (ec *executionContext) marshalNVolumeBenefitTier2ᚕᚖcodeᚗvegaprotocol�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNVolumeBenefitTier2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐVolumeBenefitTier(ctx, sel, v[i])
+			ret[i] = ec.marshalNVolumeBenefitTier2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVolumeBenefitTier(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -113806,7 +114300,7 @@ func (ec *executionContext) marshalNVolumeBenefitTier2ᚕᚖcodeᚗvegaprotocol�
 	return ret
 }
 
-func (ec *executionContext) marshalNVolumeBenefitTier2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐVolumeBenefitTier(ctx context.Context, sel ast.SelectionSet, v *VolumeBenefitTier) graphql.Marshaler {
+func (ec *executionContext) marshalNVolumeBenefitTier2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVolumeBenefitTier(ctx context.Context, sel ast.SelectionSet, v *vega.VolumeBenefitTier) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -119469,6 +119963,13 @@ func (ec *executionContext) marshalOTransferType2ᚕcodeᚗvegaprotocolᚗioᚋv
 	wg.Wait()
 
 	return ret
+}
+
+func (ec *executionContext) marshalOVolumeDiscountProgram2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐVolumeDiscountProgram(ctx context.Context, sel ast.SelectionSet, v *v2.VolumeDiscountProgram) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._VolumeDiscountProgram(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVote(ctx context.Context, sel ast.SelectionSet, v []*vega.Vote) graphql.Marshaler {

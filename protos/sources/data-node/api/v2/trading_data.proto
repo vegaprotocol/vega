@@ -807,6 +807,13 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referral program"};
   }
 
+  // Get current volume discount program
+  //
+  // Get the on-going volume discount program.
+  rpc GetCurrentVolumeDiscountProgram(GetCurrentVolumeDiscountProgramRequest) returns (GetCurrentVolumeDiscountProgramResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Volume discount program"};
+  }
+
   // Export network history as CSV
   //
   // Export CSV table data from network history between two block heights.
@@ -3936,4 +3943,35 @@ message GetReferralFeeStatsRequest {
 message GetReferralFeeStatsResponse {
   // Fee statistics for the given market or asset, and epoch.
   vega.events.v1.FeeStats fee_stats = 1;
+}
+
+// Request to get the current referral program
+message GetCurrentVolumeDiscountProgramRequest {}
+
+// Response containing the current referral program
+message GetCurrentVolumeDiscountProgramResponse {
+  // Volume discount program currently activated on the network.
+  VolumeDiscountProgram current_volume_discount_program = 1;
+}
+
+// Volume discount program for reporting purposes differs slightly from the volume discount program
+// message in the volume discount program started and volume discount updated events, as it includes
+// an optional timestamp that is set when the program has ended.
+message VolumeDiscountProgram {
+  // Incremental version of the program. It is incremented after each program
+  // update.
+  uint64 version = 1;
+  // Unique ID generated from the proposal that created this program.
+  string id = 2;
+  // Defined benefit tiers in increasing order. First element will give Tier 1,
+  // second element will give Tier 2, and so on. Determines the level of
+  // benefit a party can expect based on performance criteria.
+  repeated vega.VolumeBenefitTier benefit_tiers = 3;
+  // Timestamp as Unix time in seconds after which when the current epoch ends, the
+  // program's status will become STATE_CLOSED and benefits will be disabled.
+  int64 end_of_program_timestamp = 4;
+  // Number of epochs over which to evaluate a referral set's running volume.
+  uint64 window_length = 5;
+  // Timestamp as Unix time in nanoseconds at which the program ended.
+  optional int64 ended_at = 6;
 }

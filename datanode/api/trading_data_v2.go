@@ -69,54 +69,55 @@ var httpBodyChunkSize = 1024 * 1024
 
 type TradingDataServiceV2 struct {
 	v2.UnimplementedTradingDataServiceServer
-	config                     Config
-	log                        *logging.Logger
-	eventService               EventService
-	orderService               *service.Order
-	networkLimitsService       *service.NetworkLimits
-	marketDataService          *service.MarketData
-	tradeService               *service.Trade
-	multiSigService            *service.MultiSig
-	notaryService              *service.Notary
-	assetService               *service.Asset
-	candleService              *candlesv2.Svc
-	marketsService             *service.Markets
-	partyService               *service.Party
-	riskService                *service.Risk
-	positionService            *service.Position
-	accountService             *service.Account
-	rewardService              *service.Reward
-	depositService             *service.Deposit
-	withdrawalService          *service.Withdrawal
-	oracleSpecService          *service.OracleSpec
-	oracleDataService          *service.OracleData
-	liquidityProvisionService  *service.LiquidityProvision
-	governanceService          *service.Governance
-	transfersService           *service.Transfer
-	delegationService          *service.Delegation
-	marketService              *service.Markets
-	marketDepthService         *service.MarketDepth
-	nodeService                *service.Node
-	epochService               *service.Epoch
-	riskFactorService          *service.RiskFactor
-	networkParameterService    *service.NetworkParameter
-	checkpointService          *service.Checkpoint
-	stakeLinkingService        *service.StakeLinking
-	ledgerService              *service.Ledger
-	keyRotationService         *service.KeyRotations
-	ethereumKeyRotationService *service.EthereumKeyRotation
-	blockService               BlockService
-	protocolUpgradeService     *service.ProtocolUpgrade
-	NetworkHistoryService      NetworkHistoryService
-	coreSnapshotService        *service.SnapshotData
-	stopOrderService           *service.StopOrders
-	fundingPeriodService       *service.FundingPeriods
-	partyActivityStreak        *service.PartyActivityStreak
+	config                       Config
+	log                          *logging.Logger
+	eventService                 EventService
+	orderService                 *service.Order
+	networkLimitsService         *service.NetworkLimits
+	marketDataService            *service.MarketData
+	tradeService                 *service.Trade
+	multiSigService              *service.MultiSig
+	notaryService                *service.Notary
+	assetService                 *service.Asset
+	candleService                *candlesv2.Svc
+	marketsService               *service.Markets
+	partyService                 *service.Party
+	riskService                  *service.Risk
+	positionService              *service.Position
+	accountService               *service.Account
+	rewardService                *service.Reward
+	depositService               *service.Deposit
+	withdrawalService            *service.Withdrawal
+	oracleSpecService            *service.OracleSpec
+	oracleDataService            *service.OracleData
+	liquidityProvisionService    *service.LiquidityProvision
+	governanceService            *service.Governance
+	transfersService             *service.Transfer
+	delegationService            *service.Delegation
+	marketService                *service.Markets
+	marketDepthService           *service.MarketDepth
+	nodeService                  *service.Node
+	epochService                 *service.Epoch
+	riskFactorService            *service.RiskFactor
+	networkParameterService      *service.NetworkParameter
+	checkpointService            *service.Checkpoint
+	stakeLinkingService          *service.StakeLinking
+	ledgerService                *service.Ledger
+	keyRotationService           *service.KeyRotations
+	ethereumKeyRotationService   *service.EthereumKeyRotation
+	blockService                 BlockService
+	protocolUpgradeService       *service.ProtocolUpgrade
+	NetworkHistoryService        NetworkHistoryService
+	coreSnapshotService          *service.SnapshotData
+	stopOrderService             *service.StopOrders
+	fundingPeriodService         *service.FundingPeriods
+	partyActivityStreak          *service.PartyActivityStreak
 	fundingPaymentService      *service.FundingPayment
-	referralProgramService     *service.ReferralPrograms
-	referralSetsService        *service.ReferralSets
-	teamsService               *service.Teams
-	referralFeeStatsService    *service.ReferralFeeStats
+	referralProgramService       *service.ReferralPrograms
+	referralSetsService          *service.ReferralSets
+	teamsService                 *service.Teams
+	referralFeeStatsService      *service.ReferralFeeStats
+	volumeDiscountProgramService *service.VolumeDiscountPrograms
 }
 
 func (t *TradingDataServiceV2) ListFundingPayments(ctx context.Context, req *v2.ListFundingPaymentsRequest) (*v2.ListFundingPaymentsResponse, error) {
@@ -4403,5 +4404,19 @@ func (t *TradingDataServiceV2) GetReferralFeeStats(ctx context.Context, req *v2.
 
 	return &v2.GetReferralFeeStatsResponse{
 		FeeStats: stats.ToProto(),
+	}, nil
+}
+
+func (t *TradingDataServiceV2) GetCurrentVolumeDiscountProgram(ctx context.Context, _ *v2.GetCurrentVolumeDiscountProgramRequest) (
+	*v2.GetCurrentVolumeDiscountProgramResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetCurrentVolumeDiscountProgram")()
+	volumeDiscountProgram, err := t.volumeDiscountProgramService.GetCurrentVolumeDiscountProgram(ctx)
+	if err != nil {
+		return nil, formatE(ErrGetCurrentVolumeDiscountProgram, err)
+	}
+
+	return &v2.GetCurrentVolumeDiscountProgramResponse{
+		CurrentVolumeDiscountProgram: volumeDiscountProgram.ToProto(),
 	}, nil
 }

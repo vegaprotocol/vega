@@ -672,3 +672,7 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPaymentEdge
   FundingPaymentConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPaymentConnection
+  VolumeBenefitTier:
+    model: code.vegaprotocol.io/vega/protos/vega.VolumeBenefitTier
+  VolumeDiscountProgram:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.VolumeDiscountProgram

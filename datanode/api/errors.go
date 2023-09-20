@@ -306,10 +306,12 @@ var (
 	ErrGetReferralFeeStats       = errors.New("failed to get current referral fee stats")
 
 	// Teams.
-	ErrTeamNotFound           = errors.New("failed to retrieve team")
 	ErrListTeams              = errors.New("failed to list teams")
 	ErrListTeamReferees       = errors.New("failed to list team referees")
 	ErrListTeamRefereeHistory = errors.New("failed to list team referee history")
+
+	// Volume discount Programs.
+	ErrGetCurrentVolumeDiscountProgram = errors.New("failed to get current volume discount program")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

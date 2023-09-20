@@ -546,6 +546,10 @@ func (r *VegaResolverRoot) FundingPayment() FundingPaymentResolver {
 	return (*fundingPaymentResolver)(r)
 }
 
+func (r *VegaResolverRoot) VolumeDiscountProgram() VolumeDiscountProgramResolver {
+	return (*volumeDiscountProgramResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -1584,6 +1588,15 @@ func (r *myQueryResolver) CurrentReferralProgram(ctx context.Context) (*v2.Refer
 	}
 
 	return resp.CurrentReferralProgram, nil
+}
+
+func (r *myQueryResolver) CurrentVolumeDiscountProgram(ctx context.Context) (*v2.VolumeDiscountProgram, error) {
+	resp, err := r.tradingDataClientV2.GetCurrentVolumeDiscountProgram(ctx, &v2.GetCurrentVolumeDiscountProgramRequest{})
+	if err != nil {
+		return &v2.VolumeDiscountProgram{}, err
+	}
+
+	return resp.CurrentVolumeDiscountProgram, nil
 }
 
 func (r *myQueryResolver) ReferralSets(ctx context.Context, id, referrer, referee *string, pagination *v2.Pagination) (*v2.ReferralSetConnection, error) {
