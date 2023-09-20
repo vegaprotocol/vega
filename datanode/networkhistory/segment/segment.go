@@ -158,7 +158,6 @@ func (s Segments[T]) AllContigousHistories() []ContiguousHistory[T] {
 
 func (s Segments[T]) ContiguousHistoryInRange(fromHeight int64, toHeight int64) (ContiguousHistory[T], error) {
 	c := s.AllContigousHistories()
-	var nf, nt int64
 	for _, ch := range c {
 		if ch.HeightFrom <= fromHeight && ch.HeightTo >= toHeight {
 			fromSegmentFound := false
