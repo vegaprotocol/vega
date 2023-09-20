@@ -554,6 +554,8 @@ type Query {
     orders: [OrderInfo!]
     "Optional argument specifying collateral available for the position, if provided then response will contain the liquidation price estimate"
     collateralAvailable: String
+    "Optional argument specifying if liquidation price estimates should be scaled to market decimal places, returned in asset decimal places by default"
+    scaleLiquidationPriceToMarketDecimals: Boolean
   ): PositionEstimate
 
   "Query for historic ethereum key rotations"

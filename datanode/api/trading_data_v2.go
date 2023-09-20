@@ -3006,7 +3006,7 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 			return nil, err
 		}
 
-		if req.ScaleLiquidationToMarketDecimals != nil && *req.ScaleLiquidationToMarketDecimals {
+		if req.ScaleLiquidationPriceToMarketDecimals != nil && *req.ScaleLiquidationPriceToMarketDecimals {
 			bPositionOnly = t.scaleDecimalFromAssetToMarketPrice(bPositionOnly, dPriceFactor)
 			bWithBuy = t.scaleDecimalFromAssetToMarketPrice(bWithBuy, dPriceFactor)
 			bWithSell = t.scaleDecimalFromAssetToMarketPrice(bWithSell, dPriceFactor)

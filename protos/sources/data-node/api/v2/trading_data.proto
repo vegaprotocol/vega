@@ -3514,7 +3514,7 @@ message EstimatePositionRequest {
   // Collateral available needs to be provided scaled to asset decimal places. Liquidation price returned is scaled to asset decimal places by default.
   optional string collateral_available = 4;
   // Argument specifying if the liquidation price estimates should be scaled to market decimal places, by default they are scaled to asset decimal places.
-  optional bool scale_liquidation_to_market_decimals = 5;
+  optional bool scale_liquidation_price_to_market_decimals = 5;
 }
 
 // Response for the estimate of the margin level and, if available collateral was provided in the request, liquidation price for the specified position.
