@@ -100,7 +100,7 @@ Feature: Evaluating trader activity
     Given the activity streaks at epoch "1" should be:
       | party   | active for   | inactive for   | reward multiplier | vesting multiplier |
       | trader1 | <active for> | <inactive for> | <multipliers>     | <multipliers>      |
-    
+
     Examples:
       | maker   | taker   | size | active for | inactive for | multipliers |
       | aux1    | trader1 | 1    | 0          | 1            | 1           |
@@ -142,7 +142,7 @@ Feature: Evaluating trader activity
     And the activity streaks at epoch "2" should be:
       | party   | active for   | inactive for   | reward multiplier | vesting multiplier |
       | trader1 | <active for> | <inactive for> | <multipliers>     | <multipliers>      |
-    
+
     Examples:
       | maker   | taker   | size | active for | inactive for | multipliers |
       | aux1    | trader1 | 1    | 0          | 1            | 1           |
@@ -177,7 +177,7 @@ Feature: Evaluating trader activity
     Then the activity streaks at epoch <epochs> should be:
       | party   | active for   | inactive for   | reward multiplier | vesting multiplier |
       | trader1 | <active for> | <inactive for> | <multipliers>     | <multipliers>      |
-    
+
     Examples:
       | trader side | counterparty side | epochs | size | active for | inactive for | multipliers |
       | buy         | sell              | "1"    | 1    | 0          | 1            | 1           |
@@ -211,7 +211,7 @@ Feature: Evaluating trader activity
     Then the activity streaks at epoch "1" should be:
       | party   | active for | inactive for | reward multiplier | vesting multiplier |
       | trader1 | 1          | 0            | 2                 | 2                  |
-    
+
     Examples:
       | min open volume  | min trade volume |
       | 10000            | 1000000000000000 |
@@ -244,7 +244,7 @@ Feature: Evaluating trader activity
     Then the activity streaks at epoch <forward to epoch> should be:
       | party   | active for   | inactive for   | reward multiplier | vesting multiplier |
       | trader1 | <active for> | <inactive for> | <multipliers>     | <multipliers>      |
-    
+
     Examples:
       | param | forward to epoch | active for | inactive for | multipliers |
       | 1     | "2"              | 0          | 1            | 1           |

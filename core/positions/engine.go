@@ -78,8 +78,11 @@ type openVolumeRecord struct {
 // RecordLatest will save the new openInterest for a party
 // but also register it as the lowest if it goes below
 // the existing lowest openInterest.
-func (o *openVolumeRecord) RecordLatest(buy, sell int64) {
-	new := buy + sell
+func (o *openVolumeRecord) RecordLatest(size int64) {
+	new := size
+	if size < 0 {
+		new = -size
+	}
 
 	o.Latest = uint64(new)
 	if o.Highest < uint64(new) {
@@ -219,7 +222,6 @@ func (e *Engine) RegisterOrder(ctx context.Context, order *types.Order) *MarketP
 
 	pos.RegisterOrder(e.log, order)
 	e.positionUpdated(ctx, pos)
-	e.partiesHighestVolume[pos.partyID].RecordLatest(pos.buy, pos.sell)
 	return pos
 }
 
@@ -233,7 +235,6 @@ func (e *Engine) UnregisterOrder(ctx context.Context, order *types.Order) *Marke
 	}
 	pos.UnregisterOrder(e.log, order)
 	e.positionUpdated(ctx, pos)
-	e.partiesHighestVolume[pos.partyID].RecordLatest(pos.buy, pos.sell)
 	return pos
 }
 
@@ -249,7 +250,6 @@ func (e *Engine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.
 
 	pos.AmendOrder(e.log, originalOrder, newOrder)
 	e.positionUpdated(ctx, pos)
-	e.partiesHighestVolume[pos.partyID].RecordLatest(pos.buy, pos.sell)
 	return pos
 }
 
@@ -296,8 +296,8 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade, passiveO
 	}
 
 	pos.UpdateOnOrderChange(e.log, passiveOrder.Side, passiveOrder.Price, trade.Size, false)
-	e.partiesHighestVolume[pos.partyID].RecordLatest(pos.buy, pos.sell)
-	e.updatePartiesTradedSize(pos.partyID, pos.size)
+	e.partiesHighestVolume[pos.partyID].RecordLatest(pos.size)
+	e.updatePartiesTradedSize(pos.partyID, trade.Size)
 
 	e.positionUpdated(ctx, pos)
 
@@ -305,15 +305,8 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade, passiveO
 	return []events.MarketPosition{*cpy}
 }
 
-func (e *Engine) updatePartiesTradedSize(party string, size int64) {
-	newSize := size
-	if newSize < 0 {
-		newSize = -newSize
-	}
-
-	if e.partiesTradedSize[party] < uint64(newSize) {
-		e.partiesTradedSize[party] = uint64(newSize)
-	}
+func (e *Engine) updatePartiesTradedSize(party string, size uint64) {
+	e.partiesTradedSize[party] = e.partiesTradedSize[party] + size
 }
 
 // Update pushes the previous positions on the channel + the updated open volumes of buyer/seller.
@@ -370,10 +363,10 @@ func (e *Engine) Update(ctx context.Context, trade *types.Trade, passiveOrder, a
 	e.positionUpdated(ctx, buyer)
 	e.positionUpdated(ctx, seller)
 
-	e.partiesHighestVolume[buyer.partyID].RecordLatest(buyer.buy, buyer.sell)
-	e.updatePartiesTradedSize(buyer.partyID, buyer.size)
-	e.partiesHighestVolume[seller.partyID].RecordLatest(seller.buy, seller.sell)
-	e.updatePartiesTradedSize(seller.partyID, seller.size)
+	e.partiesHighestVolume[buyer.partyID].RecordLatest(buyer.size)
+	e.updatePartiesTradedSize(buyer.partyID, trade.Size)
+	e.partiesHighestVolume[seller.partyID].RecordLatest(seller.size)
+	e.updatePartiesTradedSize(seller.partyID, trade.Size)
 
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Positions Updated for trade",
@@ -596,26 +589,9 @@ func (e *Engine) GetPartiesLowestOpenInterestForEpoch() map[string]uint64 {
 
 // GetPartiesTradedVolumeForEpoch will return a map of parties
 // and their traded volume recorded during this epoch.
-func (e *Engine) GetPartiesTradedVolumeForEpoch() map[string]uint64 {
-	// first copy the highest position size during the epoch
-	out := maps.Clone(e.partiesTradedSize)
-
-	// now update every partiesTradedSize to the last position
-	// size known at the end of the epoch
-	for k := range e.partiesTradedSize {
-		pos, ok := e.positions[k]
-		if !ok {
-			delete(e.partiesTradedSize, k)
-			continue
-		}
-		if pos.size < 0 {
-			e.partiesTradedSize[k] = uint64(-pos.size)
-			continue
-		}
-		e.partiesTradedSize[k] = uint64(pos.size)
-	}
-
-	return out
+func (e *Engine) GetPartiesTradedVolumeForEpoch() (out map[string]uint64) {
+	out, e.partiesTradedSize = e.partiesTradedSize, map[string]uint64{}
+	return
 }
 
 func (e *Engine) remove(p *MarketPosition) {
