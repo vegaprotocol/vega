@@ -234,6 +234,7 @@ const (
 	VolumeDiscountProgramMaxVolumeDiscountFactor = "volumeDiscountProgram.maxVolumeDiscountFactor"
 
 	RewardsActivityStreakBenefitTiers          = "rewards.activityStreak.benefitTiers"
+	RewardsActivityStreakInactivityLimit       = "rewards.activityStreak.inactivityLimit"
 	RewardsActivityStreakMinQuantumOpenVolume  = "rewards.activityStreak.minQuantumOpenVolume"
 	RewardsActivityStreakMinQuantumTradeVolume = "rewards.activityStreak.minQuantumTradeVolume"
 )
@@ -257,6 +258,7 @@ var AllKeys = map[string]struct{}{
 	MinEpochsInTeamForMetricRewardEligibility:                    {},
 	RewardsVestingBonusMultiplier:                                {},
 	RewardsVestingMinimumTransfer:                                {},
+	RewardsActivityStreakInactivityLimit:                         {},
 	RewardsActivityStreakBenefitTiers:                            {},
 	RewardsActivityStreakMinQuantumOpenVolume:                    {},
 	RewardsActivityStreakMinQuantumTradeVolume:                   {},

@@ -79,6 +79,7 @@ type Engine struct {
 	benefitTiers                 []*types.ActivityStreakBenefitTier
 	minQuantumOpenNotionalVolume *num.Uint
 	minQuantumTradeVolume        *num.Uint
+	inactivityLimit              uint64
 }
 
 func New(
@@ -94,6 +95,13 @@ func New(
 		minQuantumOpenNotionalVolume: num.UintZero(),
 		minQuantumTradeVolume:        num.UintZero(),
 	}
+}
+
+func (e *Engine) OnRewardsActivityStreakInactivityLimit(
+	_ context.Context, v *num.Uint,
+) error {
+	e.inactivityLimit = v.Uint64()
+	return nil
 }
 
 func (e *Engine) OnMinQuantumOpenNationalVolumeUpdate(
@@ -248,7 +256,7 @@ func (e *Engine) updateStreak(party string, openVolume, tradeVolume *num.Uint) {
 	} else {
 		partyActivity.Inactive++
 
-		if partyActivity.Inactive >= partyActivity.Active {
+		if partyActivity.Inactive > e.inactivityLimit {
 			partyActivity.Active = 0
 			partyActivity.ResetMultipliers()
 		}
