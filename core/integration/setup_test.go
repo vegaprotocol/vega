@@ -479,5 +479,9 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Param:   netparams.RewardsVestingMinimumTransfer,
 			Watcher: execsetup.vesting.OnRewardVestingMinimumTransferUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.RewardsVestingBenefitTiers,
+			Watcher: execsetup.vesting.OnBenefitTiersUpdate,
+		},
 	)
 }

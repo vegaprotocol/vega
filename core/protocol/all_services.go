@@ -817,7 +817,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.vesting.OnRewardVestingBaseRateUpdate,
 		},
 		{
-			Param:   netparams.RewardsVestingBonusMultiplier,
+			Param:   netparams.RewardsVestingBenefitTiers,
 			Watcher: svcs.vesting.OnBenefitTiersUpdate,
 		},
 		{

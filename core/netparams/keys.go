@@ -219,7 +219,7 @@ const (
 
 	RewardsVestingBaseRate        = "rewards.vesting.baseRate"
 	RewardsVestingMinimumTransfer = "rewards.vesting.minimumTransfer"
-	RewardsVestingBonusMultiplier = "rewards.vesting.benefitTiers"
+	RewardsVestingBenefitTiers    = "rewards.vesting.benefitTiers"
 
 	// Referral program.
 	ReferralProgramMaxReferralTiers                        = "referralProgram.maxReferralTiers"
@@ -256,7 +256,7 @@ var AllKeys = map[string]struct{}{
 	GovernanceProposalVolumeDiscountProgramMinVoterBalance:       {},
 	ReferralProgramMaxReferralRewardProportion:                   {},
 	MinEpochsInTeamForMetricRewardEligibility:                    {},
-	RewardsVestingBonusMultiplier:                                {},
+	RewardsVestingBenefitTiers:                                   {},
 	RewardsVestingMinimumTransfer:                                {},
 	RewardsActivityStreakInactivityLimit:                         {},
 	RewardsActivityStreakBenefitTiers:                            {},
