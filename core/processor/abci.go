@@ -2264,7 +2264,7 @@ func (app *App) ApplyReferralCode(ctx context.Context, tx abci.Tx) error {
 	err := app.referralProgram.ApplyReferralCode(ctx, partyID, types.ReferralSetID(params.Id))
 
 	// It's OK to switch team if the party was already a referee.
-	if err != nil && err.Error() != referral.ErrIsAlreadyAReferrer(partyID).Error() {
+	if err != nil && err.Error() != referral.ErrIsAlreadyAReferee(partyID).Error() {
 		return fmt.Errorf("could not apply the referral code: %w", err)
 	}
 
