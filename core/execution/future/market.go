@@ -1233,6 +1233,7 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 			m.as.EndGovernanceSuspensionAuction()
 			m.leaveAuction(ctx, m.timeService.GetTimeNow())
 		} else {
+			m.as.EndGovernanceSuspensionAuction()
 			if m.as.GetState().Trigger == types.AuctionTriggerOpening {
 				m.mkt.State = types.MarketStatePending
 				m.mkt.TradingMode = types.MarketTradingModeOpeningAuction

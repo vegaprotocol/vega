@@ -111,12 +111,26 @@ func (a *AuctionState) StartGovernanceSuspensionAuction(t time.Time) {
 }
 
 func (a *AuctionState) EndGovernanceSuspensionAuction() {
-	a.mode = types.MarketTradingModeContinuous
-	a.trigger = types.AuctionTriggerUnspecified
-	a.start = false
-	a.stop = true
-	a.begin = nil
-	a.end = nil
+	if a.trigger == types.AuctionTriggerGovernanceSuspension {
+		// if there governance was the trigger and there is no extension, reset the state.
+		if a.extension == nil {
+			a.mode = types.MarketTradingModeContinuous
+			a.trigger = types.AuctionTriggerUnspecified
+			a.start = false
+			a.stop = true
+			a.begin = nil
+			a.end = nil
+		} else {
+			// if we're leaving the governance auction which was the trigger but there was an extension trigger -
+			// make the extension trigger the trigger and set the mode to monitoring auction.
+			a.mode = types.MarketTradingModeMonitoringAuction
+			a.trigger = *a.extension
+			a.extension = nil
+		}
+	} else if a.ExtensionTrigger() == types.AuctionTriggerGovernanceSuspension {
+		// if governance suspension was the extension trigger - just reset it.
+		a.extension = nil
+	}
 }
 
 // StartOpeningAuction - set the state to start an opening auction (used for testing)
