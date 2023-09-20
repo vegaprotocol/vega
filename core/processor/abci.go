@@ -1927,8 +1927,10 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 		case toEnact.IsMarketStateUpdate():
 			app.enactMarketStateUpdate(ctx, prop)
 		case toEnact.IsReferralProgramUpdate():
+			prop.State = types.ProposalStateEnacted
 			app.referralProgram.UpdateProgram(toEnact.ReferralProgramUpdate())
 		case toEnact.IsVolumeDiscountProgramUpdate():
+			prop.State = types.ProposalStateEnacted
 			app.volumeDiscountProgram.UpdateProgram(toEnact.VolumeDiscountProgramUpdate())
 		default:
 			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
