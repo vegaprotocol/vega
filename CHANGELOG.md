@@ -201,6 +201,7 @@
 - [9472](https://github.com/vegaprotocol/vega/issues/9472) - `ListTeams` returns error when filtering by referrer or team.
 - [9477](https://github.com/vegaprotocol/vega/issues/947y) - Teams data not persisted to the database.
 - [9412](https://github.com/vegaprotocol/vega/issues/9412) - Use vote close time for opening auction start time.
+- [9487](https://github.com/vegaprotocol/vega/issues/9487) - Reset auction trigger appropriately when market is resumed via governance.
 
 ## 0.72.1
 
