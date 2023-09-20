@@ -289,6 +289,7 @@ func testProcessEthereumOracleQueryWithBlockTimeBeforeInitialTime(t *testing.T) 
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
+	eov.ethCallEngine.EXPECT().GetEthTime(gomock.Any(), uint64(1)).Return(uint64(100), nil)
 	result := okResult()
 	eov.ethCallEngine.EXPECT().CallSpec(gomock.Any(), "testspec", uint64(1)).Return(result, nil)
 
