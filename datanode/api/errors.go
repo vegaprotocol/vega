@@ -214,7 +214,7 @@ var (
 	ErrCopyHistorySegmentToFile            = errors.New("failed to copy history segment to file")
 	ErrGetIpfsAddress                      = errors.New("failed to get node's ipfs address")
 	ErrNetworkHistoryNoTableName           = errors.New("no table name for network history supplied")
-	ErrNetworkHistoryGetContiguousSegments = newInvalidArgumentError("failed to get contiguous history segments")
+	ErrNetworkHistoryGetContiguousSegments = newInvalidArgumentError("could not to get contiguous history segments")
 	ErrNetworkHistoryOpeningSegment        = errors.New("failed to open network history segment file")
 	ErrNetworkHistoryExtractingSegment     = errors.New("failed to extract data from network history segment file")
 	ErrNetworkHistoryCreatingZipFile       = errors.New("failed to create zip file writer for network history segment")
