@@ -512,7 +512,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`the referral set stats for code "([^"]+)" at epoch "([^"]+)" should have a running volume of (\d+):`, func(code, epoch, volume string, table *godog.Table) error {
 		return steps.TheReferralSetStatsShouldBe(execsetup.broker, code, epoch, volume, table)
 	})
-	s.Step(`the activity streaks at epoch (\d+) should be:`, func(epoch string, table *godog.Table) error {
+	s.Step(`the activity streaks at epoch "([^"]+)" should be:`, func(epoch string, table *godog.Table) error {
 		return steps.TheActivityStreaksShouldBe(execsetup.broker, epoch, table)
 	})
 	s.Step(`the vesting stats at epoch (\d+) should be:`, func(epoch string, table *godog.Table) error {
