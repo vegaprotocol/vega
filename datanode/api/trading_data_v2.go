@@ -2956,15 +2956,27 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		return nil, formatE(fmt.Errorf("can't parse quadratic slippage factor: %s", mktProto.QuadraticSlippageFactor), err)
 	}
 
-	fundingPaymentPerUnitPosition := num.DecimalZero()
-	if perpData := mktData.ProductData.GetPerpetualData(); perpData != nil {
-		fundingPaymentPerUnitPosition, err = num.DecimalFromString(perpData.FundingPayment)
+	marginFactorScaledFundingPaymentPerUnitPosition := num.DecimalZero()
+
+	if perp := mktProto.TradableInstrument.Instrument.GetPerpetual(); perp != nil {
+		factor, err := num.DecimalFromString(perp.MarginFundingFactor)
 		if err != nil {
-			return nil, formatE(fmt.Errorf("can't parse funding payment from perpetual product data: %s", perpData.FundingPayment), err)
+			return nil, formatE(fmt.Errorf("can't parse margin funding factor: %s", perp.MarginFundingFactor), err)
+		}
+		if !factor.IsZero() {
+			if perpData := mktData.ProductData.GetPerpetualData(); perpData != nil {
+				fundingPayment, err := num.DecimalFromString(perpData.FundingPayment)
+				if err != nil {
+					return nil, formatE(fmt.Errorf("can't parse funding payment from perpetual product data: %s", perpData.FundingPayment), err)
+				}
+				if !fundingPayment.IsZero() {
+					marginFactorScaledFundingPaymentPerUnitPosition = factor.Mul(fundingPayment)
+				}
+			}
 		}
 	}
 
-	fundingPaymentPerUnitPosition = t.scaleDecimalFromMarketToAssetPrice(fundingPaymentPerUnitPosition, dPriceFactor)
+	marginFactorScaledFundingPaymentPerUnitPosition = t.scaleDecimalFromMarketToAssetPrice(marginFactorScaledFundingPaymentPerUnitPosition, dPriceFactor)
 
 	marginEstimate := t.computeMarginRange(
 		req.MarketId,
@@ -2976,7 +2988,7 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		linearSlippageFactor,
 		quadraticSlippageFactor,
 		rf,
-		fundingPaymentPerUnitPosition,
+		marginFactorScaledFundingPaymentPerUnitPosition,
 		auction,
 		asset,
 		mkt.TradableInstrument.MarginCalculator.ScalingFactors,
@@ -2984,12 +2996,12 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 
 	var liquidationEstimate *v2.LiquidationEstimate
 	if req.CollateralAvailable != nil && len(*req.CollateralAvailable) > 0 {
-		bPositionOnly, bWithBuy, bWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(req.OpenVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, num.DecimalZero(), num.DecimalZero(), rf.Long, rf.Short, fundingPaymentPerUnitPosition)
+		bPositionOnly, bWithBuy, bWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(req.OpenVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, num.DecimalZero(), num.DecimalZero(), rf.Long, rf.Short, marginFactorScaledFundingPaymentPerUnitPosition)
 		if err != nil {
 			return nil, err
 		}
 
-		wPositionOnly, wWithBuy, wWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(req.OpenVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, rf.Long, rf.Short, fundingPaymentPerUnitPosition)
+		wPositionOnly, wWithBuy, wWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(req.OpenVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, rf.Long, rf.Short, marginFactorScaledFundingPaymentPerUnitPosition)
 		if err != nil {
 			return nil, err
 		}
