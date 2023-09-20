@@ -467,5 +467,9 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Param:   netparams.RewardsActivityStreakMinQuantumTradeVolume,
 			Watcher: execsetup.activityStreak.OnMinQuantumTradeVolumeUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.RewardsActivityStreakInactivityLimit,
+			Watcher: execsetup.activityStreak.OnRewardsActivityStreakInactivityLimit,
+		},
 	)
 }

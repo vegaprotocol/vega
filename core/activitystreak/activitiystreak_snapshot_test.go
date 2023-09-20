@@ -56,6 +56,7 @@ func getTestSnapshotEngine(t *testing.T) *testSnapshotEngine {
 
 	e.OnMinQuantumOpenNationalVolumeUpdate(context.Background(), num.NewUint(100))
 	e.OnMinQuantumTradeVolumeUpdate(context.Background(), num.NewUint(200))
+	e.OnRewardsActivityStreakInactivityLimit(context.Background(), num.NewUint(10))
 	assert.NoError(t, e.OnBenefitTiersUpdate(context.Background(), &vegapb.ActivityStreakBenefitTiers{
 		Tiers: []*vegapb.ActivityStreakBenefitTier{
 			{

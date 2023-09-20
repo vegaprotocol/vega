@@ -57,6 +57,7 @@ func TestStreak(t *testing.T) {
 
 	engine.OnMinQuantumOpenNationalVolumeUpdate(context.Background(), num.NewUint(100))
 	engine.OnMinQuantumTradeVolumeUpdate(context.Background(), num.NewUint(200))
+	engine.OnRewardsActivityStreakInactivityLimit(context.Background(), num.NewUint(10))
 	assert.NoError(t, engine.OnBenefitTiersUpdate(context.Background(), &vegapb.ActivityStreakBenefitTiers{
 		Tiers: []*vegapb.ActivityStreakBenefitTier{
 			{
