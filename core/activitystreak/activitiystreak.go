@@ -256,7 +256,7 @@ func (e *Engine) updateStreak(party string, openVolume, tradeVolume *num.Uint) {
 	} else {
 		partyActivity.Inactive++
 
-		if partyActivity.Inactive > e.inactivityLimit {
+		if partyActivity.Inactive >= e.inactivityLimit {
 			partyActivity.Active = 0
 			partyActivity.ResetMultipliers()
 		}
