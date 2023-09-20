@@ -1016,8 +1016,34 @@ func testSubmittingProposalForMarketUpdateForNotEnactedMarketFails(t *testing.T)
 	toSubmit, err = eng.submitProposal(t, updateMarketProposal)
 
 	// then
-	require.ErrorIs(t, governance.ErrMarketNotEnactedYet, err)
+	require.ErrorIs(t, governance.ErrMarketProposalStillOpen, err)
 	require.Nil(t, toSubmit)
+
+	// now the original market proposal passes
+	// given
+	voter1 := vgrand.RandomStr(5)
+	eng.ensureTokenBalanceForParty(t, voter1, 7)
+	eng.expectVoteEvent(t, voter1, marketID)
+	err = eng.addYesVote(t, voter1, marketID)
+	require.NoError(t, err)
+
+	afterClosing := time.Unix(newMarketProposal.Terms.ClosingTimestamp, 0).Add(time.Second)
+	eng.ensureStakingAssetTotalSupply(t, 10)
+	eng.ensureTokenBalanceForParty(t, voter1, 7)
+	eng.expectPassedProposalEvent(t, marketID)
+	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "7")
+	eng.expectGetMarketState(t, marketID)
+	eng.OnTick(context.Background(), afterClosing)
+
+	// submitting now the market proposal has passed should work
+	eng.ensureTokenBalanceForParty(t, proposer, 1000)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
+	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
+	eng.expectOpenProposalEvent(t, proposer, updateMarketProposal.ID)
+	toSubmit, err = eng.submitProposal(t, updateMarketProposal)
+	require.NoError(t, err)
+	require.NotNil(t, toSubmit)
 }
 
 func testSubmittingProposalForMarketUpdateWithInsufficientEquityLikeShareFails(t *testing.T) {
