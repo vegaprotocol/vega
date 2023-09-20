@@ -90,6 +90,8 @@ type Store struct {
 	checkpointOverwrites map[string]struct{}
 
 	state *snapState
+
+	protocolUpgradeNewParameters []string
 }
 
 func New(log *logging.Logger, cfg Config, broker Broker) *Store {
@@ -222,6 +224,19 @@ func (s *Store) AnyWatchers(p string) bool {
 // OnTick is trigger once per blocks
 // we will send parameters update to watchers.
 func (s *Store) OnTick(ctx context.Context, _ time.Time) {
+	// This is useful only when a protocol upgrade
+	// is running. we will dispatch all new parameter
+	// on the first time update here.
+	if len(s.protocolUpgradeNewParameters) > 0 {
+		sort.Strings(s.protocolUpgradeNewParameters)
+
+		for _, k := range s.protocolUpgradeNewParameters {
+			s.broker.Send(events.NewNetworkParameterEvent(ctx, k, s.store[k].String()))
+		}
+
+		s.protocolUpgradeNewParameters = nil
+	}
+
 	if len(s.paramUpdates) <= 0 {
 		return
 	}
