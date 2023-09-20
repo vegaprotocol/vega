@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
+	"golang.org/x/exp/maps"
 
 	"github.com/pkg/errors"
 )
@@ -3026,8 +3027,12 @@ func (e *Engine) ClearInsurancepool(ctx context.Context, mktID, asset string, cl
 	}
 
 	// get all other market insurance accounts for the same asset
+	sortedAccKeys := maps.Keys(e.accs)
+	sort.Strings(sortedAccKeys)
+
 	var insuranceAccounts []*types.Account
-	for _, acc := range e.accs {
+	for _, accKey := range sortedAccKeys {
+		acc := e.accs[accKey]
 		if acc.ID != marketInsuranceID && acc.Asset == asset && acc.Type == types.AccountTypeInsurance {
 			insuranceAccounts = append(insuranceAccounts, acc.Clone())
 		}
