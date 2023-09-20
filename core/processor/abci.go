@@ -2263,16 +2263,14 @@ func (app *App) ApplyReferralCode(ctx context.Context, tx abci.Tx) error {
 	partyID := types.PartyID(tx.Party())
 	err := app.referralProgram.ApplyReferralCode(ctx, partyID, types.ReferralSetID(params.Id))
 
-	// it's OK to switch team if the party was already a referrer / referee
-	if err != nil &&
-		err.Error() != referral.ErrIsAlreadyAReferee(partyID).Error() &&
-		err.Error() != referral.ErrIsAlreadyAReferrer(partyID).Error() {
+	// It's OK to switch team if the party was already a referee.
+	if err != nil && err.Error() != referral.ErrIsAlreadyAReferrer(partyID).Error() {
 		return fmt.Errorf("could not apply the referral code: %w", err)
 	}
 
 	teamID := types.TeamID(params.Id)
 	err = app.teamsEngine.JoinTeam(ctx, partyID, params)
-	// this is ok as well, as not all referral sets are teams as well
+	// This is ok as well, as not all referral sets are teams as well.
 	if err != nil && err.Error() != teams.ErrNoTeamMatchesID(teamID).Error() {
 		return fmt.Errorf("couldn't join team: %w", err)
 	}
