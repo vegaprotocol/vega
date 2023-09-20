@@ -158,17 +158,24 @@ func (s Segments[T]) AllContigousHistories() []ContiguousHistory[T] {
 
 func (s Segments[T]) ContiguousHistoryInRange(fromHeight int64, toHeight int64) (ContiguousHistory[T], error) {
 	c := s.AllContigousHistories()
+	var nf, nt int64
 	for _, ch := range c {
 		if ch.HeightFrom <= fromHeight && ch.HeightTo >= toHeight {
 			fromSegmentFound := false
 			toSegmentFound := false
 			for _, segment := range ch.Segments {
-				if segment.GetFromHeight() == fromHeight {
+				if !fromSegmentFound && segment.GetFromHeight() == fromHeight {
 					fromSegmentFound = true
+					if toSegmentFound {
+						break
+					}
 				}
 
-				if segment.GetToHeight() == toHeight {
+				if !toSegmentFound && segment.GetToHeight() == toHeight {
 					toSegmentFound = true
+					if fromSegmentFound {
+						break
+					}
 				}
 			}
 
@@ -178,5 +185,5 @@ func (s Segments[T]) ContiguousHistoryInRange(fromHeight int64, toHeight int64) 
 		}
 	}
 
-	return ContiguousHistory[T]{}, fmt.Errorf("no contiguous segment range found with height %d to %d", fromHeight, toHeight)
+	return ContiguousHistory[T]{}, fmt.Errorf("heights %d to %d do not lie within a continuous segment range", fromHeight, toHeight)
 }
