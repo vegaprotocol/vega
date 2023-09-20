@@ -11,8 +11,10 @@ Feature: Evaluating trader activity
       | market.auction.minimumDuration          | 1     |
       | validators.epoch.length                 | 20s   |
       | limits.markets.maxPeggedOrders          | 4     |
+
     And the following network parameters are set:
       | name                                         | value                                                                                            |
+      | rewards.activityStreak.inactivityLimit       | 1                                                                                                |
       | rewards.activityStreak.minQuantumOpenVolume  | 1                                                                                                |
       | rewards.activityStreak.minQuantumTradeVolume | 1                                                                                                |
       | rewards.activityStreak.benefitTiers          | {"tiers": [{"minimum_activity_streak": 1, "reward_multiplier": "2", "vesting_multiplier": "2"}]} |
@@ -95,7 +97,7 @@ Feature: Evaluating trader activity
       | <maker> | ETH/USD.0.1 | buy  | <size> | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | <taker> | ETH/USD.0.1 | sell | <size> | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the network moves ahead "1" epochs
-    Given the activity streaks at epoch 1 should be:
+    Given the activity streaks at epoch "1" should be:
       | party   | active for   | inactive for   | reward multiplier | vesting multiplier |
       | trader1 | <active for> | <inactive for> | <multipliers>     | <multipliers>      |
     
@@ -137,7 +139,7 @@ Feature: Evaluating trader activity
       | lp2 | lpprov | ETH/USD.0.1 | 1000000           | 0.001 | submission |
     When the network moves ahead "1" epochs
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/USD.0.1"
-    And the activity streaks at epoch 2 should be:
+    And the activity streaks at epoch "2" should be:
       | party   | active for   | inactive for   | reward multiplier | vesting multiplier |
       | trader1 | <active for> | <inactive for> | <multipliers>     | <multipliers>      |
     
@@ -171,7 +173,7 @@ Feature: Evaluating trader activity
       | aux1    | ETH/USD.0.1 | <counterparty side> | <size> | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader1 | ETH/USD.0.1 | <trader side>       | <size> | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    Then the activity streaks at epoch 1 should be:
+    Then the activity streaks at epoch "1" should be:
       | party   | active for   | inactive for   | reward multiplier | vesting multiplier |
       | trader1 | <active for> | <inactive for> | <multipliers>     | <multipliers>      |
     
@@ -203,7 +205,7 @@ Feature: Evaluating trader activity
       | aux1    | ETH/USD.1.10 | buy  | 60     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader1 | ETH/USD.1.10 | sell | 60     | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    Then the activity streaks at epoch 1 should be:
+    Then the activity streaks at epoch "1" should be:
       | party   | active for | inactive for | reward multiplier | vesting multiplier |
       | trader1 | 1          | 0            | 2                 | 2                  |
     
@@ -214,3 +216,34 @@ Feature: Evaluating trader activity
       | 10000            | 10000            |
 
 
+  Scenario Outline: Party builds an activity streak and is then inactive for n epochs (0086-ASPR-007)
+    # Expectation: parties activity streak should be reset if their inactivity streak is greater or equal than the network parameter
+
+    # Test Cases:
+    # - inactivity streak limit does not allow inactivity, as soon as party is inactive their streak is reset
+    # - inactivity streak allows inactivity, party is inactive for less than the inactivity limit
+    # - inactivity streak allows inactivity, party is inactive for the inactivity limit
+
+    Given the following network parameters are set:
+      | name                                   | value   |
+      | rewards.activityStreak.inactivityLimit | <param> |
+
+    # Open a position to be considered active then close it
+    Given the parties place the following orders:
+      | party   | market id   | side | volume | price | resulting trades | type       | tif     |
+      | aux1    | ETH/USD.0.1 | buy  | 11     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/USD.0.1 | sell | 11     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    And the parties place the following orders:
+      | party   | market id   | side | volume | price | resulting trades | type       | tif     |
+      | aux1    | ETH/USD.0.1 | sell | 11     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/USD.0.1 | buy  | 11     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    Given the network moves ahead <forward to epoch> epochs
+    Then the activity streaks at epoch <forward to epoch> should be:
+      | party   | active for   | inactive for   | reward multiplier | vesting multiplier |
+      | trader1 | <active for> | <inactive for> | <multipliers>     | <multipliers>      |
+    
+    Examples:
+      | param | forward to epoch | active for | inactive for | multipliers |
+      | 1     | "2"              | 0          | 1            | 1           |
+      | 5     | "5"              | 1          | 4            | 2           |
+      | 5     | "6"              | 0          | 5            | 1           |
