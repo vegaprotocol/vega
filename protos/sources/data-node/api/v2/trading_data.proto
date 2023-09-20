@@ -574,8 +574,9 @@ service TradingDataService {
 
   // Estimate position
   //
-  // Estimate the margin that would be required for maintaining the specified position.
+  // Estimate the margin that would be required for maintaining the specified position. Margin estimates are scaled to asset decimal places.
   // If the optional collateral available argument is supplied, the response also contains the estimate of the liquidation price.
+  // Liquidation price estimates are scaled to asset decimal places by default, unless a flag to scale to market decimal places is specified in the request.
   rpc EstimatePosition(EstimatePositionRequest) returns (EstimatePositionResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Positions"};
   }
@@ -3510,7 +3511,10 @@ message EstimatePositionRequest {
   // Open and/or hypothetical orders.
   repeated OrderInfo orders = 3;
   // Optional argument specifying collateral available for the position, if provided then response will contain the liquidation price estimate.
+  // Collateral available needs to be provided scaled to asset decimal places. Liquidation price returned scaled to asset decimal places by default.
   optional string collateral_available = 4;
+  // Optional argument specifying if the liqudiation price estimates should be scaled to market decimal places (scaled to asset decimal places by default).
+  optional bool scale_liquidation_to_market_decimals = 5;
 }
 
 // Response for the estimate of the margin level and, if available collateral was provided in the request, liquidation price for the specified position.

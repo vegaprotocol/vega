@@ -348,8 +348,9 @@ type TradingDataServiceClient interface {
 	EstimateMargin(ctx context.Context, in *EstimateMarginRequest, opts ...grpc.CallOption) (*EstimateMarginResponse, error)
 	// Estimate position
 	//
-	// Estimate the margin that would be required for maintaining the specified position.
+	// Estimate the margin that would be required for maintaining the specified position. Margin estimates are scaled to asset decimal places.
 	// If the optional collateral available argument is supplied, the response also contains the estimate of the liquidation price.
+	// Liquidation price estimates are scaled to asset decimal places by default, unless a flag to scale to market decimal places is specified in the request.
 	EstimatePosition(ctx context.Context, in *EstimatePositionRequest, opts ...grpc.CallOption) (*EstimatePositionResponse, error)
 	// List network parameters
 	//
@@ -2164,8 +2165,9 @@ type TradingDataServiceServer interface {
 	EstimateMargin(context.Context, *EstimateMarginRequest) (*EstimateMarginResponse, error)
 	// Estimate position
 	//
-	// Estimate the margin that would be required for maintaining the specified position.
+	// Estimate the margin that would be required for maintaining the specified position. Margin estimates are scaled to asset decimal places.
 	// If the optional collateral available argument is supplied, the response also contains the estimate of the liquidation price.
+	// Liquidation price estimates are scaled to asset decimal places by default, unless a flag to scale to market decimal places is specified in the request.
 	EstimatePosition(context.Context, *EstimatePositionRequest) (*EstimatePositionResponse, error)
 	// List network parameters
 	//
