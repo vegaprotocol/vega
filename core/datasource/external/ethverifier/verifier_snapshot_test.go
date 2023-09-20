@@ -77,7 +77,7 @@ func TestEthereumOracleVerifierWithPendingQueryResults(t *testing.T) {
 	assert.NotNil(t, eov)
 
 	result := okResult()
-
+	eov.ethCallEngine.EXPECT().GetEthTime(gomock.Any(), uint64(5)).Return(uint64(100), nil)
 	eov.ethCallEngine.EXPECT().CallSpec(gomock.Any(), "testspec", uint64(5)).Return(result, nil)
 	eov.ethCallEngine.EXPECT().GetInitialTriggerTime("testspec").Return(uint64(90), nil)
 	eov.ethCallEngine.EXPECT().GetRequiredConfirmations("testspec").Return(uint64(5), nil)

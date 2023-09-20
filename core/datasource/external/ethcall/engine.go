@@ -149,6 +149,20 @@ func (e *Engine) CallSpec(ctx context.Context, id string, atBlock uint64) (Resul
 	return call.Call(ctx, e.client, atBlock)
 }
 
+func (e *Engine) GetEthTime(ctx context.Context, atBlock uint64) (uint64, error) {
+	blockNum := big.NewInt(0).SetUint64(atBlock)
+	header, err := e.client.HeaderByNumber(ctx, blockNum)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get block header: %w", err)
+	}
+
+	if header == nil {
+		return 0, fmt.Errorf("nil block header: %w", err)
+	}
+
+	return header.Time, nil
+}
+
 func (e *Engine) GetRequiredConfirmations(id string) (uint64, error) {
 	e.mu.Lock()
 	call, ok := e.calls[id]

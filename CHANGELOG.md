@@ -197,6 +197,7 @@
 - [9449](https://github.com/vegaprotocol/vega/issues/9449) - if expiration is empty, never expire a discount/reward program
 - [9263](https://github.com/vegaprotocol/vega/issues/9263) - save dispatch strategy details in the database and allow for its retrieval.
 - [9374](https://github.com/vegaprotocol/vega/issues/9374) - `ListGovernanceData` returns an error instead of results.
+- [9344](https://github.com/vegaprotocol/vega/issues/9344) - Verify `EthTime` in submitted `ChainEvent` transactions matches the chain.
 - [9461](https://github.com/vegaprotocol/vega/issues/9461) - Do not make SLA related transfers for 0 amount.
 - [9462](https://github.com/vegaprotocol/vega/issues/9462) - Add missing proposal error `enum` values to the database.
 - [9466](https://github.com/vegaprotocol/vega/issues/9466) - `ListReferralSets` returns error when there are no stats available.
