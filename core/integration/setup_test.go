@@ -471,5 +471,13 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Param:   netparams.RewardsActivityStreakInactivityLimit,
 			Watcher: execsetup.activityStreak.OnRewardsActivityStreakInactivityLimit,
 		},
+		netparams.WatchParam{
+			Param:   netparams.RewardsVestingBaseRate,
+			Watcher: execsetup.vesting.OnRewardVestingBaseRateUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.RewardsVestingMinimumTransfer,
+			Watcher: execsetup.vesting.OnRewardVestingMinimumTransferUpdate,
+		},
 	)
 }
