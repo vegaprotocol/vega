@@ -30,6 +30,10 @@ func NewReferralProgramStartedEvent(ctx context.Context, p *types.ReferralProgra
 	}
 }
 
+func (r ReferralProgramStarted) GetReferralProgramStarted() *eventspb.ReferralProgramStarted {
+	return &r.e
+}
+
 func ReferralProgramStartedEventFromStream(ctx context.Context, be *eventspb.BusEvent) *ReferralProgramStarted {
 	return &ReferralProgramStarted{
 		Base: newBaseFromBusEvent(ctx, ReferralProgramStartedEvent, be),
@@ -49,6 +53,10 @@ func (t ReferralProgramUpdated) StreamMessage() *eventspb.BusEvent {
 	}
 
 	return busEvent
+}
+
+func (r ReferralProgramUpdated) GetReferralProgramUpdated() *eventspb.ReferralProgramUpdated {
+	return &r.e
 }
 
 func NewReferralProgramUpdatedEvent(ctx context.Context, p *types.ReferralProgram) *ReferralProgramUpdated {
@@ -79,6 +87,10 @@ func (t ReferralProgramEnded) StreamMessage() *eventspb.BusEvent {
 	}
 
 	return busEvent
+}
+
+func (t ReferralProgramEnded) GetReferralProgramEnded() *eventspb.ReferralProgramEnded {
+	return &t.e
 }
 
 func NewReferralProgramEndedEvent(ctx context.Context, version uint64, id string) *ReferralProgramEnded {
