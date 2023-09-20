@@ -40,7 +40,10 @@ func RegisterAsset(tbl *godog.Table, asset *stubs.AssetStub, col *collateral.Eng
 				Symbol:  aid,
 			},
 		})
-		if err != nil && err != collateral.ErrAssetAlreadyEnabled {
+		if err != nil {
+			if err == collateral.ErrAssetAlreadyEnabled {
+				return fmt.Errorf("asset %s was already enabled, perhaps when defining markets, order of steps should be swapped", aid)
+			}
 			return fmt.Errorf("couldn't enable asset(%s): %v", aid, err)
 		}
 	}
