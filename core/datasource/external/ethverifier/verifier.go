@@ -53,6 +53,7 @@ type EthereumConfirmations interface {
 type EthCallEngine interface {
 	MakeResult(specID string, bytes []byte) (ethcall.Result, error)
 	CallSpec(ctx context.Context, id string, atBlock uint64) (ethcall.Result, error)
+	GetEthTime(ctx context.Context, atBlock uint64) (uint64, error)
 	GetRequiredConfirmations(specId string) (uint64, error)
 	GetInitialTriggerTime(id string) (uint64, error)
 	StartAtHeight(height uint64, timestamp uint64)
@@ -194,6 +195,18 @@ func (s *Verifier) ProcessEthereumContractCallResult(callEvent ethcall.ContractC
 }
 
 func (s *Verifier) checkCallEventResult(ctx context.Context, callEvent ethcall.ContractCallEvent) error {
+	// Ensure that the ethtime on the call event matches the block number on the eth chain
+	// (submitting call events with malicious times could subvert, e.g. TWAPs on perp markets)
+	checkedTime, err := s.ethEngine.GetEthTime(ctx, callEvent.BlockHeight)
+	if err != nil {
+		return fmt.Errorf("unable to verify eth time at %d", callEvent.BlockHeight)
+	}
+
+	if checkedTime != callEvent.BlockTime {
+		return fmt.Errorf("call event for block time block %d alleges eth time %d - but found %d",
+			callEvent.BlockHeight, callEvent.BlockTime, checkedTime)
+	}
+
 	checkResult, err := s.ethEngine.CallSpec(ctx, callEvent.SpecId, callEvent.BlockHeight)
 	if callEvent.Error != nil {
 		if err != nil {
