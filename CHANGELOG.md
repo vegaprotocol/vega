@@ -205,6 +205,7 @@
 - [9412](https://github.com/vegaprotocol/vega/issues/9412) - Use vote close time for opening auction start time.
 - [9487](https://github.com/vegaprotocol/vega/issues/9487) - Reset auction trigger appropriately when market is resumed via governance.
 - [9489](https://github.com/vegaprotocol/vega/issues/9489) - A referrer cannot join another team.
+- [9074](https://github.com/vegaprotocol/vega/issues/9074) - Fix error response for `CSV` exports.
 
 ## 0.72.1
 
