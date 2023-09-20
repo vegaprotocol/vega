@@ -674,8 +674,8 @@ func validateLPSLAParams(slaParams *types.LiquiditySLAParams) (types.ProposalErr
 		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("sla competition factor must be in range [0, 1]")
 	}
 
-	if slaParams.PerformanceHysteresisEpochs < 1 || slaParams.PerformanceHysteresisEpochs > 366 {
-		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("provider performance hysteresis epochs must be in range [1, 366]")
+	if slaParams.PerformanceHysteresisEpochs > 366 {
+		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("provider performance hysteresis epochs must be less then 366")
 	}
 	return types.ProposalErrorUnspecified, nil
 }

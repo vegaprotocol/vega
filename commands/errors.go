@@ -61,7 +61,7 @@ var (
 	ErrOneTimeTriggerAllowedMax                        = errors.New("maximum one time trigger allowed")
 	ErrMustBeBetween01                                 = errors.New("must be between 0 (excluded) and 1 (included)")
 	ErrMustBeGreaterThanEnactmentTimestamp             = errors.New("must be greater than proposal_submission.terms.enactment_timestamp")
-	ErrMustBeWithinRange1366                           = errors.New("must be between 1 and 366")
+	ErrMustBeLessThen366                               = errors.New("must be less then 366")
 	ErrMustBeAtMost500                                 = errors.New("must be at most 500")
 	ErrMustBeWithinRangeGT0LT20                        = errors.New("price range must be strictly greater than 0 and less than or equal to 20")
 )
