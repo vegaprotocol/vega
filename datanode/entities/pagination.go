@@ -21,6 +21,8 @@ import (
 
 var defaultPageSize int32 = 1000
 
+var ErrCursorOverflow = errors.New("negative pagination value")
+
 type Pagination interface{}
 
 type Cursor struct {
@@ -103,6 +105,9 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 	}
 
 	if cp.First != nil {
+		if *cp.First < 0 {
+			return CursorPagination{}, ErrCursorOverflow
+		}
 		forwardOffset = &offset{
 			Limit: cp.First,
 		}
@@ -115,6 +120,9 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 			forwardOffset.Cursor = &after
 		}
 	} else if cp.Last != nil {
+		if *cp.Last < 0 {
+			return CursorPagination{}, ErrCursorOverflow
+		}
 		backwardOffset = &offset{
 			Limit: cp.Last,
 		}
