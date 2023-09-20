@@ -130,14 +130,25 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 		return nil, types.ErrInconsistentNamespaceKeys // it's the only possible key/namespace combo here
 	}
 
+	fromSnapshot := map[string]struct{}{}
 	for _, kv := range np.NetParams.Params {
 		if err := s.UpdateOptionalValidation(ctx, kv.Key, kv.Value, false, false); err != nil {
 			return nil, err
 		}
+
+		fromSnapshot[kv.Key] = struct{}{}
 	}
 
 	// Now they have been loaded, dispatch the changes so that the other engines pick them up
 	for k := range s.store {
+		// is this a new parameter? if yes, we are likely doing a protocol
+		// upgrade, and should be sending that to the datanode please.
+		if _, ok := fromSnapshot[k]; !ok {
+			s.protocolUpgradeNewParameters = append(
+				s.protocolUpgradeNewParameters, k,
+			)
+		}
+
 		if err := s.dispatchUpdate(ctx, k); err != nil {
 			return nil, fmt.Errorf("could not propagate netparams update to listener, %v: %v", k, err)
 		}
