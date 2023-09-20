@@ -157,8 +157,10 @@ Feature: Evaluating trader activity
     # Test Cases:
     # - long position does not meet the open volume requirement
     # - short position does not meet the open volume requirement
-    # - long position does meet the open volume requirement
-    # - short position does meet the open volume requirement
+    # - long position does meet the open volume requirement and position open for a single epoch
+    # - short position does meet the open volume requirement and position open for a single epoch
+    # - long position does meet the open volume requirement and position open across multiple epochs
+    # - short position does meet the open volume requirement and position open across multiple epochs
 
     # Test cares about open volume so set trade volume requirement high
     Given the following network parameters are set:
@@ -166,23 +168,24 @@ Feature: Evaluating trader activity
       | rewards.activityStreak.minQuantumTradeVolume | 1000000000000000 |
       | rewards.activityStreak.minQuantumOpenVolume  | 10000            |
 
-    # Move forwards into epoch so epoch twap does not match trade volume
     Given the current epoch is "1"
     And the parties place the following orders:
       | party   | market id   | side                | volume | price | resulting trades | type       | tif     |
       | aux1    | ETH/USD.0.1 | <counterparty side> | <size> | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader1 | ETH/USD.0.1 | <trader side>       | <size> | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-    When the network moves ahead "1" epochs
-    Then the activity streaks at epoch "1" should be:
+    When the network moves ahead <epochs> epochs
+    Then the activity streaks at epoch <epochs> should be:
       | party   | active for   | inactive for   | reward multiplier | vesting multiplier |
       | trader1 | <active for> | <inactive for> | <multipliers>     | <multipliers>      |
     
     Examples:
-      | trader side | counterparty side | size | active for | inactive for | multipliers |
-      | buy         | sell              | 1    | 0          | 1            | 1           |
-      | sell        | buy               | 1    | 0          | 1            | 1           |
-      | buy         | sell              | 11   | 1          | 0            | 2           |
-      | sell        | buy               | 11   | 1          | 0            | 2           |
+      | trader side | counterparty side | epochs | size | active for | inactive for | multipliers |
+      | buy         | sell              | "1"    | 1    | 0          | 1            | 1           |
+      | sell        | buy               | "1"    | 1    | 0          | 1            | 1           |
+      | buy         | sell              | "1"    | 11   | 1          | 0            | 2           |
+      | sell        | buy               | "1"    | 11   | 1          | 0            | 2           |
+      | buy         | sell              | "2"    | 11   | 2          | 0            | 2           |
+      | sell        | buy               | "2"    | 11   | 2          | 0            | 2           |
 
 
   Scenario Outline: Party splits trading between two markets using different settlement assets (0086-ASPR-004)(0086-ASPR-005)
