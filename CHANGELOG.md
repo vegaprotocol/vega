@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.73.0
+## 0.73.0
 
 ### 🚨 Breaking changes
 
@@ -118,7 +118,7 @@
 - [9343](https://github.com/vegaprotocol/vega/issues/9343) - Prevent malicious validator submitting Ethereum oracle chain event prior to initial start time
 - [8792](https://github.com/vegaprotocol/vega/issues/8792) - Fix panic when starting null block chain node.
 - [8739](https://github.com/vegaprotocol/vega/issues/8739) - Cancel orders for rejected markets.
-- [9350](https://github.com/vegaprotocol/vega/issues/9350) - Clear account ledger events causing segment divergence 
+- [9350](https://github.com/vegaprotocol/vega/issues/9350) - Clear account ledger events causing segment divergence
 - [9118](https://github.com/vegaprotocol/vega/issues/9118) - Improve list stop orders error message
 - [9406](https://github.com/vegaprotocol/vega/issues/9105) - Fix Ethereum oracle validation failing unexpectedly when using go 1.19
 - [9105](https://github.com/vegaprotocol/vega/issues/9105) - Truncate virtual stake decimal places
