@@ -15,6 +15,8 @@ Feature: Setting and applying activity streak benefits
     And the following network parameters are set:
       | name                                         | value                                                                                                                                                                                 |
       | rewards.vesting.baseRate                     | 0.1                                                                                                                                                                                   |
+      | rewards.vesting.minimumTransfer              | 1                                                                                                                                                                                     |
+      | rewards.vesting.benefitTiers                 | {"tiers": [{"minimum_quantum_balance": "1", "reward_multiplier": "1"}]}                                                                                                               |
       | rewards.activityStreak.minQuantumOpenVolume  | 1                                                                                                                                                                                     |
       | rewards.activityStreak.minQuantumTradeVolume | 1                                                                                                                                                                                     |
       | rewards.activityStreak.benefitTiers          | {"tiers": [{"minimum_activity_streak": 3, "reward_multiplier": "2", "vesting_multiplier": "2"}, {"minimum_activity_streak": 6, "reward_multiplier": "3", "vesting_multiplier": "3"}]} |
@@ -22,7 +24,6 @@ Feature: Setting and applying activity streak benefits
     # Initialise the markets
     And the following assets are registered:
       | id   | decimal places | quantum |
-      | VEGA | 0              | 1       |
       | COIN | 0              | 1       |
     And the markets:
       | id       | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | decimal places | position decimal places |
@@ -63,7 +64,7 @@ Feature: Setting and applying activity streak benefits
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/COIN"
 
 
-  Scenario Outline: Party builds an activity streak and receives greater benefits than an infrequently active trader
+  Scenario Outline: Party builds an activity streak and receives greater benefits than an infrequently active trader (0086-ASPR-008)(0086-ASPR-009)(0086-ASPR-010)
     # Expectation: parties activity streak should be incremented if they fulfill the trade volume or open volume requirements
 
     # Test Cases:
@@ -95,11 +96,10 @@ Feature: Setting and applying activity streak benefits
     Then the network moves ahead "1" epochs
     Then "trader1" should have vesting account balance of <vesting balance> for asset "COIN"
     Then the network moves ahead "1" epochs
-    Then "trader1" should have vesting account balance of <vesting balance> for asset "COIN"
-
+    Then "trader1" should have vested account balance of <vested balance> for asset "COIN"
 
     Examples:
-      | forward to epoch | active for | multipliers | vesting balance | vested amount |
-      | "1"              | 1          | 1           | "5000"          | 0             |
-      | "3"              | 3          | 2           | "6666"          | 0             |
-      | "6"              | 6          | 3           | "7500"          | 0             |
+      | forward to epoch | active for | multipliers | vesting balance | vested balance |
+      | "1"              | 1          | 1           | "5000"          | "1000"         |
+      | "3"              | 3          | 2           | "6666"          | "1333"         |
+      | "6"              | 6          | 3           | "7500"          | "2250"         |
