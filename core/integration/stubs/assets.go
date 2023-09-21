@@ -47,12 +47,12 @@ func (a *AssetStub) Get(id string) (*assets.Asset, error) {
 		return nil, errors.New("unknown asset")
 	}
 	// permissive, we return the default decimal asset
-	stub := NewIsAssetStub(id, a.defaultDP)
+	stub := NewIsAssetStub(id, a.defaultDP, nil)
 	return stub, nil
 }
 
-func (a *AssetStub) Register(id string, decimals uint64) {
-	a.registered[id] = NewIsAssetStub(id, decimals)
+func (a *AssetStub) Register(id string, decimals uint64, quantum *num.Decimal) {
+	a.registered[id] = NewIsAssetStub(id, decimals, quantum)
 }
 
 func (a *AssetStub) SetPermissive() {
@@ -75,22 +75,28 @@ type isAssetStub struct {
 	ID            string
 	DecimalPlaces uint64
 	Status        types.AssetStatus
+	Quantum       *num.Decimal
 }
 
-func NewIsAssetStub(id string, dp uint64) *assets.Asset {
+func NewIsAssetStub(id string, dp uint64, quantum *num.Decimal) *assets.Asset {
 	return assets.NewAsset(&isAssetStub{
 		ID:            id,
 		DecimalPlaces: dp,
 		Status:        types.AssetStatusProposed,
+		Quantum:       quantum,
 	})
 }
 
 func (a isAssetStub) Type() *types.Asset {
+	quantum := num.DecimalFromFloat(5000)
+	if a.Quantum != nil {
+		quantum = *a.Quantum
+	}
 	return &types.Asset{
 		ID: a.ID,
 		Details: &types.AssetDetails{
 			Decimals: a.DecimalPlaces,
-			Quantum:  num.DecimalFromFloat(5000),
+			Quantum:  quantum,
 		},
 	}
 }

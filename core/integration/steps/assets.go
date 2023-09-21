@@ -20,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 
 	"github.com/cucumber/godog"
 )
@@ -32,6 +33,7 @@ func RegisterAsset(tbl *godog.Table, asset *stubs.AssetStub, col *collateral.Eng
 		asset.Register(
 			aid,
 			row.MustU64("decimal places"),
+			aRow.maybeQuantum(),
 		)
 		err := col.EnableAsset(context.Background(), types.Asset{
 			ID: aid,
@@ -68,4 +70,12 @@ func (r assetRow) quantum() num.Decimal {
 		return num.DecimalOne()
 	}
 	return r.row.MustDecimal("quantum")
+}
+
+func (r assetRow) maybeQuantum() *num.Decimal {
+	if !r.row.HasColumn("quantum") {
+		return nil
+	}
+
+	return ptr.From(r.row.MustDecimal("quantum"))
 }
