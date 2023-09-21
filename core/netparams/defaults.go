@@ -276,7 +276,7 @@ func defaultNetParams() map[string]value {
 		SpamProtectionMaxStopOrdersPerMarket: NewUint(UintGTE(num.UintZero()), UintLTE(num.NewUint(100))).Mutable(true).MustUpdate("4"),
 
 		RewardsVestingBaseRate:        NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("0.01"),
-		RewardsVestingMinimumTransfer: NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("0.01"),
+		RewardsVestingMinimumTransfer: NewDecimal(gtD0).Mutable(true).MustUpdate("0.01"),
 		RewardsVestingBenefitTiers:    NewJSON(&proto.VestingBenefitTiers{}, types.CheckUntypedVestingBenefitTier).Mutable(true).MustUpdate(`{"tiers": [{"minimum_quantum_balance": "1000", "reward_multiplier": "1.05"}]}`),
 
 		// Referral program

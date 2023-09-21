@@ -7,13 +7,13 @@ Feature: Setting and applying activity streak benefits
     And the average block duration is "1"
     And the following network parameters are set:
       | name                                    | value |
-      | market.fee.factors.makerFee             | 0.01  |
+      | market.fee.factors.makerFee             | 0.001 |
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | market.auction.minimumDuration          | 1     |
       | validators.epoch.length                 | 20s   |
       | limits.markets.maxPeggedOrders          | 4     |
     
-    # Set vesting parmaeters and disable multipliers
+    # Set vesting parameters and disable multipliers
     And the following network parameters are set:
       | name                                | value                                                                                            |
       | rewards.vesting.baseRate            | 0.1                                                                                              |
@@ -24,7 +24,8 @@ Feature: Setting and applying activity streak benefits
     # Initialise the markets
     And the following assets are registered:
       | id   | decimal places | quantum |
-      | COIN | 0              | 1       |
+      | COIN | 1              | 10      |
+
     And the markets:
       | id       | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | decimal places | position decimal places |
       | ETH/COIN | ETH        | COIN  | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e-3                   | 0                         | default-futures | 0              | 0                       |
@@ -69,17 +70,53 @@ Feature: Setting and applying activity streak benefits
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/COIN"
 
 
-  Scenario: Party earns rewards from different transfers scoping different markets (0085-VSPR-004)(0085-VSPR-005)
-    # Expectation: rewards should be distributed into the same vesting account and transfered to the same vested account
+  Scenario Outline: Parties rewards vest at the correct rate and adhere to the minimum quantum transfer (0085-RVST-009)(0085-RVST-010)
+    # Expectation: rewards should be distributed into the same vesting account and transferred to the same vested account
 
-    # Setup the recurring transfer
+    # Test cases:
+    # - the expected base transfer is greater than the minimum transfer
+    # - the expected base transfer is smaller than the minimum transfer
+    # - the minimum transfer is smaller than the full balance
+
+    Given the following network parameters are set:
+      | name                            | value              |
+      | rewards.vesting.baseRate        | <base rate>        |
+      | rewards.vesting.minimumTransfer | <minimum transfer> |
+
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets  |
       | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | COIN  | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID | COIN         | ETH/COIN |
-      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | COIN  | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID | COIN         | BTC/COIN |
     And the network moves ahead "1" blocks
 
-    # Generate rewards from the two markets
+    Given the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1    | ETH/COIN  | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/COIN  | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1    | BTC/COIN  | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | BTC/COIN  | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    When the network moves ahead "1" epochs
+    Then "trader1" should have vesting account balance of "10000" for asset "COIN"
+
+    When  the network moves ahead "1" epochs
+    Then "trader1" should have vested account balance of <vested amount> for asset "COIN"
+
+    Examples:
+      | base rate | minimum transfer | vested amount |
+      | 0.1       | 1                | "1000"        |
+      | 0.1       | 200              | "2000"        |
+      | 0.1       | 2000             | "10000"       |
+      | 1.0       | 1                | "10000"       |
+
+
+  Scenario: Parties rewards from different markets (using the same settlement asset) are transferred into the same vesting account (0085-VSPR-004)(0085-VSPR-005)
+    # Expectation: rewards should be distributed into the same vesting account and t to the same vested account
+
+    Given the parties submit the following recurring transfers:
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets  |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | COIN  | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID | COIN         | ETH/COIN |
+      | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | COIN  | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID | COIN         | BTC/COIN |
+    And the network moves ahead "1" blocks
+
     Given the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1    | ETH/COIN  | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -89,10 +126,118 @@ Feature: Setting and applying activity streak benefits
     When the network moves ahead "1" epochs
     Then "trader1" should have vesting account balance of "20000" for asset "COIN"
 
-    # Vest some rewards
-    Given the network moves ahead "1" epochs
-    # ISSUE: would expect only 2000 to be vested, instead of 5000
-    And "trader1" should have vesting account balance of "15000" for asset "COIN"
-    Then "trader1" should have vested account balance of "5000" for asset "COIN"
+    When  the network moves ahead "1" epochs
+    Then "trader1" should have vesting account balance of "18000" for asset "COIN"
+    And "trader1" should have vested account balance of "2000" for asset "COIN"
 
 
+  Scenario: Party receive rewards from pool funded with a transfer with a non-zero lock period (0085-VSPR-011)
+    # Expectation: rewards should only start vesting once the lock-period has expired
+
+    Given the parties submit the following recurring transfers:
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets  | lock_period |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | COIN  | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID | COIN         | ETH/COIN | 2           |
+    And the network moves ahead "1" blocks
+
+    Given the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1    | ETH/COIN  | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/COIN  | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    When the network moves ahead "1" epochs
+    Then "trader1" should have vesting account balance of "10000" for asset "COIN"
+
+    # Lock period of first batch of rewards expired - no vesting occurs
+    When the network moves ahead "1" epochs
+    Then "trader1" should have vesting account balance of "10000" for asset "COIN"
+    
+    # Lock period of first batch of rewards expired - full vesting occurs
+    When the network moves ahead "1" epochs
+    And "trader1" should have vesting account balance of "9000" for asset "COIN"
+    Then "trader1" should have vested account balance of "1000" for asset "COIN"
+
+    # Generate some more rewards
+    Given the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1    | ETH/COIN  | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/COIN  | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    When the network moves ahead "1" epochs
+    Then "trader1" should have vesting account balance of "18100" for asset "COIN"
+    And "trader1" should have vested account balance of "1900" for asset "COIN"
+
+    # Lock period of second batch of rewards not expired - partial vesting occurs
+    When the network moves ahead "1" epochs
+    Then "trader1" should have vesting account balance of "17290" for asset "COIN"
+    And "trader1" should have vested account balance of "2710" for asset "COIN"
+
+    # Lock period of second batch of rewards has expired - full vesting occurs
+    When the network moves ahead "1" epochs
+    And "trader1" should have vesting account balance of "15561" for asset "COIN"
+    Then "trader1" should have vested account balance of "4439" for asset "COIN"
+
+
+  Scenario Outline: Party receives rewards but does not withdraw them in order to receive a bonus multiplier (0085-VSPR-012)(0085-VSPR-013)
+    # Expectation: if the party meets the minimum quantum balance requirement, they should receive a multiplier and a greater share of future rewards
+
+    # Test Cases:
+    # - party does meet the minimum quantum balance requirement, they receive a multiplier and a greater share of future rewards (3:1)
+    # - party does meet the minimum quantum balance requirement, they receive a multiplier and a greater share of future rewards (4:1)
+    # - party does not meet the minimum quantum balance requirement, they receive no multipliers and the same share of future rewards (1:1)
+
+    Given the following network parameters are set:
+      | name                         | value                                                                                                         |
+      | rewards.vesting.baseRate     | 1.0                                                                                                           |
+      | rewards.vesting.benefitTiers | {"tiers": [{"minimum_quantum_balance": <minimum quantum balance>, "reward_multiplier": <reward multiplier>}]} |
+
+    Given the parties submit the following recurring transfers:
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets  |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | COIN  | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID | COIN         | ETH/COIN |
+    And the network moves ahead "1" blocks
+
+    Given the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1    | ETH/COIN  | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/COIN  | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    And the network moves ahead "1" epochs
+    Then "trader1" should have vesting account balance of "10000" for asset "COIN"
+
+    Given the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1    | ETH/COIN  | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/COIN  | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1    | ETH/COIN  | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/COIN  | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    When the network moves ahead "1" epochs
+    Then "trader1" should have vesting account balance of <trader1 rewards> for asset "COIN"
+    And "trader2" should have vesting account balance of <trader2 rewards> for asset "COIN"
+
+    Examples:
+      | minimum quantum balance | reward multiplier | trader1 rewards | trader2 rewards |
+      | "500"                   | "3"               | "7500"          | "2500"          |
+      | "500"                   | "4"               | "8000"          | "2000"          |
+      | "5000000"               | "3"               | "5000"          | "5000"          |
+
+
+  Scenario: Parties attempt to transfer rewards to or from vesting and vested accounts (0085-VSPR-006)(0085-VSPR-007)(0085-VSPR-008)
+    # Expectation: only transfers from the vested account should be valid, all other transfers should be rejected
+
+    Given the parties submit the following recurring transfers:
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets  | lock_period |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | COIN  | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID | COIN         | ETH/COIN | 0           |
+    And the network moves ahead "1" blocks
+
+    Given the parties place the following orders:
+      | party                                                            | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1                                                             | ETH/COIN  | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ETH/COIN  | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    When the network moves ahead "1" epochs
+    Then "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have vesting account balance of "9000" for asset "COIN"
+    And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have vested account balance of "1000" for asset "COIN"
+
+    # Check rewards cannot be transferred to or from the following accounts
+    Given the parties submit the following one off transfers:
+      | id  | from                                                             | from_account_type            | to                                                               | to_account_type              | asset | amount | delivery_time        | error                         |
+      | oo1 | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_VESTED_REWARDS  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL         | COIN  | 1      | 2023-01-01T01:00:00Z |                               |
+      | oo2 | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_VESTING_REWARDS | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL         | COIN  | 1      | 2023-01-01T01:00:00Z | unsupported from account type |
+      | oo3 | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL         | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_VESTED_REWARDS  | COIN  | 1      | 2023-01-01T01:00:00Z | unsupported to account type   |
+      | oo4 | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL         | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_VESTING_REWARDS | COIN  | 1      | 2023-01-01T01:00:00Z | unsupported to account type   |
+    And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have vested account balance of "999" for asset "COIN"
