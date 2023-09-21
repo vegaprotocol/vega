@@ -126,7 +126,7 @@ func testSubmittingProposalForSpotMarketUpdateForNotEnactedMarketFails(t *testin
 	toSubmit, err = eng.submitProposal(t, updateMarketProposal)
 
 	// then
-	require.ErrorIs(t, governance.ErrMarketNotEnactedYet, err)
+	require.ErrorIs(t, governance.ErrMarketProposalStillOpen, err)
 	require.Nil(t, toSubmit)
 }
 

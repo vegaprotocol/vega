@@ -278,6 +278,7 @@
 - [8466](https://github.com/vegaprotocol/vega/issues/8466) - Add stop orders protobufs and domain types
 - [8467](https://github.com/vegaprotocol/vega/issues/8467) - Add stop orders data structures
 - [8516](https://github.com/vegaprotocol/vega/issues/8516) - Add stop orders network parameter
+- [9509](https://github.com/vegaprotocol/vega/issues/9509) - Markets can now be updated when they are in an opening auction.
 - [8470](https://github.com/vegaprotocol/vega/issues/8470) - Stop orders snapshots
 - [8548](https://github.com/vegaprotocol/vega/issues/8548) - Use default for tendermint `RPC` address and better validation for `semver`
 - [8472](https://github.com/vegaprotocol/vega/issues/8472) - Add support for stop orders with batch market instructions

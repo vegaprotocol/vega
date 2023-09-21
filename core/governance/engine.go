@@ -36,7 +36,7 @@ var (
 	ErrProposalDoesNotExist                      = errors.New("proposal does not exist")
 	ErrMarketDoesNotExist                        = errors.New("market does not exist")
 	ErrMarketStateUpdateNotAllowed               = errors.New("market state does not allow for state update")
-	ErrMarketNotEnactedYet                       = errors.New("market has been enacted yet")
+	ErrMarketProposalStillOpen                   = errors.New("original market proposal is still open")
 	ErrProposalNotOpenForVotes                   = errors.New("proposal is not open for votes")
 	ErrProposalIsDuplicate                       = errors.New("proposal with given ID already exists")
 	ErrVoterInsufficientTokensAndEquityLikeShare = errors.New("vote requires tokens or equity-like share")
@@ -905,8 +905,8 @@ func (e *Engine) validateMarketUpdate(ID, marketID, party string, params *Propos
 		return types.ProposalErrorInvalidMarket, ErrMarketDoesNotExist
 	}
 	for _, p := range e.activeProposals {
-		if p.ID == marketID {
-			return types.ProposalErrorInvalidMarket, ErrMarketNotEnactedYet
+		if p.ID == marketID && p.IsOpen() {
+			return types.ProposalErrorInvalidMarket, ErrMarketProposalStillOpen
 		}
 	}
 
@@ -935,8 +935,8 @@ func (e *Engine) validateSpotMarketUpdate(proposal *types.Proposal, params *Prop
 		return types.ProposalErrorInvalidMarket, ErrMarketDoesNotExist
 	}
 	for _, p := range e.activeProposals {
-		if p.ID == updateMarket.MarketID {
-			return types.ProposalErrorInvalidMarket, ErrMarketNotEnactedYet
+		if p.ID == updateMarket.MarketID && p.IsOpen() {
+			return types.ProposalErrorInvalidMarket, ErrMarketProposalStillOpen
 		}
 	}
 
