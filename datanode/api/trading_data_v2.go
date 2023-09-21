@@ -2661,16 +2661,15 @@ func (t *TradingDataServiceV2) scaleFromMarketToAssetPrice(
 }
 
 func (t *TradingDataServiceV2) scaleDecimalFromMarketToAssetPrice(
-	ctx context.Context,
-	mkt entities.Market,
-	price num.Decimal,
-) (num.Decimal, error) {
-	priceFactor, err := t.getMarketPriceFactor(ctx, mkt)
-	if err != nil {
-		return num.DecimalZero(), err
-	}
+	price, priceFactor num.Decimal,
+) num.Decimal {
+	return price.Mul(priceFactor)
+}
 
-	return price.Mul(num.DecimalFromUint(priceFactor)), nil
+func (t *TradingDataServiceV2) scaleDecimalFromAssetToMarketPrice(
+	price, priceFactor num.Decimal,
+) num.Decimal {
+	return price.Div(priceFactor)
 }
 
 func (t *TradingDataServiceV2) getMarketPriceFactor(
@@ -2907,7 +2906,7 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 			return nil, ErrInvalidOrderPrice
 		}
 
-		price = p.Mul(dPriceFactor)
+		price = t.scaleDecimalFromMarketToAssetPrice(price, dPriceFactor)
 
 		switch o.Side {
 		case types.SideBuy:
@@ -2943,10 +2942,7 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		marketObservable = mktData.IndicativePrice
 	}
 
-	marketObservable, err = t.scaleDecimalFromMarketToAssetPrice(ctx, mkt, marketObservable)
-	if err != nil {
-		return nil, formatE(ErrScalingPriceFromMarketToAsset, err)
-	}
+	marketObservable = t.scaleDecimalFromMarketToAssetPrice(marketObservable, dPriceFactor)
 
 	positionFactor := num.DecimalFromFloat(10).
 		Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
@@ -2960,6 +2956,28 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		return nil, formatE(fmt.Errorf("can't parse quadratic slippage factor: %s", mktProto.QuadraticSlippageFactor), err)
 	}
 
+	marginFactorScaledFundingPaymentPerUnitPosition := num.DecimalZero()
+
+	if perp := mktProto.TradableInstrument.Instrument.GetPerpetual(); perp != nil {
+		factor, err := num.DecimalFromString(perp.MarginFundingFactor)
+		if err != nil {
+			return nil, formatE(fmt.Errorf("can't parse margin funding factor: %s", perp.MarginFundingFactor), err)
+		}
+		if !factor.IsZero() {
+			if perpData := mktData.ProductData.GetPerpetualData(); perpData != nil {
+				fundingPayment, err := num.DecimalFromString(perpData.FundingPayment)
+				if err != nil {
+					return nil, formatE(fmt.Errorf("can't parse funding payment from perpetual product data: %s", perpData.FundingPayment), err)
+				}
+				if !fundingPayment.IsZero() {
+					marginFactorScaledFundingPaymentPerUnitPosition = factor.Mul(fundingPayment)
+				}
+			}
+		}
+	}
+
+	marginFactorScaledFundingPaymentPerUnitPosition = t.scaleDecimalFromMarketToAssetPrice(marginFactorScaledFundingPaymentPerUnitPosition, dPriceFactor)
+
 	marginEstimate := t.computeMarginRange(
 		req.MarketId,
 		req.OpenVolume,
@@ -2970,25 +2988,44 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		linearSlippageFactor,
 		quadraticSlippageFactor,
 		rf,
+		marginFactorScaledFundingPaymentPerUnitPosition,
 		auction,
 		asset,
-		mkt.TradableInstrument.MarginCalculator.ScalingFactors)
+		mkt.TradableInstrument.MarginCalculator.ScalingFactors,
+	)
 
 	var liquidationEstimate *v2.LiquidationEstimate
 	if req.CollateralAvailable != nil && len(*req.CollateralAvailable) > 0 {
-		liquidationEstimate, err = t.computeLiquidationPriceRange(
-			collateralAvailable,
-			req.OpenVolume,
-			buyOrders,
-			sellOrders,
-			marketObservable,
-			positionFactor,
-			linearSlippageFactor,
-			quadraticSlippageFactor,
-			rf)
-
+		bPositionOnly, bWithBuy, bWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(req.OpenVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, num.DecimalZero(), num.DecimalZero(), rf.Long, rf.Short, marginFactorScaledFundingPaymentPerUnitPosition)
 		if err != nil {
 			return nil, err
+		}
+
+		wPositionOnly, wWithBuy, wWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(req.OpenVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, rf.Long, rf.Short, marginFactorScaledFundingPaymentPerUnitPosition)
+		if err != nil {
+			return nil, err
+		}
+
+		if req.ScaleLiquidationPriceToMarketDecimals != nil && *req.ScaleLiquidationPriceToMarketDecimals {
+			bPositionOnly = t.scaleDecimalFromAssetToMarketPrice(bPositionOnly, dPriceFactor)
+			bWithBuy = t.scaleDecimalFromAssetToMarketPrice(bWithBuy, dPriceFactor)
+			bWithSell = t.scaleDecimalFromAssetToMarketPrice(bWithSell, dPriceFactor)
+			wPositionOnly = t.scaleDecimalFromAssetToMarketPrice(wPositionOnly, dPriceFactor)
+			wWithBuy = t.scaleDecimalFromAssetToMarketPrice(wWithBuy, dPriceFactor)
+			wWithSell = t.scaleDecimalFromAssetToMarketPrice(wWithSell, dPriceFactor)
+		}
+
+		liquidationEstimate = &v2.LiquidationEstimate{
+			WorstCase: &v2.LiquidationPrice{
+				OpenVolumeOnly:      wPositionOnly.Round(0).String(),
+				IncludingBuyOrders:  wWithBuy.Round(0).String(),
+				IncludingSellOrders: wWithSell.Round(0).String(),
+			},
+			BestCase: &v2.LiquidationPrice{
+				OpenVolumeOnly:      bPositionOnly.Round(0).String(),
+				IncludingBuyOrders:  bWithBuy.Round(0).String(),
+				IncludingSellOrders: bWithSell.Round(0).String(),
+			},
 		}
 	}
 
@@ -3004,48 +3041,18 @@ func (t *TradingDataServiceV2) computeMarginRange(
 	buyOrders, sellOrders []*risk.OrderInfo,
 	marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor num.Decimal,
 	riskFactors entities.RiskFactor,
+	fundingPaymentPerUnitPosition num.Decimal,
 	auction bool,
 	asset string,
 	scalingFactors *vega.ScalingFactors,
 ) *v2.MarginEstimate {
-	worst := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short, auction)
-	best := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short, auction)
+	worst := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short, fundingPaymentPerUnitPosition, auction)
+	best := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short, fundingPaymentPerUnitPosition, auction)
 
 	return &v2.MarginEstimate{
 		WorstCase: implyMarginLevels(worst, scalingFactors, "", market, asset),
 		BestCase:  implyMarginLevels(best, scalingFactors, "", market, asset),
 	}
-}
-
-func (t *TradingDataServiceV2) computeLiquidationPriceRange(
-	collateralAvailable num.Decimal,
-	openVolume int64,
-	buyOrders, sellOrders []*risk.OrderInfo,
-	marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor num.Decimal,
-	riskFactors entities.RiskFactor,
-) (*v2.LiquidationEstimate, error) {
-	bPositionOnly, bWithBuy, bWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short)
-	if err != nil {
-		return nil, err
-	}
-
-	wPositionOnly, wWithBuy, wWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short)
-	if err != nil {
-		return nil, err
-	}
-
-	return &v2.LiquidationEstimate{
-		WorstCase: &v2.LiquidationPrice{
-			OpenVolumeOnly:      wPositionOnly.Round(0).String(),
-			IncludingBuyOrders:  wWithBuy.Round(0).String(),
-			IncludingSellOrders: wWithSell.Round(0).String(),
-		},
-		BestCase: &v2.LiquidationPrice{
-			OpenVolumeOnly:      bPositionOnly.Round(0).String(),
-			IncludingBuyOrders:  bWithBuy.Round(0).String(),
-			IncludingSellOrders: bWithSell.Round(0).String(),
-		},
-	}, nil
 }
 
 // ListNetworkParameters returns a list of network parameters.
