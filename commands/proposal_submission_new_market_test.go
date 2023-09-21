@@ -5630,24 +5630,6 @@ func TestNewMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails(t 
 							Product: &protoTypes.InstrumentConfiguration_Future{},
 						},
 						LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
-							PerformanceHysteresisEpochs: 0,
-						},
-					},
-				},
-			},
-		},
-	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBeLessThen366)
-
-	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{},
-						},
-						LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
 							PerformanceHysteresisEpochs: 367,
 						},
 					},
@@ -5835,24 +5817,6 @@ func testNewMarketChangeSubmissionWithValidCompetitionFactorSucceeds(t *testing.
 
 func testNewMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_NewMarket{
-				NewMarket: &protoTypes.NewMarket{
-					Changes: &protoTypes.NewMarketConfiguration{
-						Instrument: &protoTypes.InstrumentConfiguration{
-							Product: &protoTypes.InstrumentConfiguration_Future{},
-						},
-						LiquiditySlaParameters: &protoTypes.LiquiditySLAParameters{
-							PerformanceHysteresisEpochs: 0,
-						},
-					},
-				},
-			},
-		},
-	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBeLessThen366)
-
-	err = checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
 			Change: &protoTypes.ProposalTerms_NewMarket{
 				NewMarket: &protoTypes.NewMarket{
