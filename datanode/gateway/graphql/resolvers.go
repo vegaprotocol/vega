@@ -1124,6 +1124,7 @@ func (r *myQueryResolver) EstimatePosition(
 	openVolume string,
 	orders []*OrderInfo,
 	collateralAvailable *string,
+	scaleLiquidationPriceToMarketDecimals *bool,
 ) (*PositionEstimate, error) {
 	ov, err := safeStringInt64(openVolume)
 	if err != nil {
@@ -1146,10 +1147,11 @@ func (r *myQueryResolver) EstimatePosition(
 	}
 
 	req := &v2.EstimatePositionRequest{
-		MarketId:            marketId,
-		OpenVolume:          ov,
-		Orders:              ord,
-		CollateralAvailable: collateralAvailable,
+		MarketId:                              marketId,
+		OpenVolume:                            ov,
+		Orders:                                ord,
+		CollateralAvailable:                   collateralAvailable,
+		ScaleLiquidationPriceToMarketDecimals: scaleLiquidationPriceToMarketDecimals,
 	}
 
 	resp, err := r.tradingDataClientV2.EstimatePosition(ctx, req)

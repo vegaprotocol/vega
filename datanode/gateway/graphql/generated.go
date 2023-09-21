@@ -1725,7 +1725,7 @@ type ComplexityRoot struct {
 		Erc20WithdrawalApproval            func(childComplexity int, withdrawalID string) int
 		EstimateFees                       func(childComplexity int, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *int64, typeArg vega.Order_Type) int
 		EstimateOrder                      func(childComplexity int, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *int64, typeArg vega.Order_Type) int
-		EstimatePosition                   func(childComplexity int, marketID string, openVolume string, orders []*OrderInfo, collateralAvailable *string) int
+		EstimatePosition                   func(childComplexity int, marketID string, openVolume string, orders []*OrderInfo, collateralAvailable *string, scaleLiquidationPriceToMarketDecimals *bool) int
 		EthereumKeyRotations               func(childComplexity int, nodeID *string) int
 		FundingPeriodDataPoints            func(childComplexity int, marketID string, dateRange *v2.DateRange, source *v1.FundingPeriodDataPoint_Source, pagination *v2.Pagination) int
 		FundingPeriods                     func(childComplexity int, marketID string, dateRange *v2.DateRange, pagination *v2.Pagination) int
@@ -2903,7 +2903,7 @@ type QueryResolver interface {
 	Erc20WithdrawalApproval(ctx context.Context, withdrawalID string) (*Erc20WithdrawalApproval, error)
 	EstimateOrder(ctx context.Context, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *int64, typeArg vega.Order_Type) (*OrderEstimate, error)
 	EstimateFees(ctx context.Context, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *int64, typeArg vega.Order_Type) (*FeeEstimate, error)
-	EstimatePosition(ctx context.Context, marketID string, openVolume string, orders []*OrderInfo, collateralAvailable *string) (*PositionEstimate, error)
+	EstimatePosition(ctx context.Context, marketID string, openVolume string, orders []*OrderInfo, collateralAvailable *string, scaleLiquidationPriceToMarketDecimals *bool) (*PositionEstimate, error)
 	EthereumKeyRotations(ctx context.Context, nodeID *string) (*v2.EthereumKeyRotationsConnection, error)
 	FundingPeriods(ctx context.Context, marketID string, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.FundingPeriodConnection, error)
 	FundingPeriodDataPoints(ctx context.Context, marketID string, dateRange *v2.DateRange, source *v1.FundingPeriodDataPoint_Source, pagination *v2.Pagination) (*v2.FundingPeriodDataPointConnection, error)
@@ -9955,7 +9955,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.EstimatePosition(childComplexity, args["marketId"].(string), args["openVolume"].(string), args["orders"].([]*OrderInfo), args["collateralAvailable"].(*string)), true
+		return e.complexity.Query.EstimatePosition(childComplexity, args["marketId"].(string), args["openVolume"].(string), args["orders"].([]*OrderInfo), args["collateralAvailable"].(*string), args["scaleLiquidationPriceToMarketDecimals"].(*bool)), true
 
 	case "Query.ethereumKeyRotations":
 		if e.complexity.Query.EthereumKeyRotations == nil {
@@ -14458,6 +14458,15 @@ func (ec *executionContext) field_Query_estimatePosition_args(ctx context.Contex
 		}
 	}
 	args["collateralAvailable"] = arg3
+	var arg4 *bool
+	if tmp, ok := rawArgs["scaleLiquidationPriceToMarketDecimals"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scaleLiquidationPriceToMarketDecimals"))
+		arg4, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["scaleLiquidationPriceToMarketDecimals"] = arg4
 	return args, nil
 }
 
@@ -61116,7 +61125,7 @@ func (ec *executionContext) _Query_estimatePosition(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().EstimatePosition(rctx, fc.Args["marketId"].(string), fc.Args["openVolume"].(string), fc.Args["orders"].([]*OrderInfo), fc.Args["collateralAvailable"].(*string))
+		return ec.resolvers.Query().EstimatePosition(rctx, fc.Args["marketId"].(string), fc.Args["openVolume"].(string), fc.Args["orders"].([]*OrderInfo), fc.Args["collateralAvailable"].(*string), fc.Args["scaleLiquidationPriceToMarketDecimals"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
