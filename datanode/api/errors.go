@@ -23,7 +23,7 @@ import (
 
 // API Errors and descriptions.
 var (
-	// ErrNoTrustedProxy indactes a forwarded request that did not pass through a trusted proxy
+	// ErrNoTrustedProxy indactes a forwarded request that did not pass through a trusted proxy.
 	ErrNoTrustedProxy = errors.New("forwarded requests need to pass through a trusted proxy")
 	// ErrChannelClosed signals that the channel streaming data is closed.
 	ErrChannelClosed = errors.New("channel closed")
