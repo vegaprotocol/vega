@@ -28,7 +28,7 @@ var ErrChainNotFound = errors.New("no chain found")
 type NetworkHistory interface {
 	FetchHistorySegment(ctx context.Context, historySegmentID string) (segment.Full, error)
 	LoadNetworkHistoryIntoDatanode(ctx context.Context, chunk segment.ContiguousHistory[segment.Full], cfg sqlstore.ConnectionConfig, withIndexesAndOrderTriggers, verbose bool) (snapshot.LoadResult, error)
-	GetMostRecentHistorySegmentFromPeers(ctx context.Context, grpcAPIPorts []int) (*PeerResponse, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse, error)
+	GetMostRecentHistorySegmentFromBootstrapPeers(ctx context.Context, grpcAPIPorts []int) (*PeerResponse, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse, error)
 	GetDatanodeBlockSpan(ctx context.Context) (sqlstore.DatanodeBlockSpan, error)
 	ListAllHistorySegments() (segment.Segments[segment.Full], error)
 }
@@ -54,7 +54,7 @@ func InitialiseDatanodeFromNetworkHistory(parentCtx context.Context, cfg Initial
 	var toSegmentID string
 	blocksToFetch := cfg.MinimumBlockCount
 	if len(cfg.ToSegment) == 0 {
-		response, _, err := networkHistoryService.GetMostRecentHistorySegmentFromPeers(sqlCtx,
+		response, _, err := networkHistoryService.GetMostRecentHistorySegmentFromBootstrapPeers(sqlCtx,
 			grpcPorts)
 		if err != nil {
 			log.Errorf("failed to get most recent history segment from peers: %v", err)

@@ -3666,7 +3666,7 @@ func toHistorySegment(segment segment.Full) *v2.HistorySegment {
 
 // GetActiveNetworkHistoryPeerAddresses returns the active network history peer addresses.
 func (t *TradingDataServiceV2) GetActiveNetworkHistoryPeerAddresses(context.Context, *v2.GetActiveNetworkHistoryPeerAddressesRequest) (*v2.GetActiveNetworkHistoryPeerAddressesResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("GetMostRecentHistorySegmentFromPeers")()
+	defer metrics.StartAPIRequestAndTimeGRPC("GetActiveNetworkHistoryPeerAddresses")()
 
 	if t.NetworkHistoryService == nil || reflect.ValueOf(t.NetworkHistoryService).IsNil() {
 		return nil, formatE(ErrNetworkHistoryServiceNotInitialised)
