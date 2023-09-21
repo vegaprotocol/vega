@@ -102,6 +102,7 @@
 - [9456](https://github.com/vegaprotocol/vega/issues/9456) - Add liquidity `SLA` parameters to `NewMarket` and `UpdateMarketConfiguration` proposals in `GraphQL`.
 - [9408](https://github.com/vegaprotocol/vega/issues/9408) - Check for integer overflow in pagination.
 - [5176](https://github.com/vegaprotocol/vega/issues/5176) - Check for duplicate asset registration in integration tests.
+- [9496](https://github.com/vegaprotocol/vega/issues/9496) - Added support for new dispatch strategy fields in feature tests
 
 ### 🐛 Fixes
 

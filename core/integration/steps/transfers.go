@@ -15,6 +15,7 @@ package steps
 import (
 	"context"
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -150,15 +151,92 @@ func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {
 		if len(mkts) == 1 && mkts[0] == "" {
 			mkts = []string{}
 		}
+		lockPeriod := uint64(1)
+		if r.HasColumn("lock_period") {
+			lockPeriod = r.U64("lock_period")
+		}
+		windowLength := uint64(1)
+		if r.HasColumn("window_length") {
+			windowLength = r.U64("window_length")
+		}
+
+		distributionStrategy := proto.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA
+		var ranks []*proto.Rank
+		if r.HasColumn("distribution_strategy") {
+			distStrat := r.Str("distribution_strategy")
+			if distStrat == "PRO_RATA" {
+				distributionStrategy = proto.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA
+			} else if distStrat == "RANK" {
+				distributionStrategy = proto.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK
+				rankList := strings.Split(r.MustStr("ranks"), ",")
+				ranks = make([]*proto.Rank, 0, len(rankList))
+				for _, r := range rankList {
+					rr := strings.Split(r, ":")
+					startRank, _ := strconv.ParseUint(rr[0], 10, 32)
+					shareRatio, _ := strconv.ParseUint(rr[1], 10, 32)
+					ranks = append(ranks, &proto.Rank{StartRank: uint32(startRank), ShareRatio: uint32(shareRatio)})
+				}
+			}
+		}
+
+		entityScope := proto.EntityScope_ENTITY_SCOPE_INDIVIDUALS
+		if r.HasColumn("entity_scope") {
+			scope := r.Str("entity_scope")
+			if scope == "INDIVIDUALS" {
+				entityScope = proto.EntityScope_ENTITY_SCOPE_INDIVIDUALS
+			} else if scope == "TEAMS" {
+				entityScope = proto.EntityScope_ENTITY_SCOPE_TEAMS
+			}
+		}
+
+		indiScope := proto.IndividualScope_INDIVIDUAL_SCOPE_UNSPECIFIED
+		if entityScope == proto.EntityScope_ENTITY_SCOPE_INDIVIDUALS {
+			indiScope = proto.IndividualScope_INDIVIDUAL_SCOPE_ALL
+			if r.HasColumn("individual_scope") {
+				indiScopeStr := r.Str("individual_scope")
+				if indiScopeStr == "ALL" {
+					indiScope = proto.IndividualScope_INDIVIDUAL_SCOPE_ALL
+				} else if indiScopeStr == "IN_TEAM" {
+					indiScope = proto.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM
+				} else if indiScopeStr == "NOT_IN_TEAM" {
+					indiScope = proto.IndividualScope_INDIVIDUAL_SCOPE_NOT_IN_TEAM
+				}
+			}
+		}
+
+		teams := []string{}
+		ntop := ""
+		if entityScope == proto.EntityScope_ENTITY_SCOPE_TEAMS {
+			teams = strings.Split(r.MustStr("teams"), ",")
+			if len(teams) == 1 && teams[0] == "" {
+				mkts = []string{}
+			}
+			ntop = r.MustStr("ntop")
+		}
+
+		stakingRequirement := ""
+		notionalRequirement := ""
+		if r.HasColumn("staking_requirement") {
+			stakingRequirement = r.MustStr("staking_requirement")
+		}
+		if r.HasColumn("notional_requirement") {
+			notionalRequirement = r.mustColumn("notional_requirement")
+		}
+
 		dispatchStrategy = &proto.DispatchStrategy{
 			AssetForMetric:       r.MustStr("metric_asset"),
 			Markets:              mkts,
 			Metric:               proto.DispatchMetric(proto.DispatchMetric_value[r.MustStr("metric")]),
-			DistributionStrategy: proto.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA,
-			LockPeriod:           1,
-			EntityScope:          proto.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
-			IndividualScope:      proto.IndividualScope_INDIVIDUAL_SCOPE_ALL,
-			WindowLength:         1,
+			DistributionStrategy: distributionStrategy,
+			LockPeriod:           lockPeriod,
+			EntityScope:          entityScope,
+			IndividualScope:      indiScope,
+			WindowLength:         windowLength,
+			TeamScope:            teams,
+			NTopPerformers:       ntop,
+			StakingRequirement:   stakingRequirement,
+			NotionalTimeWeightedAveragePositionRequirement: notionalRequirement,
+			RankTable: ranks,
 		}
 	}
 
