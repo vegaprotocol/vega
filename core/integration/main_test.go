@@ -400,6 +400,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^"([^"]*)" should have vesting account balance of "([^"]*)" for asset "([^"]*)"$`, func(party, balance, asset string) error {
 		return steps.PartyShouldHaveVestingAccountBalanceForAsset(execsetup.broker, party, asset, balance)
 	})
+	s.Step(`^"([^"]*)" should have vested account balance of "([^"]*)" for asset "([^"]*)"$`, func(party, balance, asset string) error {
+		return steps.PartyShouldHaveVestedAccountBalanceForAsset(execsetup.broker, party, asset, balance)
+	})
 	s.Step(`^"([^"]*)" should have holding account balance of "([^"]*)" for asset "([^"]*)"$`, func(party, balance, asset string) error {
 		return steps.PartyShouldHaveHoldingAccountBalanceForAsset(execsetup.broker, party, asset, balance)
 	})

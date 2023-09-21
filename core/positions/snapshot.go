@@ -98,12 +98,12 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 			}
 
 			// ensure these exists on the first snapshot after the upgrade
-			e.partiesLowestVolume[p.PartyID] = &openVolumeRecord{}
+			e.partiesHighestVolume[p.PartyID] = &openVolumeRecord{}
 		}
 
 		for _, v := range pl.MarketPositions.PartieRecords {
 			if v.LatestOpenInterest != nil && v.LowestOpenInterest != nil {
-				e.partiesLowestVolume[v.Party] = &openVolumeRecord{
+				e.partiesHighestVolume[v.Party] = &openVolumeRecord{
 					Latest:  *v.LatestOpenInterest,
 					Highest: *v.LowestOpenInterest,
 				}
@@ -152,7 +152,7 @@ func (e *SnapshotEngine) serialise() ([]byte, error) {
 
 	// now iterate over both map as some could have been remove
 	// when closing positions or being closed out.
-	for party, poi := range e.partiesLowestVolume {
+	for party, poi := range e.partiesHighestVolume {
 		partiesRecordsMap[party] = &snapshotpb.PartyPositionStats{
 			Party:              party,
 			LowestOpenInterest: ptr.From(poi.Highest),

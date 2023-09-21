@@ -861,6 +861,20 @@ func (b *BrokerStub) GetPartyVestingAccount(party, asset string) (ga vegapb.Acco
 	return
 }
 
+// GetPartyVestingAccount returns the latest event WRT the party's general account.
+func (b *BrokerStub) GetPartyVestedAccount(party, asset string) (ga vegapb.Account, err error) {
+	batch := b.GetAccountEvents()
+	err = errors.New("account does not exist")
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == party && v.Type == vegapb.AccountType_ACCOUNT_TYPE_VESTED_REWARDS && v.Asset == asset {
+			ga = v
+			err = nil
+		}
+	}
+	return
+}
+
 // GetPartyGeneralAccount returns the latest event WRT the party's general account.
 func (b *BrokerStub) GetPartyHoldingAccount(party, asset string) (ga vegapb.Account, err error) {
 	batch := b.GetAccountEvents()

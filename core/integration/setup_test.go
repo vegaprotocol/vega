@@ -207,7 +207,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.activityStreak = activitystreak.New(execsetup.log, execsetup.executionEngine, execsetup.broker)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.activityStreak.OnEpochEvent, execsetup.activityStreak.OnEpochRestore)
 
-	execsetup.vesting = vesting.New(execsetup.log, execsetup.collateralEngine, DummyASVM{}, execsetup.broker, execsetup.assetsEngine)
+	execsetup.vesting = vesting.New(execsetup.log, execsetup.collateralEngine, execsetup.activityStreak, execsetup.broker, execsetup.assetsEngine)
 	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, marketActivityTracker, execsetup.topology, execsetup.vesting, execsetup.banking, execsetup.activityStreak)
 
 	// register this after the rewards engine is created to make sure the on epoch is called in the right order.
@@ -470,6 +470,18 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.RewardsActivityStreakInactivityLimit,
 			Watcher: execsetup.activityStreak.OnRewardsActivityStreakInactivityLimit,
+		},
+		netparams.WatchParam{
+			Param:   netparams.RewardsVestingBaseRate,
+			Watcher: execsetup.vesting.OnRewardVestingBaseRateUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.RewardsVestingMinimumTransfer,
+			Watcher: execsetup.vesting.OnRewardVestingMinimumTransferUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.RewardsVestingBenefitTiers,
+			Watcher: execsetup.vesting.OnBenefitTiersUpdate,
 		},
 	)
 }
