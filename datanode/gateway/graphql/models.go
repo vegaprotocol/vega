@@ -415,6 +415,22 @@ type LiquidityProviderFeeShare struct {
 	VirtualStake string `json:"virtualStake"`
 }
 
+// The SLA statistics for each liquidity provider
+type LiquidityProviderSLA struct {
+	// The liquidity provider party ID
+	Party *vega.Party `json:"party"`
+	// Indicates how often LP meets the commitment during the current epoch.
+	CurrentEpochFractionOfTimeOnBook string `json:"currentEpochFractionOfTimeOnBook"`
+	// Indicates how often LP met the commitment in the previous epoch.
+	LastEpochFractionOfTimeOnBook string `json:"lastEpochFractionOfTimeOnBook"`
+	// Indicates the fee penalty amount applied in the previous epoch.
+	LastEpochFeePenalty string `json:"lastEpochFeePenalty"`
+	// Indicates the bond penalty amount applied in the previous epoch.
+	LastEpochBondPenalty string `json:"lastEpochBondPenalty"`
+	// Determines how the fee penalties from past epochs affect future fee revenue.
+	HysteresisPeriodFeePenalties []string `json:"hysteresisPeriodFeePenalties"`
+}
+
 type LossSocialization struct {
 	// The market ID where loss socialization happened
 	MarketID string `json:"marketId"`
@@ -486,6 +502,22 @@ type ObservableLiquidityProviderFeeShare struct {
 	AverageEntryValuation string `json:"averageEntryValuation"`
 	// The average liquidity score
 	AverageScore string `json:"averageScore"`
+}
+
+// The SLA statistics for each liquidity provider
+type ObservableLiquidityProviderSLA struct {
+	// The liquidity provider party ID
+	Party string `json:"party"`
+	// Indicates how often LP meets the commitment during the current epoch.
+	CurrentEpochFractionOfTimeOnBook string `json:"currentEpochFractionOfTimeOnBook"`
+	// Indicates how often LP meets the commitment during last epoch.
+	LastEpochFractionOfTimeOnBook string `json:"lastEpochFractionOfTimeOnBook"`
+	// Indicates the fee penalty amount applied in the previous epoch.
+	LastEpochFeePenalty string `json:"lastEpochFeePenalty"`
+	// Indicates the bond penalty amount applied in the previous epoch.
+	LastEpochBondPenalty string `json:"lastEpochBondPenalty"`
+	// Determines how the fee penalties from past epochs affect future fee revenue.
+	HysteresisPeriodFeePenalties []string `json:"hysteresisPeriodFeePenalties"`
 }
 
 type OrderByMarketAndPartyIdsFilter struct {

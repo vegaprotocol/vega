@@ -830,7 +830,6 @@ func testListLiquidityProviderValidMarketID(t *testing.T) {
 
 	lps, pageInfo, err := lpStore.ListProviders(ctx, nil, ptr.From(entities.MarketID("cafed00d")), entities.CursorPagination{})
 	require.NoError(t, err)
-
 	want := providers[:2]
 
 	assert.Equal(t, want, lps)
@@ -985,6 +984,14 @@ func addLiquidityProvisionsMultiProvider(ctx context.Context, t *testing.T, bs *
 				AverageScore:          "0",
 				VirtualStake:          "0",
 			})
+			md.LiquidityProviderSLA = append(md.LiquidityProviderSLA, &vega.LiquidityProviderSLA{
+				Party:                            provider.PartyID,
+				CurrentEpochFractionOfTimeOnBook: "0.5",
+				LastEpochFractionOfTimeOnBook:    "1",
+				LastEpochFeePenalty:              "0",
+				LastEpochBondPenalty:             "0",
+				HysteresisPeriodFeePenalties:     []string{"0"},
+			})
 			md.SyntheticTime = vegaTime
 			md.VegaTime = vegaTime
 
@@ -1009,6 +1016,14 @@ func addLiquidityProvisionsMultiProvider(ctx context.Context, t *testing.T, bs *
 						AverageEntryValuation: "0",
 						AverageScore:          "0",
 						VirtualStake:          "0",
+					},
+					SLA: &vega.LiquidityProviderSLA{
+						Party:                            provider.PartyID,
+						CurrentEpochFractionOfTimeOnBook: "0.5",
+						LastEpochFractionOfTimeOnBook:    "1",
+						LastEpochFeePenalty:              "0",
+						LastEpochBondPenalty:             "0",
+						HysteresisPeriodFeePenalties:     []string{"0"},
 					},
 				})
 			}

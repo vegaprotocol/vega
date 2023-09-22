@@ -1229,6 +1229,8 @@ message MarketData {
   string market_growth = 30;
   // Data related to the particular product type of the market.
   optional ProductData product_data = 31;
+  // SLA performance for each liquidity provider.
+  repeated LiquidityProviderSLA liquidity_provider_sla = 32;
 }
 
 // Equity like share of liquidity fee for each liquidity provider
@@ -1243,6 +1245,22 @@ message LiquidityProviderFeeShare {
   string average_score = 4;
   // The virtual stake of this liquidity provider.
   string virtual_stake = 5;
+}
+
+// SLA performance for each liquidity provider
+message LiquidityProviderSLA {
+  // Liquidity provider party ID.
+  string party = 1;
+  // Indicates how often LP meets the commitment during the current epoch.
+  string current_epoch_fraction_of_time_on_book = 2;
+  // Indicates how often LP met the commitment in the previous epoch.
+  string last_epoch_fraction_of_time_on_book = 3;
+  // Indicates the fee penalty amount applied in the previous epoch.
+  string last_epoch_fee_penalty = 4;
+  // Shows the bond penalties from past epochs.
+  string last_epoch_bond_penalty = 5;
+  // Determines how the fee penalties from past epochs affect future fee revenue.
+  repeated string hysteresis_period_fee_penalties = 6;
 }
 
 // Represents a list of valid (at the current timestamp) price ranges per associated trigger

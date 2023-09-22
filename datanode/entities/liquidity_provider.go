@@ -14,6 +14,7 @@ type LiquidityProvider struct {
 	MarketID   MarketID
 	Ordinality int64
 	FeeShare   *vega.LiquidityProviderFeeShare
+	SLA        *vega.LiquidityProviderSLA
 }
 
 type LiquidityProviderCursor struct {
@@ -43,6 +44,7 @@ func (lp LiquidityProvider) ToProto() *v2.LiquidityProvider {
 		PartyId:  lp.PartyID.String(),
 		MarketId: lp.MarketID.String(),
 		FeeShare: lp.FeeShare,
+		Sla:      lp.SLA,
 	}
 }
 

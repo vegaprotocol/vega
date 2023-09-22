@@ -226,6 +226,8 @@ type LiquidityEngine interface {
 	OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal)
 	IsProbabilityOfTradingInitialised() bool
 
+	LiquidityProviderSLAStats(t time.Time) []*types.LiquidityProviderSLA
+
 	SetLastFeeDistributionTime(t time.Time)
 	GetLastFeeDistributionTime() time.Time
 

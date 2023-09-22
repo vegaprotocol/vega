@@ -1609,6 +1609,20 @@ func (mr *MockLiquidityEngineMockRecorder) IsProbabilityOfTradingInitialised() *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsProbabilityOfTradingInitialised", reflect.TypeOf((*MockLiquidityEngine)(nil).IsProbabilityOfTradingInitialised))
 }
 
+// LiquidityProviderSLAStats mocks base method.
+func (m *MockLiquidityEngine) LiquidityProviderSLAStats(arg0 time.Time) []*vega.LiquidityProviderSLA {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LiquidityProviderSLAStats", arg0)
+	ret0, _ := ret[0].([]*vega.LiquidityProviderSLA)
+	return ret0
+}
+
+// LiquidityProviderSLAStats indicates an expected call of LiquidityProviderSLAStats.
+func (mr *MockLiquidityEngineMockRecorder) LiquidityProviderSLAStats(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LiquidityProviderSLAStats", reflect.TypeOf((*MockLiquidityEngine)(nil).LiquidityProviderSLAStats), arg0)
+}
+
 // LiquidityProvisionByPartyID mocks base method.
 func (m *MockLiquidityEngine) LiquidityProvisionByPartyID(arg0 string) *types.LiquidityProvision {
 	m.ctrl.T.Helper()

@@ -844,6 +844,7 @@ type ComplexityRoot struct {
 		FeeShare func(childComplexity int) int
 		MarketId func(childComplexity int) int
 		PartyId  func(childComplexity int) int
+		SLA      func(childComplexity int) int
 	}
 
 	LiquidityProviderConnection struct {
@@ -862,6 +863,15 @@ type ComplexityRoot struct {
 		EquityLikeShare       func(childComplexity int) int
 		Party                 func(childComplexity int) int
 		VirtualStake          func(childComplexity int) int
+	}
+
+	LiquidityProviderSLA struct {
+		CurrentEpochFractionOfTimeOnBook func(childComplexity int) int
+		HysteresisPeriodFeePenalties     func(childComplexity int) int
+		LastEpochBondPenalty             func(childComplexity int) int
+		LastEpochFeePenalty              func(childComplexity int) int
+		LastEpochFractionOfTimeOnBook    func(childComplexity int) int
+		Party                            func(childComplexity int) int
 	}
 
 	LiquidityProvision struct {
@@ -1021,6 +1031,7 @@ type ComplexityRoot struct {
 		IndicativeVolume          func(childComplexity int) int
 		LastTradedPrice           func(childComplexity int) int
 		LiquidityProviderFeeShare func(childComplexity int) int
+		LiquidityProviderSLA      func(childComplexity int) int
 		MarkPrice                 func(childComplexity int) int
 		Market                    func(childComplexity int) int
 		MarketGrowth              func(childComplexity int) int
@@ -1260,6 +1271,15 @@ type ComplexityRoot struct {
 		PartyID               func(childComplexity int) int
 	}
 
+	ObservableLiquidityProviderSLA struct {
+		CurrentEpochFractionOfTimeOnBook func(childComplexity int) int
+		HysteresisPeriodFeePenalties     func(childComplexity int) int
+		LastEpochBondPenalty             func(childComplexity int) int
+		LastEpochFeePenalty              func(childComplexity int) int
+		LastEpochFractionOfTimeOnBook    func(childComplexity int) int
+		Party                            func(childComplexity int) int
+	}
+
 	ObservableMarketData struct {
 		AuctionEnd                func(childComplexity int) int
 		AuctionStart              func(childComplexity int) int
@@ -1276,6 +1296,7 @@ type ComplexityRoot struct {
 		IndicativeVolume          func(childComplexity int) int
 		LastTradedPrice           func(childComplexity int) int
 		LiquidityProviderFeeShare func(childComplexity int) int
+		LiquidityProviderSLA      func(childComplexity int) int
 		MarkPrice                 func(childComplexity int) int
 		MarketGrowth              func(childComplexity int) int
 		MarketID                  func(childComplexity int) int
@@ -2587,6 +2608,7 @@ type LiquidityOrderReferenceResolver interface {
 }
 type LiquidityProviderResolver interface {
 	FeeShare(ctx context.Context, obj *v2.LiquidityProvider) (*LiquidityProviderFeeShare, error)
+	SLA(ctx context.Context, obj *v2.LiquidityProvider) (*LiquidityProviderSLA, error)
 }
 type LiquidityProvisionResolver interface {
 	Party(ctx context.Context, obj *vega.LiquidityProvision) (*vega.Party, error)
@@ -2655,6 +2677,7 @@ type MarketDataResolver interface {
 	PriceMonitoringBounds(ctx context.Context, obj *vega.MarketData) ([]*PriceMonitoringBounds, error)
 
 	LiquidityProviderFeeShare(ctx context.Context, obj *vega.MarketData) ([]*LiquidityProviderFeeShare, error)
+	LiquidityProviderSLA(ctx context.Context, obj *vega.MarketData) ([]*LiquidityProviderSLA, error)
 	NextMarkToMarket(ctx context.Context, obj *vega.MarketData) (string, error)
 
 	ProductData(ctx context.Context, obj *vega.MarketData) (ProductData, error)
@@ -2747,6 +2770,7 @@ type ObservableMarketDataResolver interface {
 	PriceMonitoringBounds(ctx context.Context, obj *vega.MarketData) ([]*PriceMonitoringBounds, error)
 
 	LiquidityProviderFeeShare(ctx context.Context, obj *vega.MarketData) ([]*ObservableLiquidityProviderFeeShare, error)
+	LiquidityProviderSLA(ctx context.Context, obj *vega.MarketData) ([]*ObservableLiquidityProviderSLA, error)
 	NextMarkToMarket(ctx context.Context, obj *vega.MarketData) (string, error)
 
 	ProductData(ctx context.Context, obj *vega.MarketData) (ProductData, error)
@@ -5815,6 +5839,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LiquidityProvider.PartyId(childComplexity), true
 
+	case "LiquidityProvider.sla":
+		if e.complexity.LiquidityProvider.SLA == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProvider.SLA(childComplexity), true
+
 	case "LiquidityProviderConnection.edges":
 		if e.complexity.LiquidityProviderConnection.Edges == nil {
 			break
@@ -5877,6 +5908,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LiquidityProviderFeeShare.VirtualStake(childComplexity), true
+
+	case "LiquidityProviderSLA.currentEpochFractionOfTimeOnBook":
+		if e.complexity.LiquidityProviderSLA.CurrentEpochFractionOfTimeOnBook == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProviderSLA.CurrentEpochFractionOfTimeOnBook(childComplexity), true
+
+	case "LiquidityProviderSLA.hysteresisPeriodFeePenalties":
+		if e.complexity.LiquidityProviderSLA.HysteresisPeriodFeePenalties == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProviderSLA.HysteresisPeriodFeePenalties(childComplexity), true
+
+	case "LiquidityProviderSLA.lastEpochBondPenalty":
+		if e.complexity.LiquidityProviderSLA.LastEpochBondPenalty == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProviderSLA.LastEpochBondPenalty(childComplexity), true
+
+	case "LiquidityProviderSLA.lastEpochFeePenalty":
+		if e.complexity.LiquidityProviderSLA.LastEpochFeePenalty == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProviderSLA.LastEpochFeePenalty(childComplexity), true
+
+	case "LiquidityProviderSLA.lastEpochFractionOfTimeOnBook":
+		if e.complexity.LiquidityProviderSLA.LastEpochFractionOfTimeOnBook == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProviderSLA.LastEpochFractionOfTimeOnBook(childComplexity), true
+
+	case "LiquidityProviderSLA.party":
+		if e.complexity.LiquidityProviderSLA.Party == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProviderSLA.Party(childComplexity), true
 
 	case "LiquidityProvision.buys":
 		if e.complexity.LiquidityProvision.Buys == nil {
@@ -6663,6 +6736,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarketData.LiquidityProviderFeeShare(childComplexity), true
+
+	case "MarketData.liquidityProviderSla":
+		if e.complexity.MarketData.LiquidityProviderSLA == nil {
+			break
+		}
+
+		return e.complexity.MarketData.LiquidityProviderSLA(childComplexity), true
 
 	case "MarketData.markPrice":
 		if e.complexity.MarketData.MarkPrice == nil {
@@ -7698,6 +7778,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ObservableLiquidityProviderFeeShare.PartyID(childComplexity), true
 
+	case "ObservableLiquidityProviderSLA.currentEpochFractionOfTimeOnBook":
+		if e.complexity.ObservableLiquidityProviderSLA.CurrentEpochFractionOfTimeOnBook == nil {
+			break
+		}
+
+		return e.complexity.ObservableLiquidityProviderSLA.CurrentEpochFractionOfTimeOnBook(childComplexity), true
+
+	case "ObservableLiquidityProviderSLA.hysteresisPeriodFeePenalties":
+		if e.complexity.ObservableLiquidityProviderSLA.HysteresisPeriodFeePenalties == nil {
+			break
+		}
+
+		return e.complexity.ObservableLiquidityProviderSLA.HysteresisPeriodFeePenalties(childComplexity), true
+
+	case "ObservableLiquidityProviderSLA.lastEpochBondPenalty":
+		if e.complexity.ObservableLiquidityProviderSLA.LastEpochBondPenalty == nil {
+			break
+		}
+
+		return e.complexity.ObservableLiquidityProviderSLA.LastEpochBondPenalty(childComplexity), true
+
+	case "ObservableLiquidityProviderSLA.lastEpochFeePenalty":
+		if e.complexity.ObservableLiquidityProviderSLA.LastEpochFeePenalty == nil {
+			break
+		}
+
+		return e.complexity.ObservableLiquidityProviderSLA.LastEpochFeePenalty(childComplexity), true
+
+	case "ObservableLiquidityProviderSLA.lastEpochFractionOfTimeOnBook":
+		if e.complexity.ObservableLiquidityProviderSLA.LastEpochFractionOfTimeOnBook == nil {
+			break
+		}
+
+		return e.complexity.ObservableLiquidityProviderSLA.LastEpochFractionOfTimeOnBook(childComplexity), true
+
+	case "ObservableLiquidityProviderSLA.party":
+		if e.complexity.ObservableLiquidityProviderSLA.Party == nil {
+			break
+		}
+
+		return e.complexity.ObservableLiquidityProviderSLA.Party(childComplexity), true
+
 	case "ObservableMarketData.auctionEnd":
 		if e.complexity.ObservableMarketData.AuctionEnd == nil {
 			break
@@ -7802,6 +7924,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ObservableMarketData.LiquidityProviderFeeShare(childComplexity), true
+
+	case "ObservableMarketData.liquidityProviderSla":
+		if e.complexity.ObservableMarketData.LiquidityProviderSLA == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.LiquidityProviderSLA(childComplexity), true
 
 	case "ObservableMarketData.markPrice":
 		if e.complexity.ObservableMarketData.MarkPrice == nil {
@@ -33845,6 +33974,61 @@ func (ec *executionContext) fieldContext_LiquidityProvider_feeShare(ctx context.
 	return fc, nil
 }
 
+func (ec *executionContext) _LiquidityProvider_sla(ctx context.Context, field graphql.CollectedField, obj *v2.LiquidityProvider) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityProvider_sla(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.LiquidityProvider().SLA(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*LiquidityProviderSLA)
+	fc.Result = res
+	return ec.marshalOLiquidityProviderSLA2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐLiquidityProviderSLA(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityProvider_sla(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityProvider",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "party":
+				return ec.fieldContext_LiquidityProviderSLA_party(ctx, field)
+			case "currentEpochFractionOfTimeOnBook":
+				return ec.fieldContext_LiquidityProviderSLA_currentEpochFractionOfTimeOnBook(ctx, field)
+			case "lastEpochFractionOfTimeOnBook":
+				return ec.fieldContext_LiquidityProviderSLA_lastEpochFractionOfTimeOnBook(ctx, field)
+			case "lastEpochFeePenalty":
+				return ec.fieldContext_LiquidityProviderSLA_lastEpochFeePenalty(ctx, field)
+			case "lastEpochBondPenalty":
+				return ec.fieldContext_LiquidityProviderSLA_lastEpochBondPenalty(ctx, field)
+			case "hysteresisPeriodFeePenalties":
+				return ec.fieldContext_LiquidityProviderSLA_hysteresisPeriodFeePenalties(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquidityProviderSLA", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _LiquidityProviderConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.LiquidityProviderConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_LiquidityProviderConnection_edges(ctx, field)
 	if err != nil {
@@ -33991,6 +34175,8 @@ func (ec *executionContext) fieldContext_LiquidityProviderEdge_node(ctx context.
 				return ec.fieldContext_LiquidityProvider_marketId(ctx, field)
 			case "feeShare":
 				return ec.fieldContext_LiquidityProvider_feeShare(ctx, field)
+			case "sla":
+				return ec.fieldContext_LiquidityProvider_sla(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LiquidityProvider", field.Name)
 		},
@@ -34288,6 +34474,303 @@ func (ec *executionContext) _LiquidityProviderFeeShare_virtualStake(ctx context.
 func (ec *executionContext) fieldContext_LiquidityProviderFeeShare_virtualStake(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LiquidityProviderFeeShare",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidityProviderSLA_party(ctx context.Context, field graphql.CollectedField, obj *LiquidityProviderSLA) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityProviderSLA_party(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Party, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Party)
+	fc.Result = res
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityProviderSLA_party(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityProviderSLA",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Party_id(ctx, field)
+			case "ordersConnection":
+				return ec.fieldContext_Party_ordersConnection(ctx, field)
+			case "tradesConnection":
+				return ec.fieldContext_Party_tradesConnection(ctx, field)
+			case "accountsConnection":
+				return ec.fieldContext_Party_accountsConnection(ctx, field)
+			case "positionsConnection":
+				return ec.fieldContext_Party_positionsConnection(ctx, field)
+			case "marginsConnection":
+				return ec.fieldContext_Party_marginsConnection(ctx, field)
+			case "proposalsConnection":
+				return ec.fieldContext_Party_proposalsConnection(ctx, field)
+			case "votesConnection":
+				return ec.fieldContext_Party_votesConnection(ctx, field)
+			case "withdrawalsConnection":
+				return ec.fieldContext_Party_withdrawalsConnection(ctx, field)
+			case "depositsConnection":
+				return ec.fieldContext_Party_depositsConnection(ctx, field)
+			case "liquidityProvisionsConnection":
+				return ec.fieldContext_Party_liquidityProvisionsConnection(ctx, field)
+			case "delegationsConnection":
+				return ec.fieldContext_Party_delegationsConnection(ctx, field)
+			case "stakingSummary":
+				return ec.fieldContext_Party_stakingSummary(ctx, field)
+			case "rewardsConnection":
+				return ec.fieldContext_Party_rewardsConnection(ctx, field)
+			case "rewardSummaries":
+				return ec.fieldContext_Party_rewardSummaries(ctx, field)
+			case "transfersConnection":
+				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			case "activityStreak":
+				return ec.fieldContext_Party_activityStreak(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidityProviderSLA_currentEpochFractionOfTimeOnBook(ctx context.Context, field graphql.CollectedField, obj *LiquidityProviderSLA) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityProviderSLA_currentEpochFractionOfTimeOnBook(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CurrentEpochFractionOfTimeOnBook, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityProviderSLA_currentEpochFractionOfTimeOnBook(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityProviderSLA",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidityProviderSLA_lastEpochFractionOfTimeOnBook(ctx context.Context, field graphql.CollectedField, obj *LiquidityProviderSLA) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityProviderSLA_lastEpochFractionOfTimeOnBook(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastEpochFractionOfTimeOnBook, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityProviderSLA_lastEpochFractionOfTimeOnBook(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityProviderSLA",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidityProviderSLA_lastEpochFeePenalty(ctx context.Context, field graphql.CollectedField, obj *LiquidityProviderSLA) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityProviderSLA_lastEpochFeePenalty(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastEpochFeePenalty, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityProviderSLA_lastEpochFeePenalty(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityProviderSLA",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidityProviderSLA_lastEpochBondPenalty(ctx context.Context, field graphql.CollectedField, obj *LiquidityProviderSLA) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityProviderSLA_lastEpochBondPenalty(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastEpochBondPenalty, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityProviderSLA_lastEpochBondPenalty(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityProviderSLA",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidityProviderSLA_hysteresisPeriodFeePenalties(ctx context.Context, field graphql.CollectedField, obj *LiquidityProviderSLA) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityProviderSLA_hysteresisPeriodFeePenalties(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HysteresisPeriodFeePenalties, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityProviderSLA_hysteresisPeriodFeePenalties(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityProviderSLA",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -38386,6 +38869,8 @@ func (ec *executionContext) fieldContext_Market_data(ctx context.Context, field 
 				return ec.fieldContext_MarketData_marketValueProxy(ctx, field)
 			case "liquidityProviderFeeShare":
 				return ec.fieldContext_MarketData_liquidityProviderFeeShare(ctx, field)
+			case "liquidityProviderSla":
+				return ec.fieldContext_MarketData_liquidityProviderSla(ctx, field)
 			case "nextMarkToMarket":
 				return ec.fieldContext_MarketData_nextMarkToMarket(ctx, field)
 			case "marketGrowth":
@@ -40224,6 +40709,61 @@ func (ec *executionContext) fieldContext_MarketData_liquidityProviderFeeShare(ct
 	return fc, nil
 }
 
+func (ec *executionContext) _MarketData_liquidityProviderSla(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MarketData_liquidityProviderSla(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MarketData().LiquidityProviderSLA(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*LiquidityProviderSLA)
+	fc.Result = res
+	return ec.marshalOLiquidityProviderSLA2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐLiquidityProviderSLAᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MarketData_liquidityProviderSla(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarketData",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "party":
+				return ec.fieldContext_LiquidityProviderSLA_party(ctx, field)
+			case "currentEpochFractionOfTimeOnBook":
+				return ec.fieldContext_LiquidityProviderSLA_currentEpochFractionOfTimeOnBook(ctx, field)
+			case "lastEpochFractionOfTimeOnBook":
+				return ec.fieldContext_LiquidityProviderSLA_lastEpochFractionOfTimeOnBook(ctx, field)
+			case "lastEpochFeePenalty":
+				return ec.fieldContext_LiquidityProviderSLA_lastEpochFeePenalty(ctx, field)
+			case "lastEpochBondPenalty":
+				return ec.fieldContext_LiquidityProviderSLA_lastEpochBondPenalty(ctx, field)
+			case "hysteresisPeriodFeePenalties":
+				return ec.fieldContext_LiquidityProviderSLA_hysteresisPeriodFeePenalties(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquidityProviderSLA", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MarketData_nextMarkToMarket(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MarketData_nextMarkToMarket(ctx, field)
 	if err != nil {
@@ -40684,6 +41224,8 @@ func (ec *executionContext) fieldContext_MarketDataEdge_node(ctx context.Context
 				return ec.fieldContext_MarketData_marketValueProxy(ctx, field)
 			case "liquidityProviderFeeShare":
 				return ec.fieldContext_MarketData_liquidityProviderFeeShare(ctx, field)
+			case "liquidityProviderSla":
+				return ec.fieldContext_MarketData_liquidityProviderSla(ctx, field)
 			case "nextMarkToMarket":
 				return ec.fieldContext_MarketData_nextMarkToMarket(ctx, field)
 			case "marketGrowth":
@@ -46678,6 +47220,267 @@ func (ec *executionContext) fieldContext_ObservableLiquidityProviderFeeShare_ave
 	return fc, nil
 }
 
+func (ec *executionContext) _ObservableLiquidityProviderSLA_party(ctx context.Context, field graphql.CollectedField, obj *ObservableLiquidityProviderSLA) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ObservableLiquidityProviderSLA_party(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Party, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ObservableLiquidityProviderSLA_party(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ObservableLiquidityProviderSLA",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ObservableLiquidityProviderSLA_currentEpochFractionOfTimeOnBook(ctx context.Context, field graphql.CollectedField, obj *ObservableLiquidityProviderSLA) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ObservableLiquidityProviderSLA_currentEpochFractionOfTimeOnBook(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CurrentEpochFractionOfTimeOnBook, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ObservableLiquidityProviderSLA_currentEpochFractionOfTimeOnBook(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ObservableLiquidityProviderSLA",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ObservableLiquidityProviderSLA_lastEpochFractionOfTimeOnBook(ctx context.Context, field graphql.CollectedField, obj *ObservableLiquidityProviderSLA) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ObservableLiquidityProviderSLA_lastEpochFractionOfTimeOnBook(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastEpochFractionOfTimeOnBook, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ObservableLiquidityProviderSLA_lastEpochFractionOfTimeOnBook(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ObservableLiquidityProviderSLA",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ObservableLiquidityProviderSLA_lastEpochFeePenalty(ctx context.Context, field graphql.CollectedField, obj *ObservableLiquidityProviderSLA) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ObservableLiquidityProviderSLA_lastEpochFeePenalty(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastEpochFeePenalty, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ObservableLiquidityProviderSLA_lastEpochFeePenalty(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ObservableLiquidityProviderSLA",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ObservableLiquidityProviderSLA_lastEpochBondPenalty(ctx context.Context, field graphql.CollectedField, obj *ObservableLiquidityProviderSLA) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ObservableLiquidityProviderSLA_lastEpochBondPenalty(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastEpochBondPenalty, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ObservableLiquidityProviderSLA_lastEpochBondPenalty(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ObservableLiquidityProviderSLA",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ObservableLiquidityProviderSLA_hysteresisPeriodFeePenalties(ctx context.Context, field graphql.CollectedField, obj *ObservableLiquidityProviderSLA) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ObservableLiquidityProviderSLA_hysteresisPeriodFeePenalties(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HysteresisPeriodFeePenalties, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ObservableLiquidityProviderSLA_hysteresisPeriodFeePenalties(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ObservableLiquidityProviderSLA",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ObservableMarketData_marketId(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ObservableMarketData_marketId(ctx, field)
 	if err != nil {
@@ -47863,6 +48666,61 @@ func (ec *executionContext) fieldContext_ObservableMarketData_liquidityProviderF
 				return ec.fieldContext_ObservableLiquidityProviderFeeShare_averageScore(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ObservableLiquidityProviderFeeShare", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ObservableMarketData_liquidityProviderSla(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ObservableMarketData_liquidityProviderSla(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketData().LiquidityProviderSLA(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ObservableLiquidityProviderSLA)
+	fc.Result = res
+	return ec.marshalOObservableLiquidityProviderSLA2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐObservableLiquidityProviderSLAᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ObservableMarketData_liquidityProviderSla(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "party":
+				return ec.fieldContext_ObservableLiquidityProviderSLA_party(ctx, field)
+			case "currentEpochFractionOfTimeOnBook":
+				return ec.fieldContext_ObservableLiquidityProviderSLA_currentEpochFractionOfTimeOnBook(ctx, field)
+			case "lastEpochFractionOfTimeOnBook":
+				return ec.fieldContext_ObservableLiquidityProviderSLA_lastEpochFractionOfTimeOnBook(ctx, field)
+			case "lastEpochFeePenalty":
+				return ec.fieldContext_ObservableLiquidityProviderSLA_lastEpochFeePenalty(ctx, field)
+			case "lastEpochBondPenalty":
+				return ec.fieldContext_ObservableLiquidityProviderSLA_lastEpochBondPenalty(ctx, field)
+			case "hysteresisPeriodFeePenalties":
+				return ec.fieldContext_ObservableLiquidityProviderSLA_hysteresisPeriodFeePenalties(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ObservableLiquidityProviderSLA", field.Name)
 		},
 	}
 	return fc, nil
@@ -72419,6 +73277,8 @@ func (ec *executionContext) fieldContext_Subscription_marketsData(ctx context.Co
 				return ec.fieldContext_ObservableMarketData_marketValueProxy(ctx, field)
 			case "liquidityProviderFeeShare":
 				return ec.fieldContext_ObservableMarketData_liquidityProviderFeeShare(ctx, field)
+			case "liquidityProviderSla":
+				return ec.fieldContext_ObservableMarketData_liquidityProviderSla(ctx, field)
 			case "nextMarkToMarket":
 				return ec.fieldContext_ObservableMarketData_nextMarkToMarket(ctx, field)
 			case "marketGrowth":
@@ -90992,6 +91852,23 @@ func (ec *executionContext) _LiquidityProvider(ctx context.Context, sel ast.Sele
 				return innerFunc(ctx)
 
 			})
+		case "sla":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._LiquidityProvider_sla(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -91115,6 +91992,66 @@ func (ec *executionContext) _LiquidityProviderFeeShare(ctx context.Context, sel 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var liquidityProviderSLAImplementors = []string{"LiquidityProviderSLA"}
+
+func (ec *executionContext) _LiquidityProviderSLA(ctx context.Context, sel ast.SelectionSet, obj *LiquidityProviderSLA) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liquidityProviderSLAImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiquidityProviderSLA")
+		case "party":
+
+			out.Values[i] = ec._LiquidityProviderSLA_party(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "currentEpochFractionOfTimeOnBook":
+
+			out.Values[i] = ec._LiquidityProviderSLA_currentEpochFractionOfTimeOnBook(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lastEpochFractionOfTimeOnBook":
+
+			out.Values[i] = ec._LiquidityProviderSLA_lastEpochFractionOfTimeOnBook(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lastEpochFeePenalty":
+
+			out.Values[i] = ec._LiquidityProviderSLA_lastEpochFeePenalty(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lastEpochBondPenalty":
+
+			out.Values[i] = ec._LiquidityProviderSLA_lastEpochBondPenalty(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "hysteresisPeriodFeePenalties":
+
+			out.Values[i] = ec._LiquidityProviderSLA_hysteresisPeriodFeePenalties(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -92721,6 +93658,23 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 					}
 				}()
 				res = ec._MarketData_liquidityProviderFeeShare(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "liquidityProviderSla":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketData_liquidityProviderSla(ctx, field, obj)
 				return res
 			}
 
@@ -94845,6 +95799,66 @@ func (ec *executionContext) _ObservableLiquidityProviderFeeShare(ctx context.Con
 	return out
 }
 
+var observableLiquidityProviderSLAImplementors = []string{"ObservableLiquidityProviderSLA"}
+
+func (ec *executionContext) _ObservableLiquidityProviderSLA(ctx context.Context, sel ast.SelectionSet, obj *ObservableLiquidityProviderSLA) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, observableLiquidityProviderSLAImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ObservableLiquidityProviderSLA")
+		case "party":
+
+			out.Values[i] = ec._ObservableLiquidityProviderSLA_party(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "currentEpochFractionOfTimeOnBook":
+
+			out.Values[i] = ec._ObservableLiquidityProviderSLA_currentEpochFractionOfTimeOnBook(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lastEpochFractionOfTimeOnBook":
+
+			out.Values[i] = ec._ObservableLiquidityProviderSLA_lastEpochFractionOfTimeOnBook(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lastEpochFeePenalty":
+
+			out.Values[i] = ec._ObservableLiquidityProviderSLA_lastEpochFeePenalty(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lastEpochBondPenalty":
+
+			out.Values[i] = ec._ObservableLiquidityProviderSLA_lastEpochBondPenalty(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "hysteresisPeriodFeePenalties":
+
+			out.Values[i] = ec._ObservableLiquidityProviderSLA_hysteresisPeriodFeePenalties(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var observableMarketDataImplementors = []string{"ObservableMarketData"}
 
 func (ec *executionContext) _ObservableMarketData(ctx context.Context, sel ast.SelectionSet, obj *vega.MarketData) graphql.Marshaler {
@@ -95162,6 +96176,23 @@ func (ec *executionContext) _ObservableMarketData(ctx context.Context, sel ast.S
 					}
 				}()
 				res = ec._ObservableMarketData_liquidityProviderFeeShare(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "liquidityProviderSla":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketData_liquidityProviderSla(ctx, field, obj)
 				return res
 			}
 
@@ -107902,6 +108933,16 @@ func (ec *executionContext) marshalNLiquidityProviderFeeShare2ᚖcodeᚗvegaprot
 	return ec._LiquidityProviderFeeShare(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNLiquidityProviderSLA2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐLiquidityProviderSLA(ctx context.Context, sel ast.SelectionSet, v *LiquidityProviderSLA) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LiquidityProviderSLA(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityProvision(ctx context.Context, sel ast.SelectionSet, v *vega.LiquidityProvision) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -108342,6 +109383,16 @@ func (ec *executionContext) marshalNObservableLiquidityProviderFeeShare2ᚖcode�
 		return graphql.Null
 	}
 	return ec._ObservableLiquidityProviderFeeShare(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNObservableLiquidityProviderSLA2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐObservableLiquidityProviderSLA(ctx context.Context, sel ast.SelectionSet, v *ObservableLiquidityProviderSLA) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ObservableLiquidityProviderSLA(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNObservableMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.MarketData) graphql.Marshaler {
@@ -112311,6 +113362,60 @@ func (ec *executionContext) marshalOLiquidityProviderFeeShare2ᚖcodeᚗvegaprot
 	return ec._LiquidityProviderFeeShare(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOLiquidityProviderSLA2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐLiquidityProviderSLAᚄ(ctx context.Context, sel ast.SelectionSet, v []*LiquidityProviderSLA) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLiquidityProviderSLA2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐLiquidityProviderSLA(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOLiquidityProviderSLA2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐLiquidityProviderSLA(ctx context.Context, sel ast.SelectionSet, v *LiquidityProviderSLA) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LiquidityProviderSLA(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityProvision(ctx context.Context, sel ast.SelectionSet, v []*vega.LiquidityProvision) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -113068,6 +114173,53 @@ func (ec *executionContext) marshalOObservableLiquidityProviderFeeShare2ᚕᚖco
 				defer wg.Done()
 			}
 			ret[i] = ec.marshalNObservableLiquidityProviderFeeShare2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐObservableLiquidityProviderFeeShare(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOObservableLiquidityProviderSLA2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐObservableLiquidityProviderSLAᚄ(ctx context.Context, sel ast.SelectionSet, v []*ObservableLiquidityProviderSLA) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNObservableLiquidityProviderSLA2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐObservableLiquidityProviderSLA(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

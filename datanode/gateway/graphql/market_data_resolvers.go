@@ -11,6 +11,7 @@ import (
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	vega "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	"google.golang.org/grpc"
 )
 
@@ -192,6 +193,21 @@ func (r *myMarketDataResolver) LiquidityProviderFeeShare(_ context.Context, m *t
 	return out, nil
 }
 
+func (r *myMarketDataResolver) LiquidityProviderSLA(_ context.Context, m *types.MarketData) ([]*LiquidityProviderSLA, error) {
+	out := make([]*LiquidityProviderSLA, 0, len(m.LiquidityProviderSla))
+	for _, v := range m.LiquidityProviderSla {
+		out = append(out, &LiquidityProviderSLA{
+			Party:                            &vegapb.Party{Id: v.Party},
+			CurrentEpochFractionOfTimeOnBook: v.CurrentEpochFractionOfTimeOnBook,
+			LastEpochFractionOfTimeOnBook:    v.LastEpochFractionOfTimeOnBook,
+			LastEpochFeePenalty:              v.LastEpochFeePenalty,
+			LastEpochBondPenalty:             v.LastEpochBondPenalty,
+			HysteresisPeriodFeePenalties:     v.HysteresisPeriodFeePenalties,
+		})
+	}
+	return out, nil
+}
+
 func (r *myMarketDataResolver) NextMarkToMarket(_ context.Context, m *types.MarketData) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(m.NextMarkToMarket)), nil
 }
@@ -319,6 +335,21 @@ func (r *myObservableMarketDataResolver) LiquidityProviderFeeShare(ctx context.C
 			EquityLikeShare:       v.EquityLikeShare,
 			AverageEntryValuation: v.AverageEntryValuation,
 			AverageScore:          v.AverageScore,
+		})
+	}
+	return out, nil
+}
+
+func (r *myObservableMarketDataResolver) LiquidityProviderSLA(ctx context.Context, m *types.MarketData) ([]*ObservableLiquidityProviderSLA, error) {
+	out := make([]*ObservableLiquidityProviderSLA, 0, len(m.LiquidityProviderSla))
+	for _, v := range m.LiquidityProviderSla {
+		out = append(out, &ObservableLiquidityProviderSLA{
+			Party:                            v.Party,
+			CurrentEpochFractionOfTimeOnBook: v.CurrentEpochFractionOfTimeOnBook,
+			LastEpochFractionOfTimeOnBook:    v.LastEpochFractionOfTimeOnBook,
+			LastEpochFeePenalty:              v.LastEpochFeePenalty,
+			LastEpochBondPenalty:             v.LastEpochBondPenalty,
+			HysteresisPeriodFeePenalties:     v.HysteresisPeriodFeePenalties,
 		})
 	}
 	return out, nil

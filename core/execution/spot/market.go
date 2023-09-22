@@ -409,6 +409,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		PriceMonitoringBounds:     bounds,
 		MarketValueProxy:          m.lastMarketValueProxy.BigInt().String(),
 		LiquidityProviderFeeShare: m.equityShares.LpsToLiquidityProviderFeeShare(m.liquidity.GetAverageLiquidityScores()),
+		LiquidityProviderSLA:      m.liquidityEngine.LiquidityProviderSLAStats(m.timeService.GetTimeNow()),
 	}
 }
 

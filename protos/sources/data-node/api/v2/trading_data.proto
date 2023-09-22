@@ -2620,6 +2620,8 @@ message LiquidityProvider {
   // Information used for calculating an LP's fee share, such as the equity like share,
   // average entry valuation and liquidity score for the liquidity provider for the specified market.
   vega.LiquidityProviderFeeShare fee_share = 3;
+  // Information about LP's SLA performance.
+  vega.LiquidityProviderSLA sla = 4;
 }
 
 // Liquidity provider data with the corresponding cursor.

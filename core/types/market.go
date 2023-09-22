@@ -31,6 +31,11 @@ type MarketStats struct {
 	PartiesTotalTradeVolume   map[string]*num.Uint
 }
 
+type (
+	LiquidityProviderFeeShare = vegapb.LiquidityProviderFeeShare
+	LiquidityProviderSLA      = vegapb.LiquidityProviderSLA
+)
+
 type LiquidityProviderFeeShares []*LiquidityProviderFeeShare
 
 func (ls LiquidityProviderFeeShares) String() string {
@@ -44,7 +49,18 @@ func (ls LiquidityProviderFeeShares) String() string {
 	return "[" + strings.Join(strs, ", ") + "]"
 }
 
-type LiquidityProviderFeeShare = vegapb.LiquidityProviderFeeShare
+type LiquidityProviderSLAs []*LiquidityProviderSLA
+
+func (ls LiquidityProviderSLAs) String() string {
+	if ls == nil {
+		return "[]"
+	}
+	strs := make([]string, 0, len(ls))
+	for _, l := range ls {
+		strs = append(strs, l.String())
+	}
+	return "[" + strings.Join(strs, ", ") + "]"
+}
 
 var (
 	ErrNilTradableInstrument = errors.New("nil tradable instrument")
@@ -803,9 +819,11 @@ type MarketData struct {
 	PriceMonitoringBounds     []*PriceMonitoringBounds
 	MarketValueProxy          string
 	LiquidityProviderFeeShare []*LiquidityProviderFeeShare
-	NextMTM                   int64
-	MarketGrowth              num.Decimal
-	ProductData               *ProductData
+	LiquidityProviderSLA      []*LiquidityProviderSLA
+
+	NextMTM      int64
+	MarketGrowth num.Decimal
+	ProductData  *ProductData
 }
 
 func (m MarketData) DeepClone() *MarketData {
@@ -824,11 +842,19 @@ func (m MarketData) DeepClone() *MarketData {
 	for _, pmb := range m.PriceMonitoringBounds {
 		cpy.PriceMonitoringBounds = append(cpy.PriceMonitoringBounds, pmb.DeepClone())
 	}
+
 	lpfs := make([]*LiquidityProviderFeeShare, 0, len(m.LiquidityProviderFeeShare))
 	for _, fs := range m.LiquidityProviderFeeShare {
 		lpfs = append(lpfs, proto.Clone(fs).(*LiquidityProviderFeeShare))
 	}
 	cpy.LiquidityProviderFeeShare = lpfs
+
+	lpsla := make([]*LiquidityProviderSLA, 0, len(m.LiquidityProviderSLA))
+	for _, sla := range m.LiquidityProviderSLA {
+		lpsla = append(lpsla, proto.Clone(sla).(*LiquidityProviderSLA))
+	}
+	cpy.LiquidityProviderSLA = lpsla
+
 	return &cpy
 }
 
@@ -862,6 +888,7 @@ func (m MarketData) IntoProto() *vegapb.MarketData {
 		PriceMonitoringBounds:     make([]*vegapb.PriceMonitoringBounds, 0, len(m.PriceMonitoringBounds)),
 		MarketValueProxy:          m.MarketValueProxy,
 		LiquidityProviderFeeShare: make([]*vegapb.LiquidityProviderFeeShare, 0, len(m.LiquidityProviderFeeShare)),
+		LiquidityProviderSla:      make([]*vegapb.LiquidityProviderSLA, 0, len(m.LiquidityProviderSLA)),
 		NextMarkToMarket:          m.NextMTM,
 		MarketGrowth:              m.MarketGrowth.String(),
 	}
@@ -871,6 +898,9 @@ func (m MarketData) IntoProto() *vegapb.MarketData {
 	}
 	for _, lpfs := range m.LiquidityProviderFeeShare {
 		r.LiquidityProviderFeeShare = append(r.LiquidityProviderFeeShare, proto.Clone(lpfs).(*vegapb.LiquidityProviderFeeShare)) // call IntoProto if this type gets updated
+	}
+	for _, lpfs := range m.LiquidityProviderSLA {
+		r.LiquidityProviderSla = append(r.LiquidityProviderSla, proto.Clone(lpfs).(*vegapb.LiquidityProviderSLA)) // call IntoProto if this type gets updated
 	}
 
 	if m.ProductData != nil {
@@ -882,7 +912,7 @@ func (m MarketData) IntoProto() *vegapb.MarketData {
 
 func (m MarketData) String() string {
 	return fmt.Sprintf(
-		"markPrice(%s) lastTradedPrice(%s) bestBidPrice(%s) bestBidVolume(%v) bestOfferPrice(%s) bestOfferVolume(%v) bestStaticBidPrice(%s) bestStaticBidVolume(%v) bestStaticOfferPrice(%s) bestStaticOfferVolume(%v) midPrice(%s) staticMidPrice(%s) market(%s) timestamp(%v) openInterest(%v) auctionEnd(%v) auctionStart(%v) indicativePrice(%s) indicativeVolume(%v) marketTradingMode(%s) marketState(%s) trigger(%s) extensionTrigger(%s) targetStake(%s) suppliedStake(%s) priceMonitoringBounds(%s) marketValueProxy(%s) liquidityProviderFeeShare(%v) nextMTM(%v) marketGrowth(%v)",
+		"markPrice(%s) lastTradedPrice(%s) bestBidPrice(%s) bestBidVolume(%v) bestOfferPrice(%s) bestOfferVolume(%v) bestStaticBidPrice(%s) bestStaticBidVolume(%v) bestStaticOfferPrice(%s) bestStaticOfferVolume(%v) midPrice(%s) staticMidPrice(%s) market(%s) timestamp(%v) openInterest(%v) auctionEnd(%v) auctionStart(%v) indicativePrice(%s) indicativeVolume(%v) marketTradingMode(%s) marketState(%s) trigger(%s) extensionTrigger(%s) targetStake(%s) suppliedStake(%s) priceMonitoringBounds(%s) marketValueProxy(%s) liquidityProviderFeeShare(%v) liquidityProviderSLA(%v) nextMTM(%v) marketGrowth(%v)",
 		stringer.UintPointerToString(m.MarkPrice),
 		stringer.UintPointerToString(m.LastTradedPrice),
 		m.BestBidPrice.String(),
@@ -911,6 +941,7 @@ func (m MarketData) String() string {
 		PriceMonitoringBoundsList(m.PriceMonitoringBounds).String(),
 		m.MarketValueProxy,
 		LiquidityProviderFeeShares(m.LiquidityProviderFeeShare).String(),
+		LiquidityProviderSLAs(m.LiquidityProviderSLA).String(),
 		m.NextMTM,
 		m.MarketGrowth,
 	)

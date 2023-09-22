@@ -85,6 +85,10 @@ type slaPerformance struct {
 	s                 time.Duration
 	start             time.Time
 	previousPenalties *sliceRing[*num.Decimal]
+
+	lastEpochBondPenalty      string
+	lastEpochFeePenalty       string
+	lastEpochTimeBookFraction string
 }
 
 type SlaPenalties struct {

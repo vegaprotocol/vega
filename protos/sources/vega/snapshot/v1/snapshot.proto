@@ -952,6 +952,9 @@ message LiquidityV2PerformancePerParty {
   int64 commitment_start_time = 3;
   repeated string registered_penalties_per_epoch = 4;
   uint32 position_in_penalties_per_epoch = 5;
+  string last_epoch_fraction_of_time_on_book = 6;
+  string last_epoch_fee_penalty = 7;
+  string last_epoch_bond_penalty = 8;
 }
 
 message LiquidityV2Scores {

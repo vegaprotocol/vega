@@ -1,6 +1,7 @@
 package liquidity
 
 import (
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -58,6 +59,21 @@ func (e *Engine) EndBlock(markPrice *num.Uint, midPrice *num.Uint, positionFacto
 	}
 }
 
+func (e *Engine) calculateCurrentTimeBookFraction(now, start time.Time, s time.Duration) num.Decimal {
+	if !start.IsZero() {
+		s += now.Sub(start)
+	}
+
+	observedEpochLength := now.Sub(e.slaEpochStart)
+	lNano := observedEpochLength.Nanoseconds()
+	timeBookFraction := num.DecimalZero()
+	if lNano > 0 {
+		timeBookFraction = num.DecimalFromInt64(s.Nanoseconds()).Div(num.DecimalFromInt64(lNano))
+	}
+
+	return timeBookFraction
+}
+
 // CalculateSLAPenalties should be called at the and of epoch to calculate SLA penalties based on LP performance in the epoch.
 func (e *Engine) CalculateSLAPenalties(now time.Time) SlaPenalties {
 	penaltiesPerParty := map[string]*SlaPenalty{}
@@ -70,21 +86,11 @@ func (e *Engine) CalculateSLAPenalties(now time.Time) SlaPenalties {
 		}
 	}
 
-	observedEpochLength := now.Sub(e.slaEpochStart)
-
 	one := num.DecimalOne()
 	partiesWithFullFeePenaltyCount := 0
 
 	for party, commitment := range e.slaPerformance {
-		if !commitment.start.IsZero() {
-			commitment.s += now.Sub(commitment.start)
-		}
-
-		timeBookFraction := num.DecimalZero()
-		lNano := observedEpochLength.Nanoseconds()
-		if lNano > 0 {
-			timeBookFraction = num.DecimalFromInt64(commitment.s.Nanoseconds()).Div(num.DecimalFromInt64(lNano))
-		}
+		timeBookFraction := e.calculateCurrentTimeBookFraction(now, commitment.start, commitment.s)
 
 		var feePenalty, bondPenalty num.Decimal
 
@@ -108,6 +114,11 @@ func (e *Engine) CalculateSLAPenalties(now time.Time) SlaPenalties {
 		if penaltiesPerParty[party].Fee.Equal(one) {
 			partiesWithFullFeePenaltyCount++
 		}
+
+		// safe for next epoch stats
+		e.slaPerformance[party].lastEpochBondPenalty = penaltiesPerParty[party].Bond.String()
+		e.slaPerformance[party].lastEpochFeePenalty = penaltiesPerParty[party].Fee.String()
+		e.slaPerformance[party].lastEpochTimeBookFraction = timeBookFraction.String()
 	}
 
 	return SlaPenalties{
@@ -221,4 +232,39 @@ func (e *Engine) calculateHysteresisFeePenalty(currentPenalty num.Decimal, previ
 	periodAveragePenalty = periodAveragePenalty.Div(previousPenaltiesCount)
 
 	return num.MaxD(currentPenalty, periodAveragePenalty)
+}
+
+func (e *Engine) LiquidityProviderSLAStats(now time.Time) []*types.LiquidityProviderSLA {
+	stats := make([]*types.LiquidityProviderSLA, 0, len(e.slaPerformance))
+
+	for partyID, commitment := range e.slaPerformance {
+		currentTimeBookFraction := e.calculateCurrentTimeBookFraction(now, commitment.start, commitment.s)
+
+		previousPenalties := commitment.previousPenalties.Slice()
+		hysteresisPeriodFeePenalties := make([]string, 0, len(previousPenalties))
+		for _, penalty := range previousPenalties {
+			if penalty == nil {
+				continue
+			}
+			hysteresisPeriodFeePenalties = append(hysteresisPeriodFeePenalties, penalty.String())
+		}
+
+		stats = append(stats, &types.LiquidityProviderSLA{
+			Party:                            partyID,
+			CurrentEpochFractionOfTimeOnBook: currentTimeBookFraction.String(),
+			LastEpochFractionOfTimeOnBook:    commitment.lastEpochTimeBookFraction,
+			LastEpochFeePenalty:              commitment.lastEpochFeePenalty,
+			LastEpochBondPenalty:             commitment.lastEpochBondPenalty,
+			HysteresisPeriodFeePenalties:     hysteresisPeriodFeePenalties,
+		})
+	}
+
+	sort.Slice(stats, func(i, j int) bool {
+		if stats[i].Party == stats[j].Party {
+			return stats[i].CurrentEpochFractionOfTimeOnBook > stats[j].CurrentEpochFractionOfTimeOnBook
+		}
+		return stats[i].Party > stats[j].Party
+	})
+
+	return stats
 }
