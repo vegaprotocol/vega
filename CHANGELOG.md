@@ -7,6 +7,7 @@
 - [8679](https://github.com/vegaprotocol/vega/issues/8679) - Snapshot configuration `load-from-block-height` no longer accept `-1` as value. To reload from the latest snapshot, it should be valued `0`.
 - [8679](https://github.com/vegaprotocol/vega/issues/8679) - Snapshot configuration `snapshot-keep-recent` only accept values from `1` (included) to `10` (included) .
 - [8944](https://github.com/vegaprotocol/vega/issues/8944) - Asset ID field on the `ExportLedgerEntriesRequest gRPC API` for exporting ledger entries has changed type to make it optional.
+- [8979](https://github.com/vegaprotocol/vega/issues/8979) - Add trusted proxy config and verification for `XFF` header.
 
 ### 🗑️ Deprecation
 
@@ -107,7 +108,6 @@
 - [8764](https://github.com/vegaprotocol/vega/issues/8764) - Include funding payment in margin and liquidation price estimates for `PERPS`.
 - [9519](https://github.com/vegaprotocol/vega/issues/9519) - Fix `oracle_specs` data in the `database` that was inadvertently removed during an earlier database migration
 - [9478](https://github.com/vegaprotocol/vega/issues/8764) - Add SLA statistics to market data and liquidity provision APIs.
-- [8979](https://github.com/vegaprotocol/vega/issues/8979) - Add trusted proxy config and verification for `XFF` header.
 
 ### 🐛 Fixes
 

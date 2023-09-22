@@ -284,13 +284,12 @@ func (g *GRPCServer) ReloadConf(cfg Config) {
 
 func (g *GRPCServer) ipFromContext(ctx context.Context, method string, log *logging.Logger) (string, error) {
 	// first check if the request is forwarded from our restproxy
-	// get the metadata
 	tps := g.trustedProxies
 	if len(tps) > 0 {
+		// get the metadata
 		if md, ok := metadata.FromIncomingContext(ctx); ok {
 			if forwardedFor, ok := md["x-forwarded-for"]; ok {
 				if len(forwardedFor) < 2 {
-					// this should return an error
 					return "", ErrNoTrustedProxy
 				}
 				// check the proxies for trusted

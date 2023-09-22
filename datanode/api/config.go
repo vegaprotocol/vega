@@ -58,6 +58,6 @@ func NewDefaultConfig() Config {
 		CoreNodeGRPCPort:         3002,
 		RateLimit:                ratelimit.NewDefaultConfig(),
 		MaxSubscriptionPerClient: 250,
-		TrustedProxies:           []string{},
+		TrustedProxies:           []string{"127.0.0.1"},
 	}
 }
