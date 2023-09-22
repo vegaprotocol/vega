@@ -220,6 +220,7 @@
 - [9489](https://github.com/vegaprotocol/vega/issues/9489) - A referrer cannot join another team.
 - [9074](https://github.com/vegaprotocol/vega/issues/9074) - Fix error response for `CSV` exports.
 - [9512](https://github.com/vegaprotocol/vega/issues/9512) - Allow hysteresis period to be set to 0.
+- [9526](https://github.com/vegaprotocol/vega/issues/9526) - Rename go enum value `REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION` to match `db` schema
 - [8979](https://github.com/vegaprotocol/vega/issues/8979) - Add trusted proxy config and verification for `XFF` header.
 - [9530](https://github.com/vegaprotocol/vega/issues/9530) - Referral program end timestamp not correctly displaying in `GraphQL API`.
 - [9532](https://github.com/vegaprotocol/vega/issues/9532) - Data node crashes if referral program starts and ends in the same block.
