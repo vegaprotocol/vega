@@ -6,18 +6,18 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
         Given the following network parameters are set:
             | name                                          | value |
             | market.stake.target.scalingFactor             | 1e-9  |
-            | market.liquidity.targetstake.triggering.ratio | 0     |
             | network.markPriceUpdateMaximumFrequency       | 0s    |
-
-       
+        And the liquidity monitoring parameters:
+            | name               | triggering ratio | time window | scaling factor |
+            | lqm-params         | 0.00             | 24h         | 1e-9           |       
         And the simple risk model named "simple-risk-model":
             | long | short | max move up | min move down | probability of trading |
             | 0.1  | 0.1   | 100         | -100          | 0.2                    |
 
         And the markets:
-            | id        | quote name | asset | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config           | linear slippage factor | quadratic slippage factor | sla params      |
-            | ETH/FEB23 | ETH        | USD   | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future       | 0.25                   | 0.25                      | default-futures |
-            | ETH/MAR23 | ETH        | USD   | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future       | 100                    | 100                       | default-futures |
+            | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config           | linear slippage factor | quadratic slippage factor | sla params      |
+            | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future       | 0.25                   | 0.25                      | default-futures |
+            | ETH/MAR23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future       | 100                    | 100                       | default-futures |
 
 
     @SLABug

@@ -7,9 +7,11 @@ Feature: Test how offsets are applied with decimals
             | market.value.windowLength                           | 1h    |
             | market.stake.target.timeWindow                      | 24h   |
             | market.stake.target.scalingFactor                   | 1     |
-            | market.liquidity.targetstake.triggering.ratio       | 0     |
             | network.markPriceUpdateMaximumFrequency             | 0s    |
             | limits.markets.maxPeggedOrders                      | 8     |
+        And the liquidity monitoring parameters:
+            | name               | triggering ratio | time window | scaling factor |
+            | lqm-params         | 0.00             | 24h         | 1              |
         And the following assets are registered:
             | id  | decimal places |
             | ETH | 5              |
@@ -34,8 +36,8 @@ Feature: Test how offsets are applied with decimals
             | market.liquidity.providersFeeCalculationTimeStep | 660s  |
 
         And the markets:
-            | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees         | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
-            | USD/DEC19 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none | price-monitoring-1 | default-usd-for-future | 3              | 3                       | 1e6                    | 1e6                       | SLA        |
+            | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator         | auction duration | fees         | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+            | USD/DEC19 | USD        | ETH   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none | price-monitoring-1 | default-usd-for-future | 3              | 3                       | 1e6                    | 1e6                       | SLA        |
 
         Given the parties deposit on asset's general account the following amount:
             | party  | asset | amount          |

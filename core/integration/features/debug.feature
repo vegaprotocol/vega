@@ -10,6 +10,10 @@ Feature: Simple example of successor markets
     And the margin calculator named "margin-calculator-1":
       | search factor | initial factor | release factor |
       | 1.2           | 1.5            | 2              |
+    And the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 0.01             | 10s         | 10             |  
+    
     And the average block duration is "1"
     # Create some oracles
     ## oracle for parent
@@ -24,7 +28,6 @@ Feature: Simple example of successor markets
     And the following network parameters are set:
       | name                                                | value |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
-      | market.liquidity.targetstake.triggering.ratio       | 0.01  |
       | market.stake.target.timeWindow                      | 10s   |
       | market.stake.target.scalingFactor                   | 10    |
       | market.auction.minimumDuration                      | 1     |
@@ -57,8 +60,8 @@ Feature: Simple example of successor markets
   @SLADebug
   Scenario: Reproduce opening auction without LP
     Given the markets:
-      | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params |
-      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec19Oracle     | 0.1                    | 0                         | 0              | 0                       |                  |                         |                   | SLA        |
+      | id        | quote name | asset | liquidity monitoring | risk model                | margin calculator   | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params |
+      | ETH/DEC19 | ETH        | USD   | lqm-params           | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec19Oracle     | 0.1                    | 0                         | 0              | 0                       |                  |                         |                   | SLA        |
     When the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |

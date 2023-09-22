@@ -24,9 +24,8 @@ import (
 )
 
 var unwatched = map[string]struct{}{
-	netparams.MarketLiquidityTargetStakeTriggeringRatio: {},
-	netparams.MarketTargetStakeScalingFactor:            {},
-	netparams.MarketTargetStakeTimeWindow:               {},
+	netparams.MarketTargetStakeScalingFactor: {},
+	netparams.MarketTargetStakeTimeWindow:    {},
 }
 
 func DebugNetworkParameter(log *logging.Logger, netParams *netparams.Store, key string) error {
@@ -62,12 +61,6 @@ func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *godo
 			f := row.MustF64("value")
 			n := strconv.FormatFloat(f, 'f', -1, 64)
 			if err := netParams.Update(ctx, netparams.MarketTargetStakeScalingFactor, n); err != nil {
-				return err
-			}
-		case netparams.MarketLiquidityTargetStakeTriggeringRatio:
-			f := row.MustF64("value")
-			n := strconv.FormatFloat(f, 'f', -1, 64)
-			if err := netParams.Update(ctx, netparams.MarketLiquidityTargetStakeTriggeringRatio, n); err != nil {
 				return err
 			}
 		case netparams.MarketTargetStakeTimeWindow:

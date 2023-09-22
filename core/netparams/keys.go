@@ -34,7 +34,6 @@ const (
 	MarketSuccessorLaunchWindow              = "market.liquidity.successorLaunchWindowLength"
 
 	MarketLiquidityProvisionShapesMaxSize            = "market.liquidityProvision.shapes.maxSize"
-	MarketLiquidityTargetStakeTriggeringRatio        = "market.liquidity.targetstake.triggering.ratio"
 	MarketLiquidityBondPenaltyParameter              = "market.liquidity.bondPenaltyParameter"
 	MarketLiquidityEarlyExitPenalty                  = "market.liquidity.earlyExitPenalty"
 	MarketLiquidityMaximumLiquidityFeeFactorLevel    = "market.liquidity.maximumLiquidityFeeFactorLevel"
@@ -278,7 +277,6 @@ var AllKeys = map[string]struct{}{
 	MarketAuctionMaximumDuration:                                 {},
 	MarketLiquidityBondPenaltyParameter:                          {},
 	MarketLiquidityMaximumLiquidityFeeFactorLevel:                {},
-	MarketLiquidityTargetStakeTriggeringRatio:                    {},
 	MarketLiquidityEarlyExitPenalty:                              {},
 	MarketLiquiditySLANonPerformanceBondPenaltySlope:             {},
 	MarketLiquiditySLANonPerformanceBondPenaltyMax:               {},

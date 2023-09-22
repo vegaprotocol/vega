@@ -5,17 +5,19 @@ Feature: Basic feature-file matching the system-test setup like for like
       | id  | decimal places |
       | ETH | 18             |
       | USD | 0              |
-
+    And the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 0.0              | 10s         | 1              |  
+    
     And the markets:
-      | id        | quote name | asset | risk model             | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | sla params      |
-      | ETH/DEC19 | ETH        | ETH   | default-st-risk-model  | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 5              | 5                       | default-futures |
-      | ETH/DEC20 | ETH        | ETH   | closeout-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 5              | 5                       | default-futures |
-      | ETH/DEC21 | ETH        | USD   | closeout-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 0              | 0                       | default-futures |
-      | ETH/DEC23 | ETH        | ETH   | default-st-risk-model  | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.01                   | 0                         | 5              | 5                       | default-st      |
+      | id        | quote name | asset | liquidity monitoring | risk model             | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | sla params      |
+      | ETH/DEC19 | ETH        | ETH   | lqm-params           | default-st-risk-model  | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 5              | 5                       | default-futures |
+      | ETH/DEC20 | ETH        | ETH   | lqm-params           | closeout-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 5              | 5                       | default-futures |
+      | ETH/DEC21 | ETH        | USD   | lqm-params           | closeout-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 0              | 0                       | default-futures |
+      | ETH/DEC23 | ETH        | ETH   | lqm-params           | default-st-risk-model  | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.01                   | 0                         | 5              | 5                       | default-st      |
     And the following network parameters are set:
       | name                                          | value |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
-      | market.liquidity.targetstake.triggering.ratio | 0     |
       | market.stake.target.timeWindow                | 10s   |
       | market.stake.target.scalingFactor             | 5     |
       | market.auction.minimumDuration                | 1     |
@@ -44,7 +46,6 @@ Feature: Basic feature-file matching the system-test setup like for like
     # the amount ought to be 390,500.000,000,000,000,000,000
     Given the following network parameters are set:
       | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.01  |
       | limits.markets.maxPeggedOrders                | 2     |
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |

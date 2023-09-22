@@ -41,7 +41,6 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | market.value.windowLength                     | 60s   |
       | market.stake.target.timeWindow                | 20s   |
       | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.targetstake.triggering.ratio | 0.5   |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | limits.markets.maxPeggedOrders                | 6     |
       | market.auction.minimumDuration                | 1     |
@@ -55,12 +54,16 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 1   |
       | validators.epoch.length                             | 10s   |
       | market.liquidity.providersFeeCalculationTimeStep | 10s |
+    And the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 0.5              | 20s         | 1              |  
+    
 
     And the markets:
-      | id        | quote name | asset | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params | liquidity monitoring |
-      | ETH/MAR22 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA        | lqm-params           |
-      | ETH/MAR23 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA2       | lqm-params           |
-      | ETH/JAN23 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA3       | lqm-params           |
+      | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params | liquidity monitoring |
+      | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA        | lqm-params           |
+      | ETH/MAR23 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA2       | lqm-params           |
+      | ETH/JAN23 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA3       | lqm-params           |
 
     Given the average block duration is "2"
   @Now

@@ -10,8 +10,6 @@ Feature: Spot market
       | market.value.windowLength                           | 1h    |
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
-      | market.liquidity.targetstake.triggering.ratio       | 0     |
-
     Given the following assets are registered:
       | id  | decimal places |
       | ETH | 2              |

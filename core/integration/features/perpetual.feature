@@ -11,14 +11,16 @@ Feature: Simple test creating a perpetual market.
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 1                             | 1.0                    |
+    And the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 0.01             | 10s         | 1              |  
 
     And the markets:
-      | id        | quote name | asset | risk model            | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | market type | sla params |
-      | ETH/DEC19 | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | perp-oracle        | 0.1                    | 0                         | 5              | 5                       | perp        | SLA        |
+      | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | market type | sla params |
+      | ETH/DEC19 | ETH        | ETH   | lqm-params           | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | perp-oracle        | 0.1                    | 0                         | 5              | 5                       | perp        | SLA        |
     And the following network parameters are set:
       | name                                             | value |
       | network.markPriceUpdateMaximumFrequency          | 0s    |
-      | market.liquidity.targetstake.triggering.ratio    | 0     |
       | market.stake.target.timeWindow                   | 10s   |
       | market.stake.target.scalingFactor                | 5     |
       | market.auction.minimumDuration                   | 1     |
@@ -47,10 +49,7 @@ Feature: Simple test creating a perpetual market.
   @Perpetual
   Scenario: 001 Create a new perp market and leave opening auction in the same way the system tests do
     # the amount ought to be 390,500.000,000,000,000,000,000
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.01  |
-    And the parties submit the following liquidity provision:
+    Given the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | submission |
     And the parties place the following pegged iceberg orders:
@@ -87,10 +86,7 @@ Feature: Simple test creating a perpetual market.
   @Perpetual
   Scenario: 002 Create a new perp market and leave opening auction, then terminate the market through governance
     # the amount ought to be 390,500.000,000,000,000,000,000
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.01  |
-    And the parties submit the following liquidity provision:
+    Given the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | submission |
     And the parties place the following pegged iceberg orders:

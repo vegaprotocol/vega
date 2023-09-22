@@ -516,10 +516,6 @@ func setLiquidityMonitoringNetParams(liqMon *types.LiquidityMonitoringParameters
 	if sf, err := netparams.GetDecimal("market.stake.target.scalingFactor"); err == nil {
 		liqMon.TargetStakeParameters.ScalingFactor = sf
 	}
-
-	if tr, err := netparams.GetDecimal("market.liquidity.targetstake.triggering.ratio"); err == nil {
-		liqMon.TriggeringRatio = tr
-	}
 }
 
 func openingAuction(row marketRow) *types.AuctionDuration {

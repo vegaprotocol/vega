@@ -13,12 +13,14 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
       | market.value.windowLength                     | 60s   |
       | market.stake.target.timeWindow                | 20s   |
       | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.targetstake.triggering.ratio | 1     |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | limits.markets.maxPeggedOrders                | 6     |
       | market.auction.minimumDuration                | 1     |
       | market.fee.factors.infrastructureFee          | 0.001 |
       | market.fee.factors.makerFee                   | 0.004 |
+    And the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 1.0              | 20s         | 1              |  
     #risk factor short:3.5569036
     #risk factor long:0.801225765
     And the following assets are registered:
@@ -39,9 +41,9 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
       | 0           | 0.6                          | 1                             | 1.0                    |
 
     And the markets:
-      | id        | quote name | asset | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/MAR22 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
-      | ETH/MAR23 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA-23     |
+      | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
+      | ETH/MAR23 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA-23     |
 
     And the following network parameters are set:
       | name                                                | value |

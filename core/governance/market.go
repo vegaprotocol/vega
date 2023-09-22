@@ -232,20 +232,19 @@ func buildMarketFromProposal(
 		tsTimeWindow, _ := netp.GetDuration(netparams.MarketTargetStakeTimeWindow)
 		tsScalingFactor, _ := netp.GetDecimal(netparams.MarketTargetStakeScalingFactor)
 		// get triggering ratio
-		triggeringRatio, _ := netp.GetDecimal(netparams.MarketLiquidityTargetStakeTriggeringRatio)
-
-		params := &types.TargetStakeParameters{
+		lmParams := &proto.LiquidityMonitoringParameters{}
+		triggeringRatio, _ := num.DecimalFromString(lmParams.TriggeringRatio)
+		tsParams := &types.TargetStakeParameters{
 			TimeWindow:    int64(tsTimeWindow.Seconds()),
 			ScalingFactor: tsScalingFactor,
 		}
 
 		if definition.Changes.LiquidityMonitoringParameters == nil {
 			definition.Changes.LiquidityMonitoringParameters = &types.LiquidityMonitoringParameters{
-				TargetStakeParameters: params,
+				TargetStakeParameters: tsParams,
 				TriggeringRatio:       triggeringRatio,
 			}
-		} else {
-			definition.Changes.LiquidityMonitoringParameters.TargetStakeParameters = params
+			definition.Changes.LiquidityMonitoringParameters.TargetStakeParameters = tsParams
 		}
 	}
 

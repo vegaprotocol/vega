@@ -268,9 +268,6 @@ Feature: Closeout scenarios
 
 # Scenario: 003, Position becomes distressed when market is in continuous mode (0007-POSN-017)
 #     Given the insurance pool balance should be "0" for the market "ETH/DEC19"
-#       Given the following network parameters are set:
-#       | name                                          | value |
-#       | market.liquidity.targetstake.triggering.ratio | 0.01     |
 #     Given the parties deposit on asset's general account the following amount:
 #       | party      | asset | amount        |
 #       | auxiliary1 | USD   | 1000000000000 |

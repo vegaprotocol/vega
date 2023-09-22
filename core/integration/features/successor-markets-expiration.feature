@@ -24,11 +24,13 @@ Feature: Simple example of successor markets
       | property           | type         | binding             |
       | trading.terminated | TYPE_BOOLEAN | trading termination |
     And the settlement data decimals for the oracle named "ethDec20Oracle" is given in "5" decimal places
-
+    And the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 0.01             | 10s         | 1              |  
+    
     And the following network parameters are set:
       | name                                          | value |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
-      | market.liquidity.targetstake.triggering.ratio | 0.01  |
       | market.stake.target.timeWindow                | 10s   |
       | market.stake.target.scalingFactor             | 5     |
       | market.auction.minimumDuration                | 1     |
@@ -57,9 +59,9 @@ Feature: Simple example of successor markets
   @SuccessorMarketExpires
   Scenario: 0081-SUCM-007 Enact a successor market once the parent market is settled, and the succession window has expired
     Given the markets:
-      | id        | quote name | asset | risk model            | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params      |
-      | ETH/DEC19 | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | ethDec19Oracle         | 0.1                    | 0                         | 5              | 5                       |                  |                         |                   | default-futures |
-      | ETH/DEC20 | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 5              | 5                       | ETH/DEC19        | 1                       | 10                | default-futures |
+      | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params      |
+      | ETH/DEC19 | ETH        | ETH   | lqm-params           | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | ethDec19Oracle         | 0.1                    | 0                         | 5              | 5                       |                  |                         |                   | default-futures |
+      | ETH/DEC20 | ETH        | ETH   | lqm-params           | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 5              | 5                       | ETH/DEC19        | 1                       | 10                | default-futures |
     Given the initial insurance pool balance is "1000" for all the markets
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |

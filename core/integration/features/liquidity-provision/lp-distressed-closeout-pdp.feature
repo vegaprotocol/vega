@@ -5,11 +5,13 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | name                                                | value |
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
-      | market.liquidity.bondPenaltyParameter             | 1     |
-      | market.liquidity.targetstake.triggering.ratio       | 0.1   |
+      | market.liquidity.bondPenaltyParameter               | 1     |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | limits.markets.maxPeggedOrders                      | 2     |
       | validators.epoch.length                             | 5s    |
+    And the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 0.1              | 24h         | 1              |  
     And the average block duration is "1"
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
@@ -24,8 +26,8 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 0.01        | 0.5                          | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params | position decimal places |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5                    | 0                         | SLA        | 2                       |
+      | id        | quote name | asset | liquidity monitoring | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params | position decimal places |
+      | ETH/DEC21 | ETH        | ETH   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5                    | 0                         | SLA        | 2                       |
     And the following network parameters are set:
       | name                                               | value |
       | market.liquidity.providersFeeCalculationTimeStep | 5s    |

@@ -5,9 +5,12 @@ Feature: test negative PDP (position decimal places)
             | market.stake.target.timeWindow                | 24h   |
             | market.stake.target.scalingFactor             | 1     |
             | market.liquidity.bondPenaltyParameter       | 0.2   |
-            | market.liquidity.targetstake.triggering.ratio | 0.1   |
             | network.markPriceUpdateMaximumFrequency       | 0s    |
             | limits.markets.maxPeggedOrders                | 4     |
+        Given the liquidity monitoring parameters:
+            | name               | triggering ratio | time window | scaling factor |
+            | lqm-params         | 0.10             | 24h         | 1.0            |
+    
         And the following assets are registered:
             | id  | decimal places |
             | ETH | 5              |
@@ -32,9 +35,9 @@ Feature: test negative PDP (position decimal places)
              | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
              | 0.000001    | 0.5                          | 1                             | 1.0                    |    
         And the markets:
-            | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
-            | USD/DEC22 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 5              | -1                      | 1e6                    | 1e6                       | SLA-1      |
-            | USD/DEC23 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2              | -2                      | 1e6                    | 1e6                       | SLA-2      |
+            | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+            | USD/DEC22 | USD        | ETH   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 5              | -1                      | 1e6                    | 1e6                       | SLA-1      |
+            | USD/DEC23 | USD        | ETH   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2              | -2                      | 1e6                    | 1e6                       | SLA-2      |
         And the parties deposit on asset's general account the following amount:
             | party  | asset | amount    |
             | party0 | ETH   | 5000000   |
