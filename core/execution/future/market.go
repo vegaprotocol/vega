@@ -4000,7 +4000,8 @@ func (m *Market) settlementDataWithLock(ctx context.Context, finalState types.Ma
 func (m *Market) canTrade() bool {
 	return m.mkt.State == types.MarketStateActive ||
 		m.mkt.State == types.MarketStatePending ||
-		m.mkt.State == types.MarketStateSuspended
+		m.mkt.State == types.MarketStateSuspended ||
+		m.mkt.State == types.MarketStateSuspendedViaGovernance
 }
 
 // cleanupOnReject remove all resources created while the
