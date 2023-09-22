@@ -41,9 +41,11 @@ import (
 	"github.com/fullstorydev/grpcui/standalone"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 )
 
 // EventService ...
@@ -136,6 +138,8 @@ type GRPCServer struct {
 	// used in order to gracefully close streams
 	ctx   context.Context
 	cfunc context.CancelFunc
+
+	trustedProxies map[string]struct{}
 }
 
 // NewGRPCServer create a new instance of the GPRC api for the vega node.
@@ -192,6 +196,10 @@ func NewGRPCServer(
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	ctx, cfunc := context.WithCancel(context.Background())
+	tps := make(map[string]struct{}, len(config.TrustedProxies))
+	for _, ip := range config.TrustedProxies {
+		tps[ip] = struct{}{}
+	}
 
 	return &GRPCServer{
 		log:                        log,
@@ -247,8 +255,9 @@ func NewGRPCServer(
 			eventService: eventService,
 			Config:       config,
 		},
-		ctx:   ctx,
-		cfunc: cfunc,
+		ctx:            ctx,
+		cfunc:          cfunc,
+		trustedProxies: tps,
 	}
 }
 
@@ -262,24 +271,40 @@ func (g *GRPCServer) ReloadConf(cfg Config) {
 		)
 		g.log.SetLevel(cfg.Level.Get())
 	}
+	tps := make(map[string]struct{}, len(cfg.TrustedProxies))
+	for _, ip := range cfg.TrustedProxies {
+		tps[ip] = struct{}{}
+	}
 
 	// TODO(): not updating the actual server for now, may need to look at this later
 	// e.g restart the http server on another port or whatever
 	g.Config = cfg
+	g.trustedProxies = tps
 }
 
-func ipFromContext(ctx context.Context, method string, log *logging.Logger) string {
+func (g *GRPCServer) ipFromContext(ctx context.Context, method string, log *logging.Logger) (string, error) {
 	// first check if the request is forwarded from our restproxy
 	// get the metadata
-	md, ok := metadata.FromIncomingContext(ctx)
-	if ok {
-		forwardedFor, ok := md["x-forwarded-for"]
-		if ok && len(forwardedFor) > 0 {
-			log.Debug("grpc request x-forwarded-for",
-				logging.String("method", method),
-				logging.String("remote-ip-addr", forwardedFor[0]),
-			)
-			return forwardedFor[0]
+	tps := g.trustedProxies
+	if len(tps) > 0 {
+		if md, ok := metadata.FromIncomingContext(ctx); ok {
+			if forwardedFor, ok := md["x-forwarded-for"]; ok {
+				if len(forwardedFor) < 2 {
+					// this should return an error
+					return "", ErrNoTrustedProxy
+				}
+				// check the proxies for trusted
+				for _, pip := range forwardedFor[1:] {
+					// trusted proxy found, return
+					if _, ok := tps[pip]; ok {
+						log.Debug("grpc request x-forwarded-for",
+							logging.String("method", method),
+							logging.String("remote-ip-addr", forwardedFor[0]),
+						)
+						return forwardedFor[0], nil
+					}
+				}
+			}
 		}
 	}
 
@@ -289,20 +314,23 @@ func ipFromContext(ctx context.Context, method string, log *logging.Logger) stri
 		log.Debug("grpc peer client request",
 			logging.String("method", method),
 			logging.String("remote-ip-addr", p.Addr.String()))
-		return p.Addr.String()
+		return p.Addr.String(), nil
 	}
 
-	return ""
+	return "", nil
 }
 
-func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
+func (g *GRPCServer) remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req interface{},
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (resp interface{}, err error) {
-		ip := ipFromContext(ctx, info.FullMethod, log)
+		ip, err := g.ipFromContext(ctx, info.FullMethod, log)
+		if err != nil {
+			return nil, status.Error(codes.PermissionDenied, err.Error())
+		}
 
 		ctx = contextutil.WithRemoteIPAddr(ctx, ip)
 
@@ -385,12 +413,12 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 
 	rateLimit := ratelimit.NewFromConfig(&g.RateLimit, g.log)
 	intercept := grpc.ChainUnaryInterceptor(
-		remoteAddrInterceptor(g.log),
+		g.remoteAddrInterceptor(g.log),
 		headersInterceptor(g.blockService.GetLastBlock, g.log),
 		rateLimit.GRPCInterceptor,
 	)
 
-	streamIntercept := grpc.StreamInterceptor(subscriptionRateLimiter.WithGrpcInterceptor(ipFromContext))
+	streamIntercept := grpc.StreamInterceptor(subscriptionRateLimiter.WithGrpcInterceptor(g.ipFromContext))
 
 	g.srv = grpc.NewServer(intercept, streamIntercept)
 

@@ -192,11 +192,14 @@ func (s *SubscriptionRateLimiter) WithSubscriptionRateLimiter(next http.Handler)
 	})
 }
 
-type ipGetter func(ctx context.Context, method string, log *logging.Logger) string
+type ipGetter func(ctx context.Context, method string, log *logging.Logger) (string, error)
 
 func (s *SubscriptionRateLimiter) WithGrpcInterceptor(ipGetterFunc ipGetter) grpc.StreamServerInterceptor {
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		addr := ipGetterFunc(ss.Context(), info.FullMethod, s.log)
+		addr, err := ipGetterFunc(ss.Context(), info.FullMethod, s.log)
+		if err != nil {
+			return status.Error(codes.PermissionDenied, err.Error())
+		}
 		if addr == "" {
 			// If we don't have an IP we can't rate limit
 			return handler(srv, ss)
