@@ -89,9 +89,9 @@ Feature: Test changing market.liquidity.providersFeeCalculationTimeStep;
     Then the network moves ahead "1" epochs
     # And the current epoch is "2"
 
-    # Then the following network parameters are set:
-    #   | name                                             | value |
-    #   | market.liquidity.providersFeeCalculationTimeStep | 3s    |
+    Then the following network parameters are set:
+      | name                                             | value |
+      | market.liquidity.providersFeeCalculationTimeStep | 3s    |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -104,63 +104,37 @@ Feature: Test changing market.liquidity.providersFeeCalculationTimeStep;
       | party1 | ETH/MAR22 | buy  | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
       | party2 | ETH/MAR22 | sell | 2      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |           |
 
-    Then the network moves ahead "7" blocks
-    Then the network moves ahead "1" epochs
-    # And the current epoch is "2"
+    Then the network moves ahead "8" blocks
 
-    Then debug transfers
     Then the following transfers should happen:
       | from   | to  | from account                | to account                     | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 36     | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 24     | USD   |
 
-# And the parties place the following orders:
-#   | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-#   | party1 | ETH/MAR22 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-#   | party2 | ETH/MAR22 | buy  | 2      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |           |
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/MAR22 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party2 | ETH/MAR22 | buy  | 2      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |           |
 
-# Then the network moves ahead "1" epochs
-# Then the following transfers should happen:
-#   | from   | to  | from account                | to account                     | market id | amount | asset |
-#   | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 18     | USD   |
-#   | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 12     | USD   |
+    Then the network moves ahead "1" epochs
+    And the following transfers should happen:
+      | from   | to  | from account                | to account                     | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 18     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 12     | USD   |
 
-# Then the network moves ahead "15" blocks
-
-# And the parties place the following orders:
-#   | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-#   | party1 | ETH/MAR22 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC |           |
-#   | party2 | ETH/MAR22 | sell | 1      | 999   | 1                | TYPE_LIMIT | TIF_GTC |           |
-
-# Then the network moves ahead "7" blocks
-# Then debug transfers
-# Then the parties place the following orders:
-#   | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-#   | party1 | ETH/MAR22 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-#   | party2 | ETH/MAR22 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |           |
-
-# Then the network moves ahead "4" blocks
-
-# Then debug transfers
-
-# Then the following transfers should happen:
-#   | from   | to  | from account                | to account                     | market id | amount | asset |
-#   | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 9      | USD   |
-#   | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 6      | USD   |
-
-# Then the parties place the following orders:
-#   | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-#   | party1 | ETH/MAR22 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-#   | party2 | ETH/MAR22 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |           |
-# And the current epoch is "1"
-
-# Then the network moves ahead "7" blocks
-# And the current epoch is "2"
-
-# Then the following transfers should happen:
-#   | from   | to  | from account                | to account                     | market id | amount | asset |
-#   | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 9      | USD   |
-#   | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 6      | USD   |
-
-# Then debug transfers
-
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/MAR22 | buy  | 3      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party2 | ETH/MAR22 | sell | 3      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |           |
+    Then the network moves ahead "4" blocks
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/MAR22 | sell | 4      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party2 | ETH/MAR22 | buy  | 4      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |           |
+    Then the network moves ahead "7" blocks
+    And the following transfers should happen:
+      | from   | to  | from account                | to account                     | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 27     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 18     | USD   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 48     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 32     | USD   |
