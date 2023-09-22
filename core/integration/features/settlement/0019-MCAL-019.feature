@@ -4,7 +4,7 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
 
     And the perpetual oracles from "0xCAFECAFE1":
       | name        | asset | settlement property | settlement type | schedule property | schedule type  | margin funding factor | interest rate | clamp lower bound | clamp upper bound | quote name | settlement decimals |
-      | perp-oracle | ETH   | perp.ETH.value      | TYPE_INTEGER    | perp.funding.cue  | TYPE_TIMESTAMP | 0                     | 0             | 0                 | 0                 | ETH        | 18                  |
+      | perp-oracle | ETH | perp.ETH.value | TYPE_INTEGER | perp.funding.cue | TYPE_TIMESTAMP | 0.5 | 0.05 | 0 | 0 | ETH | 18 |
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 1                             | 1.0                    |
@@ -19,7 +19,7 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
       | limits.markets.maxPeggedOrders | 2     |
 
   @Perpetual
-  Scenario: (0053-PERP-005) Mark to market settlement works correctly with a predefined frequency irrespective of the behaviour of any of the oracles specified for the market.
+  Scenario: 0019-MCAL-019 Mark to market settlement works correctly with margin funding factor and interest rate
     Given the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 5s    |
@@ -99,14 +99,21 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
       | party1 | ETH   | ETH/DEC19 | 5041200 | 4958800 |
       | party3 | ETH   | ETH/DEC19 | 132000  | 9866000 |
       | party2 | ETH   | ETH/DEC19 | 132000  | 9867000 |
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | initial |
+      | party1 | ETH/DEC19 | 4201000     | 5041200 |
 
     ## Now take us past the MTM frequency time
     When the network moves ahead "1" blocks
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
-      | party1 | ETH   | ETH/DEC19 | 7682400 | 1317600 |
+      | party1 | ETH | ETH/DEC19 | 9000000 | 0 |
       | party3 | ETH   | ETH/DEC19 | 2605200 | 7392800 |
       | party2 | ETH   | ETH/DEC19 | 2605200 | 8393800 |
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | initial  |
+      | party1 | ETH/DEC19 | 8502000     | 10202400 |
+
     And the following transfers should happen:
       | from   | to     | from account        | to account              | market id | amount  | asset |
       | party1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1000000 | ETH   |
@@ -127,27 +134,39 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
     # party 1 loses 200000, party 2/3 gain 10000 in their margin account
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
-      | party1 | ETH   | ETH/DEC19 | 7482400 | 1317600 |
+      | party1 | ETH | ETH/DEC19 | 8800000 | 0 |
       | party3 | ETH   | ETH/DEC19 | 2705200 | 7392800 |
       | party2 | ETH   | ETH/DEC19 | 2705200 | 8393800 |
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | initial |
+      | party1 | ETH/DEC19 | 6502000     | 7802400 |
 
     # move to the block before the next MTM should be no changes
     When the network moves ahead "3" blocks
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
-      | party1 | ETH   | ETH/DEC19 | 7482400 | 1317600 |
+      | party1 | ETH | ETH/DEC19 | 8800000 | 0 |
       | party3 | ETH   | ETH/DEC19 | 2705200 | 7392800 |
       | party2 | ETH   | ETH/DEC19 | 2705200 | 8393800 |
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | initial |
+      | party1 | ETH/DEC19 | 6502000     | 7802400 |
 
     ## Now take us past the MTM frequency time and things should change
     When the network moves ahead "1" blocks
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
-      | party1 | ETH   | ETH/DEC19 | 7480400 | 1317600 |
+      | party1 | ETH | ETH/DEC19 | 8798000 | 0 |
       | party3 | ETH   | ETH/DEC19 | 2706200 | 7392800 |
       | party2 | ETH   | ETH/DEC19 | 2706200 | 8393800 |
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | initial |
+      | party1 | ETH/DEC19 | 6500200     | 7800240 |
+
     And the following transfers should happen:
       | from   | to     | from account        | to account              | market id | amount  | asset |
       | party1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 200000 | ETH   |
     And the cumulated balance for all accounts should be worth "330000000"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
+
+
