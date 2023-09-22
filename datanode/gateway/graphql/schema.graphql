@@ -192,7 +192,6 @@ type MarginLevelsUpdate {
   timestamp: Timestamp!
 }
 
-
 "Details of a  perpetual product."
 type PerpetualData {
   "Funding payment for this period as the difference between the time-weighted average price of the external and internal data point."
@@ -206,7 +205,6 @@ type PerpetualData {
 }
 
 union ProductData = PerpetualData
-
 
 "Live data of a Market"
 type MarketData {
@@ -266,6 +264,8 @@ type MarketData {
   marketValueProxy: String!
   "The equity like share of liquidity fee for each liquidity provider"
   liquidityProviderFeeShare: [LiquidityProviderFeeShare!]
+  "SLA performance statistics"
+  liquidityProviderSla: [LiquidityProviderSLA!]
   "RFC3339Nano time indicating the next time positions will be marked to market"
   nextMarkToMarket: String!
   "The market growth factor for the last market time window"
@@ -332,6 +332,8 @@ type ObservableMarketData {
   marketValueProxy: String!
   "The equity like share of liquidity fee for each liquidity provider"
   liquidityProviderFeeShare: [ObservableLiquidityProviderFeeShare!]
+  "SLA performance statistics"
+  liquidityProviderSla: [ObservableLiquidityProviderSLA!]
   "RFC3339Nano time indicating the next time positions will be marked to market"
   nextMarkToMarket: String!
   "The market growth factor for the last market time window"
@@ -378,6 +380,38 @@ type ObservableLiquidityProviderFeeShare {
   averageEntryValuation: String!
   "The average liquidity score"
   averageScore: String!
+}
+
+"The SLA statistics for each liquidity provider"
+type LiquidityProviderSLA {
+  "The liquidity provider party ID"
+  party: Party!
+  "Indicates how often LP meets the commitment during the current epoch."
+  currentEpochFractionOfTimeOnBook: String!
+  "Indicates how often LP met the commitment in the previous epoch."
+  lastEpochFractionOfTimeOnBook: String!
+  "Indicates the fee penalty amount applied in the previous epoch."
+  lastEpochFeePenalty: String!
+  "Indicates the bond penalty amount applied in the previous epoch."
+  lastEpochBondPenalty: String!
+  "Determines how the fee penalties from past epochs affect future fee revenue."
+  hysteresisPeriodFeePenalties: [String!]
+}
+
+"The SLA statistics for each liquidity provider"
+type ObservableLiquidityProviderSLA {
+  "The liquidity provider party ID"
+  party: ID!
+  "Indicates how often LP meets the commitment during the current epoch."
+  currentEpochFractionOfTimeOnBook: String!
+  "Indicates how often LP meets the commitment during last epoch."
+  lastEpochFractionOfTimeOnBook: String!
+  "Indicates the fee penalty amount applied in the previous epoch."
+  lastEpochFeePenalty: String!
+  "Indicates the bond penalty amount applied in the previous epoch."
+  lastEpochBondPenalty: String!
+  "Determines how the fee penalties from past epochs affect future fee revenue."
+  hysteresisPeriodFeePenalties: [String!]
 }
 
 "The liquidity commitments for this market"
@@ -2439,10 +2473,7 @@ type Party {
   ): TransferConnection
 
   "The activity streak"
-  activityStreak(
-    "An optional epoch"
-    epoch: Int
-  ): PartyActivityStreak
+  activityStreak("An optional epoch" epoch: Int): PartyActivityStreak
 }
 
 """
@@ -4230,7 +4261,6 @@ type UpdateMarketState {
   price: String
 }
 
-
 type UpdateReferralProgram {
   "Current version of the referral program"
   version: Int!
@@ -5355,6 +5385,8 @@ type LiquidityProvider {
   marketId: ID!
   "Information used for calculating an LP's fee share, such as the equity like share, average entry valuation and liquidity score, for the given liquidity provider and market"
   feeShare: LiquidityProviderFeeShare
+  "SLA performance statistics"
+  sla: LiquidityProviderSLA
 }
 
 "Edge type containing the liquidity provider and cursor information"

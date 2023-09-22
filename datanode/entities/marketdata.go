@@ -85,6 +85,8 @@ type MarketData struct {
 	MarketValueProxy string
 	// the equity like share of liquidity fee for each liquidity provider
 	LiquidityProviderFeeShares []*types.LiquidityProviderFeeShare
+	// the SLA statistics for each liquidity provider
+	LiquidityProviderSLA []*types.LiquidityProviderSLA
 	// A synthetic time created which is the sum of vega_time + (seq num * Microsecond)
 	SyntheticTime time.Time
 	// Transaction which caused this update
@@ -194,6 +196,7 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 		PriceMonitoringBounds:      data.PriceMonitoringBounds,
 		MarketValueProxy:           data.MarketValueProxy,
 		LiquidityProviderFeeShares: data.LiquidityProviderFeeShare,
+		LiquidityProviderSLA:       data.LiquidityProviderSla,
 		TxHash:                     txHash,
 		NextMarkToMarket:           nextMTM,
 		MarketGrowth:               growth,
@@ -254,6 +257,7 @@ func (md MarketData) Equal(other MarketData) bool {
 		md.MarketValueProxy == other.MarketValueProxy &&
 		priceMonitoringBoundsMatches(md.PriceMonitoringBounds, other.PriceMonitoringBounds) &&
 		liquidityProviderFeeShareMatches(md.LiquidityProviderFeeShares, other.LiquidityProviderFeeShares) &&
+		liquidityProviderSLAMatches(md.LiquidityProviderSLA, other.LiquidityProviderSLA) &&
 		md.TxHash == other.TxHash &&
 		md.MarketState == other.MarketState &&
 		md.NextMarkToMarket.Equal(other.NextMarkToMarket) &&
@@ -306,6 +310,23 @@ func liquidityProviderFeeShareMatches(feeShares, other []*types.LiquidityProvide
 	return true
 }
 
+func liquidityProviderSLAMatches(slas, other []*types.LiquidityProviderSLA) bool {
+	if len(slas) != len(other) {
+		return false
+	}
+
+	for i, sla := range slas {
+		if sla.CurrentEpochFractionOfTimeOnBook != other[i].CurrentEpochFractionOfTimeOnBook ||
+			sla.LastEpochBondPenalty != other[i].LastEpochBondPenalty ||
+			sla.LastEpochFeePenalty != other[i].LastEpochFeePenalty ||
+			sla.LastEpochFractionOfTimeOnBook != other[i].LastEpochFractionOfTimeOnBook {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (md MarketData) ToProto() *types.MarketData {
 	result := types.MarketData{
 		LastTradedPrice:           md.LastTradedPrice.String(),
@@ -336,6 +357,7 @@ func (md MarketData) ToProto() *types.MarketData {
 		PriceMonitoringBounds:     md.PriceMonitoringBounds,
 		MarketValueProxy:          md.MarketValueProxy,
 		LiquidityProviderFeeShare: md.LiquidityProviderFeeShares,
+		LiquidityProviderSla:      md.LiquidityProviderSLA,
 		NextMarkToMarket:          md.NextMarkToMarket.UnixNano(),
 		MarketGrowth:              md.MarketGrowth.String(),
 	}
