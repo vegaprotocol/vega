@@ -107,6 +107,7 @@
 - [9536](https://github.com/vegaprotocol/vega/issues/9536) - Feature tests for average position metric transfers and reward
 - [8764](https://github.com/vegaprotocol/vega/issues/8764) - Include funding payment in margin and liquidation price estimates for `PERPS`.
 - [9519](https://github.com/vegaprotocol/vega/issues/9519) - Fix `oracle_specs` data in the `database` that was inadvertently removed during an earlier database migration
+- [9475](https://github.com/vegaprotocol/vega/issues/9475) - Make `oracle_data` and `oracle_data_oracle_specs` into `hypertables`
 - [9478](https://github.com/vegaprotocol/vega/issues/8764) - Add SLA statistics to market data and liquidity provision APIs.
 
 ### 🐛 Fixes
@@ -220,6 +221,7 @@
 - [9530](https://github.com/vegaprotocol/vega/issues/9530) - Referral program end timestamp not correctly displaying in `GraphQL API`.
 - [9532](https://github.com/vegaprotocol/vega/issues/9532) - Data node crashes if referral program starts and ends in the same block.
 - [9540](https://github.com/vegaprotocol/vega/issues/9540) - Proposals connection errors for `UpdateReferralProgram`.
+- [8934](https://github.com/vegaprotocol/vega/issues/8934) - Check for special characters in headers.
 
 ## 0.72.1
 
