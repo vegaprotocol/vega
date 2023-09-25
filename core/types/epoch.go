@@ -36,14 +36,20 @@ type Epoch struct {
 }
 
 func (e Epoch) String() string {
-	return fmt.Sprintf(
-		"seq(%d) startTime(%s) expireTime(%s) endTime(%s) action(%s)",
+	str := fmt.Sprintf(
+		"seq(%d) action(%s) startTime(%s) expireTime(%s)",
 		e.Seq,
+		e.Action.String(),
 		e.StartTime,
 		e.ExpireTime,
-		e.EndTime,
-		e.Action.String(),
 	)
+
+	// End time is only defined when the epoch event is an end "action".
+	if e.Action == proto.EpochAction_EPOCH_ACTION_END {
+		str = fmt.Sprintf("%s endTime(%s)", str, e.EndTime)
+	}
+
+	return str
 }
 
 func NewEpochFromProto(p *eventspb.EpochEvent) *Epoch {
@@ -58,11 +64,17 @@ func NewEpochFromProto(p *eventspb.EpochEvent) *Epoch {
 }
 
 func (e Epoch) IntoProto() *eventspb.EpochEvent {
-	return &eventspb.EpochEvent{
+	eProto := &eventspb.EpochEvent{
 		Seq:        e.Seq,
 		StartTime:  e.StartTime.UnixNano(),
 		ExpireTime: e.ExpireTime.UnixNano(),
-		EndTime:    e.EndTime.UnixNano(),
 		Action:     e.Action,
 	}
+
+	// End time is only defined when the epoch event is an end "action".
+	if e.Action == proto.EpochAction_EPOCH_ACTION_END {
+		eProto.EndTime = e.EndTime.UnixNano()
+	}
+
+	return eProto
 }
