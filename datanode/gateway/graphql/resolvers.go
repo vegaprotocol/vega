@@ -526,6 +526,18 @@ func (r *VegaResolverRoot) TeamRefereeHistory() TeamRefereeHistoryResolver {
 	return (*teamRefereeHistoryResolver)(r)
 }
 
+func (r *VegaResolverRoot) PartyAmount() PartyAmountResolver {
+	return (*partyAmountResolver)(r)
+}
+
+func (r *VegaResolverRoot) ReferralSetFeeStats() ReferralSetFeeStatsResolver {
+	return (*referralSetFeeStatsResolver)(r)
+}
+
+func (r *VegaResolverRoot) ReferrerRewardsGenerated() ReferrerRewardsGeneratedResolver {
+	return (*referrerRewardsGeneratedResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -1614,6 +1626,27 @@ func (r *myQueryResolver) TeamRefereeHistory(ctx context.Context, referee string
 	}
 
 	return history.TeamRefereeHistory, nil
+}
+
+func (r *myQueryResolver) ReferralFeeStats(ctx context.Context, marketID *string, assetID *string, epoch *int) (*v1.FeeStats, error) {
+	var epochSeq *uint64
+
+	if epoch != nil {
+		epochSeq = ptr.From(uint64(*epoch))
+	}
+
+	req := &v2.GetReferralFeeStatsRequest{
+		MarketId: marketID,
+		AssetId:  assetID,
+		EpochSeq: epochSeq,
+	}
+
+	resp, err := r.tradingDataClientV2.GetReferralFeeStats(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.FeeStats, nil
 }
 
 // END: Root Resolver

@@ -132,6 +132,7 @@ type GRPCServer struct {
 	referralSetsService        *service.ReferralSets
 	teamsService               *service.Teams
 	vestingStatsService        *service.VestingStats
+	referralFeeStatsService    *service.ReferralFeeStats
 
 	eventObserver *eventObserver
 
@@ -191,6 +192,7 @@ func NewGRPCServer(
 	referralSetsService *service.ReferralSets,
 	teamsService *service.Teams,
 	vestingStatsService *service.VestingStats,
+	referralFeeStatsService *service.ReferralFeeStats,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -249,6 +251,7 @@ func NewGRPCServer(
 		referralSetsService:        referralSetsService,
 		teamsService:               teamsService,
 		vestingStatsService:        vestingStatsService,
+		referralFeeStatsService:    referralFeeStatsService,
 
 		eventObserver: &eventObserver{
 			log:          log,
@@ -476,6 +479,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		referralProgramService:     g.referralProgramService,
 		referralSetsService:        g.referralSetsService,
 		teamsService:               g.teamsService,
+		referralFeeStatsService:    g.referralFeeStatsService,
 	}
 
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)
