@@ -196,8 +196,8 @@ func NewGRPCServer(
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	ctx, cfunc := context.WithCancel(context.Background())
-	tps := make(map[string]struct{}, len(config.TrustedProxies))
-	for _, ip := range config.TrustedProxies {
+	tps := make(map[string]struct{}, len(config.RateLimit.TrustedProxies))
+	for _, ip := range config.RateLimit.TrustedProxies {
 		tps[ip] = struct{}{}
 	}
 
@@ -271,8 +271,8 @@ func (g *GRPCServer) ReloadConf(cfg Config) {
 		)
 		g.log.SetLevel(cfg.Level.Get())
 	}
-	tps := make(map[string]struct{}, len(cfg.TrustedProxies))
-	for _, ip := range cfg.TrustedProxies {
+	tps := make(map[string]struct{}, len(cfg.RateLimit.TrustedProxies))
+	for _, ip := range cfg.RateLimit.TrustedProxies {
 		tps[ip] = struct{}{}
 	}
 
