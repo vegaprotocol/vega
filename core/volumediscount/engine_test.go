@@ -127,12 +127,12 @@ func TestDiscountFactor(t *testing.T) {
 	marketActivityTracker := mocks.NewMockMarketActivityTracker(ctrl)
 	engine := volumediscount.NewSnapshottedEngine(broker, marketActivityTracker)
 
-	now := time.Now()
+	currentTime := time.Now()
 
 	p1 := &types.VolumeDiscountProgram{
 		ID:                    "1",
 		Version:               0,
-		EndOfProgramTimestamp: now.Add(time.Hour * 1),
+		EndOfProgramTimestamp: currentTime.Add(time.Hour * 1),
 		WindowLength:          1,
 		VolumeBenefitTiers: []*types.VolumeBenefitTier{
 			{MinimumRunningNotionalTakerVolume: num.NewUint(1000), VolumeDiscountFactor: num.DecimalFromFloat(0.1)},
@@ -144,30 +144,30 @@ func TestDiscountFactor(t *testing.T) {
 	// add the program
 	engine.UpdateProgram(p1)
 
-	// expect an event for the started program
-	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(evt events.Event) {
-		e := evt.(*events.VolumeDiscountProgramStarted)
-		require.Equal(t, p1.IntoProto(), e.GetVolumeDiscountProgramStarted().Program)
-	}).Times(1)
-
 	// activate the program
-	engine.OnEpoch(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_START, StartTime: now})
+	currentEpoch := uint64(1)
+	expectProgramStarted(t, broker, p1)
+	startEpoch(t, engine, currentEpoch, currentTime)
 
 	// so now we have a program active so at the end of the epoch lets return for some parties some notional
 	marketActivityTracker.EXPECT().NotionalTakerVolumeForAllParties().Return(map[types.PartyID]*num.Uint{
-		types.PartyID("p1"): num.NewUint(900),
-		types.PartyID("p2"): num.NewUint(1000),
-		types.PartyID("p3"): num.NewUint(1001),
-		types.PartyID("p4"): num.NewUint(2000),
-		types.PartyID("p5"): num.NewUint(3000),
-		types.PartyID("p6"): num.NewUint(4000),
-		types.PartyID("p7"): num.NewUint(5000),
+		"p1": num.NewUint(900),
+		"p2": num.NewUint(1000),
+		"p3": num.NewUint(1001),
+		"p4": num.NewUint(2000),
+		"p5": num.NewUint(3000),
+		"p6": num.NewUint(4000),
+		"p7": num.NewUint(5000),
 	}).Times(1)
 
 	// end the epoch to get the market activity recorded
-	engine.OnEpoch(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_END})
+	expectStatsUpdated(t, broker)
+	currentTime = currentTime.Add(1 * time.Minute)
+	endEpoch(t, engine, currentEpoch, currentTime.Add(1*time.Minute))
+
 	// start a new epoch for the discount factors to be in place
-	engine.OnEpoch(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_START, StartTime: now.Add(time.Minute * 1)})
+	currentEpoch += 1
+	startEpoch(t, engine, currentEpoch, currentTime)
 
 	// check snapshot with terminated program
 	hashWithEpochNotionalsData, _, err := engine.GetState(key)
@@ -200,12 +200,16 @@ func TestDiscountFactor(t *testing.T) {
 	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p7").String())
 	require.Equal(t, "1", loadedEngine.VolumeDiscountFactorForParty("p7").String())
 
+	marketActivityTracker.EXPECT().NotionalTakerVolumeForAllParties().Return(map[types.PartyID]*num.Uint{}).Times(1)
+
+	expectStatsUpdated(t, broker)
+	currentTime = p1.EndOfProgramTimestamp
+	endEpoch(t, engine, currentEpoch, currentTime)
+
 	// terminate the program
-	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(evt events.Event) {
-		e := evt.(*events.VolumeDiscountProgramEnded)
-		require.Equal(t, p1.Version, e.GetVolumeDiscountProgramEnded().Version)
-	}).Times(1)
-	engine.OnEpoch(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_START, StartTime: now.Add(time.Hour * 1)})
+	currentEpoch += 1
+	expectProgramEnded(t, broker, p1)
+	startEpoch(t, engine, currentEpoch, currentTime)
 
 	hashAfterProgramEnded, _, err := engine.GetState(key)
 	require.NoError(t, err)
@@ -225,12 +229,12 @@ func TestDiscountFactorWithWindow(t *testing.T) {
 	marketActivityTracker := mocks.NewMockMarketActivityTracker(ctrl)
 	engine := volumediscount.NewSnapshottedEngine(broker, marketActivityTracker)
 
-	now := time.Now()
+	currentTime := time.Now()
 
 	p1 := &types.VolumeDiscountProgram{
 		ID:                    "1",
 		Version:               0,
-		EndOfProgramTimestamp: now.Add(time.Hour * 1),
+		EndOfProgramTimestamp: currentTime.Add(time.Hour * 1),
 		WindowLength:          2,
 		VolumeBenefitTiers: []*types.VolumeBenefitTier{
 			{MinimumRunningNotionalTakerVolume: num.NewUint(1000), VolumeDiscountFactor: num.DecimalFromFloat(0.1)},
@@ -243,29 +247,26 @@ func TestDiscountFactorWithWindow(t *testing.T) {
 	engine.UpdateProgram(p1)
 
 	// expect an event for the started program
-	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(evt events.Event) {
-		e := evt.(*events.VolumeDiscountProgramStarted)
-		require.Equal(t, p1.IntoProto(), e.GetVolumeDiscountProgramStarted().Program)
-	}).Times(1)
-
+	expectProgramStarted(t, broker, p1)
 	// activate the program
-	engine.OnEpoch(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_START, StartTime: now})
+	currentEpoch := uint64(1)
+	startEpoch(t, engine, currentEpoch, currentTime)
 
 	// so now we have a program active so at the end of the epoch lets return for some parties some notional
 	marketActivityTracker.EXPECT().NotionalTakerVolumeForAllParties().Return(map[types.PartyID]*num.Uint{
-		types.PartyID("p1"): num.NewUint(900),
-		types.PartyID("p2"): num.NewUint(1000),
-		types.PartyID("p3"): num.NewUint(1001),
-		types.PartyID("p4"): num.NewUint(2000),
-		types.PartyID("p5"): num.NewUint(3000),
-		types.PartyID("p6"): num.NewUint(4000),
-		types.PartyID("p7"): num.NewUint(5000),
+		"p1": num.NewUint(900),
+		"p2": num.NewUint(1000),
+		"p3": num.NewUint(1001),
+		"p4": num.NewUint(2000),
+		"p5": num.NewUint(3000),
+		"p6": num.NewUint(4000),
+		"p7": num.NewUint(5000),
 	}).Times(1)
 
-	// end the epoch to get the market activity recorded
-	engine.OnEpoch(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_END})
+	expectStatsUpdated(t, broker)
+	currentTime = currentTime.Add(1 * time.Minute)
+	endEpoch(t, engine, currentEpoch, currentTime)
 	// start a new epoch for the discount factors to be in place
-	engine.OnEpoch(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_START, StartTime: now.Add(time.Minute * 1)})
 
 	// party does not exist
 	require.Equal(t, num.DecimalZero(), engine.VolumeDiscountFactorForParty("p8"))
@@ -286,13 +287,18 @@ func TestDiscountFactorWithWindow(t *testing.T) {
 
 	// running for another epoch
 	marketActivityTracker.EXPECT().NotionalTakerVolumeForAllParties().Return(map[types.PartyID]*num.Uint{
-		types.PartyID("p8"): num.NewUint(2000),
-		types.PartyID("p1"): num.NewUint(1500),
-		types.PartyID("p5"): num.NewUint(4000),
-		types.PartyID("p6"): num.NewUint(4000),
+		"p8": num.NewUint(2000),
+		"p1": num.NewUint(1500),
+		"p5": num.NewUint(4000),
+		"p6": num.NewUint(4000),
 	}).Times(1)
-	engine.OnEpoch(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_END})
-	engine.OnEpoch(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_START, StartTime: now.Add(time.Minute * 2)})
+
+	expectStatsUpdated(t, broker)
+	currentTime = currentTime.Add(1 * time.Minute)
+	endEpoch(t, engine, currentEpoch, currentTime)
+
+	currentEpoch += 1
+	startEpoch(t, engine, currentEpoch, currentTime)
 
 	hashAfter2Epochs, _, err := engine.GetState(key)
 	require.NoError(t, err)
@@ -323,11 +329,15 @@ func TestDiscountFactorWithWindow(t *testing.T) {
 	require.Equal(t, "0.2", engine.VolumeDiscountFactorForParty("p7").String())
 	require.Equal(t, "0.2", loadedEngine.VolumeDiscountFactorForParty("p7").String())
 
-	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(evt events.Event) {
-		e := evt.(*events.VolumeDiscountProgramEnded)
-		require.Equal(t, p1.Version, e.GetVolumeDiscountProgramEnded().Version)
-	}).Times(1)
-	engine.OnEpoch(context.Background(), types.Epoch{Action: vega.EpochAction_EPOCH_ACTION_START, StartTime: now.Add(time.Hour * 1)})
+	marketActivityTracker.EXPECT().NotionalTakerVolumeForAllParties().Return(map[types.PartyID]*num.Uint{}).Times(1)
+
+	expectStatsUpdated(t, broker)
+	currentTime = p1.EndOfProgramTimestamp
+	endEpoch(t, engine, currentEpoch, currentTime)
+
+	expectProgramEnded(t, broker, p1)
+	currentEpoch += 1
+	startEpoch(t, engine, currentEpoch, currentTime)
 
 	hashAfterProgramEnded, _, err := engine.GetState(key)
 	require.NoError(t, err)

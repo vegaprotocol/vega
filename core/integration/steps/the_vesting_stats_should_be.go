@@ -119,10 +119,9 @@ type vestingStatsShouldBeRow struct {
 }
 
 func newVestingStatsShouldBeRow(r RowWrapper) vestingStatsShouldBeRow {
-	row := vestingStatsShouldBeRow{
+	return vestingStatsShouldBeRow{
 		row: r,
 	}
-	return row
 }
 
 func (r vestingStatsShouldBeRow) Party() string {

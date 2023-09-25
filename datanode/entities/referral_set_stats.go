@@ -33,19 +33,30 @@ type (
 		RewardFactor                          string
 		VegaTime                              time.Time
 	}
+
+	ReferralFeeStats struct {
+		MarketID                 MarketID
+		AssetID                  AssetID
+		EpochSeq                 uint64
+		TotalRewardsPaid         []*eventspb.PartyAmount
+		ReferrerRewardsGenerated []*eventspb.ReferrerRewardsGenerated
+		RefereesDiscountApplied  []*eventspb.PartyAmount
+		VolumeDiscountApplied    []*eventspb.PartyAmount
+		VegaTime                 time.Time
+	}
 )
 
-func ReferralSetStatsFromProto(protos *eventspb.ReferralSetStatsUpdated, vegaTime time.Time) (*ReferralSetStats, error) {
-	takerVolume, err := num.DecimalFromString(protos.GetReferralSetRunningNotionalTakerVolume())
+func ReferralSetStatsFromProto(proto *eventspb.ReferralSetStatsUpdated, vegaTime time.Time) (*ReferralSetStats, error) {
+	takerVolume, err := num.DecimalFromString(proto.GetReferralSetRunningNotionalTakerVolume())
 	if err != nil {
 		return nil, fmt.Errorf("Invalid Running Notional Taker Volume: %v", err)
 	}
 
 	return &ReferralSetStats{
-		SetID:                                 ReferralSetID(protos.SetId),
-		AtEpoch:                               protos.AtEpoch,
+		SetID:                                 ReferralSetID(proto.SetId),
+		AtEpoch:                               proto.AtEpoch,
 		ReferralSetRunningNotionalTakerVolume: takerVolume,
-		RefereesStats:                         nil,
+		RefereesStats:                         proto.RefereesStats,
 		VegaTime:                              vegaTime,
 	}, nil
 }
@@ -65,9 +76,10 @@ func (rss *ReferralSetStats) ToProto() *v2.ReferralSetStats {
 
 func (ref *ReferralSetRefereeStats) ToProto() *v2.ReferralSetStats {
 	stats := eventspb.RefereeStats{
-		PartyId:        ref.PartyID,
-		DiscountFactor: ref.DiscountFactor,
-		RewardFactor:   ref.RewardFactor,
+		PartyId:                  ref.PartyID,
+		DiscountFactor:           ref.DiscountFactor,
+		RewardFactor:             ref.RewardFactor,
+		EpochNotionalTakerVolume: ref.ReferralSetRunningNotionalTakerVolume.String(),
 	}
 
 	return &v2.ReferralSetStats{
@@ -75,5 +87,30 @@ func (ref *ReferralSetRefereeStats) ToProto() *v2.ReferralSetStats {
 		AtEpoch:                               ref.AtEpoch,
 		ReferralSetRunningNotionalTakerVolume: ref.ReferralSetRunningNotionalTakerVolume.String(),
 		RefereesStats:                         []*eventspb.RefereeStats{&stats},
+	}
+}
+
+func ReferralFeeStatsFromProto(proto *eventspb.FeeStats, vegaTime time.Time) *ReferralFeeStats {
+	return &ReferralFeeStats{
+		MarketID:                 MarketID(proto.Market),
+		AssetID:                  AssetID(proto.Asset),
+		EpochSeq:                 proto.EpochSeq,
+		TotalRewardsPaid:         proto.TotalRewardsPaid,
+		ReferrerRewardsGenerated: proto.ReferrerRewardsGenerated,
+		RefereesDiscountApplied:  proto.RefereesDiscountApplied,
+		VolumeDiscountApplied:    proto.VolumeDiscountApplied,
+		VegaTime:                 vegaTime,
+	}
+}
+
+func (stats *ReferralFeeStats) ToProto() *eventspb.FeeStats {
+	return &eventspb.FeeStats{
+		Market:                   stats.MarketID.String(),
+		Asset:                    stats.AssetID.String(),
+		EpochSeq:                 stats.EpochSeq,
+		TotalRewardsPaid:         stats.TotalRewardsPaid,
+		ReferrerRewardsGenerated: stats.ReferrerRewardsGenerated,
+		RefereesDiscountApplied:  stats.RefereesDiscountApplied,
+		VolumeDiscountApplied:    stats.VolumeDiscountApplied,
 	}
 }

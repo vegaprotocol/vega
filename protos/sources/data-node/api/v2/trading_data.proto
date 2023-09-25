@@ -489,7 +489,7 @@ service TradingDataService {
 
   // List liquidity providers data
   //
-  // List information about active liquidity provider(s) for a given market, or liquidity provider's party ID
+  // List information about active liquidity provider(s) for a given market, or liquidity provider's party ID.
   rpc ListLiquidityProviders(ListLiquidityProvidersRequest) returns (ListLiquidityProvidersResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Liquidity providers"};
   }
@@ -739,7 +739,7 @@ service TradingDataService {
   //
   // Get a party's activity across epochs
   rpc GetPartyActivityStreak(GetPartyActivityStreakRequest) returns (GetPartyActivityStreakResponse) {
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referrals"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referral program"};
   }
 
   // Get current referral program
@@ -763,6 +763,10 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referral program"};
   }
 
+  // Get referral set statistics
+  //
+  // Get the total taker volume, and each referee's taker volume and, reward and discount factors for a referral set
+  // at the latest or a specific epoch. You can also optionally filter for a specific referee's statistics.
   rpc GetReferralSetStats(GetReferralSetStatsRequest) returns (GetReferralSetStatsResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referral program"};
   }
@@ -786,6 +790,14 @@ service TradingDataService {
   // Get a list of a referee's team history, i.e. the teams that a referee has been a member of and transferred from/to.
   rpc ListTeamRefereeHistory(ListTeamRefereeHistoryRequest) returns (ListTeamRefereeHistoryResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Teams"};
+  }
+
+  // Get referral fee statistics
+  //
+  // Gets accumulated rewards and discount information for a given asset or market for the latest epoch
+  // or a specific epoch.
+  rpc GetReferralFeeStats(GetReferralFeeStatsRequest) returns (GetReferralFeeStatsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referral program"};
   }
 
   // Export network history as CSV
@@ -2603,9 +2615,9 @@ message ObserveLiquidityProvisionsResponse {
 // Request for listing active liquidity providers for a given market.
 // Either market ID or party ID or both, must be provided.
 message ListLiquidityProvidersRequest {
-  // Market ID to retrieve liquidity providers for
+  // Market ID to retrieve liquidity providers for. If omitted, you must provide a party ID.
   optional string market_id = 1;
-  // Party ID to retrieve data for
+  // Party ID to retrieve data for. If omitted, you must provide a market ID.
   optional string party_id = 2;
   // Pagination controls.
   optional Pagination pagination = 3;
@@ -3574,8 +3586,8 @@ message ReferralProgram {
   // Defined tiers in increasing order. First element will give Tier 1, second
   // element will give Tier 2, and so on.
   repeated vega.BenefitTier benefit_tiers = 3;
-  // Timestamp as Unix time in seconds, after which when the current epoch ends, the
-  // programs status will become STATE_CLOSED and benefits will be disabled.
+  // Timestamp as Unix time in nanoseconds, after which when the current epoch ends, the
+  // programs will end and benefits will be disabled.
   int64 end_of_program_timestamp = 4;
   // Number of epochs over which to evaluate a referral set's running volume.
   uint64 window_length = 5;
@@ -3841,4 +3853,20 @@ message ListTeamRefereeHistoryRequest {
 message ListTeamRefereeHistoryResponse {
   // Page of team referee history data and corresponding page information.
   TeamRefereeHistoryConnection team_referee_history = 1;
+}
+
+// Request that is sent for referral fee statistics.
+message GetReferralFeeStatsRequest {
+  // Market ID to get referral fee statistics for. If omitted, asset ID must be provided.
+  optional string market_id = 1;
+  // Asset ID to get referral fee statistics for. If omitted, market ID must be provided.
+  optional string asset_id = 2;
+  // Epoch to get referral fee statistics for. If omitted, the last epoch published is used.
+  optional uint64 epoch_seq = 3;
+}
+
+// Response that is sent when requesting referral fee statistics.
+message GetReferralFeeStatsResponse {
+  // Fee statistics for the given market or asset, and epoch.
+  vega.events.v1.FeeStats fee_stats = 1;
 }

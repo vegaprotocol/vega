@@ -122,7 +122,7 @@ func PartiesSubmitRecurringTransfers(
 func parseRecurringTransferTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id", "from", "from_account_type", "to", "to_account_type", "asset", "amount", "start_epoch", "end_epoch", "factor",
-	}, []string{"metric", "metric_asset", "markets", "lock_period", "error"})
+	}, []string{"metric", "metric_asset", "markets", "lock_period", "window_length", "entity_scope", "individual_scope", "teams", "ntop", "staking_requirement", "notional_requirement", "distribution_strategy", "error"})
 }
 
 func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {

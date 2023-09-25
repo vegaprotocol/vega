@@ -148,9 +148,11 @@ func createStore(t *testing.T, historyRetentionBlockSpan int64, chainID string, 
 func dirSize(path string) (int64, error) {
 	var size int64
 	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
-		if !info.IsDir() {
-			size += info.Size()
+		if err != nil || (info != nil && info.IsDir()) {
+			return nil //nolint:nilerr
 		}
+
+		size += info.Size()
 		return nil
 	})
 	return size, err

@@ -500,10 +500,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the referral program:$`, func(table *godog.Table) error {
 		return steps.TheReferralProgram(referralProgramConfig, execsetup.referralProgram, table)
 	})
-	s.Step(`^the referral benefit tiers "([^"]*)":$`, func(name string, table *godog.Table) error {
+	s.Step(`^the referral benefit tiers "([^"]+)":$`, func(name string, table *godog.Table) error {
 		return steps.TheReferralBenefitTiersConfiguration(referralProgramConfig, name, table)
 	})
-	s.Step(`^the referral staking tiers "([^"]*)":$`, func(name string, table *godog.Table) error {
+	s.Step(`^the referral staking tiers "([^"]+)":$`, func(name string, table *godog.Table) error {
 		return steps.TheReferralStakingTiersConfiguration(referralProgramConfig, name, table)
 	})
 	s.Step(`^the parties create the following referral codes:$`, func(table *godog.Table) error {
@@ -518,8 +518,11 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`the activity streaks at epoch "([^"]+)" should be:`, func(epoch string, table *godog.Table) error {
 		return steps.TheActivityStreaksShouldBe(execsetup.broker, epoch, table)
 	})
-	s.Step(`the vesting stats at epoch (\d+) should be:`, func(epoch string, table *godog.Table) error {
+	s.Step(`the vesting stats at epoch "([^"]+)" should be:`, func(epoch string, table *godog.Table) error {
 		return steps.TheVestingStatsShouldBe(execsetup.broker, epoch, table)
+	})
+	s.Step(`the volume discount stats at epoch "([^"]+)" should be:`, func(epoch string, table *godog.Table) error {
+		return steps.TheVolumeDiscountStatsShouldBe(execsetup.broker, epoch, table)
 	})
 
 	// Debug steps
@@ -579,6 +582,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^debug network parameter "([^"]*)"$`, func(name string) error {
 		return steps.DebugNetworkParameter(execsetup.log, execsetup.netParams, name)
 	})
+
 	// Event steps
 	s.Step(`^clear all events$`, func() error {
 		steps.ClearAllEvents(execsetup.broker)

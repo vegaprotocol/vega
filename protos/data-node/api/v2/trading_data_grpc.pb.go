@@ -299,7 +299,7 @@ type TradingDataServiceClient interface {
 	ObserveLiquidityProvisions(ctx context.Context, in *ObserveLiquidityProvisionsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveLiquidityProvisionsClient, error)
 	// List liquidity providers data
 	//
-	// List information about active liquidity provider(s) for a given market, or liquidity provider's party ID
+	// List information about active liquidity provider(s) for a given market, or liquidity provider's party ID.
 	ListLiquidityProviders(ctx context.Context, in *ListLiquidityProvidersRequest, opts ...grpc.CallOption) (*ListLiquidityProvidersResponse, error)
 	// Get governance data
 	//
@@ -452,6 +452,10 @@ type TradingDataServiceClient interface {
 	//
 	// List all referees that belong to a referral set.
 	ListReferralSetReferees(ctx context.Context, in *ListReferralSetRefereesRequest, opts ...grpc.CallOption) (*ListReferralSetRefereesResponse, error)
+	// Get referral set statistics
+	//
+	// Get the total taker volume, and each referee's taker volume and, reward and discount factors for a referral set
+	// at the latest or a specific epoch. You can also optionally filter for a specific referee's statistics.
 	GetReferralSetStats(ctx context.Context, in *GetReferralSetStatsRequest, opts ...grpc.CallOption) (*GetReferralSetStatsResponse, error)
 	// List teams
 	//
@@ -465,6 +469,11 @@ type TradingDataServiceClient interface {
 	//
 	// Get a list of a referee's team history, i.e. the teams that a referee has been a member of and transferred from/to.
 	ListTeamRefereeHistory(ctx context.Context, in *ListTeamRefereeHistoryRequest, opts ...grpc.CallOption) (*ListTeamRefereeHistoryResponse, error)
+	// Get referral fee statistics
+	//
+	// Gets accumulated rewards and discount information for a given asset or market for the latest epoch
+	// or a specific epoch.
+	GetReferralFeeStats(ctx context.Context, in *GetReferralFeeStatsRequest, opts ...grpc.CallOption) (*GetReferralFeeStatsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -1795,6 +1804,15 @@ func (c *tradingDataServiceClient) ListTeamRefereeHistory(ctx context.Context, i
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) GetReferralFeeStats(ctx context.Context, in *GetReferralFeeStatsRequest, opts ...grpc.CallOption) (*GetReferralFeeStatsResponse, error) {
+	out := new(GetReferralFeeStatsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetReferralFeeStats", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
 	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
@@ -2116,7 +2134,7 @@ type TradingDataServiceServer interface {
 	ObserveLiquidityProvisions(*ObserveLiquidityProvisionsRequest, TradingDataService_ObserveLiquidityProvisionsServer) error
 	// List liquidity providers data
 	//
-	// List information about active liquidity provider(s) for a given market, or liquidity provider's party ID
+	// List information about active liquidity provider(s) for a given market, or liquidity provider's party ID.
 	ListLiquidityProviders(context.Context, *ListLiquidityProvidersRequest) (*ListLiquidityProvidersResponse, error)
 	// Get governance data
 	//
@@ -2269,6 +2287,10 @@ type TradingDataServiceServer interface {
 	//
 	// List all referees that belong to a referral set.
 	ListReferralSetReferees(context.Context, *ListReferralSetRefereesRequest) (*ListReferralSetRefereesResponse, error)
+	// Get referral set statistics
+	//
+	// Get the total taker volume, and each referee's taker volume and, reward and discount factors for a referral set
+	// at the latest or a specific epoch. You can also optionally filter for a specific referee's statistics.
 	GetReferralSetStats(context.Context, *GetReferralSetStatsRequest) (*GetReferralSetStatsResponse, error)
 	// List teams
 	//
@@ -2282,6 +2304,11 @@ type TradingDataServiceServer interface {
 	//
 	// Get a list of a referee's team history, i.e. the teams that a referee has been a member of and transferred from/to.
 	ListTeamRefereeHistory(context.Context, *ListTeamRefereeHistoryRequest) (*ListTeamRefereeHistoryResponse, error)
+	// Get referral fee statistics
+	//
+	// Gets accumulated rewards and discount information for a given asset or market for the latest epoch
+	// or a specific epoch.
+	GetReferralFeeStats(context.Context, *GetReferralFeeStatsRequest) (*GetReferralFeeStatsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2657,6 +2684,9 @@ func (UnimplementedTradingDataServiceServer) ListTeamReferees(context.Context, *
 }
 func (UnimplementedTradingDataServiceServer) ListTeamRefereeHistory(context.Context, *ListTeamRefereeHistoryRequest) (*ListTeamRefereeHistoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTeamRefereeHistory not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetReferralFeeStats(context.Context, *GetReferralFeeStatsRequest) (*GetReferralFeeStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetReferralFeeStats not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
@@ -4545,6 +4575,24 @@ func _TradingDataService_ListTeamRefereeHistory_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_GetReferralFeeStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetReferralFeeStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetReferralFeeStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetReferralFeeStats",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetReferralFeeStats(ctx, req.(*GetReferralFeeStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ExportNetworkHistory_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportNetworkHistoryRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -4934,6 +4982,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTeamRefereeHistory",
 			Handler:    _TradingDataService_ListTeamRefereeHistory_Handler,
+		},
+		{
+			MethodName: "GetReferralFeeStats",
+			Handler:    _TradingDataService_GetReferralFeeStats_Handler,
 		},
 		{
 			MethodName: "Ping",

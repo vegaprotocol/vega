@@ -100,7 +100,8 @@ func (t *TransferBase) IsValid() error {
 		if t.To != "0000000000000000000000000000000000000000000000000000000000000000" {
 			return ErrInvalidToForRewardAccountType
 		}
-	case AccountTypeGeneral, AccountTypeLPFeeReward, AccountTypeMakerReceivedFeeReward, AccountTypeMakerPaidFeeReward, AccountTypeMarketProposerReward /*, AccountTypeLockedForStaking*/ :
+	case AccountTypeGeneral, AccountTypeLPFeeReward, AccountTypeMakerReceivedFeeReward, AccountTypeMakerPaidFeeReward, AccountTypeMarketProposerReward,
+		AccountTypeAveragePositionReward, AccountTypeRelativeReturnReward, AccountTypeValidatorRankingReward, AccountTypeReturnVolatilityReward: /*, AccountTypeLockedForStaking*/
 		break
 	default:
 		return ErrUnsupportedToAccountType

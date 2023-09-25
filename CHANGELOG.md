@@ -38,7 +38,7 @@
 - [8913](https://github.com/vegaprotocol/vega/issues/8913) - Add business logic for team management.
 - [8765](https://github.com/vegaprotocol/vega/issues/8765) - Implement snapshots state for `PERPS`.
 - [8918](https://github.com/vegaprotocol/vega/issues/8918) - Implement commands for team management.
-- [9401](https://github.com/vegaprotocol/vega/issues/9401) - Use boot strap peers when fetching initial network history segment 
+- [9401](https://github.com/vegaprotocol/vega/issues/9401) - Use boot strap peers when fetching initial network history segment
 - [8960](https://github.com/vegaprotocol/vega/issues/8960) - Improve wiring perpetual markets through governance.
 - [8969](https://github.com/vegaprotocol/vega/issues/8969) - Improve wiring of internal time triggers for perpetual markets.
 - [9001](https://github.com/vegaprotocol/vega/issues/9001) - Improve wiring of perpetual markets into the data node.
@@ -104,6 +104,7 @@
 - [9408](https://github.com/vegaprotocol/vega/issues/9408) - Check for integer overflow in pagination.
 - [5176](https://github.com/vegaprotocol/vega/issues/5176) - Check for duplicate asset registration in integration tests.
 - [9496](https://github.com/vegaprotocol/vega/issues/9496) - Added support for new dispatch strategy fields in feature tests
+- [9536](https://github.com/vegaprotocol/vega/issues/9536) - Feature tests for average position metric transfers and reward
 - [8764](https://github.com/vegaprotocol/vega/issues/8764) - Include funding payment in margin and liquidation price estimates for `PERPS`.
 - [9519](https://github.com/vegaprotocol/vega/issues/9519) - Fix `oracle_specs` data in the `database` that was inadvertently removed during an earlier database migration
 - [9478](https://github.com/vegaprotocol/vega/issues/8764) - Add SLA statistics to market data and liquidity provision APIs.
@@ -216,6 +217,9 @@
 - [9074](https://github.com/vegaprotocol/vega/issues/9074) - Fix error response for `CSV` exports.
 - [9512](https://github.com/vegaprotocol/vega/issues/9512) - Allow hysteresis period to be set to 0.
 - [8979](https://github.com/vegaprotocol/vega/issues/8979) - Add trusted proxy config and verification for `XFF` header.
+- [9530](https://github.com/vegaprotocol/vega/issues/9530) - Referral program end timestamp not correctly displaying in `GraphQL API`.
+- [9532](https://github.com/vegaprotocol/vega/issues/9532) - Data node crashes if referral program starts and ends in the same block.
+- [9540](https://github.com/vegaprotocol/vega/issues/9540) - Proposals connection errors for `UpdateReferralProgram`.
 
 ## 0.72.1
 

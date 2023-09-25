@@ -112,9 +112,17 @@ func NewMarketFromSnapshot(
 	)
 	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID, broker)
 
-	feeEngine, err := fee.New(log, feeConfig, *mkt.Fees, asset, positionFactor)
-	if err != nil {
-		return nil, fmt.Errorf("unable to instantiate fee engine: %w", err)
+	var feeEngine *fee.Engine
+	if em.FeeStats != nil {
+		feeEngine, err = fee.NewFromState(log, feeConfig, *mkt.Fees, asset, positionFactor, em.FeeStats)
+		if err != nil {
+			return nil, fmt.Errorf("unable to instantiate fee engine: %w", err)
+		}
+	} else {
+		feeEngine, err = fee.New(log, feeConfig, *mkt.Fees, asset, positionFactor)
+		if err != nil {
+			return nil, fmt.Errorf("unable to instantiate fee engine: %w", err)
+		}
 	}
 
 	tsCalc := target.NewSnapshotEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine, mkt.ID, positionFactor)
@@ -289,6 +297,7 @@ func (m *Market) GetState() *types.ExecMarket {
 		StopOrders:                 m.stopOrders.ToProto(),
 		ExpiringStopOrders:         m.expiringStopOrders.GetState(),
 		Product:                    m.tradableInstrument.Instrument.Product.Serialize(),
+		FeeStats:                   m.fee.GetState(),
 	}
 
 	return em

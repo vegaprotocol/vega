@@ -353,6 +353,12 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 		if !m.finalFeesDistributed {
 			m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow())
 		}
+		feeStats := m.fee.GetFeesStatsOnEpochEnd()
+		feeStats.Market = m.GetID()
+		feeStats.EpochSeq = epoch.Seq
+		m.broker.Send(
+			events.NewFeeStatsEvent(ctx, feeStats),
+		)
 	}
 
 	m.updateLiquidityFee(ctx)
@@ -2180,7 +2186,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
 
 		for _, mp := range m.position.Update(ctx, trade, conf.PassiveOrdersAffected[idx], conf.Order) {
-			m.marketActivityTracker.RecordPosition(m.settlementAsset, mp.Party(), m.mkt.ID, mp.Size(), mp.Price(), m.positionFactor, m.timeService.GetTimeNow())
+			m.marketActivityTracker.RecordPosition(m.settlementAsset, mp.Party(), m.mkt.ID, mp.Size(), trade.Price, m.positionFactor, m.timeService.GetTimeNow())
 		}
 
 		// Record open interest change
