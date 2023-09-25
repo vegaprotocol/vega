@@ -13,6 +13,24 @@ import "vega/vega.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega/events/v1";
 
+// Stats of all parties eligible for volume discount.
+message VolumeDiscountStatsUpdated {
+  // Epoch at which the volume discount statistics are updated.
+  uint64 at_epoch = 1;
+  // All parties' stats.
+  repeated PartyVolumeDiscountStats stats = 2;
+}
+
+// Volume discount stats for a given party.
+message PartyVolumeDiscountStats {
+  // Party ID.
+  string party_id = 1;
+  // Discount factor applied to the volume.
+  string discount_factor = 2;
+  // The party's running volume.
+  string running_volume = 3;
+}
+
 // Stats of all parties invested in the vesting program.
 message VestingStatsUpdated {
   // Epoch at which the vesting statistics are updated.
@@ -1035,6 +1053,9 @@ enum BusEventType {
   // Event indicating the updated statistics for the vesting program.
   BUS_EVENT_TYPE_VESTING_STATS_UPDATED = 77;
 
+  // Event indicating the updated statistics for the volume discount.
+  BUS_EVENT_TYPE_VOLUME_DISCOUNT_STATS_UPDATED = 78;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1198,6 +1219,8 @@ message BusEvent {
     ReferralSetStatsUpdated referral_set_stats_updated = 174;
     // Event notifying of an update to the vesting statistics.
     VestingStatsUpdated vesting_stats_updated = 175;
+    // Event notifying of an update to the volume discount statistics.
+    VolumeDiscountStatsUpdated volume_discount_stats_updated = 176;
 
     // Market tick events
     MarketEvent market = 1001;

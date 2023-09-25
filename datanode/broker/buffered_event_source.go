@@ -405,10 +405,11 @@ func removeOldArchiveFilesIfDirectoryFull(dir string, maximumDirSizeBytes int64)
 	var dirSizeBytes int64
 	var archiveFiles []fs.FileInfo
 	err := filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
-		if !info.IsDir() {
-			dirSizeBytes += info.Size()
-			archiveFiles = append(archiveFiles, info)
+		if err != nil || (info != nil && info.IsDir()) {
+			return nil //nolint:nilerr
 		}
+		dirSizeBytes += info.Size()
+		archiveFiles = append(archiveFiles, info)
 		return nil
 	})
 	if err != nil {

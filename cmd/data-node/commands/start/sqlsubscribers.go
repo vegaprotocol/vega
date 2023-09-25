@@ -57,6 +57,7 @@ type SQLSubscribers struct {
 	referralSetsStore         *sqlstore.ReferralSets
 	teamsStore                *sqlstore.Teams
 	vestingStatsStore         *sqlstore.VestingStats
+	volumeDiscountStatsStore  *sqlstore.VolumeDiscountStats
 
 	// Services
 	candleService               *candlesv2.Svc
@@ -102,6 +103,7 @@ type SQLSubscribers struct {
 	referralSetsService         *service.ReferralSets
 	teamsService                *service.Teams
 	vestingStatsService         *service.VestingStats
+	volumeDiscountStatsService  *service.VolumeDiscountStats
 
 	// Subscribers
 	accountSub              *sqlsubscribers.Account
@@ -145,6 +147,7 @@ type SQLSubscribers struct {
 	referralSetsSub         *sqlsubscribers.ReferralSets
 	teamsSub                *sqlsubscribers.Teams
 	vestingStatsSub         *sqlsubscribers.VestingStatsUpdated
+	volumeDiscountStatsSub  *sqlsubscribers.VolumeDiscountStatsUpdated
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -191,6 +194,8 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.referralProgramSub,
 		s.referralSetsSub,
 		s.teamsSub,
+		s.vestingStatsSub,
+		s.volumeDiscountStatsSub,
 	}
 }
 
@@ -242,6 +247,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.referralSetsStore = sqlstore.NewReferralSets(transactionalConnectionSource)
 	s.teamsStore = sqlstore.NewTeams(transactionalConnectionSource)
 	s.vestingStatsStore = sqlstore.NewVestingStats(transactionalConnectionSource)
+	s.volumeDiscountStatsStore = sqlstore.NewVolumeDiscountStats(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
@@ -283,13 +289,13 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.coreSnapshotService = service.NewSnapshotData(s.snapStore)
 	s.stopOrderService = service.NewStopOrders(s.stopOrderStore)
 	s.fundingPeriodService = service.NewFundingPeriods(s.fundingPeriodStore)
-	s.partyActivityStreakService = service.NewPartyActivityStreak(
-		s.partyActivityStreakStore)
+	s.partyActivityStreakService = service.NewPartyActivityStreak(s.partyActivityStreakStore)
 	s.fundingPeriodService = service.NewFundingPeriods(s.fundingPeriodStore)
 	s.referralProgramService = service.NewReferralPrograms(s.referralProgramStore)
 	s.referralSetsService = service.NewReferralSets(s.referralSetsStore)
 	s.teamsService = service.NewTeams(s.teamsStore)
 	s.vestingStatsService = service.NewVestingStats(s.vestingStatsStore)
+	s.volumeDiscountStatsService = service.NewVolumeDiscountStats(s.volumeDiscountStatsStore)
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		s.marketDepthService,
@@ -348,4 +354,5 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.referralSetsSub = sqlsubscribers.NewReferralSets(s.referralSetsService)
 	s.teamsSub = sqlsubscribers.NewTeams(s.teamsService)
 	s.vestingStatsSub = sqlsubscribers.NewVestingStatsUpdated(s.vestingStatsService)
+	s.volumeDiscountStatsSub = sqlsubscribers.NewVolumeDiscountStatsUpdated(s.volumeDiscountStatsService)
 }

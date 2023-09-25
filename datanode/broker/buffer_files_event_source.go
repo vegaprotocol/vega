@@ -32,9 +32,10 @@ func NewBufferFilesEventSource(bufferFilesDir string, timeBetweenBlocks time.Dur
 ) {
 	var archiveFiles []fs.FileInfo
 	err := filepath.Walk(bufferFilesDir, func(path string, info fs.FileInfo, err error) error {
-		if !info.IsDir() {
-			archiveFiles = append(archiveFiles, info)
+		if err != nil || (info != nil && info.IsDir()) {
+			return nil //nolint:nilerr
 		}
+		archiveFiles = append(archiveFiles, info)
 		return nil
 	})
 	if err != nil {
