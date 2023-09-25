@@ -254,36 +254,20 @@ func (mr *MockMarketDataStoreMockRecorder) Flush(arg0 interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Flush", reflect.TypeOf((*MockMarketDataStore)(nil).Flush), arg0)
 }
 
-// GetBetweenDatesByID mocks base method.
-func (m *MockMarketDataStore) GetBetweenDatesByID(arg0 context.Context, arg1 string, arg2, arg3 time.Time, arg4 entities.Pagination) ([]entities.MarketData, entities.PageInfo, error) {
+// GetHistoricMarketData mocks base method.
+func (m *MockMarketDataStore) GetHistoricMarketData(arg0 context.Context, arg1 string, arg2, arg3 *time.Time, arg4 entities.Pagination) ([]entities.MarketData, entities.PageInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBetweenDatesByID", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "GetHistoricMarketData", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].([]entities.MarketData)
 	ret1, _ := ret[1].(entities.PageInfo)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// GetBetweenDatesByID indicates an expected call of GetBetweenDatesByID.
-func (mr *MockMarketDataStoreMockRecorder) GetBetweenDatesByID(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+// GetHistoricMarketData indicates an expected call of GetHistoricMarketData.
+func (mr *MockMarketDataStoreMockRecorder) GetHistoricMarketData(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBetweenDatesByID", reflect.TypeOf((*MockMarketDataStore)(nil).GetBetweenDatesByID), arg0, arg1, arg2, arg3, arg4)
-}
-
-// GetFromDateByID mocks base method.
-func (m *MockMarketDataStore) GetFromDateByID(arg0 context.Context, arg1 string, arg2 time.Time, arg3 entities.Pagination) ([]entities.MarketData, entities.PageInfo, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFromDateByID", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].([]entities.MarketData)
-	ret1, _ := ret[1].(entities.PageInfo)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetFromDateByID indicates an expected call of GetFromDateByID.
-func (mr *MockMarketDataStoreMockRecorder) GetFromDateByID(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFromDateByID", reflect.TypeOf((*MockMarketDataStore)(nil).GetFromDateByID), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHistoricMarketData", reflect.TypeOf((*MockMarketDataStore)(nil).GetHistoricMarketData), arg0, arg1, arg2, arg3, arg4)
 }
 
 // GetMarketDataByID mocks base method.
@@ -314,22 +298,6 @@ func (m *MockMarketDataStore) GetMarketsData(arg0 context.Context) ([]entities.M
 func (mr *MockMarketDataStoreMockRecorder) GetMarketsData(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketsData", reflect.TypeOf((*MockMarketDataStore)(nil).GetMarketsData), arg0)
-}
-
-// GetToDateByID mocks base method.
-func (m *MockMarketDataStore) GetToDateByID(arg0 context.Context, arg1 string, arg2 time.Time, arg3 entities.Pagination) ([]entities.MarketData, entities.PageInfo, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetToDateByID", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].([]entities.MarketData)
-	ret1, _ := ret[1].(entities.PageInfo)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetToDateByID indicates an expected call of GetToDateByID.
-func (mr *MockMarketDataStoreMockRecorder) GetToDateByID(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetToDateByID", reflect.TypeOf((*MockMarketDataStore)(nil).GetToDateByID), arg0, arg1, arg2, arg3)
 }
 
 // MockPositionStore is a mock of PositionStore interface.
