@@ -288,10 +288,10 @@ func (g *GRPCServer) ipFromContext(ctx context.Context, method string, log *logg
 	if len(tps) > 0 {
 		// get the metadata
 		if md, ok := metadata.FromIncomingContext(ctx); ok {
-			if forwardedFor, ok := md["x-forwarded-for"]; ok {
-				if len(forwardedFor) < 2 {
-					return "", ErrNoTrustedProxy
-				}
+			// if trusted proxies are specified, the XFF header will be used to rate-limit the IP
+			// for which the request is forwarded. If no proxies are specified, or no trusted proxies
+			// are found, the peer is rate limited.
+			if forwardedFor, ok := md["x-forwarded-for"]; ok && len(forwardedFor) >= 2 {
 				// check the proxies for trusted
 				for _, pip := range forwardedFor[1:] {
 					// trusted proxy found, return
