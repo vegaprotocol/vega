@@ -211,7 +211,6 @@ func (m *Market) GetState() *types.ExecSpotMarket {
 		FeeStats:                   m.fee.GetState(),
 	}
 
-	println(em.IntoProto().String())
 	return em
 }
 

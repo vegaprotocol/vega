@@ -638,6 +638,12 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetStats
   RefereeStats:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.RefereeStats
+  ReferralSetFeeStats:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.FeeStats
+  PartyAmount:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.PartyAmount
+  ReferrerRewardsGenerated:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.ReferrerRewardsGenerated
   Team:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.Team
   TeamEdge:

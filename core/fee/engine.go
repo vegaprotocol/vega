@@ -652,15 +652,18 @@ func (e *Engine) applyDiscountsAndRewards(taker string, fees *types.Fee, referra
 	inf = inf.Sub(inf, referrerReward.InfrastructureFeeReferrerReward)
 	lf = lf.Sub(lf, referrerReward.LiquidityFeeReferrerReward)
 
-	e.feeStats.RegisterReferrerReward(
-		string(referrer),
-		taker,
-		num.Sum(
-			referrerReward.MakerFeeReferrerReward,
-			referrerReward.InfrastructureFeeReferrerReward,
-			referrerReward.LiquidityFeeReferrerReward,
-		),
-	)
+	referrer, err := referral.GetReferrer(types.PartyID(taker))
+	if err != nil {
+		e.feeStats.RegisterReferrerReward(
+			string(referrer),
+			taker,
+			num.Sum(
+				referrerReward.MakerFeeReferrerReward,
+				referrerReward.InfrastructureFeeReferrerReward,
+				referrerReward.LiquidityFeeReferrerReward,
+			),
+		)
+	}
 
 	f.MakerFee = mf
 	f.InfrastructureFee = inf
