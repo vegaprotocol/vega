@@ -801,14 +801,23 @@ func (mt *marketTracker) processNotionalEndOfEpoch(epochStartTime time.Time, end
 
 func (mat *MarketActivityTracker) getTWNotionalPosition(asset, party string, markets []string) *num.Uint {
 	total := num.UintZero()
-	for _, mkt := range markets {
+	mkts := markets
+	if len(mkts) == 0 {
+		mkts = make([]string, 0, len(mat.assetToMarketTrackers[asset]))
+		for k := range mat.assetToMarketTrackers[asset] {
+			mkts = append(mkts, k)
+		}
+		sort.Strings(mkts)
+	}
+
+	for _, mkt := range mkts {
 		if tracker, ok := mat.getMarketTracker(asset, mkt); ok {
 			if twNotional, ok := tracker.twNotional[party]; ok {
-				total = total.AddSum(twNotional.currentEpochTWNotional)
+				total.AddSum(twNotional.currentEpochTWNotional)
 			}
 		}
 	}
-	return num.UintZero().Div(total, uScalingFactor)
+	return total
 }
 
 func updatePosition(toi *twPosition, scaledAbsPos uint64, t, tn int64, time time.Time) {
