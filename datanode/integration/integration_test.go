@@ -251,7 +251,7 @@ func newTestConfig(postgresRuntimePath string) (*config.Config, error) {
 	}
 
 	cfg := config.NewDefaultConfig()
-	cfg.API.RateLimit.TrustedProxies = []string{}
+	// cfg.API.RateLimit.TrustedProxies = []string{}
 	cfg.Broker.UseEventFile = true
 	cfg.Broker.PanicOnError = true
 	cfg.Broker.FileEventSourceConfig.Directory = filepath.Join(cwd, eventsDir)
