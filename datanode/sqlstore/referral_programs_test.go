@@ -102,7 +102,7 @@ func TestReferralPrograms_AddReferralProgram(t *testing.T) {
 			},
 		}
 
-		want := entities.ReferralProgramFromProto(programs[0].Program, block.VegaTime)
+		want := entities.ReferralProgramFromProto(programs[0].Program, block.VegaTime, 0)
 		err := rs.AddReferralProgram(ctx, want)
 		require.NoError(t, err)
 
@@ -112,7 +112,7 @@ func TestReferralPrograms_AddReferralProgram(t *testing.T) {
 		require.Len(t, got, 1)
 		assert.Equal(t, *want, got[0])
 
-		want2 := entities.ReferralProgramFromProto(programs[1].Program, block2.VegaTime)
+		want2 := entities.ReferralProgramFromProto(programs[1].Program, block2.VegaTime, 0)
 		err = rs.AddReferralProgram(ctx, want2)
 		require.NoError(t, err)
 
@@ -213,7 +213,7 @@ func TestReferralPrograms_UpdateReferralProgram(t *testing.T) {
 
 	var want, wantUpdated *entities.ReferralProgram
 	t.Run("UpdateReferralProgram should create a new referral program record with the updated data", func(t *testing.T) {
-		want = entities.ReferralProgramFromProto(started.Program, block.VegaTime)
+		want = entities.ReferralProgramFromProto(started.Program, block.VegaTime, 0)
 		err := rs.AddReferralProgram(ctx, want)
 		require.NoError(t, err)
 
@@ -225,7 +225,7 @@ func TestReferralPrograms_UpdateReferralProgram(t *testing.T) {
 		assert.Equal(t, *want, got[0])
 
 		block = addTestBlock(t, ctx, bs)
-		wantUpdated = entities.ReferralProgramFromProto(updated.Program, block.VegaTime)
+		wantUpdated = entities.ReferralProgramFromProto(updated.Program, block.VegaTime, 0)
 		err = rs.UpdateReferralProgram(ctx, wantUpdated)
 		require.NoError(t, err)
 
@@ -255,20 +255,20 @@ func TestReferralPrograms_EndReferralProgram(t *testing.T) {
 	endTime := block.VegaTime.Add(time.Hour)
 	startedEvent, updatedEvent, endedEvent := getReferralEvents(t, endTime)
 	t.Run("EndReferralProgram should create a new referral program record with the data from the current referral program and set the ended_at timestamp", func(t *testing.T) {
-		started := entities.ReferralProgramFromProto(startedEvent.Program, block.VegaTime)
+		started := entities.ReferralProgramFromProto(startedEvent.Program, block.VegaTime, 0)
 		err := rs.AddReferralProgram(ctx, started)
 		require.NoError(t, err)
 
 		block = addTestBlock(t, ctx, bs)
-		updated := entities.ReferralProgramFromProto(updatedEvent.Program, block.VegaTime)
+		updated := entities.ReferralProgramFromProto(updatedEvent.Program, block.VegaTime, 0)
 		err = rs.UpdateReferralProgram(ctx, updated)
 		require.NoError(t, err)
 
 		block = addTestBlock(t, ctx, bs)
-		err = rs.EndReferralProgram(ctx, entities.ReferralProgramID(endedEvent.Id), endedEvent.Version, block.VegaTime)
+		err = rs.EndReferralProgram(ctx, entities.ReferralProgramID(endedEvent.Id), endedEvent.Version, block.VegaTime, 0)
 		require.NoError(t, err)
 
-		ended := entities.ReferralProgramFromProto(updatedEvent.Program, block.VegaTime)
+		ended := entities.ReferralProgramFromProto(updatedEvent.Program, block.VegaTime, 0)
 		ended.Version = endedEvent.Version
 		ended.EndedAt = &block.VegaTime
 
@@ -295,7 +295,7 @@ func TestReferralPrograms_GetCurrentReferralProgram(t *testing.T) {
 	startedEvent, updatedEvent, endedEvent := getReferralEvents(t, endTime)
 
 	t.Run("GetCurrentReferralProgram should return the current referral program information", func(t *testing.T) {
-		started := entities.ReferralProgramFromProto(startedEvent.Program, block.VegaTime)
+		started := entities.ReferralProgramFromProto(startedEvent.Program, block.VegaTime, 0)
 		err := rs.AddReferralProgram(ctx, started)
 		require.NoError(t, err)
 
@@ -304,7 +304,7 @@ func TestReferralPrograms_GetCurrentReferralProgram(t *testing.T) {
 		assert.Equal(t, *started, got)
 
 		block = addTestBlock(t, ctx, bs)
-		updated := entities.ReferralProgramFromProto(updatedEvent.Program, block.VegaTime)
+		updated := entities.ReferralProgramFromProto(updatedEvent.Program, block.VegaTime, 0)
 		err = rs.UpdateReferralProgram(ctx, updated)
 		require.NoError(t, err)
 
@@ -313,10 +313,48 @@ func TestReferralPrograms_GetCurrentReferralProgram(t *testing.T) {
 		assert.Equal(t, *updated, got)
 
 		block = addTestBlock(t, ctx, bs)
-		err = rs.EndReferralProgram(ctx, entities.ReferralProgramID(endedEvent.Id), endedEvent.Version, block.VegaTime)
+		err = rs.EndReferralProgram(ctx, entities.ReferralProgramID(endedEvent.Id), endedEvent.Version, block.VegaTime, 0)
 		require.NoError(t, err)
 
-		ended := entities.ReferralProgramFromProto(updatedEvent.Program, block.VegaTime)
+		ended := entities.ReferralProgramFromProto(updatedEvent.Program, block.VegaTime, 0)
+		ended.Version = endedEvent.Version
+		ended.EndedAt = &block.VegaTime
+
+		got, err = rs.GetCurrentReferralProgram(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, *ended, got)
+	})
+}
+
+func TestReferralPrograms_StartAndEndInSameBlock(t *testing.T) {
+	bs, rs := setupReferralProgramTest(t)
+	ctx := tempTransaction(t)
+
+	block := addTestBlock(t, ctx, bs)
+	endTime := block.VegaTime
+	startedEvent, updatedEvent, endedEvent := getReferralEvents(t, endTime)
+
+	t.Run("Data node should allow a referral program to be started and ended in the same block", func(t *testing.T) {
+		started := entities.ReferralProgramFromProto(startedEvent.Program, block.VegaTime, 0)
+		err := rs.AddReferralProgram(ctx, started)
+		require.NoError(t, err)
+
+		got, err := rs.GetCurrentReferralProgram(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, *started, got)
+
+		updated := entities.ReferralProgramFromProto(updatedEvent.Program, block.VegaTime, 1)
+		err = rs.UpdateReferralProgram(ctx, updated)
+		require.NoError(t, err)
+
+		got, err = rs.GetCurrentReferralProgram(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, *updated, got)
+
+		err = rs.EndReferralProgram(ctx, entities.ReferralProgramID(endedEvent.Id), endedEvent.Version, block.VegaTime, 2)
+		require.NoError(t, err)
+
+		ended := entities.ReferralProgramFromProto(updatedEvent.Program, block.VegaTime, 2)
 		ended.Version = endedEvent.Version
 		ended.EndedAt = &block.VegaTime
 

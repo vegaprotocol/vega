@@ -38,7 +38,7 @@
 - [8913](https://github.com/vegaprotocol/vega/issues/8913) - Add business logic for team management.
 - [8765](https://github.com/vegaprotocol/vega/issues/8765) - Implement snapshots state for `PERPS`.
 - [8918](https://github.com/vegaprotocol/vega/issues/8918) - Implement commands for team management.
-- [9401](https://github.com/vegaprotocol/vega/issues/9401) - Use boot strap peers when fetching initial network history segment 
+- [9401](https://github.com/vegaprotocol/vega/issues/9401) - Use boot strap peers when fetching initial network history segment
 - [8960](https://github.com/vegaprotocol/vega/issues/8960) - Improve wiring perpetual markets through governance.
 - [8969](https://github.com/vegaprotocol/vega/issues/8969) - Improve wiring of internal time triggers for perpetual markets.
 - [9001](https://github.com/vegaprotocol/vega/issues/9001) - Improve wiring of perpetual markets into the data node.
@@ -217,6 +217,9 @@
 - [9074](https://github.com/vegaprotocol/vega/issues/9074) - Fix error response for `CSV` exports.
 - [9512](https://github.com/vegaprotocol/vega/issues/9512) - Allow hysteresis period to be set to 0.
 - [8979](https://github.com/vegaprotocol/vega/issues/8979) - Add trusted proxy config and verification for `XFF` header.
+- [9530](https://github.com/vegaprotocol/vega/issues/9530) - Referral program end timestamp not correctly displaying in `GraphQL API`.
+- [9532](https://github.com/vegaprotocol/vega/issues/9532) - Data node crashes if referral program starts and ends in the same block.
+- [9540](https://github.com/vegaprotocol/vega/issues/9540) - Proposals connection errors for `UpdateReferralProgram`.
 
 ## 0.72.1
 

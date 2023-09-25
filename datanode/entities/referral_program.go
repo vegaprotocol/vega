@@ -22,10 +22,11 @@ type (
 		StakingTiers          []*vega.StakingTier
 		VegaTime              time.Time
 		EndedAt               *time.Time
+		SeqNum                uint64
 	}
 )
 
-func ReferralProgramFromProto(proto *vega.ReferralProgram, vegaTime time.Time) *ReferralProgram {
+func ReferralProgramFromProto(proto *vega.ReferralProgram, vegaTime time.Time, seqNum uint64) *ReferralProgram {
 	return &ReferralProgram{
 		ID:                    ReferralProgramID(proto.Id),
 		Version:               proto.Version,
@@ -34,6 +35,7 @@ func ReferralProgramFromProto(proto *vega.ReferralProgram, vegaTime time.Time) *
 		WindowLength:          proto.WindowLength,
 		StakingTiers:          proto.StakingTiers,
 		VegaTime:              vegaTime,
+		SeqNum:                seqNum,
 	}
 }
 
@@ -43,11 +45,14 @@ func (rp ReferralProgram) ToProto() *v2.ReferralProgram {
 		endedAt = ptr.From(rp.EndedAt.UnixNano())
 	}
 
+	// While the original referral program proto from core sends EndOfProgramTimestamp as a timestamp in unix seconds,
+	// For the data node API, we publish it as a unix timestamp in nanoseconds as the GraphQL API timestamp will incorrectly
+	// treat the timestamp as nanos.
 	return &v2.ReferralProgram{
 		Id:                    rp.ID.String(),
 		Version:               rp.Version,
 		BenefitTiers:          rp.BenefitTiers,
-		EndOfProgramTimestamp: rp.EndOfProgramTimestamp.Unix(),
+		EndOfProgramTimestamp: rp.EndOfProgramTimestamp.UnixNano(),
 		WindowLength:          rp.WindowLength,
 		StakingTiers:          rp.StakingTiers,
 		EndedAt:               endedAt,
