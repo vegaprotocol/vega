@@ -888,6 +888,11 @@ func testSigningTransactionWithInvalidRequestFails(t *testing.T) {
 			statusCode, _, _ := s.serveHTTP(tt, signTxRequest(tt, tc.payload, tc.headers))
 			// then
 			assert.Equal(tt, http.StatusBadRequest, statusCode)
+			tc.headers["Origin"] = "Contains 世界"
+			// when
+			statusCode, _, _ = s.serveHTTP(tt, signTxRequest(tt, tc.payload, tc.headers))
+			// then
+			assert.Equal(tt, http.StatusBadRequest, statusCode)
 		})
 	}
 }
