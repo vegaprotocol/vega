@@ -530,23 +530,28 @@ func (t *TradingDataServiceV2) GetLatestMarketDepth(ctx context.Context, req *v2
 func (t *TradingDataServiceV2) GetMarketDataHistoryByID(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest) (*v2.GetMarketDataHistoryByIDResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetMarketDataHistoryV2")()
 
-	startTime := vegatime.Unix(0, ptr.UnBox(req.StartTimestamp))
-	endTime := vegatime.Unix(0, ptr.UnBox(req.EndTimestamp))
-
-	marketData, err := t.handleGetMarketDataHistoryWithCursorPagination(ctx, req, startTime, endTime)
+	marketData, err := t.handleGetMarketDataHistoryWithCursorPagination(ctx, req)
 	if err != nil {
 		return marketData, formatE(ErrMarketServiceGetMarketDataHistory, err)
 	}
 	return marketData, nil
 }
 
-func (t *TradingDataServiceV2) handleGetMarketDataHistoryWithCursorPagination(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest, startTime, endTime time.Time) (*v2.GetMarketDataHistoryByIDResponse, error) {
+func (t *TradingDataServiceV2) handleGetMarketDataHistoryWithCursorPagination(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest) (*v2.GetMarketDataHistoryByIDResponse, error) {
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
 		return nil, errors.Wrap(ErrInvalidPagination, err.Error())
 	}
 
-	history, pageInfo, err := t.marketDataService.GetBetweenDatesByID(ctx, req.MarketId, startTime, endTime, pagination)
+	var startTime, endTime *time.Time
+	if req.StartTimestamp != nil {
+		startTime = ptr.From(time.Unix(0, *req.StartTimestamp))
+	}
+	if req.EndTimestamp != nil {
+		endTime = ptr.From(time.Unix(0, *req.EndTimestamp))
+	}
+
+	history, pageInfo, err := t.marketDataService.GetHistoricMarketData(ctx, req.MarketId, startTime, endTime, pagination)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not retrieve historic market data")
 	}
