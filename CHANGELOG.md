@@ -130,6 +130,7 @@
 - [9118](https://github.com/vegaprotocol/vega/issues/9118) - Improve list stop orders error message
 - [9406](https://github.com/vegaprotocol/vega/issues/9105) - Fix Ethereum oracle validation failing unexpectedly when using go 1.19
 - [9105](https://github.com/vegaprotocol/vega/issues/9105) - Truncate virtual stake decimal places
+- [9517](https://github.com/vegaprotocol/vega/issues/9517) - Start and end time stamps in `GetMarketDataHistoryByID` now work as expected.
 - [9348](https://github.com/vegaprotocol/vega/issues/9348) - Nil pointer error in Ethereum call engine when running with null block chain
 - [8800](https://github.com/vegaprotocol/vega/issues/8800) - `expiresAt` is always null in the Stop Orders `API`.
 - [8796](https://github.com/vegaprotocol/vega/issues/8796) - Avoid updating active proposals slice while iterating over it.
