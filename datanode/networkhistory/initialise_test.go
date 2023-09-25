@@ -17,37 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type TestSegment struct {
-	HeightFrom               int64
-	HeightTo                 int64
-	PreviousHistorySegmentId string
-	HistorySegmentId         string
-}
-
-func (m TestSegment) GetPreviousHistorySegmentId() string {
-	return m.PreviousHistorySegmentId
-}
-
-func (m TestSegment) GetHistorySegmentId() string {
-	return m.HistorySegmentId
-}
-
-func (m TestSegment) GetFromHeight() int64 {
-	return m.HeightFrom
-}
-
-func (m TestSegment) GetToHeight() int64 {
-	return m.HeightTo
-}
-
-func (m TestSegment) GetDatabaseVersion() int64 {
-	return 1
-}
-
-func (m TestSegment) GetChainId() string {
-	return "test-chain-id"
-}
-
 func makeFullSegment(from, to int64, previous, id string) segment.Full {
 	return segment.Full{
 		MetaData: segment.MetaData{

@@ -363,12 +363,12 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmfDocy2GgqtA52oWUG5LHTqcX2gV5RYyXZquMypmYeVdY", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "Qmbyf1JppcccbpGiEZfEqVecKrKEY2uBqcqHgcM72ht6MT", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmdNAutyut4Wr837pEz16MZoiTAqvvzb5Av2KXxDnPggJh", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmU34Kv4g1pheMBbixnSiNAie3TKnHLssa2yJ3nXbi9q4F", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmTTf59zuZecKG9YuudWraTEkqUUrDKapKhoPM9pTqy1Kt", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmXkjioJxcN5RuVhdPpdgrFzPfckRqcvguXdEDcjTGG9bG", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmfL8Wx3ad67gvBBMLBJ3B1oQYWXB9MWBboq7KUJvV1h3R", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmfKEQuDAddfyHmAmgJScRvaNK5R5vdSQDNneH8EkAtmMn", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmYDiPfN7SAd5Tf4BXqkDxMMGGiEj5cbV4vVeuaWJkBDBf", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmZPrSuvhgfmDFEBL5eZmtDETjhsBEuQbasrGBkxxFjr1S", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmdQNhiiACPzCZTqEAKuvNFYc6TsVTbfyfyowYuWiapyBX", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmPXtjX5zS2ayLEowFhYqpiEP5D3LsfVn4xKS2CjLVGvpy", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {
@@ -1597,31 +1597,32 @@ func setupTestSQLMigrations() (int64, fs.FS) {
 
 	var highestMigrationNumber int64
 	err = filepath.Walk(sourceMigrationsDir, func(path string, info os.FileInfo, err error) error {
-		if info != nil && !info.IsDir() {
-			if strings.HasSuffix(info.Name(), ".sql") {
-				split := strings.Split(info.Name(), "_")
-				if len(split) < 2 {
-					return errors.New("expected sql filename of form <version>_<name>.sql")
-				}
+		if err != nil || (info != nil && info.IsDir()) {
+			return nil //nolint:nilerr
+		}
+		if strings.HasSuffix(info.Name(), ".sql") {
+			split := strings.Split(info.Name(), "_")
+			if len(split) < 2 {
+				return errors.New("expected sql filename of form <version>_<name>.sql")
+			}
 
-				migrationNum, err := strconv.Atoi(split[0])
-				if err != nil {
-					return fmt.Errorf("expected first part of file name to be integer, is %s", split[0])
-				}
+			migrationNum, err := strconv.Atoi(split[0])
+			if err != nil {
+				return fmt.Errorf("expected first part of file name to be integer, is %s", split[0])
+			}
 
-				if int64(migrationNum) > highestMigrationNumber {
-					highestMigrationNumber = int64(migrationNum)
-				}
+			if int64(migrationNum) > highestMigrationNumber {
+				highestMigrationNumber = int64(migrationNum)
+			}
 
-				data, err := os.ReadFile(filepath.Join(sourceMigrationsDir, info.Name()))
-				if err != nil {
-					return fmt.Errorf("failed to read file:%w", err)
-				}
+			data, err := os.ReadFile(filepath.Join(sourceMigrationsDir, info.Name()))
+			if err != nil {
+				return fmt.Errorf("failed to read file:%w", err)
+			}
 
-				err = os.WriteFile(filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir, info.Name()), data, fs.ModePerm)
-				if err != nil {
-					return fmt.Errorf("failed to write file:%w", err)
-				}
+			err = os.WriteFile(filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir, info.Name()), data, fs.ModePerm)
+			if err != nil {
+				return fmt.Errorf("failed to write file:%w", err)
 			}
 		}
 		return nil

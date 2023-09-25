@@ -115,6 +115,7 @@ type TradingDataServiceV2 struct {
 	referralProgramService     *service.ReferralPrograms
 	referralSetsService        *service.ReferralSets
 	teamsService               *service.Teams
+	referralFeeStatsService    *service.ReferralFeeStats
 }
 
 func (t *TradingDataServiceV2) GetPartyActivityStreak(ctx context.Context, req *v2.GetPartyActivityStreakRequest) (*v2.GetPartyActivityStreakResponse, error) {
@@ -3666,7 +3667,7 @@ func toHistorySegment(segment segment.Full) *v2.HistorySegment {
 
 // GetActiveNetworkHistoryPeerAddresses returns the active network history peer addresses.
 func (t *TradingDataServiceV2) GetActiveNetworkHistoryPeerAddresses(context.Context, *v2.GetActiveNetworkHistoryPeerAddressesRequest) (*v2.GetActiveNetworkHistoryPeerAddressesResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("GetMostRecentHistorySegmentFromPeers")()
+	defer metrics.StartAPIRequestAndTimeGRPC("GetActiveNetworkHistoryPeerAddresses")()
 
 	if t.NetworkHistoryService == nil || reflect.ValueOf(t.NetworkHistoryService).IsNil() {
 		return nil, formatE(ErrNetworkHistoryServiceNotInitialised)
@@ -4345,5 +4346,33 @@ func (t *TradingDataServiceV2) ListTeamRefereeHistory(ctx context.Context, req *
 
 	return &v2.ListTeamRefereeHistoryResponse{
 		TeamRefereeHistory: connection,
+	}, nil
+}
+
+func (t *TradingDataServiceV2) GetReferralFeeStats(ctx context.Context, req *v2.GetReferralFeeStatsRequest) (*v2.GetReferralFeeStatsResponse, error) {
+	if req.MarketId == nil && req.AssetId == nil {
+		return nil, formatE(ErrReferralFeeStatsRequest)
+	}
+
+	var (
+		marketID *entities.MarketID
+		assetID  *entities.AssetID
+	)
+
+	if req.MarketId != nil {
+		marketID = ptr.From(entities.MarketID(*req.MarketId))
+	}
+
+	if req.AssetId != nil {
+		assetID = ptr.From(entities.AssetID(*req.AssetId))
+	}
+
+	stats, err := t.referralFeeStatsService.GetFeeStats(ctx, marketID, assetID, req.EpochSeq)
+	if err != nil {
+		return nil, formatE(ErrGetReferralFeeStats, err)
+	}
+
+	return &v2.GetReferralFeeStatsResponse{
+		FeeStats: stats.ToProto(),
 	}, nil
 }

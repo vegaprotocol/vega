@@ -52,9 +52,10 @@ func Test_RemoveOldArchiveFilesIfDirectoryFull(t *testing.T) {
 
 	var preCleanUpSize int64
 	err = filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
-		if !info.IsDir() {
-			preCleanUpSize += info.Size()
+		if err != nil || (info != nil && info.IsDir()) {
+			return nil //nolint:nilerr
 		}
+		preCleanUpSize += info.Size()
 		return nil
 	})
 	assert.NoError(t, err)
@@ -62,9 +63,10 @@ func Test_RemoveOldArchiveFilesIfDirectoryFull(t *testing.T) {
 	removeOldArchiveFilesIfDirectoryFull(path, preCleanUpSize/2+1)
 	var postRemoveFiles []fs.FileInfo
 	err = filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
-		if !info.IsDir() {
-			postRemoveFiles = append(postRemoveFiles, info)
+		if err != nil || (info != nil && info.IsDir()) {
+			return nil //nolint:nilerr
 		}
+		postRemoveFiles = append(postRemoveFiles, info)
 		return nil
 	})
 	assert.NoError(t, err)
@@ -113,9 +115,10 @@ func Test_CompressUncompressedFilesInDir(t *testing.T) {
 
 	var preCompressFiles []fs.FileInfo
 	err = filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
-		if !info.IsDir() {
-			preCompressFiles = append(preCompressFiles, info)
+		if err != nil || (info != nil && info.IsDir()) {
+			return nil //nolint:nilerr
 		}
+		preCompressFiles = append(preCompressFiles, info)
 		return nil
 	})
 	sort.Slice(preCompressFiles, func(i, j int) bool {
@@ -128,9 +131,10 @@ func Test_CompressUncompressedFilesInDir(t *testing.T) {
 
 	var postCompressFiles []fs.FileInfo
 	err = filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
-		if !info.IsDir() {
-			postCompressFiles = append(postCompressFiles, info)
+		if err != nil || (info != nil && info.IsDir()) {
+			return nil //nolint:nilerr
 		}
+		postCompressFiles = append(postCompressFiles, info)
 		return nil
 	})
 	assert.NoError(t, err)

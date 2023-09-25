@@ -177,6 +177,8 @@ http:
       get: "/api/v2/teams/referees/{team_id}"
     - selector: datanode.api.v2.TradingDataService.ListTeamRefereeHistory
       get: "/api/v2/teams/referees/history/{referee}"
+    - selector: datanode.api.v2.TradingDataService.GetReferralFeeStats
+      get: "/api/v2/referral-sets/fees/stats"
 
     # websockets
 

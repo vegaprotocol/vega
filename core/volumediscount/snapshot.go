@@ -14,7 +14,7 @@ package volumediscount
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -22,12 +22,12 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+	"golang.org/x/exp/slices"
 )
 
 var (
-	key                        = (&types.PayloadVolumeDiscountProgram{}).Key()
-	ErrSnapshotKeyDoesNotExist = errors.New("unknown key for volume discount program snapshot")
-	hashKeys                   = []string{key}
+	key      = (&types.PayloadVolumeDiscountProgram{}).Key()
+	hashKeys = []string{key}
 )
 
 type SnapshottedEngine struct {
@@ -103,6 +103,17 @@ func (e *SnapshottedEngine) restore(vdp *snapshotpb.VolumeDiscountProgram) error
 			e.epochData[i] = volumes
 		}
 	}
+
+	for _, stats := range vdp.FactorsByParty {
+		factor, err := num.DecimalFromString(stats.DiscountFactor)
+		if err != nil {
+			return fmt.Errorf("could not parse string %q into decimal: %w", stats.DiscountFactor, err)
+		}
+		e.factorsByParty[types.PartyID(stats.Party)] = types.VolumeDiscountStats{
+			DiscountFactor: factor,
+		}
+	}
+
 	return nil
 }
 
@@ -168,6 +179,17 @@ func (e *SnapshottedEngine) serialiseDiscountVolumeProgram() ([]byte, error) {
 		epochData = append(epochData, ed)
 	}
 
+	stats := make([]*snapshotpb.VolumeDiscountStats, 0, len(e.factorsByParty))
+	for partyID, discountStats := range e.factorsByParty {
+		stats = append(stats, &snapshotpb.VolumeDiscountStats{
+			Party:          partyID.String(),
+			DiscountFactor: discountStats.DiscountFactor.String(),
+		})
+	}
+	slices.SortStableFunc(stats, func(a, b *snapshotpb.VolumeDiscountStats) bool {
+		return a.Party < b.Party
+	})
+
 	payload := &snapshotpb.Payload{
 		Data: &snapshotpb.Payload_VolumeDiscountProgram{
 			VolumeDiscountProgram: &snapshotpb.VolumeDiscountProgram{
@@ -177,6 +199,7 @@ func (e *SnapshottedEngine) serialiseDiscountVolumeProgram() ([]byte, error) {
 				EpochDataIndex:     uint64(e.epochDataIndex),
 				AveragePartyVolume: avgPartyVolumes,
 				EpochPartyVolumes:  epochData,
+				FactorsByParty:     stats,
 			},
 		},
 	}

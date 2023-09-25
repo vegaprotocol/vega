@@ -156,6 +156,8 @@ const (
 	VolumeDiscountProgramUpdatedEvent
 	ReferralSetStatsUpdatedEvent
 	VestingStatsUpdatedEvent
+	VolumeDiscountStatsUpdatedEvent
+	FeeStatsEvent
 )
 
 var (
@@ -245,6 +247,8 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_UPDATED:  VolumeDiscountProgramUpdatedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_SET_STATS_UPDATED:       ReferralSetStatsUpdatedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_VESTING_STATS_UPDATED:            VestingStatsUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_STATS_UPDATED:    VolumeDiscountStatsUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_FEE_STATS_UPDATED:                FeeStatsEvent,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -325,6 +329,8 @@ var (
 		VolumeDiscountProgramUpdatedEvent: eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_UPDATED,
 		ReferralSetStatsUpdatedEvent:      eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_SET_STATS_UPDATED,
 		VestingStatsUpdatedEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_VESTING_STATS_UPDATED,
+		VolumeDiscountStatsUpdatedEvent:   eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_STATS_UPDATED,
+		FeeStatsEvent:                     eventspb.BusEventType_BUS_EVENT_TYPE_FEE_STATS_UPDATED,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -406,6 +412,8 @@ var (
 		VolumeDiscountProgramUpdatedEvent: "VolumeDiscountProgramUpdatedEvent",
 		ReferralSetStatsUpdatedEvent:      "ReferralSetStatsUpdatedEvent",
 		VestingStatsUpdatedEvent:          "VestingStatsUpdatedEvent",
+		VolumeDiscountStatsUpdatedEvent:   "VolumeDiscountStatsUpdatedEvent",
+		FeeStatsEvent:                     "FeeStatsEvent",
 	}
 )
 
