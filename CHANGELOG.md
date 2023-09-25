@@ -104,6 +104,7 @@
 - [9408](https://github.com/vegaprotocol/vega/issues/9408) - Check for integer overflow in pagination.
 - [5176](https://github.com/vegaprotocol/vega/issues/5176) - Check for duplicate asset registration in integration tests.
 - [9496](https://github.com/vegaprotocol/vega/issues/9496) - Added support for new dispatch strategy fields in feature tests
+- [9536](https://github.com/vegaprotocol/vega/issues/9536) - Feature tests for average position metric transfers and reward
 - [8764](https://github.com/vegaprotocol/vega/issues/8764) - Include funding payment in margin and liquidation price estimates for `PERPS`.
 - [9519](https://github.com/vegaprotocol/vega/issues/9519) - Fix `oracle_specs` data in the `database` that was inadvertently removed during an earlier database migration
 - [9478](https://github.com/vegaprotocol/vega/issues/8764) - Add SLA statistics to market data and liquidity provision APIs.
