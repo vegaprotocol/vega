@@ -298,24 +298,43 @@ func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, log
 	return loadResult, err
 }
 
-func (d *Service) GetMostRecentHistorySegmentFromPeers(ctx context.Context,
+func (d *Service) GetMostRecentHistorySegmentFromBootstrapPeers(ctx context.Context,
 	grpcAPIPorts []int,
 ) (*PeerResponse, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse, error) {
-	var activePeerAddresses []string
-	// Time for connections to be established
-	time.Sleep(5 * time.Second)
-	for retries := 0; retries < 5; retries++ {
-		activePeerAddresses = d.GetActivePeerIPAddresses()
-		if len(activePeerAddresses) == 0 {
-			time.Sleep(5 * time.Second)
+	bootstrapPeers := d.GetBootstrapPeers()
+	if len(bootstrapPeers) == 0 {
+		return nil, nil, errors.New("no bootstrap peers found")
+	}
+
+	ip4Protocol := multiaddr.ProtocolWithName("ip4")
+	ip6Protocol := multiaddr.ProtocolWithName("ip6")
+	dnsProtocol := multiaddr.ProtocolWithName("dns")
+
+	bootstrapPeerAddresses := make([]string, 0, len(bootstrapPeers))
+
+	for _, bootstrapPeer := range bootstrapPeers {
+		addr, err := multiaddr.NewMultiaddr(bootstrapPeer)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to parse bootstrap peer address %s: %w", bootstrapPeer, err)
+		}
+
+		ipAddr, err := addr.ValueForProtocol(ip4Protocol.Code)
+		if err == nil {
+			bootstrapPeerAddresses = append(bootstrapPeerAddresses, ipAddr)
+		}
+
+		ipAddr, err = addr.ValueForProtocol(ip6Protocol.Code)
+		if err == nil {
+			bootstrapPeerAddresses = append(bootstrapPeerAddresses, ipAddr)
+		}
+
+		dnsAddr, err := addr.ValueForProtocol(dnsProtocol.Code)
+		if err == nil {
+			bootstrapPeerAddresses = append(bootstrapPeerAddresses, dnsAddr)
 		}
 	}
 
-	if len(activePeerAddresses) == 0 {
-		return nil, nil, errors.New("no active peers found")
-	}
-
-	return GetMostRecentHistorySegmentFromPeersAddresses(ctx, activePeerAddresses, d.GetSwarmKeySeed(), grpcAPIPorts)
+	return GetMostRecentHistorySegmentFromPeersAddresses(ctx, bootstrapPeerAddresses, d.GetSwarmKeySeed(), grpcAPIPorts)
 }
 
 func (d *Service) GetDatanodeBlockSpan(ctx context.Context) (sqlstore.DatanodeBlockSpan, error) {
