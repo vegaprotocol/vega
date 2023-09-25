@@ -2,6 +2,7 @@ package execution_test
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"testing"
 	"time"
@@ -9,6 +10,7 @@ import (
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 	paths2 "code.vegaprotocol.io/vega/paths"
@@ -134,4 +136,54 @@ func TestSuspendMarketViaGovernance(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, types.MarketStateActive, state.MarketState)
 	require.Equal(t, types.MarketTradingModeContinuous, state.MarketTradingMode)
+}
+
+func TestSubmitOrderWhenSuspended(t *testing.T) {
+	ctx := vgtest.VegaContext("chainid", 100)
+	now := time.Now()
+	exec := getEngineWithParties(t, now, num.NewUint(1000000000), "lp", "p1", "p2", "p3", "p4")
+	pubKey := &dstypes.SignerPubKey{
+		PubKey: &dstypes.PubKey{
+			Key: "0xDEADBEEF",
+		},
+	}
+	mkt := newMarket("MarketID", pubKey)
+	err := exec.engine.SubmitMarket(context.Background(), mkt, "", now)
+	require.NoError(t, err)
+
+	exec.engine.StartOpeningAuction(context.Background(), mkt.ID)
+
+	// during opening auction
+	state, err := exec.engine.GetMarketData(mkt.ID)
+	require.NoError(t, err)
+	require.Equal(t, types.MarketStateActive, state.MarketState)
+	require.Equal(t, types.MarketTradingModeContinuous, state.MarketTradingMode)
+
+	config := &types.MarketStateUpdateConfiguration{
+		MarketID:        mkt.ID,
+		UpdateType:      types.MarketStateUpdateTypeSuspend,
+		SettlementPrice: num.NewUint(100),
+	}
+	require.NoError(t, exec.engine.UpdateMarketState(ctx, config))
+
+	// after governance suspension
+	state, err = exec.engine.GetMarketData(mkt.ID)
+	require.NoError(t, err)
+	require.Equal(t, types.MarketStateSuspendedViaGovernance, state.MarketState)
+	require.Equal(t, types.MarketTradingModeSuspendedViaGovernance, state.MarketTradingMode)
+
+	// check we can submit an order
+	os1 := &types.OrderSubmission{
+		MarketID:    mkt.ID,
+		Price:       num.NewUint(99),
+		Size:        1,
+		Side:        types.SideBuy,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
+		Reference:   "o1",
+	}
+	idgen := &stubIDGen{}
+	vgctx := vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("0deadbeef")))
+	_, err = exec.engine.SubmitOrder(vgctx, os1, "p1", idgen, "o1p1")
+	require.NoError(t, err)
 }
