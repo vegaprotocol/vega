@@ -97,7 +97,7 @@ func (s *Service) handleV1(method string, path string, handle httprouter.Handle)
 				if len([]rune(v)) != len(v) {
 					s.badHeaderResp(w, HeaderError{
 						Key: k,
-						Val: v,
+						Val: h,
 					})
 					return
 				}
@@ -117,11 +117,10 @@ func (h HeaderError) Error() string {
 func (h HeaderError) MarshalJSON() ([]byte, error) {
 	details := make([]string, 0, len(h.Val)+1)
 	details = append(details, h.Key)
-	w := JSONRPCErr{
+	return json.Marshal(JSONRPCErr{
 		Err:     h.Error(),
 		Details: append(details, h.Val...),
-	}
-	return json.Marshal(JSONRPCErr)
+	})
 }
 
 func (h *HeaderError) UnmarshalJSON(data []byte) error {
@@ -139,10 +138,10 @@ func (h *HeaderError) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (s *Service) badHeaderResp(w http.ResponseWriter, err HeaderError) {
+func (s *Service) badHeaderResp(w http.ResponseWriter, herr HeaderError) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusBadRequest)
-	buf, err := json.Marshal(err)
+	buf, err := json.Marshal(herr)
 	if err != nil {
 		s.log.Error("couldn't marshal errors", zap.String("error", err.Error()))
 		return
