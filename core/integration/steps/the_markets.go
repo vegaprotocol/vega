@@ -349,8 +349,6 @@ func newPerpMarket(config *market.Config, netparams *netparams.Store, row market
 	linearSlippageFactor := row.linearSlippageFactor()
 	quadraticSlippageFactor := row.quadraticSlippageFactor()
 
-	setLiquidityMonitoringNetParams(liqMon, netparams)
-
 	slaParams, err := config.LiquiditySLAParams.Get(row.liquiditySLA())
 	if err != nil {
 		panic(err)
@@ -445,8 +443,6 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 	linearSlippageFactor := row.linearSlippageFactor()
 	quadraticSlippageFactor := row.quadraticSlippageFactor()
 
-	setLiquidityMonitoringNetParams(liqMon, netparams)
-
 	slaParams, err := config.LiquiditySLAParams.Get(row.liquiditySLA())
 	if err != nil {
 		panic(err)
@@ -504,18 +500,6 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 	}
 
 	return m
-}
-
-func setLiquidityMonitoringNetParams(liqMon *types.LiquidityMonitoringParameters, netparams *netparams.Store) {
-	// the governance engine would fill in the liquidity monitor parameters from the network parameters (unless set explicitly)
-	// so we do this step here manually
-	if tw, err := netparams.GetDuration("market.stake.target.timeWindow"); err == nil {
-		liqMon.TargetStakeParameters.TimeWindow = int64(tw.Seconds())
-	}
-
-	if sf, err := netparams.GetDecimal("market.stake.target.scalingFactor"); err == nil {
-		liqMon.TargetStakeParameters.ScalingFactor = sf
-	}
 }
 
 func openingAuction(row marketRow) *types.AuctionDuration {
