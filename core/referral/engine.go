@@ -310,7 +310,7 @@ func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 		e.currentEpoch = ep.Seq
 		e.applyProgramUpdate(ctx, ep.StartTime)
 	case vegapb.EpochAction_EPOCH_ACTION_END:
-		e.computeReferralSetsStats(ctx, ep)
+		e.computeReferralSetsStats(ctx, ep, false)
 	}
 }
 
@@ -453,7 +453,7 @@ func (e *Engine) loadReferralSetsFromSnapshot(setsProto *snapshotpb.ReferralSets
 	}
 }
 
-func (e *Engine) computeReferralSetsStats(ctx context.Context, epoch types.Epoch) {
+func (e *Engine) computeReferralSetsStats(ctx context.Context, epoch types.Epoch, fromSnapshot bool) {
 	priorEpoch := uint64(0)
 	if epoch.Seq > MaximumWindowLength {
 		priorEpoch = epoch.Seq - MaximumWindowLength
@@ -462,14 +462,18 @@ func (e *Engine) computeReferralSetsStats(ctx context.Context, epoch types.Epoch
 
 	for partyID, setID := range e.referrers {
 		volumeForEpoch := e.marketActivityTracker.NotionalTakerVolumeForParty(string(partyID))
-		e.referralSetsNotionalVolumes.Add(epoch.Seq, setID, volumeForEpoch)
+		if !fromSnapshot {
+			e.referralSetsNotionalVolumes.Add(epoch.Seq, setID, volumeForEpoch)
+		}
 	}
 
 	partiesTakerVolume := map[types.PartyID]*num.Uint{}
 
 	for partyID, setID := range e.referees {
 		volumeForEpoch := e.marketActivityTracker.NotionalTakerVolumeForParty(string(partyID))
-		e.referralSetsNotionalVolumes.Add(epoch.Seq, setID, volumeForEpoch)
+		if !fromSnapshot {
+			e.referralSetsNotionalVolumes.Add(epoch.Seq, setID, volumeForEpoch)
+		}
 		partiesTakerVolume[partyID] = volumeForEpoch
 	}
 

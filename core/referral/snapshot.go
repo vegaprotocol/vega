@@ -216,6 +216,12 @@ func (e *SnapshottedEngine) buildHashKeys() {
 	e.hashKeys = append([]string{}, e.currentProgramKey, e.newProgramKey, e.referralSetsKey)
 }
 
+func (e *Engine) OnStateLoaded(ctx context.Context) error {
+	// we need to regenerate the statistics based on the restored state
+	e.computeReferralSetsStats(ctx, types.Epoch{Seq: e.currentEpoch}, true)
+	return nil
+}
+
 func NewSnapshottedEngine(broker Broker, timeSvc TimeService, mat MarketActivityTracker, staking StakingBalances) *SnapshottedEngine {
 	se := &SnapshottedEngine{
 		Engine:  NewEngine(broker, timeSvc, mat, staking),
