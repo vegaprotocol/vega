@@ -482,6 +482,8 @@ type TradingDataServiceClient interface {
 	//
 	// Get the on-going volume discount program.
 	GetCurrentVolumeDiscountProgram(ctx context.Context, in *GetCurrentVolumeDiscountProgramRequest, opts ...grpc.CallOption) (*GetCurrentVolumeDiscountProgramResponse, error)
+	// Get the volume discount statistics for a given epoch for all parties
+	GetVolumeDiscountStats(ctx context.Context, in *GetVolumeDiscountStatsRequest, opts ...grpc.CallOption) (*GetVolumeDiscountStatsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -1839,6 +1841,15 @@ func (c *tradingDataServiceClient) GetCurrentVolumeDiscountProgram(ctx context.C
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) GetVolumeDiscountStats(ctx context.Context, in *GetVolumeDiscountStatsRequest, opts ...grpc.CallOption) (*GetVolumeDiscountStatsResponse, error) {
+	out := new(GetVolumeDiscountStatsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetVolumeDiscountStats", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
 	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
@@ -2343,6 +2354,8 @@ type TradingDataServiceServer interface {
 	//
 	// Get the on-going volume discount program.
 	GetCurrentVolumeDiscountProgram(context.Context, *GetCurrentVolumeDiscountProgramRequest) (*GetCurrentVolumeDiscountProgramResponse, error)
+	// Get the volume discount statistics for a given epoch for all parties
+	GetVolumeDiscountStats(context.Context, *GetVolumeDiscountStatsRequest) (*GetVolumeDiscountStatsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2727,6 +2740,9 @@ func (UnimplementedTradingDataServiceServer) GetReferralFeeStats(context.Context
 }
 func (UnimplementedTradingDataServiceServer) GetCurrentVolumeDiscountProgram(context.Context, *GetCurrentVolumeDiscountProgramRequest) (*GetCurrentVolumeDiscountProgramResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCurrentVolumeDiscountProgram not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetVolumeDiscountStats(context.Context, *GetVolumeDiscountStatsRequest) (*GetVolumeDiscountStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVolumeDiscountStats not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
@@ -4669,6 +4685,24 @@ func _TradingDataService_GetCurrentVolumeDiscountProgram_Handler(srv interface{}
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_GetVolumeDiscountStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVolumeDiscountStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetVolumeDiscountStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetVolumeDiscountStats",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetVolumeDiscountStats(ctx, req.(*GetVolumeDiscountStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ExportNetworkHistory_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportNetworkHistoryRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -5070,6 +5104,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCurrentVolumeDiscountProgram",
 			Handler:    _TradingDataService_GetCurrentVolumeDiscountProgram_Handler,
+		},
+		{
+			MethodName: "GetVolumeDiscountStats",
+			Handler:    _TradingDataService_GetVolumeDiscountStats_Handler,
 		},
 		{
 			MethodName: "Ping",

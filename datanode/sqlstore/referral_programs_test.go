@@ -4,11 +4,12 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
 
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -265,7 +266,7 @@ func TestReferralPrograms_EndReferralProgram(t *testing.T) {
 		require.NoError(t, err)
 
 		block = addTestBlock(t, ctx, bs)
-		err = rs.EndReferralProgram(ctx, entities.ReferralProgramID(endedEvent.Id), endedEvent.Version, block.VegaTime, 0)
+		err = rs.EndReferralProgram(ctx, endedEvent.Version, block.VegaTime, 0)
 		require.NoError(t, err)
 
 		ended := entities.ReferralProgramFromProto(updatedEvent.Program, block.VegaTime, 0)
@@ -313,7 +314,7 @@ func TestReferralPrograms_GetCurrentReferralProgram(t *testing.T) {
 		assert.Equal(t, *updated, got)
 
 		block = addTestBlock(t, ctx, bs)
-		err = rs.EndReferralProgram(ctx, entities.ReferralProgramID(endedEvent.Id), endedEvent.Version, block.VegaTime, 0)
+		err = rs.EndReferralProgram(ctx, endedEvent.Version, block.VegaTime, 0)
 		require.NoError(t, err)
 
 		ended := entities.ReferralProgramFromProto(updatedEvent.Program, block.VegaTime, 0)
@@ -351,7 +352,7 @@ func TestReferralPrograms_StartAndEndInSameBlock(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, *updated, got)
 
-		err = rs.EndReferralProgram(ctx, entities.ReferralProgramID(endedEvent.Id), endedEvent.Version, block.VegaTime, 2)
+		err = rs.EndReferralProgram(ctx, endedEvent.Version, block.VegaTime, 2)
 		require.NoError(t, err)
 
 		ended := entities.ReferralProgramFromProto(updatedEvent.Program, block.VegaTime, 2)

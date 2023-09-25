@@ -312,6 +312,7 @@ var (
 
 	// Volume discount Programs.
 	ErrGetCurrentVolumeDiscountProgram = errors.New("failed to get current volume discount program")
+	ErrGetVolumeDiscountStats          = errors.New("failed to get volume discount stats")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

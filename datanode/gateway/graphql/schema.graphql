@@ -481,14 +481,14 @@ type Query {
     pagination: Pagination
   ): AggregatedBalanceConnection!
 
-  "List core snapshots"
-  coreSnapshots(pagination: Pagination): CoreSnapshotConnection
-
   "Get the current referral program"
   currentReferralProgram: CurrentReferralProgram
 
   "Get the current volume discount program"
   currentVolumeDiscountProgram: VolumeDiscountProgram
+
+  "List core snapshots"
+  coreSnapshots(pagination: Pagination): CoreSnapshotConnection
 
   "Find a deposit using its ID"
   deposit("ID of the Deposit" id: ID!): Deposit
@@ -941,6 +941,16 @@ type Query {
 
   "Find a transfer using its ID"
   transfer("ID of the transfer" id: ID!): Transfer
+
+  "Get volume discount statistics"
+  volumeDiscountStats(
+    "Optional epoch to get statistics from. If not provided, the latest statistics are returned"
+    epoch: Int
+    "Optional party ID"
+    partyId: ID
+    "Optional pagination information"
+    pagination: Pagination
+  ): VolumeDiscountStatsConnection!
 
   "Find a withdrawal using its ID"
   withdrawal("ID of the withdrawal" id: ID!): Withdrawal
@@ -6200,10 +6210,38 @@ type VolumeDiscountProgram {
   version: Int!
   "Defined tiers in increasing order. First element will give Tier 1, second element will give Tier 2, etc."
   benefitTiers: [VolumeBenefitTier!]!
-  "Timestamp as RFC3339Nano, after which when the current epoch ends, the programs status will become STATE_CLOSED and benefits will be disabled."
+  "Timestamp as Unix time in nanoseconds, after which when the current epoch ends, the programs will end and benefits will be disabled."
   endOfProgramTimestamp: Timestamp!
   "Number of epochs over which to evaluate parties' running volume."
   windowLength: Int!
   "Timestamp as RFC3339Nano when the program ended. If present, the current program has ended and no program is currently running."
   endedAt: Timestamp
 }
+
+"Connection type for retrieving cursor-based paginated volume discount statistics information"
+type VolumeDiscountStatsConnection {
+  "The volume discount statistics in this connection"
+  edges: [VolumeDiscountStatsEdge]!
+  "The pagination information"
+  pageInfo: PageInfo!
+}
+
+"Edge type containing the volume discount statistics and cursor information returned by a VolumeDiscountStatsConnection"
+type VolumeDiscountStatsEdge {
+  "The volume discount statistics"
+  node: VolumeDiscountStats!
+  "The cursor for this volume discount statistics"
+  cursor: String!
+}
+
+type VolumeDiscountStats {
+  "Epoch at which the statistics are updated."
+  atEpoch: Int!
+  "Unique ID of the party."
+  partyId: ID!
+  "Discount factor applied to the party."
+  discountFactor: String!
+  "Party's running volume."
+  runningVolume: String!
+}
+

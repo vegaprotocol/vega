@@ -28,7 +28,7 @@ type (
 	VolumeDiscountStore interface {
 		AddVolumeDiscountProgram(ctx context.Context, referral *entities.VolumeDiscountProgram) error
 		UpdateVolumeDiscountProgram(ctx context.Context, referral *entities.VolumeDiscountProgram) error
-		EndVolumeDiscountProgram(ctx context.Context, referralID entities.VolumeDiscountProgramID, version uint64, vegaTime time.Time) error
+		EndVolumeDiscountProgram(ctx context.Context, version uint64, vegaTime time.Time, seqNum uint64) error
 	}
 
 	VolumeDiscountProgram struct {
@@ -65,16 +65,15 @@ func (rp *VolumeDiscountProgram) Push(ctx context.Context, evt events.Event) err
 }
 
 func (rp *VolumeDiscountProgram) consumeVolumeDiscountProgramStartedEvent(ctx context.Context, e VolumeDiscountProgramStartedEvent) error {
-	program := entities.VolumeDiscountProgramFromProto(e.GetVolumeDiscountProgramStarted().GetProgram(), rp.vegaTime)
+	program := entities.VolumeDiscountProgramFromProto(e.GetVolumeDiscountProgramStarted().GetProgram(), rp.vegaTime, e.Sequence())
 	return rp.store.AddVolumeDiscountProgram(ctx, program)
 }
 
 func (rp *VolumeDiscountProgram) consumeVolumeDiscountProgramUpdatedEvent(ctx context.Context, e VolumeDiscountProgramUpdatedEvent) error {
-	program := entities.VolumeDiscountProgramFromProto(e.GetVolumeDiscountProgramUpdated().GetProgram(), rp.vegaTime)
+	program := entities.VolumeDiscountProgramFromProto(e.GetVolumeDiscountProgramUpdated().GetProgram(), rp.vegaTime, e.Sequence())
 	return rp.store.UpdateVolumeDiscountProgram(ctx, program)
 }
 
 func (rp *VolumeDiscountProgram) consumeVolumeDiscountProgramEndedEvent(ctx context.Context, e VolumeDiscountProgramEndedEvent) error {
-	referralID := entities.VolumeDiscountProgramID(e.GetVolumeDiscountProgramEnded().GetId())
-	return rp.store.EndVolumeDiscountProgram(ctx, referralID, e.GetVolumeDiscountProgramEnded().GetVersion(), rp.vegaTime)
+	return rp.store.EndVolumeDiscountProgram(ctx, e.GetVolumeDiscountProgramEnded().GetVersion(), rp.vegaTime, e.Sequence())
 }

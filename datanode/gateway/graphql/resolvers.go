@@ -550,6 +550,10 @@ func (r *VegaResolverRoot) VolumeDiscountProgram() VolumeDiscountProgramResolver
 	return (*volumeDiscountProgramResolver)(r)
 }
 
+func (r *VegaResolverRoot) VolumeDiscountStats() VolumeDiscountStatsResolver {
+	return (*volumeDiscountStatsResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -1597,6 +1601,25 @@ func (r *myQueryResolver) CurrentVolumeDiscountProgram(ctx context.Context) (*v2
 	}
 
 	return resp.CurrentVolumeDiscountProgram, nil
+}
+
+func (r *myQueryResolver) VolumeDiscountStats(ctx context.Context, epoch *int, partyID *string, pagination *v2.Pagination) (*v2.VolumeDiscountStatsConnection, error) {
+	var epochU64Ptr *uint64
+	if epoch != nil {
+		epochU64 := uint64(*epoch)
+		epochU64Ptr = &epochU64
+	}
+
+	resp, err := r.tradingDataClientV2.GetVolumeDiscountStats(ctx, &v2.GetVolumeDiscountStatsRequest{
+		AtEpoch:    epochU64Ptr,
+		PartyId:    partyID,
+		Pagination: pagination,
+	})
+	if err != nil {
+		return &v2.VolumeDiscountStatsConnection{}, err
+	}
+
+	return resp.Stats, nil
 }
 
 func (r *myQueryResolver) ReferralSets(ctx context.Context, id, referrer, referee *string, pagination *v2.Pagination) (*v2.ReferralSetConnection, error) {

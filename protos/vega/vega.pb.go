@@ -8810,8 +8810,8 @@ type VolumeDiscountProgram struct {
 	// second element will give Tier 2, and so on. Determines the level of
 	// benefit a party can expect based on performance criteria.
 	BenefitTiers []*VolumeBenefitTier `protobuf:"bytes,3,rep,name=benefit_tiers,json=benefitTiers,proto3" json:"benefit_tiers,omitempty"`
-	// Timestamp as Unix time in seconds after which when the current epoch ends, the
-	// program's status will become STATE_CLOSED and benefits will be disabled.
+	// Timestamp as Unix time in seconds, after which when the current epoch
+	// ends, the programs will end and benefits will be disabled.
 	EndOfProgramTimestamp int64 `protobuf:"varint,4,opt,name=end_of_program_timestamp,json=endOfProgramTimestamp,proto3" json:"end_of_program_timestamp,omitempty"`
 	// Number of epochs over which to evaluate a referral set's running volume.
 	WindowLength uint64 `protobuf:"varint,5,opt,name=window_length,json=windowLength,proto3" json:"window_length,omitempty"`

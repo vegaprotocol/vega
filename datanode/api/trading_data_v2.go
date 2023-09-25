@@ -112,11 +112,12 @@ type TradingDataServiceV2 struct {
 	stopOrderService             *service.StopOrders
 	fundingPeriodService         *service.FundingPeriods
 	partyActivityStreak          *service.PartyActivityStreak
-	fundingPaymentService      *service.FundingPayment
+	fundingPaymentService        *service.FundingPayment
 	referralProgramService       *service.ReferralPrograms
 	referralSetsService          *service.ReferralSets
 	teamsService                 *service.Teams
 	referralFeeStatsService      *service.ReferralFeeStats
+	volumeDiscountStatsService   *service.VolumeDiscountStats
 	volumeDiscountProgramService *service.VolumeDiscountPrograms
 }
 
@@ -4418,5 +4419,33 @@ func (t *TradingDataServiceV2) GetCurrentVolumeDiscountProgram(ctx context.Conte
 
 	return &v2.GetCurrentVolumeDiscountProgramResponse{
 		CurrentVolumeDiscountProgram: volumeDiscountProgram.ToProto(),
+	}, nil
+}
+
+func (t *TradingDataServiceV2) GetVolumeDiscountStats(ctx context.Context, req *v2.GetVolumeDiscountStatsRequest) (
+	*v2.GetVolumeDiscountStatsResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetVolumeDiscountStats")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	stats, pageInfo, err := t.volumeDiscountStatsService.Stats(ctx, req.AtEpoch, req.PartyId, pagination)
+	if err != nil {
+		return nil, formatE(ErrGetVolumeDiscountStats, err)
+	}
+
+	edges, err := makeEdges[*v2.VolumeDiscountStatsEdge](stats)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.GetVolumeDiscountStatsResponse{
+		Stats: &v2.VolumeDiscountStatsConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
 	}, nil
 }

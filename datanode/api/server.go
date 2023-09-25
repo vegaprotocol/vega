@@ -134,6 +134,7 @@ type GRPCServer struct {
 	vestingStatsService          *service.VestingStats
 	referralFeeStatsService      *service.ReferralFeeStats
 	fundingPaymentService        *service.FundingPayment
+	volumeDiscountStatsService   *service.VolumeDiscountStats
 	volumeDiscountProgramService *service.VolumeDiscountPrograms
 
 	eventObserver *eventObserver
@@ -196,6 +197,7 @@ func NewGRPCServer(
 	vestingStatsService *service.VestingStats,
 	referralFeeStatsService *service.ReferralFeeStats,
 	fundingPaymentService *service.FundingPayment,
+	volumeDiscountStatsService *service.VolumeDiscountStats,
 	volumeDiscountProgramService *service.VolumeDiscountPrograms,
 ) *GRPCServer {
 	// setup logger
@@ -257,6 +259,7 @@ func NewGRPCServer(
 		vestingStatsService:          vestingStatsService,
 		referralFeeStatsService:      referralFeeStatsService,
 		fundingPaymentService:        fundingPaymentService,
+		volumeDiscountStatsService:   volumeDiscountStatsService,
 		volumeDiscountProgramService: volumeDiscountProgramService,
 
 		eventObserver: &eventObserver{
@@ -487,6 +490,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		teamsService:                 g.teamsService,
 		referralFeeStatsService:      g.referralFeeStatsService,
 		fundingPaymentService:        g.fundingPaymentService,
+		volumeDiscountStatsService:   g.volumeDiscountStatsService,
 		volumeDiscountProgramService: g.volumeDiscountProgramService,
 	}
 

@@ -793,7 +793,7 @@ type PartyVolumeDiscountStats struct {
 
 	// Party ID.
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// Discount factor applied to the volume.
+	// Discount factor applied to fees.
 	DiscountFactor string `protobuf:"bytes,2,opt,name=discount_factor,json=discountFactor,proto3" json:"discount_factor,omitempty"`
 	// The party's running volume.
 	RunningVolume string `protobuf:"bytes,3,opt,name=running_volume,json=runningVolume,proto3" json:"running_volume,omitempty"`

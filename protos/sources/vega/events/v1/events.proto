@@ -25,7 +25,7 @@ message VolumeDiscountStatsUpdated {
 message PartyVolumeDiscountStats {
   // Party ID.
   string party_id = 1;
-  // Discount factor applied to the volume.
+  // Discount factor applied to fees.
   string discount_factor = 2;
   // The party's running volume.
   string running_volume = 3;

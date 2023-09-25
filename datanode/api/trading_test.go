@@ -154,6 +154,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	vestingStatsService := service.NewVestingStats(sqlstore.NewVestingStats(sqlConn))
 	referralFeeStatsService := service.NewReferralFeeStats(sqlstore.NewReferralFeeStats(sqlConn))
 	fundingPaymentService := service.NewFundingPayment(sqlstore.NewFundingPayments(sqlConn))
+	volumeDiscountStatsService := service.NewVolumeDiscountStats(sqlstore.NewVolumeDiscountStats(sqlConn))
 	volumeDiscountProgramService := service.NewVolumeDiscountPrograms(sqlstore.NewVolumeDiscountPrograms(sqlConn))
 
 	g := api.NewGRPCServer(
@@ -206,6 +207,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 		vestingStatsService,
 		referralFeeStatsService,
 		fundingPaymentService,
+		volumeDiscountStatsService,
 		volumeDiscountProgramService,
 	)
 	if g == nil {
