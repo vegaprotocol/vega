@@ -84,9 +84,9 @@ func TheMarkets(
 		}
 		var mkt types.Market
 		if isPerp {
-			mkt = newPerpMarket(config, netparams, mRow)
+			mkt = newPerpMarket(config, mRow)
 		} else {
-			mkt = newMarket(config, netparams, mRow)
+			mkt = newMarket(config, mRow)
 		}
 		markets = append(markets, mkt)
 	}
@@ -311,7 +311,7 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 	return update
 }
 
-func newPerpMarket(config *market.Config, netparams *netparams.Store, row marketRow) types.Market {
+func newPerpMarket(config *market.Config, row marketRow) types.Market {
 	fees, err := config.FeesConfig.Get(row.fees())
 	if err != nil {
 		panic(err)
@@ -403,7 +403,7 @@ func newPerpMarket(config *market.Config, netparams *netparams.Store, row market
 	return m
 }
 
-func newMarket(config *market.Config, netparams *netparams.Store, row marketRow) types.Market {
+func newMarket(config *market.Config, row marketRow) types.Market {
 	fees, err := config.FeesConfig.Get(row.fees())
 	if err != nil {
 		panic(err)
