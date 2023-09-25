@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -101,6 +102,17 @@ func (a *API) unmarshallRequest(traceID string, r *http.Request) (jsonrpc.Reques
 }
 
 func (a *API) processJSONRPCRequest(ctx context.Context, traceID string, lw *responseWriter, httpRequest *http.Request, rpcRequest jsonrpc.Request) *jsonrpc.Response {
+	// check for unicode headers
+	for k, h := range httpRequest.Header {
+		for _, v := range h {
+			if len([]rune(v)) != len(v) {
+				return jsonrpc.NewErrorResponse(rpcRequest.ID, &jsonrpc.ErrorDetails{
+					Code:    jsonrpc.ErrorCodeInvalidRequest,
+					Message: fmt.Sprintf("Header %s contains invalid characters", k),
+				})
+			}
+		}
+	}
 	if err := rpcRequest.Check(); err != nil {
 		a.log.Info("invalid RPC request",
 			zap.String("trace-id", traceID),
