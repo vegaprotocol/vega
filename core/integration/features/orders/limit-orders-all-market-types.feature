@@ -31,6 +31,17 @@ Feature: limit orders in all market types
       | id  | party  | market id | commitment amount | fee | lp type    |
       | lp1 | lp1    | ETH/DEC23 | 10000000          | 0.1 | submission |
 
+    # We are in auction now so make sure orders act correctly
+   When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | error |
+      | party1| ETH/DEC23 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_IOC |        | ioc order received during auction trading |
+      | party1| ETH/DEC23 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_FOK |        | fok order received during auction trading |
+      | party1| ETH/DEC23 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GFN |        | gfn order received during auction trading |
+      | party1| ETH/DEC23 | sell | 1      | 1001  | 0                | TYPE_LIMIT | TIF_IOC |        | ioc order received during auction trading |
+      | party1| ETH/DEC23 | sell | 1      | 1001  | 0                | TYPE_LIMIT | TIF_FOK |        | fok order received during auction trading |
+      | party1| ETH/DEC23 | sell | 1      | 1001  | 0                | TYPE_LIMIT | TIF_GFN |        | gfn order received during auction trading |
+
+
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -42,12 +53,22 @@ Feature: limit orders in all market types
     Then the opening auction period ends for market "ETH/DEC23"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC23"
 
+    # Auction only orders should be rejected
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | error |
+      | party1| ETH/DEC23 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GFA |        | gfa order received during continuous trading |
+      | party1| ETH/DEC23 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GFA |        | gfa order received during continuous trading |
+
+
     # A non matching GTC should be accepted
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | only   | error |
-      | party1| ETH/DEC23 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC |        |       |
-      | party1| ETH/DEC23 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | post   |       |
-      | party1| ETH/DEC23 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | reduce | OrderError: reduce only order would not reduce position |
+      | party1| ETH/DEC23 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |        |       |
+      | party1| ETH/DEC23 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | post   |       |
+      | party1| ETH/DEC23 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | reduce | OrderError: reduce only order would not reduce position |
+      | party1| ETH/DEC23 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |        |       |
+      | party1| ETH/DEC23 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | post   |       |
+      | party1| ETH/DEC23 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | reduce | OrderError: reduce only order would not reduce position |
       
 
     # A matching GTC should be accepted
@@ -56,48 +77,67 @@ Feature: limit orders in all market types
       | party1| ETH/DEC23 | buy  | 1      | 1100  | 1                | TYPE_LIMIT | TIF_GTC |        |       |
       | party1| ETH/DEC23 | buy  | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | post   | OrderError: post only order would trade |
       | party1| ETH/DEC23 | buy  | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | reduce | OrderError: reduce only order would not reduce position |
+      | party1| ETH/DEC23 | sell | 1      | 900   | 1                | TYPE_LIMIT | TIF_GTC |        |       |
+      | party1| ETH/DEC23 | sell | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | post   | OrderError: post only order would trade |
+      | party1| ETH/DEC23 | sell | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | reduce | OrderError: reduce only order would not reduce position |
 
     # A non matching GTT should be accepted
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | expires in | only   | error |
-      | party1| ETH/DEC23 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTT | 50         |        |       |
-      | party1| ETH/DEC23 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTT | 50         | post   |       |
-      | party1| ETH/DEC23 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTT | 50         | reduce | OrderError: reduce only order would not reduce position |
+      | party1| ETH/DEC23 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTT | 50         |        |       |
+      | party1| ETH/DEC23 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTT | 50         | post   |       |
+      | party1| ETH/DEC23 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTT | 50         | reduce | OrderError: reduce only order would not reduce position |
+      | party1| ETH/DEC23 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTT | 50         |        |       |
+      | party1| ETH/DEC23 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTT | 50         | post   |       |
+      | party1| ETH/DEC23 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTT | 50         | reduce | OrderError: reduce only order would not reduce position |
 
     # A matching GTT should be accepted
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | expires in | only   | error |
       | party1| ETH/DEC23 | buy  | 1      | 1100  | 1                | TYPE_LIMIT | TIF_GTT | 50         |        |       |
       | party1| ETH/DEC23 | buy  | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTT | 50         | post   | OrderError: post only order would trade |
-      | party1| ETH/DEC23 | buy  | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTT | 50         | reduce |       |
+      | party1| ETH/DEC23 | buy  | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTT | 50         | reduce | OrderError: reduce only order would not reduce position |
+      | party1| ETH/DEC23 | sell | 1      | 900   | 1                | TYPE_LIMIT | TIF_GTT | 50         |        |       |
+      | party1| ETH/DEC23 | sell | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTT | 50         | post   | OrderError: post only order would trade |
+      | party1| ETH/DEC23 | sell | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTT | 50         | reduce | OrderError: reduce only order would not reduce position |
 
     # A non matching IOC should be accepted
     When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | only    | only    | error |
-      | party1| ETH/DEC23 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_IOC |         |         |       |
-      | party1| ETH/DEC23 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_IOC | post    | post    |       |
-      | party1| ETH/DEC23 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_IOC | reduce  | reduce  |       |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only    | error |
+      | party1| ETH/DEC23 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_IOC |         |       |
+      | party1| ETH/DEC23 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_IOC | post    |       |
+      | party1| ETH/DEC23 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_IOC | reduce  | OrderError: reduce only order would not reduce position |
+      | party1| ETH/DEC23 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_IOC |         |       |
+      | party1| ETH/DEC23 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_IOC | post    |       |
+      | party1| ETH/DEC23 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_IOC | reduce  | OrderError: reduce only order would not reduce position |
 
     # A matching IOC should be accepted
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | only    | error |
       | party1| ETH/DEC23 | buy  | 1      | 1100  | 1                | TYPE_LIMIT | TIF_IOC |         |       |
+      | party1| ETH/DEC23 | buy  | 1      | 1100  | 0                | TYPE_LIMIT | TIF_IOC | post    | OrderError: post only order would trade |
+      | party1| ETH/DEC23 | buy  | 1      | 1100  | 0                | TYPE_LIMIT | TIF_IOC | reduce  | OrderError: reduce only order would not reduce position |
+      | party1| ETH/DEC23 | sell | 1      | 900   | 1                | TYPE_LIMIT | TIF_IOC |         |       |
+      | party1| ETH/DEC23 | sell | 1      | 900   | 0                | TYPE_LIMIT | TIF_IOC | post    | OrderError: post only order would trade |
+      | party1| ETH/DEC23 | sell | 1      | 900   | 0                | TYPE_LIMIT | TIF_IOC | reduce  | OrderError: reduce only order would not reduce position |
 
     # A non matching FOK should be accepted
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | only    | error |
-      | party1| ETH/DEC23 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_FOK |         |       |
+      | party1| ETH/DEC23 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_FOK |         |       |
+      | party1| ETH/DEC23 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_FOK | post    |       |
+      | party1| ETH/DEC23 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_FOK | reduce  | OrderError: reduce only order would not reduce position |
+      | party1| ETH/DEC23 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_FOK |         |       |
+      | party1| ETH/DEC23 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_FOK | post    |       |
+      | party1| ETH/DEC23 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_FOK | reduce  | OrderError: reduce only order would not reduce position |
 
     # A matching FOK should be accepted
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | only    | error |
       | party1| ETH/DEC23 | buy  | 1      | 1100  | 1                | TYPE_LIMIT | TIF_FOK |         |       |
-
-
-
-    # A matching FOK should be accepted
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | error |
-      | party1| ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_FOK | post   |       |
-      | party1| ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_FOK | reduce | OrderError: reduce only order would not reduce position |
+      | party1| ETH/DEC23 | buy  | 1      | 1100  | 0                | TYPE_LIMIT | TIF_FOK | post    | OrderError: post only order would trade |
+      | party1| ETH/DEC23 | buy  | 1      | 1100  | 0                | TYPE_LIMIT | TIF_FOK | reduce  | OrderError: reduce only order would not reduce position |
+      | party1| ETH/DEC23 | sell | 1      | 900   | 1                | TYPE_LIMIT | TIF_FOK |         |       |
+      | party1| ETH/DEC23 | sell | 1      | 900   | 0                | TYPE_LIMIT | TIF_FOK | post    | OrderError: post only order would trade |
+      | party1| ETH/DEC23 | sell | 1      | 900   | 0                | TYPE_LIMIT | TIF_FOK | reduce  | OrderError: reduce only order would not reduce position |
 
