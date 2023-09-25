@@ -221,6 +221,7 @@
 - [9530](https://github.com/vegaprotocol/vega/issues/9530) - Referral program end timestamp not correctly displaying in `GraphQL API`.
 - [9532](https://github.com/vegaprotocol/vega/issues/9532) - Data node crashes if referral program starts and ends in the same block.
 - [9540](https://github.com/vegaprotocol/vega/issues/9540) - Proposals connection errors for `UpdateReferralProgram`.
+- [8934](https://github.com/vegaprotocol/vega/issues/8934) - Check for special characters in headers.
 
 ## 0.72.1
 
