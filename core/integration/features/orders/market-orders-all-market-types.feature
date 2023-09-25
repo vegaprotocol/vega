@@ -32,14 +32,25 @@ Feature: market orders in all market types
       | lp1 | lp1    | ETH/DEC23 | 10000000          | 0.1 | submission |
 
     # We are in auction now so make sure orders act correctly
+    # GFA market orders should not be accepted during an auction but are accepted here because the 
+    # validation is performed on commands at a stage before we insert orders using the feature test framework.
    When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type        | tif     | only   | error |
       | party1| ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC |        | ioc order received during auction trading |
       | party1| ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_FOK |        | fok order received during auction trading |
       | party1| ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_GFN |        | gfn order received during auction trading |
+      | party1| ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_GFA |        |  |
+      | party1| ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_GTC |        | OrderError: Invalid Persistence |
       | party1| ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC |        | ioc order received during auction trading |
       | party1| ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_FOK |        | fok order received during auction trading |
       | party1| ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_GFN |        | gfn order received during auction trading |
+      | party1| ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_GTC |        | OrderError: Invalid Persistence |
+      | party1| ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_GFA |        |  |
+
+   When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type        | tif     | expires in | only   | error |
+      | party1| ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_GTT | 50         |        | OrderError: Invalid Expiration Datetime |
+      | party1| ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_GTT | 50         |        | OrderError: Invalid Expiration Datetime |
 
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
