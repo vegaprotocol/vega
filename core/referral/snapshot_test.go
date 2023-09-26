@@ -175,7 +175,6 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 	closeSnapshotEngine1()
 
 	// Reload the engine using the previous snapshot.
-
 	te2 := newEngine(t)
 	snapshotEngine2 := newSnapshotEngine(t, vegaPath, now, te2.engine)
 	defer snapshotEngine2.Close()
@@ -189,6 +188,17 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 	// Simulate restoration of the network parameter at the time of the snapshot
 	require.NoError(t, te2.engine.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate(ctx, maxVolumeParams))
 
+	// OnStateLoaded will recalculate referrer stats and send out all these events
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee1)).Return(num.UintFromUint64(100)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee2)).Return(num.UintFromUint64(100)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee3)).Return(num.UintFromUint64(100)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee4)).Return(num.UintFromUint64(100)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee5)).Return(num.UintFromUint64(100)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee6)).Return(num.UintFromUint64(100)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee7)).Return(num.UintFromUint64(100)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee8)).Return(num.UintFromUint64(100)).Times(1)
+	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee9)).Return(num.UintFromUint64(100)).Times(1)
+	expectReferralSetStatsUpdatedEvent(t, te2, 4)
 	// This triggers the state restoration from the local snapshot.
 	require.NoError(t, snapshotEngine2.Start(ctx))
 
