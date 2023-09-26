@@ -4,7 +4,7 @@ Feature: Test funding margin for Perps market
 
     And the perpetual oracles from "0xCAFECAFE1":
       | name        | asset | settlement property | settlement type | schedule property | schedule type  | margin funding factor | interest rate | clamp lower bound | clamp upper bound | quote name | settlement decimals |
-      | perp-oracle | USD | perp.ETH.value | TYPE_INTEGER | perp.funding.cue | TYPE_TIMESTAMP | 0.5 | 0.05 | 0.1 | 0.9 | ETH | 18 |
+      | perp-oracle | USD | perp.ETH.value | TYPE_INTEGER | perp.funding.cue | TYPE_TIMESTAMP | 0.5 | 0.05 | 0 | 0 | ETH | 18 |
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 1                             | 1.0                    |
@@ -54,9 +54,6 @@ Feature: Test funding margin for Perps market
       | 1100000      | 10000000       |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-
-# And time is updated to "2021-02-10T05:00:00Z"
-#epoch time: 1612935180, 1 year has 8760 hours,so 0.002 year would be: 8760*0.002*3600 = 63072second, so next funding time with delta_t = 0.002 would be 1612998252
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
     # back sure we end the block so we're in a new one after opening auction
@@ -100,6 +97,7 @@ Feature: Test funding margin for Perps market
     # send in external data to the perpetual market, it should not change anything and a MTM should not happen
     When the network moves ahead "1" blocks
     And the mark price should be "1000" for the market "ETH/DEC19"
+
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value                   | time offset |
       | perp.ETH.value   | 1600000000000000000000 | 0s |
@@ -142,41 +140,41 @@ Feature: Test funding margin for Perps market
       | aux   | ETH/DEC19 | sell | 1      | 2001  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC19 | buy  | 1      | 2001  | 1                | TYPE_LIMIT | TIF_GTC |
     And the mark price should be "2000" for the market "ETH/DEC19"
+#1 year has 8760 hours,so 0.002 year would be: 8760*0.002*3600 = 63072second, so next funding time (with delta_t = 0.002) would be 1612998252+63072=1613061324
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value      | time offset |
       | perp.funding.cue | 1613061324 | 0s |
 
     And the following transfers should happen:
       | from   | to     | from account            | to account              | market id | amount  | asset |
-      | aux2   | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1120000 | USD   |
-      | party2 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 560000  | USD   |
-      | party3 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 560000  | USD   |
-      | market | aux    | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 1120000 | USD   |
-      | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 1120000 | USD   |
+      | aux2   | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 800000 | USD |
+      | party2 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 400000 | USD |
+      | party3 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 400000 | USD |
+      | market | aux    | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 800000 | USD |
+      | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 800000 | USD |
 
-    # funding payment is -100, funding-rate ~-0.05,
-    # party 1 loses 200000, party 2/3 gain 10000 in their margin account
+# funding payment is 1600*0.002*0.05=0.16, funding rate =0.5, funding margin = 0.08
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
-      | party1 | USD | ETH/DEC19 | 8802400 | 1317600 |
-      | party3 | USD | ETH/DEC19 | 2605200 | 6832800 |
-      | party2 | USD | ETH/DEC19 | 2605200 | 7833800 |
+      | party1 | USD | ETH/DEC19 | 8482400 | 1317600 |
+      | party3 | USD | ETH/DEC19 | 2605200 | 6992800 |
+      | party2 | USD | ETH/DEC19 | 2605200 | 7993800 |
 
-    # move to the block before the next MTM should be no changes
+#move to the block before the next MTM should be no changes
     When the network moves ahead "3" blocks
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
-      | party1 | USD | ETH/DEC19 | 8802400 | 1317600 |
-      | party3 | USD | ETH/DEC19 | 2605200 | 6832800 |
-      | party2 | USD | ETH/DEC19 | 2605200 | 7833800 |
+      | party1 | USD | ETH/DEC19 | 8482400 | 1317600 |
+      | party3 | USD | ETH/DEC19 | 2605200 | 6992800 |
+      | party2 | USD | ETH/DEC19 | 2605200 | 7993800 |
 
     ## Now take us past the MTM frequency time and things should change
     When the network moves ahead "1" blocks
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
-      | party1 | USD | ETH/DEC19 | 8800400 | 1317600 |
-      | party3 | USD | ETH/DEC19 | 2606200 | 6832800 |
-      | party2 | USD | ETH/DEC19 | 2606200 | 7833800 |
+      | party1 | USD | ETH/DEC19 | 8480400 | 1317600 |
+      | party3 | USD | ETH/DEC19 | 2606200 | 6992800 |
+      | party2 | USD | ETH/DEC19 | 2606200 | 7993800 |
 
     And the following transfers should happen:
       | from   | to     | from account            | to account              | market id | amount | asset |
@@ -189,4 +187,4 @@ Feature: Test funding margin for Perps market
     And the cumulated balance for all accounts should be worth "330000000"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
-    Then debug transfers
+# Then debug transfers
