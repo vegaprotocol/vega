@@ -246,14 +246,14 @@ func (ls *Ledger) Export(
 	}
 
 	if dateRange.Start != nil {
-		query = fmt.Sprintf("%s AND l.vega_time >= %s", query, nextBindVar(&args, dateRange.Start.Format(time.RFC3339)))
+		query = fmt.Sprintf("%s AND l.ledger_entry_time >= %s", query, nextBindVar(&args, dateRange.Start.Format(time.RFC3339)))
 	}
 
 	if dateRange.End != nil {
-		query = fmt.Sprintf("%s AND l.vega_time < %s", query, nextBindVar(&args, dateRange.Start.Format(time.RFC3339)))
+		query = fmt.Sprintf("%s AND l.ledger_entry_time < %s", query, nextBindVar(&args, dateRange.End.Format(time.RFC3339)))
 	}
 
-	query = fmt.Sprintf("copy (%s ORDER BY l.vega_time) to STDOUT (FORMAT csv, HEADER)", query)
+	query = fmt.Sprintf("copy (%s ORDER BY l.ledger_entry_time) to STDOUT (FORMAT csv, HEADER)", query)
 
 	tag, err := ls.Connection.CopyTo(ctx, writer, query, args...)
 	if err != nil {

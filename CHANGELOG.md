@@ -229,6 +229,8 @@
 - [9530](https://github.com/vegaprotocol/vega/issues/9530) - Referral program end timestamp not correctly displaying in `GraphQL API`.
 - [9532](https://github.com/vegaprotocol/vega/issues/9532) - Data node crashes if referral program starts and ends in the same block.
 - [9540](https://github.com/vegaprotocol/vega/issues/9540) - Proposals connection errors for `UpdateReferralProgram`.
+- [9570](https://github.com/vegaprotocol/vega/issues/9570) - Ledger entry export doesn't work if `dateRange.End` is specified
+- [9571](https://github.com/vegaprotocol/vega/issues/9571) - Ledger entry `CSV` export slow even when looking at narrow time window
 - [8934](https://github.com/vegaprotocol/vega/issues/8934) - Check for special characters in headers.
 - [8979](https://github.com/vegaprotocol/vega/issues/8979) - Update `XFF` information in rate limiter documentation.
 - [9540](https://github.com/vegaprotocol/vega/issues/9540) - Proposals connection does not resolve `UpdateReferralProgram` proposals correctly.
