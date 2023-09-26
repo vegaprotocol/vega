@@ -1063,7 +1063,7 @@ func (m *Market) recordPositionActivity(t *types.Transfer) {
 	}
 	if t.Type == types.TransferTypeMTMWin || t.Type == types.TransferTypeMTMLoss ||
 		t.Type == types.TransferTypePerpFundingWin || t.Type == types.TransferTypePerpFundingLoss {
-		m.marketActivityTracker.RecordM2M(m.settlementAsset, t.Owner, t.Market, amt)
+		m.marketActivityTracker.RecordM2M(m.settlementAsset, t.Owner, m.mkt.ID, amt)
 	}
 }
 
@@ -2563,6 +2563,9 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 			// Update positions - this is a special trade involving the network as party
 			// so rather than checking this every time we call Update, call special UpdateNetwork
 			m.position.UpdateNetwork(ctx, trade, confirmation.PassiveOrdersAffected[idx])
+			// record the updated passive side's position
+			m.marketActivityTracker.RecordPosition(m.settlementAsset, confirmation.PassiveOrdersAffected[idx].Party, m.mkt.ID, int64(trade.Size), trade.Price, m.positionFactor, m.timeService.GetTimeNow())
+
 			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), now); err != nil {
 				m.log.Debug("unable record open interest",
 					logging.String("market-id", m.GetID()),

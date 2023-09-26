@@ -833,6 +833,9 @@ func updatePosition(toi *twPosition, scaledAbsPos uint64, t, tn int64, time time
 // recordPosition records the current position of a party and the time of change. If there is a previous position then it is time weight updated with respect to the time
 // it has been in place during the epoch.
 func (mt *marketTracker) recordPosition(party string, absPos uint64, positionFactor num.Decimal, time time.Time, epochStartTime time.Time) {
+	if party == "network" {
+		return
+	}
 	// scale by scaling factor and divide by position factor
 	// by design the scaling factor is greater than the max position factor which allows no loss of precision
 	scaledAbsPos := num.UintZero().Mul(num.NewUint(absPos), uScalingFactor).ToDecimal().Div(positionFactor).IntPart()
@@ -872,6 +875,9 @@ func (mt *marketTracker) processPositionEndOfEpoch(epochStartTime time.Time, end
 
 // recordM2M records the amount corresponding to mark to market (profit or loss).
 func (mt *marketTracker) recordM2M(party string, amount num.Decimal) {
+	if party == "network" {
+		return
+	}
 	if _, ok := mt.partyM2M[party]; !ok {
 		mt.partyM2M[party] = amount
 		return

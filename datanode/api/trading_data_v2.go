@@ -2912,7 +2912,7 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 			return nil, ErrInvalidOrderPrice
 		}
 
-		price = t.scaleDecimalFromMarketToAssetPrice(price, dPriceFactor)
+		price = t.scaleDecimalFromMarketToAssetPrice(p, dPriceFactor)
 
 		switch o.Side {
 		case types.SideBuy:
