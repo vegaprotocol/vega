@@ -14,7 +14,6 @@ package monitor
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -388,11 +387,4 @@ func (a *AuctionState) ExceededMaxOpening(now time.Time) bool {
 	// the market is invalid if it hasn't left auction before max duration
 	// or if it cannot leave before max duration allows it
 	return validTo.Before(now) || minTo.After(validTo)
-}
-
-func (a *AuctionState) String() string {
-	if a.begin != nil {
-		return fmt.Sprintf("Type: %s, start: %s, end: %s, exceeds: %+v\n", a.trigger, a.begin, a.end.Duration, a.maxDuration)
-	}
-	return "NOTHING"
 }
