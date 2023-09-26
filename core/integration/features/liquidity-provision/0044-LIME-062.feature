@@ -139,7 +139,7 @@ Feature: Test changing market.liquidity.providersFeeCalculationTimeStep;
       | party2 | ETH/MAR22 | buy  | 4      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |           |
 
     # Then forward enough to cause them both to distribute, the fees are instead sent as two separate distributions
-    Then the network moves ahead "7" block
+    Then the network moves ahead "7" blocks
     And the following transfers should happen:
       | from   | to  | from account                | to account                     | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 27     | USD   |
