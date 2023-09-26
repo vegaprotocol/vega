@@ -18,6 +18,7 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
@@ -217,8 +218,18 @@ func (e *SnapshottedEngine) buildHashKeys() {
 }
 
 func (e *Engine) OnStateLoaded(ctx context.Context) error {
-	// we need to regenerate the statistics based on the restored state
-	e.computeReferralSetsStats(ctx, types.Epoch{Seq: e.currentEpoch}, true)
+	if e.programHasEnded {
+		return nil
+	}
+
+	// we need to regenerate the statistics based on the restored state and we call
+	// computeFactorsByReferee to do this
+	partiesTakerVolume := map[types.PartyID]*num.Uint{}
+	for partyID := range e.referees {
+		volumeForEpoch := e.marketActivityTracker.NotionalTakerVolumeForParty(string(partyID))
+		partiesTakerVolume[partyID] = volumeForEpoch
+	}
+	e.computeFactorsByReferee(ctx, e.currentEpoch, partiesTakerVolume)
 	return nil
 }
 

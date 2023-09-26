@@ -189,10 +189,6 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 	require.NoError(t, te2.engine.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate(ctx, maxVolumeParams))
 
 	// OnStateLoaded will recalculate referrer stats and send out all these events
-	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer1)).Return(num.UintFromUint64(100)).Times(1)
-	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer2)).Return(num.UintFromUint64(100)).Times(1)
-	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer3)).Return(num.UintFromUint64(100)).Times(1)
-	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer4)).Return(num.UintFromUint64(100)).Times(1)
 	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee1)).Return(num.UintFromUint64(100)).Times(1)
 	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee2)).Return(num.UintFromUint64(100)).Times(1)
 	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee3)).Return(num.UintFromUint64(100)).Times(1)
