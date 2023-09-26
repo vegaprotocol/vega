@@ -41,6 +41,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		m.triggerStopOrders(ctx, idgen)
 	}()
 
+	checkExceeded := m.mkt.State == types.MarketStatePending
 	// as soon as we have an indicative uncrossing price in opening auction it needs to be passed into the price monitoring engine so statevar calculation can start
 	isOpening := m.as.IsOpeningAuction()
 	if isOpening && !m.pMonitor.Initialised() {
@@ -53,9 +54,16 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 			m.pMonitor.CheckPrice(ctx, m.as, trades, true)
 			m.OnOpeningAuctionFirstUncrossingPrice()
 		}
+		if checkExceeded && m.as.ExceededMaxOpening(now) {
+			m.closeSpotMarket(ctx)
+			return
+		}
 	}
 
 	if endTS := m.as.ExpiresAt(); endTS == nil || !endTS.Before(now) {
+		if checkExceeded && isOpening && m.as.ExceededMaxOpening(now) {
+			m.closeSpotMarket(ctx)
+		}
 		return
 	}
 	trades, err := m.matching.GetIndicativeTrades()
@@ -66,7 +74,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 	// opening auction
 	if isOpening {
 		if len(trades) == 0 {
-			if m.as.ExceededMaxOpening(now) {
+			if checkExceeded && m.as.ExceededMaxOpening(now) {
 				m.closeSpotMarket(ctx)
 			}
 			return

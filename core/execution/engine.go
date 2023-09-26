@@ -785,6 +785,9 @@ func (e *Engine) propagateSpotInitialNetParams(ctx context.Context, mkt *spot.Ma
 	if e.npv.auctionMinDuration != -1 {
 		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, e.npv.auctionMinDuration)
 	}
+	if e.npv.auctionMaxDuration > 0 {
+		mkt.OnMarketAuctionMaximumDurationUpdate(ctx, e.npv.auctionMaxDuration)
+	}
 	if !e.npv.infrastructureFee.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnFeeFactorsInfrastructureFeeUpdate(ctx, e.npv.infrastructureFee)
 	}
@@ -835,6 +838,9 @@ func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mk
 	}
 	if e.npv.auctionMinDuration != -1 {
 		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, e.npv.auctionMinDuration)
+	}
+	if e.npv.auctionMaxDuration > 0 {
+		mkt.OnMarketAuctionMaximumDurationUpdate(ctx, e.npv.auctionMaxDuration)
 	}
 
 	if !e.npv.infrastructureFee.Equal(num.DecimalFromInt64(-1)) {
