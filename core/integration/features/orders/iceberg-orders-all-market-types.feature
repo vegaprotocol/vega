@@ -32,10 +32,23 @@ Feature: iceberg orders in all market types
       | lp1 | lp1    | ETH/DEC23 | 10000000          | 0.1 | submission |
 
     # We are in auction now so make sure orders act correctly
-   When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type        | tif     | expires in | only   | error |
-      | party1| ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_GTT | 50         |        | OrderError: Invalid Expiration Datetime |
-      | party1| ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_GTT | 50         |        | OrderError: Invalid Expiration Datetime |
+    When the parties place the following iceberg orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | only   | error |
+      | party1 | ETH/DEC23 | buy  | 10     | 899   | 0                | TYPE_LIMIT | TIF_GTC | 9         | 1                    |        |       |      
+      | party1 | ETH/DEC23 | buy  | 10     | 899   | 0                | TYPE_LIMIT | TIF_IOC | 9         | 1                    |        | ioc order received during auction trading |      
+      | party1 | ETH/DEC23 | buy  | 10     | 899   | 0                | TYPE_LIMIT | TIF_FOK | 9         | 1                    |        | fok order received during auction trading |      
+      | party1 | ETH/DEC23 | buy  | 10     | 899   | 0                | TYPE_LIMIT | TIF_GFA | 9         | 1                    |        |       |      
+      | party1 | ETH/DEC23 | buy  | 10     | 899   | 0                | TYPE_LIMIT | TIF_GFN | 9         | 1                    |        | gfn order received during auction trading |      
+      | party1 | ETH/DEC23 | sell | 10     | 1101  | 0                | TYPE_LIMIT | TIF_GTC | 9         | 1                    |        |       |      
+      | party1 | ETH/DEC23 | sell | 10     | 1101  | 0                | TYPE_LIMIT | TIF_IOC | 9         | 1                    |        | ioc order received during auction trading |      
+      | party1 | ETH/DEC23 | sell | 10     | 1101  | 0                | TYPE_LIMIT | TIF_FOK | 9         | 1                    |        | fok order received during auction trading |      
+      | party1 | ETH/DEC23 | sell | 10     | 1101  | 0                | TYPE_LIMIT | TIF_GFA | 9         | 1                    |        |       |      
+      | party1 | ETH/DEC23 | sell | 10     | 1101  | 0                | TYPE_LIMIT | TIF_GFN | 9         | 1                    |        | gfn order received during auction trading |      
+
+    When the parties place the following iceberg orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | expires in | peak size | minimum visible size | only   | error |
+      | party1 | ETH/DEC23 | buy  | 10     | 899   | 0                | TYPE_LIMIT | TIF_GTT | 50         | 9         | 1                    |        |       |      
+      | party1 | ETH/DEC23 | sell | 10     | 1101  | 0                | TYPE_LIMIT | TIF_GTT | 50         | 9         | 1                    |        |       |      
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -51,8 +64,12 @@ Feature: iceberg orders in all market types
     # We reject orders of type MARKET 
     When the parties place the following iceberg orders:
       | party  | market id | side | volume | price | resulting trades | type        | tif     | peak size | minimum visible size | only   | error |
-      | party1 | ETH/DEC23 | buy  | 100    | 0   | 0                | TYPE_MARKET | TIF_GTC | 90        | 1                    |        | OrderError: Invalid Persistence |      
-      | party1 | ETH/DEC23 | sell | 100    | 0   | 0                | TYPE_MARKET | TIF_GTC | 90        | 1                    |        | OrderError: Invalid Persistence |      
+      | party1 | ETH/DEC23 | buy  | 10     | 0     | 0                | TYPE_MARKET | TIF_GTC | 9         | 1                    |        | OrderError: Invalid Persistence |      
+      | party1 | ETH/DEC23 | sell | 10     | 0     | 0                | TYPE_MARKET | TIF_GTC | 9         | 1                    |        | OrderError: Invalid Persistence |      
+      | party1 | ETH/DEC23 | buy  | 10     | 0     | 1                | TYPE_MARKET | TIF_IOC | 9         | 1                    |        |  |      
+      | party1 | ETH/DEC23 | sell | 10     | 0     | 1                | TYPE_MARKET | TIF_IOC | 9         | 1                    |        |  |      
+      | party1 | ETH/DEC23 | buy  | 10     | 0     | 1                | TYPE_MARKET | TIF_FOK | 9         | 1                    |        |  |      
+      | party1 | ETH/DEC23 | sell | 10     | 0     | 1                | TYPE_MARKET | TIF_FOK | 9         | 1                    |        |  |      
 
     # We can have IOC icebergs 
     When the parties place the following iceberg orders:
