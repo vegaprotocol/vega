@@ -2693,6 +2693,20 @@ message ListGovernanceDataRequest {
     TYPE_NEW_FREE_FORM = 6;
     // Update asset proposals
     TYPE_UPDATE_ASSET = 7;
+    // Propose a new spot market
+    TYPE_NEW_SPOT_MARKET = 8;
+    // Update an existing spot market
+    TYPE_UPDATE_SPOT_MARKET = 9;
+    // Propose a new transfer
+    TYPE_NEW_TRANSFER = 10;
+    // Proposal to cancel a transfer
+    TYPE_CANCEL_TRANSFER = 11;
+    // Proposal for updating the state of a market
+    TYPE_UPDATE_MARKET_STATE = 12;
+    // Proposal to update the referral program
+    TYPE_UPDATE_REFERRAL_PROGRAM = 13;
+    // Proposal to update the volume discount program
+    TYPE_UPDATE_VOLUME_DISCOUNT_PROGRAM = 14;
   }
   // Restrict proposals to those with the given state.
   optional vega.Proposal.State proposal_state = 1;

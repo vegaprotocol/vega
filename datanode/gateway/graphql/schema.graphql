@@ -473,7 +473,7 @@ type Query {
   coreSnapshots(pagination: Pagination): CoreSnapshotConnection
 
   "Get the current referral program"
-  currentReferralProgram: ReferralProgram
+  currentReferralProgram: CurrentReferralProgram
 
   "Find a deposit using its ID"
   deposit("ID of the Deposit" id: ID!): Deposit
@@ -4272,18 +4272,7 @@ type UpdateMarketState {
 }
 
 type UpdateReferralProgram {
-  "Current version of the referral program"
-  version: Int!
-  "ID of the proposal that created the referral program"
-  id: ID!
-  "Benefit tiers for the program"
-  benefitTiers: [BenefitTier!]!
-  "Determines the level of benefit a party can expect based on their staking"
-  stakingTiers: [StakingTier!]!
-  "The end time of the program"
-  endOfProgramTimestamp: Timestamp!
-  "The window legnth to consider for the referral program"
-  windowLength: Int!
+  changes: ReferralProgram!
 }
 
 type BenefitTier {
@@ -4455,6 +4444,20 @@ enum ProposalType {
   TYPE_NEW_FREE_FORM
   "Proposal to update an existing asset"
   TYPE_UPDATE_ASSET
+  "Propose a new spot market"
+  TYPE_NEW_SPOT_MARKET
+  "Update an existing spot market"
+  TYPE_UPDATE_SPOT_MARKET
+  "Propose a new transfer"
+  TYPE_NEW_TRANSFER
+  "Proposal to cancel a transfer"
+  TYPE_CANCEL_TRANSFER
+  "Proposal for updating the state of a market"
+  TYPE_UPDATE_MARKET_STATE
+  "Proposal to update the referral program"
+  TYPE_UPDATE_REFERRAL_PROGRAM
+  "Proposal to update the volume discount program"
+  TYPE_UPDATE_VOLUME_DISCOUNT_PROGRAM
 }
 
 """
@@ -5891,7 +5894,27 @@ type ReferralProgram {
   version: Int!
   "Defined tiers in increasing order. First element will give Tier 1, second element will give Tier 2, etc."
   benefitTiers: [BenefitTier!]!
-  "Timestamp as RFC3339Nano, after which when the current epoch ends, the programs status will become STATE_CLOSED and benefits will be disabled."
+  "Timestamp as RFC3339, after which when the current epoch ends, the programs will end and benefits will be disabled."
+  endOfProgramTimestamp: String!
+  "Number of epochs over which to evaluate a referral set's running volume."
+  windowLength: Int!
+  """
+  Defined staking tiers in increasing order. First element will give Tier 1,
+  second element will give Tier 2, and so on. Determines the level of
+  benefit a party can expect based on their staking.
+  """
+  stakingTiers: [StakingTier!]!
+}
+
+"Referral program information reported by data node with additional endedAt timestamp."
+type CurrentReferralProgram {
+  "Unique ID generated from the proposal that created this program."
+  id: ID!
+  "Incremental version of the program. It is incremented each time the referral program is edited."
+  version: Int!
+  "Defined tiers in increasing order. First element will give Tier 1, second element will give Tier 2, etc."
+  benefitTiers: [BenefitTier!]!
+  "Timestamp as RFC3339Nano, after which when the current epoch ends, the program will end and benefits will be disabled."
   endOfProgramTimestamp: Timestamp!
   "Number of epochs over which to evaluate a referral set's running volume."
   windowLength: Int!

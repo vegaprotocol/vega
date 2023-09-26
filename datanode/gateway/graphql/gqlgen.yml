@@ -618,7 +618,11 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.PartyActivityStreak
   BenefitTier:
     model: code.vegaprotocol.io/vega/protos/vega.BenefitTier
+  UpdateReferralProgram:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdateReferralProgram
   ReferralProgram:
+    model: code.vegaprotocol.io/vega/protos/vega.ReferralProgram
+  CurrentReferralProgram:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralProgram
   StakingTier:
     model: code.vegaprotocol.io/vega/protos/vega.StakingTier
