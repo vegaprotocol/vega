@@ -111,6 +111,7 @@
 - [9478](https://github.com/vegaprotocol/vega/issues/8764) - Add SLA statistics to market data and liquidity provision APIs.
 - [9558](https://github.com/vegaprotocol/vega/issues/9558) - Feature tests for relative return metric transfers and reward
 - [9559](https://github.com/vegaprotocol/vega/issues/9559) - Feature tests for return volatility metric transfers and reward
+- [9564](https://github.com/vegaprotocol/vega/issues/9564) - Fix error message for too many staking tiers. 
 
 ### 🐛 Fixes
 
