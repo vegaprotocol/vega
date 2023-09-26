@@ -19,7 +19,7 @@ Feature: Test funding margin for Perps market
       | limits.markets.maxPeggedOrders | 2     |
 
   @Perpetual
-  Scenario: (0019-MCAL-0019) check funding margin for Perps market when clumps are 0
+  Scenario: (0019-MCAL-019) check funding margin for Perps market when clumps are 0
     Given the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 5s    |
@@ -153,7 +153,6 @@ Feature: Test funding margin for Perps market
       | market | aux    | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 800000 | USD |
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 800000 | USD |
 
-# funding payment is 1600*0.002*0.05=0.16, funding rate =0.5, funding margin = 0.08
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
       | party1 | USD | ETH/DEC19 | 8482400 | 1317600 |

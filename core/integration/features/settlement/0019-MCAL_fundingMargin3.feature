@@ -4,7 +4,7 @@ Feature: Test funding margin for Perps market
 
     And the perpetual oracles from "0xCAFECAFE1":
       | name        | asset | settlement property | settlement type | schedule property | schedule type  | margin funding factor | interest rate | clamp lower bound | clamp upper bound | quote name | settlement decimals |
-      | perp-oracle | USD   | perp.ETH.value      | TYPE_INTEGER    | perp.funding.cue  | TYPE_TIMESTAMP | 0.5                   | 0.05          | 0.1               | 0.9               | ETH        | 18                  |
+      | perp-oracle | USD   | perp.ETH.value      | TYPE_INTEGER    | perp.funding.cue  | TYPE_TIMESTAMP | 0.5                   | 0.05          | -0.05             | 0.9               | ETH        | 18                  |
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 1                             | 1.0                    |
@@ -19,7 +19,7 @@ Feature: Test funding margin for Perps market
       | limits.markets.maxPeggedOrders | 2     |
 
   @Perpetual
-  Scenario: (0019-MCAL-019) check funding margin for Perps market when clumps are 0
+  Scenario: (0019-MCAL-022) check funding margin for Perps market when clumps are 0
     Given the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 5s    |
@@ -145,36 +145,36 @@ Feature: Test funding margin for Perps market
       | name             | value      | time offset |
       | perp.funding.cue | 1613061324 | 0s          |
 
-#funding payment = f_twap - s_twap + clamp_lower_bound*s_twap =2000-1600+(0.1*1600)=560
+    #funding payment = f_twap - s_twap + clamp_lower_bound*s_twap =2000-1600+(-0.05*1600)=320
     And the following transfers should happen:
-      | from   | to     | from account            | to account              | market id | amount  | asset |
-      | aux2   | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1120000 | USD   |
-      | party2 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 560000  | USD   |
-      | party3 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 560000  | USD   |
-      | market | aux    | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 1120000 | USD   |
-      | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 1120000 | USD   |
+      | from   | to     | from account            | to account              | market id | amount | asset |
+      | aux2   | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 640000 | USD   |
+      | party2 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 320000 | USD   |
+      | party3 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 320000 | USD   |
+      | market | aux    | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 640000 | USD   |
+      | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 640000 | USD   |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
-      | party1 | USD   | ETH/DEC19 | 8802400 | 1317600 |
-      | party3 | USD   | ETH/DEC19 | 2605200 | 6832800 |
-      | party2 | USD   | ETH/DEC19 | 2605200 | 7833800 |
+      | party1 | USD   | ETH/DEC19 | 8322400 | 1317600 |
+      | party3 | USD   | ETH/DEC19 | 2605200 | 7072800 |
+      | party2 | USD   | ETH/DEC19 | 2605200 | 8073800 |
 
     #move to the block before the next MTM should be no changes
     When the network moves ahead "3" blocks
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
-      | party1 | USD   | ETH/DEC19 | 8802400 | 1317600 |
-      | party3 | USD   | ETH/DEC19 | 2605200 | 6832800 |
-      | party2 | USD   | ETH/DEC19 | 2605200 | 7833800 |
+      | party1 | USD   | ETH/DEC19 | 8322400 | 1317600 |
+      | party3 | USD   | ETH/DEC19 | 2605200 | 7072800 |
+      | party2 | USD   | ETH/DEC19 | 2605200 | 8073800 |
 
     ## Now take us past the MTM frequency time and things should change
     When the network moves ahead "1" blocks
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
-      | party1 | USD   | ETH/DEC19 | 8800400 | 1317600 |
-      | party3 | USD   | ETH/DEC19 | 2606200 | 6832800 |
-      | party2 | USD   | ETH/DEC19 | 2606200 | 7833800 |
+      | party1 | USD   | ETH/DEC19 | 8320400 | 1317600 |
+      | party3 | USD   | ETH/DEC19 | 2606200 | 7072800 |
+      | party2 | USD   | ETH/DEC19 | 2606200 | 8073800 |
 
     And the following transfers should happen:
       | from   | to     | from account            | to account              | market id | amount | asset |
