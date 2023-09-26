@@ -110,6 +110,7 @@
 - [9475](https://github.com/vegaprotocol/vega/issues/9475) - Make `oracle_data` and `oracle_data_oracle_specs` into `hypertables`
 - [9478](https://github.com/vegaprotocol/vega/issues/8764) - Add SLA statistics to market data and liquidity provision APIs.
 - [9558](https://github.com/vegaprotocol/vega/issues/9558) - Feature tests for relative return metric transfers and reward
+- [9559](https://github.com/vegaprotocol/vega/issues/9559) - Feature tests for return volatility metric transfers and reward
 
 ### 🐛 Fixes
 

@@ -61,8 +61,33 @@ Feature: Relative return rewards
     #complete the epoch to advance to a meaningful epoch (can't setup transfer to start at epoch 0)
     Then the network moves ahead "1" epochs
 
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+      | lp2 | lpprov | ETH/DEC22 | 90000             | 0.1 | submission |
+      | lp2 | lpprov | ETH/DEC22 | 90000             | 0.1 | submission |
+
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC21 | 90        | 1                    | buy  | BID              | 90     | 10     |
+      | lpprov | ETH/DEC21 | 90        | 1                    | sell | ASK              | 90     | 10     |
+      | lpprov | ETH/DEC22 | 90        | 1                    | buy  | BID              | 90     | 10     |
+      | lpprov | ETH/DEC22 | 90        | 1                    | sell | ASK              | 90     | 10     |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux1   | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | aux2   | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | aux1   | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy1      |
+      | aux2   | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell1     |
+      | party1 | ETH/DEC22 | buy  | 5      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party2 | ETH/DEC22 | sell | 5      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | aux1   | ETH/DEC22 | buy  | 1      | 1800  | 0                | TYPE_LIMIT | TIF_GTC | buy2      |
+      | aux2   | ETH/DEC22 | sell | 1      | 2200  | 0                | TYPE_LIMIT | TIF_GTC | sell2     |
+
   Scenario: No trader is eligible - no transfer is made
-    # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+    # setup recurring transfer to the reward account - this will start at the  end of this epoch 
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
       | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_RELATIVE_RETURN | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_RELATIVE_RETURN | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1500                | 50                   |
@@ -72,27 +97,10 @@ Feature: Relative return rewards
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "1000000" for asset "VEGA"
 
   Scenario: eligible party with staking less than threshold doesn't get a reward (0056-REWA-076)
-    # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+    # setup recurring transfer to the reward account - this will start at the  end of this epoch 
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
       | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_RELATIVE_RETURN | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_RELATIVE_RETURN | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1500                | 0                    |
-
-    When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
-
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/DEC21 | 90        | 1                    | buy  | BID              | 90     | 10     |
-      | lpprov | ETH/DEC21 | 90        | 1                    | sell | ASK              | 90     | 10     |
-
-    Then the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy1      |
-      | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell1     |
 
     Then the network moves ahead "1" epochs
 
@@ -120,27 +128,10 @@ Feature: Relative return rewards
     And "aux1" should have vesting account balance of "10000" for asset "VEGA"
 
   Scenario: eligible party with average notional less than threshold doesn't get a reward (0056-REWA-077)
-    # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+    # setup recurring transfer to the reward account - this will start at the  end of this epoch 
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
       | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_RELATIVE_RETURN | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_RELATIVE_RETURN | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 5000                 |
-
-    When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
-
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/DEC21 | 90        | 1                    | buy  | BID              | 90     | 10     |
-      | lpprov | ETH/DEC21 | 90        | 1                    | sell | ASK              | 90     | 10     |
-
-    Then the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy1      |
-      | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell1     |
 
     Then the network moves ahead "1" epochs
 
@@ -164,28 +155,11 @@ Feature: Relative return rewards
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
     And "aux2" should have vesting account balance of "10000" for asset "VEGA"
 
-  Scenario: multiple eligible parties split the reward equally (0056-REWA-084">0056-REWA-084)
-    # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
+  Scenario: multiple eligible parties split the reward (0056-REWA-084,0056-REWA-085)
+    # setup recurring transfer to the reward account - this will start at the  end of this epoch 
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
       | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_RELATIVE_RETURN | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_RELATIVE_RETURN | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
-
-    When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
-
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/DEC21 | 90        | 1                    | buy  | BID              | 90     | 10     |
-      | lpprov | ETH/DEC21 | 90        | 1                    | sell | ASK              | 90     | 10     |
-
-    Then the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy1      |
-      | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell1     |
 
     Then the network moves ahead "1" epochs
 
@@ -210,27 +184,10 @@ Feature: Relative return rewards
     And "aux2" should have vesting account balance of "3333" for asset "VEGA"
 
   Scenario: multiple epochs multiple positions (0056-REWA-087)
-    When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
+    Given the network moves ahead "1" epochs
 
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/DEC21 | 90        | 1                    | buy  | BID              | 90     | 10     |
-      | lpprov | ETH/DEC21 | 90        | 1                    | sell | ASK              | 90     | 10     |
-
-    Then the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy1      |
-      | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell1     |
-
-    Then the network moves ahead "1" epochs
-
-    # setup recurring transfer to the reward account - this will start at the end of this epoch (1)
-    Given the parties submit the following recurring transfers:
+    # setup recurring transfer to the reward account - this will start at the  end of this epoch 
+    And the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
       | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_RELATIVE_RETURN | VEGA  | 10000  | 2           |           | 1      | DISPATCH_METRIC_RELATIVE_RETURN | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 0                    |
 
@@ -284,33 +241,8 @@ Feature: Relative return rewards
     And "aux2" should have vesting account balance of "4487" for asset "VEGA"
 
   Scenario: multiple multiple markets - only one in scope
-    When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
-      | lp2 | lpprov | ETH/DEC22 | 90000             | 0.1 | submission |
-      | lp2 | lpprov | ETH/DEC22 | 90000             | 0.1 | submission |
-
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/DEC21 | 90        | 1                    | buy  | BID              | 90     | 10     |
-      | lpprov | ETH/DEC21 | 90        | 1                    | sell | ASK              | 90     | 10     |
-      | lpprov | ETH/DEC22 | 90        | 1                    | buy  | BID              | 90     | 10     |
-      | lpprov | ETH/DEC22 | 90        | 1                    | sell | ASK              | 90     | 10     |
-
-    Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux1   | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | aux2   | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | aux1   | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy1      |
-      | aux2   | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell1     |
-      | party1 | ETH/DEC22 | buy  | 5      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | party2 | ETH/DEC22 | sell | 5      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | aux1   | ETH/DEC22 | buy  | 1      | 1800  | 0                | TYPE_LIMIT | TIF_GTC | buy2      |
-      | aux2   | ETH/DEC22 | sell | 1      | 2200  | 0                | TYPE_LIMIT | TIF_GTC | sell2     |
-
-    Then the network moves ahead "1" epochs
-    Given the parties submit the following recurring transfers:
+    Given the network moves ahead "1" epochs
+    And the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets   | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
       | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_RELATIVE_RETURN | VEGA  | 10000  | 2           |           | 1      | DISPATCH_METRIC_RELATIVE_RETURN | ETH          | ETH/DEC21 | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
 
@@ -347,32 +279,7 @@ Feature: Relative return rewards
     And "aux1" should have vesting account balance of "8000" for asset "VEGA"
     And "party1" should have vesting account balance of "2000" for asset "VEGA"
 
-  Scenario: If an eligible party is participating in multiple in-scope markets, their relative returns reward metric should be the sum of their relative returns from each market (0056-REWA-086)
-    When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | submission |
-      | lp2 | lpprov | ETH/DEC22 | 90000             | 0.1 | submission |
-      | lp2 | lpprov | ETH/DEC22 | 90000             | 0.1 | submission |
-
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/DEC21 | 90        | 1                    | buy  | BID              | 90     | 10     |
-      | lpprov | ETH/DEC21 | 90        | 1                    | sell | ASK              | 90     | 10     |
-      | lpprov | ETH/DEC22 | 90        | 1                    | buy  | BID              | 90     | 10     |
-      | lpprov | ETH/DEC22 | 90        | 1                    | sell | ASK              | 90     | 10     |
-
-    Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux1   | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | aux2   | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | aux1   | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy1      |
-      | aux2   | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell1     |
-      | party1 | ETH/DEC22 | buy  | 5      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | party2 | ETH/DEC22 | sell | 5      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | aux1   | ETH/DEC22 | buy  | 1      | 1800  | 0                | TYPE_LIMIT | TIF_GTC | buy2      |
-      | aux2   | ETH/DEC22 | sell | 1      | 2200  | 0                | TYPE_LIMIT | TIF_GTC | sell2     |
-
+  Scenario: If an eligible party is participating in multiple in-scope markets, their relative returns reward metric should be the sum of their relative returns from each market (0056-REWA-085,0056-REWA-086)
     Then the network moves ahead "1" epochs
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
