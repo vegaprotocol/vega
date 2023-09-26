@@ -56,7 +56,7 @@ message StopOrder {
     // Stop orders are not allowed if there is no open position
     REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION = 5;
     // This stop order does not close the position
-    REJECTION_REASON_STOP_ORDER_DOES_NOT_CLOSE_POSITION = 6;
+    REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION = 6;
   }
 
   // ID of this stop order
