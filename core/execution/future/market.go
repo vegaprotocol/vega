@@ -3845,9 +3845,13 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 func (m *Market) tradingTerminatedWithFinalState(ctx context.Context, finalState types.MarketState, settlementDataInAsset *num.Uint) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	m.terminateMarket(ctx, finalState, settlementDataInAsset)
+}
 
+func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketState, settlementDataInAsset *num.Uint) {
 	// ignore trading termination while the governance proposal hasn't been enacted
 	if m.mkt.State == types.MarketStateProposed {
+		m.log.Debug("market must not terminated before its enactment time", logging.MarketID(m.GetID()))
 		return
 	}
 
@@ -3896,6 +3900,7 @@ func (m *Market) tradingTerminatedWithFinalState(ctx context.Context, finalState
 		_, err := m.CancelAllOrders(ctx, party)
 		if err != nil {
 			m.log.Debug("could not cancel orders for party", logging.PartyID(party), logging.Error(err))
+			panic(err)
 		}
 	}
 	err := m.closeCancelledMarket(ctx)
@@ -3903,8 +3908,6 @@ func (m *Market) tradingTerminatedWithFinalState(ctx context.Context, finalState
 		m.log.Debug("could not close market", logging.MarketID(m.GetID()))
 		return
 	}
-
-	m.log.Debug("market must not terminated before its enactment time", logging.MarketID(m.GetID()))
 }
 
 func (m *Market) settlementData(ctx context.Context, settlementData *num.Numeric) {
