@@ -225,6 +225,7 @@
 - [9532](https://github.com/vegaprotocol/vega/issues/9532) - Data node crashes if referral program starts and ends in the same block.
 - [9540](https://github.com/vegaprotocol/vega/issues/9540) - Proposals connection errors for `UpdateReferralProgram`.
 - [8934](https://github.com/vegaprotocol/vega/issues/8934) - Check for special characters in headers.
+- [8979](https://github.com/vegaprotocol/vega/issues/8979) - Update `XFF` information in rate limiter documentation.
 
 ## 0.72.1
 
