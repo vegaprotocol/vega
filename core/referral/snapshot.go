@@ -18,6 +18,7 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
@@ -214,6 +215,22 @@ func (e *SnapshottedEngine) buildHashKeys() {
 	e.referralSetsKey = (&types.PayloadReferralSets{}).Key()
 
 	e.hashKeys = append([]string{}, e.currentProgramKey, e.newProgramKey, e.referralSetsKey)
+}
+
+func (e *Engine) OnStateLoaded(ctx context.Context) error {
+	if e.programHasEnded {
+		return nil
+	}
+
+	// we need to regenerate the statistics based on the restored state and we call
+	// computeFactorsByReferee to do this
+	partiesTakerVolume := map[types.PartyID]*num.Uint{}
+	for partyID := range e.referees {
+		volumeForEpoch := e.marketActivityTracker.NotionalTakerVolumeForParty(string(partyID))
+		partiesTakerVolume[partyID] = volumeForEpoch
+	}
+	e.computeFactorsByReferee(ctx, e.currentEpoch, partiesTakerVolume)
+	return nil
 }
 
 func NewSnapshottedEngine(broker Broker, timeSvc TimeService, mat MarketActivityTracker, staking StakingBalances) *SnapshottedEngine {

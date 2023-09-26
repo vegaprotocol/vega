@@ -183,6 +183,7 @@
 - [9140](https://github.com/vegaprotocol/vega/issues/9140) - Stop orders table should be a `hypertable` with retention policy.
 - [9153](https://github.com/vegaprotocol/vega/issues/9153) - `MTM` win transfers can be less than one.
 - [9227](https://github.com/vegaprotocol/vega/issues/9227) - Do not allow market updates that change the product type.
+- [9535](https://github.com/vegaprotocol/vega/issues/9535) - Populate referral statistics when loading from a snapshot.
 - [9178](https://github.com/vegaprotocol/vega/issues/9178) - Fix LP amendment panic
 - [9329](https://github.com/vegaprotocol/vega/issues/9329) - Roll next trigger time forward until after the time that triggered it.
 - [9053](https://github.com/vegaprotocol/vega/issues/9053) - Handle settle market events in core positions plug-in.
