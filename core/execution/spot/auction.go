@@ -66,6 +66,9 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 	// opening auction
 	if isOpening {
 		if len(trades) == 0 {
+			if m.as.ExceededMaxOpening(now) {
+				m.closeSpotMarket(ctx)
+			}
 			return
 		}
 

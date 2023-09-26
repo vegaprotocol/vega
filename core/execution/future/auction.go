@@ -78,6 +78,23 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		// first check liquidity - before we mark auction as ready to leave
 		m.checkLiquidity(ctx, trades, true)
 		if !m.as.CanLeave() {
+			if m.as.ExceededMaxOpening(now) {
+				m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
+				for party := range m.parties {
+					_, err := m.CancelAllOrders(ctx, party)
+					if err != nil {
+						m.log.Debug("could not cancel orders for party", logging.PartyID(party), logging.Error(err))
+					}
+				}
+				err := m.closeCancelledMarket(ctx)
+				if err != nil {
+					m.log.Debug("could not close market", logging.MarketID(m.GetID()))
+					return
+				}
+
+				m.log.Debug("market must not terminated before its enactment time", logging.MarketID(m.GetID()))
+				// cancel the market, exceeded opening auction
+			}
 			if e := m.as.AuctionExtended(ctx, now); e != nil {
 				m.broker.Send(e)
 			}

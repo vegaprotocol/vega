@@ -113,6 +113,7 @@ type netParamsValues struct {
 	maxLiquidityFee                      num.Decimal
 	bondPenaltyFactor                    num.Decimal
 	auctionMinDuration                   time.Duration
+	auctionMaxDuration                   time.Duration
 	probabilityOfTradingTauScaling       num.Decimal
 	minProbabilityOfTradingLPOrders      num.Decimal
 	minLpStakeQuantumMultiple            num.Decimal
@@ -1487,6 +1488,16 @@ func (e *Engine) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d tim
 		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, d)
 	}
 	e.npv.auctionMinDuration = d
+	return nil
+}
+
+func (e *Engine) OnMarketAuctionMaximumDurationUpdate(ctx context.Context, d time.Duration) error {
+	for _, mkt := range e.allMarketsCpy {
+		if mkt.IsOpeningAuction() {
+			mkt.OnMarketAuctionMaximumDurationUpdate(ctx, d)
+		}
+	}
+	e.npv.auctionMaxDuration = d
 	return nil
 }
 
