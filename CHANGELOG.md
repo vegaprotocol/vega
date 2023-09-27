@@ -164,6 +164,7 @@
 - [8891](https://github.com/vegaprotocol/vega/issues/8891) - Emit market update event when resuming via governance
 - [8874](https://github.com/vegaprotocol/vega/issues/8874) - Database migration can fail when rolling back and migrating up again.
 - [8855](https://github.com/vegaprotocol/vega/issues/8855) - Preserve reference to parent market when restoring checkpoint data
+- [9576](https://github.com/vegaprotocol/vega/issues/9576) - Metric collection during bridge stops no longer causes a panic.
 - [8909](https://github.com/vegaprotocol/vega/issues/8909) - initialise id generator for all branches of market state update
 - [9004](https://github.com/vegaprotocol/vega/issues/9004) - Clear insurance pools in a deterministic order in successor markets.
 - [8908](https://github.com/vegaprotocol/vega/issues/8908) - A rejected parent market should result in all successors getting rejected, too.
