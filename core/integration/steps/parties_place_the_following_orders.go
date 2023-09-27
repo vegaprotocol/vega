@@ -67,7 +67,28 @@ func PartiesPlaceTheFollowingOrdersWithTicks(exec Execution, time *stubs.TimeStu
 			orderSubmission.ReduceOnly = true
 		}
 
-		resp, err := exec.SubmitOrder(context.Background(), &orderSubmission, row.Party())
+		// check for pegged orders
+		if row.PeggedReference() != types.PeggedReferenceUnspecified {
+			orderSubmission.PeggedOrder = &types.PeggedOrder{Reference: row.PeggedReference(), Offset: row.PeggedOffset()}
+		}
+
+		// check for stop orders
+		stopOrderSubmission, err := buildStopOrder(&orderSubmission, row, now)
+		if err != nil {
+			return err
+		}
+
+		var resp *types.OrderConfirmation
+		if stopOrderSubmission != nil {
+			resp, err = exec.SubmitStopOrder(
+				context.Background(),
+				stopOrderSubmission,
+				row.Party(),
+			)
+		} else {
+			resp, err = exec.SubmitOrder(context.Background(), &orderSubmission, row.Party())
+		}
+
 		if ceerr := checkExpectedError(row, err, nil); ceerr != nil {
 			return ceerr
 		}
@@ -76,16 +97,18 @@ func PartiesPlaceTheFollowingOrdersWithTicks(exec Execution, time *stubs.TimeStu
 			continue
 		}
 
-		actualTradeCount := int64(len(resp.Trades))
-		if actualTradeCount != row.ResultingTrades() {
-			return formatDiff(fmt.Sprintf("the resulting trades didn't match the expectation for order \"%v\"", row.Reference()),
-				map[string]string{
-					"total": i64ToS(row.ResultingTrades()),
-				},
-				map[string]string{
-					"total": i64ToS(actualTradeCount),
-				},
-			)
+		if resp != nil {
+			actualTradeCount := int64(len(resp.Trades))
+			if actualTradeCount != row.ResultingTrades() {
+				return formatDiff(fmt.Sprintf("the resulting trades didn't match the expectation for order \"%v\"", row.Reference()),
+					map[string]string{
+						"total": i64ToS(row.ResultingTrades()),
+					},
+					map[string]string{
+						"total": i64ToS(actualTradeCount),
+					},
+				)
+			}
 		}
 		// make it look like we start a new block
 		epochService.OnBlockEnd(context.Background())
