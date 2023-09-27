@@ -834,6 +834,13 @@ func (m *Market) PostRestore(ctx context.Context) error {
 		m.log.Panic("failed to get bonus distribution account", logging.Error(err))
 	}
 
+	// if loading from an old snapshot we're restoring positions using the position engine
+	if m.marketActivityTracker.NeedsInitialisation(m.settlementAsset, m.mkt.ID) {
+		for _, mp := range m.position.Positions() {
+			m.marketActivityTracker.RestorePosition(m.settlementAsset, mp.Party(), m.mkt.ID, mp.Size(), mp.Price(), m.positionFactor)
+		}
+	}
+
 	return nil
 }
 

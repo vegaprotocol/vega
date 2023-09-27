@@ -124,6 +124,16 @@ func (mat *MarketActivityTracker) OnMinEpochsInTeamForRewardEligibilityUpdated(_
 	return nil
 }
 
+// NeedsInitialisation is a heuristc migration - if there is no time weighted position data when restoring from snapshot, we will restore
+// positions from the market. This will only happen on the one time migration from a version preceding the new metrics. If we're already on a
+// new version, either there are no timeweighted positions and no positions or there are time weighted positions and they will not be restored.
+func (mat *MarketActivityTracker) NeedsInitialisation(asset, market string) bool {
+	if tracker, ok := mat.getMarketTracker(asset, market); ok {
+		return len(tracker.twPosition) == 0
+	}
+	return false
+}
+
 // GetProposer returns the proposer of the market or empty string if the market doesn't exist.
 func (mat *MarketActivityTracker) GetProposer(market string) string {
 	for _, markets := range mat.assetToMarketTrackers {
@@ -449,6 +459,11 @@ func (mat *MarketActivityTracker) getMarketTracker(asset, market string) (*marke
 		return nil, false
 	}
 	return tracker, true
+}
+
+// RestorePosition restores a position as if it were acquired at the beginning of the epoch. This is purely for migration from an old version.
+func (mat *MarketActivityTracker) RestorePosition(asset, party, market string, pos int64, price *num.Uint, positionFactor num.Decimal) {
+	mat.RecordPosition(asset, party, market, pos, price, positionFactor, mat.epochStartTime)
 }
 
 // RecordPosition passes the position of the party in the asset/market to the market tracker to be recorded.
