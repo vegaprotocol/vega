@@ -1000,7 +1000,7 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		enct.shouldNotVerify = true
 		return validateUpdateSpotMarketChange(terms.GetUpdateSpotMarket())
 	case types.ProposalTermsTypeUpdateReferralProgram:
-		return validateUpdateReferralProgram(e.netp, terms.GetUpdateReferralProgram())
+		return validateUpdateReferralProgram(e.netp, terms.GetUpdateReferralProgram(), terms.EnactmentTimestamp)
 	case types.ProposalTermsTypeUpdateVolumeDiscountProgram:
 		return validateUpdateVolumeDiscountProgram(e.netp, terms.GetUpdateVolumeDiscountProgram())
 	default:
