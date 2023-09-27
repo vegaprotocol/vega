@@ -837,7 +837,9 @@ func (m *Market) PostRestore(ctx context.Context) error {
 	// if loading from an old snapshot we're restoring positions using the position engine
 	if m.marketActivityTracker.NeedsInitialisation(m.settlementAsset, m.mkt.ID) {
 		for _, mp := range m.position.Positions() {
-			m.marketActivityTracker.RestorePosition(m.settlementAsset, mp.Party(), m.mkt.ID, mp.Size(), mp.Price(), m.positionFactor)
+			if mp.Size() != 0 {
+				m.marketActivityTracker.RestorePosition(m.settlementAsset, mp.Party(), m.mkt.ID, mp.Size(), mp.Price(), m.positionFactor)
+			}
 		}
 	}
 
