@@ -23,6 +23,7 @@
 - [8741](https://github.com/vegaprotocol/vega/issues/8741) - Add a network parameter for disabling `Ethereum` oracles.
 - [8600](https://github.com/vegaprotocol/vega/issues/8600) - Clean and refactor data source packages.
 - [8845](https://github.com/vegaprotocol/vega/issues/8845) - Add support for network treasury and global insurance accounts.
+- [9545](https://github.com/vegaprotocol/vega/issues/9545) - Auto load new segments after load finishes 
 - [8661](https://github.com/vegaprotocol/vega/issues/8661) - Refactor the snapshot engine to make it testable.
 - [8680](https://github.com/vegaprotocol/vega/issues/8680) - Move loading the local snapshot in the initialization steps.
 - [8682](https://github.com/vegaprotocol/vega/issues/8682) - Share snapshot by search the metadata database instead of loading the tree.
