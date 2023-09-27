@@ -706,7 +706,7 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 	case vega.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY:
 		filteredReturns := []num.Decimal{}
 		for _, d := range returns {
-			if !d.IsZero() {
+			if d.IsPositive() {
 				filteredReturns = append(filteredReturns, d)
 			}
 		}
@@ -920,11 +920,7 @@ func (mt *marketTracker) getReturns(party string, windowSize int) ([]num.Decimal
 			returns = append(returns, num.DecimalZero())
 		}
 		epochData := mt.epochPartyM2M[len(mt.epochPartyM2M)-i-1]
-		if v, ok := epochData[party]; !ok {
-			returns = append(returns, num.DecimalZero())
-		} else {
-			returns = append(returns, num.MaxD(num.DecimalZero(), v))
-		}
+		returns = append(returns, epochData[party])
 	}
 	return returns, true
 }

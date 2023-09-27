@@ -336,6 +336,10 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Watcher: e.executionEngine.OnMarketAuctionMinimumDurationUpdate,
 		},
 		netparams.WatchParam{
+			Param:   netparams.MarketAuctionMaximumDuration,
+			Watcher: e.executionEngine.OnMarketAuctionMaximumDurationUpdate,
+		},
+		netparams.WatchParam{
 			Param:   netparams.MarketProbabilityOfTradingTauScaling,
 			Watcher: e.executionEngine.OnMarketProbabilityOfTradingTauScalingUpdate,
 		},

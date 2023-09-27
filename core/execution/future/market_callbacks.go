@@ -89,6 +89,12 @@ func (m *Market) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d tim
 	}
 }
 
+func (m *Market) OnMarketAuctionMaximumDurationUpdate(ctx context.Context, d time.Duration) {
+	if m.mkt.State == types.MarketStatePending || m.mkt.State == types.MarketStateProposed {
+		m.as.UpdateMaxDuration(ctx, d)
+	}
+}
+
 func (m *Market) OnMarkPriceUpdateMaximumFrequency(ctx context.Context, d time.Duration) {
 	if !m.nextMTM.IsZero() {
 		m.nextMTM = m.nextMTM.Add(-m.mtmDelta)

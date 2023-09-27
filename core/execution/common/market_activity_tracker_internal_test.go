@@ -154,13 +154,13 @@ func TestReturns(t *testing.T) {
 	ret1, ok := tracker.getReturns("p1", 1)
 	require.True(t, ok)
 	require.Equal(t, 1, len(ret1))
-	// max(-100/5 = -20,0)=0
-	require.Equal(t, "0", ret1[0].String())
+	// -100/5 = -20
+	require.Equal(t, "-20", ret1[0].String())
 	ret2, ok := tracker.getReturns("p2", 1)
 	require.True(t, ok)
 	require.Equal(t, 1, len(ret2))
-	// max(-100/10 = -10,0)=0
-	require.Equal(t, "0", ret2[0].String())
+	// -100/10 = -10
+	require.Equal(t, "-10", ret2[0].String())
 	ret3, ok := tracker.getReturns("p3", 1)
 	require.True(t, ok)
 	require.Equal(t, 1, len(ret3))
@@ -618,15 +618,20 @@ func TestCalculateMetricForIndividualReturnVolatility(t *testing.T) {
 	tracker.RecordPosition("a1", "p2", "m1", 100, num.NewUint(10), num.DecimalOne(), time.Unix(15, 0))
 	tracker.RecordPosition("a1", "p2", "m2", 200, num.NewUint(20), num.DecimalOne(), time.Unix(25, 0))
 	tracker.RecordPosition("a1", "p2", "m3", 300, num.NewUint(30), num.DecimalOne(), time.Unix(45, 0))
+	tracker.RecordPosition("a1", "p3", "m1", 10, num.NewUint(1), num.DecimalOne(), time.Unix(10, 0))
+	tracker.RecordPosition("a1", "p3", "m2", 20, num.NewUint(2), num.DecimalOne(), time.Unix(10, 0))
+	tracker.RecordPosition("a1", "p3", "m3", 30, num.NewUint(3), num.DecimalOne(), time.Unix(10, 0))
 
-	tracker.RecordM2M("a1", "p1", "m1", num.DecimalFromInt64(-100))
-	tracker.RecordM2M("a1", "p2", "m1", num.DecimalFromInt64(100))
-	tracker.RecordM2M("a1", "p1", "m1", num.DecimalFromInt64(250))
-	tracker.RecordM2M("a1", "p2", "m1", num.DecimalFromInt64(-250))
-	tracker.RecordM2M("a1", "p1", "m2", num.DecimalFromInt64(-50))
-	tracker.RecordM2M("a1", "p2", "m2", num.DecimalFromInt64(50))
-	tracker.RecordM2M("a1", "p1", "m3", num.DecimalFromInt64(100))
-	tracker.RecordM2M("a1", "p2", "m3", num.DecimalFromInt64(-100))
+	tracker.RecordM2M("a1", "p1", "m1", num.DecimalFromInt64(80))
+	tracker.RecordM2M("a1", "p2", "m1", num.DecimalFromInt64(20))
+	tracker.RecordM2M("a1", "p3", "m1", num.DecimalFromInt64(-100))
+	tracker.RecordM2M("a1", "p1", "m1", num.DecimalFromInt64(10))
+	tracker.RecordM2M("a1", "p2", "m1", num.DecimalFromInt64(-10))
+	tracker.RecordM2M("a1", "p1", "m2", num.DecimalFromInt64(50))
+	tracker.RecordM2M("a1", "p2", "m2", num.DecimalFromInt64(-5))
+	tracker.RecordM2M("a1", "p3", "m2", num.DecimalFromInt64(-45))
+	tracker.RecordM2M("a1", "p1", "m3", num.DecimalFromInt64(-35))
+	tracker.RecordM2M("a1", "p2", "m3", num.DecimalFromInt64(35))
 
 	// end epoch1
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_END, StartTime: time.Unix(0, 0), EndTime: time.Unix(60, 0)})
@@ -660,13 +665,14 @@ func TestCalculateMetricForIndividualReturnVolatility(t *testing.T) {
 	epochService.target(context.Background(), types.Epoch{Seq: 2, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Unix(60, 0)})
 	tracker.RecordPosition("a1", "p1", "m1", 20, num.NewUint(5), num.DecimalOne(), time.Unix(90, 0))
 	tracker.RecordPosition("a1", "p2", "m2", 10, num.NewUint(10), num.DecimalOne(), time.Unix(75, 0))
+	tracker.RecordPosition("a1", "p3", "m1", 10, num.NewUint(10), num.DecimalOne(), time.Unix(75, 0))
 	tracker.RecordPosition("a2", "p1", "m3", 20, num.NewUint(5), num.DecimalOne(), time.Unix(90, 0))
 	tracker.RecordPosition("a2", "p2", "m2", 10, num.NewUint(10), num.DecimalOne(), time.Unix(75, 0))
 
-	tracker.RecordM2M("a1", "p1", "m1", num.DecimalFromInt64(450))
-	tracker.RecordM2M("a1", "p2", "m1", num.DecimalFromInt64(-450))
-	tracker.RecordM2M("a1", "p1", "m2", num.DecimalFromInt64(-100))
-	tracker.RecordM2M("a1", "p2", "m2", num.DecimalFromInt64(100))
+	tracker.RecordM2M("a1", "p1", "m1", num.DecimalFromInt64(45))
+	tracker.RecordM2M("a1", "p3", "m1", num.DecimalFromInt64(-45))
+	tracker.RecordM2M("a1", "p1", "m2", num.DecimalFromInt64(-10))
+	tracker.RecordM2M("a1", "p2", "m2", num.DecimalFromInt64(10))
 	// nothing in m3
 
 	// end epoch2
@@ -677,18 +683,14 @@ func TestCalculateMetricForIndividualReturnVolatility(t *testing.T) {
 	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
-	// variance(30, 16.3636363636)
-	require.Equal(t, "46.4875951915850383", metrics[0].Score.String())
+	// variance(3, 9.8181825322314569)
+	require.Equal(t, "11.6219032607065405", metrics[0].Score.String())
 
 	// get metrics for market m2 with window size=2
 	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2)
-	require.Equal(t, 1, len(metrics))
-	require.Equal(t, "p2", metrics[0].Party)
-	// variance(1.7391304347826087,0.4285714285714286)
-	require.Equal(t, "0.4293912111426469", metrics[0].Score.String())
+	require.Equal(t, 0, len(metrics))
 
 	// get metrics for market m3 with window size=2
-	// variance(6.6666666666)
 	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2)
 	require.Equal(t, 0, len(metrics))
 
@@ -696,21 +698,20 @@ func TestCalculateMetricForIndividualReturnVolatility(t *testing.T) {
 	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
-	require.Equal(t, "p2", metrics[1].Party)
-	// variance(30, 16.363636363636363)
-	require.Equal(t, "46.4875951915850383", metrics[0].Score.String())
-	// variance(1.7391304347826087,0.4285714285714286)
-	require.Equal(t, "0.4293912111426469", metrics[1].Score.String())
+	// variance(2.5, 13.5681829072314944)
+	require.Equal(t, "30.6261682169828538", metrics[0].Score.String())
+	// variance(0.1739130434782609,0.0904761880272107)
+	require.Equal(t, "0.0017404272118899", metrics[1].Score.String())
 
 	// get metrics for all market window size=2
 	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
-	// variance(30, 23.0303030303030297)
-	require.Equal(t, "12.144164815093132", metrics[0].Score.String())
-	// variance(1.7391304347826087,0.4285714285714286)
-	require.Equal(t, "0.4293912111426469", metrics[1].Score.String())
+	// variance(2.5, 11.2348495738981611)
+	require.Equal(t, "19.0743992696572216", metrics[0].Score.String())
+	// variance(0.1739130434782609,0.5571428546938774)
+	require.Equal(t, "0.0367162720510893", metrics[1].Score.String())
 
 	// now make p2 not eligible via not having sufficient governance token
 	balanceChecker.EXPECT().GetAvailableBalance("p1").Return(num.NewUint(2), nil).Times(1)

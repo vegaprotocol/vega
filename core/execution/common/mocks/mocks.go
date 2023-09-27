@@ -1099,6 +1099,20 @@ func (mr *MockAuctionStateMockRecorder) EndGovernanceSuspensionAuction() *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndGovernanceSuspensionAuction", reflect.TypeOf((*MockAuctionState)(nil).EndGovernanceSuspensionAuction))
 }
 
+// ExceededMaxOpening mocks base method.
+func (m *MockAuctionState) ExceededMaxOpening(arg0 time.Time) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExceededMaxOpening", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ExceededMaxOpening indicates an expected call of ExceededMaxOpening.
+func (mr *MockAuctionStateMockRecorder) ExceededMaxOpening(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExceededMaxOpening", reflect.TypeOf((*MockAuctionState)(nil).ExceededMaxOpening), arg0)
+}
+
 // ExpiresAt mocks base method.
 func (m *MockAuctionState) ExpiresAt() *time.Time {
 	m.ctrl.T.Helper()
@@ -1403,6 +1417,18 @@ func (m *MockAuctionState) Trigger() vega.AuctionTrigger {
 func (mr *MockAuctionStateMockRecorder) Trigger() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Trigger", reflect.TypeOf((*MockAuctionState)(nil).Trigger))
+}
+
+// UpdateMaxDuration mocks base method.
+func (m *MockAuctionState) UpdateMaxDuration(arg0 context.Context, arg1 time.Duration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateMaxDuration", arg0, arg1)
+}
+
+// UpdateMaxDuration indicates an expected call of UpdateMaxDuration.
+func (mr *MockAuctionStateMockRecorder) UpdateMaxDuration(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMaxDuration", reflect.TypeOf((*MockAuctionState)(nil).UpdateMaxDuration), arg0, arg1)
 }
 
 // UpdateMinDuration mocks base method.

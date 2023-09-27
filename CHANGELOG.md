@@ -110,6 +110,9 @@
 - [9475](https://github.com/vegaprotocol/vega/issues/9475) - Make `oracle_data` and `oracle_data_oracle_specs` into `hypertables`
 - [9478](https://github.com/vegaprotocol/vega/issues/8764) - Add SLA statistics to market data and liquidity provision APIs.
 - [9558](https://github.com/vegaprotocol/vega/issues/9558) - Feature tests for relative return metric transfers and reward
+- [9559](https://github.com/vegaprotocol/vega/issues/9559) - Feature tests for return volatility metric transfers and reward
+- [9564](https://github.com/vegaprotocol/vega/issues/9564) - Fix error message for too many staking tiers. 
+- [8421](https://github.com/vegaprotocol/vega/issues/8421) - Markets that spend too long in opening auction should be cancelled.
 
 ### 🐛 Fixes
 
@@ -162,6 +165,7 @@
 - [8891](https://github.com/vegaprotocol/vega/issues/8891) - Emit market update event when resuming via governance
 - [8874](https://github.com/vegaprotocol/vega/issues/8874) - Database migration can fail when rolling back and migrating up again.
 - [8855](https://github.com/vegaprotocol/vega/issues/8855) - Preserve reference to parent market when restoring checkpoint data
+- [9576](https://github.com/vegaprotocol/vega/issues/9576) - Metric collection during bridge stops no longer causes a panic.
 - [8909](https://github.com/vegaprotocol/vega/issues/8909) - initialise id generator for all branches of market state update
 - [9004](https://github.com/vegaprotocol/vega/issues/9004) - Clear insurance pools in a deterministic order in successor markets.
 - [8908](https://github.com/vegaprotocol/vega/issues/8908) - A rejected parent market should result in all successors getting rejected, too.
@@ -218,6 +222,7 @@
 - [9412](https://github.com/vegaprotocol/vega/issues/9412) - Use vote close time for opening auction start time.
 - [9487](https://github.com/vegaprotocol/vega/issues/9487) - Reset auction trigger appropriately when market is resumed via governance.
 - [9489](https://github.com/vegaprotocol/vega/issues/9489) - A referrer cannot join another team.
+- [9441](https://github.com/vegaprotocol/vega/issues/9441) - fix occasional double close of channel in integration tests
 - [9074](https://github.com/vegaprotocol/vega/issues/9074) - Fix error response for `CSV` exports.
 - [9512](https://github.com/vegaprotocol/vega/issues/9512) - Allow hysteresis period to be set to 0.
 - [9526](https://github.com/vegaprotocol/vega/issues/9526) - Rename go enum value `REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION` to match `db` schema
@@ -225,8 +230,11 @@
 - [9530](https://github.com/vegaprotocol/vega/issues/9530) - Referral program end timestamp not correctly displaying in `GraphQL API`.
 - [9532](https://github.com/vegaprotocol/vega/issues/9532) - Data node crashes if referral program starts and ends in the same block.
 - [9540](https://github.com/vegaprotocol/vega/issues/9540) - Proposals connection errors for `UpdateReferralProgram`.
+- [9570](https://github.com/vegaprotocol/vega/issues/9570) - Ledger entry export doesn't work if `dateRange.End` is specified
+- [9571](https://github.com/vegaprotocol/vega/issues/9571) - Ledger entry `CSV` export slow even when looking at narrow time window
 - [8934](https://github.com/vegaprotocol/vega/issues/8934) - Check for special characters in headers.
 - [8979](https://github.com/vegaprotocol/vega/issues/8979) - Update `XFF` information in rate limiter documentation.
+- [9540](https://github.com/vegaprotocol/vega/issues/9540) - Proposals connection does not resolve `UpdateReferralProgram` proposals correctly.
 
 ## 0.72.1
 

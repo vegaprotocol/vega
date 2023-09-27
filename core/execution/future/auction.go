@@ -47,6 +47,8 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		err    error
 	)
 
+	checkExceeded := m.mkt.State == types.MarketStatePending
+
 	// as soon as we have an indicative uncrossing price in opening auction it needs to be passed into the price monitoring engine so statevar calculation can start
 	isOpening := m.as.IsOpeningAuction()
 	if isOpening && !m.pMonitor.Initialised() {
@@ -61,6 +63,11 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 	}
 
 	if endTS := m.as.ExpiresAt(); endTS == nil || !endTS.Before(now) {
+		if isOpening && checkExceeded && m.as.ExceededMaxOpening(now) {
+			// cancel the market, exceeded opening auction
+			m.log.Debug("Market was cancelled because it failed to leave opening auction in time", logging.MarketID(m.GetID()))
+			m.terminateMarket(ctx, types.MarketStateCancelled, nil)
+		}
 		return
 	}
 	if len(trades) == 0 {
@@ -78,6 +85,12 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		// first check liquidity - before we mark auction as ready to leave
 		m.checkLiquidity(ctx, trades, true)
 		if !m.as.CanLeave() {
+			if checkExceeded && m.as.ExceededMaxOpening(now) {
+				// cancel the market, exceeded opening auction
+				m.log.Debug("Market was cancelled because it failed to leave opening auction in time", logging.MarketID(m.GetID()))
+				m.terminateMarket(ctx, types.MarketStateCancelled, nil)
+				return
+			}
 			if e := m.as.AuctionExtended(ctx, now); e != nil {
 				m.broker.Send(e)
 			}

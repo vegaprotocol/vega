@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
@@ -64,6 +65,12 @@ func (m *Market) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d tim
 	// we were in an auction, and the duration of the auction was updated
 	if evt != nil {
 		m.broker.Send(evt)
+	}
+}
+
+func (m *Market) OnMarketAuctionMaximumDurationUpdate(ctx context.Context, d time.Duration) {
+	if m.mkt.State == types.MarketStatePending || m.mkt.State == types.MarketStateProposed {
+		m.as.UpdateMaxDuration(ctx, d)
 	}
 }
 

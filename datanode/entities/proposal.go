@@ -28,13 +28,20 @@ import (
 type ProposalType v2.ListGovernanceDataRequest_Type
 
 var (
-	ProposalTypeAll                    = ProposalType(v2.ListGovernanceDataRequest_TYPE_ALL)
-	ProposalTypeNewMarket              = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_MARKET)
-	ProposalTypeNewAsset               = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_ASSET)
-	ProposalTypeUpdateAsset            = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_ASSET)
-	ProposalTypeUpdateMarket           = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_MARKET)
-	ProposalTypeUpdateNetworkParameter = ProposalType(v2.ListGovernanceDataRequest_TYPE_NETWORK_PARAMETERS)
-	ProposalTypeNewFreeform            = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_FREE_FORM)
+	ProposalTypeAll                         = ProposalType(v2.ListGovernanceDataRequest_TYPE_ALL)
+	ProposalTypeNewMarket                   = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_MARKET)
+	ProposalTypeNewAsset                    = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_ASSET)
+	ProposalTypeUpdateAsset                 = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_ASSET)
+	ProposalTypeUpdateMarket                = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_MARKET)
+	ProposalTypeUpdateNetworkParameter      = ProposalType(v2.ListGovernanceDataRequest_TYPE_NETWORK_PARAMETERS)
+	ProposalTypeNewFreeform                 = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_FREE_FORM)
+	ProposalTypeNewSpotMarket               = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_SPOT_MARKET)
+	ProposalTypeUpdateSpotMarket            = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_SPOT_MARKET)
+	ProposalTypeNewTransfer                 = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_TRANSFER)
+	ProposalTypeCancelTransfer              = ProposalType(v2.ListGovernanceDataRequest_TYPE_CANCEL_TRANSFER)
+	ProposalTypeUpdateMarketState           = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_MARKET_STATE)
+	ProposalTypeUpdateReferralProgram       = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_REFERRAL_PROGRAM)
+	ProposalTypeUpdateVolumeDiscountProgram = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_VOLUME_DISCOUNT_PROGRAM)
 )
 
 func (p *ProposalType) String() string {
@@ -56,6 +63,20 @@ func (p *ProposalType) String() string {
 		return "updateNetworkParameter"
 	case ProposalTypeNewFreeform:
 		return "newFreeform"
+	case ProposalTypeNewSpotMarket:
+		return "newSpotMarket"
+	case ProposalTypeUpdateSpotMarket:
+		return "updateSpotMarket"
+	case ProposalTypeNewTransfer:
+		return "newTransfer"
+	case ProposalTypeCancelTransfer:
+		return "cancelTransfer"
+	case ProposalTypeUpdateMarketState:
+		return "updateMarketState"
+	case ProposalTypeUpdateReferralProgram:
+		return "updateReferralProgram"
+	case ProposalTypeUpdateVolumeDiscountProgram:
+		return "updateVolumeDiscountProgram"
 	default:
 		return "unknown"
 	}

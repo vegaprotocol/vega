@@ -87,6 +87,7 @@ type AuctionState interface {
 	IsLiquidityAuction() bool
 	IsFBA() bool
 	IsMonitorAuction() bool
+	ExceededMaxOpening(time.Time) bool
 	// is it the start/end of an auction
 	AuctionStart() bool
 	CanLeave() bool
@@ -107,6 +108,7 @@ type AuctionState interface {
 	// Snapshot
 	GetState() *types.AuctionState
 	Changed() bool
+	UpdateMaxDuration(ctx context.Context, d time.Duration)
 }
 
 type EpochEngine interface {
@@ -298,6 +300,7 @@ type CommonMarket interface {
 	OnFeeFactorsMakerFeeUpdate(context.Context, num.Decimal)
 	OnMarkPriceUpdateMaximumFrequency(context.Context, time.Duration)
 	OnMarketAuctionMinimumDurationUpdate(context.Context, time.Duration)
+	OnMarketAuctionMaximumDurationUpdate(context.Context, time.Duration)
 	OnMarketLiquidityV2EarlyExitPenaltyUpdate(num.Decimal)
 	OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate(num.Decimal)
 	OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(num.Decimal)

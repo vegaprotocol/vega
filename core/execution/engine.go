@@ -113,6 +113,7 @@ type netParamsValues struct {
 	maxLiquidityFee                      num.Decimal
 	bondPenaltyFactor                    num.Decimal
 	auctionMinDuration                   time.Duration
+	auctionMaxDuration                   time.Duration
 	probabilityOfTradingTauScaling       num.Decimal
 	minProbabilityOfTradingLPOrders      num.Decimal
 	minLpStakeQuantumMultiple            num.Decimal
@@ -784,6 +785,9 @@ func (e *Engine) propagateSpotInitialNetParams(ctx context.Context, mkt *spot.Ma
 	if e.npv.auctionMinDuration != -1 {
 		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, e.npv.auctionMinDuration)
 	}
+	if e.npv.auctionMaxDuration > 0 {
+		mkt.OnMarketAuctionMaximumDurationUpdate(ctx, e.npv.auctionMaxDuration)
+	}
 	if !e.npv.infrastructureFee.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnFeeFactorsInfrastructureFeeUpdate(ctx, e.npv.infrastructureFee)
 	}
@@ -834,6 +838,9 @@ func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mk
 	}
 	if e.npv.auctionMinDuration != -1 {
 		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, e.npv.auctionMinDuration)
+	}
+	if e.npv.auctionMaxDuration > 0 {
+		mkt.OnMarketAuctionMaximumDurationUpdate(ctx, e.npv.auctionMaxDuration)
 	}
 
 	if !e.npv.infrastructureFee.Equal(num.DecimalFromInt64(-1)) {
@@ -1487,6 +1494,16 @@ func (e *Engine) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d tim
 		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, d)
 	}
 	e.npv.auctionMinDuration = d
+	return nil
+}
+
+func (e *Engine) OnMarketAuctionMaximumDurationUpdate(ctx context.Context, d time.Duration) error {
+	for _, mkt := range e.allMarketsCpy {
+		if mkt.IsOpeningAuction() {
+			mkt.OnMarketAuctionMaximumDurationUpdate(ctx, d)
+		}
+	}
+	e.npv.auctionMaxDuration = d
 	return nil
 }
 
