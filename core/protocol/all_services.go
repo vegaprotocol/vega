@@ -647,6 +647,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMarketAuctionMinimumDurationUpdate,
 		},
 		{
+			Param:   netparams.MarketAuctionMaximumDuration,
+			Watcher: svcs.executionEngine.OnMarketAuctionMaximumDurationUpdate,
+		},
+		{
 			Param:   netparams.MarketProbabilityOfTradingTauScaling,
 			Watcher: svcs.executionEngine.OnMarketProbabilityOfTradingTauScalingUpdate,
 		},

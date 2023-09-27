@@ -30,6 +30,7 @@ type AuctionState struct {
 	m                  *types.Market           // keep market definition handy, useful to end auctions when default is FBA
 	extension          *types.AuctionTrigger   // Set if the current auction was extended, reset after the event was created
 	extensionEventSent bool
+	maxDuration        *time.Duration
 }
 
 func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
@@ -183,6 +184,9 @@ func (a *AuctionState) SetReadyToLeave() {
 	// we can't leave the auction if it was triggered by governance suspension
 	if a.trigger == types.AuctionTriggerGovernanceSuspension {
 		return
+	}
+	if a.maxDuration != nil {
+		a.maxDuration = nil
 	}
 	a.stop = true
 }
@@ -363,4 +367,24 @@ func (a *AuctionState) UpdateMinDuration(ctx context.Context, d time.Duration) *
 		}
 	}
 	return nil
+}
+
+func (a *AuctionState) UpdateMaxDuration(_ context.Context, d time.Duration) {
+	if a.trigger == types.AuctionTriggerOpening {
+		a.maxDuration = &d
+	}
+}
+
+func (a *AuctionState) ExceededMaxOpening(now time.Time) bool {
+	if a.trigger != types.AuctionTriggerOpening || a.begin == nil || a.maxDuration == nil {
+		return false
+	}
+	minTo := now
+	if a.end != nil && a.end.Duration > 0 {
+		minTo = a.begin.Add(time.Duration(a.end.Duration) * time.Second)
+	}
+	validTo := a.begin.Add(*a.maxDuration)
+	// the market is invalid if it hasn't left auction before max duration
+	// or if it cannot leave before max duration allows it
+	return validTo.Before(now) || minTo.After(validTo)
 }
