@@ -185,7 +185,7 @@ func (e *ERC20LogicView) FindBridgeStopped(
 
 	resp := "ok"
 	defer func() {
-		metrics.EthCallInc("find_bridge_stopped", resp)
+		metrics.EthCallInc("find_bridge_stopped", "", resp)
 	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -243,7 +243,7 @@ func (e *ERC20LogicView) FindBridgeResumed(
 
 	resp := "ok"
 	defer func() {
-		metrics.EthCallInc("find_bridge_stopped", resp)
+		metrics.EthCallInc("find_bridge_stopped", "", resp)
 	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
