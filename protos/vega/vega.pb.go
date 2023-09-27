@@ -5811,12 +5811,12 @@ type LiquidityProviderSLA struct {
 	LastEpochBondPenalty string `protobuf:"bytes,5,opt,name=last_epoch_bond_penalty,json=lastEpochBondPenalty,proto3" json:"last_epoch_bond_penalty,omitempty"`
 	// Determines how the fee penalties from past epochs affect future fee revenue.
 	HysteresisPeriodFeePenalties []string `protobuf:"bytes,6,rep,name=hysteresis_period_fee_penalties,json=hysteresisPeriodFeePenalties,proto3" json:"hysteresis_period_fee_penalties,omitempty"`
-	// Represents the total amount of funds LP must supply. This amount be supplied in the market’s
+	// Represents the total amount of funds LP must supply. The amount to be supplied is in the market’s
 	// settlement currency, spread on both buy and sell sides of the order book within a defined range.
 	RequiredLiquidity string `protobuf:"bytes,7,opt,name=required_liquidity,json=requiredLiquidity,proto3" json:"required_liquidity,omitempty"`
-	// Notional volume of orders within the range provided on buys side of the book.
+	// Notional volume of orders within the range provided on the buy side of the book.
 	NotionalVolumeBuys string `protobuf:"bytes,8,opt,name=notional_volume_buys,json=notionalVolumeBuys,proto3" json:"notional_volume_buys,omitempty"`
-	// Notional volume of orders within the range provided on sells side of the book.
+	// Notional volume of orders within the range provided on the sell side of the book.
 	NotionalVolumeSells string `protobuf:"bytes,9,opt,name=notional_volume_sells,json=notionalVolumeSells,proto3" json:"notional_volume_sells,omitempty"`
 }
 
