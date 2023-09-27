@@ -18,6 +18,7 @@ func TestProposalForUpdateReferralProgram(t *testing.T) {
 	t.Run("Submitting a proposal for referral program update with too many tiers fails", testSubmittingProposalForReferralProgramUpdateWithTooManyTiersFails)
 	t.Run("Submitting a proposal for referral program update with too high reward factor fails", testSubmittingProposalForReferralProgramUpdateWithTooHighRewardFactorFails)
 	t.Run("Submitting a proposal for referral program update with too high discount factor fails", testSubmittingProposalForReferralProgramUpdateWithTooHighDiscountFactorFails)
+	t.Run("Submitting a proposal for referral program that ends before it enacted fails", testSubmittingProposalForReferralProgramUpdateEndsBeforeEnactsFails)
 }
 
 func testSubmittingProposalForReferralProgramUpdateSucceeds(t *testing.T) {
@@ -218,6 +219,65 @@ func testSubmittingProposalForReferralProgramUpdateWithTooHighDiscountFactorFail
 	require.EqualError(t,
 		err,
 		"tier 2 defines a referral discount factor higher than the maximum allowed by the network parameter \"referralProgram.maxReferralDiscountFactor\": maximum is 0.01, but got 0.015",
+	)
+	require.Nil(t, toSubmit)
+}
+
+func testSubmittingProposalForReferralProgramUpdateEndsBeforeEnactsFails(t *testing.T) {
+	now := time.Now()
+	ctx := vgtest.VegaContext(vgrand.RandomStr(5), vgtest.RandomPositiveI64())
+	eng := getTestEngine(t, now)
+
+	// setup
+	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxReferralTiers, "2")).Times(1)
+	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxReferralTiers, "2"))
+
+	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxReferralRewardFactor, "0.010")).Times(1)
+	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxReferralRewardFactor, "0.010"))
+
+	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxReferralDiscountFactor, "0.010")).Times(1)
+	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxReferralDiscountFactor, "0.010"))
+
+	// given
+	proposer := vgrand.RandomStr(5)
+	rp := &types.ProposalTermsUpdateReferralProgram{
+		UpdateReferralProgram: &types.UpdateReferralProgram{
+			Changes: &types.ReferralProgram{
+				EndOfProgramTimestamp: time.Time{}, // we will set this later
+				WindowLength:          15,
+				BenefitTiers: []*types.BenefitTier{
+					{
+						MinimumEpochs:                     num.NewUint(1),
+						MinimumRunningNotionalTakerVolume: num.NewUint(10000),
+						ReferralRewardFactor:              num.DecimalFromFloat(0.001),
+						ReferralDiscountFactor:            num.DecimalFromFloat(0.001),
+					}, {
+						MinimumEpochs:                     num.NewUint(7),
+						MinimumRunningNotionalTakerVolume: num.NewUint(20000),
+						ReferralRewardFactor:              num.DecimalFromFloat(0.010),
+						ReferralDiscountFactor:            num.DecimalFromFloat(0.015),
+					},
+				},
+			},
+		},
+	}
+	proposal := eng.newProposalForReferralProgramUpdate(proposer, now, rp.UpdateReferralProgram.Changes)
+	rp.UpdateReferralProgram.Changes.EndOfProgramTimestamp = time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(-time.Second) // set to end before enacted
+	proposal.Terms.Change = rp
+
+	// setup
+	eng.ensureTokenBalanceForParty(t, proposer, 1000)
+
+	// expect
+	eng.expectRejectedProposalEvent(t, proposer, proposal.ID, types.ProposalErrorInvalidReferralProgram)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.EqualError(t,
+		err,
+		"the proposal must be enacted before the referral program ends",
 	)
 	require.Nil(t, toSubmit)
 }
