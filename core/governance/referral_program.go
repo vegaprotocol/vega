@@ -2,12 +2,16 @@ package governance
 
 import (
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
 )
 
-func validateUpdateReferralProgram(netp NetParams, p *types.UpdateReferralProgram) (types.ProposalError, error) {
+func validateUpdateReferralProgram(netp NetParams, p *types.UpdateReferralProgram, enactment int64) (types.ProposalError, error) {
+	if enact := time.Unix(enactment, 0); enact.After(p.Changes.EndOfProgramTimestamp) {
+		return types.ProposalErrorInvalidReferralProgram, fmt.Errorf("the proposal must be enacted before the referral program ends")
+	}
 	maxReferralTiers, _ := netp.GetUint(netparams.ReferralProgramMaxReferralTiers)
 	if len(p.Changes.BenefitTiers) > int(maxReferralTiers.Uint64()) {
 		return types.ProposalErrorInvalidReferralProgram, fmt.Errorf("the number of benefit tiers in the proposal is higher than the maximum allowed by the network parameter %q: maximum is %s, but got %d", netparams.ReferralProgramMaxReferralTiers, maxReferralTiers.String(), len(p.Changes.BenefitTiers))
@@ -27,7 +31,7 @@ func validateUpdateReferralProgram(netp NetParams, p *types.UpdateReferralProgra
 			return types.ProposalErrorInvalidReferralProgram, fmt.Errorf("tier %d defines a referral discount factor higher than the maximum allowed by the network parameter %q: maximum is %s, but got %s", i+1, netparams.ReferralProgramMaxReferralDiscountFactor, maxDiscountFactor.String(), tier.ReferralDiscountFactor.String())
 		}
 	}
-	return 0, nil
+	return types.ProposalErrorUnspecified, nil
 }
 
 func updatedReferralProgramFromProposal(p *proposal) *types.ReferralProgram {
