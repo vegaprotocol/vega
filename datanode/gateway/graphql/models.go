@@ -429,6 +429,9 @@ type LiquidityProviderSLA struct {
 	LastEpochBondPenalty string `json:"lastEpochBondPenalty"`
 	// Determines how the fee penalties from past epochs affect future fee revenue.
 	HysteresisPeriodFeePenalties []string `json:"hysteresisPeriodFeePenalties"`
+	RequiredLiquidity            string   `json:"requiredLiquidity"`
+	NotionalVolumeBuys           string   `json:"notionalVolumeBuys"`
+	NotionalVolumeSells          string   `json:"notionalVolumeSells"`
 }
 
 type LossSocialization struct {

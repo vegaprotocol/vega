@@ -885,7 +885,10 @@ type ComplexityRoot struct {
 		LastEpochBondPenalty             func(childComplexity int) int
 		LastEpochFeePenalty              func(childComplexity int) int
 		LastEpochFractionOfTimeOnBook    func(childComplexity int) int
+		NotionalVolumeBuys               func(childComplexity int) int
+		NotionalVolumeSells              func(childComplexity int) int
 		Party                            func(childComplexity int) int
+		RequiredLiquidity                func(childComplexity int) int
 	}
 
 	LiquidityProvision struct {
@@ -6041,12 +6044,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LiquidityProviderSLA.LastEpochFractionOfTimeOnBook(childComplexity), true
 
+	case "LiquidityProviderSLA.notionalVolumeBuys":
+		if e.complexity.LiquidityProviderSLA.NotionalVolumeBuys == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProviderSLA.NotionalVolumeBuys(childComplexity), true
+
+	case "LiquidityProviderSLA.notionalVolumeSells":
+		if e.complexity.LiquidityProviderSLA.NotionalVolumeSells == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProviderSLA.NotionalVolumeSells(childComplexity), true
+
 	case "LiquidityProviderSLA.party":
 		if e.complexity.LiquidityProviderSLA.Party == nil {
 			break
 		}
 
 		return e.complexity.LiquidityProviderSLA.Party(childComplexity), true
+
+	case "LiquidityProviderSLA.requiredLiquidity":
+		if e.complexity.LiquidityProviderSLA.RequiredLiquidity == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProviderSLA.RequiredLiquidity(childComplexity), true
 
 	case "LiquidityProvision.buys":
 		if e.complexity.LiquidityProvision.Buys == nil {
@@ -34527,6 +34551,12 @@ func (ec *executionContext) fieldContext_LiquidityProvider_sla(ctx context.Conte
 				return ec.fieldContext_LiquidityProviderSLA_lastEpochBondPenalty(ctx, field)
 			case "hysteresisPeriodFeePenalties":
 				return ec.fieldContext_LiquidityProviderSLA_hysteresisPeriodFeePenalties(ctx, field)
+			case "requiredLiquidity":
+				return ec.fieldContext_LiquidityProviderSLA_requiredLiquidity(ctx, field)
+			case "notionalVolumeBuys":
+				return ec.fieldContext_LiquidityProviderSLA_notionalVolumeBuys(ctx, field)
+			case "notionalVolumeSells":
+				return ec.fieldContext_LiquidityProviderSLA_notionalVolumeSells(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LiquidityProviderSLA", field.Name)
 		},
@@ -35274,6 +35304,138 @@ func (ec *executionContext) _LiquidityProviderSLA_hysteresisPeriodFeePenalties(c
 }
 
 func (ec *executionContext) fieldContext_LiquidityProviderSLA_hysteresisPeriodFeePenalties(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityProviderSLA",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidityProviderSLA_requiredLiquidity(ctx context.Context, field graphql.CollectedField, obj *LiquidityProviderSLA) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityProviderSLA_requiredLiquidity(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RequiredLiquidity, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityProviderSLA_requiredLiquidity(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityProviderSLA",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidityProviderSLA_notionalVolumeBuys(ctx context.Context, field graphql.CollectedField, obj *LiquidityProviderSLA) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityProviderSLA_notionalVolumeBuys(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NotionalVolumeBuys, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityProviderSLA_notionalVolumeBuys(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityProviderSLA",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidityProviderSLA_notionalVolumeSells(ctx context.Context, field graphql.CollectedField, obj *LiquidityProviderSLA) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityProviderSLA_notionalVolumeSells(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NotionalVolumeSells, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityProviderSLA_notionalVolumeSells(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LiquidityProviderSLA",
 		Field:      field,
@@ -41262,6 +41424,12 @@ func (ec *executionContext) fieldContext_MarketData_liquidityProviderSla(ctx con
 				return ec.fieldContext_LiquidityProviderSLA_lastEpochBondPenalty(ctx, field)
 			case "hysteresisPeriodFeePenalties":
 				return ec.fieldContext_LiquidityProviderSLA_hysteresisPeriodFeePenalties(ctx, field)
+			case "requiredLiquidity":
+				return ec.fieldContext_LiquidityProviderSLA_requiredLiquidity(ctx, field)
+			case "notionalVolumeBuys":
+				return ec.fieldContext_LiquidityProviderSLA_notionalVolumeBuys(ctx, field)
+			case "notionalVolumeSells":
+				return ec.fieldContext_LiquidityProviderSLA_notionalVolumeSells(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LiquidityProviderSLA", field.Name)
 		},
@@ -93015,6 +93183,27 @@ func (ec *executionContext) _LiquidityProviderSLA(ctx context.Context, sel ast.S
 
 			out.Values[i] = ec._LiquidityProviderSLA_hysteresisPeriodFeePenalties(ctx, field, obj)
 
+		case "requiredLiquidity":
+
+			out.Values[i] = ec._LiquidityProviderSLA_requiredLiquidity(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "notionalVolumeBuys":
+
+			out.Values[i] = ec._LiquidityProviderSLA_notionalVolumeBuys(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "notionalVolumeSells":
+
+			out.Values[i] = ec._LiquidityProviderSLA_notionalVolumeSells(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

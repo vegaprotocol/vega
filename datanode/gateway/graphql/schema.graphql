@@ -396,6 +396,12 @@ type LiquidityProviderSLA {
   lastEpochBondPenalty: String!
   "Determines how the fee penalties from past epochs affect future fee revenue."
   hysteresisPeriodFeePenalties: [String!]
+  "Represents the total amount of funds LP must supply. The amount to be supplied is in the market’s settlement currency, spread on both buy and sell sides of the order book within a defined range."
+  requiredLiquidity: String!
+  "Notional volume of orders within the range provided on the buy side of the book."
+  notionalVolumeBuys: String!
+  "Notional volume of orders within the range provided on the sell side of the book."
+  notionalVolumeSells: String!
 }
 
 "The SLA statistics for each liquidity provider"
@@ -412,6 +418,12 @@ type ObservableLiquidityProviderSLA {
   lastEpochBondPenalty: String!
   "Determines how the fee penalties from past epochs affect future fee revenue."
   hysteresisPeriodFeePenalties: [String!]
+  "Represents the total amount of funds LP must supply. The amount to be supplied is in the market’s settlement currency, spread on both buy and sell sides of the order book within a defined range."
+  requiredLiquidity: String!
+  "Notional volume of orders within the range provided on the buy side of the book."
+  notionalVolumeBuys: String!
+  "Notional volume of orders within the range provided on the sell side of the book."
+  notionalVolumeSells: String!
 }
 
 "The liquidity commitments for this market"

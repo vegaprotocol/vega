@@ -179,6 +179,11 @@ func (e *Engine) doesLPMeetsCommitment(
 
 	requiredLiquidity := e.stakeToCcyVolume.Mul(lp.CommitmentAmount.ToDecimal())
 
+	// safe stats
+	e.slaPerformance[party].requiredLiquidity = requiredLiquidity.String()
+	e.slaPerformance[party].notionalVolumeBuys = notionalVolumeBuys.String()
+	e.slaPerformance[party].notionalVolumeSells = notionalVolumeSells.String()
+
 	return notionalVolumeBuys.GreaterThanOrEqual(requiredLiquidity) &&
 		notionalVolumeSells.GreaterThanOrEqual(requiredLiquidity)
 }
@@ -256,6 +261,9 @@ func (e *Engine) LiquidityProviderSLAStats(now time.Time) []*types.LiquidityProv
 			LastEpochFeePenalty:              commitment.lastEpochFeePenalty,
 			LastEpochBondPenalty:             commitment.lastEpochBondPenalty,
 			HysteresisPeriodFeePenalties:     hysteresisPeriodFeePenalties,
+			RequiredLiquidity:                commitment.requiredLiquidity,
+			NotionalVolumeBuys:               commitment.notionalVolumeBuys,
+			NotionalVolumeSells:              commitment.notionalVolumeSells,
 		})
 	}
 

@@ -1261,6 +1261,13 @@ message LiquidityProviderSLA {
   string last_epoch_bond_penalty = 5;
   // Determines how the fee penalties from past epochs affect future fee revenue.
   repeated string hysteresis_period_fee_penalties = 6;
+  // Represents the total amount of funds LP must supply. The amount to be supplied is in the market’s
+  // settlement currency, spread on both buy and sell sides of the order book within a defined range.
+  string required_liquidity = 7;
+  // Notional volume of orders within the range provided on the buy side of the book.
+  string notional_volume_buys = 8;
+  // Notional volume of orders within the range provided on the sell side of the book.
+  string notional_volume_sells = 9;
 }
 
 // Represents a list of valid (at the current timestamp) price ranges per associated trigger

@@ -991,6 +991,9 @@ func addLiquidityProvisionsMultiProvider(ctx context.Context, t *testing.T, bs *
 				LastEpochFeePenalty:              "0",
 				LastEpochBondPenalty:             "0",
 				HysteresisPeriodFeePenalties:     []string{"0"},
+				RequiredLiquidity:                "1000",
+				NotionalVolumeBuys:               "1010",
+				NotionalVolumeSells:              "1005",
 			})
 			md.SyntheticTime = vegaTime
 			md.VegaTime = vegaTime
@@ -1024,6 +1027,9 @@ func addLiquidityProvisionsMultiProvider(ctx context.Context, t *testing.T, bs *
 						LastEpochFeePenalty:              "0",
 						LastEpochBondPenalty:             "0",
 						HysteresisPeriodFeePenalties:     []string{"0"},
+						RequiredLiquidity:                "1000",
+						NotionalVolumeBuys:               "1010",
+						NotionalVolumeSells:              "1005",
 					},
 				})
 			}

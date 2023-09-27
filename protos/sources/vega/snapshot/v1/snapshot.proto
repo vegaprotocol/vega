@@ -957,6 +957,9 @@ message LiquidityV2PerformancePerParty {
   string last_epoch_fraction_of_time_on_book = 6;
   string last_epoch_fee_penalty = 7;
   string last_epoch_bond_penalty = 8;
+  string required_liquidity = 9;
+  string notional_volume_buys = 10;
+  string notional_volume_sells = 11;
 }
 
 message LiquidityV2Scores {
