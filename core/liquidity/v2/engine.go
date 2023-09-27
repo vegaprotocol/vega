@@ -89,6 +89,9 @@ type slaPerformance struct {
 	lastEpochBondPenalty      string
 	lastEpochFeePenalty       string
 	lastEpochTimeBookFraction string
+	requiredLiquidity         string
+	notionalVolumeBuys        string
+	notionalVolumeSells       string
 }
 
 type SlaPenalties struct {

@@ -405,6 +405,9 @@ func (e *snapshotV2) loadPerformances(performances *snapshotpb.LiquidityV2Perfor
 			lastEpochTimeBookFraction: partyPerformance.LastEpochFractionOfTimeOnBook,
 			lastEpochBondPenalty:      partyPerformance.LastEpochBondPenalty,
 			lastEpochFeePenalty:       partyPerformance.LastEpochFeePenalty,
+			requiredLiquidity:         partyPerformance.RequiredLiquidity,
+			notionalVolumeBuys:        partyPerformance.NotionalVolumeBuys,
+			notionalVolumeSells:       partyPerformance.NotionalVolumeSells,
 		}
 	}
 

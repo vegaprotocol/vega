@@ -64,6 +64,9 @@ type LiquidityProviderSLA struct {
 	LastEpochFeePenalty              string
 	LastEpochBondPenalty             string
 	HysteresisPeriodFeePenalties     []string
+	RequiredLiquidity                string
+	NotionalVolumeBuys               string
+	NotionalVolumeSells              string
 }
 
 const (
@@ -222,6 +225,9 @@ func (lp *LiquidityProvision) ListProviders(ctx context.Context, partyID *entiti
 				LastEpochFeePenalty:              sla.LastEpochFeePenalty,
 				LastEpochBondPenalty:             sla.LastEpochBondPenalty,
 				HysteresisPeriodFeePenalties:     sla.HysteresisPeriodFeePenalties,
+				RequiredLiquidity:                sla.RequiredLiquidity,
+				NotionalVolumeBuys:               sla.NotionalVolumeBuys,
+				NotionalVolumeSells:              sla.NotionalVolumeSells,
 			}
 		}
 
@@ -284,6 +290,9 @@ select
 	coalesce(lpsla.sla ->> 'last_epoch_fraction_of_time_on_book', '') 	 as last_epoch_fraction_of_time_on_book,
 	coalesce(lpsla.sla ->> 'last_epoch_fee_penalty', '')       			 as last_epoch_fee_penalty,
 	coalesce(lpsla.sla ->> 'last_epoch_bond_penalty', '') 				 as last_epoch_bond_penalty,
+	coalesce(lpsla.sla ->> 'required_liquidity', '') 					 as required_liquidity,
+	coalesce(lpsla.sla ->> 'notional_volume_buys', '') 					 as notional_volume_buys,
+	coalesce(lpsla.sla ->> 'notional_volume_sells', '') 				 as notional_volume_sells,
 	lpsla.sla -> 'hysteresis_period_fee_penalties' 		                 as hysteresis_period_fee_penalties
 from current_market_data cmd,
 jsonb_array_elements(liquidity_provider_sla) with ordinality lpsla(sla, ordinality)
@@ -301,8 +310,8 @@ where liquidity_provider_sla != 'null' and liquidity_provider_sla is not null
 
 	// we join with the live liquidity providers table to make sure we are only returning data
 	// for liquidity providers that are currently active
-	query := fmt.Sprintf(`WITH liquidity_provider_sla(ordinality, market_id, party_id, current_epoch_fraction_of_time_on_book, last_epoch_fraction_of_time_on_book, last_epoch_fee_penalty, last_epoch_bond_penalty, hysteresis_period_fee_penalties) as (%s)
-        SELECT fs.ordinality, fs.market_id, fs.party_id, fs.current_epoch_fraction_of_time_on_book, fs.last_epoch_fraction_of_time_on_book, fs.last_epoch_fee_penalty, fs.last_epoch_bond_penalty, fs.hysteresis_period_fee_penalties
+	query := fmt.Sprintf(`WITH liquidity_provider_sla(ordinality, market_id, party_id, current_epoch_fraction_of_time_on_book, last_epoch_fraction_of_time_on_book, last_epoch_fee_penalty, last_epoch_bond_penalty, required_liquidity, notional_volume_buys, notional_volume_sells, hysteresis_period_fee_penalties) as (%s)
+        SELECT fs.ordinality, fs.market_id, fs.party_id, fs.current_epoch_fraction_of_time_on_book, fs.last_epoch_fraction_of_time_on_book, fs.last_epoch_fee_penalty, fs.last_epoch_bond_penalty, fs.required_liquidity, fs.notional_volume_buys, fs.notional_volume_sells, fs.hysteresis_period_fee_penalties
 	    FROM liquidity_provider_sla fs
         JOIN live_liquidity_provisions lps ON encode(lps.party_id, 'hex') = fs.party_id
         	AND lps.market_id = fs.market_id`, subQuery)
