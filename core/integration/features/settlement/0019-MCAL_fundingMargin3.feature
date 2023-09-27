@@ -19,7 +19,7 @@ Feature: Test funding margin for Perps market
       | limits.markets.maxPeggedOrders | 2     |
 
   @Perpetual
-  Scenario: (0019-MCAL-022) check funding margin for Perps market when clumps are 0
+  Scenario: (0019-MCAL-022,0019-MCAL-023) check funding margin for Perps market when clumps are -0.05 and 0.9
     Given the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 5s    |
