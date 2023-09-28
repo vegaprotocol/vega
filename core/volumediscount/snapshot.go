@@ -56,11 +56,6 @@ func (e *Engine) loadCurrentProgramFromSnapshot(program *vegapb.VolumeDiscountPr
 	}
 
 	e.currentProgram = types.NewVolumeDiscountProgramFromProto(program)
-
-	if e.latestProgramVersion < e.currentProgram.Version {
-		e.latestProgramVersion = e.currentProgram.Version
-	}
-	e.programHasEnded = false
 }
 
 func (e *Engine) loadNewProgramFromSnapshot(program *vegapb.VolumeDiscountProgram) {
@@ -70,13 +65,11 @@ func (e *Engine) loadNewProgramFromSnapshot(program *vegapb.VolumeDiscountProgra
 	}
 
 	e.newProgram = types.NewVolumeDiscountProgramFromProto(program)
-
-	if e.latestProgramVersion < e.newProgram.Version {
-		e.latestProgramVersion = e.newProgram.Version
-	}
 }
 
 func (e *SnapshottedEngine) restore(vdp *snapshotpb.VolumeDiscountProgram) error {
+	e.latestProgramVersion = vdp.LastProgramVersion
+	e.programHasEnded = vdp.ProgramHasEnded
 	e.loadCurrentProgramFromSnapshot(vdp.CurrentProgram)
 	e.loadNewProgramFromSnapshot(vdp.NewProgram)
 	for _, v := range vdp.Parties {
@@ -200,6 +193,8 @@ func (e *SnapshottedEngine) serialiseDiscountVolumeProgram() ([]byte, error) {
 				AveragePartyVolume: avgPartyVolumes,
 				EpochPartyVolumes:  epochData,
 				FactorsByParty:     stats,
+				LastProgramVersion: e.latestProgramVersion,
+				ProgramHasEnded:    e.programHasEnded,
 			},
 		},
 	}

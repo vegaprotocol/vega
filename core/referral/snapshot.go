@@ -37,6 +37,7 @@ type SnapshottedEngine struct {
 	currentProgramKey string
 	newProgramKey     string
 	referralSetsKey   string
+	referralMiscKey   string
 }
 
 func (e *SnapshottedEngine) Namespace() types.SnapshotNamespace {
@@ -67,6 +68,9 @@ func (e *SnapshottedEngine) LoadState(_ context.Context, p *types.Payload) ([]ty
 	case *types.PayloadReferralSets:
 		e.loadReferralSetsFromSnapshot(data.Sets)
 		return nil, nil
+	case *types.PayloadReferralMisc:
+		e.loadReferralMiscFromSnapshot(data.ReferralMisc)
+		return nil, nil
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
@@ -92,6 +96,8 @@ func (e *SnapshottedEngine) serialise(k string) ([]byte, error) {
 		return e.serialiseNewReferralProgram()
 	case e.referralSetsKey:
 		return e.serialiseReferralSets()
+	case e.referralMiscKey:
+		return e.serialiseReferralMisc()
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -187,6 +193,24 @@ func (e *SnapshottedEngine) serialiseCurrentReferralProgram() ([]byte, error) {
 	return serialisedCurrentReferralProgram, nil
 }
 
+func (e *SnapshottedEngine) serialiseReferralMisc() ([]byte, error) {
+	payload := &snapshotpb.Payload{
+		Data: &snapshotpb.Payload_ReferralMisc{
+			ReferralMisc: &snapshotpb.ReferralMisc{
+				LastProgramVersion: e.latestProgramVersion,
+				ProgramHasEnded:    e.programHasEnded,
+			},
+		},
+	}
+
+	serialised, err := proto.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("could not serialize referral misc payload: %w", err)
+	}
+
+	return serialised, nil
+}
+
 func (e *SnapshottedEngine) serialiseNewReferralProgram() ([]byte, error) {
 	var programSnapshot *vegapb.ReferralProgram
 	if e.newProgram != nil {
@@ -213,8 +237,9 @@ func (e *SnapshottedEngine) buildHashKeys() {
 	e.currentProgramKey = (&types.PayloadCurrentReferralProgram{}).Key()
 	e.newProgramKey = (&types.PayloadNewReferralProgram{}).Key()
 	e.referralSetsKey = (&types.PayloadReferralSets{}).Key()
+	e.referralMiscKey = (&types.PayloadReferralMisc{}).Key()
 
-	e.hashKeys = append([]string{}, e.currentProgramKey, e.newProgramKey, e.referralSetsKey)
+	e.hashKeys = append([]string{}, e.currentProgramKey, e.newProgramKey, e.referralSetsKey, e.referralMiscKey)
 }
 
 func (e *Engine) OnStateLoaded(ctx context.Context) error {

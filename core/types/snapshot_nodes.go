@@ -933,6 +933,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadVestingFromProto(dt)
 	case *snapshot.Payload_CurrentReferralProgram:
 		ret.Data = PayloadCurrentReferralProgramFromProto(dt)
+	case *snapshot.Payload_ReferralMisc:
+		ret.Data = PayloadReferralMiscFromProto(dt)
 	case *snapshot.Payload_NewReferralProgram:
 		ret.Data = PayloadNewReferralProgramFromProto(dt)
 	case *snapshot.Payload_ReferralSets:
@@ -1115,6 +1117,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_NewReferralProgram:
 		ret.Data = dt
 	case *snapshot.Payload_ReferralSets:
+		ret.Data = dt
+	case *snapshot.Payload_ReferralMisc:
 		ret.Data = dt
 	case *snapshot.Payload_ActivityStreak:
 		ret.Data = dt

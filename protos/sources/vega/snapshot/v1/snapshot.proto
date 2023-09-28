@@ -140,6 +140,7 @@ message Payload {
     ActivityStreak activity_streak = 76;
     VolumeDiscountProgram volume_discount_program = 77;
     LiquidityV2Parameters liquidity_v2_parameters = 78;
+    ReferralMisc referral_misc = 79;
   }
 }
 
@@ -1150,6 +1151,11 @@ message ReferralSet {
   repeated RunningVolume running_volumes = 6;
 }
 
+message ReferralMisc {
+  uint64 last_program_version = 1;
+  bool program_has_ended = 2;
+}
+
 message RunningVolume {
   uint64 epoch = 1;
   bytes volume = 2;
@@ -1190,6 +1196,8 @@ message VolumeDiscountProgram {
   vega.VolumeDiscountProgram current_program = 5;
   vega.VolumeDiscountProgram new_program = 6;
   repeated VolumeDiscountStats factors_by_party = 7;
+  uint64 last_program_version = 8;
+  bool program_has_ended = 9;
 }
 
 message VolumeDiscountStats {

@@ -114,7 +114,7 @@
 - [9564](https://github.com/vegaprotocol/vega/issues/9564) - Fix error message for too many staking tiers.
 - [8421](https://github.com/vegaprotocol/vega/issues/8421) - Markets that spend too long in opening auction should be cancelled.
 - [9575](https://github.com/vegaprotocol/vega/issues/9575) - Expand SLA statistics by required liquidity and notional volumes.
-- [9590](https://github.com/vegaprotocol/vega/issues/9590) - Restore positions for market activity tracker on migration from old version. 
+- [9590](https://github.com/vegaprotocol/vega/issues/9590) - Restore positions for market activity tracker on migration from old version.
 
 ### 🐛 Fixes
 
@@ -238,6 +238,7 @@
 - [8979](https://github.com/vegaprotocol/vega/issues/8979) - Update `XFF` information in rate limiter documentation.
 - [9540](https://github.com/vegaprotocol/vega/issues/9540) - Proposals connection does not resolve `UpdateReferralProgram` proposals correctly.
 - [9580](https://github.com/vegaprotocol/vega/issues/9580) - Add program end time validation for referral proposals.
+- [9588](https://github.com/vegaprotocol/vega/issues/9588) - Fix snapshot state for referral and volume discount programs.
 
 ## 0.72.1
 
