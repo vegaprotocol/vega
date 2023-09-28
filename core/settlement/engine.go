@@ -297,13 +297,16 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		current, lastSettledPrice := e.getOrCreateCurrentPosition(party, evt.Size())
 		traded, hasTraded = trades[party]
 		tradeset := make([]events.TradeSettlement, 0, len(traded))
+		// empty position
+		skip := current == 0 && lastSettledPrice.IsZero() && evt.Buy() == 0 && evt.Sell() == 0
 		for _, t := range traded {
 			tradeset = append(tradeset, t)
 		}
 		// create (and add position to buffer)
 		evts = append(evts, events.NewSettlePositionEvent(ctx, party, e.market, evt.Price(), tradeset, e.timeService.GetTimeNow().UnixNano(), e.positionFactor))
 		// no changes in position, and the MTM price hasn't changed, we don't need to do anything
-		if !hasTraded && lastSettledPrice.EQ(markPrice) {
+		// or an empty position that isn't the result of the party closing itself out
+		if !hasTraded && (lastSettledPrice.EQ(markPrice) || skip) {
 			// no changes in position and markPrice hasn't changed -> nothing needs to be marked
 			continue
 		}
@@ -322,6 +325,9 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 			e.rmPosition(party)
 		}
 
+		// there's still a subset of potential-only positions, their MTM will be zero
+		// but they don't hold an open position, and are excluded from win-socialisation.
+		skip = !hasTraded && evt.Size() == 0
 		posEvent := newPos(evt, markPrice)
 		mtmTransfer := e.getMtmTransfer(mtmShare.Clone(), neg, posEvent, party)
 
@@ -329,7 +335,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 			wins = append(wins, mtmTransfer)
 			winTotal.AddSum(mtmShare)
 			winTotalDec = winTotalDec.Add(mtmDShare)
-			if mtmShare.IsZero() {
+			if !skip && mtmShare.IsZero() {
 				zeroShares = append(zeroShares, mtmTransfer)
 				zeroAmts = true
 			}
