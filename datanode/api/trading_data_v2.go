@@ -2969,7 +2969,7 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		if err != nil {
 			return nil, formatE(fmt.Errorf("can't parse margin funding factor: %s", perp.MarginFundingFactor), err)
 		}
-		if !factor.IsZero() {
+		if !factor.IsZero() && mktData.ProductData != nil { // for perps it's possible that the product data is not available in the market data
 			if perpData := mktData.ProductData.GetPerpetualData(); perpData != nil {
 				fundingPayment, err := num.DecimalFromString(perpData.FundingPayment)
 				if err != nil {
