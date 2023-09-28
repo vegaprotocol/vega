@@ -367,6 +367,5 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.vestingStatsSub = sqlsubscribers.NewVestingStatsUpdated(s.vestingStatsService)
 	s.volumeDiscountStatsSub = sqlsubscribers.NewVolumeDiscountStatsUpdated(s.volumeDiscountStatsService)
 	s.referralFeeStatsSub = sqlsubscribers.NewReferralFeeStats(s.referralFeeStatsService)
-	s.fundingPaymentSub =
-		sqlsubscribers.NewFundingPaymentsSubscriber(s.fundingPaymentStore)
+	s.fundingPaymentSub = sqlsubscribers.NewFundingPaymentsSubscriber(s.fundingPaymentStore)
 }
