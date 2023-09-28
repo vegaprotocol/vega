@@ -240,6 +240,7 @@
 - [9540](https://github.com/vegaprotocol/vega/issues/9540) - Proposals connection does not resolve `UpdateReferralProgram` proposals correctly.
 - [9580](https://github.com/vegaprotocol/vega/issues/9580) - Add program end time validation for referral proposals.
 - [9588](https://github.com/vegaprotocol/vega/issues/9588) - Fix snapshot state for referral and volume discount programs.
+- [9596](https://github.com/vegaprotocol/vega/issues/9596) - Empty positions and potential positions are excluded from win socialisation.
 
 ## 0.72.1
 
