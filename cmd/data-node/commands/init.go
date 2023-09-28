@@ -30,9 +30,8 @@ import (
 type InitCmd struct {
 	config.VegaHomeFlag
 
-	Force   bool `description:"Erase exiting vega configuration at the specified path"                           long:"force"   short:"f"`
-	Archive bool `description:"Disable database retention policies. Keeps data and network history indefinitely" long:"archive" short:"a"`
-	Lite    bool `description:"Set all database retention policies to one day only"                              long:"lite"    short:"l"`
+	Force bool   `description:"Erase exiting vega configuration at the specified path" long:"force"  short:"f"`
+	Mode  string `choice:"archive"                                                     choice:"lite" choice:"standard" default:"archive" description:"Set which mode to initialise the data node with, will affect retention policies" long:"mode" short:"m"`
 }
 
 var initCmd InitCmd
@@ -73,19 +72,14 @@ func (opts *InitCmd) Execute(args []string) error {
 
 	cfg := config.NewDefaultConfig()
 
-	if opts.Archive && opts.Lite {
-		return fmt.Errorf("specify either archive mode, lite mode - not both")
-	}
-
-	if opts.Archive {
+	if opts.Mode == "archive" {
 		cfg.NetworkHistory.Store.HistoryRetentionBlockSpan = math.MaxInt64
 		cfg.SQLStore.RetentionPeriod = sqlstore.RetentionPeriodArchive
 	}
 
-	if opts.Lite {
+	if opts.Mode == "lite" {
 		cfg.SQLStore.RetentionPeriod = sqlstore.RetentionPeriodLite
 	}
-
 	cfg.ChainID = chainID
 
 	if err := cfgLoader.Save(&cfg); err != nil {
