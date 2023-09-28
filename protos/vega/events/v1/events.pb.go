@@ -1420,7 +1420,7 @@ func (x *FundingPeriod) GetExternalTwap() string {
 	return ""
 }
 
-// The amount won or lost by a party as a result of a funding payment.
+// The amount gained or lost by a party as a result of a funding payment.
 type FundingPayment struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1486,9 +1486,9 @@ type FundingPayments struct {
 
 	// ID of the market.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Sequence number of the funding period assiociated with these payments.
+	// Sequence number of the funding period associated with these payments.
 	Seq uint64 `protobuf:"varint,2,opt,name=seq,proto3" json:"seq,omitempty"`
-	// List of parties and the payment amounts.
+	// List of parties and the payment amounts, this can be negative for parties who lost at the end of the funding period.
 	Payments []*FundingPayment `protobuf:"bytes,3,rep,name=payments,proto3" json:"payments,omitempty"`
 }
 

@@ -123,7 +123,7 @@ message FundingPeriod {
   optional string external_twap = 8;
 }
 
-// The amount won or lost by a party as a result of a funding payment.
+// The amount gained or lost by a party as a result of a funding payment.
 message FundingPayment {
   // ID of the party.
   string party_id = 1;
@@ -135,9 +135,9 @@ message FundingPayment {
 message FundingPayments {
   // ID of the market.
   string market_id = 1;
-  // Sequence number of the funding period assiociated with these payments.
+  // Sequence number of the funding period associated with these payments.
   uint64 seq = 2;
-  // List of parties and the payment amounts.
+  // List of parties and the payment amounts, this can be negative for parties who lost at the end of the funding period.
   repeated FundingPayment payments = 3;
 }
 
