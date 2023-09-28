@@ -38,7 +38,6 @@ func (fp *FundingPayments) Add(
 			`insert into funding_payment(market_id, party_id, funding_period_seq, amount, vega_time, tx_hash)
 values ($1, $2, $3, $4, $5, $6)`,
 			v.MarketID, v.PartyID, v.FundingPeriodSeq, v.Amount, v.VegaTime, v.TxHash)
-
 		if err != nil {
 			return err
 		}

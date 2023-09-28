@@ -9,5 +9,5 @@ import (
 type fundingPaymentResolver VegaResolverRoot
 
 func (f *fundingPaymentResolver) FundingPeriodSeq(ctx context.Context, obj *v2.FundingPayment) (int, error) {
-	return int(obj.FundingPeriodSed), nil
+	return int(obj.FundingPeriodSeq), nil
 }

@@ -670,7 +670,6 @@ func (r *myQueryResolver) FundingPayments(
 		return nil, err
 	}
 	return res.FundingPayments, nil
-
 }
 
 func (r *myQueryResolver) FundingPeriods(ctx context.Context, marketID string, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.FundingPeriodConnection, error) {

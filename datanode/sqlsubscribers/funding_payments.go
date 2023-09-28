@@ -62,7 +62,12 @@ func (ts *FundingPaymentSubscriber) consume(te FundingPaymentsEvent) error {
 	return errors.Wrap(ts.addFundingPayments(fps, entities.TxHash(te.TxHash()), ts.vegaTime, te.Sequence()), "failed to consume funding payment")
 }
 
-func (ts *FundingPaymentSubscriber) addFundingPayments(fps *eventspb.FundingPayments, txHash entities.TxHash, vegaTime time.Time, blockSeqNumber uint64) error {
+func (ts *FundingPaymentSubscriber) addFundingPayments(
+	fps *eventspb.FundingPayments,
+	txHash entities.TxHash,
+	vegaTime time.Time,
+	_ uint64,
+) error {
 	payments, err := entities.NewFundingPaymentsFromProto(fps, txHash, vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting event to funding payments")

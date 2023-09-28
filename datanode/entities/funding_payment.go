@@ -52,7 +52,7 @@ func (fp FundingPayment) ToProto() *v2.FundingPayment {
 	return &v2.FundingPayment{
 		PartyId:          fp.PartyID.String(),
 		MarketId:         fp.MarketID.String(),
-		FundingPeriodSed: fp.FundingPeriodSeq,
+		FundingPeriodSeq: fp.FundingPeriodSeq,
 		Timestamp:        fp.VegaTime.UnixNano(),
 		Amount:           fp.Amount.String(),
 	}
