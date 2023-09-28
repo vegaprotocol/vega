@@ -29,7 +29,7 @@ Feature: Test funding payment triggering closeout for Perps market
       | party2 | USD   | 10000000  |
       | party3 | USD   | 10000000  |
       | aux    | USD   | 100000000 |
-      | aux2   | USD   | 2391000   |
+      | aux2   | USD   | 1515000   |
       | lpprov | USD   | 100000000 |
 
     When the parties submit the following liquidity provision:
@@ -82,7 +82,7 @@ Feature: Test funding payment triggering closeout for Perps market
 
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value                  | time offset |
-      | perp.ETH.value   | 1420000000000000000000 | 0s          |
+      | perp.ETH.value   | 3000000000000000000000 | 0s          |
       | perp.funding.cue | 1612998252             | 0s          |
     When the network moves ahead "4" blocks
 
@@ -93,7 +93,7 @@ Feature: Test funding payment triggering closeout for Perps market
       | aux    | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 200000 | USD   |
       | market | aux2   | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 200000 | USD   |
       | market | party2 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 200000 | USD   |
-    # And the cumulated balance for all accounts should be worth "330010000"
+
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
     When the network moves ahead "1" blocks
@@ -103,35 +103,30 @@ Feature: Test funding payment triggering closeout for Perps market
       | aux   | ETH/DEC19 | sell | 1      | 2001  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC19 | buy  | 1      | 2001  | 1                | TYPE_LIMIT | TIF_GTC |
 
-    # Then the parties should have the following margin levels:
-    #   | party  | market id | maintenance | initial |
-    #   | party1 | ETH/DEC19 | 6402000     | 7682400 |
-    #   | party2 | ETH/DEC19 | 2171000     | 2605200 |
-    #   | aux2   | ETH/DEC19 | 2391000     | 2869200 |
-    # And the mark price should be "2000" for the market "ETH/DEC19"
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | initial |
+      | party1 | ETH/DEC19 | 7842000     | 9410400 |
+      | party2 | ETH/DEC19 | 1283000     | 1539600 |
+      | aux2   | ETH/DEC19 | 1415000     | 1698000 |
+    And the mark price should be "1200" for the market "ETH/DEC19"
 
+    #delta_t = 0.5
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value      | time offset |
-      | perp.funding.cue | 1613061324 | 0s          |
+      | perp.funding.cue | 1628766252 | 0s          |
 
-    #funding payment = f_twap - s_twap + clamp_lower_bound*s_twap =2000-1600+(0.1*1600)=560
-    # And the following transfers should happen:
-    # | from | to     | from account        | to account              | market id | amount  | asset |
-    # | aux2 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1120000 | USD   |
-    # | party2 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 560000  | USD   |
-    # | party3 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 560000  | USD   |
-    # | market | aux    | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 1120000 | USD   |
-    # | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 1120000 | USD   |
+    #funding payment = s_twap * delta_t * interest_rate = 3000*0.5*0.05 = 150000
+    And the following transfers should happen:
+      | from   | to     | from account            | to account              | market id | amount | asset |
+      | aux2   | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 150000 | USD   |
+      | party2 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 75000  | USD   |
+      | party3 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 75000  | USD   |
+      | market | aux    | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 150000 | USD   |
+      | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 150000 | USD   |
 
-    # Then the parties should have the following account balances:
-    #   | party  | asset | market id | margin  | general |
-    #   | party1 | USD   | ETH/DEC19 | 8802400 | 1317600 |
-    #   | party3 | USD   | ETH/DEC19 | 2605200 | 6832800 |
-    #   | party2 | USD   | ETH/DEC19 | 2605200 | 7833800 |
-    #   | aux2   | USD   | ETH/DEC19 | 0       | 0       |
-
-    # And the insurance pool balance should be "0" for the market "ETH/DEC19"
-
-    Then debug transfers
-
+    Then the parties should have the following margin levels:
+      | party | market id | maintenance | initial |
+      | aux2  | ETH/DEC19 | 0           | 0       |
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
+    And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
