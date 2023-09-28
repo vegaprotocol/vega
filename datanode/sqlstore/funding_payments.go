@@ -15,7 +15,7 @@ type FundingPayments struct {
 }
 
 var fundingPaymentOrdering = TableOrdering{
-	ColumnOrdering{Name: "vegatime", Sorting: ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
 	ColumnOrdering{Name: "market_id", Sorting: ASC},
 	ColumnOrdering{Name: "funding_period_seq", Sorting: ASC},
 	ColumnOrdering{Name: "party_id", Sorting: ASC},
@@ -31,7 +31,7 @@ func (fp *FundingPayments) Add(
 	ctx context.Context,
 	fundingPayments []*entities.FundingPayment,
 ) error {
-	defer metrics.StartSQLQuery("FundingPayment", "AddFundingPayment")()
+	defer metrics.StartSQLQuery("FundingPayments", "Add")()
 
 	for _, v := range fundingPayments {
 		_, err := fp.Connection.Exec(ctx,
@@ -52,7 +52,7 @@ func (fp *FundingPayments) List(
 	marketID *entities.MarketID,
 	pagination entities.CursorPagination,
 ) ([]entities.FundingPayment, entities.PageInfo, error) {
-	defer metrics.StartSQLQuery("FundingPeriodDataPoint", "ListFundingPeriodDataPoints")()
+	defer metrics.StartSQLQuery("FundingPayments", "List")()
 	var fundingPayments []entities.FundingPayment
 	var pageInfo entities.PageInfo
 	var args []interface{}
