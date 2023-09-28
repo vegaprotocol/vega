@@ -735,6 +735,13 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Markets"};
   }
 
+  // List funding payments for a party
+  //
+  // Get a list of data points for a perpetual market's funding payment for a party.
+  rpc ListFundingPayments(ListFundingPaymentsRequest) returns (ListFundingPaymentsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Markets"};
+  }
+
   // List party activity streak
   //
   // Get a party's activity across epochs
@@ -3441,6 +3448,52 @@ message GetPartyActivityStreakRequest {
 message GetPartyActivityStreakResponse {
   // A party's activity streak in a given epoch
   vega.events.v1.PartyActivityStreak activity_streak = 1;
+}
+
+// A funding payment for a party on a perps market
+message FundingPayment {
+  // Party ID of the funding payment.
+  string party_id = 1;
+  // Market ID for the funding payment.
+  string market_id = 2;
+  // The funding period_sequence.
+  uint64 funding_period_sed = 3;
+  // The time at which this funding period occured.
+  int64 timestamp = 4;
+  // The amount earned / lost.
+  string amount = 5;
+}
+
+// Request to list a perpetual market's funding periods
+message ListFundingPaymentsRequest {
+  // Party ID to get funding payment for.
+  string party_id = 1 [(google.api.field_behavior) = REQUIRED];
+  // Market ID to get funding periods for.
+  optional string market_id = 2;
+  // Optional pagination information to limit the data that is returned.
+  optional Pagination pagination = 3;
+}
+
+// Funding payment data with the corresponding cursor.
+message FundingPaymentEdge {
+  // Funding payment data.
+  FundingPayment node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Page of funding payment data and corresponding page information.
+message FundingPaymentConnection {
+  // Page of funding payment data and their corresponding cursors.
+  repeated FundingPaymentEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+// Response from listing funding payments
+message ListFundingPaymentsResponse {
+  // Page of funding period data and corresponding page information.
+  FundingPaymentConnection funding_payments = 1;
 }
 
 // Request to list a perpetual market's funding periods

@@ -59,6 +59,7 @@ type SQLSubscribers struct {
 	vestingStatsStore         *sqlstore.VestingStats
 	volumeDiscountStatsStore  *sqlstore.VolumeDiscountStats
 	referralFeeStatsStore     *sqlstore.ReferralFeeStats
+	fundingPaymentStore       *sqlstore.FundingPayments
 
 	// Services
 	candleService               *candlesv2.Svc
@@ -106,6 +107,7 @@ type SQLSubscribers struct {
 	vestingStatsService         *service.VestingStats
 	volumeDiscountStatsService  *service.VolumeDiscountStats
 	referralFeeStatsService     *service.ReferralFeeStats
+	fundingPaymentService       *service.FundingPayment
 
 	// Subscribers
 	accountSub              *sqlsubscribers.Account
@@ -151,6 +153,7 @@ type SQLSubscribers struct {
 	vestingStatsSub         *sqlsubscribers.VestingStatsUpdated
 	volumeDiscountStatsSub  *sqlsubscribers.VolumeDiscountStatsUpdated
 	referralFeeStatsSub     *sqlsubscribers.ReferralFeeStats
+	fundingPaymentSub       *sqlsubscribers.FundingPaymentSubscriber
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -200,6 +203,7 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.vestingStatsSub,
 		s.volumeDiscountStatsSub,
 		s.referralFeeStatsSub,
+		s.fundingPaymentSub,
 	}
 }
 
@@ -253,6 +257,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.vestingStatsStore = sqlstore.NewVestingStats(transactionalConnectionSource)
 	s.volumeDiscountStatsStore = sqlstore.NewVolumeDiscountStats(transactionalConnectionSource)
 	s.referralFeeStatsStore = sqlstore.NewReferralFeeStats(transactionalConnectionSource)
+	s.fundingPaymentStore = sqlstore.NewFundingPayments(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
@@ -302,6 +307,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.vestingStatsService = service.NewVestingStats(s.vestingStatsStore)
 	s.volumeDiscountStatsService = service.NewVolumeDiscountStats(s.volumeDiscountStatsStore)
 	s.referralFeeStatsService = service.NewReferralFeeStats(s.referralFeeStatsStore)
+	s.fundingPaymentService = service.NewFundingPayment(s.fundingPaymentStore)
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		s.marketDepthService,

@@ -429,9 +429,12 @@ type LiquidityProviderSLA struct {
 	LastEpochBondPenalty string `json:"lastEpochBondPenalty"`
 	// Determines how the fee penalties from past epochs affect future fee revenue.
 	HysteresisPeriodFeePenalties []string `json:"hysteresisPeriodFeePenalties"`
-	RequiredLiquidity            string   `json:"requiredLiquidity"`
-	NotionalVolumeBuys           string   `json:"notionalVolumeBuys"`
-	NotionalVolumeSells          string   `json:"notionalVolumeSells"`
+	// Represents the total amount of funds LP must supply. The amount to be supplied is in the market’s settlement currency, spread on both buy and sell sides of the order book within a defined range.
+	RequiredLiquidity string `json:"requiredLiquidity"`
+	// Notional volume of orders within the range provided on the buy side of the book.
+	NotionalVolumeBuys string `json:"notionalVolumeBuys"`
+	// Notional volume of orders within the range provided on the sell side of the book.
+	NotionalVolumeSells string `json:"notionalVolumeSells"`
 }
 
 type LossSocialization struct {
@@ -521,6 +524,12 @@ type ObservableLiquidityProviderSLA struct {
 	LastEpochBondPenalty string `json:"lastEpochBondPenalty"`
 	// Determines how the fee penalties from past epochs affect future fee revenue.
 	HysteresisPeriodFeePenalties []string `json:"hysteresisPeriodFeePenalties"`
+	// Represents the total amount of funds LP must supply. The amount to be supplied is in the market’s settlement currency, spread on both buy and sell sides of the order book within a defined range.
+	RequiredLiquidity string `json:"requiredLiquidity"`
+	// Notional volume of orders within the range provided on the buy side of the book.
+	NotionalVolumeBuys string `json:"notionalVolumeBuys"`
+	// Notional volume of orders within the range provided on the sell side of the book.
+	NotionalVolumeSells string `json:"notionalVolumeSells"`
 }
 
 type OrderByMarketAndPartyIdsFilter struct {

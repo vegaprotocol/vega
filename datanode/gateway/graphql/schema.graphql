@@ -640,6 +640,18 @@ type Query {
     pagination: Pagination
   ): FundingPeriodDataPointConnection!
 
+  """
+  Funding payment for perpetual markets.
+  """
+  fundingPayments(
+    "ID of the party"
+    partyId: ID!
+    "ID of the perpetual market to get funding periods for"
+    marketId: ID
+    "Pagination control"
+    pagination: Pagination
+  ): FundingPaymentConnection!
+
   "Get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided."
   getMarketDataHistoryConnectionByID(
     id: ID!
@@ -5820,6 +5832,36 @@ type Entities {
   ethereumKeyRotations: [EthereumKeyRotation]
   "List of protocol upgrade proposals created by the transaction hash"
   protocolUpgradeProposals: [ProtocolUpgradeProposal]
+}
+
+"The funding payment from a perpetual market."
+type FundingPayment {
+  "Market the funding payment applies to."
+  marketId: ID!
+  "Party the funding payment applies to."
+  partyId: ID!
+  "Sequence number of the funding period the funding payment belongs to."
+  fundingPeriodSeq: Int!
+  "Amount transfered"
+  amount: String
+  "RFC3339Nano timestamp when the data point was received."
+  timestamp: Timestamp!
+}
+
+"Edge type for funding payment"
+type FundingPaymentEdge {
+  "The funding payment"
+  node: FundingPayment!
+  "Cursor identifying the funding payment"
+  cursor: String!
+}
+
+"Connection type for funding payment"
+type FundingPaymentConnection {
+  "List of funding payments"
+  edges: [FundingPaymentEdge!]!
+  "Pagination information"
+  pageInfo: PageInfo!
 }
 
 "Data point for a funding period."

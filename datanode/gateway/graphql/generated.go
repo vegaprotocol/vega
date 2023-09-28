@@ -71,6 +71,7 @@ type ResolverRoot interface {
 	EpochTimestamps() EpochTimestampsResolver
 	EthCallSpec() EthCallSpecResolver
 	EthereumKeyRotation() EthereumKeyRotationResolver
+	FundingPayment() FundingPaymentResolver
 	FundingPeriod() FundingPeriodResolver
 	FundingPeriodDataPoint() FundingPeriodDataPointResolver
 	Future() FutureResolver
@@ -707,6 +708,24 @@ type ComplexityRoot struct {
 		Key        func(childComplexity int) int
 	}
 
+	FundingPayment struct {
+		Amount           func(childComplexity int) int
+		FundingPeriodSeq func(childComplexity int) int
+		MarketId         func(childComplexity int) int
+		PartyId          func(childComplexity int) int
+		Timestamp        func(childComplexity int) int
+	}
+
+	FundingPaymentConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	FundingPaymentEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	FundingPeriod struct {
 		EndTime        func(childComplexity int) int
 		ExternalTwap   func(childComplexity int) int
@@ -1294,7 +1313,10 @@ type ComplexityRoot struct {
 		LastEpochBondPenalty             func(childComplexity int) int
 		LastEpochFeePenalty              func(childComplexity int) int
 		LastEpochFractionOfTimeOnBook    func(childComplexity int) int
+		NotionalVolumeBuys               func(childComplexity int) int
+		NotionalVolumeSells              func(childComplexity int) int
 		Party                            func(childComplexity int) int
+		RequiredLiquidity                func(childComplexity int) int
 	}
 
 	ObservableMarketData struct {
@@ -1770,6 +1792,7 @@ type ComplexityRoot struct {
 		EstimateOrder                      func(childComplexity int, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *int64, typeArg vega.Order_Type) int
 		EstimatePosition                   func(childComplexity int, marketID string, openVolume string, orders []*OrderInfo, collateralAvailable *string, scaleLiquidationPriceToMarketDecimals *bool) int
 		EthereumKeyRotations               func(childComplexity int, nodeID *string) int
+		FundingPayments                    func(childComplexity int, partyID string, marketID *string, pagination *v2.Pagination) int
 		FundingPeriodDataPoints            func(childComplexity int, marketID string, dateRange *v2.DateRange, source *v1.FundingPeriodDataPoint_Source, pagination *v2.Pagination) int
 		FundingPeriods                     func(childComplexity int, marketID string, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		GetMarketDataHistoryConnectionByID func(childComplexity int, id string, start *int64, end *int64, pagination *v2.Pagination) int
@@ -2604,6 +2627,9 @@ type EthCallSpecResolver interface {
 type EthereumKeyRotationResolver interface {
 	BlockHeight(ctx context.Context, obj *v1.EthereumKeyRotation) (string, error)
 }
+type FundingPaymentResolver interface {
+	FundingPeriodSeq(ctx context.Context, obj *v2.FundingPayment) (int, error)
+}
 type FundingPeriodResolver interface {
 	Seq(ctx context.Context, obj *v1.FundingPeriod) (int, error)
 	StartTime(ctx context.Context, obj *v1.FundingPeriod) (int64, error)
@@ -2972,6 +2998,7 @@ type QueryResolver interface {
 	EthereumKeyRotations(ctx context.Context, nodeID *string) (*v2.EthereumKeyRotationsConnection, error)
 	FundingPeriods(ctx context.Context, marketID string, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.FundingPeriodConnection, error)
 	FundingPeriodDataPoints(ctx context.Context, marketID string, dateRange *v2.DateRange, source *v1.FundingPeriodDataPoint_Source, pagination *v2.Pagination) (*v2.FundingPeriodDataPointConnection, error)
+	FundingPayments(ctx context.Context, partyID string, marketID *string, pagination *v2.Pagination) (*v2.FundingPaymentConnection, error)
 	GetMarketDataHistoryConnectionByID(ctx context.Context, id string, start *int64, end *int64, pagination *v2.Pagination) (*v2.MarketDataConnection, error)
 	LedgerEntries(ctx context.Context, filter *v2.LedgerEntryFilter, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedLedgerEntriesConnection, error)
 	LiquidityProviders(ctx context.Context, partyID *string, marketID *string, pagination *v2.Pagination) (*v2.LiquidityProviderConnection, error)
@@ -5371,6 +5398,69 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Filter.Key(childComplexity), true
+
+	case "FundingPayment.amount":
+		if e.complexity.FundingPayment.Amount == nil {
+			break
+		}
+
+		return e.complexity.FundingPayment.Amount(childComplexity), true
+
+	case "FundingPayment.fundingPeriodSeq":
+		if e.complexity.FundingPayment.FundingPeriodSeq == nil {
+			break
+		}
+
+		return e.complexity.FundingPayment.FundingPeriodSeq(childComplexity), true
+
+	case "FundingPayment.marketId":
+		if e.complexity.FundingPayment.MarketId == nil {
+			break
+		}
+
+		return e.complexity.FundingPayment.MarketId(childComplexity), true
+
+	case "FundingPayment.partyId":
+		if e.complexity.FundingPayment.PartyId == nil {
+			break
+		}
+
+		return e.complexity.FundingPayment.PartyId(childComplexity), true
+
+	case "FundingPayment.timestamp":
+		if e.complexity.FundingPayment.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.FundingPayment.Timestamp(childComplexity), true
+
+	case "FundingPaymentConnection.edges":
+		if e.complexity.FundingPaymentConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.FundingPaymentConnection.Edges(childComplexity), true
+
+	case "FundingPaymentConnection.pageInfo":
+		if e.complexity.FundingPaymentConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.FundingPaymentConnection.PageInfo(childComplexity), true
+
+	case "FundingPaymentEdge.cursor":
+		if e.complexity.FundingPaymentEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.FundingPaymentEdge.Cursor(childComplexity), true
+
+	case "FundingPaymentEdge.node":
+		if e.complexity.FundingPaymentEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.FundingPaymentEdge.Node(childComplexity), true
 
 	case "FundingPeriod.endTime":
 		if e.complexity.FundingPeriod.EndTime == nil {
@@ -7934,12 +8024,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ObservableLiquidityProviderSLA.LastEpochFractionOfTimeOnBook(childComplexity), true
 
+	case "ObservableLiquidityProviderSLA.notionalVolumeBuys":
+		if e.complexity.ObservableLiquidityProviderSLA.NotionalVolumeBuys == nil {
+			break
+		}
+
+		return e.complexity.ObservableLiquidityProviderSLA.NotionalVolumeBuys(childComplexity), true
+
+	case "ObservableLiquidityProviderSLA.notionalVolumeSells":
+		if e.complexity.ObservableLiquidityProviderSLA.NotionalVolumeSells == nil {
+			break
+		}
+
+		return e.complexity.ObservableLiquidityProviderSLA.NotionalVolumeSells(childComplexity), true
+
 	case "ObservableLiquidityProviderSLA.party":
 		if e.complexity.ObservableLiquidityProviderSLA.Party == nil {
 			break
 		}
 
 		return e.complexity.ObservableLiquidityProviderSLA.Party(childComplexity), true
+
+	case "ObservableLiquidityProviderSLA.requiredLiquidity":
+		if e.complexity.ObservableLiquidityProviderSLA.RequiredLiquidity == nil {
+			break
+		}
+
+		return e.complexity.ObservableLiquidityProviderSLA.RequiredLiquidity(childComplexity), true
 
 	case "ObservableMarketData.auctionEnd":
 		if e.complexity.ObservableMarketData.AuctionEnd == nil {
@@ -10232,6 +10343,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.EthereumKeyRotations(childComplexity, args["nodeId"].(*string)), true
+
+	case "Query.fundingPayments":
+		if e.complexity.Query.FundingPayments == nil {
+			break
+		}
+
+		args, err := ec.field_Query_fundingPayments_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.FundingPayments(childComplexity, args["partyId"].(string), args["marketId"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.fundingPeriodDataPoints":
 		if e.complexity.Query.FundingPeriodDataPoints == nil {
@@ -14786,6 +14909,39 @@ func (ec *executionContext) field_Query_ethereumKeyRotations_args(ctx context.Co
 		}
 	}
 	args["nodeId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_fundingPayments_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyId"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["marketId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketId"] = arg1
+	var arg2 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg2
 	return args, nil
 }
 
@@ -30657,6 +30813,427 @@ func (ec *executionContext) fieldContext_Filter_conditions(ctx context.Context, 
 				return ec.fieldContext_Condition_value(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FundingPayment_marketId(ctx context.Context, field graphql.CollectedField, obj *v2.FundingPayment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FundingPayment_marketId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FundingPayment_marketId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FundingPayment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FundingPayment_partyId(ctx context.Context, field graphql.CollectedField, obj *v2.FundingPayment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FundingPayment_partyId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PartyId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FundingPayment_partyId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FundingPayment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FundingPayment_fundingPeriodSeq(ctx context.Context, field graphql.CollectedField, obj *v2.FundingPayment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FundingPayment_fundingPeriodSeq(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.FundingPayment().FundingPeriodSeq(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FundingPayment_fundingPeriodSeq(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FundingPayment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FundingPayment_amount(ctx context.Context, field graphql.CollectedField, obj *v2.FundingPayment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FundingPayment_amount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Amount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FundingPayment_amount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FundingPayment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FundingPayment_timestamp(ctx context.Context, field graphql.CollectedField, obj *v2.FundingPayment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FundingPayment_timestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FundingPayment_timestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FundingPayment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FundingPaymentConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.FundingPaymentConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FundingPaymentConnection_edges(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.FundingPaymentEdge)
+	fc.Result = res
+	return ec.marshalNFundingPaymentEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFundingPaymentEdgeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FundingPaymentConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FundingPaymentConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "node":
+				return ec.fieldContext_FundingPaymentEdge_node(ctx, field)
+			case "cursor":
+				return ec.fieldContext_FundingPaymentEdge_cursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type FundingPaymentEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FundingPaymentConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.FundingPaymentConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FundingPaymentConnection_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FundingPaymentConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FundingPaymentConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FundingPaymentEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.FundingPaymentEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FundingPaymentEdge_node(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.FundingPayment)
+	fc.Result = res
+	return ec.marshalNFundingPayment2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFundingPayment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FundingPaymentEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FundingPaymentEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "marketId":
+				return ec.fieldContext_FundingPayment_marketId(ctx, field)
+			case "partyId":
+				return ec.fieldContext_FundingPayment_partyId(ctx, field)
+			case "fundingPeriodSeq":
+				return ec.fieldContext_FundingPayment_fundingPeriodSeq(ctx, field)
+			case "amount":
+				return ec.fieldContext_FundingPayment_amount(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_FundingPayment_timestamp(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type FundingPayment", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FundingPaymentEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.FundingPaymentEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FundingPaymentEdge_cursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FundingPaymentEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FundingPaymentEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -48154,6 +48731,138 @@ func (ec *executionContext) fieldContext_ObservableLiquidityProviderSLA_hysteres
 	return fc, nil
 }
 
+func (ec *executionContext) _ObservableLiquidityProviderSLA_requiredLiquidity(ctx context.Context, field graphql.CollectedField, obj *ObservableLiquidityProviderSLA) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ObservableLiquidityProviderSLA_requiredLiquidity(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RequiredLiquidity, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ObservableLiquidityProviderSLA_requiredLiquidity(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ObservableLiquidityProviderSLA",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ObservableLiquidityProviderSLA_notionalVolumeBuys(ctx context.Context, field graphql.CollectedField, obj *ObservableLiquidityProviderSLA) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ObservableLiquidityProviderSLA_notionalVolumeBuys(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NotionalVolumeBuys, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ObservableLiquidityProviderSLA_notionalVolumeBuys(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ObservableLiquidityProviderSLA",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ObservableLiquidityProviderSLA_notionalVolumeSells(ctx context.Context, field graphql.CollectedField, obj *ObservableLiquidityProviderSLA) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ObservableLiquidityProviderSLA_notionalVolumeSells(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NotionalVolumeSells, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ObservableLiquidityProviderSLA_notionalVolumeSells(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ObservableLiquidityProviderSLA",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ObservableMarketData_marketId(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ObservableMarketData_marketId(ctx, field)
 	if err != nil {
@@ -49392,6 +50101,12 @@ func (ec *executionContext) fieldContext_ObservableMarketData_liquidityProviderS
 				return ec.fieldContext_ObservableLiquidityProviderSLA_lastEpochBondPenalty(ctx, field)
 			case "hysteresisPeriodFeePenalties":
 				return ec.fieldContext_ObservableLiquidityProviderSLA_hysteresisPeriodFeePenalties(ctx, field)
+			case "requiredLiquidity":
+				return ec.fieldContext_ObservableLiquidityProviderSLA_requiredLiquidity(ctx, field)
+			case "notionalVolumeBuys":
+				return ec.fieldContext_ObservableLiquidityProviderSLA_notionalVolumeBuys(ctx, field)
+			case "notionalVolumeSells":
+				return ec.fieldContext_ObservableLiquidityProviderSLA_notionalVolumeSells(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ObservableLiquidityProviderSLA", field.Name)
 		},
@@ -62965,6 +63680,67 @@ func (ec *executionContext) fieldContext_Query_fundingPeriodDataPoints(ctx conte
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_fundingPeriodDataPoints_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_fundingPayments(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_fundingPayments(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().FundingPayments(rctx, fc.Args["partyId"].(string), fc.Args["marketId"].(*string), fc.Args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.FundingPaymentConnection)
+	fc.Result = res
+	return ec.marshalNFundingPaymentConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFundingPaymentConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_fundingPayments(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_FundingPaymentConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_FundingPaymentConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type FundingPaymentConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_fundingPayments_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -91708,6 +92484,142 @@ func (ec *executionContext) _Filter(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var fundingPaymentImplementors = []string{"FundingPayment"}
+
+func (ec *executionContext) _FundingPayment(ctx context.Context, sel ast.SelectionSet, obj *v2.FundingPayment) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, fundingPaymentImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FundingPayment")
+		case "marketId":
+
+			out.Values[i] = ec._FundingPayment_marketId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "partyId":
+
+			out.Values[i] = ec._FundingPayment_partyId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "fundingPeriodSeq":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._FundingPayment_fundingPeriodSeq(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "amount":
+
+			out.Values[i] = ec._FundingPayment_amount(ctx, field, obj)
+
+		case "timestamp":
+
+			out.Values[i] = ec._FundingPayment_timestamp(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var fundingPaymentConnectionImplementors = []string{"FundingPaymentConnection"}
+
+func (ec *executionContext) _FundingPaymentConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.FundingPaymentConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, fundingPaymentConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FundingPaymentConnection")
+		case "edges":
+
+			out.Values[i] = ec._FundingPaymentConnection_edges(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+
+			out.Values[i] = ec._FundingPaymentConnection_pageInfo(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var fundingPaymentEdgeImplementors = []string{"FundingPaymentEdge"}
+
+func (ec *executionContext) _FundingPaymentEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.FundingPaymentEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, fundingPaymentEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FundingPaymentEdge")
+		case "node":
+
+			out.Values[i] = ec._FundingPaymentEdge_node(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+
+			out.Values[i] = ec._FundingPaymentEdge_cursor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var fundingPeriodImplementors = []string{"FundingPeriod"}
 
 func (ec *executionContext) _FundingPeriod(ctx context.Context, sel ast.SelectionSet, obj *v1.FundingPeriod) graphql.Marshaler {
@@ -97000,6 +97912,27 @@ func (ec *executionContext) _ObservableLiquidityProviderSLA(ctx context.Context,
 
 			out.Values[i] = ec._ObservableLiquidityProviderSLA_hysteresisPeriodFeePenalties(ctx, field, obj)
 
+		case "requiredLiquidity":
+
+			out.Values[i] = ec._ObservableLiquidityProviderSLA_requiredLiquidity(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "notionalVolumeBuys":
+
+			out.Values[i] = ec._ObservableLiquidityProviderSLA_notionalVolumeBuys(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "notionalVolumeSells":
+
+			out.Values[i] = ec._ObservableLiquidityProviderSLA_notionalVolumeSells(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -101626,6 +102559,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_fundingPeriodDataPoints(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "fundingPayments":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_fundingPayments(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -109699,6 +110655,84 @@ func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.S
 		}
 	}
 	return graphql.WrapContextMarshaler(ctx, res)
+}
+
+func (ec *executionContext) marshalNFundingPayment2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFundingPayment(ctx context.Context, sel ast.SelectionSet, v *v2.FundingPayment) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._FundingPayment(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNFundingPaymentConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFundingPaymentConnection(ctx context.Context, sel ast.SelectionSet, v v2.FundingPaymentConnection) graphql.Marshaler {
+	return ec._FundingPaymentConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNFundingPaymentConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFundingPaymentConnection(ctx context.Context, sel ast.SelectionSet, v *v2.FundingPaymentConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._FundingPaymentConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNFundingPaymentEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFundingPaymentEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.FundingPaymentEdge) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNFundingPaymentEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFundingPaymentEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNFundingPaymentEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFundingPaymentEdge(ctx context.Context, sel ast.SelectionSet, v *v2.FundingPaymentEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._FundingPaymentEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNFundingPeriod2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐFundingPeriod(ctx context.Context, sel ast.SelectionSet, v *v1.FundingPeriod) graphql.Marshaler {
