@@ -21,6 +21,7 @@ type (
 	Block               struct{ *sqlstore.Blocks }
 	Party               struct{ *sqlstore.Parties }
 	PartyActivityStreak struct{ *sqlstore.PartyActivityStreaks }
+	FundingPayment      struct{ *sqlstore.FundingPayments }
 	NetworkLimits       struct{ *sqlstore.NetworkLimits }
 	Epoch               struct{ *sqlstore.Epochs }
 	Deposit             struct{ *sqlstore.Deposits }
@@ -65,6 +66,10 @@ func NewParty(store *sqlstore.Parties) *Party {
 
 func NewPartyActivityStreak(store *sqlstore.PartyActivityStreaks) *PartyActivityStreak {
 	return &PartyActivityStreak{PartyActivityStreaks: store}
+}
+
+func NewFundingPayment(store *sqlstore.FundingPayments) *FundingPayment {
+	return &FundingPayment{FundingPayments: store}
 }
 
 func NewNetworkLimits(store *sqlstore.NetworkLimits) *NetworkLimits {

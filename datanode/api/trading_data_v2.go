@@ -112,27 +112,51 @@ type TradingDataServiceV2 struct {
 	stopOrderService           *service.StopOrders
 	fundingPeriodService       *service.FundingPeriods
 	partyActivityStreak        *service.PartyActivityStreak
+	fundingPaymentService      *service.FundingPayment
 	referralProgramService     *service.ReferralPrograms
 	referralSetsService        *service.ReferralSets
 	teamsService               *service.Teams
 	referralFeeStatsService    *service.ReferralFeeStats
 }
 
-func (t *TradingDataServiceV2) GetPartyActivityStreak(ctx context.Context, req *v2.GetPartyActivityStreakRequest) (*v2.GetPartyActivityStreakResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("GetPartyActivityStreak")()
+func (t *TradingDataServiceV2) ListFundingPayments(ctx context.Context, req *v2.ListFundingPaymentsRequest) (*v2.ListFundingPaymentsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListFundingPayments")()
 
 	if !crypto.IsValidVegaPubKey(req.PartyId) {
 		return nil, formatE(ErrInvalidPartyID)
 	}
 
-	activityStreak, err := t.partyActivityStreak.Get(
-		ctx, entities.PartyID(req.PartyId), req.Epoch)
+	var marketID *entities.MarketID
+	if req.MarketId != nil {
+		if !crypto.IsValidVegaPubKey(*req.MarketId) {
+			return nil, formatE(ErrInvalidMarketID)
+		}
+		marketID = ptr.From(entities.MarketID(*req.MarketId))
+	}
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	fundingPayments, pageInfo, err := t.fundingPaymentService.List(
+		ctx, entities.PartyID(req.PartyId), marketID, pagination)
 	if err != nil {
 		return nil, formatE(err)
 	}
 
-	return &v2.GetPartyActivityStreakResponse{
-		ActivityStreak: activityStreak.ToProto(),
+	edges, err := makeEdges[*v2.FundingPaymentEdge](fundingPayments)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	connection := &v2.FundingPaymentConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListFundingPaymentsResponse{
+		FundingPayments: connection,
 	}, nil
 }
 
