@@ -34,7 +34,7 @@ func NewDefaultConfig() Config {
 	return Config{
 		Level: encoding.LogLevel{Level: logging.InfoLevel},
 		Socket: SocketConfig{
-			DialTimeout:             encoding.Duration{Duration: 2 * time.Minute},
+			DialTimeout:             encoding.Duration{Duration: 96 * time.Hour},
 			DialRetryInterval:       encoding.Duration{Duration: 5 * time.Second},
 			SocketQueueTimeout:      encoding.Duration{Duration: 3 * time.Second},
 			MaxSendTimeouts:         10,
@@ -53,8 +53,9 @@ func NewDefaultConfig() Config {
 }
 
 type SocketConfig struct {
-	DialTimeout        encoding.Duration `description:" " long:"dial-timeout"`
-	DialRetryInterval  encoding.Duration `description:" " long:"dial-retry-interval"`
+	DialTimeout       encoding.Duration `description:" " long:"dial-timeout"`
+	DialRetryInterval encoding.Duration `description:" " long:"dial-retry-interval"`
+
 	SocketQueueTimeout encoding.Duration `description:" " long:"socket-queue-timeout"`
 
 	EventChannelBufferSize  int `description:" " long:"event-channel-buffer-size"`
