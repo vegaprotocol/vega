@@ -15,7 +15,6 @@ package steps
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/cucumber/godog"
 
@@ -23,10 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-var unwatched = map[string]struct{}{
-	netparams.MarketTargetStakeScalingFactor: {},
-	netparams.MarketTargetStakeTimeWindow:    {},
-}
+var unwatched = map[string]struct{}{}
 
 func DebugNetworkParameter(log *logging.Logger, netParams *netparams.Store, key string) error {
 	value, err := netParams.Get(key)
@@ -50,23 +46,6 @@ func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *godo
 		case netparams.MarketAuctionMinimumDuration:
 			d := row.MustDurationSec("value")
 			if err := netParams.Update(ctx, netparams.MarketAuctionMinimumDuration, d.String()); err != nil {
-				return err
-			}
-		case netparams.MarketAuctionMaximumDuration:
-			d := row.MustDurationSec("value")
-			if err := netParams.Update(ctx, netparams.MarketAuctionMaximumDuration, d.String()); err != nil {
-				return err
-			}
-		case netparams.MarketTargetStakeScalingFactor:
-			f := row.MustF64("value")
-			n := strconv.FormatFloat(f, 'f', -1, 64)
-			if err := netParams.Update(ctx, netparams.MarketTargetStakeScalingFactor, n); err != nil {
-				return err
-			}
-		case netparams.MarketTargetStakeTimeWindow:
-			f := row.MustDurationStr("value")
-			str := f.String()
-			if err := netParams.Update(ctx, netparams.MarketTargetStakeTimeWindow, str); err != nil {
 				return err
 			}
 		case netparams.MarkPriceUpdateMaximumFrequency:

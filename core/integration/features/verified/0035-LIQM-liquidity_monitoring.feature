@@ -3,8 +3,6 @@ Feature: Test liquidity monitoring
   Background:
     Given the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 1s    |
-      | market.stake.target.scalingFactor             | 1     |
       | network.floatingPointUpdates.delay            | 10s   |
       | market.auction.minimumDuration                | 1     |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
@@ -173,8 +171,7 @@ Feature: Test liquidity monitoring
 
     Given the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 5s    |
-      | market.liquidity.bondPenaltyParameter       | 1     |
+      | market.liquidity.bondPenaltyParameter         | 1     |
     Given the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 1.0              | 5s          | 1              |

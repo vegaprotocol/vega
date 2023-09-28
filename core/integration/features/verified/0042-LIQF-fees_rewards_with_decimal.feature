@@ -5,8 +5,6 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
     Given the following network parameters are set:
       | name                                               | value |
       | market.value.windowLength                          | 1h    |
-      | market.stake.target.timeWindow                     | 24h   |
-      | market.stake.target.scalingFactor                  | 1     |
       | network.markPriceUpdateMaximumFrequency            | 0s    |
       | limits.markets.maxPeggedOrders                     | 18    |
       | market.liquidity.providersFeeCalculationTimeStep | 600s  |
@@ -169,8 +167,6 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
     Given the following network parameters are set:
       | name                                          | value |
       | market.value.windowLength                     | 1h    |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | limits.markets.maxPeggedOrders                | 30    |
       | market.liquidity.earlyExitPenalty           | 1.0   |
@@ -464,8 +460,6 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
     And the following network parameters are set:
       | name                                          | value |
       | market.value.windowLength                     | 1h    |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | limits.markets.maxPeggedOrders                | 18    |
     Given the liquidity monitoring parameters:

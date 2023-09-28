@@ -26,13 +26,11 @@ Feature: Simple example of successor markets
     And the settlement data decimals for the oracle named "ethDec20Oracle" is given in "5" decimal places
     And the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
-      | lqm-params         | 0.01             | 10s         | 1              |  
+      | lqm-params         | 0.01             | 10s         | 5              |  
     
     And the following network parameters are set:
       | name                                          | value |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
-      | market.stake.target.timeWindow                | 10s   |
-      | market.stake.target.scalingFactor             | 5     |
       | market.auction.minimumDuration                | 1     |
       | market.fee.factors.infrastructureFee          | 0.001 |
       | market.fee.factors.makerFee                   | 0.004 |

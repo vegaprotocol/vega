@@ -20,8 +20,6 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | 1000    | 0.99        | 300               |
     And the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter       | 0.2   |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | limits.markets.maxPeggedOrders                | 6     |

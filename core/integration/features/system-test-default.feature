@@ -7,7 +7,7 @@ Feature: Basic feature-file matching the system-test setup like for like
       | USD | 0              |
     And the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
-      | lqm-params         | 0.0              | 10s         | 1              |  
+      | lqm-params         | 0.0              | 10s         | 5              |  
     
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model             | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | sla params      |
@@ -18,8 +18,6 @@ Feature: Basic feature-file matching the system-test setup like for like
     And the following network parameters are set:
       | name                                          | value |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
-      | market.stake.target.timeWindow                | 10s   |
-      | market.stake.target.scalingFactor             | 5     |
       | market.auction.minimumDuration                | 1     |
       | market.fee.factors.infrastructureFee          | 0.001 |
       | market.fee.factors.makerFee                   | 0.004 |
@@ -67,7 +65,7 @@ Feature: Basic feature-file matching the system-test setup like for like
     When the opening auction period ends for market "ETH/DEC19"
     Then the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake   | open interest |
-      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 269815200000 | 3905000000000000 | 5             |
+      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 3905000000000000 | 5             |
     And the parties should have the following account balances:
       | party   | asset | market id | margin       | general                   |
       | trader1 | ETH   | ETH/DEC19 | 113402285504 | 9999999999999886597714496 |
@@ -99,7 +97,7 @@ Feature: Basic feature-file matching the system-test setup like for like
     When the opening auction period ends for market "ETH/DEC20"
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake  | supplied stake   | open interest |
-      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 2380805600000 | 3905000000000000 | 5             |
+      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1190402800000 | 3905000000000000 | 5             |
 
     # Now place orders to cause designatedloser party to be distressed
     When the parties place the following orders:
@@ -147,7 +145,7 @@ Feature: Basic feature-file matching the system-test setup like for like
     When the opening auction period ends for market "ETH/DEC21"
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | target stake  | supplied stake   | open interest |
-      | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 731 | 390500 | 1             |
+      | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 365           | 390500 | 1             |
 
     # Now place orders to cause designatedloser party to be distressed
     When the parties place the following orders with ticks:
@@ -231,5 +229,5 @@ Feature: Basic feature-file matching the system-test setup like for like
     Then the network moves ahead "1" blocks
     And the market data for the market "ETH/DEC23" should be:
       | mark price | trading mode            | auction trigger             | target stake            | supplied stake           | open interest |
-      | 100000     | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 55290000000000000000000 | 390500000000000000000000 | 10000000000   |
+      | 100000     | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 27645000000000000000000 | 390500000000000000000000 | 10000000000   |
 

@@ -1,7 +1,9 @@
 Feature: check pegged GTT and GTC in auction
 
   Background:
-
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 1.0              | 20s         | 1.0            |  
     Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | 0  | 0 | 1.0   |
@@ -16,12 +18,11 @@ Feature: check pegged GTT and GTC in auction
     And the following network parameters are set:
       | name                              | value |
       | market.auction.minimumDuration    | 1     |
-      | market.stake.target.scalingFactor | 1     |
       | limits.markets.maxPeggedOrders    | 1500  |
       | limits.markets.maxPeggedOrders    | 4     |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | ETH        | ETH   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator   | auction duration | fees         | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | ETH        | ETH   | lqm-params           | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
 
   Scenario: 001, Pegged GTC (good till time) (parked in auction), Pegged orders will be [parked] if placed during [an auction], with time priority preserved. 0011-MARA-017
     Given the parties deposit on asset's general account the following amount:

@@ -13,12 +13,10 @@ Feature: Assure LP margin is correct
       | 3600    | 0.99        | 300               |
     And the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1.5   |
       | market.liquidity.bondPenaltyParameter       | 0.2   |
     And the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
-      | lqm-params         | 0.24             | 24h         | 1              |  
+      | lqm-params         | 0.24             | 24h         | 1.5            |  
     
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |

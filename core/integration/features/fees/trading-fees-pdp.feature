@@ -761,11 +761,6 @@ Feature: Fees calculations
       | name               | triggering ratio | time window | scaling factor |
       | lqm-params         | 1.00             | 24h         | 1              |  
       
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-
     And the average block duration is "1"
 
     And the fees configuration named "fees-config-1":
@@ -836,11 +831,6 @@ Feature: Fees calculations
       | name               | triggering ratio | time window | scaling factor |
       | lqm-params         | 1.00             | 24h         | 1              |  
       
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-
     And the average block duration is "1"
 
     And the fees configuration named "fees-config-1":
@@ -958,11 +948,6 @@ Feature: Fees calculations
     Given the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
       | lqm-params         | 1.00             | 24h         | 1              |  
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-
     And the average block duration is "1"
 
     And the fees configuration named "fees-config-1":
@@ -1069,11 +1054,6 @@ Feature: Fees calculations
     Given the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
       | lqm-params         | 1.00             | 24h         | 1              |  
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-
     And the average block duration is "1"
 
     And the fees configuration named "fees-config-1":
@@ -1183,12 +1163,7 @@ Feature: Fees calculations
     Given the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
       | lqm-params         | 1.00             | 24h         | 1              |  
-      
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-
+    
     And the average block duration is "1"
 
     And the fees configuration named "fees-config-1":

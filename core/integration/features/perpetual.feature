@@ -13,7 +13,7 @@ Feature: Simple test creating a perpetual market.
       | 1.0         | 0.5                          | 1                             | 1.0                    |
     And the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
-      | lqm-params         | 0.01             | 10s         | 1              |  
+      | lqm-params         | 0.01             | 10s         | 5              |  
 
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | market type | sla params |
@@ -21,8 +21,6 @@ Feature: Simple test creating a perpetual market.
     And the following network parameters are set:
       | name                                             | value |
       | network.markPriceUpdateMaximumFrequency          | 0s    |
-      | market.stake.target.timeWindow                   | 10s   |
-      | market.stake.target.scalingFactor                | 5     |
       | market.auction.minimumDuration                   | 1     |
       | market.fee.factors.infrastructureFee             | 0.001 |
       | market.fee.factors.makerFee                      | 0.004 |
@@ -67,7 +65,7 @@ Feature: Simple test creating a perpetual market.
     When the opening auction period ends for market "ETH/DEC19"
     Then the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake   | open interest |
-      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 269815200000 | 3905000000000000 | 5             |
+      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 3905000000000000 | 5             |
     And the parties should have the following account balances:
       | party   | asset | market id | margin       | general                   |
       | trader1 | ETH   | ETH/DEC19 | 113402285504 | 9999999999999886597714496 |
@@ -104,7 +102,7 @@ Feature: Simple test creating a perpetual market.
     When the opening auction period ends for market "ETH/DEC19"
     Then the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake   | open interest |
-      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 269815200000 | 3905000000000000 | 5             |
+      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 3905000000000000 | 5             |
     And the parties should have the following account balances:
       | party   | asset | market id | margin       | general                   |
       | trader1 | ETH   | ETH/DEC19 | 113402285504 | 9999999999999886597714496 |

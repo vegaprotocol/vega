@@ -13,8 +13,6 @@ Feature: test margin during amending orders
       | 1       | 0.99        | 300               |
     And the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter       | 0.2   |
     And the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |

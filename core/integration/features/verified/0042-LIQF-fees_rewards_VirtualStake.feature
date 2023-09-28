@@ -16,8 +16,6 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the following network parameters are set:
       | name                                                | value |
       | market.value.windowLength                           | 1h    |
-      | market.stake.target.timeWindow                      | 24h   |
-      | market.stake.target.scalingFactor                   | 1     |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | limits.markets.maxPeggedOrders                      | 12    |
     Given the liquidity monitoring parameters:

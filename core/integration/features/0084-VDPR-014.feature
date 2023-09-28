@@ -14,8 +14,6 @@ Feature: If a party does not qualify for the lowest tier, their volume_discount_
     And the following network parameters are set:
       | name                                          | value |
       | market.value.windowLength                     | 60s   |
-      | market.stake.target.timeWindow                | 20s   |
-      | market.stake.target.scalingFactor             | 1     |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | limits.markets.maxPeggedOrders                | 6     |
       | market.auction.minimumDuration                | 1     |

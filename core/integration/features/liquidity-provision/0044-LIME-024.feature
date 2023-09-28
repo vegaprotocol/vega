@@ -9,8 +9,6 @@ Feature: Check penalties for early exit
   Background:
     Given the following network parameters are set:
       | name                                                  | value |
-      | market.stake.target.timeWindow                        | 24h   |
-      | market.stake.target.scalingFactor                     | 1     |
       | market.liquidity.bondPenaltyParameter                 | 1     |
       | network.markPriceUpdateMaximumFrequency               | 0s    |
       | limits.markets.maxPeggedOrders                        | 2     |

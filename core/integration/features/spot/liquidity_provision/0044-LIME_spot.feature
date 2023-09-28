@@ -26,7 +26,6 @@ Feature: Spot market
       | name                                                  | value |
       | network.markPriceUpdateMaximumFrequency               | 0s    |
       | market.liquidity.earlyExitPenalty                   | 0.02  |
-      | market.stake.target.timeWindow                        | 2s    |
       | market.liquidity.earlyExitPenalty                   | 0.5   |
       | market.liquidity.bondPenaltyParameter                 | 0     |
       | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.5   |

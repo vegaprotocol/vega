@@ -16,8 +16,6 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
       | 1       | 0.99        | 300               |
     And the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter       | 0.1   |
       | limits.markets.maxPeggedOrders                | 2     |
       | validators.epoch.length                       | 5s    |

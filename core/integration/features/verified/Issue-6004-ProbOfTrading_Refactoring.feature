@@ -13,8 +13,6 @@ Feature: test probability of trading used in LP vol when best bid/ask is changin
       | 10000   | 0.99        | 300               |
     And the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter       | 0.2   |
       | market.liquidity.stakeToCcyVolume           | 1.0   |
       | network.markPriceUpdateMaximumFrequency       | 0s    |

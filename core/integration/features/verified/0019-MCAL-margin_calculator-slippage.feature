@@ -5,7 +5,6 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
         # Set liquidity parameters to allow "zero" target-stake which is needed to construct the order-book defined in the ACs
         Given the following network parameters are set:
             | name                                          | value |
-            | market.stake.target.scalingFactor             | 1e-9  |
             | network.markPriceUpdateMaximumFrequency       | 0s    |
         And the liquidity monitoring parameters:
             | name               | triggering ratio | time window | scaling factor |

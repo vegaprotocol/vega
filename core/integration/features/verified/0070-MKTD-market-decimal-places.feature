@@ -3,8 +3,6 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
     Background:
         Given the following network parameters are set:
             | name                                          | value |
-            | market.stake.target.timeWindow                | 24h   |
-            | market.stake.target.scalingFactor             | 1     |
             | market.liquidity.bondPenaltyParameter       | 0.2   |
             | limits.markets.maxPeggedOrders                | 1500  |
             | network.markPriceUpdateMaximumFrequency       | 0s    |

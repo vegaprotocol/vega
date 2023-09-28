@@ -362,9 +362,9 @@ func testNonEmptyCheckpointWithOverWrite(t *testing.T) {
 
 	genesis := map[string]interface{}{
 		"network_parameters": map[string]string{
-			"market.stake.target.timeWindow": "1h",
+			"market.liquidity.successorLaunchWindowLength": "1h",
 		},
-		"network_parameters_checkpoint_overwrite": []string{"market.stake.target.timeWindow"},
+		"network_parameters_checkpoint_overwrite": []string{"market.liquidity.successorLaunchWindowLength"},
 	}
 
 	buf, err := json.Marshal(genesis)

@@ -3,8 +3,6 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
   Background:
     Given the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
       | limits.markets.maxPeggedOrders                | 4     |
     And the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |

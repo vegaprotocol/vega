@@ -28,8 +28,6 @@ Feature: Simple example of successor markets
     And the following network parameters are set:
       | name                                                | value |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
-      | market.stake.target.timeWindow                      | 10s   |
-      | market.stake.target.scalingFactor                   | 10    |
       | market.auction.minimumDuration                      | 1     |
       | market.fee.factors.infrastructureFee                | 0.001 |
       | market.fee.factors.makerFee                         | 0.004 |

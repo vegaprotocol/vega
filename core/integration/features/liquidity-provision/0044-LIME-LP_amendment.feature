@@ -25,7 +25,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | 0.5         | 0.5                          | 1                             | 1.0                    |
     And the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
-      | lqm-params         | 1.0              | 20s         | 1              |  
+      | lqm-params         | 1.0              | 20s         | 10             |  
     
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
@@ -37,8 +37,6 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     And the following network parameters are set:
       | name                                                  | value |
       | market.value.windowLength                             | 60s   |
-      | market.stake.target.timeWindow                        | 20s   |
-      | market.stake.target.scalingFactor                     | 1     |
       | network.markPriceUpdateMaximumFrequency               | 0s    |
       | limits.markets.maxPeggedOrders                        | 6     |
       | market.auction.minimumDuration                        | 1     |

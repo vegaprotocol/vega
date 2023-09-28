@@ -8,8 +8,6 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
   Background:
     Given the following network parameters are set:
       | name                                               | value |
-      | market.stake.target.timeWindow                     | 24h   |
-      | market.stake.target.scalingFactor                  | 1     |
       | network.floatingPointUpdates.delay                 | 10s   |
       | market.auction.minimumDuration                     | 10    |
       | network.markPriceUpdateMaximumFrequency            | 0s    |

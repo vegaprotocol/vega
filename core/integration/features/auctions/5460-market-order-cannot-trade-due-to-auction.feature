@@ -3,8 +3,6 @@ Feature: Test for issue 5460
   Background:
     Given the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
       | network.floatingPointUpdates.delay            | 10s   |
       | market.auction.minimumDuration                | 1     |
       | limits.markets.maxPeggedOrders                | 2     |

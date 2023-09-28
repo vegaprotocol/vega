@@ -23,10 +23,11 @@ const (
 	MarketAuctionMinimumDuration      = "market.auction.minimumDuration"
 	MarketAuctionMaximumDuration      = "market.auction.maximumDuration"
 
-	MarketTargetStakeTimeWindow            = "market.stake.target.timeWindow"
-	MarketTargetStakeScalingFactor         = "market.stake.target.scalingFactor"
-	MarketValueWindowLength                = "market.value.windowLength"
-	MarketPriceMonitoringDefaultParameters = "market.monitor.price.defaultParameters"
+	MarketTargetStakeTimeWindow               = "market.stake.target.timeWindow"
+	MarketTargetStakeScalingFactor            = "market.stake.target.scalingFactor"
+	MarketLiquidityTargetStakeTriggeringRatio = "market.liquidity.targetstake.triggering.ratio"
+	MarketValueWindowLength                   = "market.value.windowLength"
+	MarketPriceMonitoringDefaultParameters    = "market.monitor.price.defaultParameters"
 
 	MarketMinLpStakeQuantumMultiple          = "market.liquidityProvision.minLpStakeQuantumMultiple"
 	MarketProbabilityOfTradingTauScaling     = "market.liquidity.probabilityOfTrading.tau.scaling"
@@ -34,6 +35,7 @@ const (
 	MarketSuccessorLaunchWindow              = "market.liquidity.successorLaunchWindowLength"
 
 	MarketLiquidityProvisionShapesMaxSize            = "market.liquidityProvision.shapes.maxSize"
+	MarketLiquidityTargetStakeTriggeringRatioXXX     = "market.liquidity.targetstake.triggering.ratio"
 	MarketLiquidityBondPenaltyParameter              = "market.liquidity.bondPenaltyParameter"
 	MarketLiquidityEarlyExitPenalty                  = "market.liquidity.earlyExitPenalty"
 	MarketLiquidityMaximumLiquidityFeeFactorLevel    = "market.liquidity.maximumLiquidityFeeFactorLevel"
@@ -242,6 +244,9 @@ var Deprecated = map[string]struct{}{
 	StakingAndDelegationRewardPayoutFraction:    {},
 	StakingAndDelegationRewardPayoutDelay:       {},
 	StakingAndDelegationRewardMaxPayoutPerEpoch: {},
+	MarketLiquidityTargetStakeTriggeringRatio:   {},
+	MarketTargetStakeTimeWindow:                 {},
+	MarketTargetStakeScalingFactor:              {},
 }
 
 var AllKeys = map[string]struct{}{
@@ -282,8 +287,6 @@ var AllKeys = map[string]struct{}{
 	MarketLiquiditySLANonPerformanceBondPenaltyMax:               {},
 	MarketLiquidityStakeToCCYVolume:                              {},
 	MarketLiquidityProvidersFeeCalculationTimeStep:               {},
-	MarketTargetStakeTimeWindow:                                  {},
-	MarketTargetStakeScalingFactor:                               {},
 	MarketPriceMonitoringDefaultParameters:                       {},
 	MarketMinLpStakeQuantumMultiple:                              {},
 	RewardAsset:                                                  {},

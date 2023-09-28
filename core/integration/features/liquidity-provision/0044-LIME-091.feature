@@ -11,8 +11,6 @@ Feature: Test change of SLA market parameter
     And the following network parameters are set:
       | name                                          | value |
       | market.value.windowLength                     | 60s   |
-      | market.stake.target.timeWindow                | 20s   |
-      | market.stake.target.scalingFactor             | 1     |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | limits.markets.maxPeggedOrders                | 6     |
       | market.auction.minimumDuration                | 1     |

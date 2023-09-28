@@ -226,28 +226,6 @@ func buildMarketFromProposal(
 		definition.Changes.PriceMonitoringParameters = types.PriceMonitoringParametersFromProto(pmParams)
 	}
 
-	if definition.Changes.LiquidityMonitoringParameters == nil ||
-		definition.Changes.LiquidityMonitoringParameters.TargetStakeParameters == nil {
-		// get target stake parameters
-		tsTimeWindow, _ := netp.GetDuration(netparams.MarketTargetStakeTimeWindow)
-		tsScalingFactor, _ := netp.GetDecimal(netparams.MarketTargetStakeScalingFactor)
-		// get triggering ratio
-		lmParams := &proto.LiquidityMonitoringParameters{}
-		triggeringRatio, _ := num.DecimalFromString(lmParams.TriggeringRatio)
-		tsParams := &types.TargetStakeParameters{
-			TimeWindow:    int64(tsTimeWindow.Seconds()),
-			ScalingFactor: tsScalingFactor,
-		}
-
-		if definition.Changes.LiquidityMonitoringParameters == nil {
-			definition.Changes.LiquidityMonitoringParameters = &types.LiquidityMonitoringParameters{
-				TargetStakeParameters: tsParams,
-				TriggeringRatio:       triggeringRatio,
-			}
-			definition.Changes.LiquidityMonitoringParameters.TargetStakeParameters = tsParams
-		}
-	}
-
 	makerFeeDec, _ := num.DecimalFromString(makerFee)
 	infraFeeDec, _ := num.DecimalFromString(infraFee)
 	market := &types.Market{
@@ -307,17 +285,6 @@ func buildSpotMarketFromProposal(
 		pmParams := &proto.PriceMonitoringParameters{}
 		_ = netp.GetJSONStruct(netparams.MarketPriceMonitoringDefaultParameters, pmParams)
 		definition.Changes.PriceMonitoringParameters = types.PriceMonitoringParametersFromProto(pmParams)
-	}
-
-	if definition.Changes.TargetStakeParameters == nil {
-		// get target stake parameters
-		tsTimeWindow, _ := netp.GetDuration(netparams.MarketTargetStakeTimeWindow)
-		tsScalingFactor, _ := netp.GetDecimal(netparams.MarketTargetStakeScalingFactor)
-		params := &types.TargetStakeParameters{
-			TimeWindow:    int64(tsTimeWindow.Seconds()),
-			ScalingFactor: tsScalingFactor,
-		}
-		definition.Changes.TargetStakeParameters = params
 	}
 
 	liquidityMonitoring := &types.LiquidityMonitoringParameters{

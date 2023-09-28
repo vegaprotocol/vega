@@ -29,8 +29,6 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
-      | market.stake.target.timeWindow                        | 24h  |
-      | market.stake.target.scalingFactor                     | 1    |
       | market.liquidity.bondPenaltyParameter               | 0    |
       | validators.epoch.length                               | 5s   |
       | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0    |

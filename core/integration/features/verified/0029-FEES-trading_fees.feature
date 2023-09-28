@@ -765,10 +765,6 @@ Feature: Fees calculations
 
   Scenario:S009, Testing fees in auctions session with each side of a trade debited 1/2 IF & LP (0029-FEES-006, 0029-FEES-008)
 
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
     Given the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
       | lqm-params         | 1.0              | 24h         | 1.0            |
@@ -937,11 +933,7 @@ Feature: Fees calculations
 
   Scenario: S011, Testing fees in Liquidity auction session trading with insufficient balance in their general account but margin covers the fees (0029-FEES-006)
 
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-
+    
     And the average block duration is "1"
 
     And the fees configuration named "fees-config-1":
@@ -1055,11 +1047,7 @@ Feature: Fees calculations
 
   Scenario: S013, Testing fees in Price auction session trading with insufficient balance in their general account but margin covers the fees (0029-FEES-008)
 
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-
+    
     And the average block duration is "1"
 
     And the fees configuration named "fees-config-1":
@@ -1165,11 +1153,7 @@ Feature: Fees calculations
 
   Scenario: S014, Testing fees in Liquidity auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead, (0029-FEES-008)
 
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-
+    
     And the average block duration is "1"
 
     And the fees configuration named "fees-config-1":
@@ -1287,11 +1271,7 @@ Feature: Fees calculations
 
   Scenario:S016,  Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead (0029-FEES-008)
 
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-
+    
     And the average block duration is "1"
 
     And the fees configuration named "fees-config-1":
@@ -1401,11 +1381,7 @@ Feature: Fees calculations
 
   Scenario:S017, Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade does not go ahead (0029-FEES-008)
 
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-
+    
     And the average block duration is "1"
 
     And the fees configuration named "fees-config-1":

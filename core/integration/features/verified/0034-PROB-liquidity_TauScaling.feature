@@ -4,8 +4,6 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
     Given the following network parameters are set:
       | name                                                | value |
       | market.value.windowLength                           | 1h    |
-      | market.stake.target.timeWindow                      | 24h   |
-      | market.stake.target.scalingFactor                   | 1     |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | market.liquidity.probabilityOfTrading.tau.scaling   | 1     |
       | limits.markets.maxPeggedOrders                      | 4     |
@@ -139,8 +137,6 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
     Given the following network parameters are set:
       | name                                              | value |
       | market.value.windowLength                         | 1h    |
-      | market.stake.target.timeWindow                    | 24h   |
-      | market.stake.target.scalingFactor                 | 1     |
       | network.markPriceUpdateMaximumFrequency           | 0s    |
       | market.liquidity.probabilityOfTrading.tau.scaling | 10    |
       | limits.markets.maxPeggedOrders                    | 4     |
@@ -251,8 +247,6 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
     Given the following network parameters are set:
       | name                                              | value |
       | market.value.windowLength                         | 1h    |
-      | market.stake.target.timeWindow                    | 24h   |
-      | market.stake.target.scalingFactor                 | 1     |
       | network.markPriceUpdateMaximumFrequency           | 0s    |
       | market.liquidity.probabilityOfTrading.tau.scaling | 1000  |
       | limits.markets.maxPeggedOrders                    | 4     |
@@ -364,8 +358,6 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
     Given the following network parameters are set:
       | name                                              | value |
       | market.value.windowLength                         | 1h    |
-      | market.stake.target.timeWindow                    | 24h   |
-      | market.stake.target.scalingFactor                 | 1     |
       | network.markPriceUpdateMaximumFrequency           | 0s    |
       | market.liquidity.probabilityOfTrading.tau.scaling | 1     |
       | limits.markets.maxPeggedOrders                    | 8     |
@@ -478,8 +470,6 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
     Given the following network parameters are set:
       | name                                              | value |
       | market.value.windowLength                         | 1h    |
-      | market.stake.target.timeWindow                    | 24h   |
-      | market.stake.target.scalingFactor                 | 1     |
       | network.markPriceUpdateMaximumFrequency           | 0s    |
       | market.liquidity.probabilityOfTrading.tau.scaling | 10    |
       | limits.markets.maxPeggedOrders                    | 4     |
@@ -592,8 +582,6 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
     Given the following network parameters are set:
       | name                                              | value |
       | market.value.windowLength                         | 1h    |
-      | market.stake.target.timeWindow                    | 24h   |
-      | market.stake.target.scalingFactor                 | 1     |
       | network.markPriceUpdateMaximumFrequency           | 0s    |
       | market.liquidity.probabilityOfTrading.tau.scaling | 1000  |
       | limits.markets.maxPeggedOrders                    | 4     |

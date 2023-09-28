@@ -26,13 +26,11 @@ Feature: Simple example of successor markets
     And the settlement data decimals for the oracle named "ethDec20Oracle" is given in "5" decimal places
     And the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
-      | lqm-params         | 0.01             | 10s         | 1              |  
+      | lqm-params         | 0.01             | 10s         | 5              |  
     
     And the following network parameters are set:
       | name                                          | value |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
-      | market.stake.target.timeWindow                | 10s   |
-      | market.stake.target.scalingFactor             | 5     |
       | market.auction.minimumDuration                | 1     |
       | market.fee.factors.infrastructureFee          | 0.001 |
       | market.fee.factors.makerFee                   | 0.004 |
@@ -133,7 +131,7 @@ Feature: Simple example of successor markets
     When the opening auction period ends for market "ETH/DEC19"
     Then the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake   | open interest |
-      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 3905000000000000 | 5             |
+      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 269815200000 | 3905000000000000 | 5             |
     And the parties should have the following account balances:
       | party   | asset | market id | margin       | general                   |
       | trader1 | ETH   | ETH/DEC19 | 113402285504 | 9999999999999886597714496 |
@@ -184,7 +182,7 @@ Feature: Simple example of successor markets
     When the opening auction period ends for market "ETH/DEC21"
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake   | open interest |
-      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 1905000000000000 | 5             |
+      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 269815200000 | 1905000000000000 | 5             |
 
     When the network moves ahead "1" blocks
 #The bond for market ETH/DEC20 should be released back to the general balance
@@ -217,7 +215,7 @@ Feature: Simple example of successor markets
     When the opening auction period ends for market "ETH/DEC19"
     Then the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake   | open interest |
-      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 3905000000000000 | 5             |
+      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 269815200000 | 3905000000000000 | 5             |
     And the parties should have the following account balances:
       | party   | asset | market id | margin       | general                   |
       | trader1 | ETH   | ETH/DEC19 | 113402285504 | 9999999999999886597714496 |
@@ -245,7 +243,7 @@ Feature: Simple example of successor markets
     # successor market is enacted without issue
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake   | open interest |
-      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 1905000000000000 | 5             |
+      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 269815200000 | 1905000000000000 | 5             |
     # Now terminate the parent market
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |
@@ -256,7 +254,7 @@ Feature: Simple example of successor markets
     And the last market state should be "STATE_ACTIVE" for the market "ETH/DEC20"
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake   | open interest |
-      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 1905000000000000 | 5             |
+      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 269815200000 | 1905000000000000 | 5             |
 
   @SuccessorMarketSimple @NoPerp
   Scenario: 004 Enact a successor market while the parent market is still in pending state, 0081-SUCM-009, 0081-SUCM-010, 0081-SUCM-011
@@ -298,7 +296,7 @@ Feature: Simple example of successor markets
     When the opening auction period ends for market "ETH/DEC20"
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake   | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 276450000000 | 1905000000000000 | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 552900000000 | 1905000000000000 | 10            |
     Then the successor market "ETH/DEC20" is enacted
     And the last market state should be "STATE_REJECTED" for the market "ETH/DEC21"
 
@@ -336,7 +334,7 @@ Feature: Simple example of successor markets
     When the opening auction period ends for market "ETH/DEC19"
     Then the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake   | open interest |
-      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 3905000000000000 | 5             |
+      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 269815200000 | 3905000000000000 | 5             |
     And the parties should have the following account balances:
       | party   | asset | market id | margin       | general                   |
       | trader1 | ETH   | ETH/DEC19 | 113402285504 | 9999999999999886597714496 |
@@ -385,7 +383,7 @@ Feature: Simple example of successor markets
     When the opening auction period ends for market "ETH/DEC20"
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake   | open interest |
-      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 1905000000000000 | 5             |
+      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 269815200000 | 1905000000000000 | 5             |
 
     When the network moves ahead "1" blocks
     # The bond for market ETH/DEC20 should be released back to the general balance

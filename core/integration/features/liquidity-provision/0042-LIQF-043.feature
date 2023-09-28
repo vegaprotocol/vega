@@ -15,8 +15,6 @@ Feature: Test LP fee distribution in LP mechanics in 0042
     And the following network parameters are set:
       | name                                          | value |
       | market.value.windowLength                     | 60s   |
-      | market.stake.target.timeWindow                | 20s   |
-      | market.stake.target.scalingFactor             | 1     |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | limits.markets.maxPeggedOrders                | 6     |
       | market.auction.minimumDuration                | 1     |

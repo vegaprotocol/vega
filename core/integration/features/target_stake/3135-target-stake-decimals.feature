@@ -6,10 +6,12 @@ Feature: Target stake
   Background:
     Given the following network parameters are set:
       | name                                    | value |
-      | market.stake.target.timeWindow          | 168h  |
-      | market.stake.target.scalingFactor       | 1.5   |
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 1.0              | 168h        | 1.5            |  
+    
     And the following assets are registered:
       | id  | decimal places |
       | BTC | 5              |
@@ -26,8 +28,8 @@ Feature: Target stake
       | search factor | initial factor | release factor |
       | 1.1           | 1.2            | 1.4            |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future | 2              | 1e6                    | 1e6                       | default-futures |
+      | id        | quote name | asset | liquidity monitoring | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC21 | BTC        | BTC   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future | 2              | 1e6                    | 1e6                       | default-futures |
 
     # Above, it says mark price but really I don't mind if we start
     # with an opening auction as long as at start of the scenario

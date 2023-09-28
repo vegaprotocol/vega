@@ -8,8 +8,7 @@ Feature: Spot market
       | name                                                | value |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | market.value.windowLength                           | 1h    |
-      | market.stake.target.timeWindow                      | 24h   |
-      | market.stake.target.scalingFactor                   | 1     |
+    
     Given the following assets are registered:
       | id  | decimal places |
       | ETH | 2              |
