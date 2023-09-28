@@ -29,8 +29,7 @@ type FundingPaymentsEvent interface {
 }
 
 type FundingPaymentsStore interface {
-	Add([]*entities.FundingPayment) error
-	Flush(ctx context.Context) error
+	Add(context.Context, []*entities.FundingPayment) error
 }
 
 type FundingPaymentSubscriber struct {
@@ -49,20 +48,21 @@ func (ts *FundingPaymentSubscriber) Types() []events.Type {
 }
 
 func (ts *FundingPaymentSubscriber) Flush(ctx context.Context) error {
-	return ts.store.Flush(ctx)
+	return nil
 }
 
 func (ts *FundingPaymentSubscriber) Push(ctx context.Context, evt events.Event) error {
-	return ts.consume(evt.(FundingPaymentsEvent))
+	return ts.consume(ctx, evt.(FundingPaymentsEvent))
 }
 
-func (ts *FundingPaymentSubscriber) consume(te FundingPaymentsEvent) error {
+func (ts *FundingPaymentSubscriber) consume(ctx context.Context, te FundingPaymentsEvent) error {
 	fps := te.FundingPayments()
 
-	return errors.Wrap(ts.addFundingPayments(fps, entities.TxHash(te.TxHash()), ts.vegaTime, te.Sequence()), "failed to consume funding payment")
+	return errors.Wrap(ts.addFundingPayments(ctx, fps, entities.TxHash(te.TxHash()), ts.vegaTime, te.Sequence()), "failed to consume funding payment")
 }
 
 func (ts *FundingPaymentSubscriber) addFundingPayments(
+	ctx context.Context,
 	fps *eventspb.FundingPayments,
 	txHash entities.TxHash,
 	vegaTime time.Time,
@@ -73,5 +73,5 @@ func (ts *FundingPaymentSubscriber) addFundingPayments(
 		return errors.Wrap(err, "converting event to funding payments")
 	}
 
-	return errors.Wrap(ts.store.Add(payments), "adding funding payment to store")
+	return errors.Wrap(ts.store.Add(ctx, payments), "adding funding payment to store")
 }

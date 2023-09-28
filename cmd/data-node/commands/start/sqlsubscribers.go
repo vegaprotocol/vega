@@ -298,7 +298,6 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.protocolUpgradeService = service.NewProtocolUpgrade(s.pupStore, log)
 	s.coreSnapshotService = service.NewSnapshotData(s.snapStore)
 	s.stopOrderService = service.NewStopOrders(s.stopOrderStore)
-	s.fundingPeriodService = service.NewFundingPeriods(s.fundingPeriodStore)
 	s.partyActivityStreakService = service.NewPartyActivityStreak(s.partyActivityStreakStore)
 	s.fundingPeriodService = service.NewFundingPeriods(s.fundingPeriodStore)
 	s.referralProgramService = service.NewReferralPrograms(s.referralProgramStore)
@@ -368,4 +367,6 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.vestingStatsSub = sqlsubscribers.NewVestingStatsUpdated(s.vestingStatsService)
 	s.volumeDiscountStatsSub = sqlsubscribers.NewVolumeDiscountStatsUpdated(s.volumeDiscountStatsService)
 	s.referralFeeStatsSub = sqlsubscribers.NewReferralFeeStats(s.referralFeeStatsService)
+	s.fundingPaymentSub =
+		sqlsubscribers.NewFundingPaymentsSubscriber(s.fundingPaymentStore)
 }
