@@ -17578,7 +17578,7 @@ type FundingPayment struct {
 	FundingPeriodSeq uint64 `protobuf:"varint,3,opt,name=funding_period_seq,json=fundingPeriodSeq,proto3" json:"funding_period_seq,omitempty"`
 	// Timestamp in Unix nanoseconds at which this funding payment occured.
 	Timestamp int64 `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// Funding payment amount, where a positive value indicates an earnt payment received and a negative value a loss.
+	// Funding payment amount, where a positive value indicates an earned payment received and a negative value a loss.
 	Amount string `protobuf:"bytes,5,opt,name=amount,proto3" json:"amount,omitempty"`
 }
 
