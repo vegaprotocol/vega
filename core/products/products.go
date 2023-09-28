@@ -69,6 +69,7 @@ type Product interface {
 	Serialize() *snapshotpb.Product
 	GetMarginIncrease(int64) num.Decimal
 	GetData(t int64) *types.ProductData
+	GetCurrentPeriod() uint64
 }
 
 // New instance a new product from a Market framework product configuration.

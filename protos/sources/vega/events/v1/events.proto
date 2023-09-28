@@ -123,6 +123,24 @@ message FundingPeriod {
   optional string external_twap = 8;
 }
 
+// The amount won or lost by a party as a result of a funding payment.
+message FundingPayment {
+  // ID of the party.
+  string party_id = 1;
+  // The amount paid, this can be negative for parties who lost at the end of the funding period.
+  string amount = 2;
+}
+
+// Event notifying of funding payments at the end of a funding period.
+message FundingPayments {
+  // ID of the market.
+  string market_id = 1;
+  // Sequence number of the funding period assiociated with these payments.
+  uint64 seq = 2;
+  // List of parties and the payment amounts.
+  repeated FundingPayment payments = 3;
+}
+
 // Event notifying a data point for a funding period.
 message FundingPeriodDataPoint {
   enum Source {
@@ -1090,8 +1108,11 @@ enum BusEventType {
   // Event indicating the updated statistics for the volume discount.
   BUS_EVENT_TYPE_VOLUME_DISCOUNT_STATS_UPDATED = 78;
 
-  // Evnts indicating the fee stats per market at end of epoch
+  // Event indicating the fee stats per market at end of epoch
   BUS_EVENT_TYPE_FEE_STATS_UPDATED = 79;
+
+  // Event indicating a funding period has ended and resulted in funding payment transfers.
+  BUS_EVENT_TYPE_FUNDING_PAYMENTS = 80;
 
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
@@ -1260,6 +1281,8 @@ message BusEvent {
     VolumeDiscountStatsUpdated volume_discount_stats_updated = 176;
     // Event notifying of an update the fees stats for a market.
     FeeStats fee_stats = 177;
+    // Event notifying of funding payments at the end of a funding period.
+    FundingPayments funding_payments = 178;
 
     // Market tick events
     MarketEvent market = 1001;

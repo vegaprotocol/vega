@@ -3964,6 +3964,7 @@ func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Num
 	for _, t := range transfers {
 		m.recordPositionActivity(t.Transfer())
 	}
+	m.broker.Send(events.NewFundingPaymentsEvent(ctx, m.mkt.ID, m.tradableInstrument.Instrument.Product.GetCurrentPeriod(), transfers))
 
 	margins, ledgerMovements, err := m.collateral.PerpsFundingSettlement(ctx, m.GetID(), transfers, m.settlementAsset, round)
 	if err != nil {
