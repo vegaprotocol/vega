@@ -376,11 +376,6 @@ func (e *Engine) loadCurrentReferralProgramFromSnapshot(program *vegapb.Referral
 	}
 
 	e.currentProgram = types.NewReferralProgramFromProto(program)
-	e.programHasEnded = false
-
-	if e.latestProgramVersion < e.currentProgram.Version {
-		e.latestProgramVersion = e.currentProgram.Version
-	}
 }
 
 func (e *Engine) loadNewReferralProgramFromSnapshot(program *vegapb.ReferralProgram) {
@@ -390,10 +385,11 @@ func (e *Engine) loadNewReferralProgramFromSnapshot(program *vegapb.ReferralProg
 	}
 
 	e.newProgram = types.NewReferralProgramFromProto(program)
+}
 
-	if e.latestProgramVersion < e.newProgram.Version {
-		e.latestProgramVersion = e.newProgram.Version
-	}
+func (e *Engine) loadReferralMiscFromSnapshot(misc *snapshotpb.ReferralMisc) {
+	e.latestProgramVersion = misc.LastProgramVersion
+	e.programHasEnded = misc.ProgramHasEnded
 }
 
 func (e *Engine) loadReferralSetsFromSnapshot(setsProto *snapshotpb.ReferralSets) {

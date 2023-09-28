@@ -17,6 +17,42 @@ import (
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
+type PayloadReferralMisc struct {
+	ReferralMisc *snapshotpb.ReferralMisc
+}
+
+func (p *PayloadReferralMisc) Key() string {
+	return "referralMisc"
+}
+
+func (*PayloadReferralMisc) Namespace() SnapshotNamespace {
+	return ReferralProgramSnapshot
+}
+
+func (p *PayloadReferralMisc) IntoProto() *snapshotpb.Payload_ReferralMisc {
+	return &snapshotpb.Payload_ReferralMisc{
+		ReferralMisc: &snapshotpb.ReferralMisc{
+			LastProgramVersion: p.ReferralMisc.LastProgramVersion,
+			ProgramHasEnded:    p.ReferralMisc.ProgramHasEnded,
+		},
+	}
+}
+
+func (*PayloadReferralMisc) isPayload() {}
+
+func (p *PayloadReferralMisc) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func PayloadReferralMiscFromProto(payload *snapshotpb.Payload_ReferralMisc) *PayloadReferralMisc {
+	return &PayloadReferralMisc{
+		ReferralMisc: &snapshotpb.ReferralMisc{
+			LastProgramVersion: payload.ReferralMisc.LastProgramVersion,
+			ProgramHasEnded:    payload.ReferralMisc.ProgramHasEnded,
+		},
+	}
+}
+
 type PayloadCurrentReferralProgram struct {
 	CurrentReferralProgram *vegapb.ReferralProgram
 }
