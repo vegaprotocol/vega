@@ -5842,7 +5842,7 @@ type FundingPayment {
   partyId: ID!
   "Sequence number of the funding period the funding payment belongs to."
   fundingPeriodSeq: Int!
-  "Amount transfered"
+  "Amount transferred"
   amount: String
   "RFC3339Nano timestamp when the data point was received."
   timestamp: Timestamp!

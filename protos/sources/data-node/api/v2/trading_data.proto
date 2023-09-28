@@ -3460,7 +3460,7 @@ message FundingPayment {
   uint64 funding_period_seq = 3;
   // Timestamp in Unix nanoseconds at which this funding payment occured.
   int64 timestamp = 4;
-  // Funding payment amount, where a positive value indicates an earnt payment received and a negative value a loss.
+  // Funding payment amount, where a positive value indicates an earned payment received and a negative value a loss.
   string amount = 5;
 }
 
