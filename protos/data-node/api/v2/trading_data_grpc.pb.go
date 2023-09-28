@@ -436,6 +436,10 @@ type TradingDataServiceClient interface {
 	//
 	// Get a list of data points for a perpetual market's funding periods.
 	ListFundingPeriodDataPoints(ctx context.Context, in *ListFundingPeriodDataPointsRequest, opts ...grpc.CallOption) (*ListFundingPeriodDataPointsResponse, error)
+	// List funding payments for a party
+	//
+	// Get a list of data points for a perpetual market's funding payment for a party.
+	ListFundingPayments(ctx context.Context, in *ListFundingPaymentsRequest, opts ...grpc.CallOption) (*ListFundingPaymentsResponse, error)
 	// List party activity streak
 	//
 	// Get a party's activity across epochs
@@ -1732,6 +1736,15 @@ func (c *tradingDataServiceClient) ListFundingPeriodDataPoints(ctx context.Conte
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ListFundingPayments(ctx context.Context, in *ListFundingPaymentsRequest, opts ...grpc.CallOption) (*ListFundingPaymentsResponse, error) {
+	out := new(ListFundingPaymentsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListFundingPayments", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) GetPartyActivityStreak(ctx context.Context, in *GetPartyActivityStreakRequest, opts ...grpc.CallOption) (*GetPartyActivityStreakResponse, error) {
 	out := new(GetPartyActivityStreakResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetPartyActivityStreak", in, out, opts...)
@@ -2271,6 +2284,10 @@ type TradingDataServiceServer interface {
 	//
 	// Get a list of data points for a perpetual market's funding periods.
 	ListFundingPeriodDataPoints(context.Context, *ListFundingPeriodDataPointsRequest) (*ListFundingPeriodDataPointsResponse, error)
+	// List funding payments for a party
+	//
+	// Get a list of data points for a perpetual market's funding payment for a party.
+	ListFundingPayments(context.Context, *ListFundingPaymentsRequest) (*ListFundingPaymentsResponse, error)
 	// List party activity streak
 	//
 	// Get a party's activity across epochs
@@ -2660,6 +2677,9 @@ func (UnimplementedTradingDataServiceServer) ListFundingPeriods(context.Context,
 }
 func (UnimplementedTradingDataServiceServer) ListFundingPeriodDataPoints(context.Context, *ListFundingPeriodDataPointsRequest) (*ListFundingPeriodDataPointsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListFundingPeriodDataPoints not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListFundingPayments(context.Context, *ListFundingPaymentsRequest) (*ListFundingPaymentsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListFundingPayments not implemented")
 }
 func (UnimplementedTradingDataServiceServer) GetPartyActivityStreak(context.Context, *GetPartyActivityStreakRequest) (*GetPartyActivityStreakResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPartyActivityStreak not implemented")
@@ -4431,6 +4451,24 @@ func _TradingDataService_ListFundingPeriodDataPoints_Handler(srv interface{}, ct
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ListFundingPayments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListFundingPaymentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListFundingPayments(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListFundingPayments",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListFundingPayments(ctx, req.(*ListFundingPaymentsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_GetPartyActivityStreak_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetPartyActivityStreakRequest)
 	if err := dec(in); err != nil {
@@ -4950,6 +4988,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListFundingPeriodDataPoints",
 			Handler:    _TradingDataService_ListFundingPeriodDataPoints_Handler,
+		},
+		{
+			MethodName: "ListFundingPayments",
+			Handler:    _TradingDataService_ListFundingPayments_Handler,
 		},
 		{
 			MethodName: "GetPartyActivityStreak",

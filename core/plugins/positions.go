@@ -21,11 +21,20 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/pkg/errors"
 )
 
 var ErrMarketNotFound = errors.New("could not find market")
+
+// FP FundingPaymentsEvent.
+type FP interface {
+	events.Event
+	MarketID() string
+	IsParty(id string) bool
+	FundingPayments() *eventspb.FundingPayments
+}
 
 // SE SettleEvent - common denominator between SPE & SDE.
 type SE interface {
@@ -118,9 +127,31 @@ func (p *Positions) Push(evts ...events.Event) {
 			p.applyDistressedPositions(te)
 		case SME:
 			p.handleSettleMarket(te)
+		case FP:
+			p.handleFundingPayments(te)
 		}
 	}
 	p.mu.Unlock()
+}
+
+func (p *Positions) handleFundingPayments(e FP) {
+	marketID := e.MarketID()
+	partyPos, ok := p.data[marketID]
+	if !ok {
+		return
+	}
+	payments := e.FundingPayments().Payments
+	for _, pay := range payments {
+		pos, ok := partyPos[pay.PartyId]
+		amt, _ := num.DecimalFromString(pay.Amount)
+		if !ok {
+			continue
+		}
+		pos.UnrealisedPnl = pos.UnrealisedPnl.Add(amt)
+		pos.UnrealisedPnlFP = pos.UnrealisedPnlFP.Add(amt)
+		partyPos[pay.PartyId] = pos
+	}
+	p.data[marketID] = partyPos
 }
 
 func (p *Positions) applyDistressedPositions(e DPE) {
@@ -440,5 +471,6 @@ func (p *Positions) Types() []events.Type {
 		events.DistressedOrdersClosedEvent,
 		events.DistressedPositionsEvent,
 		events.SettleMarketEvent,
+		events.FundingPaymentsEvent,
 	}
 }

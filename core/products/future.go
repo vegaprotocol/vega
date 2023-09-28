@@ -50,6 +50,8 @@ type Future struct {
 	assetDP                    uint32
 }
 
+func (_ Future) GetCurrentPeriod() uint64 { return 0 }
+
 func (f *Future) UnsubscribeTradingTerminated(ctx context.Context) {
 	f.log.Info("unsubscribed trading terminated for", logging.String("quote-name", f.QuoteName))
 	f.oracle.unsubTerm(ctx)

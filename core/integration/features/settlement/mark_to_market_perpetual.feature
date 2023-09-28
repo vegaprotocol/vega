@@ -18,7 +18,7 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
       | market.auction.minimumDuration | 1     |
       | limits.markets.maxPeggedOrders | 2     |
 
-  @Perpetual
+  @Perpetual @FundingLoss
   Scenario: (0053-PERP-005) Mark to market settlement works correctly with a predefined frequency irrespective of the behaviour of any of the oracles specified for the market.
     Given the following network parameters are set:
       | name                                    | value |
@@ -119,6 +119,11 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux   | ETH/DEC19 | sell | 1      | 2001  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC19 | buy  | 1      | 2001  | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | -2     | -1000000       | 0            |
+      | party2 | 1      | 1000000        | 0            |
+      | party3 | 1      | 0              | 0            |
 
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value      | time offset |
@@ -131,6 +136,11 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
       | party1 | ETH   | ETH/DEC19 | 7482400 | 1317600 |
       | party3 | ETH   | ETH/DEC19 | 2705200 | 7392800 |
       | party2 | ETH   | ETH/DEC19 | 2705200 | 8393800 |
+    And the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | -2     | -1200000       | 0            |
+      | party2 | 1      | 1100000        | 0            |
+      | party3 | 1      | 100000         | 0            |
 
     # move to the block before the next MTM should be no changes
     When the network moves ahead "3" blocks

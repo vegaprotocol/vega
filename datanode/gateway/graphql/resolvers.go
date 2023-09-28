@@ -542,6 +542,10 @@ func (r *VegaResolverRoot) ReferrerRewardsGenerated() ReferrerRewardsGeneratedRe
 	return (*referrerRewardsGeneratedResolver)(r)
 }
 
+func (r *VegaResolverRoot) FundingPayment() FundingPaymentResolver {
+	return (*fundingPaymentResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -563,7 +567,7 @@ type epochRewardSummaryResolver VegaResolverRoot
 func (r *epochRewardSummaryResolver) RewardType(_ context.Context, obj *vega.EpochRewardSummary) (vega.AccountType, error) {
 	accountType, ok := vega.AccountType_value[obj.RewardType]
 	if !ok {
-		return vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED, fmt.Errorf("Unknown account type %v", obj.RewardType)
+		return vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED, fmt.Errorf("unknown account type %v", obj.RewardType)
 	}
 
 	return vega.AccountType(accountType), nil
@@ -648,6 +652,25 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *vegapb.Dep
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
+
+func (r *myQueryResolver) FundingPayments(
+	ctx context.Context,
+	partyID string,
+	marketID *string,
+	pagination *v2.Pagination,
+) (*v2.FundingPaymentConnection, error) {
+	req := v2.ListFundingPaymentsRequest{
+		PartyId:    partyID,
+		MarketId:   marketID,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.ListFundingPayments(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return res.FundingPayments, nil
+}
 
 func (r *myQueryResolver) FundingPeriods(ctx context.Context, marketID string, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.FundingPeriodConnection, error) {
 	req := v2.ListFundingPeriodsRequest{

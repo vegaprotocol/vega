@@ -666,3 +666,9 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamRefereeHistoryEdge
   TeamRefereeHistoryConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamRefereeHistoryConnection
+  FundingPayment:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPayment
+  FundingPaymentEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPaymentEdge
+  FundingPaymentConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPaymentConnection

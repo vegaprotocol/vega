@@ -1,0 +1,80 @@
+package sqlstore
+
+import (
+	"context"
+	"fmt"
+
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/metrics"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"github.com/georgysavva/scany/pgxscan"
+)
+
+type FundingPayments struct {
+	*ConnectionSource
+}
+
+var fundingPaymentOrdering = TableOrdering{
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "market_id", Sorting: ASC},
+	ColumnOrdering{Name: "funding_period_seq", Sorting: ASC},
+	ColumnOrdering{Name: "party_id", Sorting: ASC},
+}
+
+func NewFundingPayments(connectionSource *ConnectionSource) *FundingPayments {
+	return &FundingPayments{
+		ConnectionSource: connectionSource,
+	}
+}
+
+func (fp *FundingPayments) Add(
+	ctx context.Context,
+	fundingPayments []*entities.FundingPayment,
+) error {
+	defer metrics.StartSQLQuery("FundingPayments", "Add")()
+
+	for _, v := range fundingPayments {
+		_, err := fp.Connection.Exec(ctx,
+			`insert into funding_payment(market_id, party_id, funding_period_seq, amount, vega_time, tx_hash)
+values ($1, $2, $3, $4, $5, $6)`,
+			v.MarketID, v.PartyID, v.FundingPeriodSeq, v.Amount, v.VegaTime, v.TxHash)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (fp *FundingPayments) List(
+	ctx context.Context,
+	partyID entities.PartyID,
+	marketID *entities.MarketID,
+	pagination entities.CursorPagination,
+) ([]entities.FundingPayment, entities.PageInfo, error) {
+	defer metrics.StartSQLQuery("FundingPayments", "List")()
+	var fundingPayments []entities.FundingPayment
+	var pageInfo entities.PageInfo
+	var args []interface{}
+	var err error
+
+	query := fmt.Sprintf("select * from funding_payment where party_id = %s", nextBindVar(&args, partyID))
+
+	if marketID != nil {
+		query = fmt.Sprintf("%s and market_id = %s", query, nextBindVar(&args, *marketID))
+	}
+
+	query, args, err = PaginateQuery[entities.FundingPaymentCursor](query, args, fundingPaymentOrdering, pagination)
+	if err != nil {
+		return fundingPayments, pageInfo, err
+	}
+
+	err = pgxscan.Select(ctx, fp.Connection, &fundingPayments, query, args...)
+	if err != nil {
+		return fundingPayments, pageInfo, err
+	}
+
+	fundingPayments, pageInfo = entities.PageEntities[*v2.FundingPaymentEdge](fundingPayments, pagination)
+
+	return fundingPayments, pageInfo, nil
+}

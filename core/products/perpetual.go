@@ -274,6 +274,10 @@ type Perpetual struct {
 	externalTWAP *cachedTWAP
 }
 
+func (p Perpetual) GetCurrentPeriod() uint64 {
+	return p.seq
+}
+
 func (p *Perpetual) Update(ctx context.Context, pp interface{}, oe OracleEngine) error {
 	iPerp, ok := pp.(*types.InstrumentPerps)
 	if !ok {

@@ -114,6 +114,12 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 	p.pendingMTM(positionPrice, pf)
 }
 
+func (p *Position) ApplyFundingPayment(amount *num.Int) {
+	da := num.DecimalFromInt(amount)
+	p.PendingUnrealisedPnl = p.PendingUnrealisedPnl.Add(da)
+	p.UnrealisedPnl = p.RealisedPnl.Add(da)
+}
+
 func (p *Position) UpdateOrdersClosed() {
 	p.DistressedStatus = PositionStatusOrdersClosed
 }
