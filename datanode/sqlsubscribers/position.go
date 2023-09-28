@@ -147,7 +147,7 @@ func (p *Position) Push(ctx context.Context, evt events.Event) error {
 	}
 }
 
-func (p *Position) handleFundingPayments(ctx, event fundingPaymentsEvent) error {
+func (p *Position) handleFundingPayments(ctx context.Context, event fundingPaymentsEvent) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	mkt := event.MarketID()
