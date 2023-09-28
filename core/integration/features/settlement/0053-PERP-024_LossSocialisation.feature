@@ -12,7 +12,6 @@ Feature: Test funding payment triggering closeout for Perps market
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | position decimal places | market type | sla params      |
       | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle        | 1e6                    | 1e6                       | -3                      | perp        | default-futures |
-
     And the initial insurance pool balance is "100" for all the markets
     And the following network parameters are set:
       | name                           | value |
@@ -83,16 +82,17 @@ Feature: Test funding payment triggering closeout for Perps market
 
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value                  | time offset |
-      | perp.ETH.value   | 1320000000000000000000 | 0s          |
+      | perp.ETH.value   | 1420000000000000000000 | 0s          |
       | perp.funding.cue | 1612998252             | 0s          |
     When the network moves ahead "4" blocks
 
-    # And the following transfers should happen:
-    #   | from   | to     | from account            | to account              | market id | amount  | asset |
-    #   | party1 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1000000 | USD   |
-    #   | aux    | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1000000 | USD   |
-    #   | market | aux2   | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 1000000 | USD   |
-    #   | market | party2 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 1000000 | USD   |
+    #MTM for mark price 1000 to 1200
+    And the following transfers should happen:
+      | from   | to     | from account            | to account              | market id | amount | asset |
+      | party1 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 200000 | USD   |
+      | aux    | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 200000 | USD   |
+      | market | aux2   | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 200000 | USD   |
+      | market | party2 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 200000 | USD   |
     # And the cumulated balance for all accounts should be worth "330010000"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
@@ -109,15 +109,7 @@ Feature: Test funding payment triggering closeout for Perps market
     #   | party2 | ETH/DEC19 | 2171000     | 2605200 |
     #   | aux2   | ETH/DEC19 | 2391000     | 2869200 |
     # And the mark price should be "2000" for the market "ETH/DEC19"
-    # Then the parties should have the following profit and loss:
-    #   | party  | volume | unrealised pnl | realised pnl |
-    #   | aux    | -1     | -1000000       | 0            |
-    #   | aux2   | 1      | 1000000        | 0            |
-    #   | party1 | -2     | -1000000       | 0            |
-    #   | party2 | 1      | 1000000        | 0            |
-    #   | party3 | 1      | 0              | 0            |
-    #   | lpprov | 0      | 0              | 0            |
-    #1 year has 8760 hours,so 0.002 year would be: 8760*0.002*3600 = 63072second, so next funding time (with delta_t = 0.002) would be 1612998252+63072=1613061324
+
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value      | time offset |
       | perp.funding.cue | 1613061324 | 0s          |
@@ -137,15 +129,6 @@ Feature: Test funding payment triggering closeout for Perps market
     #   | party3 | USD   | ETH/DEC19 | 2605200 | 6832800 |
     #   | party2 | USD   | ETH/DEC19 | 2605200 | 7833800 |
     #   | aux2   | USD   | ETH/DEC19 | 0       | 0       |
-
-    # Then the parties should have the following profit and loss:
-    #   | party  | volume | unrealised pnl | realised pnl |
-    #   | aux    | -1     | -499500        | 634710       |
-    #   | aux2   | 0      | 0              | -1268999     |
-    #   | party1 | -2     | -1000000       | 0            |
-    #   | party2 | 1      | 1000000        | 0            |
-    #   | party3 | 1      | 0              | 0            |
-    #   | lpprov | 1      | 1952000        | -817208      |
 
     # And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
