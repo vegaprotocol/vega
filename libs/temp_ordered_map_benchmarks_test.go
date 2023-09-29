@@ -199,7 +199,7 @@ length: 0
 length: 0
 length: 0
 length: 0
-BenchmarkMapDelete-16    	  651661	      1799 ns/op
+BenchmarkMapDelete-16    	    6439	    182624 ns/op
 */
 func BenchmarkMapDelete(b *testing.B) {
 
@@ -207,12 +207,12 @@ func BenchmarkMapDelete(b *testing.B) {
 
 	var keys []string
 	var values []string
-	for c := 0; c < 1000; c++ {
+	for c := 0; c < 100000; c++ {
 		keys = append(keys, fmt.Sprintf("%d-key", c))
 		values = append(values, fmt.Sprintf("%d-value", c))
 	}
 
-	for c := 0; c < 1000; c++ {
+	for c := 0; c < 100000; c++ {
 		m[keys[c]] = values[c]
 	}
 
@@ -220,7 +220,7 @@ func BenchmarkMapDelete(b *testing.B) {
 
 	i := 0
 	for n := 0; n < b.N; n++ {
-		for c := 999; c >= 0; c-- {
+		for c := 99999; c >= 0; c-- {
 			delete(m, keys[c])
 			i++
 		}
@@ -235,7 +235,7 @@ length: 0
 length: 0
 length: 0
 length: 0
-BenchmarkOrderedMapDelete-16    	  577935	      2049 ns/op
+BenchmarkOrderedMapDelete-16    	    5668	    210437 ns/op
 */
 func BenchmarkOrderedMapDelete(b *testing.B) {
 
@@ -243,12 +243,12 @@ func BenchmarkOrderedMapDelete(b *testing.B) {
 
 	var keys []string
 	var values []string
-	for c := 0; c < 1000; c++ {
+	for c := 0; c < 100000; c++ {
 		keys = append(keys, fmt.Sprintf("%d-key", c))
 		values = append(values, fmt.Sprintf("%d-value", c))
 	}
 
-	for c := 0; c < 1000; c++ {
+	for c := 0; c < 100000; c++ {
 		m.Set(keys[c], values[c])
 	}
 
@@ -256,7 +256,7 @@ func BenchmarkOrderedMapDelete(b *testing.B) {
 
 	i := 0
 	for n := 0; n < b.N; n++ {
-		for c := 999; c >= 0; c-- {
+		for c := 99999; c >= 0; c-- {
 			_, _ = m.Delete(keys[c])
 			i++
 		}
