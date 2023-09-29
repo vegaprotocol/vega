@@ -7,10 +7,7 @@ Feature: If we are below target stake, everyone gets the penalty
   Background:
     Given the following network parameters are set:
       | name                                                  | value |
-      | market.stake.target.timeWindow                        | 24h   |
-      | market.stake.target.scalingFactor                     | 1     |
       | market.liquidity.bondPenaltyParameter                 | 1     |
-      | market.liquidity.targetstake.triggering.ratio         | 0.1   |
       | network.markPriceUpdateMaximumFrequency               | 0s    |
       | limits.markets.maxPeggedOrders                        | 2     |
       | validators.epoch.length                               | 5s    |
@@ -18,7 +15,10 @@ Feature: If we are below target stake, everyone gets the penalty
       | market.liquidity.stakeToCcyVolume                     | 1.0   |
       | market.liquidity.sla.nonPerformanceBondPenaltySlope   | 0.19  |
       | market.liquidity.sla.nonPerformanceBondPenaltyMax     | 1     |
-
+    And the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 0.1              | 24h         | 1              |  
+    
     And the average block duration is "1"
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
@@ -33,8 +33,8 @@ Feature: If we are below target stake, everyone gets the penalty
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 0.01        | 0.5                          | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5                    | 0                         | SLA        |
+      | id        | quote name | asset | liquidity monitoring | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5                    | 0                         | SLA        |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | party1 | ETH   | 100000000  |

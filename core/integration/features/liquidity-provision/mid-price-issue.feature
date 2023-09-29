@@ -4,16 +4,18 @@ Feature: Replicate unexpected margin issues - no mid price pegs
     Given the following assets are registered:
       | id  | decimal places |
       | DAI | 5              |
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 1.0              | 20s         | 10             |  
     And the log normal risk model named "dai-lognormal-risk":
       | risk aversion | tau         | mu | r | sigma |
       | 0.00001       | 0.000114077 | 0  | 0 | 0.41  |
     And the markets:
-      | id        | quote name | asset | risk model         | margin calculator         | auction duration | fees         | price monitoring | data source config     | decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | DAI/DEC22 | DAI        | DAI   | dai-lognormal-risk | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 5              | 1e6                    | 1e6                       | default-futures |
+      | id        | quote name | asset | liquidity monitoring | risk model         | margin calculator         | auction duration | fees         | price monitoring | data source config     | decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | DAI/DEC22 | DAI        | DAI   | lqm-params           | dai-lognormal-risk | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 5              | 1e6                    | 1e6                       | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
-      | market.stake.target.scalingFactor       | 10    |
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 

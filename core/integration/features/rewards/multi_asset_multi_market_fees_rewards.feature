@@ -13,12 +13,11 @@ Feature: Fees rewards with multiple markets and assets
       | reward.staking.delegation.minValidators             | 5      |
       | reward.staking.delegation.optimalStakeMultiplier    | 5.0    |
       | market.value.windowLength                           | 1h     |
-      | market.stake.target.timeWindow                      | 24h    |
-      | market.stake.target.scalingFactor                   | 1      |
-      | market.liquidity.targetstake.triggering.ratio       | 0      |
       | network.markPriceUpdateMaximumFrequency             | 0s     |
       | limits.markets.maxPeggedOrders                      | 2      |
-
+    And the liquidity monitoring parameters:
+            | name               | triggering ratio | time window | scaling factor |
+            | lqm-params         | 0.00             | 24h         | 1              |
     Given time is updated to "2021-08-26T00:00:00Z"
     Given the average block duration is "2"
 
@@ -38,11 +37,11 @@ Feature: Fees rewards with multiple markets and assets
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | default-futures |
-      | ETH/DEC22 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | default-futures |
-      | BTC/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-2 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | default-futures |
-      | BTC/DEC22 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-2 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | default-futures |
+      | id        | quote name | asset | liquidity monitoring | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC21 | ETH        | ETH   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | default-futures |
+      | ETH/DEC22 | ETH        | ETH   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | default-futures |
+      | BTC/DEC21 | BTC        | BTC   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-2 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | default-futures |
+      | BTC/DEC22 | BTC        | BTC   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-2 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | default-futures |
 
     Given the parties deposit on asset's general account the following amount:
       | party                                                            | asset | amount   |

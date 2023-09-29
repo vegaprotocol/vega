@@ -3,13 +3,12 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
 
     Given the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter       | 0.2   |
-      | market.liquidity.targetstake.triggering.ratio | 0.1   |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | limits.markets.maxPeggedOrders                | 2     |
-
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 0.1              | 24h         | 1.0            |
     And the following assets are registered:
       | id  | decimal places |
       | USD | 5              |
@@ -29,8 +28,8 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
       | horizon | probability | auction extension |
       | 3600    | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 5              | 5                       | 1e6                    | 1e6                       | default-futures |
+      | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/MAR22 | ETH        | USD   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 5              | 5                       | 1e6                    | 1e6                       | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount         |
       | lp     | USD   | 10000000000000 |
@@ -85,10 +84,7 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
 
     Given the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter       | 0.2   |
-      | market.liquidity.targetstake.triggering.ratio | 0.1   |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | limits.markets.maxPeggedOrders                | 2     |
 
@@ -111,8 +107,8 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
       | horizon | probability | auction extension |
       | 360000  | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 5              | 5                       | 1e6                    | 1e6                       | default-futures |
+      | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/MAR22 | ETH        | USD   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 5              | 5                       | 1e6                    | 1e6                       | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount         |
       | lp     | USD   | 10000000000000 |
@@ -169,10 +165,7 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
 
     Given the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter       | 0.2   |
-      | market.liquidity.targetstake.triggering.ratio | 0.1   |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | limits.markets.maxPeggedOrders                | 2     |
       
@@ -195,8 +188,8 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
       | horizon | probability | auction extension |
       | 360000  | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2              | 1                       | 1e6                    | 1e6                       | default-futures |
+      | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/MAR22 | ETH        | USD   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2              | 1                       | 1e6                    | 1e6                       | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount          |
       | lp     | USD   | 100000000000000 |

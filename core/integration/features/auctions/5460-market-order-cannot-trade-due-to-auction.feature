@@ -3,12 +3,13 @@ Feature: Test for issue 5460
   Background:
     Given the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.targetstake.triggering.ratio | 1     |
       | network.floatingPointUpdates.delay            | 10s   |
       | market.auction.minimumDuration                | 1     |
       | limits.markets.maxPeggedOrders                | 2     |
+    And the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 1.00             | 24h         | 1              |  
+    
     And the following assets are registered:
       | id  | decimal places |
       | ETH | 5              |
@@ -23,8 +24,8 @@ Feature: Test for issue 5460
       | horizon | probability | auction extension |
       | 43200   | 0.9999999   | 60                |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | ETH        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 10               | fees-config-1 | price-monitoring-1 | default-eth-for-future | 5              | 5                       | 1e6                    | 1e6                       | default-futures |
+      | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC21 | ETH        | ETH   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 10               | fees-config-1 | price-monitoring-1 | default-eth-for-future | 5              | 5                       | 1e6                    | 1e6                       | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party    | asset | amount            |
       | party0   | ETH   | 100000000000000   |

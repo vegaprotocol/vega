@@ -11,9 +11,12 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 0.24             | 24h         | 1.0            |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.7                    | 0                         | default-futures |
+      | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/MAR22 | ETH        | USD   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.7                    | 0                         | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party0 | USD   | 500000    |
@@ -26,12 +29,10 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
-      | market.stake.target.timeWindow                        | 24h  |
-      | market.stake.target.scalingFactor                     | 1    |
       | market.liquidity.bondPenaltyParameter               | 0    |
-      | market.liquidity.targetstake.triggering.ratio         | 0.24 |
       | validators.epoch.length                               | 5s   |
       | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0    |
+    
 
   @Now @NoPerp
   Scenario: 001, LP gets distressed during continuous trading, no DPD setting (0044-LIME-002, 0035-LIQM-004)

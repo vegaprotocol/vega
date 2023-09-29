@@ -6,12 +6,13 @@ Feature: Test liquidity provider reward distribution
     Given the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 500         | 500           | 0.1                    |
+    And the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 0.00             | 24h         | 1              |  
+      
     And the following network parameters are set:
       | name                                          | value |
       | market.value.windowLength                     | 1h    |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.targetstake.triggering.ratio | 0     |
       | network.markPriceUpdateMaximumFrequency       | 1s    |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | limits.markets.maxPeggedOrders                | 612   |
@@ -39,9 +40,9 @@ Feature: Test liquidity provider reward distribution
       | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
-      | id        | quote name | asset | risk model             | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1    | default-margin-calculator | 2                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e0                    | 1e0                       | SLA        |
-      | ETH/DEC22 | ETH        | ETH   | lognormal-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-2 | ethDec21Oracle     | 1e0                    | 1e0                       | SLA        |
+      | id        | quote name | asset | liquidity monitoring | risk model             | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | lqm-params           | simple-risk-model-1    | default-margin-calculator | 2                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e0                    | 1e0                       | SLA        |
+      | ETH/DEC22 | ETH        | ETH   | lqm-params           | lognormal-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-2 | ethDec21Oracle     | 1e0                    | 1e0                       | SLA        |
     And the following network parameters are set:
       | name                                             | value |
       | market.liquidity.providersFeeCalculationTimeStep | 600s  |

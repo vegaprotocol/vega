@@ -144,7 +144,7 @@ func (s *Store) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 	}
 
 	// now we are going to iterate over ALL the netparams,
-	// and run validation, so we will now if any was forgotten,
+	// and run validation, so we will know if any was forgotten,
 	// and left to a default which required explicit UponGenesis
 	// through the genesis block
 	for k := range AllKeys {

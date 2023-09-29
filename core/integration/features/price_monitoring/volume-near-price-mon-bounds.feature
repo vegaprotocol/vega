@@ -6,12 +6,11 @@ Feature: Test margin for lp near price monitoring boundaries
     Given the following network parameters are set:
       | name                                                | value |
       | market.value.windowLength                           | 1h    |
-      | market.stake.target.timeWindow                      | 24h   |
-      | market.stake.target.scalingFactor                   | 1     |
-      | market.liquidity.targetstake.triggering.ratio       | 0     |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
       | limits.markets.maxPeggedOrders                      | 2     |
-
+    And the liquidity monitoring parameters:
+            | name               | triggering ratio | time window | scaling factor |
+            | lqm-params         | 0.00             | 24h         | 1              |
     And the average block duration is "1"
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
@@ -30,8 +29,8 @@ Feature: Test margin for lp near price monitoring boundaries
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | SLA        |
+      | id        | quote name | asset | liquidity monitoring | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | SLA        |
     And the following network parameters are set:
       | name                                               | value |
       | market.liquidity.providersFeeCalculationTimeStep | 600s  |
@@ -145,7 +144,7 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the market data for the market "ETH2/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3611         | 50000000       | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 36119        | 50000000       | 10            |
 
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price | volume |
@@ -172,7 +171,7 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the market data for the market "ETH2/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3611         | 50000000       | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 36119        | 50000000       | 10            |
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price | volume |
       | sell | 1209  | 41357  |
@@ -192,7 +191,7 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the market data for the market "ETH2/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3611         | 50000000       | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 36119        | 50000000       | 10            |
 
     And the parties amend the following pegged iceberg orders:
       | party | reference | size delta |

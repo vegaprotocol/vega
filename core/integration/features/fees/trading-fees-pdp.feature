@@ -757,13 +757,10 @@ Feature: Fees calculations
       | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/DEC21 | 4      | ETH   |
 
   Scenario: Testing fees in auctions session with each side of a trade debited 1/2 IF & LP
-
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.targetstake.triggering.ratio | 1     |
-
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 1.00             | 24h         | 1              |  
+      
     And the average block duration is "1"
 
     And the fees configuration named "fees-config-1":
@@ -785,8 +782,8 @@ Feature: Fees calculations
       | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1                      | 0                         | SLA        |
+      | id        | quote name | asset | liquidity monitoring | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1                      | 0                         | SLA        |
     And the following network parameters are set:
       | name                                               | value |
       | market.liquidity.providersFeeCalculationTimeStep | 10s   |
@@ -830,12 +827,10 @@ Feature: Fees calculations
 
   Scenario: Testing fees in Liquidity auction session trading with insufficient balance in their general account but margin covers the fees
 
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.targetstake.triggering.ratio | 1     |
-
+    And the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 1.00             | 24h         | 1              |  
+      
     And the average block duration is "1"
 
     And the fees configuration named "fees-config-1":
@@ -855,8 +850,8 @@ Feature: Fees calculations
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e0                    | 0                         | SLA        |
+      | id        | quote name | asset | liquidity monitoring | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e0                    | 0                         | SLA        |
     And the following network parameters are set:
       | name                                               | value |
       | market.liquidity.providersFeeCalculationTimeStep | 10s   |
@@ -950,13 +945,9 @@ Feature: Fees calculations
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
   Scenario: Testing fees in Price auction session trading with insufficient balance in their general account but margin covers the fees
-
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.targetstake.triggering.ratio | 1     |
-
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 1.00             | 24h         | 1              |  
     And the average block duration is "1"
 
     And the fees configuration named "fees-config-1":
@@ -976,8 +967,8 @@ Feature: Fees calculations
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e6                    | 1e6                       | SLA        |
+      | id        | quote name | asset | liquidity monitoring | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e6                    | 1e6                       | SLA        |
     And the following network parameters are set:
       | name                                               | value |
       | market.liquidity.providersFeeCalculationTimeStep | 10s   |
@@ -1057,117 +1048,12 @@ Feature: Fees calculations
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-  # Because we no longer check liquidity before uncrossing, this scenario can't happen anymore. Insteads trades don't go through because of the lack of fees
-  #Scenario: Testing fees in Liquidity auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead.
 
-  # Given the following network parameters are set:
-  #   | name                                                | value |
-  #   | market.stake.target.timeWindow                      | 24h   |
-  #   | market.stake.target.scalingFactor                   | 1     |
-  #   | market.liquidity.targetstake.triggering.ratio       | 1     |
-  #   | market.liquidity.providers.fee.distributionTimeStep | 10s   |
-
-  # And the average block duration is "1"
-
-  # And the fees configuration named "fees-config-1":
-  #   | maker fee | infrastructure fee |
-  #   | 0.005     | 2                  |
-  # And the price monitoring named "price-monitoring-1":
-  #   | horizon | probability | auction extension |
-  #   | 1       | 0.99        | 300               |
-  # And the simple risk model named "simple-risk-model-1":
-  #   | long | short | max move up | min move down | probability of trading |
-  #   | 0.2  | 0.1   | 100         | -100          | 0.1                    |
-
-  # And the log normal risk model named "log-normal-risk-model-1":
-  #   | risk aversion | tau | mu | r   | sigma |
-  #   | 0.000001      | 0.1 | 0  | 1.4 | -1    |
-
-  # And the markets:
-  #   | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config          | position decimal places | linear slippage factor | quadratic slippage factor |
-  #   | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e6 | 1e6 |
-
-  # setup accounts
-  # When the parties deposit on asset's general account the following amount:
-  #   | party    | asset | amount    |
-  #   | aux1     | ETH   | 100000000 |
-  #   | aux2     | ETH   | 100000000 |
-  #   | trader3a | ETH   | 5000      |
-  #   | trader4  | ETH   | 5261      |
-
-  # Then the parties place the following orders:
-  #   | party    | market id | side | volume | price | resulting trades | type       | tif     |
-  #   | aux1     | ETH/DEC21 | buy  | 100    | 500   | 0                | TYPE_LIMIT | TIF_GTC |
-  #   | aux2     | ETH/DEC21 | sell | 100    | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
-  #   | trader3a | ETH/DEC21 | buy  | 100    | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
-  #   | trader4  | ETH/DEC21 | sell | 100    | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
-
-  # Given the parties submit the following liquidity provision:
-  #   | id  | party | market id | commitment amount | fee   | side | pegged reference | volume     | offset | lp type    |
-  #   | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | 10     | submission |
-  #   | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          | 10     | submission |
-
-  # Then the opening auction period ends for market "ETH/DEC21"
-
-  #Scenario: Triggering Liquidity auction
-
-  # Then the parties place the following orders:
-  #   | party    | market id | side | volume | price | resulting trades | type       | tif     |
-  #   | trader3a | ETH/DEC21 | buy  | 300    | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
-  #   | trader4  | ETH/DEC21 | sell | 300    | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
-
-  # When the opening auction period ends for market "ETH/DEC21"
-  # Then the market data for the market "ETH/DEC21" should be:
-  #   | trading mode                    | auction trigger           |
-  #   | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
-
-  # Given the parties submit the following liquidity provision:
-  #   | id  | party | market id | commitment amount | fee   | side | pegged reference | volume     | offset | lp type   |
-  #   | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
-  #   | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
-
-  # When the network moves ahead "1" blocks
-
-  # TODO: This seems to be suming the traded volume from the previous auction, verify and raise a bug.
-  # Then the auction ends with a traded volume of "3" at a price of "1002"
-
-  # Then the following trades should be executed:
-  #   | buyer    | price | size | seller  |
-  #   | trader3a | 1002  | 300  | trader4 |
-
-  # For trader3a & 4- Sharing IF and LP
-  # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 3 * 1002= 3006
-  # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 2 * 3006
-  # maker_fee =  0 in auction
-  # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 3006 = 3.006 = 4 (rounded up)
-
-  # And the following transfers should happen:
-  #   | from     | to     | from account         | to account                       | market id | amount | asset |
-  #   | trader4  |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 3006   | ETH   |
-  #   | trader4  | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 2      | ETH   |
-  #   | trader3a |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 3006   | ETH   |
-  #   | trader3a | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 2      | ETH   |
-
-  # Then the parties should have the following margin levels:
-  #   | party   | market id | maintenance | search | initial | release |
-  #   | trader4 | ETH/DEC21 | 4393        | 4832   | 5271    | 6150    |
-
-  # Then the parties should have the following account balances:
-  #   | party    | asset | market id | margin | general |
-  #   | trader3a | ETH   | ETH/DEC21 | 0      | 0       |
-  #   | trader4  | ETH   | ETH/DEC21 | 0      | 0       |
-
-  # Then the market data for the market "ETH/DEC21" should be:
-  #   | trading mode            | auction trigger             |
-  #   | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
   Scenario: Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead
-
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.targetstake.triggering.ratio | 1     |
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 1.00             | 24h         | 1              |  
     And the average block duration is "1"
 
     And the fees configuration named "fees-config-1":
@@ -1187,8 +1073,8 @@ Feature: Fees calculations
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 1                             | 1.0                    |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e0                    | 0                         | SLA        |
+      | id        | quote name | asset | liquidity monitoring | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e0                    | 0                         | SLA        |
     And the following network parameters are set:
       | name                                               | value |
       | market.liquidity.providersFeeCalculationTimeStep | 10s   |
@@ -1274,13 +1160,10 @@ Feature: Fees calculations
     # <PC> - Just need to confirm if the trades doesn't go through, then general and margin account balances are expected to be 0.
     # <PC> - Also need to confirm if all 4 internal levels of margin should be non-zero , as in another case where the trade shouldn't be going through it's 0
     # Reducing account balances somehow lowers the margin requirement so the fees again gets covered by the deficient created.
-
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.targetstake.triggering.ratio | 1     |
-
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 1.00             | 24h         | 1              |  
+    
     And the average block duration is "1"
 
     And the fees configuration named "fees-config-1":
@@ -1302,8 +1185,8 @@ Feature: Fees calculations
       | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e0                    | 0                         | SLA        |
+      | id        | quote name | asset | liquidity monitoring | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/DEC21 | ETH        | ETH   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       | 1e0                    | 0                         | SLA        |
     And the following network parameters are set:
       | name                                               | value |
       | market.liquidity.providersFeeCalculationTimeStep | 10s   |

@@ -8,15 +8,15 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
   Background:
     Given the following network parameters are set:
       | name                                               | value |
-      | market.stake.target.timeWindow                     | 24h   |
-      | market.stake.target.scalingFactor                  | 1     |
-      | market.liquidity.targetstake.triggering.ratio      | 0     |
       | network.floatingPointUpdates.delay                 | 10s   |
       | market.auction.minimumDuration                     | 10    |
       | network.markPriceUpdateMaximumFrequency            | 0s    |
       | market.liquidity.successorLaunchWindowLength       | 1s    |
       | limits.markets.maxPeggedOrders                     | 4     |
       | market.liquidity.providersFeeCalculationTimeStep | 1s    |
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 0.0              | 24h         | 1.0            |
     And the average block duration is "1"
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
@@ -35,9 +35,9 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | 2       | 0.999995    | 200               |
       | 1       | 0.999999    | 300               |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1     | default-margin-calculator | 10               | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5                    | 0                         | default-futures |
-      | ETH/DEC22 | ETH        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 10               | fees-config-1 | price-monitoring-2 | default-eth-for-future | 0.5                    | 0                         | default-futures |
+      | id        | quote name | asset | liquidity monitoring    | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC21 | ETH        | ETH   | lqm-params              | simple-risk-model-1     | default-margin-calculator | 10               | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5                    | 0                         | default-futures |
+      | ETH/DEC22 | ETH        | ETH   | lqm-params              | log-normal-risk-model-1 | default-margin-calculator | 10               | fees-config-1 | price-monitoring-2 | default-eth-for-future | 0.5                    | 0                         | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | party0 | ETH   | 1000000000 |
@@ -371,9 +371,12 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 1515         | 1000           | 15            |
 
   Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger price auction, check that the order gets stopped, appropriate event is sent and market remains in TRADING_MODE_CONTINUOUS, 0024-OSTA-012
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.8   |
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.8              | 24h         | 1.0            |
+    When the markets are updated:
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0.0                       |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | lp type    |

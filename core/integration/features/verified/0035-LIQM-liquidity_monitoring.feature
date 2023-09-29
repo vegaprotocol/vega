@@ -3,13 +3,13 @@ Feature: Test liquidity monitoring
   Background:
     Given the following network parameters are set:
       | name                                          | value |
-      | market.stake.target.timeWindow                | 1s    |
-      | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.targetstake.triggering.ratio | 1     |
       | network.floatingPointUpdates.delay            | 10s   |
       | market.auction.minimumDuration                | 1     |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | limits.markets.maxPeggedOrders                | 4     |
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 1.0              | 1s          | 1.0            |
     And the average block duration is "1"
     And the margin calculator named "margin-calculator-1":
       | search factor | initial factor | release factor |
@@ -30,9 +30,9 @@ Feature: Test liquidity monitoring
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1     | margin-calculator-1       | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5                    | 0                         | default-futures |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future | 0.5                    | 0                         | default-futures |
+      | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC21 | ETH        | ETH   | lqm-params           | simple-risk-model-1     | margin-calculator-1       | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5                    | 0                         | default-futures |
+      | ETH/MAR22 | ETH        | USD   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future | 0.5                    | 0                         | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | party1 | ETH   | 100000000  |
@@ -108,10 +108,7 @@ Feature: Test liquidity monitoring
       | AuctionEvent |
 
   Scenario: 002: A market which enters a state requiring liquidity auction through reduced current stake (e.g. through LP bankruptcy) during a block but then leaves state again prior to block completion never enters liquidity auction. (0035-LIQM-006)
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 1     |
-
+    
     And the average block duration is "1"
 
     And the parties submit the following liquidity provision:
@@ -174,9 +171,14 @@ Feature: Test liquidity monitoring
 
     Given the following network parameters are set:
       | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 1     |
-      | market.stake.target.timeWindow                | 5s    |
-      | market.liquidity.bondPenaltyParameter       | 1     |
+      | market.liquidity.bondPenaltyParameter         | 1     |
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 1.0              | 5s          | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
+
     And the parties deposit on asset's general account the following amount:
       | party          | asset | amount |
       | lprov1         | ETH   | 1000   |

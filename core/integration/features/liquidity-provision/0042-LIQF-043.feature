@@ -8,12 +8,13 @@ Feature: Test LP fee distribution in LP mechanics in 0042
     Given the log normal risk model named "log-normal-risk-model":
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | 0  | 0 | 1.0   |
+    And the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 1.00             | 20s         | 1              |  
+      
     And the following network parameters are set:
       | name                                          | value |
       | market.value.windowLength                     | 60s   |
-      | market.stake.target.timeWindow                | 20s   |
-      | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.targetstake.triggering.ratio | 1     |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
       | limits.markets.maxPeggedOrders                | 6     |
       | market.auction.minimumDuration                | 1     |
@@ -37,8 +38,8 @@ Feature: Test LP fee distribution in LP mechanics in 0042
       | 0.5         | 0.6                          | 1                             | 1.0                    |
 
     And the markets:
-      | id        | quote name | asset | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/MAR22 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
+      | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
 
     And the following network parameters are set:
       | name                                                | value |

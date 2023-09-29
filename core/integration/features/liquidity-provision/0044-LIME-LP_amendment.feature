@@ -23,10 +23,13 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 0.5         | 0.5                          | 1                             | 1.0                    |
-
+    And the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 1.0              | 20s         | 10             |  
+    
     And the markets:
-      | id        | quote name | asset | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/MAR22 | USD        | USD   | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA        |
+      | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA        |
     And the following network parameters are set:
       | name                                               | value |
       | market.liquidity.providersFeeCalculationTimeStep | 5s    |
@@ -34,9 +37,6 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     And the following network parameters are set:
       | name                                                  | value |
       | market.value.windowLength                             | 60s   |
-      | market.stake.target.timeWindow                        | 20s   |
-      | market.stake.target.scalingFactor                     | 1     |
-      | market.liquidity.targetstake.triggering.ratio         | 1     |
       | network.markPriceUpdateMaximumFrequency               | 0s    |
       | limits.markets.maxPeggedOrders                        | 6     |
       | market.auction.minimumDuration                        | 1     |
@@ -49,7 +49,6 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.5   |
       | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 1     |
       | validators.epoch.length                               | 10s   |
-
     Given the average block duration is "2"
   @Now
   Scenario: 001: lp1 and lp2 under supplies liquidity
@@ -104,8 +103,8 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     Then the network moves ahead "6" blocks
     And the parties should have the following account balances:
       | party | asset | market id | margin | general | bond  |
-      | lp1   | USD   | ETH/MAR22 | 64024  | 0       | 17988 |
-      | lp2   | USD   | ETH/MAR22 | 32013  | 57987   | 5000  |
+      | lp1   | USD   | ETH/MAR22 | 0      | 64024   | 17988 |
+      | lp2   | USD   | ETH/MAR22 | 0      | 90000   | 5000  |
 
   @SLABug
   Scenario: 002: lp1 and lp2 amend LP commitment
