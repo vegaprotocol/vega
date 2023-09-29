@@ -12,7 +12,7 @@ Feature: Test funding payment triggering closeout for Perps market
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | position decimal places | market type | sla params      |
       | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle        | 1e6                    | 1e6                       | -3                      | perp        | default-futures |
-    And the initial insurance pool balance is "100" for all the markets
+    And the initial insurance pool balance is "200" for all the markets
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
@@ -112,8 +112,9 @@ Feature: Test funding payment triggering closeout for Perps market
 
     #delta_t = 0.5
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
-      | name             | value      | time offset |
-      | perp.funding.cue | 1628766252 | 0s          |
+      | name             | value                  | time offset |
+      | perp.ETH.value   | 3000000000000000000000 | 0s          |
+      | perp.funding.cue | 1628766252             | 0s          |
 
     #funding payment = s_twap * delta_t * interest_rate = 3000*0.5*0.05 = 150000
     And the following transfers should happen:
@@ -127,6 +128,7 @@ Feature: Test funding payment triggering closeout for Perps market
     Then the parties should have the following margin levels:
       | party | market id | maintenance | initial |
       | aux2  | ETH/DEC19 | 0           | 0       |
+    #loss socialisaton happened
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
