@@ -43,7 +43,7 @@ func TestReferralSets_AddReferralSet(t *testing.T) {
 		VegaTime:  block.VegaTime,
 	}
 
-	t.Run("Should add a nre referral set if it does not already exist", func(t *testing.T) {
+	t.Run("Should add the referral set if it does not already exist", func(t *testing.T) {
 		err := rs.AddReferralSet(ctx, &set)
 		require.NoError(t, err)
 

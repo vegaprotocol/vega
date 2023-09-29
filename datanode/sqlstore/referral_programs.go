@@ -48,9 +48,7 @@ func (rp *ReferralPrograms) UpdateReferralProgram(ctx context.Context, referral 
 	return rp.insertReferralProgram(ctx, referral)
 }
 
-func (rp *ReferralPrograms) EndReferralProgram(ctx context.Context, referralID entities.ReferralProgramID, version uint64,
-	vegaTime time.Time, seqNum uint64,
-) error {
+func (rp *ReferralPrograms) EndReferralProgram(ctx context.Context, version uint64, vegaTime time.Time, seqNum uint64) error {
 	defer metrics.StartSQLQuery("ReferralPrograms", "EndReferralProgram")()
 	_, err := rp.Connection.Exec(ctx,
 		`INSERT INTO referral_programs (id, version, benefit_tiers, end_of_program_timestamp, window_length, staking_tiers, vega_time, ended_at, seq_num)

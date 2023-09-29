@@ -807,6 +807,18 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referral program"};
   }
 
+  // Get current volume discount program
+  //
+  // Get the on-going volume discount program.
+  rpc GetCurrentVolumeDiscountProgram(GetCurrentVolumeDiscountProgramRequest) returns (GetCurrentVolumeDiscountProgramResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Volume discount program"};
+  }
+
+  // Get the volume discount statistics for a given epoch for all parties
+  rpc GetVolumeDiscountStats(GetVolumeDiscountStatsRequest) returns (GetVolumeDiscountStatsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Volume discount program"};
+  }
+
   // Export network history as CSV
   //
   // Export CSV table data from network history between two block heights.
@@ -3936,4 +3948,80 @@ message GetReferralFeeStatsRequest {
 message GetReferralFeeStatsResponse {
   // Fee statistics for the given market or asset, and epoch.
   vega.events.v1.FeeStats fee_stats = 1;
+}
+
+// Request to get the current referral program
+message GetCurrentVolumeDiscountProgramRequest {}
+
+// Response containing the current referral program
+message GetCurrentVolumeDiscountProgramResponse {
+  // Volume discount program currently activated on the network.
+  VolumeDiscountProgram current_volume_discount_program = 1;
+}
+
+// Request to get the volume discount statistics for a given epoch.
+message GetVolumeDiscountStatsRequest {
+  // Epoch at which the statistics apply. If not set, last
+  // epoch is used.
+  optional uint64 at_epoch = 1;
+  // Party ID to return volume discount statistics for.
+  optional string party_id = 2;
+  // pagination information to limit the data that is returned.
+  optional Pagination pagination = 3;
+}
+
+// Response containing the volume discount statistics for the given epoch.
+message GetVolumeDiscountStatsResponse {
+  // Volume discount statistics for the epoch.
+  VolumeDiscountStatsConnection stats = 1;
+}
+
+// Page of volume discount stats data and corresponding page information.
+message VolumeDiscountStatsConnection {
+  // Page of volume discount statistics data and their corresponding cursors.
+  repeated VolumeDiscountStatsEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+// Volume discount stats data with the corresponding cursor.
+message VolumeDiscountStatsEdge {
+  // Volume discount stats data.
+  VolumeDiscountStats node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Volume discount statistics for a given epoch for all parties.
+message VolumeDiscountStats {
+  // Epoch at which the statistics apply.
+  uint64 at_epoch = 1;
+  // Party ID.
+  string party_id = 2;
+  // Discount factor applied to the volume.
+  string discount_factor = 3;
+  // The party's running volume.
+  string running_volume = 4;
+}
+
+// Volume discount program for reporting purposes differs slightly from the volume discount program
+// message in the volume discount program started and volume discount updated events, as it includes
+// an optional timestamp that is set when the program has ended.
+message VolumeDiscountProgram {
+  // Incremental version of the program. It is incremented after each program
+  // update.
+  uint64 version = 1;
+  // Unique ID generated from the proposal that created this program.
+  string id = 2;
+  // Defined benefit tiers in increasing order. First element will give Tier 1,
+  // second element will give Tier 2, and so on. Determines the level of
+  // benefit a party can expect based on performance criteria.
+  repeated vega.VolumeBenefitTier benefit_tiers = 3;
+  // Timestamp as Unix time in nanoseconds, after which when the current epoch
+  // ends, the programs will end and benefits will be disabled.
+  int64 end_of_program_timestamp = 4;
+  // Number of epochs over which to evaluate a volume discount statistics' running volume.
+  uint64 window_length = 5;
+  // Timestamp as Unix time in nanoseconds at which the program ended.
+  optional int64 ended_at = 6;
 }

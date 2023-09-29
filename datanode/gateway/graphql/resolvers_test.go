@@ -37,7 +37,6 @@ import (
 
 func TestNewResolverRoot_ConstructAndResolve(t *testing.T) {
 	root := buildTestResolverRoot(t)
-
 	assert.NotNil(t, root)
 
 	partyResolver := root.Party()
@@ -78,6 +77,9 @@ func TestNewResolverRoot_ConstructAndResolve(t *testing.T) {
 
 	perpetualProductResolver := root.PerpetualProduct()
 	assert.NotNil(t, perpetualProductResolver)
+
+	volumeDiscountStatsResolver := root.VolumeDiscountStats()
+	assert.NotNil(t, volumeDiscountStatsResolver)
 }
 
 func TestNewResolverRoot_QueryResolver(t *testing.T) {
@@ -1359,6 +1361,7 @@ type resolverRoot interface {
 	Proposal() gql.ProposalResolver
 	Spot() gql.SpotResolver
 	SpotProduct() gql.SpotProductResolver
+	VolumeDiscountStats() gql.VolumeDiscountStatsResolver
 }
 
 type testResolver struct {

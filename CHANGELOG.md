@@ -7,7 +7,7 @@
 - [8679](https://github.com/vegaprotocol/vega/issues/8679) - Snapshot configuration `load-from-block-height` no longer accept `-1` as value. To reload from the latest snapshot, it should be valued `0`.
 - [8679](https://github.com/vegaprotocol/vega/issues/8679) - Snapshot configuration `snapshot-keep-recent` only accept values from `1` (included) to `10` (included) .
 - [8944](https://github.com/vegaprotocol/vega/issues/8944) - Asset ID field on the `ExportLedgerEntriesRequest gRPC API` for exporting ledger entries has changed type to make it optional.
-- [9562](https://github.com/vegaprotocol/vega/issues/9562) - `--lite` and `--archive` options to data node have been replaced with `--mode=[archive|lite|standard]` with default mode as archive.
+- [9562](https://github.com/vegaprotocol/vega/issues/9562) - `--lite` and `--archive` options to data node have been replaced with `--retention-profile=[archive|conservative|minimal]` with default mode as archive.
 
 ### 🗑️ Deprecation
 
@@ -120,6 +120,7 @@
 - [9575](https://github.com/vegaprotocol/vega/issues/9575) - Expand SLA statistics by required liquidity and notional volumes.
 - [9590](https://github.com/vegaprotocol/vega/issues/9590) - Restore positions for market activity tracker on migration from old version.
 - [9589](https://github.com/vegaprotocol/vega/issues/9589) - Add event for funding payments.
+- [9460](https://github.com/vegaprotocol/vega/issues/9460) - Add APIs for volume discount program.
 
 ### 🐛 Fixes
 

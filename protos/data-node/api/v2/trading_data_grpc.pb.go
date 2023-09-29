@@ -478,6 +478,12 @@ type TradingDataServiceClient interface {
 	// Gets accumulated rewards and discount information for a given asset or market for the latest epoch
 	// or a specific epoch.
 	GetReferralFeeStats(ctx context.Context, in *GetReferralFeeStatsRequest, opts ...grpc.CallOption) (*GetReferralFeeStatsResponse, error)
+	// Get current volume discount program
+	//
+	// Get the on-going volume discount program.
+	GetCurrentVolumeDiscountProgram(ctx context.Context, in *GetCurrentVolumeDiscountProgramRequest, opts ...grpc.CallOption) (*GetCurrentVolumeDiscountProgramResponse, error)
+	// Get the volume discount statistics for a given epoch for all parties
+	GetVolumeDiscountStats(ctx context.Context, in *GetVolumeDiscountStatsRequest, opts ...grpc.CallOption) (*GetVolumeDiscountStatsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -1826,6 +1832,24 @@ func (c *tradingDataServiceClient) GetReferralFeeStats(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) GetCurrentVolumeDiscountProgram(ctx context.Context, in *GetCurrentVolumeDiscountProgramRequest, opts ...grpc.CallOption) (*GetCurrentVolumeDiscountProgramResponse, error) {
+	out := new(GetCurrentVolumeDiscountProgramResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetCurrentVolumeDiscountProgram", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) GetVolumeDiscountStats(ctx context.Context, in *GetVolumeDiscountStatsRequest, opts ...grpc.CallOption) (*GetVolumeDiscountStatsResponse, error) {
+	out := new(GetVolumeDiscountStatsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetVolumeDiscountStats", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
 	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
@@ -2326,6 +2350,12 @@ type TradingDataServiceServer interface {
 	// Gets accumulated rewards and discount information for a given asset or market for the latest epoch
 	// or a specific epoch.
 	GetReferralFeeStats(context.Context, *GetReferralFeeStatsRequest) (*GetReferralFeeStatsResponse, error)
+	// Get current volume discount program
+	//
+	// Get the on-going volume discount program.
+	GetCurrentVolumeDiscountProgram(context.Context, *GetCurrentVolumeDiscountProgramRequest) (*GetCurrentVolumeDiscountProgramResponse, error)
+	// Get the volume discount statistics for a given epoch for all parties
+	GetVolumeDiscountStats(context.Context, *GetVolumeDiscountStatsRequest) (*GetVolumeDiscountStatsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2707,6 +2737,12 @@ func (UnimplementedTradingDataServiceServer) ListTeamRefereeHistory(context.Cont
 }
 func (UnimplementedTradingDataServiceServer) GetReferralFeeStats(context.Context, *GetReferralFeeStatsRequest) (*GetReferralFeeStatsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetReferralFeeStats not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetCurrentVolumeDiscountProgram(context.Context, *GetCurrentVolumeDiscountProgramRequest) (*GetCurrentVolumeDiscountProgramResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCurrentVolumeDiscountProgram not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetVolumeDiscountStats(context.Context, *GetVolumeDiscountStatsRequest) (*GetVolumeDiscountStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVolumeDiscountStats not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
@@ -4631,6 +4667,42 @@ func _TradingDataService_GetReferralFeeStats_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_GetCurrentVolumeDiscountProgram_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCurrentVolumeDiscountProgramRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetCurrentVolumeDiscountProgram(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetCurrentVolumeDiscountProgram",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetCurrentVolumeDiscountProgram(ctx, req.(*GetCurrentVolumeDiscountProgramRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_GetVolumeDiscountStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVolumeDiscountStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetVolumeDiscountStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetVolumeDiscountStats",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetVolumeDiscountStats(ctx, req.(*GetVolumeDiscountStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ExportNetworkHistory_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportNetworkHistoryRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -5028,6 +5100,14 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetReferralFeeStats",
 			Handler:    _TradingDataService_GetReferralFeeStats_Handler,
+		},
+		{
+			MethodName: "GetCurrentVolumeDiscountProgram",
+			Handler:    _TradingDataService_GetCurrentVolumeDiscountProgram_Handler,
+		},
+		{
+			MethodName: "GetVolumeDiscountStats",
+			Handler:    _TradingDataService_GetVolumeDiscountStats_Handler,
 		},
 		{
 			MethodName: "Ping",
