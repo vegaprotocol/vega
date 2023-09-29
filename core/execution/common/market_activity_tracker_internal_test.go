@@ -154,6 +154,11 @@ func TestReturns(t *testing.T) {
 	ret1, ok := tracker.getReturns("p1", 1)
 	require.True(t, ok)
 	require.Equal(t, 1, len(ret1))
+
+	ret1, ok = tracker.getReturns("p1", 100)
+	require.True(t, ok)
+	require.Equal(t, 100, len(ret1))
+
 	// -100/5 = -20
 	require.Equal(t, "-20", ret1[0].String())
 	ret2, ok := tracker.getReturns("p2", 1)

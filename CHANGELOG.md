@@ -249,6 +249,7 @@
 - [9588](https://github.com/vegaprotocol/vega/issues/9588) - Fix snapshot state for referral and volume discount programs.
 - [9596](https://github.com/vegaprotocol/vega/issues/9596) - Empty positions and potential positions are excluded from win socialisation.
 - [9619](https://github.com/vegaprotocol/vega/issues/9619) - Win socialisation on funding payments should include parties who haven't traded.
+- [9624](https://github.com/vegaprotocol/vega/issues/9624) - Fix get returns when window is larger than available returns
 
 ## 0.72.1
 
