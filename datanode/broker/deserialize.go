@@ -80,7 +80,7 @@ func deserializeEvent(rawEvent []byte) (events.Event, error) {
 
 	event := toEvent(context.Background(), busEvent)
 	if event == nil {
-		return nil, fmt.Errorf("Can not convert proto '%s' event to internal event", busEvent.GetType().String())
+		return nil, fmt.Errorf("cannot convert proto %q event to internal event", busEvent.GetType().String())
 	}
 	return event, nil
 }
