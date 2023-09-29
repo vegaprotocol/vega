@@ -72,6 +72,9 @@ func TestMarkToMarket(t *testing.T) {
 	t.Run("Test MTM settle when the network is closed out", testMTMNetworkZero)
 	t.Run("Test settling a funding period", testSettlingAFundingPeriod)
 	t.Run("Test settling a funding period with rounding error", testSettlingAFundingPeriodRoundingError)
+	t.Run("Test settling a funding period with small win amounts (zero transfers)", testSettlingAFundingPeriodExcessSmallLoss)
+	t.Run("Test settling a funding period with rounding error (single party rounding)", testSettlingAFundingPeriodExcessLoss)
+	t.Run("Test settling a funding period with zero win amounts (loss exceeds 1)", testSettlingAFundingPeriodExcessLostExceedsOneLoss)
 }
 
 func TestMTMWinDistribution(t *testing.T) {
@@ -171,6 +174,140 @@ func testSettlingAFundingPeriodRoundingError(t *testing.T) {
 	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[1].Transfer().Type)
 	assert.Equal(t, "100000", transfers[2].Transfer().Amount.Amount.String())
 	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[2].Transfer().Type)
+
+	// here 100001 will be sent to the settlement account, but only 200000 we be paid out due to rounding,
+	// so we expect a remainder of 1
+	require.Equal(t, "1", round.String())
+}
+
+func testSettlingAFundingPeriodExcessLostExceedsOneLoss(t *testing.T) {
+	engine := getTestEngineWithFactor(t, 100)
+	defer engine.Finish()
+	ctx := context.Background()
+
+	testPositions := []testPos{
+		{
+			party: "party1",
+			size:  23,
+		},
+		{
+			party: "party3",
+			size:  -3,
+		},
+		{
+			party: "party4",
+			size:  -5,
+		},
+		{
+			party: "party5",
+			size:  -5,
+		},
+		{
+			party: "party6",
+			size:  -5,
+		},
+		{
+			party: "party7",
+			size:  -5,
+		},
+	}
+
+	positions := make([]events.MarketPosition, 0, len(testPositions))
+	for _, p := range testPositions {
+		positions = append(positions, p)
+	}
+
+	fundingPayment, _ := num.IntFromString("10", 10)
+	transfers, round := engine.SettleFundingPeriod(ctx, positions, fundingPayment)
+	require.Len(t, transfers, 6)
+	assert.Equal(t, "2", transfers[0].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingLoss, transfers[0].Transfer().Type)
+	assert.Equal(t, "0", transfers[1].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[1].Transfer().Type)
+	assert.Equal(t, "0", transfers[2].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[2].Transfer().Type)
+	assert.Equal(t, "0", transfers[3].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[3].Transfer().Type)
+	assert.Equal(t, "0", transfers[4].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[4].Transfer().Type)
+	assert.Equal(t, "0", transfers[5].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[5].Transfer().Type)
+
+	require.Equal(t, "2", round.String())
+}
+
+func testSettlingAFundingPeriodExcessSmallLoss(t *testing.T) {
+	engine := getTestEngineWithFactor(t, 100)
+	defer engine.Finish()
+	ctx := context.Background()
+
+	testPositions := []testPos{
+		{
+			party: "party1",
+			size:  11,
+		},
+		{
+			party: "party3",
+			size:  -3,
+		},
+		{
+			party: "party4",
+			size:  -3,
+		},
+		{
+			party: "party5",
+			size:  -5,
+		},
+	}
+
+	positions := make([]events.MarketPosition, 0, len(testPositions))
+	for _, p := range testPositions {
+		positions = append(positions, p)
+	}
+
+	fundingPayment, _ := num.IntFromString("10", 10)
+	transfers, round := engine.SettleFundingPeriod(ctx, positions, fundingPayment)
+	require.Len(t, transfers, 4)
+	assert.Equal(t, "1", transfers[0].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingLoss, transfers[0].Transfer().Type)
+	assert.Equal(t, "0", transfers[1].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[1].Transfer().Type)
+	assert.Equal(t, "0", transfers[2].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[2].Transfer().Type)
+	assert.Equal(t, "0", transfers[3].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[3].Transfer().Type)
+
+	require.Equal(t, "1", round.String())
+}
+
+func testSettlingAFundingPeriodExcessLoss(t *testing.T) {
+	engine := getTestEngineWithFactor(t, 100)
+	defer engine.Finish()
+	ctx := context.Background()
+
+	testPositions := []testPos{
+		{
+			party: "party1",
+			size:  1000010,
+		},
+		{
+			party: "party3",
+			size:  -1000005,
+		},
+	}
+
+	positions := make([]events.MarketPosition, 0, len(testPositions))
+	for _, p := range testPositions {
+		positions = append(positions, p)
+	}
+
+	fundingPayment, _ := num.IntFromString("10", 10)
+	transfers, round := engine.SettleFundingPeriod(ctx, positions, fundingPayment)
+	require.Len(t, transfers, 2)
+	assert.Equal(t, "100001", transfers[0].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingLoss, transfers[0].Transfer().Type)
+	assert.Equal(t, "100000", transfers[1].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[1].Transfer().Type)
 
 	// here 100001 will be sent to the settlement account, but only 200000 we be paid out due to rounding,
 	// so we expect a remainder of 1

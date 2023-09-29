@@ -192,6 +192,27 @@ func (e *Engine) HasTraded() bool {
 	return len(e.trades) > 0
 }
 
+func (e *Engine) getFundingTransfer(mtmShare *num.Uint, neg bool, mpos events.MarketPosition, owner string) (*mtmTransfer, bool) {
+	tf := e.getMtmTransfer(mtmShare, neg, mpos, owner)
+	if tf.transfer == nil {
+		tf.transfer = &types.Transfer{
+			Type:  types.TransferTypePerpFundingWin,
+			Owner: owner,
+			Amount: &types.FinancialAmount{
+				Amount: mtmShare,
+				Asset:  e.product.GetAsset(),
+			},
+		}
+		return tf, false
+	}
+	if tf.transfer.Type == types.TransferTypeMTMLoss {
+		tf.transfer.Type = types.TransferTypePerpFundingLoss
+	} else {
+		tf.transfer.Type = types.TransferTypePerpFundingWin
+	}
+	return tf, true
+}
+
 func (e *Engine) getMtmTransfer(mtmShare *num.Uint, neg bool, mpos events.MarketPosition, owner string) *mtmTransfer {
 	if mtmShare.IsZero() {
 		return &mtmTransfer{
@@ -570,43 +591,55 @@ func (e *Engine) SettleFundingPeriod(ctx context.Context, positions []events.Mar
 	// colletral engine expects all the losses before the wins
 	transfers := make([]events.Transfer, 0, len(positions))
 	wins := make([]events.Transfer, 0, len(positions))
+	zeroTransfers := make([]events.Transfer, 0, len(positions)/2)
+	totalW, totalL := num.UintZero(), num.UintZero()
 	var delta num.Decimal
 	for _, p := range positions {
 		// per-party cash flow is -openVolume * fundingPayment
 		flow, rem, neg := calcFundingFlow(fundingPayment, p, e.positionFactor)
+		if neg {
+			// amount of loss not collected, this never gets added to the settlement account
+			delta = delta.Sub(rem)
+		} else {
+			// amount of wins never collected, remains in the settlement account
+			delta = delta.Add(rem)
+		}
 
-		if !flow.IsZero() {
-			tf := e.getMtmTransfer(flow, neg, p, p.Party())
-
-			if tf.transfer == nil {
-				continue
-			}
-
-			if tf.transfer.Type == types.TransferTypeMTMWin {
-				tf.transfer.Type = types.TransferTypePerpFundingWin
+		if tf, valid := e.getFundingTransfer(flow, neg, p, p.Party()); valid {
+			if tf.transfer.Type == types.TransferTypePerpFundingWin {
 				wins = append(wins, tf)
-				delta = delta.Add(rem)
+				totalW.AddSum(flow)
 			} else {
-				tf.transfer.Type = types.TransferTypePerpFundingLoss
 				transfers = append(transfers, tf)
-				delta = delta.Sub(rem)
+				totalL.AddSum(flow)
 			}
+		} else {
+			// we could use deltas to order these transfers to prioritise the right people
+			zeroTransfers = append(zeroTransfers, tf)
 		}
 		if e.log.IsDebug() {
 			e.log.Debug("cash flow", logging.String("mid", e.market), logging.String("pid", p.Party()), logging.String("flow", flow.String()))
 		}
 	}
-	// we only care about the int part
-	round := num.UintZero()
-	// if delta > 0, the settlement account will have a non-zero balance at the end since due to rounding loss-amount > win-amount
-	if !delta.IsNegative() {
-		round, _ = num.UintFromDecimal(delta)
-		if e.log.IsDebug() {
-			e.log.Debug("expected leftover in settlement account given rounding issues", logging.String("round", round.String()))
-		}
+	// account for cases where the winning side never even accounts for an amount of 1
+	if len(wins) == 0 && len(zeroTransfers) > 0 {
+		wins = zeroTransfers
 	}
-	transfers = append(transfers, wins...)
-	return transfers, round
+	// profit and loss balances out perfectly, or profit > loss
+	if totalL.LTE(totalW) {
+		// this rounding shouldn't be needed, losses will be distributed in their entirety
+		round, _ := num.UintFromDecimal(delta.Abs())
+		return append(transfers, wins...), round
+	}
+	round := totalL.Sub(totalL, totalW) // loss - win is what will be left over
+	// we have a remainder, make sure it's an expected amount due to rounding
+	if dU, _ := num.UintFromDecimal(delta.Ceil().Abs()); dU.LT(round) {
+		e.log.Panic("Excess loss transfer amount found, cannot be explained by rounding",
+			logging.String("loss-win delta", round.String()),
+			logging.Decimal("rounding delta", delta.Abs()),
+		)
+	}
+	return append(transfers, wins...), round
 }
 
 func calcFundingFlow(fp *num.Int, p events.MarketPosition, posFac num.Decimal) (*num.Uint, num.Decimal, bool) {
