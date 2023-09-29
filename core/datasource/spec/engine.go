@@ -211,6 +211,9 @@ func (e *Engine) sendMatchedData(ctx context.Context, data common.Data, specIDs 
 			Value: value,
 		})
 	}
+	sort.Slice(payload, func(i, j int) bool {
+		return strings.Compare(payload[i].Name, payload[j].Name) < 0
+	})
 
 	metaData := make([]*datapb.Property, 0, len(data.MetaData))
 	for name, value := range data.MetaData {
@@ -219,9 +222,8 @@ func (e *Engine) sendMatchedData(ctx context.Context, data common.Data, specIDs 
 			Value: value,
 		})
 	}
-
-	sort.Slice(payload, func(i, j int) bool {
-		return strings.Compare(payload[i].Name, payload[j].Name) < 0
+	sort.Slice(metaData, func(i, j int) bool {
+		return strings.Compare(metaData[i].Name, metaData[j].Name) < 0
 	})
 
 	ids := make([]string, 0, len(specIDs))
