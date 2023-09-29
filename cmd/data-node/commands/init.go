@@ -33,8 +33,8 @@ import (
 type InitCmd struct {
 	config.VegaHomeFlag
 
-	Force bool   `description:"Erase exiting vega configuration at the specified path" long:"force"  short:"f"`
-	Mode  string `choice:"archive"                                                     choice:"lite" choice:"standard" default:"archive" description:"Set which mode to initialise the data node with, will affect retention policies" long:"mode" short:"m"`
+	Force            bool   `description:"Erase exiting vega configuration at the specified path" long:"force"     short:"f"`
+	RetentionProfile string `choice:"archive"                                                     choice:"minimal" choice:"conservative" default:"archive" description:"Set which mode to initialise the data node with, will affect retention policies" long:"retention-profile" short:"r"`
 }
 
 var initCmd InitCmd
@@ -75,14 +75,14 @@ func (opts *InitCmd) Execute(args []string) error {
 
 	cfg := config.NewDefaultConfig()
 
-	if opts.Mode == "archive" {
+	if opts.RetentionProfile == "archive" {
 		cfg.NetworkHistory.Store.HistoryRetentionBlockSpan = math.MaxInt64
 		cfg.SQLStore.RetentionPeriod = sqlstore.RetentionPeriodArchive
 		cfg.NetworkHistory.Initialise.TimeOut = encoding.Duration{Duration: 96 * time.Hour}
 		cfg.NetworkHistory.Initialise.MinimumBlockCount = -1
 	}
 
-	if opts.Mode == "lite" {
+	if opts.RetentionProfile == "minimal" {
 		cfg.SQLStore.RetentionPeriod = sqlstore.RetentionPeriodLite
 		cfg.NetworkHistory.Initialise.TimeOut = encoding.Duration{Duration: 1 * time.Minute}
 		cfg.NetworkHistory.Initialise.MinimumBlockCount = 1

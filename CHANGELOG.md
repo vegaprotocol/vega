@@ -7,7 +7,7 @@
 - [8679](https://github.com/vegaprotocol/vega/issues/8679) - Snapshot configuration `load-from-block-height` no longer accept `-1` as value. To reload from the latest snapshot, it should be valued `0`.
 - [8679](https://github.com/vegaprotocol/vega/issues/8679) - Snapshot configuration `snapshot-keep-recent` only accept values from `1` (included) to `10` (included) .
 - [8944](https://github.com/vegaprotocol/vega/issues/8944) - Asset ID field on the `ExportLedgerEntriesRequest gRPC API` for exporting ledger entries has changed type to make it optional.
-- [9562](https://github.com/vegaprotocol/vega/issues/9562) - `--lite` and `--archive` options to data node have been replaced with `--mode=[archive|lite|standard]` with default mode as archive.
+- [9562](https://github.com/vegaprotocol/vega/issues/9562) - `--lite` and `--archive` options to data node have been replaced with `--retention-profile=[archive|conservative|minimal]` with default mode as archive.
 
 ### 🗑️ Deprecation
 
