@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"sort"
 	"sync"
 	"time"
@@ -105,7 +106,7 @@ type Market struct {
 	closed               bool
 	finalFeesDistributed bool
 
-	parties map[string]struct{}
+	parties *orderedmap.OrderedMap[string, struct{}]
 
 	pMonitor common.PriceMonitor
 	lMonitor LiquidityMonitor
@@ -291,7 +292,7 @@ func NewMarket(
 		fee:                           feeEngine,
 		liquidity:                     marketLiquidity,
 		liquidityEngine:               liquidityEngine, // TODO karel - consider not having this
-		parties:                       map[string]struct{}{},
+		parties:                       orderedmap.New[string, struct{}](),
 		as:                            auctionState,
 		pMonitor:                      pMonitor,
 		lMonitor:                      lMonitor,
@@ -1015,9 +1016,9 @@ func (m *Market) removeOrders(ctx context.Context) {
 }
 
 func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.MarketState) error {
-	parties := make([]string, 0, len(m.parties))
-	for k := range m.parties {
-		parties = append(parties, k)
+	parties := make([]string, 0, m.parties.Len())
+	for p := m.parties.Oldest(); p != nil; p = p.Next() {
+		parties = append(parties, p.Key)
 	}
 
 	// insurance pool has to be preserved in case a successor market leaves opening auction
@@ -1565,7 +1566,7 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 		// we can delete the party from the map here
 		// unless the party is an LP
 		if !m.liquidityEngine.IsLiquidityProvider(party) {
-			delete(m.parties, party)
+			m.parties.Delete(party)
 		}
 	}
 	m.broker.SendBatch(evts)
@@ -2067,8 +2068,8 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 }
 
 func (m *Market) addParty(party string) {
-	if _, ok := m.parties[party]; !ok {
-		m.parties[party] = struct{}{}
+	if _, ok := m.parties.Get(party); !ok {
+		m.parties.Set(party, struct{}{})
 	}
 }
 
@@ -3905,10 +3906,10 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 	}
 
 	m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
-	for party := range m.parties {
-		_, err := m.CancelAllOrders(ctx, party)
+	for p := m.parties.Oldest(); p != nil; p = p.Next() {
+		_, err := m.CancelAllOrders(ctx, p.Key)
 		if err != nil {
-			m.log.Debug("could not cancel orders for party", logging.PartyID(party), logging.Error(err))
+			m.log.Debug("could not cancel orders for party", logging.PartyID(p.Key), logging.Error(err))
 			panic(err)
 		}
 	}
@@ -4037,9 +4038,10 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 	m.tradableInstrument.Instrument.Unsubscribe(ctx)
 
 	// get the list of all parties in this market
-	parties := make([]string, 0, len(m.parties))
-	for k := range m.parties {
-		parties = append(parties, k)
+	parties := make([]string, 0, m.parties.Len())
+
+	for p := m.parties.Oldest(); p != nil; p = p.Next() {
+		parties = append(parties, p.Key)
 	}
 
 	m.liquidity.StopAllLiquidityProvision(ctx)
