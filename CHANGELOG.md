@@ -28,6 +28,7 @@
 - [8680](https://github.com/vegaprotocol/vega/issues/8680) - Move loading the local snapshot in the initialization steps.
 - [8682](https://github.com/vegaprotocol/vega/issues/8682) - Share snapshot by search the metadata database instead of loading the tree.
 - [8846](https://github.com/vegaprotocol/vega/issues/8846) - Add support to transfer recurring transfers to metric based reward
+- [9549](https://github.com/vegaprotocol/vega/issues/9549) - Update config defaults to better support archive nodes 
 - [8857](https://github.com/vegaprotocol/vega/issues/8857) - Add a step for getting the balance of the liquidity provider liquidity fee account
 - [8847](https://github.com/vegaprotocol/vega/issues/8847) - Implement internal time trigger data source.
 - [8895](https://github.com/vegaprotocol/vega/issues/8895) - Allow to set runtime parameters in the SQL Store connection structure

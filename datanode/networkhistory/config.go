@@ -42,8 +42,8 @@ func NewDefaultConfig() Config {
 
 func NewDefaultInitializationConfig() InitializationConfig {
 	return InitializationConfig{
-		MinimumBlockCount: 1,
-		TimeOut:           encoding.Duration{Duration: 1 * time.Minute},
+		MinimumBlockCount: 4_200_000,
+		TimeOut:           encoding.Duration{Duration: 6 * time.Hour},
 		GrpcAPIPorts:      []int{},
 		ToSegment:         "",
 	}

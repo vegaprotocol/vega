@@ -217,7 +217,7 @@ func DefaultVisorConfig(log *logging.Logger, homePath string) *VisorConfig {
 		data: &VisorConfigFile{
 			UpgradeFolders:                    map[string]string{"vX.X.X": "vX.X.X"},
 			MaxNumberOfRestarts:               3,
-			MaxNumberOfFirstConnectionRetries: 10,
+			MaxNumberOfFirstConnectionRetries: 175000,
 			RestartsDelaySeconds:              5,
 			StopDelaySeconds:                  0,
 			StopSignalTimeoutSeconds:          15,

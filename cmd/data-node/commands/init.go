@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 
@@ -25,6 +26,8 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 
 	"github.com/jessevdk/go-flags"
+
+	"code.vegaprotocol.io/vega/datanode/config/encoding"
 )
 
 type InitCmd struct {
@@ -75,10 +78,14 @@ func (opts *InitCmd) Execute(args []string) error {
 	if opts.Mode == "archive" {
 		cfg.NetworkHistory.Store.HistoryRetentionBlockSpan = math.MaxInt64
 		cfg.SQLStore.RetentionPeriod = sqlstore.RetentionPeriodArchive
+		cfg.NetworkHistory.Initialise.TimeOut = encoding.Duration{Duration: 96 * time.Hour}
+		cfg.NetworkHistory.Initialise.MinimumBlockCount = -1
 	}
 
 	if opts.Mode == "lite" {
 		cfg.SQLStore.RetentionPeriod = sqlstore.RetentionPeriodLite
+		cfg.NetworkHistory.Initialise.TimeOut = encoding.Duration{Duration: 1 * time.Minute}
+		cfg.NetworkHistory.Initialise.MinimumBlockCount = 1
 	}
 	cfg.ChainID = chainID
 
