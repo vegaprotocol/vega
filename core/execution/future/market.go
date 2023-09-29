@@ -3905,7 +3905,10 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 	}
 
 	m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
-	for party := range m.parties {
+
+	parties := maps.Keys(m.parties)
+	sort.Strings(parties)
+	for _, party := range parties {
 		_, err := m.CancelAllOrders(ctx, party)
 		if err != nil {
 			m.log.Debug("could not cancel orders for party", logging.PartyID(party), logging.Error(err))
