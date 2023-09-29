@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/products/mocks"
 	"code.vegaprotocol.io/vega/core/types"
+	tmocks "code.vegaprotocol.io/vega/core/vegatime/mocks"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
@@ -116,6 +117,7 @@ func testPerpetualSnapshot(t *testing.T, ctrl *gomock.Controller, state *snapsho
 	log := logging.NewTestLogger()
 	oe := mocks.NewMockOracleEngine(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
+	ts := tmocks.NewMockTimeService(ctrl)
 	dp := uint32(1)
 
 	pubKeys := []*dstypes.Signer{
@@ -171,8 +173,8 @@ func testPerpetualSnapshot(t *testing.T, ctrl *gomock.Controller, state *snapsho
 		},
 	}
 	oe.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(spec.SubscriptionID(1), func(_ context.Context, _ spec.SubscriptionID) {}, nil)
-
-	perpetual, err := products.NewPerpetualFromSnapshot(context.Background(), log, perp, "", oe, broker, state.GetPerps(), dp, tm)
+	ts.EXPECT().GetTimeNow().Times(1).Return(tm)
+	perpetual, err := products.NewPerpetualFromSnapshot(context.Background(), log, perp, "", ts, oe, broker, state.GetPerps(), dp)
 	if err != nil {
 		t.Fatalf("couldn't create a perp for testing: %v", err)
 	}

@@ -21,6 +21,7 @@ import (
 	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
@@ -258,6 +259,7 @@ type Perpetual struct {
 	settlementDataListener func(context.Context, *num.Numeric)
 	broker                 Broker
 	oracle                 scheduledOracle
+	timeService            common.TimeService
 
 	// id should be the same as the market id
 	id string
@@ -316,7 +318,7 @@ func (p *Perpetual) Update(ctx context.Context, pp interface{}, oe OracleEngine)
 	return nil
 }
 
-func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, marketID string, oe OracleEngine, broker Broker, assetDP uint32) (*Perpetual, error) {
+func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, marketID string, ts common.TimeService, oe OracleEngine, broker Broker, assetDP uint32) (*Perpetual, error) {
 	// make sure we have all we need
 	if p.DataSourceSpecForSettlementData == nil || p.DataSourceSpecForSettlementSchedule == nil || p.DataSourceSpecBinding == nil {
 		return nil, ErrDataSourceSpecAndBindingAreRequired
@@ -330,6 +332,7 @@ func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, mark
 		p:            p,
 		id:           marketID,
 		log:          log,
+		timeService:  ts,
 		broker:       broker,
 		assetDP:      assetDP,
 		externalTWAP: NewCachedTWAP(log, 0),
@@ -418,7 +421,7 @@ func (p *Perpetual) UnsubscribeTradingTerminated(ctx context.Context) {
 	p.log.Info("unsubscribed trading data and cue oracle on perpetual termination", logging.String("quote-name", p.p.QuoteName))
 	p.terminated = true
 	p.oracle.unsubAll(ctx)
-	p.sendFinalSettlementCue(ctx)
+	p.handleSettlementCue(ctx, p.timeService.GetTimeNow().Truncate(time.Second).UnixNano())
 }
 
 func (p *Perpetual) UnsubscribeSettlementData(ctx context.Context) {
@@ -554,14 +557,6 @@ func (p *Perpetual) receiveSettlementCue(ctx context.Context, data dscommon.Data
 	return nil
 }
 
-func (p *Perpetual) sendFinalSettlementCue(ctx context.Context) {
-	if !p.readyForData() {
-		return
-	}
-	max := num.MaxV(p.internalTWAP.end, p.externalTWAP.end)
-	p.handleSettlementCue(ctx, max)
-}
-
 // handleSettlementCue will be hooked up as a subscriber to the oracle data for the notification that the settlement period has ended.
 func (p *Perpetual) handleSettlementCue(ctx context.Context, t int64) {
 	if !p.readyForData() {
@@ -571,8 +566,8 @@ func (p *Perpetual) handleSettlementCue(ctx context.Context, t int64) {
 		return
 	}
 
-	if !p.haveData(t) {
-		// we have no points so we just start a new interval
+	if !p.haveData(t) || t == p.startedAt {
+		// we have no points, or the interval is zero length so we just start a new interval
 		p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t), nil, nil, nil, nil))
 		p.startNewFundingPeriod(ctx, t)
 		return
@@ -613,6 +608,11 @@ func (p *Perpetual) GetData(t int64) *types.ProductData {
 
 // restarts the funcing period at time st.
 func (p *Perpetual) startNewFundingPeriod(ctx context.Context, endAt int64) {
+	if p.terminated {
+		// the perpetual market has been terminated so we won't start a new funding period
+		return
+	}
+
 	// increment seq and set start to the time the previous ended
 	p.seq += 1
 	p.startedAt = endAt

@@ -19,6 +19,7 @@ import (
 	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
@@ -73,7 +74,7 @@ type Product interface {
 }
 
 // New instance a new product from a Market framework product configuration.
-func New(ctx context.Context, log *logging.Logger, pp interface{}, marketID string, oe OracleEngine, broker Broker, assetDP uint32) (Product, error) {
+func New(ctx context.Context, log *logging.Logger, pp interface{}, marketID string, ts common.TimeService, oe OracleEngine, broker Broker, assetDP uint32) (Product, error) {
 	if pp == nil {
 		return nil, ErrNilProduct
 	}
@@ -82,7 +83,7 @@ func New(ctx context.Context, log *logging.Logger, pp interface{}, marketID stri
 	case *types.InstrumentFuture:
 		return NewFuture(ctx, log, p.Future, oe, assetDP)
 	case *types.InstrumentPerps:
-		return NewPerpetual(ctx, log, p.Perps, marketID, oe, broker, assetDP)
+		return NewPerpetual(ctx, log, p.Perps, marketID, ts, oe, broker, assetDP)
 	default:
 		return nil, ErrUnimplementedProduct
 	}

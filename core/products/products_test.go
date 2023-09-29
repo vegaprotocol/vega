@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/products/mocks"
 	"code.vegaprotocol.io/vega/core/types"
+	tmocks "code.vegaprotocol.io/vega/core/vegatime/mocks"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -102,6 +103,7 @@ func TestFutureSettlement(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	oe := mocks.NewMockOracleEngine(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
+	ts := tmocks.NewMockTimeService(ctrl)
 
 	sid1 := spec.SubscriptionID(1)
 	oe.EXPECT().Unsubscribe(ctx, sid1).AnyTimes()
@@ -116,7 +118,7 @@ func TestFutureSettlement(t *testing.T) {
 
 	prodSpec := proto.Product
 	require.NotNil(t, prodSpec)
-	prod, err := products.New(ctx, logging.NewTestLogger(), prodSpec, "", oe, broker, 1)
+	prod, err := products.New(ctx, logging.NewTestLogger(), prodSpec, "", ts, oe, broker, 1)
 
 	// Cast back into a future so we can call future specific functions
 	f, ok := prod.(*products.Future)

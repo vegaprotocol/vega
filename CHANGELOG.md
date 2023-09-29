@@ -240,6 +240,7 @@
 - [9570](https://github.com/vegaprotocol/vega/issues/9570) - Ledger entry export doesn't work if `dateRange.End` is specified
 - [9571](https://github.com/vegaprotocol/vega/issues/9571) - Ledger entry `CSV` export slow even when looking at narrow time window
 - [8934](https://github.com/vegaprotocol/vega/issues/8934) - Check for special characters in headers.
+- [9609](https://github.com/vegaprotocol/vega/issues/9609) - Do not prompt for funding payments when terminating a perpetual market if we have already processed a trigger.
 - [8979](https://github.com/vegaprotocol/vega/issues/8979) - Update `XFF` information in rate limiter documentation.
 - [9540](https://github.com/vegaprotocol/vega/issues/9540) - Proposals connection does not resolve `UpdateReferralProgram` proposals correctly.
 - [9580](https://github.com/vegaprotocol/vega/issues/9580) - Add program end time validation for referral proposals.
