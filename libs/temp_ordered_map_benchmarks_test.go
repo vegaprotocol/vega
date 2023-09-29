@@ -8,11 +8,11 @@ import (
 
 /*
 BenchmarkMapIteration
-iterations: 1000
-iterations: 100000
-iterations: 10000000
-iterations: 139970000
-BenchmarkMapIteration-16    	  139970	      8536 ns/op
+values length: 8890
+values length: 889000
+values length: 88900000
+values length: 1262157750
+BenchmarkMapIteration-16    	  141975	      8371 ns/op
 */
 func BenchmarkMapIteration(b *testing.B) {
 
@@ -21,25 +21,27 @@ func BenchmarkMapIteration(b *testing.B) {
 	for c := 0; c < 1000; c++ {
 		m[fmt.Sprintf("%d-key", c)] = fmt.Sprintf("%d-value", c)
 	}
+
+	lengthOfAllValues := 0
+
 	b.ResetTimer()
 
-	i := 0
 	for n := 0; n < b.N; n++ {
-		for _, _ = range m {
-			i++
+		for _, v := range m {
+			lengthOfAllValues += len(v)
 		}
 	}
 
-	fmt.Printf("iterations: %d\n", i)
+	fmt.Printf("values length: %d\n", lengthOfAllValues)
 }
 
 /*
 BenchmarkOrderedMapIteration
-iterations: 1000
-iterations: 100000
-iterations: 10000000
-iterations: 411097000
-BenchmarkOrderedMapIteration-16    	  411097	      2811 ns/op
+values length: 8890
+values length: 889000
+values length: 88900000
+values length: 3754478140
+BenchmarkOrderedMapIteration-16    	  422326	      2811 ns/op
 */
 func BenchmarkOrderedMapIteration(b *testing.B) {
 
@@ -47,16 +49,17 @@ func BenchmarkOrderedMapIteration(b *testing.B) {
 	for c := 0; c < 1000; c++ {
 		m.Set(fmt.Sprintf("%d-key", c), fmt.Sprintf("%d-value", c))
 	}
+
+	lengthOfAllValues := 0
 	b.ResetTimer()
 
-	i := 0
 	for n := 0; n < b.N; n++ {
 		for p := m.Oldest(); p != nil; p = p.Next() {
-			i++
+			lengthOfAllValues += len(p.Value)
 		}
 	}
 
-	fmt.Printf("iterations: %d\n", i)
+	fmt.Printf("values length: %d\n", lengthOfAllValues)
 }
 
 /*
