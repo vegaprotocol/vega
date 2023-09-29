@@ -143,6 +143,7 @@ Feature: Test funding margin for Perps market
 #1 year has 8760 hours,so 0.002 year would be: 8760*0.002*3600 = 63072second, so next funding time (with delta_t = 0.002) would be 1612998252+63072=1613061324
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value      | time offset |
+      | perp.ETH.value | 1600000000000000000000 | 0s |
       | perp.funding.cue | 1613061324 | 0s |
 
     And the following transfers should happen:
