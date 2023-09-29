@@ -127,9 +127,9 @@ type Subscription {
     "ID of the party from which you want trades updates"
     partyId: ID
   ): [TradeUpdate!]
-    @deprecated(
-      reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once"
-    )
+  @deprecated(
+    reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once"
+  )
 
   "Subscribe to the trades updates"
   tradesStream(
@@ -481,11 +481,14 @@ type Query {
     pagination: Pagination
   ): AggregatedBalanceConnection!
 
-  "List core snapshots"
-  coreSnapshots(pagination: Pagination): CoreSnapshotConnection
-
   "Get the current referral program"
   currentReferralProgram: CurrentReferralProgram
+
+  "Get the current volume discount program"
+  currentVolumeDiscountProgram: VolumeDiscountProgram
+
+  "List core snapshots"
+  coreSnapshots(pagination: Pagination): CoreSnapshotConnection
 
   "Find a deposit using its ID"
   deposit("ID of the Deposit" id: ID!): Deposit
@@ -568,7 +571,7 @@ type Query {
     "Type of the order"
     type: OrderType!
   ): OrderEstimate!
-    @deprecated(reason: "Use estimateFees and estimatePosition instead")
+  @deprecated(reason: "Use estimateFees and estimatePosition instead")
 
   "Return an estimation of the potential cost for a new order"
   estimateFees(
@@ -939,6 +942,16 @@ type Query {
   "Find a transfer using its ID"
   transfer("ID of the transfer" id: ID!): Transfer
 
+  "Get volume discount statistics"
+  volumeDiscountStats(
+    "Optional epoch to get statistics from. If not provided, the latest statistics are returned"
+    epoch: Int
+    "Optional party ID"
+    partyId: ID
+    "Optional pagination information"
+    pagination: Pagination
+  ): VolumeDiscountStatsConnection!
+
   "Find a withdrawal using its ID"
   withdrawal("ID of the withdrawal" id: ID!): Withdrawal
 
@@ -1008,7 +1021,7 @@ type Transfer {
 }
 
 union TransferKind =
-    OneOffTransfer
+  OneOffTransfer
   | RecurringTransfer
   | OneOffGovernanceTransfer
   | RecurringGovernanceTransfer
@@ -2180,9 +2193,9 @@ type Market {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-    @deprecated(
-      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-    )
+  @deprecated(
+    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+  )
 
   "Current depth on the order book for this market"
   depth(
@@ -2400,9 +2413,9 @@ type Party {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-    @deprecated(
-      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-    )
+  @deprecated(
+    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+  )
 
   "Collateral accounts relating to a party"
   accountsConnection(
@@ -2418,7 +2431,7 @@ type Party {
 
   "Trading positions relating to a party"
   positionsConnection(market: ID, pagination: Pagination): PositionConnection
-    @deprecated(reason: "Use root positions query instead of sub-query")
+  @deprecated(reason: "Use root positions query instead of sub-query")
 
   "Margin levels for a market"
   marginsConnection(
@@ -2740,9 +2753,9 @@ type Order {
     dateRange: DateRange
     pagination: Pagination
   ): TradeConnection
-    @deprecated(
-      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-    )
+  @deprecated(
+    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+  )
 
   "The order type"
   type: OrderType
@@ -4180,7 +4193,7 @@ type UpdatePerpetualProduct {
 }
 
 union UpdateMarketRiskParameters =
-    UpdateMarketSimpleRiskModel
+  UpdateMarketSimpleRiskModel
   | UpdateMarketLogNormalRiskModel
 
 type UpdateMarketSimpleRiskModel {
@@ -4261,7 +4274,7 @@ type NewTransfer {
 }
 
 union GovernanceTransferKind =
-    OneOffGovernanceTransfer
+  OneOffGovernanceTransfer
   | RecurringGovernanceTransfer
 
 "Allows for cancellation of an existing governance transfer"
@@ -4400,7 +4413,7 @@ type NetworkParameter {
 }
 
 union ProposalChange =
-    NewMarket
+  NewMarket
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
@@ -5738,7 +5751,7 @@ type DataSourceSpecConfigurationTimeTrigger {
 }
 
 union InternalDataSourceKind =
-    DataSourceSpecConfigurationTime
+  DataSourceSpecConfigurationTime
   | DataSourceSpecConfigurationTimeTrigger
 
 """
@@ -5760,7 +5773,7 @@ type DataSourceDefinitionExternal {
 }
 
 union DataSourceKind =
-    DataSourceDefinitionInternal
+  DataSourceDefinitionInternal
   | DataSourceDefinitionExternal
 
 """
@@ -6188,3 +6201,47 @@ type ReferrerRewardsGenerated {
   "The amount of rewards generated per party"
   generatedReward: [PartyAmount!]!
 }
+
+"Volume discount program information"
+type VolumeDiscountProgram {
+  "Unique ID generated from the proposal that created this program."
+  id: ID!
+  "Incremental version of the program. It is incremented each time the volume discount program is edited."
+  version: Int!
+  "Defined tiers in increasing order. First element will give Tier 1, second element will give Tier 2, etc."
+  benefitTiers: [VolumeBenefitTier!]!
+  "Timestamp as Unix time in nanoseconds, after which when the current epoch ends, the programs will end and benefits will be disabled."
+  endOfProgramTimestamp: Timestamp!
+  "Number of epochs over which to evaluate parties' running volume."
+  windowLength: Int!
+  "Timestamp as RFC3339Nano when the program ended. If present, the current program has ended and no program is currently running."
+  endedAt: Timestamp
+}
+
+"Connection type for retrieving cursor-based paginated volume discount statistics information"
+type VolumeDiscountStatsConnection {
+  "The volume discount statistics in this connection"
+  edges: [VolumeDiscountStatsEdge]!
+  "The pagination information"
+  pageInfo: PageInfo!
+}
+
+"Edge type containing the volume discount statistics and cursor information returned by a VolumeDiscountStatsConnection"
+type VolumeDiscountStatsEdge {
+  "The volume discount statistics"
+  node: VolumeDiscountStats!
+  "The cursor for this volume discount statistics"
+  cursor: String!
+}
+
+type VolumeDiscountStats {
+  "Epoch at which the statistics are updated."
+  atEpoch: Int!
+  "Unique ID of the party."
+  partyId: ID!
+  "Discount factor applied to the party."
+  discountFactor: String!
+  "Party's running volume."
+  runningVolume: String!
+}
+

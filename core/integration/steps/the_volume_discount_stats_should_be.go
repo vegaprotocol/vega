@@ -60,7 +60,7 @@ func parseVolumeDiscountStatsShouldBeTable(table *godog.Table) (map[string]event
 	return stats, nil
 }
 
-func compareVolumeDiscountStats(expectedStats map[string]eventspb.PartyVolumeDiscountStats, foundStats map[string]eventspb.PartyVolumeDiscountStats) error {
+func compareVolumeDiscountStats(expectedStats, foundStats map[string]eventspb.PartyVolumeDiscountStats) error {
 	foundStatsIDs := maps.Keys(expectedStats)
 	expectedStatsIDs := maps.Keys(expectedStats)
 

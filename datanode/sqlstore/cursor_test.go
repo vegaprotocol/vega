@@ -16,9 +16,10 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
 )
 
 func TestCursorPredicate(t *testing.T) {

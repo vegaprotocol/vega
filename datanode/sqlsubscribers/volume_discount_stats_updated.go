@@ -29,7 +29,7 @@ type (
 		VolumeDiscountStatsUpdated() *eventspb.VolumeDiscountStatsUpdated
 	}
 	VolumeDiscountStatsUpdatedStore interface {
-		Add(context.Context, *entities.VolumeDiscountStatsUpdated) error
+		Add(context.Context, *entities.VolumeDiscountStats) error
 	}
 	VolumeDiscountStatsUpdated struct {
 		subscriber

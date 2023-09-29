@@ -887,7 +887,7 @@ type UpdateVolumeDiscountProgram struct {
 	// ID of the proposal that created the discount program
 	ID string `json:"id"`
 	// The benefit tiers for the program
-	BenefitTiers []*VolumeBenefitTier `json:"benefitTiers"`
+	BenefitTiers []*vega.VolumeBenefitTier `json:"benefitTiers"`
 	// The end time of the program
 	EndOfProgramTimestamp int64 `json:"endOfProgramTimestamp"`
 	// The window legnth to consider for the volume discount program
@@ -895,13 +895,6 @@ type UpdateVolumeDiscountProgram struct {
 }
 
 func (UpdateVolumeDiscountProgram) IsProposalChange() {}
-
-type VolumeBenefitTier struct {
-	// The minimum running notional for the given benefit tier
-	MinimumRunningNotionalTakerVolume string `json:"minimumRunningNotionalTakerVolume"`
-	// Discount given to those in this benefit tier
-	VolumeDiscountFactor string `json:"volumeDiscountFactor"`
-}
 
 // Event types
 type BusEventType string

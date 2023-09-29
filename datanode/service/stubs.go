@@ -38,13 +38,16 @@ type (
 	MultiSig            struct {
 		*sqlstore.ERC20MultiSigSignerEvent
 	}
-	FundingPeriods      struct{ *sqlstore.FundingPeriods }
-	ReferralPrograms    struct{ *sqlstore.ReferralPrograms }
-	ReferralSets        struct{ *sqlstore.ReferralSets }
-	Teams               struct{ *sqlstore.Teams }
-	VestingStats        struct{ *sqlstore.VestingStats }
-	VolumeDiscountStats struct{ *sqlstore.VolumeDiscountStats }
-	ReferralFeeStats    struct{ *sqlstore.ReferralFeeStats }
+	FundingPeriods         struct{ *sqlstore.FundingPeriods }
+	ReferralPrograms       struct{ *sqlstore.ReferralPrograms }
+	ReferralSets           struct{ *sqlstore.ReferralSets }
+	Teams                  struct{ *sqlstore.Teams }
+	VestingStats           struct{ *sqlstore.VestingStats }
+	VolumeDiscountStats    struct{ *sqlstore.VolumeDiscountStats }
+	ReferralFeeStats       struct{ *sqlstore.ReferralFeeStats }
+	VolumeDiscountPrograms struct {
+		*sqlstore.VolumeDiscountPrograms
+	}
 )
 
 type (
@@ -162,4 +165,8 @@ func NewVolumeDiscountStats(store *sqlstore.VolumeDiscountStats) *VolumeDiscount
 
 func NewReferralFeeStats(store *sqlstore.ReferralFeeStats) *ReferralFeeStats {
 	return &ReferralFeeStats{ReferralFeeStats: store}
+}
+
+func NewVolumeDiscountPrograms(store *sqlstore.VolumeDiscountPrograms) *VolumeDiscountPrograms {
+	return &VolumeDiscountPrograms{VolumeDiscountPrograms: store}
 }

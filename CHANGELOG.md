@@ -120,6 +120,7 @@
 - [9575](https://github.com/vegaprotocol/vega/issues/9575) - Expand SLA statistics by required liquidity and notional volumes.
 - [9590](https://github.com/vegaprotocol/vega/issues/9590) - Restore positions for market activity tracker on migration from old version.
 - [9589](https://github.com/vegaprotocol/vega/issues/9589) - Add event for funding payments.
+- [9460](https://github.com/vegaprotocol/vega/issues/9460) - Add APIs for volume discount program.
 
 ### 🐛 Fixes
 
