@@ -15,6 +15,7 @@ package gql
 import (
 	"context"
 	"errors"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -76,13 +77,21 @@ func resolveTrigger(obj any) (trigger TriggerKind) {
 		switch trig := obj.(type) {
 		case *vegapb.EthCallTrigger_TimeTrigger:
 			if trig.TimeTrigger != nil {
-				init := int64(trig.TimeTrigger.GetInitial())
+				var (
+					init  *int64
+					until *int64
+				)
+				if trig.TimeTrigger.GetInitial() != 0 {
+					init = ptr.From(time.Unix(int64(trig.TimeTrigger.GetInitial()), 0).UnixNano())
+				}
 				every := int(trig.TimeTrigger.GetEvery())
-				until := int64(trig.TimeTrigger.GetUntil())
+				if trig.TimeTrigger.GetUntil() != 0 {
+					until = ptr.From(time.Unix(int64(trig.TimeTrigger.GetUntil()), 0).UnixNano())
+				}
 				trigger = &EthTimeTrigger{
-					Initial: &init,
+					Initial: init,
 					Every:   &every,
-					Until:   &until,
+					Until:   until,
 				}
 			}
 		}
