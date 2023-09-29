@@ -16,6 +16,7 @@ import (
 	"context"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
@@ -27,17 +28,17 @@ func NewPerpetualFromSnapshot(
 	log *logging.Logger,
 	p *types.Perps,
 	marketID string,
+	ts common.TimeService,
 	oe OracleEngine,
 	broker Broker,
 	state *snapshotpb.Perps,
 	assetDP uint32,
-	tm time.Time,
 ) (*Perpetual, error) {
 	// set next trigger from the settlement cue, it'll roll forward from `initial` to the next trigger time after `now`
 	tt := p.DataSourceSpecForSettlementSchedule.Data.GetInternalTimeTriggerSpecConfiguration()
-	tt.SetNextTrigger(tm.Truncate(time.Second))
+	tt.SetNextTrigger(ts.GetTimeNow().Truncate(time.Second))
 
-	perps, err := NewPerpetual(ctx, log, p, marketID, oe, broker, assetDP)
+	perps, err := NewPerpetual(ctx, log, p, marketID, ts, oe, broker, assetDP)
 	if err != nil {
 		return nil, err
 	}

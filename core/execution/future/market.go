@@ -186,7 +186,7 @@ func NewMarket(
 	assetDecimals := assetDetails.DecimalPlaces()
 	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(mkt.PositionDecimalPlaces))
 
-	tradableInstrument, err := markets.NewTradableInstrument(ctx, log, mkt.TradableInstrument, mkt.ID, oracleEngine, broker, uint32(assetDecimals))
+	tradableInstrument, err := markets.NewTradableInstrument(ctx, log, mkt.TradableInstrument, mkt.ID, timeService, oracleEngine, broker, uint32(assetDecimals))
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}

@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	emock "code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/markets"
+	tmocks "code.vegaprotocol.io/vega/core/vegatime/mocks"
 	"code.vegaprotocol.io/vega/logging"
 
 	"code.vegaprotocol.io/vega/core/products"
@@ -36,22 +37,25 @@ import (
 
 func TestInstrument(t *testing.T) {
 	t.Run("Create a valid new instrument", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
 		pinst := getValidInstrumentProto()
-		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, "", newOracleEngine(t), mocks.NewMockBroker(gomock.NewController(t)), 1)
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, "", tmocks.NewMockTimeService(ctrl), newOracleEngine(t), mocks.NewMockBroker(ctrl), 1)
 		assert.NotNil(t, inst)
 		assert.Nil(t, err)
 	})
 
 	t.Run("nil product", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
 		pinst := getValidInstrumentProto()
 		pinst.Product = nil
-		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, "", newOracleEngine(t), mocks.NewMockBroker(gomock.NewController(t)), 1)
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, "", tmocks.NewMockTimeService(ctrl), newOracleEngine(t), mocks.NewMockBroker(ctrl), 1)
 		assert.Nil(t, inst)
 		assert.NotNil(t, err)
 		assert.Equal(t, err.Error(), "unable to instantiate product from instrument configuration: nil product")
 	})
 
 	t.Run("nil oracle spec", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
 		pinst := getValidInstrumentProto()
 		pinst.Product = &types.InstrumentFuture{
 			Future: &types.Future{
@@ -64,13 +68,14 @@ func TestInstrument(t *testing.T) {
 				},
 			},
 		}
-		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, "", newOracleEngine(t), mocks.NewMockBroker(gomock.NewController(t)), 1)
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, "", tmocks.NewMockTimeService(ctrl), newOracleEngine(t), mocks.NewMockBroker(ctrl), 1)
 		require.NotNil(t, err)
 		assert.Nil(t, inst)
 		assert.Equal(t, "unable to instantiate product from instrument configuration: a data source spec and spec binding are required", err.Error())
 	})
 
 	t.Run("nil oracle spec binding", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
 		pinst := getValidInstrumentProto()
 		pinst.Product = &types.InstrumentFuture{
 			Future: &types.Future{
@@ -114,7 +119,7 @@ func TestInstrument(t *testing.T) {
 				DataSourceSpecBinding: nil,
 			},
 		}
-		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, "", newOracleEngine(t), mocks.NewMockBroker(gomock.NewController(t)), 1)
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, "", tmocks.NewMockTimeService(ctrl), newOracleEngine(t), mocks.NewMockBroker(ctrl), 1)
 		require.NotNil(t, err)
 		assert.Nil(t, inst)
 		assert.Equal(t, "unable to instantiate product from instrument configuration: a data source spec and spec binding are required", err.Error())

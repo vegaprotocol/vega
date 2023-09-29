@@ -30,6 +30,7 @@ import (
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/products/mocks"
 	"code.vegaprotocol.io/vega/core/types"
+	tmocks "code.vegaprotocol.io/vega/core/vegatime/mocks"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
@@ -55,6 +56,7 @@ func TestPeriodicSettlement(t *testing.T) {
 	t.Run("margin increase, negative payment", TestGetMarginIncreaseNegativePayment)
 	t.Run("test pathological case with out of order points", testOutOfOrderPointsBeforePeriodStart)
 	t.Run("test update perpetual", testUpdatePerpetual)
+	t.Run("test terminate trading coincides with time trigger", testTerminateTradingCoincidesTimeTrigger)
 }
 
 func TestExternalDataPointTWAPInSequence(t *testing.T) {
@@ -387,6 +389,7 @@ func testRegisteredCallbacks(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	oe := mocks.NewMockOracleEngine(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
+	ts := tmocks.NewMockTimeService(ctrl)
 	exp := &num.Numeric{}
 	exp.SetUint(num.UintZero())
 	ctx := context.Background()
@@ -411,7 +414,7 @@ func testRegisteredCallbacks(t *testing.T) {
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	perp := getTestPerpProd(t)
-	perpetual, err := products.NewPerpetual(context.Background(), log, perp, "", oe, broker, 1)
+	perpetual, err := products.NewPerpetual(context.Background(), log, perp, "", ts, oe, broker, 1)
 	require.NoError(t, err)
 	require.NotNil(t, settle)
 	require.NotNil(t, period)
@@ -463,6 +466,7 @@ func testRegisteredCallbacksWithDifferentData(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	oe := mocks.NewMockOracleEngine(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
+	ts := tmocks.NewMockTimeService(ctrl)
 	exp := &num.Numeric{}
 	// should be 2
 	res, _ := num.IntFromString("-4", 10)
@@ -489,7 +493,7 @@ func testRegisteredCallbacksWithDifferentData(t *testing.T) {
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	perp := getTestPerpProd(t)
-	perpetual, err := products.NewPerpetual(context.Background(), log, perp, "", oe, broker, 1)
+	perpetual, err := products.NewPerpetual(context.Background(), log, perp, "", ts, oe, broker, 1)
 	require.NoError(t, err)
 	require.NotNil(t, settle)
 	require.NotNil(t, period)
@@ -676,12 +680,57 @@ func testTerminateTrading(t *testing.T) {
 	}
 	perp.perpetual.SetSettlementListener(fn)
 
-	perp.broker.EXPECT().Send(gomock.Any()).Times(2)
-	perp.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	perp.ts.EXPECT().GetTimeNow().Times(1).Return(time.Unix(10, points[len(points)-1].t))
+	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
 	perp.perpetual.UnsubscribeTradingTerminated(ctx)
 	assert.NotNil(t, fundingPayment)
 	assert.True(t, fundingPayment.IsInt())
 	assert.Equal(t, "0", fundingPayment.String())
+}
+
+func testTerminateTradingCoincidesTimeTrigger(t *testing.T) {
+	perp := testPerpetual(t)
+	defer perp.ctrl.Finish()
+	ctx := context.Background()
+
+	// set of the data points such that difference in averages is 0
+	points := getTestDataPoints(t)
+
+	// tell the perpetual that we are ready to accept settlement stuff
+	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
+	perp.perpetual.OnLeaveOpeningAuction(ctx, points[0].t)
+
+	// send in some data points
+	perp.broker.EXPECT().Send(gomock.Any()).Times(len(points) * 2)
+	for _, p := range points {
+		// send in an external and a matching internal
+		require.NoError(t, perp.perpetual.SubmitDataPoint(ctx, p.price, p.t))
+		perp.perpetual.AddTestExternalPoint(ctx, p.price, p.t)
+	}
+
+	// ask for the funding payment
+	var fundingPayment *num.Numeric
+	fn := func(_ context.Context, fp *num.Numeric) {
+		fundingPayment = fp
+	}
+	perp.perpetual.SetSettlementListener(fn)
+
+	// do a normal settlement cue end time
+	endTime := time.Unix(10, points[len(points)-1].t).Truncate(time.Second)
+	perp.broker.EXPECT().Send(gomock.Any()).Times(2)
+	perp.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	perp.perpetual.PromptSettlementCue(ctx, endTime.UnixNano())
+	assert.NotNil(t, fundingPayment)
+	assert.True(t, fundingPayment.IsInt())
+	assert.Equal(t, "0", fundingPayment.String())
+
+	// now terminate the market at the same time, we expect no funding payment, and just an event
+	// to say the period has ended, with no start period.
+	fundingPayment = nil
+	perp.ts.EXPECT().GetTimeNow().Times(1).Return(time.Unix(10, points[len(points)-1].t))
+	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
+	perp.perpetual.UnsubscribeTradingTerminated(ctx)
+	assert.Nil(t, fundingPayment)
 }
 
 func testGetMarginIncrease(t *testing.T) {
@@ -828,6 +877,7 @@ func getTestDataPoints(t *testing.T) []*testDataPoint {
 
 type tstPerp struct {
 	oe        *mocks.MockOracleEngine
+	ts        *tmocks.MockTimeService
 	broker    *mocks.MockBroker
 	perpetual *products.Perpetual
 	ctrl      *gomock.Controller
@@ -852,9 +902,11 @@ func testPerpetualWithOpts(t *testing.T, interestRate, clampLowerBound, clampUpp
 	ctrl := gomock.NewController(t)
 	oe := mocks.NewMockOracleEngine(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
+	ts := tmocks.NewMockTimeService(ctrl)
 	perp := getTestPerpProd(t)
 
 	tp := &tstPerp{
+		ts:     ts,
 		oe:     oe,
 		broker: broker,
 		ctrl:   ctrl,
@@ -862,7 +914,7 @@ func testPerpetualWithOpts(t *testing.T, interestRate, clampLowerBound, clampUpp
 	}
 	tp.oe.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(spec.SubscriptionID(1), tp.unsubscribe, nil)
 
-	perpetual, err := products.NewPerpetual(context.Background(), log, perp, "", oe, broker, 1)
+	perpetual, err := products.NewPerpetual(context.Background(), log, perp, "", ts, oe, broker, 1)
 	perp.InterestRate = num.MustDecimalFromString(interestRate)
 	perp.ClampLowerBound = num.MustDecimalFromString(clampLowerBound)
 	perp.ClampUpperBound = num.MustDecimalFromString(clampUpperBound)

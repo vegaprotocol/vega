@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
@@ -32,8 +33,8 @@ type TradableInstrument struct {
 
 // NewTradableInstrument will instantiate a new tradable instrument
 // using a market framework configuration for a tradable instrument.
-func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.TradableInstrument, marketID string, oe products.OracleEngine, broker products.Broker, assetDP uint32) (*TradableInstrument, error) {
-	instrument, err := NewInstrument(ctx, log, pti.Instrument, marketID, oe, broker, assetDP)
+func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.TradableInstrument, marketID string, ts common.TimeService, oe products.OracleEngine, broker products.Broker, assetDP uint32) (*TradableInstrument, error) {
+	instrument, err := NewInstrument(ctx, log, pti.Instrument, marketID, ts, oe, broker, assetDP)
 	if err != nil {
 		return nil, err
 	}
@@ -78,8 +79,8 @@ type Instrument struct {
 
 // NewInstrument will instantiate a new instrument
 // using a market framework configuration for a instrument.
-func NewInstrument(ctx context.Context, log *logging.Logger, pi *types.Instrument, marketID string, oe products.OracleEngine, broker products.Broker, assetDP uint32) (*Instrument, error) {
-	product, err := products.New(ctx, log, pi.Product, marketID, oe, broker, assetDP)
+func NewInstrument(ctx context.Context, log *logging.Logger, pi *types.Instrument, marketID string, ts common.TimeService, oe products.OracleEngine, broker products.Broker, assetDP uint32) (*Instrument, error) {
+	product, err := products.New(ctx, log, pi.Product, marketID, ts, oe, broker, assetDP)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate product from instrument configuration: %w", err)
 	}

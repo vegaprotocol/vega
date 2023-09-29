@@ -69,7 +69,7 @@ func NewMarketFromSnapshot(
 
 	assetDecimals := assetDetails.DecimalPlaces()
 	tradableInstrument, err := markets.NewTradableInstrumentFromSnapshot(ctx, log, mkt.TradableInstrument, em.Market.ID,
-		oracleEngine, broker, em.Product, uint32(assetDecimals), timeService.GetTimeNow())
+		timeService, oracleEngine, broker, em.Product, uint32(assetDecimals))
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}
