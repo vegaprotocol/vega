@@ -933,8 +933,9 @@ func (mt *marketTracker) getReturns(party string, windowSize int) ([]num.Decimal
 		ind := len(mt.epochPartyM2M) - i - 1
 		if ind < 0 {
 			returns = append(returns, num.DecimalZero())
+			continue
 		}
-		epochData := mt.epochPartyM2M[len(mt.epochPartyM2M)-i-1]
+		epochData := mt.epochPartyM2M[ind]
 		returns = append(returns, epochData[party])
 	}
 	return returns, true
