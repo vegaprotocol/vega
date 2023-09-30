@@ -112,17 +112,24 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	transferPolicy := NewSimpleSpamPolicy("transfer", "", netparams.TransferMaxCommandsPerEpoch, log, accounting)
 	issuesSignaturesPolicy := NewSimpleSpamPolicy("issueSignature", netparams.SpamProtectionMinMultisigUpdates, "", log, accounting)
 
+	createReferralSetPolicy := NewSimpleSpamPolicy("createReferralSet", netparams.ReferralProgramMinStakedVegaTokens, netparams.SpamProtectionMaxCreateReferralSet, log, accounting)
+	updateReferralSetPolicy := NewSimpleSpamPolicy("updateReferralSet", netparams.ReferralProgramMinStakedVegaTokens, netparams.SpamProtectionMaxUpdateReferralSet, log, accounting)
+	applyReferralCodePolicy := NewSimpleSpamPolicy("applyReferralCode", "", netparams.SpamProtectionMaxApplyReferralCode, log, accounting)
+
 	// complex policies
 	votePolicy := NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes, log, accounting)
 
 	voteKey := (&types.PayloadVoteSpamPolicy{}).Key()
 	e.policyNameToPolicy = map[string]Policy{
-		proposalPolicy.policyName:         proposalPolicy,
-		valJoinPolicy.policyName:          valJoinPolicy,
-		delegationPolicy.policyName:       delegationPolicy,
-		transferPolicy.policyName:         transferPolicy,
-		issuesSignaturesPolicy.policyName: issuesSignaturesPolicy,
-		voteKey:                           votePolicy,
+		proposalPolicy.policyName:          proposalPolicy,
+		valJoinPolicy.policyName:           valJoinPolicy,
+		delegationPolicy.policyName:        delegationPolicy,
+		transferPolicy.policyName:          transferPolicy,
+		issuesSignaturesPolicy.policyName:  issuesSignaturesPolicy,
+		createReferralSetPolicy.policyName: createReferralSetPolicy,
+		updateReferralSetPolicy.policyName: updateReferralSetPolicy,
+		applyReferralCodePolicy.policyName: applyReferralCodePolicy,
+		voteKey:                            votePolicy,
 	}
 	e.hashKeys = []string{
 		proposalPolicy.policyName,
@@ -130,6 +137,9 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 		delegationPolicy.policyName,
 		transferPolicy.policyName,
 		issuesSignaturesPolicy.policyName,
+		createReferralSetPolicy.policyName,
+		updateReferralSetPolicy.policyName,
+		applyReferralCodePolicy.policyName,
 		voteKey,
 	}
 
@@ -141,6 +151,9 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	e.transactionTypeToPolicy[txn.CancelTransferFundsCommand] = transferPolicy
 	e.transactionTypeToPolicy[txn.IssueSignatures] = issuesSignaturesPolicy
 	e.transactionTypeToPolicy[txn.VoteCommand] = votePolicy
+	e.transactionTypeToPolicy[txn.CreateReferralSetCommand] = createReferralSetPolicy
+	e.transactionTypeToPolicy[txn.UpdateReferralSetCommand] = updateReferralSetPolicy
+	e.transactionTypeToPolicy[txn.ApplyReferralCodeCommand] = applyReferralCodePolicy
 
 	// register for epoch end notifications
 	epochEngine.NotifyOnEpoch(e.OnEpochEvent, e.OnEpochRestore)
@@ -164,6 +177,30 @@ func (e *Engine) OnEpochDurationChanged(_ context.Context, duration time.Duratio
 		e.banDuration = epochImpliedDurationDuration
 	}
 	return nil
+}
+
+// OnCreateReferralSet is called when the net param for max create referral set per epoch has changed.
+func (e *Engine) OnMaxCreateReferralSet(ctx context.Context, max int64) error {
+	return e.transactionTypeToPolicy[txn.CreateReferralSetCommand].UpdateIntParam(netparams.SpamProtectionMaxCreateReferralSet, max)
+}
+
+// OnMaxUpdateReferralSet is called when the net param for max update referral set per epoch has changed.
+func (e *Engine) OnMaxUpdateReferralSet(ctx context.Context, max int64) error {
+	return e.transactionTypeToPolicy[txn.UpdateReferralSetCommand].UpdateIntParam(netparams.SpamProtectionMaxUpdateReferralSet, max)
+}
+
+// OnMaxApplyReferralCode is called when the net param for max update referral set per epoch has changed.
+func (e *Engine) OnMaxApplyReferralCode(ctx context.Context, max int64) error {
+	return e.transactionTypeToPolicy[txn.ApplyReferralCodeCommand].UpdateIntParam(netparams.SpamProtectionMaxApplyReferralCode, max)
+}
+
+// OnMinTokensForReferral is called when the net param for min staked tokens requirement for referral set create/update has changed.
+func (e *Engine) OnMinTokensForReferral(ctx context.Context, minTokens *num.Uint) error {
+	err := e.transactionTypeToPolicy[txn.CreateReferralSetCommand].UpdateUintParam(netparams.ReferralProgramMinStakedVegaTokens, minTokens)
+	if err != nil {
+		return err
+	}
+	return e.transactionTypeToPolicy[txn.UpdateReferralSetCommand].UpdateUintParam(netparams.ReferralProgramMinStakedVegaTokens, minTokens)
 }
 
 // OnMaxDelegationsChanged is called when the net param for max delegations per epoch has changed.

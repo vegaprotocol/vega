@@ -132,6 +132,7 @@ func New(
 			svcs.codec,
 			svcs.gastimator,
 			svcs.ethCallEngine,
+			svcs.collateral,
 		),
 		log:         log,
 		confWatcher: confWatcher,

@@ -133,6 +133,7 @@ type ReferralProgram interface {
 	SetExists(types.ReferralSetID) bool
 	CreateReferralSet(context.Context, types.PartyID, types.ReferralSetID) error
 	ApplyReferralCode(context.Context, types.PartyID, types.ReferralSetID) error
+	CheckSufficientBalanceForApplyReferralCode(types.PartyID, *num.Uint) error
 }
 
 type VolumeDiscountProgram interface {
@@ -153,6 +154,11 @@ type ProtocolUpgradeService interface {
 	SetCoreReadyForUpgrade()
 	Cleanup(ctx context.Context)
 	IsValidProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag string) error
+}
+
+type BalanceChecker interface {
+	GetPartyBalance(party string) *num.Uint
+	BeginBlock()
 }
 
 type EthCallEngine interface {
@@ -211,6 +217,7 @@ type App struct {
 	erc20MultiSigTopology  ERC20MultiSigTopology
 	gastimator             *Gastimator
 	ethCallEngine          EthCallEngine
+	balanceChecker         BalanceChecker
 
 	nilPow  bool
 	nilSpam bool
@@ -258,6 +265,7 @@ func NewApp(
 	codec abci.Codec,
 	gastimator *Gastimator,
 	ethCallEngine EthCallEngine,
+	balanceChecker BalanceChecker,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -307,6 +315,7 @@ func NewApp(
 		protocolUpgradeService: protocolUpgradeService,
 		gastimator:             gastimator,
 		ethCallEngine:          ethCallEngine,
+		balanceChecker:         balanceChecker,
 	}
 
 	// setup handlers
@@ -337,7 +346,8 @@ func NewApp(
 		HandleCheckTx(txn.ProtocolUpgradeCommand, app.CheckProtocolUpgradeProposal).
 		HandleCheckTx(txn.BatchMarketInstructions, app.CheckBatchMarketInstructions).
 		HandleCheckTx(txn.ProposeCommand, app.CheckPropose).
-		HandleCheckTx(txn.TransferFundsCommand, app.CheckTransferCommand)
+		HandleCheckTx(txn.TransferFundsCommand, app.CheckTransferCommand).
+		HandleCheckTx(txn.ApplyReferralCodeCommand, app.CheckApplyReferralCode)
 
 	app.abci.
 		// node commands
@@ -838,6 +848,7 @@ func (app *App) OnBeginBlock(
 
 	app.protocolUpgradeService.BeginBlock(ctx, uint64(req.Header.Height))
 	app.top.BeginBlock(ctx, req)
+	app.balanceChecker.BeginBlock()
 
 	return ctx, resp
 }
@@ -1385,6 +1396,13 @@ func (app *App) DeliverValidatorHeartbeat(ctx context.Context, tx abci.Tx) error
 	}
 
 	return app.top.ProcessValidatorHeartbeat(ctx, an, signatures.VerifyVegaSignature, signatures.VerifyEthereumSignature)
+}
+
+func (app *App) CheckApplyReferralCode(_ context.Context, tx abci.Tx) error {
+	if err := app.referralProgram.CheckSufficientBalanceForApplyReferralCode(types.PartyID(tx.Party()), app.balanceChecker.GetPartyBalance(tx.Party())); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (app *App) CheckTransferCommand(_ context.Context, tx abci.Tx) error {

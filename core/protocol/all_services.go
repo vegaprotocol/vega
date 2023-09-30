@@ -531,10 +531,30 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				Param:   netparams.SpamProtectionMinMultisigUpdates,
 				Watcher: svcs.spam.OnMinTokensForMultisigUpdatesChanged,
 			},
+			{
+				Param:   netparams.ReferralProgramMinStakedVegaTokens,
+				Watcher: svcs.spam.OnMinTokensForReferral,
+			},
+			{
+				Param:   netparams.SpamProtectionMaxCreateReferralSet,
+				Watcher: svcs.spam.OnMaxCreateReferralSet,
+			},
+			{
+				Param:   netparams.SpamProtectionMaxUpdateReferralSet,
+				Watcher: svcs.spam.OnMaxUpdateReferralSet,
+			},
+			{
+				Param:   netparams.SpamProtectionMaxApplyReferralCode,
+				Watcher: svcs.spam.OnMaxApplyReferralCode,
+			},
 		}
 	}
 
 	watchers := []netparams.WatchParam{
+		{
+			Param:   netparams.SpamProtectionBalanceSnapshotFrequency,
+			Watcher: svcs.collateral.OnBalanceSnapshotFrequencyUpdated,
+		},
 		{
 			Param:   netparams.MinEpochsInTeamForMetricRewardEligibility,
 			Watcher: svcs.marketActivityTracker.OnMinEpochsInTeamForRewardEligibilityUpdated,
@@ -839,6 +859,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.ReferralProgramMinStakedVegaTokens,
 			Watcher: svcs.teamsEngine.OnReferralProgramMinStakedVegaTokensUpdate,
+		},
+		{
+			Param:   netparams.SpamProtectionApplyReferralMinFunds,
+			Watcher: svcs.referralProgram.OnMinBalanceForApplyReferralCodeUpdated,
 		},
 		{
 			Param:   netparams.RewardsActivityStreakBenefitTiers,

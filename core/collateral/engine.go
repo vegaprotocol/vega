@@ -99,6 +99,9 @@ type Engine struct {
 	timeService  TimeService
 	broker       Broker
 
+	partiesAccsBalanceCache     map[string]*num.Uint
+	partiesAccsBalanceCacheLock sync.RWMutex
+
 	idbuf []byte
 
 	// asset ID to asset
@@ -110,6 +113,13 @@ type Engine struct {
 	// unique usage at startup from a checkpoint
 	// a map of party -> (string -> balance)
 	vesting map[string]map[string]*num.Uint
+
+	nextBalancesSnapshot     time.Time
+	balanceSnapshotFrequency time.Duration
+	// this is a bit of a hack to work around the fact that the collateral engine is restored before the net patams engine.
+	// what we want to achieve is that when the balanceSnapshotFrequency net param is restored we don't use it to reschedule the nextBalancesSnapshot
+	// but rather just set the frequency. On post restore we release the active restore flag.
+	activeRestore bool
 }
 
 // New instantiates a new collateral engine.
@@ -118,18 +128,80 @@ func New(log *logging.Logger, conf Config, ts TimeService, broker Broker) *Engin
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
 	return &Engine{
-		log:           log,
-		Config:        conf,
-		accs:          make(map[string]*types.Account, initialAccountSize),
-		partiesAccs:   map[string]map[string]*types.Account{},
-		hashableAccs:  []*types.Account{},
-		timeService:   ts,
-		broker:        broker,
-		idbuf:         make([]byte, 256),
-		enabledAssets: map[string]types.Asset{},
-		state:         newAccState(),
-		vesting:       map[string]map[string]*num.Uint{},
+		log:                     log,
+		Config:                  conf,
+		accs:                    make(map[string]*types.Account, initialAccountSize),
+		partiesAccs:             map[string]map[string]*types.Account{},
+		hashableAccs:            []*types.Account{},
+		timeService:             ts,
+		broker:                  broker,
+		idbuf:                   make([]byte, 256),
+		enabledAssets:           map[string]types.Asset{},
+		state:                   newAccState(),
+		vesting:                 map[string]map[string]*num.Uint{},
+		partiesAccsBalanceCache: map[string]*num.Uint{},
+		nextBalancesSnapshot:    time.Time{},
+		activeRestore:           false,
 	}
+}
+
+func (e *Engine) BeginBlock() {
+	t := e.timeService.GetTimeNow()
+	if e.nextBalancesSnapshot.IsZero() || !e.nextBalancesSnapshot.After(t) {
+		e.updateNextBalanceSnapshot(t.Add(e.balanceSnapshotFrequency))
+		e.snapshotBalances()
+	}
+}
+
+func (e *Engine) snapshotBalances() {
+	e.partiesAccsBalanceCacheLock.Lock()
+	defer e.partiesAccsBalanceCacheLock.Unlock()
+	m := make(map[string]*num.Uint, len(e.partiesAccs))
+	quantums := map[string]*num.Uint{}
+	for k, v := range e.partiesAccs {
+		total := num.UintZero()
+		for _, a := range v {
+			asset := a.Asset
+			if _, ok := quantums[asset]; !ok {
+				if _, ok := e.enabledAssets[asset]; !ok {
+					continue
+				}
+				quantum, _ := num.UintFromDecimal(e.enabledAssets[asset].Details.Quantum)
+				quantums[asset] = quantum
+			}
+			total.AddSum(num.UintZero().Div(a.Balance, quantums[asset]))
+		}
+		m[k] = total
+	}
+	e.partiesAccsBalanceCache = m
+}
+
+func (e *Engine) updateNextBalanceSnapshot(t time.Time) {
+	e.nextBalancesSnapshot = t
+	e.state.updateBalanceSnapshotTime(t)
+}
+
+func (e *Engine) OnBalanceSnapshotFrequencyUpdated(ctx context.Context, d time.Duration) error {
+	if e.activeRestore {
+		e.balanceSnapshotFrequency = d
+		return nil
+	}
+	if !e.nextBalancesSnapshot.IsZero() {
+		e.updateNextBalanceSnapshot(e.nextBalancesSnapshot.Add(-e.balanceSnapshotFrequency))
+	}
+	e.balanceSnapshotFrequency = d
+	e.updateNextBalanceSnapshot(e.nextBalancesSnapshot.Add(d))
+	return nil
+}
+
+func (e *Engine) GetPartyBalance(party string) *num.Uint {
+	e.partiesAccsBalanceCacheLock.RLock()
+	defer e.partiesAccsBalanceCacheLock.RUnlock()
+
+	if balance, ok := e.partiesAccsBalanceCache[party]; ok {
+		return balance.Clone()
+	}
+	return num.UintZero()
 }
 
 func (e *Engine) GetAllVestingQuantumBalance(party string) *num.Uint {

@@ -96,6 +96,20 @@ type Engine struct {
 	sets      map[types.ReferralSetID]*types.ReferralSet
 	referrers map[types.PartyID]types.ReferralSetID
 	referees  map[types.PartyID]types.ReferralSetID
+
+	minBalanceForApplyCode *num.Uint
+}
+
+func (e *Engine) CheckSufficientBalanceForApplyReferralCode(party types.PartyID, balance *num.Uint) error {
+	if balance.LT(e.minBalanceForApplyCode) {
+		return fmt.Errorf("party %q does not have sufficient balance to apply referral code, required balance %s available balance %s", party, e.minBalanceForApplyCode.String(), balance.String())
+	}
+	return nil
+}
+
+func (e *Engine) OnMinBalanceForApplyReferralCodeUpdated(_ context.Context, min *num.Uint) error {
+	e.minBalanceForApplyCode = min
+	return nil
 }
 
 func (e *Engine) GetReferrer(referee types.PartyID) (types.PartyID, error) {
@@ -118,10 +132,6 @@ func (e *Engine) CreateReferralSet(ctx context.Context, party types.PartyID, det
 	}
 	if _, ok := e.referees[party]; ok {
 		return ErrIsAlreadyAReferee(party)
-	}
-
-	if err := e.isPartyEligible(string(party)); err != nil {
-		return err
 	}
 
 	now := e.timeSvc.GetTimeNow()

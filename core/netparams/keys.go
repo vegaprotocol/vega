@@ -165,6 +165,12 @@ const (
 	SpamProtectionMinMultisigUpdates               = "spam.protection.minMultisigUpdates"
 	SpamProtectionMaxStopOrdersPerMarket           = "spam.protection.max.stopOrdersPerMarket"
 
+	SpamProtectionMaxCreateReferralSet     = "spam.protection.max.createReferralSet"
+	SpamProtectionMaxUpdateReferralSet     = "spam.protection.max.updateReferralSet"
+	SpamProtectionMaxApplyReferralCode     = "spam.protection.max.applyReferralCode"
+	SpamProtectionBalanceSnapshotFrequency = "spam.protection.balanceSnapshotFrequency"
+	SpamProtectionApplyReferralMinFunds    = "spam.protection.applyReferral.min.funds"
+
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
 
@@ -416,4 +422,9 @@ var AllKeys = map[string]struct{}{
 	ReferralProgramMinStakedVegaTokens:                           {},
 	VolumeDiscountProgramMaxBenefitTiers:                         {},
 	VolumeDiscountProgramMaxVolumeDiscountFactor:                 {},
+	SpamProtectionMaxCreateReferralSet:                           {},
+	SpamProtectionMaxUpdateReferralSet:                           {},
+	SpamProtectionMaxApplyReferralCode:                           {},
+	SpamProtectionBalanceSnapshotFrequency:                       {},
+	SpamProtectionApplyReferralMinFunds:                          {},
 }
