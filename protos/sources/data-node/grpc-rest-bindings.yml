@@ -170,7 +170,7 @@ http:
     - selector: datanode.api.v2.TradingDataService.ListReferralSetReferees
       get: "/api/v2/referral-sets/referees"
     - selector: datanode.api.v2.TradingDataService.GetReferralSetStats
-      get: "/api/v2/referral-sets/stats/{referral_set_id}"
+      get: "/api/v2/referral-sets/{referral_set_id}/stats"
     - selector: datanode.api.v2.TradingDataService.ListTeams
       get: "/api/v2/teams"
     - selector: datanode.api.v2.TradingDataService.ListTeamReferees
@@ -182,7 +182,7 @@ http:
     - selector: datanode.api.v2.TradingDataService.GetCurrentVolumeDiscountProgram
       get: "/api/v2/volume-discount-programs/current"
     - selector: datanode.api.v2.TradingDataService.GetVolumeDiscountStats
-      get: "/api/v2/volume-discount-stats"
+      get: "/api/v2/volume-discount-programs/stats"
 
     # websockets
 

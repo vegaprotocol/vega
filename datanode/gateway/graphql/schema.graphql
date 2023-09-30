@@ -860,6 +860,18 @@ type Query {
     pagination: Pagination
   ): ReferralSetRefereeConnection!
 
+  "Get referral set statistics"
+  referralSetStats(
+    "Referral set ID to fetch stats for"
+    id: ID!
+    "Optional epoch to get statistics from. If not provided, the latest statistics are returned"
+    epoch: Int
+    "Optional party ID. If not provided all parties for the epoch are returned"
+    partyId: ID
+    "Optional pagination information"
+    pagination: Pagination
+  ): ReferralSetStatsConnection!
+
   "Get statistics about the Vega node"
   statistics: Statistics!
 
@@ -6005,11 +6017,6 @@ type ReferralSet {
   createdAt: Timestamp!
   "Timestamp as RFC3339Nano when the referral set was updated."
   updatedAt: Timestamp!
-  """
-  Referral set statistics for the latest or specific epoch.
-  If provided the results can be filtered for a specific referee
-  """
-  stats(epoch: Int, referee: ID): ReferralSetStats
 }
 
 "Edge type containing the referral set and cursor information returned by a ReferralSetConnection"
@@ -6056,18 +6063,25 @@ type ReferralSetRefereeConnection {
   pageInfo: PageInfo!
 }
 
-type ReferralSetStats {
-  "Unique ID of the set"
-  setId: ID!
-  "Epoch at which the set's statistics are updated."
-  atEpoch: Int
-  "Running volume for the set based on the window length of the current referral program."
-  referralSetRunningNotionalTakerVolume: String!
-  "Referees' statistics for that epoch."
-  referees_stats: [RefereeStats!]!
+"Connection type for retrieving cursor-based paginated referral set statistics information"
+type ReferralSetStatsConnection {
+  "The referral set statistics in this connection"
+  edges: [ReferralSetStatsEdge]!
+  "The pagination information"
+  pageInfo: PageInfo!
 }
 
-type RefereeStats {
+"Edge type containing the referral set statistics and cursor information returned by a ReferralSetStatsConnection"
+type ReferralSetStatsEdge {
+  "The referral set statistics"
+  node: ReferralSetStats!
+  "The cursor for this referral set statistics"
+  cursor: String!
+}
+
+type ReferralSetStats {
+  "Epoch at which the statistics are updated."
+  atEpoch: Int!
   "Unique ID of the party."
   partyId: ID!
   "Discount factor applied to the party."
@@ -6076,6 +6090,8 @@ type RefereeStats {
   rewardFactor: String!
   "Current referee notional taker volume"
   epochNotionalTakerVolume: String!
+  "Running volume for the set based on the window length of the current referral program."
+  referralSetRunningNotionalTakerVolume: String!
 }
 
 "Team record containing the team information."

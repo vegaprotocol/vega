@@ -126,7 +126,6 @@ type ResolverRoot interface {
 	RecurringGovernanceTransfer() RecurringGovernanceTransferResolver
 	RecurringTransfer() RecurringTransferResolver
 	ReferralProgram() ReferralProgramResolver
-	ReferralSet() ReferralSetResolver
 	ReferralSetFeeStats() ReferralSetFeeStatsResolver
 	ReferralSetReferee() ReferralSetRefereeResolver
 	ReferralSetStats() ReferralSetStatsResolver
@@ -1829,6 +1828,7 @@ type ComplexityRoot struct {
 		ProtocolUpgradeStatus              func(childComplexity int) int
 		ReferralFeeStats                   func(childComplexity int, marketID *string, assetID *string, epoch *int) int
 		ReferralSetReferees                func(childComplexity int, id *string, referrer *string, referee *string, pagination *v2.Pagination) int
+		ReferralSetStats                   func(childComplexity int, id string, epoch *int, partyID *string, pagination *v2.Pagination) int
 		ReferralSets                       func(childComplexity int, id *string, referrer *string, referee *string, pagination *v2.Pagination) int
 		Statistics                         func(childComplexity int) int
 		StopOrder                          func(childComplexity int, id string) int
@@ -1872,13 +1872,6 @@ type ComplexityRoot struct {
 		StartEpoch       func(childComplexity int) int
 	}
 
-	RefereeStats struct {
-		DiscountFactor           func(childComplexity int) int
-		EpochNotionalTakerVolume func(childComplexity int) int
-		PartyId                  func(childComplexity int) int
-		RewardFactor             func(childComplexity int) int
-	}
-
 	ReferralProgram struct {
 		BenefitTiers          func(childComplexity int) int
 		EndOfProgramTimestamp func(childComplexity int) int
@@ -1892,7 +1885,6 @@ type ComplexityRoot struct {
 		CreatedAt func(childComplexity int) int
 		Id        func(childComplexity int) int
 		Referrer  func(childComplexity int) int
-		Stats     func(childComplexity int, epoch *int, referee *string) int
 		UpdatedAt func(childComplexity int) int
 	}
 
@@ -1935,9 +1927,21 @@ type ComplexityRoot struct {
 
 	ReferralSetStats struct {
 		AtEpoch                               func(childComplexity int) int
-		RefereesStats                         func(childComplexity int) int
+		DiscountFactor                        func(childComplexity int) int
+		EpochNotionalTakerVolume              func(childComplexity int) int
+		PartyId                               func(childComplexity int) int
 		ReferralSetRunningNotionalTakerVolume func(childComplexity int) int
-		SetId                                 func(childComplexity int) int
+		RewardFactor                          func(childComplexity int) int
+	}
+
+	ReferralSetStatsConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	ReferralSetStatsEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	ReferrerRewardsGenerated struct {
@@ -3062,6 +3066,7 @@ type QueryResolver interface {
 	ReferralSets(ctx context.Context, id *string, referrer *string, referee *string, pagination *v2.Pagination) (*v2.ReferralSetConnection, error)
 	ReferralFeeStats(ctx context.Context, marketID *string, assetID *string, epoch *int) (*v1.FeeStats, error)
 	ReferralSetReferees(ctx context.Context, id *string, referrer *string, referee *string, pagination *v2.Pagination) (*v2.ReferralSetRefereeConnection, error)
+	ReferralSetStats(ctx context.Context, id string, epoch *int, partyID *string, pagination *v2.Pagination) (*v2.ReferralSetStatsConnection, error)
 	Statistics(ctx context.Context) (*v12.Statistics, error)
 	StopOrder(ctx context.Context, id string) (*v1.StopOrderEvent, error)
 	StopOrders(ctx context.Context, filter *v2.StopOrderFilter, pagination *v2.Pagination) (*v2.StopOrderConnection, error)
@@ -3096,9 +3101,6 @@ type ReferralProgramResolver interface {
 	EndOfProgramTimestamp(ctx context.Context, obj *vega.ReferralProgram) (string, error)
 	WindowLength(ctx context.Context, obj *vega.ReferralProgram) (int, error)
 }
-type ReferralSetResolver interface {
-	Stats(ctx context.Context, obj *v2.ReferralSet, epoch *int, referee *string) (*v2.ReferralSetStats, error)
-}
 type ReferralSetFeeStatsResolver interface {
 	MarketID(ctx context.Context, obj *v1.FeeStats) (string, error)
 	AssetID(ctx context.Context, obj *v1.FeeStats) (string, error)
@@ -3110,7 +3112,7 @@ type ReferralSetRefereeResolver interface {
 	AtEpoch(ctx context.Context, obj *v2.ReferralSetReferee) (int, error)
 }
 type ReferralSetStatsResolver interface {
-	AtEpoch(ctx context.Context, obj *v2.ReferralSetStats) (*int, error)
+	AtEpoch(ctx context.Context, obj *v2.ReferralSetStats) (int, error)
 }
 type ReferrerRewardsGeneratedResolver interface {
 	ReferrerID(ctx context.Context, obj *v1.ReferrerRewardsGenerated) (string, error)
@@ -10774,6 +10776,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.ReferralSetReferees(childComplexity, args["id"].(*string), args["referrer"].(*string), args["referee"].(*string), args["pagination"].(*v2.Pagination)), true
 
+	case "Query.referralSetStats":
+		if e.complexity.Query.ReferralSetStats == nil {
+			break
+		}
+
+		args, err := ec.field_Query_referralSetStats_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ReferralSetStats(childComplexity, args["id"].(string), args["epoch"].(*int), args["partyId"].(*string), args["pagination"].(*v2.Pagination)), true
+
 	case "Query.referralSets":
 		if e.complexity.Query.ReferralSets == nil {
 			break
@@ -11042,34 +11056,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RecurringTransfer.StartEpoch(childComplexity), true
 
-	case "RefereeStats.discountFactor":
-		if e.complexity.RefereeStats.DiscountFactor == nil {
-			break
-		}
-
-		return e.complexity.RefereeStats.DiscountFactor(childComplexity), true
-
-	case "RefereeStats.epochNotionalTakerVolume":
-		if e.complexity.RefereeStats.EpochNotionalTakerVolume == nil {
-			break
-		}
-
-		return e.complexity.RefereeStats.EpochNotionalTakerVolume(childComplexity), true
-
-	case "RefereeStats.partyId":
-		if e.complexity.RefereeStats.PartyId == nil {
-			break
-		}
-
-		return e.complexity.RefereeStats.PartyId(childComplexity), true
-
-	case "RefereeStats.rewardFactor":
-		if e.complexity.RefereeStats.RewardFactor == nil {
-			break
-		}
-
-		return e.complexity.RefereeStats.RewardFactor(childComplexity), true
-
 	case "ReferralProgram.benefitTiers":
 		if e.complexity.ReferralProgram.BenefitTiers == nil {
 			break
@@ -11132,18 +11118,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ReferralSet.Referrer(childComplexity), true
-
-	case "ReferralSet.stats":
-		if e.complexity.ReferralSet.Stats == nil {
-			break
-		}
-
-		args, err := ec.field_ReferralSet_stats_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.ReferralSet.Stats(childComplexity, args["epoch"].(*int), args["referee"].(*string)), true
 
 	case "ReferralSet.updatedAt":
 		if e.complexity.ReferralSet.UpdatedAt == nil {
@@ -11292,12 +11266,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ReferralSetStats.AtEpoch(childComplexity), true
 
-	case "ReferralSetStats.referees_stats":
-		if e.complexity.ReferralSetStats.RefereesStats == nil {
+	case "ReferralSetStats.discountFactor":
+		if e.complexity.ReferralSetStats.DiscountFactor == nil {
 			break
 		}
 
-		return e.complexity.ReferralSetStats.RefereesStats(childComplexity), true
+		return e.complexity.ReferralSetStats.DiscountFactor(childComplexity), true
+
+	case "ReferralSetStats.epochNotionalTakerVolume":
+		if e.complexity.ReferralSetStats.EpochNotionalTakerVolume == nil {
+			break
+		}
+
+		return e.complexity.ReferralSetStats.EpochNotionalTakerVolume(childComplexity), true
+
+	case "ReferralSetStats.partyId":
+		if e.complexity.ReferralSetStats.PartyId == nil {
+			break
+		}
+
+		return e.complexity.ReferralSetStats.PartyId(childComplexity), true
 
 	case "ReferralSetStats.referralSetRunningNotionalTakerVolume":
 		if e.complexity.ReferralSetStats.ReferralSetRunningNotionalTakerVolume == nil {
@@ -11306,12 +11294,40 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ReferralSetStats.ReferralSetRunningNotionalTakerVolume(childComplexity), true
 
-	case "ReferralSetStats.setId":
-		if e.complexity.ReferralSetStats.SetId == nil {
+	case "ReferralSetStats.rewardFactor":
+		if e.complexity.ReferralSetStats.RewardFactor == nil {
 			break
 		}
 
-		return e.complexity.ReferralSetStats.SetId(childComplexity), true
+		return e.complexity.ReferralSetStats.RewardFactor(childComplexity), true
+
+	case "ReferralSetStatsConnection.edges":
+		if e.complexity.ReferralSetStatsConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.ReferralSetStatsConnection.Edges(childComplexity), true
+
+	case "ReferralSetStatsConnection.pageInfo":
+		if e.complexity.ReferralSetStatsConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.ReferralSetStatsConnection.PageInfo(childComplexity), true
+
+	case "ReferralSetStatsEdge.cursor":
+		if e.complexity.ReferralSetStatsEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.ReferralSetStatsEdge.Cursor(childComplexity), true
+
+	case "ReferralSetStatsEdge.node":
+		if e.complexity.ReferralSetStatsEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.ReferralSetStatsEdge.Node(childComplexity), true
 
 	case "ReferrerRewardsGenerated.generatedReward":
 		if e.complexity.ReferrerRewardsGenerated.GeneratedReward == nil {
@@ -15801,6 +15817,48 @@ func (ec *executionContext) field_Query_referralSetReferees_args(ctx context.Con
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_referralSetStats_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["epoch"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("epoch"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["epoch"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
+		arg2, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyId"] = arg2
+	var arg3 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg3, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg3
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_referralSets_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -16146,30 +16204,6 @@ func (ec *executionContext) field_Query_withdrawals_args(ctx context.Context, ra
 		}
 	}
 	args["pagination"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_ReferralSet_stats_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *int
-	if tmp, ok := rawArgs["epoch"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("epoch"))
-		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["epoch"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["referee"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("referee"))
-		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["referee"] = arg1
 	return args, nil
 }
 
@@ -66059,6 +66093,67 @@ func (ec *executionContext) fieldContext_Query_referralSetReferees(ctx context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_referralSetStats(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_referralSetStats(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ReferralSetStats(rctx, fc.Args["id"].(string), fc.Args["epoch"].(*int), fc.Args["partyId"].(*string), fc.Args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.ReferralSetStatsConnection)
+	fc.Result = res
+	return ec.marshalNReferralSetStatsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSetStatsConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_referralSetStats(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_ReferralSetStatsConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_ReferralSetStatsConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReferralSetStatsConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_referralSetStats_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_statistics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_statistics(ctx, field)
 	if err != nil {
@@ -67751,182 +67846,6 @@ func (ec *executionContext) fieldContext_RecurringTransfer_dispatchStrategy(ctx 
 	return fc, nil
 }
 
-func (ec *executionContext) _RefereeStats_partyId(ctx context.Context, field graphql.CollectedField, obj *v1.RefereeStats) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RefereeStats_partyId(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PartyId, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_RefereeStats_partyId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "RefereeStats",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _RefereeStats_discountFactor(ctx context.Context, field graphql.CollectedField, obj *v1.RefereeStats) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RefereeStats_discountFactor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.DiscountFactor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_RefereeStats_discountFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "RefereeStats",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _RefereeStats_rewardFactor(ctx context.Context, field graphql.CollectedField, obj *v1.RefereeStats) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RefereeStats_rewardFactor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RewardFactor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_RefereeStats_rewardFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "RefereeStats",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _RefereeStats_epochNotionalTakerVolume(ctx context.Context, field graphql.CollectedField, obj *v1.RefereeStats) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RefereeStats_epochNotionalTakerVolume(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.EpochNotionalTakerVolume, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_RefereeStats_epochNotionalTakerVolume(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "RefereeStats",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _ReferralProgram_id(ctx context.Context, field graphql.CollectedField, obj *vega.ReferralProgram) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ReferralProgram_id(ctx, field)
 	if err != nil {
@@ -68383,68 +68302,6 @@ func (ec *executionContext) fieldContext_ReferralSet_updatedAt(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _ReferralSet_stats(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSet) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ReferralSet_stats(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.ReferralSet().Stats(rctx, obj, fc.Args["epoch"].(*int), fc.Args["referee"].(*string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*v2.ReferralSetStats)
-	fc.Result = res
-	return ec.marshalOReferralSetStats2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSetStats(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ReferralSet_stats(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ReferralSet",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "setId":
-				return ec.fieldContext_ReferralSetStats_setId(ctx, field)
-			case "atEpoch":
-				return ec.fieldContext_ReferralSetStats_atEpoch(ctx, field)
-			case "referralSetRunningNotionalTakerVolume":
-				return ec.fieldContext_ReferralSetStats_referralSetRunningNotionalTakerVolume(ctx, field)
-			case "referees_stats":
-				return ec.fieldContext_ReferralSetStats_referees_stats(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ReferralSetStats", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_ReferralSet_stats_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _ReferralSetConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ReferralSetConnection_edges(ctx, field)
 	if err != nil {
@@ -68596,8 +68453,6 @@ func (ec *executionContext) fieldContext_ReferralSetEdge_node(ctx context.Contex
 				return ec.fieldContext_ReferralSet_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_ReferralSet_updatedAt(ctx, field)
-			case "stats":
-				return ec.fieldContext_ReferralSet_stats(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ReferralSet", field.Name)
 		},
@@ -69359,50 +69214,6 @@ func (ec *executionContext) fieldContext_ReferralSetRefereeEdge_cursor(ctx conte
 	return fc, nil
 }
 
-func (ec *executionContext) _ReferralSetStats_setId(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetStats) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ReferralSetStats_setId(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.SetId, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ReferralSetStats_setId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ReferralSetStats",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _ReferralSetStats_atEpoch(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetStats) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ReferralSetStats_atEpoch(ctx, field)
 	if err != nil {
@@ -69424,11 +69235,14 @@ func (ec *executionContext) _ReferralSetStats_atEpoch(ctx context.Context, field
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ReferralSetStats_atEpoch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -69439,6 +69253,182 @@ func (ec *executionContext) fieldContext_ReferralSetStats_atEpoch(ctx context.Co
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReferralSetStats_partyId(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSetStats_partyId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PartyId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReferralSetStats_partyId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReferralSetStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReferralSetStats_discountFactor(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSetStats_discountFactor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DiscountFactor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReferralSetStats_discountFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReferralSetStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReferralSetStats_rewardFactor(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSetStats_rewardFactor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RewardFactor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReferralSetStats_rewardFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReferralSetStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReferralSetStats_epochNotionalTakerVolume(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSetStats_epochNotionalTakerVolume(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EpochNotionalTakerVolume, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReferralSetStats_epochNotionalTakerVolume(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReferralSetStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -69488,8 +69478,8 @@ func (ec *executionContext) fieldContext_ReferralSetStats_referralSetRunningNoti
 	return fc, nil
 }
 
-func (ec *executionContext) _ReferralSetStats_referees_stats(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetStats) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ReferralSetStats_referees_stats(ctx, field)
+func (ec *executionContext) _ReferralSetStatsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetStatsConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSetStatsConnection_edges(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -69502,7 +69492,7 @@ func (ec *executionContext) _ReferralSetStats_referees_stats(ctx context.Context
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.RefereesStats, nil
+		return obj.Edges, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -69514,29 +69504,181 @@ func (ec *executionContext) _ReferralSetStats_referees_stats(ctx context.Context
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*v1.RefereeStats)
+	res := resTmp.([]*v2.ReferralSetStatsEdge)
 	fc.Result = res
-	return ec.marshalNRefereeStats2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐRefereeStatsᚄ(ctx, field.Selections, res)
+	return ec.marshalNReferralSetStatsEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSetStatsEdge(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ReferralSetStats_referees_stats(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ReferralSetStatsConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "ReferralSetStats",
+		Object:     "ReferralSetStatsConnection",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "partyId":
-				return ec.fieldContext_RefereeStats_partyId(ctx, field)
-			case "discountFactor":
-				return ec.fieldContext_RefereeStats_discountFactor(ctx, field)
-			case "rewardFactor":
-				return ec.fieldContext_RefereeStats_rewardFactor(ctx, field)
-			case "epochNotionalTakerVolume":
-				return ec.fieldContext_RefereeStats_epochNotionalTakerVolume(ctx, field)
+			case "node":
+				return ec.fieldContext_ReferralSetStatsEdge_node(ctx, field)
+			case "cursor":
+				return ec.fieldContext_ReferralSetStatsEdge_cursor(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type RefereeStats", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type ReferralSetStatsEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReferralSetStatsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetStatsConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSetStatsConnection_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReferralSetStatsConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReferralSetStatsConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReferralSetStatsEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetStatsEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSetStatsEdge_node(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.ReferralSetStats)
+	fc.Result = res
+	return ec.marshalNReferralSetStats2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSetStats(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReferralSetStatsEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReferralSetStatsEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "atEpoch":
+				return ec.fieldContext_ReferralSetStats_atEpoch(ctx, field)
+			case "partyId":
+				return ec.fieldContext_ReferralSetStats_partyId(ctx, field)
+			case "discountFactor":
+				return ec.fieldContext_ReferralSetStats_discountFactor(ctx, field)
+			case "rewardFactor":
+				return ec.fieldContext_ReferralSetStats_rewardFactor(ctx, field)
+			case "epochNotionalTakerVolume":
+				return ec.fieldContext_ReferralSetStats_epochNotionalTakerVolume(ctx, field)
+			case "referralSetRunningNotionalTakerVolume":
+				return ec.fieldContext_ReferralSetStats_referralSetRunningNotionalTakerVolume(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReferralSetStats", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReferralSetStatsEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetStatsEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSetStatsEdge_cursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReferralSetStatsEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReferralSetStatsEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -104236,6 +104378,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "referralSetStats":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_referralSetStats(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "statistics":
 			field := field
 
@@ -104793,55 +104958,6 @@ func (ec *executionContext) _RecurringTransfer(ctx context.Context, sel ast.Sele
 	return out
 }
 
-var refereeStatsImplementors = []string{"RefereeStats"}
-
-func (ec *executionContext) _RefereeStats(ctx context.Context, sel ast.SelectionSet, obj *v1.RefereeStats) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, refereeStatsImplementors)
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("RefereeStats")
-		case "partyId":
-
-			out.Values[i] = ec._RefereeStats_partyId(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "discountFactor":
-
-			out.Values[i] = ec._RefereeStats_discountFactor(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "rewardFactor":
-
-			out.Values[i] = ec._RefereeStats_rewardFactor(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "epochNotionalTakerVolume":
-
-			out.Values[i] = ec._RefereeStats_epochNotionalTakerVolume(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var referralProgramImplementors = []string{"ReferralProgram"}
 
 func (ec *executionContext) _ReferralProgram(ctx context.Context, sel ast.SelectionSet, obj *vega.ReferralProgram) graphql.Marshaler {
@@ -104959,46 +105075,29 @@ func (ec *executionContext) _ReferralSet(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._ReferralSet_id(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "referrer":
 
 			out.Values[i] = ec._ReferralSet_referrer(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "createdAt":
 
 			out.Values[i] = ec._ReferralSet_createdAt(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "updatedAt":
 
 			out.Values[i] = ec._ReferralSet_updatedAt(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
-		case "stats":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._ReferralSet_stats(ctx, field, obj)
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -105344,13 +105443,6 @@ func (ec *executionContext) _ReferralSetStats(ctx context.Context, sel ast.Selec
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ReferralSetStats")
-		case "setId":
-
-			out.Values[i] = ec._ReferralSetStats_setId(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "atEpoch":
 			field := field
 
@@ -105361,6 +105453,9 @@ func (ec *executionContext) _ReferralSetStats(ctx context.Context, sel ast.Selec
 					}
 				}()
 				res = ec._ReferralSetStats_atEpoch(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -105368,6 +105463,34 @@ func (ec *executionContext) _ReferralSetStats(ctx context.Context, sel ast.Selec
 				return innerFunc(ctx)
 
 			})
+		case "partyId":
+
+			out.Values[i] = ec._ReferralSetStats_partyId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "discountFactor":
+
+			out.Values[i] = ec._ReferralSetStats_discountFactor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "rewardFactor":
+
+			out.Values[i] = ec._ReferralSetStats_rewardFactor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "epochNotionalTakerVolume":
+
+			out.Values[i] = ec._ReferralSetStats_epochNotionalTakerVolume(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "referralSetRunningNotionalTakerVolume":
 
 			out.Values[i] = ec._ReferralSetStats_referralSetRunningNotionalTakerVolume(ctx, field, obj)
@@ -105375,12 +105498,75 @@ func (ec *executionContext) _ReferralSetStats(ctx context.Context, sel ast.Selec
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "referees_stats":
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
 
-			out.Values[i] = ec._ReferralSetStats_referees_stats(ctx, field, obj)
+var referralSetStatsConnectionImplementors = []string{"ReferralSetStatsConnection"}
+
+func (ec *executionContext) _ReferralSetStatsConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.ReferralSetStatsConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, referralSetStatsConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ReferralSetStatsConnection")
+		case "edges":
+
+			out.Values[i] = ec._ReferralSetStatsConnection_edges(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
+			}
+		case "pageInfo":
+
+			out.Values[i] = ec._ReferralSetStatsConnection_pageInfo(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var referralSetStatsEdgeImplementors = []string{"ReferralSetStatsEdge"}
+
+func (ec *executionContext) _ReferralSetStatsEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.ReferralSetStatsEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, referralSetStatsEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ReferralSetStatsEdge")
+		case "node":
+
+			out.Values[i] = ec._ReferralSetStatsEdge_node(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+
+			out.Values[i] = ec._ReferralSetStatsEdge_cursor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -113802,60 +113988,6 @@ func (ec *executionContext) marshalNRankingScore2ᚖcodeᚗvegaprotocolᚗioᚋv
 	return ec._RankingScore(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNRefereeStats2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐRefereeStatsᚄ(ctx context.Context, sel ast.SelectionSet, v []*v1.RefereeStats) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNRefereeStats2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐRefereeStats(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNRefereeStats2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐRefereeStats(ctx context.Context, sel ast.SelectionSet, v *v1.RefereeStats) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._RefereeStats(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNReferralProgram2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReferralProgram(ctx context.Context, sel ast.SelectionSet, v *vega.ReferralProgram) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -113977,6 +114109,68 @@ func (ec *executionContext) marshalNReferralSetRefereeEdge2ᚕᚖcodeᚗvegaprot
 				defer wg.Done()
 			}
 			ret[i] = ec.marshalOReferralSetRefereeEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSetRefereeEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalNReferralSetStats2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSetStats(ctx context.Context, sel ast.SelectionSet, v *v2.ReferralSetStats) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ReferralSetStats(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNReferralSetStatsConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSetStatsConnection(ctx context.Context, sel ast.SelectionSet, v v2.ReferralSetStatsConnection) graphql.Marshaler {
+	return ec._ReferralSetStatsConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNReferralSetStatsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSetStatsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.ReferralSetStatsConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ReferralSetStatsConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNReferralSetStatsEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSetStatsEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.ReferralSetStatsEdge) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOReferralSetStatsEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSetStatsEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -119528,11 +119722,11 @@ func (ec *executionContext) marshalOReferralSetRefereeEdge2ᚖcodeᚗvegaprotoco
 	return ec._ReferralSetRefereeEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOReferralSetStats2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSetStats(ctx context.Context, sel ast.SelectionSet, v *v2.ReferralSetStats) graphql.Marshaler {
+func (ec *executionContext) marshalOReferralSetStatsEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSetStatsEdge(ctx context.Context, sel ast.SelectionSet, v *v2.ReferralSetStatsEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._ReferralSetStats(ctx, sel, v)
+	return ec._ReferralSetStatsEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReward(ctx context.Context, sel ast.SelectionSet, v []*vega.Reward) graphql.Marshaler {

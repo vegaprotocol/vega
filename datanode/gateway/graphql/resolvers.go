@@ -506,10 +506,6 @@ func (r *VegaResolverRoot) ReferralSetReferee() ReferralSetRefereeResolver {
 	return (*referralSetRefereeResolver)(r)
 }
 
-func (r *VegaResolverRoot) ReferralSet() ReferralSetResolver {
-	return (*referralSetResolver)(r)
-}
-
 func (r *VegaResolverRoot) ReferralSetStats() ReferralSetStatsResolver {
 	return (*referralSetStatsResolver)(r)
 }
@@ -1652,6 +1648,26 @@ func (r *myQueryResolver) ReferralSetReferees(ctx context.Context, id, referrer,
 	}
 
 	return resp.ReferralSetReferees, nil
+}
+
+func (r *myQueryResolver) ReferralSetStats(ctx context.Context, setID string, epoch *int, partyID *string, pagination *v2.Pagination) (*v2.ReferralSetStatsConnection, error) {
+	var epochU64Ptr *uint64
+	if epoch != nil {
+		epochU64 := uint64(*epoch)
+		epochU64Ptr = &epochU64
+	}
+
+	resp, err := r.tradingDataClientV2.GetReferralSetStats(ctx, &v2.GetReferralSetStatsRequest{
+		ReferralSetId: setID,
+		AtEpoch:       epochU64Ptr,
+		Referee:       partyID,
+		Pagination:    pagination,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Stats, nil
 }
 
 func (r *myQueryResolver) Teams(ctx context.Context, teamID *string, partyID *string, pagination *v2.Pagination) (*v2.TeamConnection, error) {

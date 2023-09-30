@@ -67,7 +67,7 @@ spellcheck: ## Run markdown spellcheck container
 	@docker run --rm -ti \
 		--entrypoint mdspell \
 		-v "$(PWD):/src" \
-		ghcr.io/vegaprotocol/devops-infra/markdownspellcheck:latest \
+		pipelinecomponents/markdown-spellcheck \
 			--en-gb \
 			--ignore-acronyms \
 			--ignore-numbers \
