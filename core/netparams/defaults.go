@@ -220,6 +220,12 @@ func defaultNetParams() map[string]value {
 		SpamProtectionMinTokensForDelegation:           NewDecimal(gteD1).Mutable(true).MustUpdate("1000000000000000000"),
 		SpamProtectionMinimumWithdrawalQuantumMultiple: NewDecimal(gtD0, DecimalLT(num.MustDecimalFromString("1e6"))).Mutable(true).MustUpdate("10"),
 		SpamProtectionMinMultisigUpdates:               NewDecimal(gteD1).Mutable(true).MustUpdate("100000000000000000000"),
+		SpamProtectionMaxCreateReferralSet:             NewInt(gteI0).Mutable(true).MustUpdate("3"),
+		SpamProtectionMaxUpdateReferralSet:             NewInt(gteI0).Mutable(true).MustUpdate("3"),
+		SpamProtectionMaxApplyReferralCode:             NewInt(gteI0).Mutable(true).MustUpdate("5"),
+		SpamProtectionBalanceSnapshotFrequency:         NewDuration(gte0s, lte1h).Mutable(true).MustUpdate("5s"),
+		SpamProtectionApplyReferralMinFunds:            NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("1"),
+
 		// no validation for this initially as we configure the
 		// the bootstrapping asset.
 		// validation will be added at node startup, so we can use dynamic stuff

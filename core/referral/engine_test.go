@@ -49,15 +49,7 @@ func TestReferralSet(t *testing.T) {
 		assert.EqualError(t, err, referral.ErrUnknownReferralCode(setID).Error())
 	})
 
-	t.Run("cannot create a set for the first time without enough staking balance", func(t *testing.T) {
-		te.staking.EXPECT().GetAvailableBalance(string(referrer)).Times(1).Return(num.NewUint(99), nil)
-		assert.EqualError(t, te.engine.CreateReferralSet(ctx, referrer, setID),
-			referral.ErrNotEligibleForReferralRewards(string(referrer), num.NewUint(99), num.NewUint(100)).Error(),
-		)
-	})
-
 	t.Run("can create a set for the first time", func(t *testing.T) {
-		te.staking.EXPECT().GetAvailableBalance(string(referrer)).Times(1).Return(num.NewUint(100), nil)
 		te.broker.EXPECT().Send(gomock.Any()).Times(1)
 		te.timeSvc.EXPECT().GetTimeNow().Times(1)
 		assert.NoError(t, te.engine.CreateReferralSet(ctx, referrer, setID))
@@ -88,7 +80,6 @@ func TestReferralSet(t *testing.T) {
 	})
 
 	t.Run("can create a second referrer", func(t *testing.T) {
-		te.staking.EXPECT().GetAvailableBalance(string(referrer2)).Times(1).Return(num.NewUint(100), nil)
 		te.broker.EXPECT().Send(gomock.Any()).Times(1)
 		te.timeSvc.EXPECT().GetTimeNow().Times(1)
 		assert.NoError(t, te.engine.CreateReferralSet(ctx, referrer2, setID2))

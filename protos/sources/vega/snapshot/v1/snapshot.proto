@@ -227,6 +227,7 @@ message EventForwarder {
 
 message CollateralAccounts {
   repeated vega.Account accounts = 1;
+  int64 next_balance_snapshot = 2;
 }
 
 message CollateralAssets {

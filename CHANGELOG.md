@@ -118,6 +118,7 @@
 - [9564](https://github.com/vegaprotocol/vega/issues/9564) - Fix error message for too many staking tiers.
 - [8421](https://github.com/vegaprotocol/vega/issues/8421) - Markets that spend too long in opening auction should be cancelled.
 - [9575](https://github.com/vegaprotocol/vega/issues/9575) - Expand SLA statistics by required liquidity and notional volumes.
+- [9578](https://github.com/vegaprotocol/vega/issues/9578) - Add spam protection for referral transactions
 - [9590](https://github.com/vegaprotocol/vega/issues/9590) - Restore positions for market activity tracker on migration from old version.
 - [9589](https://github.com/vegaprotocol/vega/issues/9589) - Add event for funding payments.
 - [9460](https://github.com/vegaprotocol/vega/issues/9460) - Add APIs for volume discount program.

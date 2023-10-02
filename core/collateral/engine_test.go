@@ -17,6 +17,7 @@ import (
 	"encoding/hex"
 	"strconv"
 	"testing"
+	"time"
 
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/collateral"
@@ -29,6 +30,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	ptypes "code.vegaprotocol.io/vega/protos/vega"
 
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -2949,7 +2951,7 @@ func getTestEngine(t *testing.T) *testEngine {
 	// system accounts created
 
 	eng := collateral.New(logging.NewTestLogger(), conf, timeSvc, broker)
-
+	eng.OnBalanceSnapshotFrequencyUpdated(context.Background(), 5*time.Second)
 	enableGovernanceAsset(t, eng)
 
 	// enable the assert for the tests
@@ -3412,4 +3414,139 @@ func TestTransferSpot(t *testing.T) {
 
 	require.Equal(t, num.NewUint(1000), z.Balance)
 	require.Equal(t, num.UintZero(), j.Balance)
+}
+
+func TestBalanceSnapshot(t *testing.T) {
+	t.Helper()
+	ctrl := gomock.NewController(t)
+	timeSvc := mocks.NewMockTimeService(ctrl)
+
+	tm := time.Now()
+	timeSvc.EXPECT().GetTimeNow().Return(tm).Times(2)
+
+	broker := bmocks.NewMockBroker(ctrl)
+	conf := collateral.NewDefaultConfig()
+	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
+
+	eng := collateral.New(logging.NewTestLogger(), conf, timeSvc, broker)
+
+	ctx := context.Background()
+
+	// enable a few assets with various quantums
+	assets := map[string]int64{
+		"asset1": 1,
+		"asset2": 2,
+		"asset3": 3,
+		"asset4": 4,
+		"asset5": 5,
+	}
+
+	broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	for k, v := range assets {
+		require.NoError(t, eng.EnableAsset(ctx, types.Asset{
+			ID: k,
+			Details: &types.AssetDetails{
+				Name:     k,
+				Symbol:   k,
+				Decimals: 3,
+				Quantum:  num.DecimalFromInt64(v),
+				Source:   types.AssetDetailsBuiltinAsset{},
+			},
+		}))
+	}
+
+	for k, v := range assets {
+		id, err := eng.CreatePartyGeneralAccount(ctx, "zohar", k)
+		require.NoError(t, err)
+		require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(uint64(v)*10)))
+	}
+
+	// trigger the balance caching
+	eng.BeginBlock()
+
+	// we have 10 units of quantum for each of the 5 tokens, so expect balance to be 50
+	require.Equal(t, "50", eng.GetPartyBalance("zohar").String())
+
+	// now make a few updates to the balances
+
+	for k, v := range assets {
+		id, err := eng.CreatePartyGeneralAccount(ctx, "zohar", k)
+		require.NoError(t, err)
+		require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(uint64(v)*5)))
+	}
+
+	eng.OnBalanceSnapshotFrequencyUpdated(ctx, 5*time.Second)
+
+	// we didn't move the time so no new snapshot has been taken, therefore we expect the balance to still be 50
+	eng.BeginBlock()
+	require.Equal(t, "50", eng.GetPartyBalance("zohar").String())
+
+	// now move the time by 5 seconds and recheck - expect 75
+	timeSvc.EXPECT().GetTimeNow().Return(tm.Add(5 * time.Second)).Times(1)
+	eng.BeginBlock()
+	require.Equal(t, "75", eng.GetPartyBalance("zohar").String())
+
+	keys := eng.Keys()
+	payloads := make(map[string]*types.Payload, len(keys))
+	data := make(map[string][]byte, len(keys))
+	for _, k := range keys {
+		payloads[k] = &types.Payload{}
+		s, _, err := eng.GetState(k)
+		require.NoError(t, err)
+		data[k] = s
+	}
+
+	t.Helper()
+	timeSvc2 := mocks.NewMockTimeService(ctrl)
+	broker2 := bmocks.NewMockBroker(ctrl)
+	broker2.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	newEng := collateral.New(logging.NewTestLogger(), conf, timeSvc2, broker2)
+
+	for k, pl := range payloads {
+		state := data[k]
+		ptype := pl.IntoProto()
+		require.NoError(t, proto.Unmarshal(state, ptype))
+		payloads[k] = types.PayloadFromProto(ptype)
+		_, err := newEng.LoadState(ctx, payloads[k])
+		require.NoError(t, err)
+	}
+	for k, d := range data {
+		got, _, err := newEng.GetState(k)
+		require.NoError(t, err)
+		require.EqualValues(t, d, got)
+	}
+
+	timeSvc.EXPECT().GetTimeNow().Return(tm.Add(20 * time.Second)).Times(1)
+	timeSvc2.EXPECT().GetTimeNow().Return(tm.Add(20 * time.Second)).Times(1)
+	eng.BeginBlock()
+	newEng.BeginBlock()
+
+	payloads = make(map[string]*types.Payload, len(keys))
+	data = make(map[string][]byte, len(keys))
+	for _, k := range keys {
+		payloads[k] = &types.Payload{}
+		s, _, err := eng.GetState(k)
+		require.NoError(t, err)
+		data[k] = s
+	}
+
+	timeSvc2 = mocks.NewMockTimeService(ctrl)
+	broker2 = bmocks.NewMockBroker(ctrl)
+	broker2.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	newEng = collateral.New(logging.NewTestLogger(), conf, timeSvc2, broker2)
+
+	for k, pl := range payloads {
+		state := data[k]
+		ptype := pl.IntoProto()
+		require.NoError(t, proto.Unmarshal(state, ptype))
+		payloads[k] = types.PayloadFromProto(ptype)
+		_, err := newEng.LoadState(ctx, payloads[k])
+		require.NoError(t, err)
+	}
+	for k, d := range data {
+		got, _, err := newEng.GetState(k)
+		require.NoError(t, err)
+		require.EqualValues(t, d, got)
+	}
 }

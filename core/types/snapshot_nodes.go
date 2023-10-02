@@ -633,7 +633,8 @@ type CPState struct {
 }
 
 type CollateralAccounts struct {
-	Accounts []*Account
+	Accounts            []*Account
+	NextBalanceSnapshot time.Time
 }
 
 type CollateralAssets struct {
@@ -2688,13 +2689,15 @@ func CollateralAccountsFromProto(ca *snapshot.CollateralAccounts) *CollateralAcc
 	for _, a := range ca.Accounts {
 		ret.Accounts = append(ret.Accounts, AccountFromProto(a))
 	}
+	ret.NextBalanceSnapshot = time.Unix(0, ca.NextBalanceSnapshot)
 	return &ret
 }
 
 func (c CollateralAccounts) IntoProto() *snapshot.CollateralAccounts {
 	accs := Accounts(c.Accounts)
 	return &snapshot.CollateralAccounts{
-		Accounts: accs.IntoProto(),
+		Accounts:            accs.IntoProto(),
+		NextBalanceSnapshot: c.NextBalanceSnapshot.UnixNano(),
 	}
 }
 

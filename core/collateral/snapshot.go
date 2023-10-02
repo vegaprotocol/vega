@@ -15,6 +15,7 @@ package collateral
 import (
 	"context"
 	"sort"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
@@ -106,7 +107,15 @@ func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAcco
 	var err error
 	e.state.serialisedAccounts, err = proto.Marshal(p.IntoProto())
 	e.getOrCreateNetTreasuryAndGlobalInsForAssets(ctx, assets)
+	e.updateNextBalanceSnapshot(accs.NextBalanceSnapshot)
+	e.snapshotBalances()
+	e.activeRestore = true
 	return err
+}
+
+func (e *Engine) PostRestore(ctx context.Context) error {
+	e.activeRestore = false
+	return nil
 }
 
 func (e *Engine) getOrCreateNetTreasuryAndGlobalInsForAssets(ctx context.Context, assets map[string]struct{}) {
@@ -140,13 +149,16 @@ func (e *Engine) restoreAssets(assets *types.CollateralAssets, p *types.Payload)
 	}
 	var err error
 	e.state.serialisedAssets, err = proto.Marshal(p.IntoProto())
+	e.snapshotBalances()
 	return err
 }
 
 func newAccState() *accState {
 	state := &accState{
 		accPL: types.PayloadCollateralAccounts{
-			CollateralAccounts: &types.CollateralAccounts{},
+			CollateralAccounts: &types.CollateralAccounts{
+				NextBalanceSnapshot: time.Time{},
+			},
 		},
 		assPL: types.PayloadCollateralAssets{
 			CollateralAssets: &types.CollateralAssets{},
@@ -176,6 +188,10 @@ func (a *accState) updateAsset(asset types.Asset) {
 
 func (a *accState) updateAccs(accs []*types.Account) {
 	a.accPL.CollateralAccounts.Accounts = accs[:]
+}
+
+func (a *accState) updateBalanceSnapshotTime(t time.Time) {
+	a.accPL.CollateralAccounts.NextBalanceSnapshot = t
 }
 
 func (a *accState) hashAssets() ([]byte, error) {
