@@ -19,7 +19,7 @@ Feature: Test funding payment triggering closeout for Perps market
       | limits.markets.maxPeggedOrders | 2     |
 
   @Perpetual
-  Scenario: (0053-PERP-024) Funding payment triggering closeout but no loss soccialization
+  Scenario: (0053-PERP-024) Funding payment triggering loss soccialization
     Given the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 5s    |
