@@ -23,12 +23,12 @@
 - [8741](https://github.com/vegaprotocol/vega/issues/8741) - Add a network parameter for disabling `Ethereum` oracles.
 - [8600](https://github.com/vegaprotocol/vega/issues/8600) - Clean and refactor data source packages.
 - [8845](https://github.com/vegaprotocol/vega/issues/8845) - Add support for network treasury and global insurance accounts.
-- [9545](https://github.com/vegaprotocol/vega/issues/9545) - Auto load new segments after load finishes 
+- [9545](https://github.com/vegaprotocol/vega/issues/9545) - Auto load new segments after load finishes
 - [8661](https://github.com/vegaprotocol/vega/issues/8661) - Refactor the snapshot engine to make it testable.
 - [8680](https://github.com/vegaprotocol/vega/issues/8680) - Move loading the local snapshot in the initialization steps.
 - [8682](https://github.com/vegaprotocol/vega/issues/8682) - Share snapshot by search the metadata database instead of loading the tree.
 - [8846](https://github.com/vegaprotocol/vega/issues/8846) - Add support to transfer recurring transfers to metric based reward
-- [9549](https://github.com/vegaprotocol/vega/issues/9549) - Update config defaults to better support archive nodes 
+- [9549](https://github.com/vegaprotocol/vega/issues/9549) - Update config defaults to better support archive nodes
 - [8857](https://github.com/vegaprotocol/vega/issues/8857) - Add a step for getting the balance of the liquidity provider liquidity fee account
 - [8847](https://github.com/vegaprotocol/vega/issues/8847) - Implement internal time trigger data source.
 - [8895](https://github.com/vegaprotocol/vega/issues/8895) - Allow to set runtime parameters in the SQL Store connection structure
@@ -122,6 +122,7 @@
 - [9590](https://github.com/vegaprotocol/vega/issues/9590) - Restore positions for market activity tracker on migration from old version.
 - [9589](https://github.com/vegaprotocol/vega/issues/9589) - Add event for funding payments.
 - [9460](https://github.com/vegaprotocol/vega/issues/9460) - Add APIs for volume discount program.
+- [9628](https://github.com/vegaprotocol/vega/issues/9628) - Upgrade `CometBFT`.
 
 ### 🐛 Fixes
 
@@ -139,7 +140,7 @@
 - [9343](https://github.com/vegaprotocol/vega/issues/9343) - Prevent malicious validator submitting Ethereum oracle chain event prior to initial start time
 - [8792](https://github.com/vegaprotocol/vega/issues/8792) - Fix panic when starting null block chain node.
 - [8739](https://github.com/vegaprotocol/vega/issues/8739) - Cancel orders for rejected markets.
-- [9594](https://github.com/vegaprotocol/vega/issues/9594) - non deterministic order events on market termination 
+- [9594](https://github.com/vegaprotocol/vega/issues/9594) - non deterministic order events on market termination
 - [9350](https://github.com/vegaprotocol/vega/issues/9350) - Clear account ledger events causing segment divergence
 - [9118](https://github.com/vegaprotocol/vega/issues/9118) - Improve list stop orders error message
 - [9406](https://github.com/vegaprotocol/vega/issues/9105) - Fix Ethereum oracle validation failing unexpectedly when using go 1.19
