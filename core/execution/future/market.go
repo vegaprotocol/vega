@@ -1553,7 +1553,7 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 			ctx, party, m.GetID(), m.settlementAsset)
 		if err != nil {
 			m.log.Error("unable to clear party margin account", logging.Error(err))
-			return
+			continue
 		}
 
 		if transfers != nil {
