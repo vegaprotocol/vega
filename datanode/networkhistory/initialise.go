@@ -64,7 +64,11 @@ func InitialiseDatanodeFromNetworkHistory(ctx context.Context, cfg Initializatio
 
 				blocksToFetch = mostRecentHistorySegment.ToHeight - currentSpan.ToHeight
 			} else {
-				blocksToFetch = -1
+				// check if goes < 0
+				blocksToFetch = cfg.MinimumBlockCount
+				if mostRecentHistorySegment.ToHeight-cfg.MinimumBlockCount < 0 {
+					blocksToFetch = -1
+				}
 			}
 
 			err = loadSegments(ctxWithTimeout, log, connCfg, networkHistoryService, currentSpan,
