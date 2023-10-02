@@ -31,6 +31,62 @@ import (
 func TestSubmissions(t *testing.T) {
 	t.Run("Create and cancel", testSubmissionCreateAndCancel)
 	t.Run("Cancel non existing", testCancelNonExistingSubmission)
+	t.Run("Can to submit when current or pending LP exists", testFailsWhenLPExists)
+}
+
+func testFailsWhenLPExists(t *testing.T) {
+	var (
+		party = "party-1"
+		ctx   = context.Background()
+		te    = newTestEngine(t)
+	)
+	defer te.ctrl.Finish()
+
+	require.Nil(t, te.engine.LiquidityProvisionByPartyID("some-party"))
+
+	lps1 := &commandspb.LiquidityProvisionSubmission{
+		MarketId: te.marketID, CommitmentAmount: "100", Fee: "0.5",
+	}
+	lps, err := types.LiquidityProvisionSubmissionFromProto(lps1)
+	require.NoError(t, err)
+
+	deterministicID := crypto.RandomHash()
+	idGen := idgeneration.New(deterministicID)
+
+	lpID := idGen.NextID()
+	now := te.tsvc.GetTimeNow()
+	nowNano := now.UnixNano()
+
+	expected := &types.LiquidityProvision{
+		ID:               lpID,
+		MarketID:         te.marketID,
+		Party:            party,
+		Fee:              num.DecimalFromFloat(0.5),
+		CommitmentAmount: lps.CommitmentAmount.Clone(),
+		CreatedAt:        nowNano,
+		UpdatedAt:        nowNano,
+		Status:           types.LiquidityProvisionStatusActive,
+		Version:          1,
+	}
+
+	// Creating a submission should fire an event
+	te.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	te.auctionState.EXPECT().IsOpeningAuction().Return(false).AnyTimes()
+
+	idgen := idgeneration.New(deterministicID)
+	_, err = te.engine.SubmitLiquidityProvision(ctx, lps, party, idgen)
+	require.NoError(t, err)
+
+	// first validate that the amendment is pending
+	pendingLp := te.engine.PendingProvisionByPartyID(party)
+	assert.Equal(t, expected.CommitmentAmount.String(), pendingLp.CommitmentAmount.String())
+	assert.Equal(t, expected.Fee.String(), pendingLp.Fee.String())
+
+	idgen = idgeneration.New(deterministicID)
+
+	lps.CommitmentAmount = num.NewUint(1000)
+	_, err = te.engine.SubmitLiquidityProvision(ctx, lps, party, idgen)
+	require.Error(t, err, "liquidity provision already exists")
 }
 
 func testSubmissionCreateAndCancel(t *testing.T) {

@@ -223,7 +223,7 @@ func (e *Engine) SubmitLiquidityProvision(
 		return false, err
 	}
 
-	if foundLp := e.LiquidityProvisionByPartyID(party); foundLp != nil {
+	if e.IsLiquidityProvider(party) {
 		return false, ErrLiquidityProvisionAlreadyExists
 	}
 
