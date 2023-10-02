@@ -23,7 +23,6 @@ type marginUpdate struct {
 	events.MarketPosition
 	margin          *types.Account
 	general         *types.Account
-	lock            *types.Account
 	bond            *types.Account
 	asset           string
 	marketID        string

@@ -72,7 +72,8 @@ func (s socketServer) Listen() error {
 		net.JoinHostPort(s.config.SocketConfig.IP, fmt.Sprintf("%d", s.config.SocketConfig.Port)),
 	)
 
-	listenOptions := map[string]interface{}{mangos.OptionMaxRecvSize: 0}
+	// listenOptions := map[string]interface{}{mangos.OptionMaxRecvSize: 0}
+	listenOptions := map[string]interface{}{}
 
 	listener, err := s.sock.NewListener(addr, listenOptions)
 	if err != nil {
