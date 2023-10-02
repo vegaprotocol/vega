@@ -9,14 +9,21 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 
+	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot/mutex"
 	"code.vegaprotocol.io/vega/logging"
 )
+
+type HistoryStore interface {
+	StagedSegment(ctx context.Context, s segment.Full) (segment.Staged, error)
+}
 
 type Service struct {
 	log      *logging.Logger
 	config   Config
 	connPool *pgxpool.Pool
+
+	historyStore HistoryStore
 
 	createSnapshotLock         mutex.CtxMutex
 	copyToPath                 string
@@ -25,6 +32,7 @@ type Service struct {
 }
 
 func NewSnapshotService(log *logging.Logger, config Config, connPool *pgxpool.Pool,
+	historyStore HistoryStore,
 	snapshotsCopyToPath string,
 	migrateDatabaseToVersion func(version int64) error,
 	migrateSchemaDownToVersion func(version int64) error,
@@ -43,6 +51,7 @@ func NewSnapshotService(log *logging.Logger, config Config, connPool *pgxpool.Po
 		copyToPath:                 snapshotsCopyToPath,
 		migrateSchemaUpToVersion:   migrateDatabaseToVersion,
 		migrateSchemaDownToVersion: migrateSchemaDownToVersion,
+		historyStore:               historyStore,
 	}
 
 	err = os.MkdirAll(s.copyToPath, fs.ModePerm)

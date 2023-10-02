@@ -29,6 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/logging"
@@ -322,9 +323,16 @@ func (l *NodeCommand) initialiseNetworkHistory(preLog *logging.Logger, connConfi
 
 	snapshotServiceLog := networkHistoryLog.Named("snapshot")
 	networkHistoryServiceLog := networkHistoryLog.Named("service")
+	home := l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome)
+
+	networkHistoryStore, err := store.New(l.ctx, networkHistoryServiceLog, l.conf.ChainID, l.conf.NetworkHistory.Store, home,
+		l.conf.MaxMemoryPercent)
+	if err != nil {
+		return fmt.Errorf("failed to create network history store: %w", err)
+	}
 
 	l.snapshotService, err = snapshot.NewSnapshotService(snapshotServiceLog, l.conf.NetworkHistory.Snapshot,
-		networkHistoryPool,
+		networkHistoryPool, networkHistoryStore,
 		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), func(version int64) error {
 			if err = sqlstore.MigrateUpToSchemaVersion(preNetworkHistoryLog, l.conf.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
 				return fmt.Errorf("failed to migrate up to schema version %d: %w", version, err)
@@ -341,11 +349,12 @@ func (l *NodeCommand) initialiseNetworkHistory(preLog *logging.Logger, connConfi
 		return fmt.Errorf("failed to create snapshot service:%w", err)
 	}
 
-	l.networkHistoryService, err = networkhistory.New(l.ctx, networkHistoryServiceLog, l.conf.NetworkHistory,
-		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome),
+	l.networkHistoryService, err = networkhistory.New(l.ctx, networkHistoryServiceLog, l.conf.ChainID, l.conf.NetworkHistory,
 		networkHistoryPool,
-		l.conf.ChainID, l.snapshotService, l.conf.API.Port, l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
-		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), l.conf.MaxMemoryPercent)
+		l.snapshotService,
+		networkHistoryStore,
+		l.conf.API.Port,
+		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo))
 	if err != nil {
 		return fmt.Errorf("failed to create networkHistory service:%w", err)
 	}

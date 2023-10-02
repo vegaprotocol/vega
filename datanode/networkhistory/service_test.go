@@ -312,7 +312,7 @@ func TestMain(t *testing.M) {
 		datanodeConfig := config2.NewDefaultConfig()
 		cfg := networkhistory.NewDefaultConfig()
 
-		_, err = networkhistory.NewWithStore(outerCtx, log, chainID, cfg, networkHistoryConnPool, snapshotService,
+		_, err = networkhistory.New(outerCtx, log, chainID, cfg, networkHistoryConnPool, snapshotService,
 			networkHistoryStore, datanodeConfig.API.Port, snapshotCopyToPath)
 
 		if err != nil {
@@ -1207,7 +1207,7 @@ func setupNetworkHistoryService(ctx context.Context, log *logging.Logger, inputS
 
 	datanodeConfig := config2.NewDefaultConfig()
 
-	networkHistoryService, err := networkhistory.NewWithStore(ctx, log, chainID, cfg, networkHistoryConnPool,
+	networkHistoryService, err := networkhistory.New(ctx, log, chainID, cfg, networkHistoryConnPool,
 		inputSnapshotService, store, datanodeConfig.API.Port, snapshotCopyToPath)
 	if err != nil {
 		panic(err)
@@ -1276,7 +1276,7 @@ func assertIntervalHistoryIsEmpty(t *testing.T, historyTableDelta []map[string]t
 func setupSnapshotService(snapshotCopyToPath string) *snapshot.Service {
 	snapshotServiceCfg := snapshot.NewDefaultConfig()
 	snapshotService, err := snapshot.NewSnapshotService(logging.NewTestLogger(), snapshotServiceCfg,
-		networkHistoryConnPool, snapshotCopyToPath, migrateUpToDatabaseVersion,
+		networkHistoryConnPool, networkHistoryStore, snapshotCopyToPath, migrateUpToDatabaseVersion,
 		migrateDownToDatabaseVersion)
 	if err != nil {
 		panic(err)

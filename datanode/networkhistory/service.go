@@ -40,25 +40,7 @@ type Service struct {
 	publishLock sync.Mutex
 }
 
-func New(ctx context.Context, log *logging.Logger, cfg Config, networkHistoryHome string, connPool *pgxpool.Pool,
-	chainID string,
-	snapshotService *snapshot.Service, datanodeGrpcAPIPort int,
-	snapshotsCopyFromDir, snapshotsCopyToDir string, maxMemoryPercent uint8,
-) (*Service, error) {
-	storeLog := log.Named("store")
-	storeLog.SetLevel(cfg.Level.Get())
-
-	networkHistoryStore, err := store.New(ctx, storeLog, chainID, cfg.Store, networkHistoryHome,
-		maxMemoryPercent)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create network history store:%w", err)
-	}
-
-	return NewWithStore(ctx, log, chainID, cfg, connPool, snapshotService, networkHistoryStore, datanodeGrpcAPIPort,
-		snapshotsCopyToDir)
-}
-
-func NewWithStore(ctx context.Context, log *logging.Logger, chainID string, cfg Config, connPool *pgxpool.Pool,
+func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, connPool *pgxpool.Pool,
 	snapshotService *snapshot.Service,
 	networkHistoryStore *store.Store, datanodeGrpcAPIPort int,
 	snapshotsCopyToPath string,
@@ -111,12 +93,7 @@ func (d *Service) RollbackToHeight(ctx context.Context, log snapshot.LoadLog, he
 		return fmt.Errorf("failed to get history segment for height %d: %w", height, err)
 	}
 
-	stagedSegment, err := d.store.StagedSegment(ctx, rollbackToSegment)
-	if err != nil {
-		return fmt.Errorf("failed to get staged segment for height %d: %w", height, err)
-	}
-
-	err = d.snapshotService.RollbackToSegment(ctx, log, stagedSegment)
+	err = d.snapshotService.RollbackToSegment(ctx, log, rollbackToSegment)
 
 	if err != nil {
 		return fmt.Errorf("failed to rollback to segment: %w", err)
@@ -282,19 +259,15 @@ func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, log
 
 	start := time.Now()
 
-	chunkToLoad := chunk.Slice(datanodeBlockSpan.ToHeight+1, chunk.HeightTo)
-	stagedChunk, err := d.store.StagedContiguousHistory(ctx, chunkToLoad)
-	if err != nil {
-		return snapshot.LoadResult{}, fmt.Errorf("failed to load history:%w", err)
-	}
-
-	loadResult, err := d.snapshotService.LoadSnapshotData(ctx, log, stagedChunk, connConfig, withIndexesAndOrderTriggers, verbose)
+	chunks := chunk.Slice(datanodeBlockSpan.ToHeight+1, chunk.HeightTo)
+	loadResult, err := d.snapshotService.LoadSnapshotData(ctx, log, chunks, connConfig, withIndexesAndOrderTriggers, verbose)
 	if err != nil {
 		return snapshot.LoadResult{}, fmt.Errorf("failed to load snapshot data:%w", err)
 	}
 
 	log.Info("loaded all available data into datanode", logging.String("result", fmt.Sprintf("%+v", loadResult)),
 		logging.Duration("time taken", time.Since(start)))
+
 	return loadResult, err
 }
 
