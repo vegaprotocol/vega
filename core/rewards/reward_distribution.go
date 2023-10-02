@@ -9,12 +9,19 @@ import (
 )
 
 func findRank(rankingTable []*vega.Rank, ind int) uint32 {
-	for i, r := range rankingTable {
-		if ind < int(r.StartRank) && i >= 1 {
-			return rankingTable[i-1].ShareRatio
+	var lastSeen *vega.Rank
+	for _, rank := range rankingTable {
+		if int(rank.StartRank) > ind {
+			break
 		}
+		lastSeen = rank
 	}
-	return 0
+
+	if lastSeen == nil {
+		return 0
+	}
+
+	return lastSeen.ShareRatio
 }
 
 func rankingRewardCalculator(partyMetric []*types.PartyContributionScore, rankingTable []*vega.Rank, partyRewardFactor map[string]num.Decimal) []*types.PartyContributionScore {

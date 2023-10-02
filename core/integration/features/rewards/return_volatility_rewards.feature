@@ -35,6 +35,8 @@ Feature: Return volatility rewards
     Given the parties deposit on asset's general account the following amount:
       | party                                                            | asset | amount    |
       | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | VEGA  | 1000000   |
+      | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca4ffffffffff | VEGA  | 100000    |
+      | party2                                                           | ETH   | 100000    |
       | aux1                                                             | ETH   | 100000000 |
       | aux2                                                             | ETH   | 100000000 |
       | trader3                                                          | ETH   | 10000     |
@@ -314,11 +316,13 @@ Feature: Return volatility rewards
     And "aux1" should have vesting account balance of "9000" for asset "VEGA"
     And "party1" should have vesting account balance of "1000" for asset "VEGA"
 
-  Scenario: multiple multiple (0056-REWA-090)
-    # setup recurring transfer to the reward account - this will start at the end of this epoch
+  Scenario: multiple multiple (0056-REWA-090,0056-REWA-093,0056-REWA-094)
+    # not that this test is also demonstrating multiple transfers to the same reward account but with different dispatch strategies, though same metric and same metric asset, 
+    # being handled sepearately, eventially contributing to the same accounts different amounts as calculated by the distribution strategy. 
     Given the parties submit the following recurring transfers:
-      | id | from                                                             | from_account_type    | to                                                               | to_account_type                       | asset | amount | start_epoch | end_epoch | factor | metric                            | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
-      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_RETURN_VOLATILITY | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 0                    |
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                       | asset | amount | start_epoch | end_epoch | factor | metric                            | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement | ranks    |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_RETURN_VOLATILITY | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 0                    |          |
+      | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca4ffffffffff | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_RETURN_VOLATILITY | ETH          |         | 2           | 2             | RANK                  | INDIVIDUALS  | ALL              | 0                   | 0                    | 1:10,2:5 |
 
     Then the network moves ahead "1" epochs
 
@@ -391,15 +395,25 @@ Feature: Return volatility rewards
     # party1 return = 1
     # party2 return = -4
 
-    # total: 
+    # total:
     # aux1 = [6.2857142857142857, 2] => variance = 4.5918367346938775
     # aux2 = [-9.75, 1] => N/A
     # party1 = [4, 2] => variance = 1
     # party2 = [,-5.4285714285714286] => N/A
 
-    # rewards:
+    # pro rata rewards from transfer1:
     # aux1 = 10000 * 4.5918367346938775/5.5918367346938775 = 8211
-    # part1 = 10000 * 1/5.5918367346938775 = 1788
+    # party1 = 10000 * 1/5.5918367346938775 = 1788
+
+    # rank rewards from transfer2:
+    # aux1 = 10/15 * 10000 = 6666
+    # party1 = 5/15 * 10000 = 3333
+
+    # total
+    # aux1 = 8211 + 6666 = 14877
+    # party1 = 1788 + 3333 = 5121
+
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
-    And "aux1" should have vesting account balance of "8211" for asset "VEGA"
-    And "party1" should have vesting account balance of "1788" for asset "VEGA"
+    And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca4ffffffffff" should have general account balance of "90000" for asset "VEGA"
+    And "aux1" should have vesting account balance of "14877" for asset "VEGA"
+    And "party1" should have vesting account balance of "5121" for asset "VEGA"

@@ -87,7 +87,7 @@ Feature: Relative return rewards
       | aux2   | ETH/DEC22 | sell | 1      | 2200  | 0                | TYPE_LIMIT | TIF_GTC | sell2     |
 
   Scenario: No trader is eligible - no transfer is made
-    # setup recurring transfer to the reward account - this will start at the  end of this epoch 
+    # setup recurring transfer to the reward account - this will start at the  end of this epoch
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
       | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_RELATIVE_RETURN | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_RELATIVE_RETURN | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1500                | 50                   |
@@ -97,7 +97,7 @@ Feature: Relative return rewards
     And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "1000000" for asset "VEGA"
 
   Scenario: eligible party with staking less than threshold doesn't get a reward (0056-REWA-076)
-    # setup recurring transfer to the reward account - this will start at the  end of this epoch 
+    # setup recurring transfer to the reward account - this will start at the  end of this epoch
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
       | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_RELATIVE_RETURN | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_RELATIVE_RETURN | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1500                | 0                    |
@@ -128,7 +128,7 @@ Feature: Relative return rewards
     And "aux1" should have vesting account balance of "10000" for asset "VEGA"
 
   Scenario: eligible party with average notional less than threshold doesn't get a reward (0056-REWA-077)
-    # setup recurring transfer to the reward account - this will start at the  end of this epoch 
+    # setup recurring transfer to the reward account - this will start at the  end of this epoch
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
       | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_RELATIVE_RETURN | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_RELATIVE_RETURN | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 5000                 |
@@ -156,7 +156,7 @@ Feature: Relative return rewards
     And "aux2" should have vesting account balance of "10000" for asset "VEGA"
 
   Scenario: multiple eligible parties split the reward (0056-REWA-084,0056-REWA-085)
-    # setup recurring transfer to the reward account - this will start at the  end of this epoch 
+    # setup recurring transfer to the reward account - this will start at the  end of this epoch
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
       | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_RELATIVE_RETURN | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_RELATIVE_RETURN | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 1000                | 0                    |
@@ -186,7 +186,7 @@ Feature: Relative return rewards
   Scenario: multiple epochs multiple positions (0056-REWA-087)
     Given the network moves ahead "1" epochs
 
-    # setup recurring transfer to the reward account - this will start at the  end of this epoch 
+    # setup recurring transfer to the reward account - this will start at the  end of this epoch
     And the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
       | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_RELATIVE_RETURN | VEGA  | 10000  | 2           |           | 1      | DISPATCH_METRIC_RELATIVE_RETURN | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | ALL              | 0                   | 0                    |
@@ -279,7 +279,7 @@ Feature: Relative return rewards
     And "aux1" should have vesting account balance of "8000" for asset "VEGA"
     And "party1" should have vesting account balance of "2000" for asset "VEGA"
 
-  Scenario: If an eligible party is participating in multiple in-scope markets, their relative returns reward metric should be the sum of their relative returns from each market (0056-REWA-085,0056-REWA-086)
+  Scenario: If an eligible party is participating in multiple in-scope markets, their relative returns reward metric should be the sum of their relative returns from each market (0056-REWA-085,0056-REWA-086, with pro rata distribution strategy 0056-REWA-093)
     Then the network moves ahead "1" epochs
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
@@ -335,3 +335,61 @@ Feature: Relative return rewards
     And "aux1" should have vesting account balance of "3243" for asset "VEGA"
     And "aux2" should have vesting account balance of "1891" for asset "VEGA"
     And "party2" should have vesting account balance of "4864" for asset "VEGA"
+
+  Scenario: If an eligible party is participating in multiple in-scope markets, their relative returns reward metric should be the sum of their relative returns from each market (0056-REWA-085,0056-REWA-086, with rank distribution strategy 0056-REWA-094)
+    Then the network moves ahead "1" epochs
+    Given the parties submit the following recurring transfers:
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement | ranks        |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_RELATIVE_RETURN | VEGA  | 10000  | 2           |           | 1      | DISPATCH_METRIC_RELATIVE_RETURN | ETH          |         | 2           | 2             | RANK                  | INDIVIDUALS  | ALL              | 1000                | 0                    | 1:10,2:5,4:1 |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | party1 | ETH/DEC21 | buy  | 5      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | aux1-buy1  |
+      | aux2   | ETH/DEC21 | sell | 5      | 1001  | 1                | TYPE_LIMIT | TIF_GTC | aux2-sell1 |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | party2 | ETH/DEC21 | buy  | 5      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | aux1-buy1  |
+      | aux1   | ETH/DEC21 | sell | 5      | 1002  | 1                | TYPE_LIMIT | TIF_GTC | aux2-sell1 |
+
+    # let the position update be in the middle of the epoch
+    Given time is updated to "2023-09-23T00:00:30Z"
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | party1 | ETH/DEC22 | buy  | 5      | 1999  | 0                | TYPE_LIMIT | TIF_GTC | aux1-buy1  |
+      | aux2   | ETH/DEC22 | sell | 5      | 1999  | 1                | TYPE_LIMIT | TIF_GTC | aux2-sell1 |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | party2 | ETH/DEC22 | buy  | 5      | 1997  | 0                | TYPE_LIMIT | TIF_GTC | aux1-buy1  |
+      | aux1   | ETH/DEC22 | sell | 5      | 1997  | 1                | TYPE_LIMIT | TIF_GTC | aux2-sell1 |
+
+    Then the network moves ahead "1" epochs
+
+    # market ETH/DEC21
+    # aux2 m2m=-25 p=15 => ret=-1.6666666666666667
+    # aux1 m2m=20 p=5 => ret=4
+    # party1 m2m=5 p=5 =>  ret=1
+
+    # market ETH/DEC22
+    # party1 m2m=-25 p=7.5 => ret=-3.3333333333333333
+    # party2 m2m=15 p=2.5 => ret=6
+    # aux2 m2m=10 p=2.5 => ret=4
+
+    # metric over a window=2
+    # party1 = -1.6666666666666667-3.3333333333333333 = 0
+    # party2 = 6/2 = 3
+    # aux1 = 4/2 = 2
+    # aux2 = (4-1.6666666666666667)/2 = 1.1666666667
+
+    # reward
+    # sort by metric (there are no reward multipliers):
+    # 1. party2 => 10000 * 10/20 = 5000
+    # 2. aux1 => 10000 * 5/20 = 2500
+    # 3. aux2 => 10000 * 5/20 = 2500
+    
+    And "a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf" should have general account balance of "990000" for asset "VEGA"
+    And "aux1" should have vesting account balance of "2500" for asset "VEGA"
+    And "aux2" should have vesting account balance of "2500" for asset "VEGA"
+    And "party2" should have vesting account balance of "5000" for asset "VEGA"
