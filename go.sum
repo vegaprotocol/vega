@@ -62,8 +62,8 @@ github.com/BurntSushi/toml v1.1.0/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbi
 github.com/BurntSushi/toml v1.2.1 h1:9F2/+DoOYIOksmaJFPw1tGFy1eDnIJXg+UHjuD8lTak=
 github.com/BurntSushi/toml v1.2.1/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d h1:nalkkPQcITbvhmL4+C4cKA87NW0tfm3Kl9VXRoPywFg=
-github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d/go.mod h1:URdX5+vg25ts3aCh8H5IFZybJYKWhJHYMTnf+ULtoC4=
+github.com/ChainSafe/go-schnorrkel v1.0.0 h1:3aDA67lAykLaG1y3AOjs88dMxC88PgUuHRrLeDnvGIM=
+github.com/ChainSafe/go-schnorrkel v1.0.0/go.mod h1:dpzHYVxLZcp8pjlV+O+UR8K0Hp/z7vcchBSbMBEhCw4=
 github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53/go.mod h1:+3IMCy2vIlbG1XG/0ggNQv0SvxCAIpPM5b1nCz56Xno=
 github.com/CloudyKit/jet/v3 v3.0.0/go.mod h1:HKQPgSJmdK8hdoAbKUUWajkHyHo4RaU5rMdUywE7VMo=
 github.com/DataDog/zstd v1.5.2 h1:vUG4lAyuPCXO0TLbXvPv7EB7cNK1QV/luu55UHLrrn8=
@@ -1449,8 +1449,8 @@ github.com/valyala/fasttemplate v1.2.1/go.mod h1:KHLXt3tVN2HBp8eijSv/kGJopbvo7S+
 github.com/valyala/tcplisten v0.0.0-20161114210144-ceec8f93295a/go.mod h1:v3UYOV9WzVtRmSR+PDvWpU/qWl4Wa5LApYYX4ZtKbio=
 github.com/vegaprotocol/cancelreader v0.0.0-20230724130739-6f2217a69449 h1:X2/RVmrBNProT5+53SnPJvCAicmHmxrTGwtbnercH3Q=
 github.com/vegaprotocol/cancelreader v0.0.0-20230724130739-6f2217a69449/go.mod h1:3XuTXfFS2VjM+HTLZY9Ak0l6eUKfijIfMUZ4EgX0QYo=
-github.com/vegaprotocol/cometbft v0.34.28-0.20230322133204-3d8588de736e h1:sXyN1EtmbF/wZ01zj8IF5W8ZExzCpdIFUWvPoF7+ckE=
-github.com/vegaprotocol/cometbft v0.34.28-0.20230322133204-3d8588de736e/go.mod h1:BcCbhKv7ieM0KEddnYXvQZR+pZykTKReJJYf7YC7qhw=
+github.com/vegaprotocol/cometbft v0.34.29-patch.1 h1:cagbEi+E+0qObyYyI3XcmHfQD4S6qlwKAxK6PDtNEpc=
+github.com/vegaprotocol/cometbft v0.34.29-patch.1/go.mod h1:L9shMfbkZ8B+7JlwANEr+NZbBcn+hBpwdbeYvA5rLCw=
 github.com/vegaprotocol/decimal v1.3.1-uint256 h1:Aj//9joGGuz+dAKo6W/r9Rt1HUXYrjH7oerdCg1q/So=
 github.com/vegaprotocol/decimal v1.3.1-uint256/go.mod h1:+mRbjtsnpvm5Qw6aiLEf3I6SHICNB4nhMTmH9y8hMtg=
 github.com/vegaprotocol/embedded-postgres v1.13.1-0.20221123183204-2e7a2feee5bb h1:c7l0ESzXbIbr7ykEjWki6+aG+77gAJua3ETrAxd50HI=
