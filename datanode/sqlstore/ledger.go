@@ -200,6 +200,16 @@ func (ls *Ledger) Export(
 				WHEN fa.type=16 THEN 'REWARD_LP_RECEIVED_FEES'
 				WHEN fa.type=17 THEN 'REWARD_MARKET_PROPOSERS'
 				WHEN fa.type=18 THEN 'HOLDING'
+				WHEN fa.type=19 THEN 'LP_LIQUIDITY_FEES'
+				WHEN fa.type=20 THEN 'LIQUIDITY_FEES_BONUS_DISTRIBUTION'
+				WHEN fa.type=21 THEN 'NETWORK_TREASURY'
+				WHEN fa.type=22 THEN 'VESTING_REWARDS'
+				WHEN fa.type=23 THEN 'VESTED_REWARDS'
+				WHEN fa.type=24 THEN 'REWARD_AVERAGE_POSITION'
+				WHEN fa.type=25 THEN 'REWARD_RELATIVE_RETURN'
+				WHEN fa.type=26 THEN 'REWARD_RETURN_VOLATILITY'
+				WHEN fa.type=27 THEN 'REWARD_VALIDATOR_RANKING'
+				WHEN fa.type=28 THEN 'PENDING_FEE_REFERRAL_REWARD'
 				ELSE 'UNKNOWN' END AS account_from_account_type,
 			l.account_from_balance AS account_from_balance,
 			encode(ta.market_id, 'hex') AS account_to_market_id,
@@ -226,6 +236,16 @@ func (ls *Ledger) Export(
 				WHEN ta.type=16 THEN 'REWARD_LP_RECEIVED_FEES'
 				WHEN ta.type=17 THEN 'REWARD_MARKET_PROPOSERS'
 				WHEN ta.type=18 THEN 'HOLDING'
+				WHEN fa.type=19 THEN 'LP_LIQUIDITY_FEES'
+				WHEN fa.type=20 THEN 'LIQUIDITY_FEES_BONUS_DISTRIBUTION'
+				WHEN fa.type=21 THEN 'NETWORK_TREASURY'
+				WHEN fa.type=22 THEN 'VESTING_REWARDS'
+				WHEN fa.type=23 THEN 'VESTED_REWARDS'
+				WHEN fa.type=24 THEN 'REWARD_AVERAGE_POSITION'
+				WHEN fa.type=25 THEN 'REWARD_RELATIVE_RETURN'
+				WHEN fa.type=26 THEN 'REWARD_RETURN_VOLATILITY'
+				WHEN fa.type=27 THEN 'REWARD_VALIDATOR_RANKING'
+				WHEN fa.type=28 THEN 'PENDING_FEE_REFERRAL_REWARD'				
 				ELSE 'UNKNOWN' END AS account_to_account_type,
 			l.account_to_balance AS account_to_balance
 		FROM 
