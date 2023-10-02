@@ -254,6 +254,7 @@
 - [9619](https://github.com/vegaprotocol/vega/issues/9619) - Win socialisation on funding payments should include parties who haven't traded.
 - [9624](https://github.com/vegaprotocol/vega/issues/9624) - Fix get returns when window is larger than available returns
 - [9634](https://github.com/vegaprotocol/vega/issues/9634) - Do not allow to submit liquidity provision for pending LPs
+- [9636](https://github.com/vegaprotocol/vega/issues/9636) - include ersatz validator for validator ranking reward.
 
 ## 0.72.1
 

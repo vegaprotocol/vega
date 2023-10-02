@@ -119,7 +119,7 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	consensusValidatorsRankingScores := []*types.PartyContributionScore{}
+	consensusAndErsatzValidatorsRankingScores := []*types.PartyContributionScore{}
 
 	// first we record the current status of validators before the promotion/demotion so we can capture in an event.
 	currentState := make(map[string]StatusAddress, len(t.validators))
@@ -181,8 +181,8 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 				Status:           statusToProtoStatus(status),
 				VotingPower:      uint32(vp),
 			}
-			if vd.rankingScore.Status == proto.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_TENDERMINT {
-				consensusValidatorsRankingScores = append(consensusValidatorsRankingScores, &types.PartyContributionScore{Party: vd.data.VegaPubKey, Score: rankingScore[nodeID]})
+			if vd.rankingScore.Status == proto.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_TENDERMINT || vd.rankingScore.Status == proto.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_ERSATZ {
+				consensusAndErsatzValidatorsRankingScores = append(consensusAndErsatzValidatorsRankingScores, &types.PartyContributionScore{Party: vd.data.VegaPubKey, Score: rankingScore[nodeID]})
 			}
 		}
 
@@ -224,7 +224,7 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 			delete(t.validators, k)
 		}
 	}
-	return consensusValidatorsRankingScores
+	return consensusAndErsatzValidatorsRankingScores
 }
 
 func protoStatusToString(status proto.ValidatorNodeStatus) string {
