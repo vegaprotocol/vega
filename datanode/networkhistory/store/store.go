@@ -107,7 +107,7 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, n
 	storePath := filepath.Join(networkHistoryHome, "store")
 
 	p := &Store{
-		log:        log,
+		log:        log.Named("store"),
 		cfg:        cfg,
 		indexPath:  filepath.Join(storePath, "index"),
 		stagingDir: filepath.Join(storePath, "staging"),
@@ -143,7 +143,7 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, n
 		PrivKey: cfg.PrivKey,
 	}
 
-	log.Infof("starting network history store with ipfs Peer Id:%s", p.identity.PeerID)
+	p.log.Infof("starting network history store with ipfs Peer Id:%s", p.identity.PeerID)
 
 	if plugins == nil {
 		plugins, err = loadPlugins(p.ipfsPath)
@@ -152,11 +152,11 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, n
 		}
 	}
 
-	log.Debugf("ipfs swarm port:%d", cfg.SwarmPort)
+	p.log.Debugf("ipfs swarm port:%d", cfg.SwarmPort)
 	ipfsCfg, err := createIpfsNodeConfiguration(p.log, p.identity, cfg.BootstrapPeers,
 		cfg.SwarmPort)
 
-	log.Debugf("ipfs bootstrap peers:%v", ipfsCfg.Bootstrap)
+	p.log.Debugf("ipfs bootstrap peers:%v", ipfsCfg.Bootstrap)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ipfs node configuration:%w", err)
@@ -676,6 +676,7 @@ func (p *Store) FetchHistorySegment(ctx context.Context, historySegmentID string
 }
 
 func (p *Store) StagedSegment(ctx context.Context, s segment.Full) (segment.Staged, error) {
+	p.log.Info("staging full-segment", logging.String("segment", s.ZipFileName()))
 	ss := segment.Staged{
 		Full:      s,
 		Directory: p.stagingDir,

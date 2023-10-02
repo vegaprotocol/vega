@@ -205,7 +205,13 @@ func (cmd *loadCmd) Execute(args []string) error {
 }
 
 func createNetworkHistoryService(ctx context.Context, log *logging.Logger, vegaConfig config.Config, connPool *pgxpool.Pool, vegaPaths paths.Paths) (*networkhistory.Service, error) {
-	snapshotService, err := snapshot.NewSnapshotService(log, vegaConfig.NetworkHistory.Snapshot, connPool,
+	networkHistoryStore, err := store.New(ctx, log, vegaConfig.ChainID, vegaConfig.NetworkHistory.Store, vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome),
+		vegaConfig.MaxMemoryPercent)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create network history store: %w", err)
+	}
+
+	snapshotService, err := snapshot.NewSnapshotService(log, vegaConfig.NetworkHistory.Snapshot, connPool, networkHistoryStore,
 		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), func(version int64) error {
 			if err := sqlstore.MigrateUpToSchemaVersion(log, vegaConfig.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
 				return fmt.Errorf("failed to migrate to schema version %d: %w", version, err)
@@ -222,13 +228,7 @@ func createNetworkHistoryService(ctx context.Context, log *logging.Logger, vegaC
 		return nil, fmt.Errorf("failed to create snapshot service: %w", err)
 	}
 
-	networkHistoryStore, err := store.New(ctx, log, vegaConfig.ChainID, vegaConfig.NetworkHistory.Store, vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome),
-		vegaConfig.MaxMemoryPercent)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create network history store:%w", err)
-	}
-
-	networkHistoryService, err := networkhistory.NewWithStore(ctx, log, vegaConfig.ChainID, vegaConfig.NetworkHistory,
+	networkHistoryService, err := networkhistory.New(ctx, log, vegaConfig.ChainID, vegaConfig.NetworkHistory,
 		connPool, snapshotService, networkHistoryStore, vegaConfig.API.Port,
 		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo))
 	if err != nil {
@@ -264,4 +264,8 @@ func (l *loadLog) Infof(s string, args ...interface{}) {
 
 func (l *loadLog) Info(msg string, fields ...zap.Field) {
 	l.log.Info(msg, fields...)
+}
+
+func (l *loadLog) Error(msg string, fields ...zap.Field) {
+	l.log.Error(msg, fields...)
 }

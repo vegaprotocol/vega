@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"path"
 	"sort"
 	"time"
@@ -32,16 +33,10 @@ type LoadResult struct {
 type LoadLog interface {
 	Infof(s string, args ...interface{})
 	Info(msg string, fields ...zap.Field)
+	Error(msg string, fields ...zap.Field)
 }
 
-type loadableSegment interface {
-	GetToHeight() int64
-	GetDatabaseVersion() int64
-	ZipFileName() string
-	ZipFilePath() string
-}
-
-func (b *Service) RollbackToSegment(ctx context.Context, log LoadLog, rollbackToSegment loadableSegment) error {
+func (b *Service) RollbackToSegment(ctx context.Context, log LoadLog, rollbackToSegment segment.Full) error {
 	dbMeta, err := NewDatabaseMetaData(ctx, b.connPool)
 	if err != nil {
 		return fmt.Errorf("failed to get database meta data: %w", err)
@@ -85,7 +80,7 @@ func (b *Service) RollbackToSegment(ctx context.Context, log LoadLog, rollbackTo
 		}
 	}
 
-	segments := []loadableSegment{rollbackToSegment}
+	segments := []segment.Full{rollbackToSegment}
 	rowsCopied, err := b.loadSegmentsWithTransaction(ctx, log, tx.Conn(), segments, true, true, dbMeta, map[string]time.Time{})
 	if err != nil {
 		return fmt.Errorf("failed to load current state: %w", err)
@@ -107,7 +102,13 @@ func (b *Service) RollbackToSegment(ctx context.Context, log LoadLog, rollbackTo
 	return nil
 }
 
-func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, ch segment.ContiguousHistory[segment.Staged], connConfig sqlstore.ConnectionConfig, optimiseForAppend, verbose bool,
+func (b *Service) LoadSnapshotData(
+	ctx context.Context,
+	log LoadLog,
+	ch segment.ContiguousHistory[segment.Full],
+	connConfig sqlstore.ConnectionConfig,
+	optimiseForAppend,
+	verbose bool,
 ) (LoadResult, error) {
 	if len(ch.Segments) == 0 {
 		return LoadResult{}, fmt.Errorf("no segments to load")
@@ -152,7 +153,7 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, ch segment.
 		return LoadResult{}, fmt.Errorf("failed to get last timestamp for history tables: %w", err)
 	}
 
-	dbVersionToSegments := map[int64][]loadableSegment{}
+	dbVersionToSegments := map[int64][]segment.Full{}
 
 	for _, segment := range ch.Segments {
 		dbVersion := segment.GetDatabaseVersion()
@@ -220,7 +221,7 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, ch segment.
 	}, nil
 }
 
-func (b *Service) loadSegmentsWithTransaction(ctx context.Context, log LoadLog, conn *pgx.Conn, segments []loadableSegment,
+func (b *Service) loadSegmentsWithTransaction(ctx context.Context, log LoadLog, conn *pgx.Conn, segments []segment.Full,
 	optimiseForAppend, currentStateOnly bool, dbMetaData DatabaseMetadata,
 	historyTableLastTimestampMap map[string]time.Time,
 ) (int64, error) {
@@ -281,7 +282,7 @@ func (b *Service) loadSegmentsWithTransaction(ctx context.Context, log LoadLog, 
 	return historyRowsCopied + currentStateRowsCopied, nil
 }
 
-func (b *Service) loadCurrentState(ctx context.Context, log LoadLog, conn *pgx.Conn, segment loadableSegment,
+func (b *Service) loadCurrentState(ctx context.Context, log LoadLog, conn *pgx.Conn, segment segment.Full,
 	dbMetaData DatabaseMetadata, historyTableLastTimestampMap map[string]time.Time,
 ) (int64, error) {
 	rowsCopied, err := b.loadSegment(ctx, conn, log, segment, "currentstate/", dbMetaData, historyTableLastTimestampMap)
@@ -292,7 +293,7 @@ func (b *Service) loadCurrentState(ctx context.Context, log LoadLog, conn *pgx.C
 	return rowsCopied, nil
 }
 
-func (b *Service) loadHistorySegments(ctx context.Context, log LoadLog, conn *pgx.Conn, segments []loadableSegment,
+func (b *Service) loadHistorySegments(ctx context.Context, log LoadLog, conn *pgx.Conn, segments []segment.Full,
 	dbMetaData DatabaseMetadata, historyTableLastTimestampMap map[string]time.Time,
 ) (int64, error) {
 	var totalRowsCopied int64
@@ -330,22 +331,40 @@ func validateSpanOfHistoryToLoad(existingDatanodeSpan sqlstore.DatanodeBlockSpan
 	return nil
 }
 
-func (b *Service) loadSegment(ctx context.Context, vegaDbConn *pgx.Conn, loadLog LoadLog, segment loadableSegment, zipDir string,
+func (b *Service) loadSegment(ctx context.Context, conn *pgx.Conn, log LoadLog, segment segment.Full, zipDir string,
 	dbMetaData DatabaseMetadata, historyTableLastTimestamps map[string]time.Time,
 ) (int64, error) {
-	reader, err := zip.OpenReader(segment.ZipFilePath())
+	// first we fetch and save the segment
+	staged, err := b.historyStore.StagedSegment(ctx, segment)
+	if err != nil {
+		return 0, err
+	}
+
+	// then we dip our fingers into the zip-file
+	reader, err := zip.OpenReader(staged.ZipFilePath())
 	if err != nil {
 		return 0, fmt.Errorf("failed to open zip reader: %w", err)
 	}
+	defer func() {
+		if rerr := reader.Close(); rerr != nil {
+			b.log.Error("unable to close zip reader", logging.Error(rerr))
+		}
+	}()
 
-	loadLog.Infof("copying %s into database", segment.ZipFileName())
+	// push it into the database
+	log.Info("copying into database", logging.String("segment", staged.ZipFileName()))
 	startTime := time.Now()
-	rowsCopied, err := copyDataIntoDatabase(ctx, vegaDbConn, reader, zipDir, dbMetaData, historyTableLastTimestamps)
+	rowsCopied, err := copyDataIntoDatabase(ctx, conn, reader, zipDir, dbMetaData, historyTableLastTimestamps)
 	if err != nil {
-		return 0, fmt.Errorf("failed to copy data into the database %s : %w", segment.ZipFileName(), err)
+		return 0, fmt.Errorf("failed to copy data into the database %s : %w", staged.ZipFileName(), err)
 	}
-	elapsed := time.Since(startTime)
-	loadLog.Infof("copied %d rows from %s into database in %s", rowsCopied, segment.ZipFileName(), elapsed.String())
+	log.Info("copy complete", logging.Int64("rows", rowsCopied), logging.String("segment", staged.ZipFileName()), logging.Duration("took", time.Since(startTime)))
+
+	// and finally remove the zipfile we staged earlier
+	log.Info("removing staged segment", logging.String("path", staged.ZipFilePath()))
+	if err := os.Remove(staged.ZipFilePath()); err != nil {
+		log.Error("unable to remove staged segment", logging.Error(err))
+	}
 
 	return rowsCopied, nil
 }
@@ -475,6 +494,10 @@ func copyDataIntoDatabase(ctx context.Context, conn *pgx.Conn, zipReader *zip.Re
 		}
 
 		rowsCopied, err := copyTableDataIntoDatabase(ctx, dbMetaData.TableNameToMetaData[tableName], tableReader, conn, historyTableLastTimestamps)
+
+		// close the file
+		_ = tableReader.Close()
+
 		if err != nil {
 			return 0, fmt.Errorf("failed to copy data into table %s: %w", tableName, err)
 		}

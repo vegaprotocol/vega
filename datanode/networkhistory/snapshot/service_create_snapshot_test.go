@@ -12,7 +12,7 @@ import (
 
 func TestGetHistorySnapshots(t *testing.T) {
 	snapshotsDir := t.TempDir()
-	service, err := snapshot.NewSnapshotService(logging.NewTestLogger(), snapshot.NewDefaultConfig(), nil, snapshotsDir, nil, nil)
+	service, err := snapshot.NewSnapshotService(logging.NewTestLogger(), snapshot.NewDefaultConfig(), nil, nil, snapshotsDir, nil, nil)
 	if err != nil {
 		panic(err)
 	}
