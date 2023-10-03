@@ -120,6 +120,11 @@ type Engine struct {
 	// what we want to achieve is that when the balanceSnapshotFrequency net param is restored we don't use it to reschedule the nextBalancesSnapshot
 	// but rather just set the frequency. On post restore we release the active restore flag.
 	activeRestore bool
+
+	// set to false when started
+	// we'll use it only once after an upgrade
+	// to make sure asset are being created
+	ensuredAssetAccounts bool
 }
 
 // New instantiates a new collateral engine.
@@ -142,6 +147,23 @@ func New(log *logging.Logger, conf Config, ts TimeService, broker Broker) *Engin
 		partiesAccsBalanceCache: map[string]*num.Uint{},
 		nextBalancesSnapshot:    time.Time{},
 		activeRestore:           false,
+	}
+}
+
+func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
+	// FIXME(jeremy): to be removed after the migration from
+	// 72.x to 73, this will ensure all per assets accounts are being
+	// created after the restart
+	if !e.ensuredAssetAccounts {
+		// we don't want to do that again
+		e.ensuredAssetAccounts = true
+
+		assets := maps.Keys(e.enabledAssets)
+		sort.Strings(assets)
+		for _, assetId := range assets {
+			asset := e.enabledAssets[assetId]
+			e.ensureAllAssetAccounts(ctx, asset)
+		}
 	}
 }
 
@@ -342,6 +364,20 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	e.enabledAssets[asset.ID] = asset
 	// update state
 	e.state.enableAsset(asset)
+
+	e.ensureAllAssetAccounts(ctx, asset)
+
+	e.log.Info("new asset added successfully",
+		logging.AssetID(asset.ID),
+	)
+	return nil
+}
+
+// ensureAllAssetAccounts will try to get all asset specific accounts
+// and if they do not exists will create them and send an event
+// this is useful when doing a migration so we can create all asset
+// account for already enabled assets.
+func (e *Engine) ensureAllAssetAccounts(ctx context.Context, asset types.Asset) {
 	// then creat a new infrastructure fee account for the asset
 	// these are fee related account only
 	infraFeeID := e.accountID(noMarket, systemOwner, asset.ID, types.AccountTypeFeesInfrastructure)
@@ -463,11 +499,6 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 		e.addAccountToHashableSlice(pendingFeeReferrerRewardAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *pendingFeeReferrerRewardAcc))
 	}
-
-	e.log.Info("new asset added successfully",
-		logging.AssetID(asset.ID),
-	)
-	return nil
 }
 
 func (e *Engine) PropagateAssetUpdate(ctx context.Context, asset types.Asset) error {

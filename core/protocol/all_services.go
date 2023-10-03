@@ -432,6 +432,7 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 	svcs.timeService.NotifyOnTick(
 		svcs.epochService.OnTick,
 		svcs.builtinOracle.OnTick,
+		svcs.collateral.OnTick,
 
 		svcs.netParams.OnTick,
 		svcs.erc20MultiSigTopology.OnTick,
