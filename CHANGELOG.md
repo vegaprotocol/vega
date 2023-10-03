@@ -124,6 +124,7 @@
 - [9589](https://github.com/vegaprotocol/vega/issues/9589) - Add event for funding payments.
 - [9460](https://github.com/vegaprotocol/vega/issues/9460) - Add APIs for volume discount program.
 - [9628](https://github.com/vegaprotocol/vega/issues/9628) - Upgrade `CometBFT`.
+- [9577](https://github.com/vegaprotocol/vega/issues/9577) - Feature test coverage for distribution strategy
 
 ### 🐛 Fixes
 
