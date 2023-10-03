@@ -111,5 +111,9 @@ func PrintResetServiceConfigResponse(w io.Writer, cfg *service.Config) {
 	str.Text("Service URL: ").WarningText(cfg.Server.String()).NextSection()
 	str.Text("Log level: ").WarningText(cfg.LogLevel.String()).NextSection()
 	str.Text("API V1").NextLine()
-	str.Pad().Text("Maximum token duration: ").WarningText(cfg.APIV1.MaximumTokenDuration.String()).NextLine()
+	str.Pad().Text("Maximum token duration: ").WarningText(cfg.APIV1.MaximumTokenDuration.String()).NextSection()
+	str.Text("API V2").NextLine()
+	str.Pad().Text("Nodes:").NextLine()
+	str.Pad().Pad().Text("Maximum retry per request: ").WarningText(fmt.Sprintf("%d", cfg.APIV2.Nodes.MaximumRetryPerRequest)).NextLine()
+	str.Pad().Pad().Text("Maximum request duration: ").WarningText(cfg.APIV2.Nodes.MaximumRequestDuration.String()).NextLine()
 }
