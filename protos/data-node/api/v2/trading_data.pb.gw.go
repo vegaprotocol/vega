@@ -5797,7 +5797,7 @@ func RegisterTradingDataServiceHandlerServer(ctx context.Context, mux *runtime.S
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/GetReferralSetStats", runtime.WithHTTPPathPattern("/api/v2/referral-sets/stats/{referral_set_id}"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/GetReferralSetStats", runtime.WithHTTPPathPattern("/api/v2/referral-sets/{referral_set_id}/stats"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -5935,7 +5935,7 @@ func RegisterTradingDataServiceHandlerServer(ctx context.Context, mux *runtime.S
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/GetVolumeDiscountStats", runtime.WithHTTPPathPattern("/api/v2/volume-discount-stats"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/GetVolumeDiscountStats", runtime.WithHTTPPathPattern("/api/v2/volume-discount-programs/stats"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -7844,7 +7844,7 @@ func RegisterTradingDataServiceHandlerClient(ctx context.Context, mux *runtime.S
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/GetReferralSetStats", runtime.WithHTTPPathPattern("/api/v2/referral-sets/stats/{referral_set_id}"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/GetReferralSetStats", runtime.WithHTTPPathPattern("/api/v2/referral-sets/{referral_set_id}/stats"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -7964,7 +7964,7 @@ func RegisterTradingDataServiceHandlerClient(ctx context.Context, mux *runtime.S
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/GetVolumeDiscountStats", runtime.WithHTTPPathPattern("/api/v2/volume-discount-stats"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/GetVolumeDiscountStats", runtime.WithHTTPPathPattern("/api/v2/volume-discount-programs/stats"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -8188,7 +8188,7 @@ var (
 
 	pattern_TradingDataService_ListReferralSetReferees_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v2", "referral-sets", "referees"}, ""))
 
-	pattern_TradingDataService_GetReferralSetStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v2", "referral-sets", "stats", "referral_set_id"}, ""))
+	pattern_TradingDataService_GetReferralSetStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"api", "v2", "referral-sets", "referral_set_id", "stats"}, ""))
 
 	pattern_TradingDataService_ListTeams_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v2", "teams"}, ""))
 
@@ -8200,7 +8200,7 @@ var (
 
 	pattern_TradingDataService_GetCurrentVolumeDiscountProgram_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v2", "volume-discount-programs", "current"}, ""))
 
-	pattern_TradingDataService_GetVolumeDiscountStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v2", "volume-discount-stats"}, ""))
+	pattern_TradingDataService_GetVolumeDiscountStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v2", "volume-discount-programs", "stats"}, ""))
 
 	pattern_TradingDataService_ExportNetworkHistory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v2", "networkhistory", "export"}, ""))
 )

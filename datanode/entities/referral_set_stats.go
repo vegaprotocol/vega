@@ -1,10 +1,9 @@
 package entities
 
 import (
-	"fmt"
+	"encoding/json"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
@@ -13,25 +12,25 @@ type (
 	ReferralSetStats struct {
 		SetID                                 ReferralSetID
 		AtEpoch                               uint64
-		ReferralSetRunningNotionalTakerVolume num.Decimal
+		ReferralSetRunningNotionalTakerVolume string
 		RefereesStats                         []*eventspb.RefereeStats
 		VegaTime                              time.Time
 	}
 
-	ReferralSetStatsCursor struct {
-		VegaTime time.Time
-		SetID    ReferralSetID
-		AtEpoch  uint64
-	}
-
-	ReferralSetRefereeStats struct {
-		SetID                                 ReferralSetID
+	FlattenReferralSetStats struct {
 		AtEpoch                               uint64
-		ReferralSetRunningNotionalTakerVolume num.Decimal
+		ReferralSetRunningNotionalTakerVolume string
+		VegaTime                              time.Time
 		PartyID                               string
 		DiscountFactor                        string
 		RewardFactor                          string
-		VegaTime                              time.Time
+		EpochNotionalTakerVolume              string
+	}
+
+	ReferralSetStatsCursor struct {
+		VegaTime time.Time
+		AtEpoch  uint64
+		PartyID  string
 	}
 
 	ReferralFeeStats struct {
@@ -46,48 +45,53 @@ type (
 	}
 )
 
-func ReferralSetStatsFromProto(proto *eventspb.ReferralSetStatsUpdated, vegaTime time.Time) (*ReferralSetStats, error) {
-	takerVolume, err := num.DecimalFromString(proto.GetReferralSetRunningNotionalTakerVolume())
-	if err != nil {
-		return nil, fmt.Errorf("Invalid Running Notional Taker Volume: %v", err)
+func (s FlattenReferralSetStats) Cursor() *Cursor {
+	c := ReferralSetStatsCursor{
+		VegaTime: s.VegaTime,
+		AtEpoch:  s.AtEpoch,
+		PartyID:  s.PartyID,
 	}
+	return NewCursor(c.ToString())
+}
 
-	return &ReferralSetStats{
-		SetID:                                 ReferralSetID(proto.SetId),
-		AtEpoch:                               proto.AtEpoch,
-		ReferralSetRunningNotionalTakerVolume: takerVolume,
-		RefereesStats:                         proto.RefereesStats,
-		VegaTime:                              vegaTime,
+func (s FlattenReferralSetStats) ToProtoEdge(_ ...any) (*v2.ReferralSetStatsEdge, error) {
+	return &v2.ReferralSetStatsEdge{
+		Node:   s.ToProto(),
+		Cursor: s.Cursor().Encode(),
 	}, nil
 }
 
-func (rss *ReferralSetStats) ToProto() *v2.ReferralSetStats {
-	if rss == nil {
-		return nil
-	}
-
+func (s FlattenReferralSetStats) ToProto() *v2.ReferralSetStats {
 	return &v2.ReferralSetStats{
-		SetId:                                 rss.SetID.String(),
-		AtEpoch:                               rss.AtEpoch,
-		ReferralSetRunningNotionalTakerVolume: rss.ReferralSetRunningNotionalTakerVolume.String(),
-		RefereesStats:                         rss.RefereesStats,
+		AtEpoch:                               s.AtEpoch,
+		ReferralSetRunningNotionalTakerVolume: s.ReferralSetRunningNotionalTakerVolume,
+		PartyId:                               s.PartyID,
+		DiscountFactor:                        s.DiscountFactor,
+		RewardFactor:                          s.RewardFactor,
+		EpochNotionalTakerVolume:              s.EpochNotionalTakerVolume,
 	}
 }
 
-func (ref *ReferralSetRefereeStats) ToProto() *v2.ReferralSetStats {
-	stats := eventspb.RefereeStats{
-		PartyId:                  ref.PartyID,
-		DiscountFactor:           ref.DiscountFactor,
-		RewardFactor:             ref.RewardFactor,
-		EpochNotionalTakerVolume: ref.ReferralSetRunningNotionalTakerVolume.String(),
-	}
+func (c ReferralSetStatsCursor) ToString() string {
+	bs, _ := json.Marshal(c)
+	return string(bs)
+}
 
-	return &v2.ReferralSetStats{
-		SetId:                                 ref.SetID.String(),
-		AtEpoch:                               ref.AtEpoch,
-		ReferralSetRunningNotionalTakerVolume: ref.ReferralSetRunningNotionalTakerVolume.String(),
-		RefereesStats:                         []*eventspb.RefereeStats{&stats},
+func (c *ReferralSetStatsCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
 	}
+	return json.Unmarshal([]byte(cursorString), c)
+}
+
+func ReferralSetStatsFromProto(proto *eventspb.ReferralSetStatsUpdated, vegaTime time.Time) (*ReferralSetStats, error) {
+	return &ReferralSetStats{
+		SetID:                                 ReferralSetID(proto.SetId),
+		AtEpoch:                               proto.AtEpoch,
+		ReferralSetRunningNotionalTakerVolume: proto.ReferralSetRunningNotionalTakerVolume,
+		RefereesStats:                         proto.RefereesStats,
+		VegaTime:                              vegaTime,
+	}, nil
 }
 
 func ReferralFeeStatsFromProto(proto *eventspb.FeeStats, vegaTime time.Time) *ReferralFeeStats {
