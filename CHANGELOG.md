@@ -129,6 +129,7 @@
 - [9628](https://github.com/vegaprotocol/vega/issues/9628) - Upgrade `CometBFT`.
 - [9577](https://github.com/vegaprotocol/vega/issues/9577) - Feature test coverage for distribution strategy
 - [9542](https://github.com/vegaprotocol/vega/issues/9542) - Ensure all per asset accounts exist after migration
+- [8475](https://github.com/vegaprotocol/vega/issues/8475) - Emit margin levels event when margin balance is cleared.
 
 ### 🐛 Fixes
 

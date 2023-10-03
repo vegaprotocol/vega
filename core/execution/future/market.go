@@ -1535,6 +1535,19 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 // fetching said position again my party.
 func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.MarketPosition) {
 	evts := make([]events.Event, 0, len(positions))
+	mEvts := make([]events.Event, 0, len(positions))
+	mktID := m.GetID()
+	// base margin event. We don't care about the uint values being pointers here
+	// this is only used to create an event, which converts this to proto.
+	marginEvt := types.MarginLevels{
+		MaintenanceMargin:      num.UintZero(),
+		SearchLevel:            num.UintZero(),
+		InitialMargin:          num.UintZero(),
+		CollateralReleaseLevel: num.UintZero(),
+		MarketID:               mktID,
+		Asset:                  m.settlementAsset,
+		Timestamp:              m.timeService.GetTimeNow().UnixNano(),
+	}
 	for _, pos := range positions {
 		party := pos.Party()
 		// if the party still have a position in the settlement engine,
@@ -1549,12 +1562,16 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 			continue
 		}
 
+		// If no error is returned, the party either had a zero balance, or no margin balance left.
+		// Either way their margin levels are zero, so we need to emit an event saying as much.
 		transfers, err := m.collateral.ClearPartyMarginAccount(
-			ctx, party, m.GetID(), m.settlementAsset)
+			ctx, party, mktID, m.settlementAsset)
 		if err != nil {
 			m.log.Error("unable to clear party margin account", logging.Error(err))
 			continue
 		}
+		marginEvt.Party = party
+		mEvts = append(mEvts, events.NewMarginLevelsEvent(ctx, marginEvt))
 
 		if transfers != nil {
 			evts = append(evts, events.NewLedgerMovements(
@@ -1568,7 +1585,12 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 			delete(m.parties, party)
 		}
 	}
-	m.broker.SendBatch(evts)
+	if len(evts) > 0 {
+		m.broker.SendBatch(evts)
+	}
+	if len(mEvts) > 0 {
+		m.broker.SendBatch(mEvts)
+	}
 }
 
 func rejectStopOrders(rejectionReason types.StopOrderRejectionReason, orders ...*types.StopOrder) {
