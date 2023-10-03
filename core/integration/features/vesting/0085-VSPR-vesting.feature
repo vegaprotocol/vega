@@ -175,7 +175,7 @@ Feature: Setting and applying activity streak benefits
     Then "trader1" should have vested account balance of "4439" for asset "USD.1.10"
 
 
-  Scenario Outline: Party receives rewards but does not withdraw them in order to receive a bonus multiplier (0085-RVST-012)(0085-RVST-013)
+  Scenario Outline: Party receives rewards but does not withdraw them in order to receive a bonus multiplier (0085-RVST-012)(0085-RVST-013)(0085-RVST-014)
     # Expectation: if the party meets the minimum quantum balance requirement, they should receive a multiplier and a greater share of future rewards
 
     # Test Cases:
