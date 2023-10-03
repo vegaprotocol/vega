@@ -108,7 +108,7 @@ Feature: Setting and applying activity streak benefits
       | 1.0       | 1                | "10000"       |
 
 
-  Scenario: Parties rewards from different markets (using the same settlement asset) are transferred into the same vesting account (0085-VSPR-004)(0085-VSPR-005)
+  Scenario: Parties rewards from different markets (using the same settlement asset) are transferred into the same vesting account (0085-RVST-004)(0085-RVST-005)
     # Expectation: rewards should be distributed into the same vesting account and t to the same vested account
 
     Given the parties submit the following recurring transfers:
@@ -131,7 +131,7 @@ Feature: Setting and applying activity streak benefits
     And "trader1" should have vested account balance of "2000" for asset "USD.1.10"
 
 
-  Scenario: Party receive rewards from pool funded with a transfer with a non-zero lock period (0085-VSPR-011)
+  Scenario: Party receive rewards from pool funded with a transfer with a non-zero lock period (0085-RVST-011)
     # Expectation: rewards should only start vesting once the lock-period has expired
 
     Given the parties submit the following recurring transfers:
@@ -175,7 +175,7 @@ Feature: Setting and applying activity streak benefits
     Then "trader1" should have vested account balance of "4439" for asset "USD.1.10"
 
 
-  Scenario Outline: Party receives rewards but does not withdraw them in order to receive a bonus multiplier (0085-VSPR-012)(0085-VSPR-013)
+  Scenario Outline: Party receives rewards but does not withdraw them in order to receive a bonus multiplier (0085-RVST-012)(0085-RVST-013)(0085-RVST-014)
     # Expectation: if the party meets the minimum quantum balance requirement, they should receive a multiplier and a greater share of future rewards
 
     # Test Cases:
@@ -217,7 +217,7 @@ Feature: Setting and applying activity streak benefits
       | "5000000"               | "3"               | "5000"          | "5000"          |
 
 
-  Scenario: Parties attempt to transfer rewards to or from vesting and vested accounts (0085-VSPR-006)(0085-VSPR-007)(0085-VSPR-008)
+  Scenario: Parties attempt to transfer rewards to or from vesting and vested accounts (0085-RVST-006)(0085-RVST-007)(0085-RVST-008)
     # Expectation: only transfers from the vested account should be valid, all other transfers should be rejected
 
     Given the parties submit the following recurring transfers:
