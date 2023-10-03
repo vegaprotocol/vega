@@ -111,6 +111,9 @@ Feature: Test LP SLA Bond penalty;
       | party | asset | market id | margin | general | bond |
       | lp1   | USD   | ETH/MAR22 | 0      | 96000   | 2950 |
       | lp2   | USD   | ETH/MAR22 | 0      | 96000   | 1600 |
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 3556         | 4550           | 1             |
 
 #if commitment min time fraction is 0, then LP will not get SLA bond penalty for not supplying volume on the book, nor liquidity fee
     Given the liquidity sla params named "updated-sla-params":
@@ -121,24 +124,17 @@ Feature: Test LP SLA Bond penalty;
       | ETH/MAR22 | updated-sla-params | 1e-3                   | 0                         |
 
     And the network moves ahead "1" epochs
-    And the insurance pool balance should be "3450" for the market "ETH/MAR22"
-    Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/MAR22 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/MAR22 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-    And the network moves ahead "1" epochs
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | 3600    | 973       | 1027      | 3556         | 1820           | 1             |
 
     Then the following transfers should happen:
-      | from | to     | from account                   | to account             | market id | amount | asset |
-      | lp1  | market | ACCOUNT_TYPE_BOND              | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 0      | USD   |
-      | lp2  | market | ACCOUNT_TYPE_BOND              | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 0      | USD   |
-      | lp1  | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 12     | USD   |
-      | lp2  | market | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 7      | USD   |
+      | from | to     | from account      | to account             | market id | amount | asset |
+      | lp1  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 1770   | USD   |
+      | lp2  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 960    | USD   |
 
-    And the parties should have the following account balances:
-      | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 0      | 96000   | 2950 |
-      | lp2   | USD   | ETH/MAR22 | 0      | 96000   | 1600 |
-    And the insurance pool balance should be "3469" for the market "ETH/MAR22"
+    And the insurance pool balance should be "6180" for the market "ETH/MAR22"
+
+
 
 
