@@ -4,7 +4,7 @@ Feature: stop orders in all market types
   # they work the same in both futures and perpetual markets
  
   # All order types should be able to be placed and act in the same way on a perpetual
-  # market as on an expiring future market. Specifically this includes: All stop order types
+  # market as on an expiring future market. Specifically this includes: All stop order types (0014-ORDT-123)
 
   Background:
     Given the markets:
