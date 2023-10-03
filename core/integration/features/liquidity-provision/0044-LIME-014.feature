@@ -107,3 +107,34 @@ Feature: Test LP SLA Bond penalty;
       | lp1  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 1050   | USD   |
       | lp2  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 2400   | USD   |
 
+    And the parties should have the following account balances:
+      | party | asset | market id | margin | general | bond |
+      | lp1   | USD   | ETH/MAR22 | 0      | 96000   | 2950 |
+      | lp2   | USD   | ETH/MAR22 | 0      | 96000   | 1600 |
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 3556         | 4550           | 1             |
+
+#if commitment min time fraction is 0, then LP will not get SLA bond penalty for not supplying volume on the book, nor liquidity fee
+    Given the liquidity sla params named "updated-sla-params":
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1           | 0                            | 2                             | 1                      |
+    And the markets are updated:
+      | id        | sla params         | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR22 | updated-sla-params | 1e-3                   | 0                         |
+
+    And the network moves ahead "1" epochs
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | 3600    | 973       | 1027      | 3556         | 1820           | 1             |
+
+    Then the following transfers should happen:
+      | from | to     | from account      | to account             | market id | amount | asset |
+      | lp1  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 1770   | USD   |
+      | lp2  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 960    | USD   |
+
+    And the insurance pool balance should be "6180" for the market "ETH/MAR22"
+
+
+
+
