@@ -109,7 +109,7 @@ func TestVolumeDiscountStats_GetVolumeDiscountStats(t *testing.T) {
 	}
 
 	t.Run("Should return the stats for the most recent epoch if no epoch is provided", func(t *testing.T) {
-		lastStats := flattenStatsForEpoch(flattenStats, lastEpoch)
+		lastStats := flattenVolumeDiscountStatsForEpoch(flattenStats, lastEpoch)
 		got, _, err := vds.Stats(ctx, nil, nil, entities.CursorPagination{})
 		require.NoError(t, err)
 		require.NotNil(t, got)
@@ -118,7 +118,7 @@ func TestVolumeDiscountStats_GetVolumeDiscountStats(t *testing.T) {
 
 	t.Run("Should return the stats for the specified epoch if an epoch is provided", func(t *testing.T) {
 		epoch := flattenStats[rand.Intn(len(flattenStats))].AtEpoch
-		statsAtEpoch := flattenStatsForEpoch(flattenStats, epoch)
+		statsAtEpoch := flattenVolumeDiscountStatsForEpoch(flattenStats, epoch)
 		got, _, err := vds.Stats(ctx, &epoch, nil, entities.CursorPagination{})
 		require.NoError(t, err)
 		require.NotNil(t, got)
@@ -127,7 +127,7 @@ func TestVolumeDiscountStats_GetVolumeDiscountStats(t *testing.T) {
 
 	t.Run("Should return the stats for the specified party for epoch", func(t *testing.T) {
 		partyID := flattenStats[rand.Intn(len(flattenStats))].PartyID
-		statsAtEpoch := flattenStatsForParty(flattenStats, partyID)
+		statsAtEpoch := flattenVolumeDiscountStatsForParty(flattenStats, partyID)
 		got, _, err := vds.Stats(ctx, nil, &partyID, entities.CursorPagination{})
 		require.NoError(t, err)
 		require.NotNil(t, got)
@@ -138,7 +138,7 @@ func TestVolumeDiscountStats_GetVolumeDiscountStats(t *testing.T) {
 		randomStats := flattenStats[rand.Intn(len(flattenStats))]
 		partyID := randomStats.PartyID
 		atEpoch := randomStats.AtEpoch
-		statsAtEpoch := flattenStatsForParty(flattenStatsForEpoch(flattenStats, atEpoch), partyID)
+		statsAtEpoch := flattenVolumeDiscountStatsForParty(flattenVolumeDiscountStatsForEpoch(flattenStats, atEpoch), partyID)
 		got, _, err := vds.Stats(ctx, &atEpoch, &partyID, entities.CursorPagination{})
 		require.NoError(t, err)
 		require.NotNil(t, got)
@@ -146,7 +146,7 @@ func TestVolumeDiscountStats_GetVolumeDiscountStats(t *testing.T) {
 	})
 }
 
-func flattenStatsForEpoch(flattenStats []entities.FlattenVolumeDiscountStats, epoch uint64) []entities.FlattenVolumeDiscountStats {
+func flattenVolumeDiscountStatsForEpoch(flattenStats []entities.FlattenVolumeDiscountStats, epoch uint64) []entities.FlattenVolumeDiscountStats {
 	lastStats := []entities.FlattenVolumeDiscountStats{}
 
 	for _, stat := range flattenStats {
@@ -166,7 +166,7 @@ func flattenStatsForEpoch(flattenStats []entities.FlattenVolumeDiscountStats, ep
 	return lastStats
 }
 
-func flattenStatsForParty(flattenStats []entities.FlattenVolumeDiscountStats, party string) []entities.FlattenVolumeDiscountStats {
+func flattenVolumeDiscountStatsForParty(flattenStats []entities.FlattenVolumeDiscountStats, party string) []entities.FlattenVolumeDiscountStats {
 	lastStats := []entities.FlattenVolumeDiscountStats{}
 
 	for _, stat := range flattenStats {

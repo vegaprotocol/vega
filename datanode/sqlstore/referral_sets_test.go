@@ -2,19 +2,24 @@ package sqlstore_test
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"sort"
+	"strconv"
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/num"
+	"golang.org/x/exp/slices"
+
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 )
@@ -437,8 +442,7 @@ func TestReferralSets_AddReferralSetStats(t *testing.T) {
 	setID := set.ID.String()
 	refs := referees[setID]
 
-	takerVolume, err := num.DecimalFromString("100000")
-	require.NoError(t, err)
+	takerVolume := "100000"
 
 	t.Run("Should add stats for an epoch if it does not exist", func(t *testing.T) {
 		epoch := uint64(1)
@@ -497,168 +501,145 @@ func getRefereeStats(t *testing.T, refs []entities.ReferralSetReferee, discountF
 	return stats
 }
 
-func setupReferralStats(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, ps *sqlstore.Parties, rs *sqlstore.ReferralSets) (
-	[]entities.ReferralSet, map[string][]entities.ReferralSetStats,
-) {
-	t.Helper()
-	sets, referees := setupReferralSetsAndReferees(t, ctx, bs, ps, rs)
-
-	testData := []struct {
-		DiscountFactor string
-		RewardFactor   string
-	}{
-		{
-			DiscountFactor: "0.01",
-			RewardFactor:   "0.01",
-		},
-		{
-			DiscountFactor: "0.02",
-			RewardFactor:   "0.02",
-		},
-		{
-			DiscountFactor: "0.03",
-			RewardFactor:   "0.03",
-		},
-		{
-			DiscountFactor: "0.04",
-			RewardFactor:   "0.04",
-		},
-		{
-			DiscountFactor: "0.05",
-			RewardFactor:   "0.05",
-		},
-		{
-			DiscountFactor: "0.06",
-			RewardFactor:   "0.06",
-		},
-		{
-			DiscountFactor: "0.07",
-			RewardFactor:   "0.07",
-		},
-		{
-			DiscountFactor: "0.08",
-			RewardFactor:   "0.08",
-		},
-		{
-			DiscountFactor: "0.09",
-			RewardFactor:   "0.09",
-		},
-		{
-			DiscountFactor: "0.1",
-			RewardFactor:   "0.1",
-		},
-	}
-
-	inserted := make(map[string][]entities.ReferralSetStats)
-
-	takerVolume, err := num.DecimalFromString("1000000")
-	require.NoError(t, err)
-
-	blockTime := time.Now().Add(-time.Minute)
-
-	for i, td := range testData {
-		block := addTestBlockForTime(t, ctx, bs, blockTime)
-		for _, set := range sets {
-			setID := set.ID.String()
-			inserted[setID] = make([]entities.ReferralSetStats, 0)
-
-			stats := getRefereeStats(t, referees[set.ID.String()], td.DiscountFactor, td.DiscountFactor)
-			sort.Slice(stats, func(i, j int) bool {
-				return stats[i].PartyId < stats[j].PartyId
-			})
-
-			setStats := entities.ReferralSetStats{
-				SetID:                                 set.ID,
-				AtEpoch:                               uint64(i),
-				ReferralSetRunningNotionalTakerVolume: takerVolume,
-				RefereesStats:                         stats,
-				VegaTime:                              block.VegaTime,
-			}
-
-			err := rs.AddReferralSetStats(ctx, &setStats)
-			require.NoError(t, err)
-
-			inserted[setID] = append(inserted[setID], setStats)
-		}
-		blockTime = blockTime.Add(time.Second)
-	}
-
-	return sets, inserted
-}
-
 func TestReferralSets_GetReferralSetStats(t *testing.T) {
-	bs, ps, rs := setupReferralSetsTest(t)
 	ctx := tempTransaction(t)
 
-	sets, stats := setupReferralStats(t, ctx, bs, ps, rs)
+	bs := sqlstore.NewBlocks(connectionSource)
+	ps := sqlstore.NewParties(connectionSource)
+	rs := sqlstore.NewReferralSets(connectionSource)
 
-	// Pick a random set ID and get the stats that were inserted for it
-	src := rand.New(rand.NewSource(time.Now().UnixNano()))
-	r := rand.New(src)
-	set := sets[r.Intn(len(sets))]
-	setID := set.ID.String()
-	testStats := stats[setID]
+	parties := make([]entities.Party, 0, 5)
+	for i := 0; i < 5; i++ {
+		block := addTestBlockForTime(t, ctx, bs, time.Now().Add(time.Duration(i-10)*time.Minute))
+		parties = append(parties, addTestParty(t, ctx, ps, block))
+	}
 
-	// sort by AtEpoch in descending order
-	sort.Slice(testStats, func(i, j int) bool {
-		return testStats[i].AtEpoch > testStats[j].AtEpoch
-	})
+	flattenStats := make([]entities.FlattenReferralSetStats, 0, 5*len(parties))
+	lastEpoch := uint64(0)
 
-	t.Run("Should return the stats for the most current epoch if no epoch is provided", func(t *testing.T) {
-		// the stats we want is the first one in the sorted slice
-		want := testStats[0]
-		got, err := rs.GetReferralSetStats(ctx, set.ID, nil, nil)
+	setID := entities.ReferralSetID(vgcrypto.RandomHash())
+
+	for i := 0; i < 5; i++ {
+		block := addTestBlock(t, ctx, bs)
+		lastEpoch = uint64(i + 1)
+
+		set := entities.ReferralSetStats{
+			SetID:                                 setID,
+			AtEpoch:                               lastEpoch,
+			ReferralSetRunningNotionalTakerVolume: fmt.Sprintf("%d000000", i+1),
+			RefereesStats: setupPartyReferralSetStatsMod(t, parties, func(j int, party entities.Party) *eventspb.RefereeStats {
+				return &eventspb.RefereeStats{
+					PartyId:                  party.ID.String(),
+					DiscountFactor:           fmt.Sprintf("0.1%d%d", i+1, j+1),
+					RewardFactor:             fmt.Sprintf("0.2%d%d", i+1, j+1),
+					EpochNotionalTakerVolume: strconv.Itoa((i+1)*100 + (j+1)*10),
+				}
+			}),
+			VegaTime: block.VegaTime,
+		}
+
+		require.NoError(t, rs.AddReferralSetStats(ctx, &set))
+
+		for _, stat := range set.RefereesStats {
+			flattenStats = append(flattenStats, entities.FlattenReferralSetStats{
+				AtEpoch:                               lastEpoch,
+				ReferralSetRunningNotionalTakerVolume: set.ReferralSetRunningNotionalTakerVolume,
+				VegaTime:                              block.VegaTime,
+				PartyID:                               stat.PartyId,
+				DiscountFactor:                        stat.DiscountFactor,
+				RewardFactor:                          stat.RewardFactor,
+				EpochNotionalTakerVolume:              stat.EpochNotionalTakerVolume,
+			})
+		}
+	}
+
+	t.Run("Should return the stats for the most recent epoch if no epoch is provided", func(t *testing.T) {
+		lastStats := flattenReferralSetStatsForEpoch(flattenStats, lastEpoch)
+		got, _, err := rs.GetReferralSetStats(ctx, setID, nil, nil, entities.CursorPagination{})
 		require.NoError(t, err)
 		require.NotNil(t, got)
-		assert.Equal(t, want, *got)
+		assert.Equal(t, lastStats, got)
 	})
 
 	t.Run("Should return the stats for the specified epoch if an epoch is provided", func(t *testing.T) {
-		wantIndex := r.Intn(len(testStats))
-		want := testStats[wantIndex]
-		wantEpoch := want.AtEpoch
-
-		got, err := rs.GetReferralSetStats(ctx, set.ID, &wantEpoch, nil)
+		epoch := flattenStats[rand.Intn(len(flattenStats))].AtEpoch
+		statsAtEpoch := flattenReferralSetStatsForEpoch(flattenStats, epoch)
+		got, _, err := rs.GetReferralSetStats(ctx, setID, &epoch, nil, entities.CursorPagination{})
 		require.NoError(t, err)
 		require.NotNil(t, got)
-		assert.Equal(t, want, *got)
+		assert.Equal(t, statsAtEpoch, got)
 	})
 
-	t.Run("Should return the stats for the most current and referee if no epoch and a referee is provided", func(t *testing.T) {
-		// the stats we want is the first one in the sorted slice
-		wantStats := testStats[0]
-		refIndex := r.Intn(len(wantStats.RefereesStats))
-		refStats := wantStats.RefereesStats[refIndex]
-		referee := entities.PartyID(refStats.PartyId)
-		want := entities.ReferralSetStats{
-			SetID:                                 wantStats.SetID,
-			AtEpoch:                               wantStats.AtEpoch,
-			ReferralSetRunningNotionalTakerVolume: wantStats.ReferralSetRunningNotionalTakerVolume,
-			RefereesStats:                         []*eventspb.RefereeStats{refStats},
-			VegaTime:                              wantStats.VegaTime,
+	t.Run("Should return the stats for the specified party for epoch", func(t *testing.T) {
+		partyIDStr := flattenStats[rand.Intn(len(flattenStats))].PartyID
+		partyID := entities.PartyID(partyIDStr)
+		statsAtEpoch := flattenReferralSetStatsForParty(flattenStats, partyIDStr)
+		got, _, err := rs.GetReferralSetStats(ctx, setID, nil, &partyID, entities.CursorPagination{})
+		require.NoError(t, err)
+		require.NotNil(t, got)
+		assert.Equal(t, statsAtEpoch, got)
+	})
+
+	t.Run("Should return the stats for the specified party and epoch", func(t *testing.T) {
+		randomStats := flattenStats[rand.Intn(len(flattenStats))]
+		partyIDStr := randomStats.PartyID
+		partyID := entities.PartyID(partyIDStr)
+		atEpoch := randomStats.AtEpoch
+		statsAtEpoch := flattenReferralSetStatsForParty(flattenReferralSetStatsForEpoch(flattenStats, atEpoch), partyIDStr)
+		got, _, err := rs.GetReferralSetStats(ctx, setID, &atEpoch, &partyID, entities.CursorPagination{})
+		require.NoError(t, err)
+		require.NotNil(t, got)
+		assert.Equal(t, statsAtEpoch, got)
+	})
+}
+
+func flattenReferralSetStatsForEpoch(flattenStats []entities.FlattenReferralSetStats, epoch uint64) []entities.FlattenReferralSetStats {
+	lastStats := []entities.FlattenReferralSetStats{}
+
+	for _, stat := range flattenStats {
+		if stat.AtEpoch == epoch {
+			lastStats = append(lastStats, stat)
 		}
-		got, err := rs.GetReferralSetStats(ctx, set.ID, nil, &referee)
-		require.NoError(t, err)
-		require.NotNil(t, got)
-		assert.Equal(t, want, *got)
+	}
+
+	slices.SortStableFunc(lastStats, func(a, b entities.FlattenReferralSetStats) bool {
+		if a.AtEpoch == b.AtEpoch {
+			return a.PartyID < b.PartyID
+		}
+
+		return a.AtEpoch < b.AtEpoch
 	})
 
-	t.Run("Should return the stats for the specified epoch and referee if they are provided", func(t *testing.T) {
-		wantIndex := r.Intn(len(testStats))
-		wantStats := testStats[wantIndex]
-		refIndex := r.Intn(len(wantStats.RefereesStats))
-		refStats := wantStats.RefereesStats[refIndex]
-		referee := entities.PartyID(refStats.PartyId)
-		want := entities.ReferralSetStats{
-			SetID:                                 wantStats.SetID,
-			AtEpoch:                               wantStats.AtEpoch,
-			ReferralSetRunningNotionalTakerVolume: wantStats.ReferralSetRunningNotionalTakerVolume,
-			RefereesStats:                         []*eventspb.RefereeStats{refStats},
-			VegaTime:                              wantStats.VegaTime,
+	return lastStats
+}
+
+func flattenReferralSetStatsForParty(flattenStats []entities.FlattenReferralSetStats, party string) []entities.FlattenReferralSetStats {
+	lastStats := []entities.FlattenReferralSetStats{}
+
+	for _, stat := range flattenStats {
+		if stat.PartyID == party {
+			lastStats = append(lastStats, stat)
 		}
-		got, err := rs.GetReferralSetStats(ctx, set.ID, &want.AtEpoch, &referee)
-		require.NoError(t, err)
-		require.NotNil(t, got)
-		assert.Equal(t, want, *got)
+	}
+
+	slices.SortStableFunc(lastStats, func(a, b entities.FlattenReferralSetStats) bool {
+		if a.AtEpoch == b.AtEpoch {
+			return a.PartyID < b.PartyID
+		}
+
+		return a.AtEpoch > b.AtEpoch
 	})
+
+	return lastStats
+}
+
+func setupPartyReferralSetStatsMod(t *testing.T, parties []entities.Party, f func(i int, party entities.Party) *eventspb.RefereeStats) []*eventspb.RefereeStats {
+	t.Helper()
+
+	partiesStats := make([]*eventspb.RefereeStats, 0, 5)
+	for i, p := range parties {
+		partiesStats = append(partiesStats, f(i, p))
+	}
+
+	return partiesStats
 }

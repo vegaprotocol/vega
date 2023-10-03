@@ -3,11 +3,11 @@ package sqlstore
 import (
 	"context"
 	"fmt"
+	"strings"
 
-	events "code.vegaprotocol.io/vega/protos/vega/events/v1"
+	"github.com/georgysavva/scany/pgxscan"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	"github.com/georgysavva/scany/pgxscan"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -25,6 +25,11 @@ var (
 	referralSetRefereeOrdering = TableOrdering{
 		ColumnOrdering{Name: "joined_at", Sorting: ASC},
 		ColumnOrdering{Name: "referee", Sorting: ASC},
+	}
+
+	referralSetStatsOrdering = TableOrdering{
+		ColumnOrdering{Name: "at_epoch", Sorting: DESC},
+		ColumnOrdering{Name: "party_id", Sorting: ASC},
 	}
 )
 
@@ -117,73 +122,62 @@ func (rs *ReferralSets) AddReferralSetStats(ctx context.Context, stats *entities
 	return err
 }
 
-func (rs *ReferralSets) GetReferralSetStats(ctx context.Context, setID entities.ReferralSetID, atEpoch *uint64, referee *entities.PartyID) (*entities.ReferralSetStats, error) {
+func (rs *ReferralSets) GetReferralSetStats(ctx context.Context, setID entities.ReferralSetID, atEpoch *uint64, referee *entities.PartyID, pagination entities.CursorPagination) ([]entities.FlattenReferralSetStats, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("ReferralSets", "GetReferralSetStats")()
 	var (
-		stats []*entities.ReferralSetStats
-		query string
-		args  []interface{}
+		query    string
+		args     []interface{}
+		pageInfo entities.PageInfo
 	)
 
-	if referee == nil {
-		query = fmt.Sprintf(`SELECT set_id, at_epoch, referral_set_running_notional_taker_volume, referees_stats, vega_time
-			  FROM referral_set_stats
-			  WHERE set_id = %s`, nextBindVar(&args, setID))
-	} else {
-		query = fmt.Sprintf(`SELECT set_id, at_epoch, referral_set_running_notional_taker_volume, party_id, discount_factor, reward_factor, vega_time
-		FROM referral_set_referee_stats
-		WHERE set_id = %s`, nextBindVar(&args, setID))
+	query = fmt.Sprintf(
+		`SELECT at_epoch,
+       				vega_time,
+       				referral_set_running_notional_taker_volume,
+       				referee_stats->>'party_id' as party_id,
+       				referee_stats->>'discount_factor' as discount_factor,
+       				referee_stats->>'reward_factor' as reward_factor,
+       				referee_stats->>'epoch_notional_taker_volume' as epoch_notional_taker_volume
+			  FROM referral_set_stats, jsonb_array_elements(referees_stats) AS referee_stats
+			  WHERE set_id = %s`,
+		nextBindVar(&args, setID),
+	)
+
+	whereClauses := []string{}
+
+	if referee == nil && atEpoch == nil {
+		whereClauses = append(whereClauses, "at_epoch = (SELECT MAX(at_epoch) FROM referral_set_stats)")
 	}
 
 	if atEpoch != nil {
-		query = fmt.Sprintf("%s AND at_epoch = %s", query, nextBindVar(&args, *atEpoch))
-	}
-	if referee == nil {
-		// just get the last record from the stats and return all the referee stats
-		query = fmt.Sprintf("%s ORDER BY at_epoch DESC LIMIT 1", query)
-	} else {
-		// filter the referee stats by the referee
-		query = fmt.Sprintf("%s AND party_id = %s", query, nextBindVar(&args, referee.String()))
-		// then get most recent epoch for that referee
-		query = fmt.Sprintf("%s ORDER BY at_epoch DESC LIMIT 1", query)
+		whereClauses = append(whereClauses, fmt.Sprintf("at_epoch = %s", nextBindVar(&args, *atEpoch)))
 	}
 
-	if referee == nil {
-		if err := pgxscan.Select(ctx, rs.Connection, &stats, query, args...); err != nil {
-			return nil, err
-		}
-		if len(stats) == 0 {
-			return nil, nil
-		}
-	} else {
-		var refStats []*entities.ReferralSetRefereeStats
-		if err := pgxscan.Select(ctx, rs.Connection, &refStats, query, args...); err != nil {
-			return nil, err
-		}
-
-		if len(refStats) == 0 {
-			return nil, nil
-		}
-
-		stat := entities.ReferralSetStats{}
-		refStat := refStats[0]
-
-		stat.SetID = refStat.SetID
-		stat.AtEpoch = refStat.AtEpoch
-		stat.ReferralSetRunningNotionalTakerVolume = refStat.ReferralSetRunningNotionalTakerVolume
-		stat.RefereesStats = []*events.RefereeStats{
-			{
-				PartyId:        refStat.PartyID,
-				DiscountFactor: refStat.DiscountFactor,
-				RewardFactor:   refStat.RewardFactor,
-			},
-		}
-		stat.VegaTime = refStat.VegaTime
-
-		stats = append(stats, &stat)
+	if referee != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("referee_stats->>'party_id' = %s", nextBindVar(&args, referee.String())))
 	}
 
-	return stats[0], nil
+	var whereStr string
+	if len(whereClauses) > 0 {
+		whereStr = " AND " + strings.Join(whereClauses, " AND ")
+	}
+
+	query = fmt.Sprintf("%s %s", query, whereStr)
+
+	stats := []entities.FlattenReferralSetStats{}
+
+	query, args, err := PaginateQuery[entities.ReferralSetStatsCursor](query, args, referralSetStatsOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
+	}
+
+	if err := pgxscan.Select(ctx, rs.Connection, &stats, query, args...); err != nil {
+		return nil, pageInfo, err
+	}
+
+	stats, pageInfo = entities.PageEntities[*v2.ReferralSetStatsEdge](stats, pagination)
+
+	return stats, pageInfo, nil
 }
 
 func (rs *ReferralSets) ListReferralSetReferees(ctx context.Context, referralSetID *entities.ReferralSetID, referrer, referee *entities.PartyID, pagination entities.CursorPagination) (

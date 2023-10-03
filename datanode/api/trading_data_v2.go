@@ -4219,21 +4219,33 @@ func (t *TradingDataServiceV2) GetReferralSetStats(ctx context.Context, req *v2.
 ) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetReferralSetStats")()
 
-	id := entities.ReferralSetID(req.ReferralSetId)
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	setID := entities.ReferralSetID(req.ReferralSetId)
 
 	var referee *entities.PartyID
-
 	if req.Referee != nil {
 		referee = ptr.From(entities.PartyID(*req.Referee))
 	}
 
-	stats, err := t.referralSetsService.GetReferralSetStats(ctx, id, req.AtEpoch, referee)
+	stats, pageInfo, err := t.referralSetsService.GetReferralSetStats(ctx, setID, req.AtEpoch, referee, pagination)
+	if err != nil {
+		return nil, formatE(ErrGetReferralSetStats, err)
+	}
+
+	edges, err := makeEdges[*v2.ReferralSetStatsEdge](stats)
 	if err != nil {
 		return nil, formatE(err)
 	}
 
 	return &v2.GetReferralSetStatsResponse{
-		Stats: stats.ToProto(),
+		Stats: &v2.ReferralSetStatsConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
 	}, nil
 }
 

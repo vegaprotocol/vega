@@ -8,6 +8,9 @@
 - [8679](https://github.com/vegaprotocol/vega/issues/8679) - Snapshot configuration `snapshot-keep-recent` only accept values from `1` (included) to `10` (included) .
 - [8944](https://github.com/vegaprotocol/vega/issues/8944) - Asset ID field on the `ExportLedgerEntriesRequest gRPC API` for exporting ledger entries has changed type to make it optional.
 - [9562](https://github.com/vegaprotocol/vega/issues/9562) - `--lite` and `--archive` options to data node have been replaced with `--retention-profile=[archive|conservative|minimal]` with default mode as archive.
+- [9258](https://github.com/vegaprotocol/vega/issues/9258) - Rework `GetReferralSetStats` endpoint.
+- [9258](https://github.com/vegaprotocol/vega/issues/9258) - Change HTTP endpoint from `/volume-discount-stats` to `/volume-discount-program/stats`.
+- [9258](https://github.com/vegaprotocol/vega/issues/9258) - Change HTTP endpoint from `/referral-sets/stats/{id}` to `/referral-sets/{id}/stats`.
 
 ### 🗑️ Deprecation
 
