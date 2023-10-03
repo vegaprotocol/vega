@@ -182,19 +182,88 @@ Feature: Closeout scenarios
       | trader2 | USD   | ETH/DEC19 | 0      | 2000    |
       | trader3 | USD   | ETH/DEC19 | 162    | 0       |
 
-# 0007-POSN-015
-#   And the parties should have the following profit and loss:
-#     | party   | volume | unrealised pnl | realised pnl | status                        |
-#     | trader2 | 0      | 0              | 0            | POSITION_STATUS_ORDERS_CLOSED |
 
-#   And the insurance pool balance should be "0" for the market "ETH/DEC19"
-#   And the parties should have the following profit and loss:
-#     | party      | volume | unrealised pnl | realised pnl |
-#     | auxiliary1 | -10    | -900           | 0            |
-#     | auxiliary2 | 5      | 475            | 503          |
-#     | trader2    | 0      | 0              | 0            |
-#     | trader3    | 0      | 0              | -162         |
-#     | lprov      | 5      | 495            | -413         |
-#   Then the market data for the market "ETH/DEC19" should be:
-#     | mark price | trading mode                    | auction trigger                            |
-#     | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS |
+  @ZeroMargin
+  Scenario: When a party voluntarily closes their position, a zero margin event should be sent
+    Given the insurance pool balance should be "0" for the market "ETH/DEC19"
+    And the parties deposit on asset's general account the following amount:
+      | party      | asset | amount        |
+      | auxiliary1 | USD   | 1000000000000 |
+      | auxiliary2 | USD   | 1000000000000 |
+      | trader2    | USD   | 2000          |
+      | trader3    | USD   | 162           |
+      | lprov      | USD   | 1000000000000 |
+      | closer     | USD   | 1000000000000 |
+      | dummy      | USD   | 1000000000000 |
+
+    Given the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lprov | ETH/DEC19 | 100000            | 0.001 | submission |
+      | lp1 | lprov | ETH/DEC19 | 100000            | 0.001 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lprov | ETH/DEC19 | 100       | 10                   | sell | ASK              | 100    | 55     |
+      | lprov | ETH/DEC19 | 100       | 10                   | buy  | BID              | 100    | 55     |
+
+    And the parties place the following orders:
+      | party      | market id | side | price | volume | resulting trades | type       | tif     | reference  |
+      | auxiliary2 | ETH/DEC19 | buy  | 5     | 5      | 0                | TYPE_LIMIT | TIF_GTC | aux-b-5    |
+      | auxiliary1 | ETH/DEC19 | sell | 1000  | 10     | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1000 |
+      | auxiliary2 | ETH/DEC19 | buy  | 10    | 10     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1    |
+      | auxiliary1 | ETH/DEC19 | sell | 10    | 10     | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1    |
+    When the opening auction period ends for market "ETH/DEC19"
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    And the mark price should be "10" for the market "ETH/DEC19"
+
+    And the parties should have the following account balances:
+      | party      | asset | market id | margin     | general      |
+      | auxiliary1 | USD   | ETH/DEC19 | 21224      | 999999978776 |
+      | auxiliary2 | USD   | ETH/DEC19 | 2200000242 | 997799999758 |
+
+    # trader2 posts and order that would take over position of trader3 if they have enough to support it at the new mark price
+    When the parties place the following orders:
+      | party   | market id | side | price | volume | resulting trades | type       | tif     | reference   |
+      | trader2 | ETH/DEC19 | buy  | 50    | 40     | 0                | TYPE_LIMIT | TIF_GTC | buy-order-3 |
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | buy  | 5     | 5      |
+      | buy  | 50    | 40     |
+      | sell | 1000  | 10     |
+      | sell | 1055  | 100    |
+
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin | general      |
+      | trader2 | USD   | ETH/DEC19 | 642    | 1358         |
+      | lprov   | USD   | ETH/DEC19 | 7114   | 999999892886 |
+
+    # trader3 posts a limit order
+    When the parties place the following orders:
+      | party   | market id | side | price | volume | resulting trades | type       | tif     | reference       |
+      | trader3 | ETH/DEC19 | buy  | 100   | 10     | 0                | TYPE_LIMIT | TIF_GTC | buy-position-31 |
+      | dummy   | ETH/DEC19 | sell | 2000  | 1      | 0                | TYPE_LIMIT | TIF_GTC | dummy-sell-1    |
+
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | buy  | 5     | 5      |
+      | buy  | 45    | 100    |
+      | buy  | 50    | 40     |
+      | buy  | 100   | 10     |
+      | sell | 1000  | 10     |
+      | sell | 1055  | 100    |
+      | sell | 2000  | 1      |
+
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release |
+      | trader3 | ETH/DEC19 | 81          | 121    | 162     | 243     |
+      | dummy   | ETH/DEC19 | 36          | 54     | 72      | 108     |
+
+    # Party 3 cancels their order
+    When the parties cancel the following orders:
+      | party | reference    | error |
+      | dummy | dummy-sell-1 |       |
+    
+    # This should cause their margin to be set to 0 thanks to the margin levels event
+    Then the parties should have the following margin levels:
+      | party | market id | maintenance | search | initial | release |
+      | dummy | ETH/DEC19 | 0           | 0      | 0       | 0       |
+

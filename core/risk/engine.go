@@ -243,6 +243,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 	eventBatch := make([]*events.MarginLevels, 0, len(evts))
 	// for now, we can assume a single asset for all events
 	rFactors := *e.factors
+	nowTS := e.timeSvc.GetTimeNow().UnixNano()
 	for _, evt := range evts {
 		levels := e.calculateMargins(evt, price, rFactors, true, true, increment)
 		if levels == nil {
@@ -251,7 +252,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 
 		levels.Party = evt.Party()
 		levels.Asset = e.asset // This is assuming there's a single asset at play here
-		levels.Timestamp = e.timeSvc.GetTimeNow().UnixNano()
+		levels.Timestamp = nowTS
 		levels.MarketID = e.mktID
 
 		curMargin := evt.MarginBalance()
