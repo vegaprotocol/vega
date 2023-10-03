@@ -112,7 +112,7 @@ Feature: Test LP SLA Bond penalty;
       | lp1   | USD   | ETH/MAR22 | 0      | 96000   | 2950 |
       | lp2   | USD   | ETH/MAR22 | 0      | 96000   | 1600 |
 
-#if commitmnet min time fraction is 0, then LP will not get SLA bond penalty for not supplying volume on the book, nor liquidity fee
+#if commitment min time fraction is 0, then LP will not get SLA bond penalty for not supplying volume on the book, nor liquidity fee
     Given the liquidity sla params named "updated-sla-params":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 1           | 0                            | 2                             | 1                      |
