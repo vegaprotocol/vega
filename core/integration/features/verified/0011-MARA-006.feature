@@ -201,7 +201,7 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
     #GTT order expires
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | trader3 | ETH/DEC20 | 801         | 961    | 1201    | 1602    |
+      | trader3 | ETH/DEC20 | 0           | 0      | 0       | 0       |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |

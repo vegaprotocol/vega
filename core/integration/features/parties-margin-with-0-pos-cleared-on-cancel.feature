@@ -140,10 +140,10 @@ Feature: Close potential positions
       | party  | asset | market id | margin | general |
       | party1 | USD   | ETH/DEC19 | 0      | 30000   |
 
-    ### still same margin levels
+    ### Margin levels are now zero, all margin was released
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/DEC19 | 21467       | 25760  | 32200   | 42934   |
+      | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       |
 
     ### then we place new orders and get a trade
     When the parties place the following orders with ticks:

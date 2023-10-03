@@ -40,9 +40,11 @@ Feature: test for issue 1920
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_FOK | ref-1     |
 
+    # If the order isn't filled, the margin levels are calculated, but a zero-event is sent once the order is stopped
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/DEC19 | 100         | 110    | 120     | 140     |
+      | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       |
+      #| party1 | ETH/DEC19 | 100         | 110    | 120     | 140     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 0      | 10000   |
