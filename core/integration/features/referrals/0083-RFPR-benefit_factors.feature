@@ -80,7 +80,7 @@ Feature: Setting and applying referee benefit factors
       | referee1 | referral-code-1 |
 
 
-  Scenario Outline: Referral set generates variable running taker volume with a referee with variable epochs in set (0083-RFPR-036)(0083-RFPR-037)(0083-RFPR-039)(0083-RFPR-040)
+  Scenario Outline: Referral set generates variable running taker volume with a referee with variable epochs in set (0083-RFPR-036)(0083-RFPR-037)(0083-RFPR-038)(0083-RFPR-039)(0083-RFPR-040)
     # Expectation: Referral reward factor and referral discount factor should be set correctly according to the spec
 
     # Test cases
