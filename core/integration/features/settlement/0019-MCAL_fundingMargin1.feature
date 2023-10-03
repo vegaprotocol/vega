@@ -4,14 +4,14 @@ Feature: Test funding margin for Perps market
 
     And the perpetual oracles from "0xCAFECAFE1":
       | name        | asset | settlement property | settlement type | schedule property | schedule type  | margin funding factor | interest rate | clamp lower bound | clamp upper bound | quote name | settlement decimals |
-      | perp-oracle | USD | perp.ETH.value | TYPE_INTEGER | perp.funding.cue | TYPE_TIMESTAMP | 0.5 | 0.05 | 0 | 0 | ETH | 1 |
+      | perp-oracle | USD | perp.ETH.value | TYPE_INTEGER | perp.funding.cue | TYPE_TIMESTAMP | 0.5 | 0.05 | 0 | 0 | ETH | 18 |
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 1                             | 1.0                    |
 
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | position decimal places | market type | sla params |
-      | ETH/DEC19 | ETH | USD | default-simple-risk-model-3 | default-margin-calculator | 1 | default-none | default-none | perp-oracle | 1e6 | 1e6 | 5 | perp | default-futures |
+      | ETH/DEC19 | ETH | USD | default-simple-risk-model-3 | default-margin-calculator | 1 | default-none | default-none | perp-oracle | 1e6 | 1e6 | -3 | perp | default-futures |
 
     And the following network parameters are set:
       | name                           | value |
@@ -52,6 +52,7 @@ Feature: Test funding margin for Perps market
     And the market data for the market "ETH/DEC19" should be:
       | target stake | supplied stake |
       | 1100000      | 10000000       |
+
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
