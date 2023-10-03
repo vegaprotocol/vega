@@ -51,7 +51,7 @@ func (p *Pipe) Addr() net.Addr {
 	return &p.addr
 }
 
-func (p *Pipe) Dial(ctx context.Context, something string) (net.Conn, error) {
+func (p *Pipe) Dial(ctx context.Context, _ string) (net.Conn, error) {
 	conn1, conn2 := net.Pipe()
 	select {
 	case p.ch <- conn1:

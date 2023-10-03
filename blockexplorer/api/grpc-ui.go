@@ -18,9 +18,11 @@ import (
 	"net"
 	"net/http"
 
-	"code.vegaprotocol.io/vega/logging"
 	"github.com/fullstorydev/grpcui/standalone"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	"code.vegaprotocol.io/vega/logging"
 )
 
 type GRPCUIHandler struct {
@@ -56,7 +58,7 @@ func (g *GRPCUIHandler) Start() error {
 
 	dialOpts := []grpc.DialOption{
 		grpc.WithDefaultCallOptions(defaultCallOptions...),
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
 	}
 	cc, err := g.dialer.DialGRPC(dialOpts...)
