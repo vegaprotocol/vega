@@ -63,7 +63,7 @@ func (t *TxResultRow) ToProto() (*pb.Transaction, error) {
 	}
 
 	return &pb.Transaction{
-		Block:     uint64(t.BlockID),
+		Block:     uint64(t.BlockID) - 1, // subtract 1, block_id is rowid (BIGSERIAL), which starts at 1. Block height starts at 0
 		Index:     uint32(t.Index),
 		Type:      extractAttribute(&txResult, "command", "type"),
 		Submitter: extractAttribute(&txResult, "tx", "submitter"),
@@ -78,7 +78,7 @@ func (t *TxResultRow) ToProto() (*pb.Transaction, error) {
 
 func (t *TxResultRow) Cursor() TxCursor {
 	return TxCursor{
-		BlockNumber: uint64(t.BlockID),
+		BlockNumber: uint64(t.BlockID) - 1,
 		TxIndex:     uint32(t.Index),
 	}
 }
@@ -118,7 +118,7 @@ func TxCursorFromString(s string) (TxCursor, error) {
 	}
 
 	return TxCursor{
-		BlockNumber: blockNumber,
+		BlockNumber: blockNumber + 1, // increase by one again to make the behaviour consistent
 		TxIndex:     uint32(txIndex),
 	}, nil
 }
