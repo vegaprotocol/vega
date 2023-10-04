@@ -881,21 +881,6 @@ type UpdatePerpetualProduct struct {
 
 func (UpdatePerpetualProduct) IsUpdateProductConfiguration() {}
 
-type UpdateVolumeDiscountProgram struct {
-	// The current version of the volume discount program
-	Version int `json:"version"`
-	// ID of the proposal that created the discount program
-	ID string `json:"id"`
-	// The benefit tiers for the program
-	BenefitTiers []*vega.VolumeBenefitTier `json:"benefitTiers"`
-	// The end time of the program
-	EndOfProgramTimestamp int64 `json:"endOfProgramTimestamp"`
-	// The window legnth to consider for the volume discount program
-	WindowLength int `json:"windowLength"`
-}
-
-func (UpdateVolumeDiscountProgram) IsProposalChange() {}
-
 // Event types
 type BusEventType string
 
