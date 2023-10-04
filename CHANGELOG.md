@@ -262,6 +262,7 @@
 - [9634](https://github.com/vegaprotocol/vega/issues/9634) - Do not allow to submit liquidity provision for pending LPs
 - [9636](https://github.com/vegaprotocol/vega/issues/9636) - include ersatz validator for validator ranking reward.
 - [9655](https://github.com/vegaprotocol/vega/issues/9655) - Make liquidity monitoring parameter required in market proposals validation
+- [9280](https://github.com/vegaprotocol/vega/issues/9280) - Fix block height off by one issue.
 
 ## 0.72.1
 
