@@ -2,15 +2,15 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
 
   Scenario: 001: set tau.scaling to 1
     Given the following network parameters are set:
-      | name                                                | value |
-      | market.value.windowLength                           | 1h    |
-      | network.markPriceUpdateMaximumFrequency             | 0s    |
-      | market.liquidity.probabilityOfTrading.tau.scaling   | 1     |
-      | limits.markets.maxPeggedOrders                      | 4     |
+      | name                                              | value |
+      | market.value.windowLength                         | 1h    |
+      | network.markPriceUpdateMaximumFrequency           | 0s    |
+      | market.liquidity.probabilityOfTrading.tau.scaling | 1     |
+      | limits.markets.maxPeggedOrders                    | 4     |
       | market.liquidity.providersFeeCalculationTimeStep  | 600s  |
     Given the liquidity monitoring parameters:
-      | name               | triggering ratio | time window | scaling factor |
-      | lqm-params         | 0.0              | 24h         | 1.0            |
+      | name       | triggering ratio | time window | scaling factor |
+      | lqm-params | 0.0              | 24h         | 1.0            |
     And the following assets are registered:
       | id  | decimal places |
       | USD | 2              |
@@ -50,11 +50,11 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | lp1 | lp1   | ETH/MAR22 | 500000000         | 0.001 | submission |
       | lp1 | lp1   | ETH/MAR22 | 500000000         | 0.001 | submission |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lp1 | ETH/MAR22 | 3572 | 1 | buy  | BID | 3572 | 200 |
-      | lp1 | ETH/MAR22 | 2778 | 1 | buy  | MID | 2777 | 100 |
-      | lp1 | ETH/MAR22 | 1924 | 1 | sell | ASK | 1924 | 200 |
-      | lp1 | ETH/MAR22 | 2273 | 1 | sell | MID | 2273 | 100 |
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lp1   | ETH/MAR22 | 3572      | 1                    | buy  | BID              | 3572   | 200    |
+      | lp1   | ETH/MAR22 | 2778      | 1                    | buy  | MID              | 2777   | 100    |
+      | lp1   | ETH/MAR22 | 1924      | 1                    | sell | ASK              | 1924   | 200    |
+      | lp1   | ETH/MAR22 | 2273      | 1                    | sell | MID              | 2273   | 100    |
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | lp type    |
       | lp2 | lp2   | ETH/MAR22 | 500000000         | 0.002 | submission |
@@ -62,11 +62,11 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | lp2 | lp2   | ETH/MAR22 | 500000000         | 0.002 | submission |
       | lp2 | lp2   | ETH/MAR22 | 500000000         | 0.002 | submission |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lp2 | ETH/MAR22 | 2784 | 1 | buy  | BID | 2784 | 2 |
-      | lp2 | ETH/MAR22 | 2502 | 1 | buy  | MID | 2502 | 1 |
-      | lp2 | ETH/MAR22 | 2269 | 1 | sell | ASK | 2269 | 2 |
-      | lp2 | ETH/MAR22 | 2498 | 1 | sell | MID | 2498 | 1 |
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lp2   | ETH/MAR22 | 2784      | 1                    | buy  | BID              | 2784   | 2      |
+      | lp2   | ETH/MAR22 | 2502      | 1                    | buy  | MID              | 2502   | 1      |
+      | lp2   | ETH/MAR22 | 2269      | 1                    | sell | ASK              | 2269   | 2      |
+      | lp2   | ETH/MAR22 | 2498      | 1                    | sell | MID              | 2498   | 1      |
 
     Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -224,13 +224,13 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
     Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
-      | party2 | ETH/MAR22 | buy | 20 | 1000 | 2 | TYPE_LIMIT | TIF_GTC | party2-buy |
+      | party2 | ETH/MAR22 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party2-buy  |
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | 41  | 0 | 0    |
-      | party2 | -40 | 0 | 4900 |
+      | party1 | 41     | 0              | 0            |
+      | party2 | -40    | 0              | 4900         |
       | lp1    | 0      | 0              | 0            |
-      | lp2 | -1 | -4900 | 0 |
+      | lp2    | -1     | -4900          | 0            |
 
     And the liquidity fee factor should be "0.001" for the market "ETH/MAR22"
     And the accumulated liquidity fees should be "1996" for the market "ETH/MAR22"
@@ -239,9 +239,9 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
     Then time is updated to "2019-11-30T00:10:05Z"
 
     Then the following transfers should happen:
-      | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 610  | USD |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 1385 | USD |
+      | from   | to  | from account                | to account                     | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 610    | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 1385   | USD   |
 
   Scenario: 003: set tau.scaling to 1000
     Given the following network parameters are set:
@@ -350,9 +350,9 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
     Then time is updated to "2019-11-30T00:10:05Z"
 
     Then the following transfers should happen:
-      | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 572  | USD |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 1329 | USD |
+      | from   | to  | from account                | to account                     | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 572    | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 1329   | USD   |
 
   Scenario: 004: set tau.scaling to 1, smaller lp offset
     Given the following network parameters are set:
@@ -447,13 +447,13 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
     Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
-      | party2 | ETH/MAR22 | buy | 20 | 1000 | 3 | TYPE_LIMIT | TIF_GTC | party2-buy |
+      | party2 | ETH/MAR22 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | party2-buy  |
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | 42  | 0     | 0    |
-      | party2 | -40 | 0     | 8900 |
-      | lp1    | -1  | -4000 | 0    |
-      | lp2    | -1  | -4900 | 0    |
+      | party1 | 42     | 0              | 0            |
+      | party2 | -40    | 0              | 8900         |
+      | lp1    | -1     | -4000          | 0            |
+      | lp2    | -1     | -4900          | 0            |
 
     And the liquidity fee factor should be "0.001" for the market "ETH/MAR22"
     And the accumulated liquidity fees should be "1992" for the market "ETH/MAR22"
@@ -462,9 +462,9 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
     Then time is updated to "2019-11-30T00:10:05Z"
 
     Then the following transfers should happen:
-      | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 903  | USD |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 1088 | USD |
+      | from   | to  | from account                | to account                     | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 903    | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 1088   | USD   |
 
   Scenario: 005: set tau.scaling to 10, smaller lp offset
     Given the following network parameters are set:
@@ -559,13 +559,13 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
     Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
-      | party2 | ETH/MAR22 | buy | 20 | 1000 | 3 | TYPE_LIMIT | TIF_GTC | party2-buy |
+      | party2 | ETH/MAR22 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | party2-buy  |
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | 42  | 0     | 0    |
-      | party2 | -40 | 0     | 8900 |
-      | lp1    | -1  | -4000 | 0    |
-      | lp2    | -1  | -4900 | 0    |
+      | party1 | 42     | 0              | 0            |
+      | party2 | -40    | 0              | 8900         |
+      | lp1    | -1     | -4000          | 0            |
+      | lp2    | -1     | -4900          | 0            |
 
     And the liquidity fee factor should be "0.001" for the market "ETH/MAR22"
     And the accumulated liquidity fees should be "1992" for the market "ETH/MAR22"
@@ -670,13 +670,13 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
     Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
-      | party2 | ETH/MAR22 | buy | 20 | 1000 | 3 | TYPE_LIMIT | TIF_GTC | party2-buy |
+      | party2 | ETH/MAR22 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | party2-buy  |
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | 42  | 0     | 0    |
-      | party2 | -40 | 0     | 8900 |
-      | lp1    | -1  | -4000 | 0    |
-      | lp2    | -1  | -4900 | 0    |
+      | party1 | 42     | 0              | 0            |
+      | party2 | -40    | 0              | 8900         |
+      | lp1    | -1     | -4000          | 0            |
+      | lp2    | -1     | -4900          | 0            |
 
     And the liquidity fee factor should be "0.001" for the market "ETH/MAR22"
     And the accumulated liquidity fees should be "1992" for the market "ETH/MAR22"
@@ -688,5 +688,70 @@ Feature: Tests impact from change of tau.scaling parameter on probability of tra
       | from   | to  | from account                | to account                     | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 992    | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 999    | USD   |
+
+
+  Scenario: market.liquidity.probabilityOfTrading.tau.scaling updated and commitment competiveness reevaluated (0034-PROB-004)
+
+    Given the following network parameters are set:
+      | name                                              | value |
+      | market.value.windowLength                         | 1h    |
+      | network.markPriceUpdateMaximumFrequency           | 0s    |
+      | market.liquidity.probabilityOfTrading.tau.scaling | 1     |
+      | limits.markets.maxPeggedOrders                    | 4     |
+    And the following assets are registered:
+      | id  | decimal places |
+      | USD | 2              |
+    And the average block duration is "1"
+    And the liquidity sla params named "SLA":
+      | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
+      | 1.0         | 0.5                          | 1                             | 1.0                    |
+    And the markets:
+      | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
+      | ETH/MAR22 | ETH        | USD   | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.001                  | 0                         | SLA        |
+
+    # Initalise the market with 2 LPs with equal commitments but different competiveness
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount       |
+      | lp1    | USD   | 100000000000 |
+      | lp2    | USD   | 100000000000 |
+      | lp3    | USD   | 100000000000 |
+      | party1 | USD   | 10000000000  |
+      | party2 | USD   | 10000000000  |
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | lp type    |
+      | lp1 | lp1   | ETH/MAR22 | 1000000           | 0.001 | submission |
+      | lp2 | lp2   | ETH/MAR22 | 1000000           | 0.001 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lp1   | ETH/MAR22 | 2000      | 1000                 | buy  | BID              | 2000   | 1      |
+      | lp1   | ETH/MAR22 | 2000      | 1000                 | sell | ASK              | 2000   | 1      |
+      | lp2   | ETH/MAR22 | 2000      | 1000                 | buy  | BID              | 2000   | 100    |
+      | lp2   | ETH/MAR22 | 2000      | 1000                 | sell | ASK              | 2000   | 100    |
+    When the parties place the following orders with ticks:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/MAR22 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 1      | 1001  | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the opening auction period ends for market "ETH/MAR22"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
+    And the mark price should be "1000" for the market "ETH/MAR22"
+
+    # - Check the 'quality' of the supplied liquidity by checking the average score at the end of the epoch.
+    # - Update the network parameter, then check the 'quality' of the supplied liquidity has chnaged.
+    Given the network moves ahead "1" epochs
+    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+      | party | equity like share | average entry valuation | average score |
+      | lp1   | 0.5               | 1000000                 | 0.6249997841  |
+      | lp2   | 0.5               | 2000000                 | 0.3750002159  |
+    When the following network parameters are set:
+      | name                                              | value |
+      | market.liquidity.probabilityOfTrading.tau.scaling | 1000  |
+    And the network moves ahead "1" epochs
+    Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
+      | party | equity like share | average entry valuation | average score |
+      | lp1   | 0.5               | 1000000                 | 0.5958598141  |
+      | lp2   | 0.5               | 2000000                 | 0.4041401859  |
+
 
 
