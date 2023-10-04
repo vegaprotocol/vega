@@ -46,7 +46,7 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a price monitoring change with right trigger probability succeeds", testPriceMonitoringChangeSubmissionWithRightTriggerProbabilitySucceeds)
 	t.Run("Submitting a price monitoring change without trigger auction extension fails", testPriceMonitoringChangeSubmissionWithoutTriggerAuctionExtensionFails)
 	t.Run("Submitting a price monitoring change with trigger auction extension succeeds", testPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds)
-	t.Run("Submitting a new market without liquidity monitoring succeeds", testNewMarketChangeSubmissionWithoutLiquidityMonitoringSucceeds)
+	t.Run("Submitting a new market without liquidity monitoring fails", testNewMarketChangeSubmissionWithoutLiquidityMonitoringFails)
 	t.Run("Submitting a new market with liquidity monitoring succeeds", testNewMarketChangeSubmissionWithLiquidityMonitoringSucceeds)
 	t.Run("Submitting a liquidity monitoring change with wrong triggering ratio fails", testLiquidityMonitoringChangeSubmissionWithWrongTriggeringRatioFails)
 	t.Run("Submitting a liquidity monitoring change with right triggering ratio succeeds", testLiquidityMonitoringChangeSubmissionWithRightTriggeringRatioSucceeds)
@@ -442,7 +442,7 @@ func testNewMarketChangeSubmissionWithEmptySlippageFactorPasses(t *testing.T) {
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor"), commands.ErrIsNotValidNumber)
 }
 
-func testNewMarketChangeSubmissionWithoutLiquidityMonitoringSucceeds(t *testing.T) {
+func testNewMarketChangeSubmissionWithoutLiquidityMonitoringFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &vegapb.ProposalTerms{
 			Change: &vegapb.ProposalTerms_NewMarket{
@@ -453,7 +453,7 @@ func testNewMarketChangeSubmissionWithoutLiquidityMonitoringSucceeds(t *testing.
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidity_monitoring_parameters"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidity_monitoring_parameters"), commands.ErrIsRequired)
 }
 
 func testNewMarketChangeSubmissionWithLiquidityMonitoringSucceeds(t *testing.T) {

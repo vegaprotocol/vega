@@ -31,7 +31,7 @@ func TestCheckProposalSubmissionForUpdateMarket(t *testing.T) {
 	t.Run("Submitting a price monitoring change with right trigger probability succeeds", testUpdateMarketPriceMonitoringChangeSubmissionWithRightTriggerProbabilitySucceeds)
 	t.Run("Submitting a price monitoring change without trigger auction extension fails", testUpdateMarketPriceMonitoringChangeSubmissionWithoutTriggerAuctionExtensionFails)
 	t.Run("Submitting a price monitoring change with trigger auction extension succeeds", testUpdateMarketPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds)
-	t.Run("Submitting a update market without liquidity monitoring succeeds", testUpdateMarketChangeSubmissionWithoutLiquidityMonitoringSucceeds)
+	t.Run("Submitting a update market without liquidity monitoring fails", testUpdateMarketChangeSubmissionWithoutLiquidityMonitoringFails)
 	t.Run("Submitting a update market with liquidity monitoring succeeds", testUpdateMarketChangeSubmissionWithLiquidityMonitoringSucceeds)
 	t.Run("Submitting a liquidity monitoring change with wrong triggering ratio fails", testUpdateMarketLiquidityMonitoringChangeSubmissionWithWrongTriggeringRatioFails)
 	t.Run("Submitting a liquidity monitoring change with right triggering ratio succeeds", testUpdateMarketLiquidityMonitoringChangeSubmissionWithRightTriggeringRatioSucceeds)
@@ -155,7 +155,7 @@ func testUpdateMarketChangeSubmissionWithoutDecimalPlacesSucceeds(t *testing.T) 
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.decimal_places"), commands.ErrMustBePositiveOrZero)
 }
 
-func testUpdateMarketChangeSubmissionWithoutLiquidityMonitoringSucceeds(t *testing.T) {
+func testUpdateMarketChangeSubmissionWithoutLiquidityMonitoringFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
 			Change: &protoTypes.ProposalTerms_UpdateMarket{
@@ -166,7 +166,7 @@ func testUpdateMarketChangeSubmissionWithoutLiquidityMonitoringSucceeds(t *testi
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.liquidity_monitoring_parameters"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.liquidity_monitoring_parameters"), commands.ErrIsRequired)
 }
 
 func testUpdateMarketChangeSubmissionWithLiquidityMonitoringSucceeds(t *testing.T) {
