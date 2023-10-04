@@ -950,7 +950,7 @@ func checkLiquidityMonitoring(parameters *protoTypes.LiquidityMonitoringParamete
 	errs := NewErrors()
 
 	if parameters == nil {
-		return errs
+		return errs.FinalAddForProperty(fmt.Sprintf("%s.liquidity_monitoring_parameters", parentProperty), ErrIsRequired)
 	}
 
 	if len(parameters.TriggeringRatio) == 0 {
