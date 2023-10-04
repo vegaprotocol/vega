@@ -272,22 +272,30 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.Proposal
   NewMarket:
     model: code.vegaprotocol.io/vega/protos/vega.NewMarket
+  UpdateMarket:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdateMarket
+  UpdateNetworkParameter:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdateNetworkParameter
   NewAsset:
     model: code.vegaprotocol.io/vega/protos/vega.NewAsset
   UpdateAsset:
     model: code.vegaprotocol.io/vega/protos/vega.UpdateAsset
   NewFreeform:
     model: code.vegaprotocol.io/vega/protos/vega.NewFreeform
-  UpdateMarket:
-    model: code.vegaprotocol.io/vega/protos/vega.UpdateMarket
-  UpdateNetworkParameter:
-    model: code.vegaprotocol.io/vega/protos/vega.UpdateNetworkParameter
-  CancelTransfer:
-    model: code.vegaprotocol.io/vega/protos/vega.CancelTransfer
   NewTransfer:
     model: code.vegaprotocol.io/vega/protos/vega.NewTransfer
+  CancelTransfer:
+    model: code.vegaprotocol.io/vega/protos/vega.CancelTransfer
   UpdateMarketState:
     model: code.vegaprotocol.io/vega/protos/vega.UpdateMarketState
+  NewSpotMarket:
+    model: code.vegaprotocol.io/vega/protos/vega.NewSpotMarket
+  UpdateSpotMarket:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdateSpotMarket
+  UpdateReferralProgram:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdateReferralProgram
+  UpdateVolumeDiscountProgram:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdateVolumeDiscountProgram
   InstrumentConfiguration:
     model: code.vegaprotocol.io/vega/protos/vega.InstrumentConfiguration
   SuccessorConfiguration:
@@ -298,10 +306,6 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.SpotProduct
   PerpetualProduct:
     model: code.vegaprotocol.io/vega/protos/vega.PerpetualProduct
-  NewSpotMarket:
-    model: code.vegaprotocol.io/vega/protos/vega.NewSpotMarket
-  UpdateSpotMarket:
-    model: code.vegaprotocol.io/vega/protos/vega.UpdateSpotMarket
   UpdateSpotMarketConfiguration:
     model: code.vegaprotocol.io/vega/protos/vega.UpdateSpotMarketConfiguration
   LiquiditySLAParameters:
@@ -618,8 +622,6 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.PartyActivityStreak
   BenefitTier:
     model: code.vegaprotocol.io/vega/protos/vega.BenefitTier
-  UpdateReferralProgram:
-    model: code.vegaprotocol.io/vega/protos/vega.UpdateReferralProgram
   ReferralProgram:
     model: code.vegaprotocol.io/vega/protos/vega.ReferralProgram
   CurrentReferralProgram:

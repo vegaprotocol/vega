@@ -263,6 +263,7 @@
 - [9636](https://github.com/vegaprotocol/vega/issues/9636) - include ersatz validator for validator ranking reward.
 - [9655](https://github.com/vegaprotocol/vega/issues/9655) - Make liquidity monitoring parameter required in market proposals validation
 - [9280](https://github.com/vegaprotocol/vega/issues/9280) - Fix block height off by one issue.
+- [9658](https://github.com/vegaprotocol/vega/issues/9658) - Fix `updateVolumeDiscountProgram` GraphQL resolver.
 
 ## 0.72.1
 

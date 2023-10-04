@@ -550,6 +550,10 @@ func (r *VegaResolverRoot) VolumeDiscountStats() VolumeDiscountStatsResolver {
 	return (*volumeDiscountStatsResolver)(r)
 }
 
+func (r *VegaResolverRoot) UpdateVolumeDiscountProgram() UpdateVolumeDiscountProgramResolver {
+	return (*updateVolumeDiscountProgramResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
