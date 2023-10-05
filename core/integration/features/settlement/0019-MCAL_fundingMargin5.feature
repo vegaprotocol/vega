@@ -46,9 +46,9 @@ Feature: check when settlement data precision is different/equal to the settleme
       | lp1 | lpprov | ETH/DEC19 | 1200000           | 0.001 | submission |
       | lp1 | lpprov | ETH/DEC19 | 1200000           | 0.001 | submission |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/DEC19 | 20 | 1 | buy  | BID | 50 | 1 |
-      | lpprov | ETH/DEC19 | 20 | 1 | sell | ASK | 50 | 1 |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset | reference |
+      | lpprov | ETH/DEC19 | 20        | 1                    | buy  | BID              | 50     | 1      | lp-buy    |
+      | lpprov | ETH/DEC19 | 20        | 1                    | sell | ASK              | 50     | 1      | lp-sell   |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -65,6 +65,11 @@ Feature: check when settlement data precision is different/equal to the settleme
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
+    And the orders should have the following status:
+      | party  | reference | status           |
+      | lpprov | lp-sell   | STATUS_CANCELLED |
+      | lpprov | lp-buy    | STATUS_CANCELLED |
+
     # back sure we end the block so we're in a new one after opening auction
     When the network moves ahead "1" blocks
 
@@ -77,6 +82,7 @@ Feature: check when settlement data precision is different/equal to the settleme
       | party  | asset | market id | margin | general      |
       | party1 | USD | ETH/DEC19 | 120000 | 99999999880000 |
       | party2 | USD   | ETH/DEC19 | 132000 | 99867000     |
+      | lpprov | USD | ETH/DEC19 | 0 | 3800000 |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -86,4 +92,10 @@ Feature: check when settlement data precision is different/equal to the settleme
       | party  | asset | market id | margin         | general        |
       | party1 | USD   | ETH/DEC19 | 13200000240000 | 86799999760000 |
 
-    Then debug orders
+    And the orders should have the following status:
+      | party  | reference | status           |
+      | lpprov | lp-sell   | STATUS_CANCELLED |
+      | lpprov | lp-buy    | STATUS_CANCELLED |
+
+
+
