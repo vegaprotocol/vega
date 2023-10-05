@@ -30,11 +30,12 @@ type GRPCUIHandler struct {
 	handler http.Handler
 	log     *logging.Logger
 	dialer  grpcDialer
+	conn    *grpc.ClientConn
 }
 
 type grpcDialer interface {
 	net.Listener
-	DialGRPC(opts ...grpc.DialOption) (*grpc.ClientConn, error)
+	DialGRPC(context.Context, ...grpc.DialOption) (*grpc.ClientConn, error)
 }
 
 func NewGRPCUIHandler(log *logging.Logger, dialer grpcDialer, config GRPCUIConfig) *GRPCUIHandler {
@@ -51,7 +52,7 @@ func (g *GRPCUIHandler) Name() string {
 	return "grpc-ui"
 }
 
-func (g *GRPCUIHandler) Start() error {
+func (g *GRPCUIHandler) Start(ctx context.Context) error {
 	defaultCallOptions := []grpc.CallOption{
 		grpc.MaxCallRecvMsgSize(int(g.MaxPayloadSize)),
 	}
@@ -61,14 +62,15 @@ func (g *GRPCUIHandler) Start() error {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
 	}
-	cc, err := g.dialer.DialGRPC(dialOpts...)
+	conn, err := g.dialer.DialGRPC(ctx, dialOpts...)
 	if err != nil {
-		return fmt.Errorf("failed to create client to local grpc server:%w", err)
+		return fmt.Errorf("failed to create client to local grpc server: %w", err)
 	}
-	g.log.Info("connected to grpc server", logging.String("target", cc.Target()))
+	g.conn = conn
 
-	ctx := context.Background()
-	handler, err := standalone.HandlerViaReflection(ctx, cc, "vega data node")
+	g.log.Info("Starting gRPC UI", logging.String("target", conn.Target()))
+
+	handler, err := standalone.HandlerViaReflection(ctx, conn, "vega data node")
 	if err != nil {
 		return fmt.Errorf("failed to create grpc-ui server:%w", err)
 	}
@@ -78,4 +80,11 @@ func (g *GRPCUIHandler) Start() error {
 
 func (g *GRPCUIHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	g.handler.ServeHTTP(w, r)
+}
+
+func (g *GRPCUIHandler) Stop() {
+	if g.conn != nil {
+		g.log.Info("Stopping gRPC UI", logging.String("target", g.conn.Target()))
+		_ = g.conn.Close()
+	}
 }

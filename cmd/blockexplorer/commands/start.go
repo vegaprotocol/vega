@@ -14,11 +14,17 @@ package commands
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/jessevdk/go-flags"
+	"go.uber.org/zap"
 
 	"code.vegaprotocol.io/vega/blockexplorer"
 	"code.vegaprotocol.io/vega/blockexplorer/config"
 	"code.vegaprotocol.io/vega/logging"
-	"github.com/jessevdk/go-flags"
 )
 
 type Start struct {
@@ -36,10 +42,31 @@ func (opts *Start) Execute(_ []string) error {
 	}
 
 	be := blockexplorer.NewFromConfig(*cfg)
-	return be.Run(context.Background())
+
+	// Used to retrieve the error from the block explorer in the main thread.
+	errCh := make(chan error, 1)
+	defer close(errCh)
+
+	// Use to shutdown the block explorer.
+	beCtx, stopBlockExplorer := context.WithCancel(context.Background())
+
+	blockExplorerStopped := make(chan any)
+	go func() {
+		if err := be.Run(beCtx); err != nil {
+			errCh <- err
+		}
+		close(blockExplorerStopped)
+	}()
+
+	err = waitUntilInterruption(logger, errCh)
+
+	stopBlockExplorer()
+	<-blockExplorerStopped
+
+	return err
 }
 
-func Run(ctx context.Context, parser *flags.Parser) error {
+func Run(_ context.Context, parser *flags.Parser) error {
 	runCmd := Start{}
 
 	short := "Start block explorer backend"
@@ -47,4 +74,24 @@ func Run(ctx context.Context, parser *flags.Parser) error {
 
 	_, err := parser.AddCommand("start", short, long, &runCmd)
 	return err
+}
+
+// waitUntilInterruption will wait for a sigterm or sigint interrupt.
+func waitUntilInterruption(logger *logging.Logger, errChan <-chan error) error {
+	gracefulStop := make(chan os.Signal, 1)
+	defer func() {
+		signal.Stop(gracefulStop)
+		close(gracefulStop)
+	}()
+
+	signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+
+	select {
+	case sig := <-gracefulStop:
+		logger.Info("OS signal received", zap.String("signal", fmt.Sprintf("%+v", sig)))
+		return nil
+	case err := <-errChan:
+		logger.Error("Initiating shutdown due to an internal error reported by the block explorer", zap.Error(err))
+		return err
+	}
 }

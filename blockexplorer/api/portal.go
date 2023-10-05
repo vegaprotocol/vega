@@ -16,8 +16,9 @@ import (
 	"fmt"
 	"net"
 
-	"code.vegaprotocol.io/vega/logging"
 	"github.com/soheilhy/cmux"
+
+	"code.vegaprotocol.io/vega/logging"
 )
 
 type Portal struct {
@@ -54,8 +55,7 @@ func NewPortal(config Config, log *logging.Logger) *Portal {
 }
 
 func (p *Portal) Serve() error {
-	p.log.Info("portal started")
-	defer p.log.Info("portal finished")
+	p.log.Info("Starting portal")
 	return p.mux.Serve()
 }
 
@@ -65,4 +65,11 @@ func (p *Portal) GatewayListener() net.Listener {
 
 func (p *Portal) GRPCListener() net.Listener {
 	return p.grpcListener
+}
+
+func (p *Portal) Stop() {
+	p.log.Info("Stopping portal")
+	_ = p.gatewayListener.Close()
+	_ = p.grpcListener.Close()
+	_ = p.portalListener.Close()
 }

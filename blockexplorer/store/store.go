@@ -16,8 +16,9 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/logging"
 	"github.com/jackc/pgx/v4/pgxpool"
+
+	"code.vegaprotocol.io/vega/logging"
 )
 
 type Store struct {
@@ -25,8 +26,17 @@ type Store struct {
 	pool *pgxpool.Pool
 }
 
+func (s *Store) Close() {
+	if s.pool != nil {
+		s.log.Info("Closing connection to database")
+		s.pool.Close()
+	}
+}
+
 func NewStore(config Config, log *logging.Logger) (*Store, error) {
 	log = log.Named(namedLogger)
+
+	log.Info("Initiating connection to database")
 
 	poolConfig, err := config.Postgres.ToPgxPoolConfig()
 	if err != nil {
