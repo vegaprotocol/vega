@@ -57,8 +57,6 @@ func (af *AssetsFetcher) GetReleaseID(ctx context.Context, releaseTag string) (i
 		Page:    nextPage,
 	}
 
-	var allReleases []*github.RepositoryRelease
-
 	for nextPage > 0 {
 		opts.Page = nextPage
 		releases, resp, err := af.Client.Repositories.ListReleases(ctx, af.repositoryOwner, af.repository, opts)
@@ -66,15 +64,12 @@ func (af *AssetsFetcher) GetReleaseID(ctx context.Context, releaseTag string) (i
 			return 0, err
 		}
 		nextPage = resp.NextPage
-		allReleases = append(allReleases, releases...)
-	}
-
-	for _, r := range allReleases {
-		if *r.TagName == releaseTag {
-			return r.GetID(), nil
+		for _, r := range releases {
+			if *r.TagName == releaseTag {
+				return r.GetID(), nil
+			}
 		}
 	}
-
 	return 0, fmt.Errorf("release tag %q not found", releaseTag)
 }
 
