@@ -153,7 +153,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 
 	txResults := []txResult{
 		{
-			height:    1,
+			height:    0,
 			index:     1,
 			createdAt: time.Date(2023, 7, 10, 9, 0, 0, 100, time.UTC),
 			txHash:    "deadbeef01",
@@ -162,7 +162,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 			cmdType:   "TEST",
 		},
 		{
-			height:    1,
+			height:    0,
 			index:     2,
 			createdAt: time.Date(2023, 7, 10, 9, 0, 0, 200, time.UTC),
 			txHash:    "deadbeef02",
@@ -171,7 +171,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 			cmdType:   "TEST",
 		},
 		{
-			height:    2,
+			height:    1,
 			index:     1,
 			createdAt: time.Date(2023, 7, 10, 9, 0, 1, 100, time.UTC),
 			txHash:    "deadbeef03",
@@ -180,7 +180,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 			cmdType:   "TEST",
 		},
 		{
-			height:    3,
+			height:    2,
 			index:     1,
 			createdAt: time.Date(2023, 7, 10, 9, 0, 2, 100, time.UTC),
 			txHash:    "deadbeef04",
@@ -189,7 +189,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 			cmdType:   "TEST",
 		},
 		{
-			height:    3,
+			height:    2,
 			index:     2,
 			createdAt: time.Date(2023, 7, 10, 9, 0, 2, 150, time.UTC),
 			txHash:    "deadbeef05",
@@ -198,7 +198,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 			cmdType:   "TEST",
 		},
 		{
-			height:    3,
+			height:    2,
 			index:     4,
 			createdAt: time.Date(2023, 7, 10, 9, 0, 2, 800, time.UTC),
 			txHash:    "deadbeef06",
@@ -207,7 +207,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 			cmdType:   "TEST",
 		},
 		{
-			height:    4,
+			height:    3,
 			index:     1,
 			createdAt: time.Date(2023, 7, 10, 9, 0, 3, 100, time.UTC),
 			txHash:    "deadbeef07",
@@ -216,7 +216,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 			cmdType:   "TEST",
 		},
 		{
-			height:    5,
+			height:    4,
 			index:     1,
 			createdAt: time.Date(2023, 7, 10, 9, 0, 4, 100, time.UTC),
 			txHash:    "deadbeef08",
@@ -225,7 +225,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 			cmdType:   "TEST",
 		},
 		{
-			height:    6,
+			height:    5,
 			index:     1,
 			createdAt: time.Date(2023, 7, 10, 9, 0, 5, 100, time.UTC),
 			txHash:    "deadbeef09",
@@ -234,7 +234,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 			cmdType:   "TEST",
 		},
 		{
-			height:    7,
+			height:    6,
 			index:     1,
 			createdAt: time.Date(2023, 7, 10, 9, 0, 6, 100, time.UTC),
 			txHash:    "deadbeef10",
