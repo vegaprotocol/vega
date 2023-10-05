@@ -70,6 +70,15 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 		riskiestLng = riskiestLng.Add(num.DecimalFromInt64(m.Buy()).Div(e.positionFactor))
 		riskiestSht = riskiestSht.Sub(num.DecimalFromInt64(m.Sell()).Div(e.positionFactor))
 	}
+	// the party has no open positions that we need to calculate margin for
+	if riskiestLng.IsZero() && riskiestSht.IsZero() {
+		return &types.MarginLevels{
+			MaintenanceMargin:      num.UintZero(),
+			SearchLevel:            num.UintZero(),
+			InitialMargin:          num.UintZero(),
+			CollateralReleaseLevel: num.UintZero(),
+		}
+	}
 
 	mPriceDec := markPrice.ToDecimal()
 	// calculate margin maintenance long only if riskiest is > 0
