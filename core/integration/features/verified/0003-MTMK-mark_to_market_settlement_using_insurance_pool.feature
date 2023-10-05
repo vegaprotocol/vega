@@ -26,9 +26,9 @@ Feature: Test mark to market settlement with insurance pool
       | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
       | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/DEC19 | 90        | 1                    | buy  | BID              | 90     | 10     |
-      | lpprov | ETH/DEC19 | 15        | 1                    | sell | ASK              | 15     | 10     |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset | reference |
+      | lpprov | ETH/DEC19 | 90        | 1                    | buy  | BID              | 90     | 10     | lp-buy    |
+      | lpprov | ETH/DEC19 | 15        | 1                    | sell | ASK              | 15     | 10     | lp-sell   |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -73,8 +73,18 @@ Feature: Test mark to market settlement with insurance pool
       | party2 | ETH   | ETH/DEC19 | 13598  | 1302    |
       | party3 | ETH   | ETH/DEC19 | 7920   | 1480    |
 
+    #party1 is closed out and traded with sell order ref-2, so there is no best ask to peg
+    And the orders should have the following status:
+      | party  | reference | status        |
+      | aux    | ref-2     | STATUS_FILLED |
+      | lpprov | lp-buy    | STATUS_ACTIVE |
+      | lpprov | lp-sell   | STATUS_PARKED |
+
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
     And the cumulated balance for all accounts should be worth "155122"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "9999" for the market "ETH/DEC19"
+
 
 
