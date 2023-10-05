@@ -58,7 +58,6 @@ type MarketLiquidity struct {
 	priceRange                num.Decimal
 	earlyExitPenalty          num.Decimal
 	minLPStakeQuantumMultiple num.Decimal
-	feeCalculationTimeStep    time.Duration
 
 	bondPenaltyFactor num.Decimal
 }

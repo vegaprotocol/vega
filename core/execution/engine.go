@@ -269,6 +269,7 @@ func (e *Engine) Hash() []byte {
 	for _, h := range append(hashes, string(accountsHash)) {
 		bytes = append(bytes, []byte(h)...)
 	}
+
 	return crypto.Hash(bytes)
 }
 
