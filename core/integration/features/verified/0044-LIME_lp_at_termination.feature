@@ -28,23 +28,23 @@ Feature: Test LP bond account when market is terminated
       | horizon | probability | auction extension |
       | 360000  | 0.99        | 3                 |
     And the following network parameters are set:
-      | name                                                  | value |
-      | market.value.windowLength                             | 60s   |
-      | network.markPriceUpdateMaximumFrequency               | 0s    |
-      | limits.markets.maxPeggedOrders                        | 6     |
-      | market.auction.minimumDuration                        | 1     |
-      | market.fee.factors.infrastructureFee                  | 0.001 |
-      | market.fee.factors.makerFee                           | 0.004 |
+      | name                                                | value |
+      | market.value.windowLength                           | 60s   |
+      | network.markPriceUpdateMaximumFrequency             | 0s    |
+      | limits.markets.maxPeggedOrders                      | 6     |
+      | market.auction.minimumDuration                      | 1     |
+      | market.fee.factors.infrastructureFee                | 0.001 |
+      | market.fee.factors.makerFee                         | 0.004 |
       | market.liquidity.bondPenaltyParameter               | 0.2   |
-      | validators.epoch.length                               | 5s    |
+      | validators.epoch.length                             | 5s    |
       | market.liquidity.stakeToCcyVolume                   | 1     |
-      | market.liquidity.successorLaunchWindowLength          | 1h    |
+      | market.liquidity.successorLaunchWindowLength        | 1h    |
       | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.19  |
       | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 1     |
-      | validators.epoch.length                               | 2s    |
+      | validators.epoch.length                             | 2s    |
     Given the liquidity monitoring parameters:
-      | name               | triggering ratio | time window | scaling factor |
-      | lqm-params         | 0.5              | 20s         | 1.0            |
+      | name       | triggering ratio | time window | scaling factor |
+      | lqm-params | 0.5              | 20s         | 1.0            |
 
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
@@ -53,7 +53,7 @@ Feature: Test LP bond account when market is terminated
       | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | ethDec19Oracle     | 1e1                    | 1e0                       | SLA        |
     And the following network parameters are set:
-      | name                                               | value |
+      | name                                             | value |
       | market.liquidity.providersFeeCalculationTimeStep | 2s    |
 
     Given the average block duration is "2"
@@ -108,7 +108,7 @@ Feature: Test LP bond account when market is terminated
       | party | asset | market id | margin | general | bond |
       | lp1   | USD   | ETH/MAR22 | 26677  | 129323  | 3000 |
       | lp2   | USD   | ETH/MAR22 | 10671  | 88329   | 1000 |
-    #intial margin lp2: 2*1000*3.5569036*1.5=10670
+    #initial margin lp2: 2*1000*3.5569036*1.5=10670
 
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
@@ -141,7 +141,7 @@ Feature: Test LP bond account when market is terminated
     And the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
       | lp1   | USD   | ETH/MAR22 | 155878 | 145     | 2430 |
-      | lp2   | USD   | ETH/MAR22 | 0      | 99000   | 1000 |
+      | lp2   | USD   | ETH/MAR22 | 0      | 99000   | 810  |
 
     When the oracles broadcast data signed with "0xCAFECAFE19":
       | name               | value |
@@ -150,11 +150,11 @@ Feature: Test LP bond account when market is terminated
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/MAR22"
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1120       | TRADING_MODE_NO_TRADING | 360000  | 831       | 1440      | 63739        | 3430           | 16            |
+      | 1120       | TRADING_MODE_NO_TRADING | 360000  | 831       | 1440      | 63739        | 3240           | 16            |
 
     Then the oracles broadcast data signed with "0xCAFECAFE19":
       | name             | value |
-      | prices.ETH.value | 1600 |
+      | prices.ETH.value | 1600  |
     And the network moves ahead "3" blocks
 
     Then the parties should have the following profit and loss:
@@ -167,7 +167,7 @@ Feature: Test LP bond account when market is terminated
     And the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
       | lp1   | USD   | ETH/MAR22 | 0      | 155592  | 0    |
-      | lp2   | USD   | ETH/MAR22 | 0      | 99810   | 0    |
+      | lp2   | USD   | ETH/MAR22 | 0      | 99657   | 0    |
 
-    And the insurance pool balance should be "1255" for the market "ETH/MAR22"
+    And the insurance pool balance should be "1408" for the market "ETH/MAR22"
 

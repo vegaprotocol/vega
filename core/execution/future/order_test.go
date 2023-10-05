@@ -1972,7 +1972,8 @@ func testPeggedOrderExpiring2(t *testing.T) {
 	tm.now = tm.now.Add(time.Second)
 	tm.market.OnTick(ctx, tm.now)
 
-	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
+	// the limit order has expired so the order pegged to it has to be parked!
+	assert.Equal(t, 2, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 2, tm.market.GetPeggedOrderCount())
 
 	// Move the time forward

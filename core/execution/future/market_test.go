@@ -4133,11 +4133,11 @@ func TestOrderBook_ExpiredOrderTriggersReprice(t *testing.T) {
 
 		expects := map[string]types.OrderStatus{
 			o1.ID: types.OrderStatusExpired,
-			o2.ID: types.OrderStatusActive,
+			o2.ID: types.OrderStatusParked,
 		}
 
 		for id, v := range found {
-			require.Equal(t, v.Status, expects[id])
+			require.Equal(t, expects[id], v.Status)
 		}
 	})
 }

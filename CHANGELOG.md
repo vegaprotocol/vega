@@ -276,6 +276,7 @@
 - [8737](https://github.com/vegaprotocol/vega/issues/8737) - Fix `GetStopOrder` errors when order has a state change.
 - [8727](https://github.com/vegaprotocol/vega/issues/8727) - Clear parent market on checkpoint restore if the parent market was already succeeded.
 - [8835](https://github.com/vegaprotocol/vega/issues/8835) - Spot snapshot fixes
+- [9651](https://github.com/vegaprotocol/vega/issues/9651) - Park pegged orders if they lose their peg
 
 ## 0.72.0
 

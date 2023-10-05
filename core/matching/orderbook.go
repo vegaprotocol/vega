@@ -789,18 +789,12 @@ func (b *OrderBook) ReSubmitSpecialOrders(order *types.Order) {
 	switch order.Side {
 	case types.SideBuy:
 		price, err := b.GetBestAskPrice()
-		if err != nil {
-			b.log.Panic("tried to re submit special orders in an empty book", logging.Order(order))
-		}
-		if price.LTE(order.Price) {
+		if err == nil && price.LTE(order.Price) {
 			b.log.Panic("re submit special order would cross", logging.Order(order), logging.BigUint("best-ask", price))
 		}
 	case types.SideSell:
 		price, err := b.GetBestBidPrice()
-		if err != nil {
-			b.log.Panic("tried to re submit special orders in an empty book", logging.Order(order))
-		}
-		if price.GTE(order.Price) {
+		if err == nil && price.GTE(order.Price) {
 			b.log.Panic("re submit special order would cross", logging.Order(order), logging.BigUint("best-bid", price))
 		}
 	default:

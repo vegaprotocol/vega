@@ -24,9 +24,6 @@ func (m *Market) checkForReferenceMoves(ctx context.Context, forceUpdate bool) {
 		return
 	}
 
-	// will be set to non-nil if a peg is missing
-	_, _, err := m.getBestStaticPricesDecimal()
-
 	newBestBid, _ := m.getBestStaticBidPrice()
 	newBestAsk, _ := m.getBestStaticAskPrice()
 	newMidBuy, _ := m.getStaticMidPrice(types.SideBuy)
@@ -48,13 +45,7 @@ func (m *Market) checkForReferenceMoves(ctx context.Context, forceUpdate bool) {
 		changes = common.PriceMoveAll
 	}
 
-	// now we can start all special order repricing...
-	if err == nil {
-		m.repriceAllSpecialOrders(ctx, changes)
-	} else {
-		// we won't be able to reprice here
-		m.parkAllPeggedOrders(ctx)
-	}
+	m.repriceAllSpecialOrders(ctx, changes)
 
 	// Update the last price values
 	// no need to clone the prices, they're not used in calculations anywhere in this function
