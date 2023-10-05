@@ -34,7 +34,7 @@ Feature: check when settlement data precision is different/equal to the settleme
       | network.markPriceUpdateMaximumFrequency | 5s    |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount        |
-      | party1 | USD   | 1000000000000 |
+      | party1 | USD | 100000000000000 |
       | party2 | USD   | 100000000     |
       | party3 | USD   | 100000000     |
       | aux    | USD   | 1000000       |
@@ -53,8 +53,8 @@ Feature: check when settlement data precision is different/equal to the settleme
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 1      | 49    | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux | ETH/DEC19 | buy  | 1 | 849  | 0 | TYPE_LIMIT | TIF_GTC |
+      | aux | ETH/DEC19 | sell | 1 | 2001 | 0 | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
@@ -75,9 +75,15 @@ Feature: check when settlement data precision is different/equal to the settleme
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general      |
-      | party1 | USD   | ETH/DEC19 | 120000 | 999999880000 |
+      | party1 | USD | ETH/DEC19 | 120000 | 99999999880000 |
       | party2 | USD   | ETH/DEC19 | 132000 | 99867000     |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC19 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin         | general        |
+      | party1 | USD   | ETH/DEC19 | 13200000240000 | 86799999760000 |
+
+    Then debug orders
