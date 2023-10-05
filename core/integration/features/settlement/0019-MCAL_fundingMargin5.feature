@@ -47,8 +47,8 @@ Feature: check when settlement data precision is different/equal to the settleme
       | lp1 | lpprov | ETH/DEC19 | 1200000           | 0.001 | submission |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 1      |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 1      |
+      | lpprov | ETH/DEC19 | 20 | 1 | buy  | BID | 50 | 1 |
+      | lpprov | ETH/DEC19 | 20 | 1 | sell | ASK | 50 | 1 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
