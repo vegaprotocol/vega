@@ -317,14 +317,13 @@ func (m *MarketLiquidity) calculateAndDistribute(ctx context.Context, t time.Tim
 
 func (m *MarketLiquidity) OnTick(ctx context.Context, t time.Time) {
 	// distribute liquidity fees each feeDistributionTimeStep
-	if m.readyForFeesAllocation(t) {
+	if m.liquidityEngine.ReadyForFeesAllocation(t) {
 		if err := m.AllocateFees(ctx); err != nil {
 			m.log.Panic("liquidity fee distribution error", logging.Error(err))
 		}
 
 		// reset next distribution period
-		m.liquidityEngine.ResetAverageLiquidityScores()
-		m.liquidityEngine.SetLastFeeDistributionTime(t)
+		m.liquidityEngine.ResetFeeAllocationPeriod(t)
 		return
 	}
 
@@ -862,7 +861,7 @@ func (m *MarketLiquidity) OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal)
 }
 
 func (m *MarketLiquidity) OnProvidersFeeCalculationTimeStep(d time.Duration) {
-	m.feeCalculationTimeStep = d
+	m.liquidityEngine.OnProvidersFeeCalculationTimeStep(d)
 }
 
 func (m *MarketLiquidity) IsProbabilityOfTradingInitialised() bool {

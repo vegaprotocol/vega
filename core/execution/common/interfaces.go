@@ -226,12 +226,13 @@ type LiquidityEngine interface {
 	OnProbabilityOfTradingTauScalingUpdate(num.Decimal)
 	OnMaximumLiquidityFeeFactorLevelUpdate(num.Decimal)
 	OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal)
+	OnProvidersFeeCalculationTimeStep(time.Duration)
 	IsProbabilityOfTradingInitialised() bool
 
 	LiquidityProviderSLAStats(t time.Time) []*types.LiquidityProviderSLA
 
-	SetLastFeeDistributionTime(t time.Time)
-	GetLastFeeDistributionTime() time.Time
+	ReadyForFeesAllocation(time.Time) bool
+	ResetFeeAllocationPeriod(t time.Time)
 
 	V1StateProvider() types.StateProvider
 	V2StateProvider() types.StateProvider

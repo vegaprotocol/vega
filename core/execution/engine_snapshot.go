@@ -226,7 +226,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 	e.futureMarketsCpy = append(e.futureMarketsCpy, mkt)
 	e.allMarkets[marketConfig.ID] = mkt
 
-	if err := e.propagateInitialNetParamsToFutureMarket(ctx, mkt); err != nil {
+	if err := e.propagateInitialNetParamsToFutureMarket(ctx, mkt, true); err != nil {
 		return nil, err
 	}
 	// ensure this is set correctly

@@ -301,6 +301,7 @@ func (e *snapshotV2) serialiseScores() ([]byte, error) {
 				RunningAverageCounter:   int32(e.nAvg),
 				Scores:                  scores,
 				LastFeeDistributionTime: lastFeeDistributionTime,
+				FeeCalculationTimeStep:  int64(e.feeCalculationTimeStep),
 			},
 		},
 	}
@@ -436,6 +437,7 @@ func (e *snapshotV2) loadScores(ls *snapshotpb.LiquidityV2Scores, p *types.Paylo
 
 	e.nAvg = int64(ls.RunningAverageCounter)
 	e.lastFeeDistribution = time.Unix(0, ls.LastFeeDistributionTime)
+	e.feeCalculationTimeStep = time.Duration(ls.FeeCalculationTimeStep)
 
 	scores := make(map[string]num.Decimal, len(ls.Scores))
 	for _, p := range ls.Scores {

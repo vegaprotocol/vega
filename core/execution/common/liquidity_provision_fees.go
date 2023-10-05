@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
-	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/liquidity/v2"
@@ -58,10 +57,6 @@ func (ft FeeTransfer) Transfers() []*types.Transfer {
 
 func (ft FeeTransfer) TotalFeesAmountPerParty() map[string]*num.Uint {
 	return ft.totalFeesPerParty
-}
-
-func (m *MarketLiquidity) readyForFeesAllocation(now time.Time) bool {
-	return now.Sub(m.liquidityEngine.GetLastFeeDistributionTime()) > m.feeCalculationTimeStep
 }
 
 // AllocateFees distributes fee from a market fee account to LP fee accounts.
