@@ -331,17 +331,6 @@ func (e *Engine) VerifyGovernanceTransfer(transfer *types.NewTransferConfigurati
 		return err
 	}
 
-	// check destination account exists
-	if transfer.DestinationType == types.AccountTypeGeneral {
-		if _, err := e.col.GetPartyGeneralAccount(transfer.Destination, transfer.Asset); err != nil {
-			return err
-		}
-	} else {
-		if _, err := e.col.GetSystemAccountBalance(transfer.Asset, transfer.Destination, transfer.DestinationType); err != nil {
-			return err
-		}
-	}
-
 	// check transfer type is specified
 	if transfer.TransferType == vegapb.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_UNSPECIFIED {
 		return errors.New("invalid governance transfer type")

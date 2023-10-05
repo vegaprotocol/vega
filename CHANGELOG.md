@@ -46,6 +46,7 @@
 - [8765](https://github.com/vegaprotocol/vega/issues/8765) - Implement snapshots state for `PERPS`.
 - [8918](https://github.com/vegaprotocol/vega/issues/8918) - Implement commands for team management.
 - [9401](https://github.com/vegaprotocol/vega/issues/9401) - Use boot strap peers when fetching initial network history segment
+- [9670](https://github.com/vegaprotocol/vega/issues/9670) - Do not check destination account exists when validating transfer proposal
 - [8960](https://github.com/vegaprotocol/vega/issues/8960) - Improve wiring perpetual markets through governance.
 - [8969](https://github.com/vegaprotocol/vega/issues/8969) - Improve wiring of internal time triggers for perpetual markets.
 - [9001](https://github.com/vegaprotocol/vega/issues/9001) - Improve wiring of perpetual markets into the data node.
