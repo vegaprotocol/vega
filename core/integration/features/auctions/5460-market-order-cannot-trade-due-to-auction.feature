@@ -2,14 +2,14 @@ Feature: Test for issue 5460
 
   Background:
     Given the following network parameters are set:
-      | name                                          | value |
-      | network.floatingPointUpdates.delay            | 10s   |
-      | market.auction.minimumDuration                | 1     |
-      | limits.markets.maxPeggedOrders                | 2     |
+      | name                               | value |
+      | network.floatingPointUpdates.delay | 10s   |
+      | market.auction.minimumDuration     | 1     |
+      | limits.markets.maxPeggedOrders     | 2     |
     And the liquidity monitoring parameters:
-      | name               | triggering ratio | time window | scaling factor |
-      | lqm-params         | 1.00             | 24h         | 1              |  
-    
+      | name       | triggering ratio | time window | scaling factor |
+      | lqm-params | 1.00             | 24h         | 1              |
+
     And the following assets are registered:
       | id  | decimal places |
       | ETH | 5              |
@@ -45,9 +45,9 @@ Feature: Test for issue 5460
       | lp1 | party0 | ETH/DEC21 | 200000000         | 0.001 | submission |
       | lp1 | party0 | ETH/DEC21 | 200000000         | 0.001 | submission |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume   | offset |
-      | party0 | ETH/DEC21 | 1000      | 1                    | buy  | MID              | 200000   | 205    |
-      | party0 | ETH/DEC21 | 1000      | 1                    | sell | MID              | 300000   | 205    |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party0 | ETH/DEC21 | 1000      | 1                    | buy  | MID              | 200000 | 205    |
+      | party0 | ETH/DEC21 | 1000      | 1                    | sell | MID              | 300000 | 205    |
     And the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | party_a1 | ETH/DEC21 | buy  | 100000 | 30000 | 0                | TYPE_LIMIT | TIF_GTC |
@@ -97,7 +97,6 @@ Feature: Test for issue 5460
       | buy  | 29977 | 100000 |
       | buy  | 29967 | 100000 |
       | buy  | 29957 | 100000 |
-      | buy  | 29795 | 1000   |
       | sell | 30002 | 0      |
       | sell | 30204 | 0      |
     When the network moves ahead "1" blocks
@@ -113,32 +112,32 @@ Feature: Test for issue 5460
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC21"
 
     And the order book should have the following volumes for market "ETH/DEC21":
-      | side | price | volume    |
-      | buy  | 29998 | 100000    |
-      | buy  | 29987 | 100000    |
-      | buy  | 29977 | 100000    |
-      | buy  | 29967 | 100000    |
-      | buy  | 29957 | 100000    |
-      | buy  | 29795 | 1000      |
-      | sell | 30002 | 100000    |
-      | sell | 30205 | 1000      |
+      | side | price | volume |
+      | buy  | 29998 | 100000 |
+      | buy  | 29987 | 100000 |
+      | buy  | 29977 | 100000 |
+      | buy  | 29967 | 100000 |
+      | buy  | 29957 | 100000 |
+      | buy  | 29795 | 1000   |
+      | sell | 30002 | 100000 |
+      | sell | 30205 | 1000   |
 
     And the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | party_r | ETH/DEC21 | buy  | 100000 | 29700 | 0                | TYPE_LIMIT | TIF_GTC |
 
     And the order book should have the following volumes for market "ETH/DEC21":
-      | side | price  | volume    |
-      | buy  | 29998  | 100000    |
-      | buy  | 29987  | 100000    |
-      | buy  | 29977  | 100000    |
-      | buy  | 29967  | 100000    |
-      | buy  | 29957  | 100000    |
-      | buy  | 29795  | 1000      |
-      | buy  | 400000 | 0         |
-      | buy  | 29700  | 100000    |
-      | sell | 30002  | 100000    |
-      | sell | 30205  | 1000      |
+      | side | price  | volume |
+      | buy  | 29998  | 100000 |
+      | buy  | 29987  | 100000 |
+      | buy  | 29977  | 100000 |
+      | buy  | 29967  | 100000 |
+      | buy  | 29957  | 100000 |
+      | buy  | 29795  | 1000   |
+      | buy  | 400000 | 0      |
+      | buy  | 29700  | 100000 |
+      | sell | 30002  | 100000 |
+      | sell | 30205  | 1000   |
 
     And the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             | target stake | supplied stake | open interest |

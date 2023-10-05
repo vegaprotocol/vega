@@ -426,13 +426,10 @@ func TestEvents_PeggedOrderNotAbleToRepriceDueToMargin(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check we have the right amount of events
-	// assert.Equal(t, uint64(6), tm.orderEventCount)
-	assert.Equal(t, uint64(5), tm.orderEventCount)
-	// assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, uint64(6), tm.orderEventCount)
 	assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
 
 	processEvents(t, tm, mdb)
-	// assert.Equal(t, int64(2), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, int64(3), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
