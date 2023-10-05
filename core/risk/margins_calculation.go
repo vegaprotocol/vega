@@ -79,6 +79,9 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			CollateralReleaseLevel: num.UintZero(),
 		}
 	}
+	if inc.IsNegative() {
+		inc = inc.Abs() // this can be positive or negative, we use it to pad margin levels to ensure funding can be paid either way, always add
+	}
 
 	mPriceDec := markPrice.ToDecimal()
 	// calculate margin maintenance long only if riskiest is > 0
