@@ -279,6 +279,7 @@
 - [8727](https://github.com/vegaprotocol/vega/issues/8727) - Clear parent market on checkpoint restore if the parent market was already succeeded.
 - [8835](https://github.com/vegaprotocol/vega/issues/8835) - Spot snapshot fixes
 - [9651](https://github.com/vegaprotocol/vega/issues/9651) - Park pegged orders if they lose their peg
+- [9666]()(https://github.com/vegaprotocol/vega/issues/9666) - Fix balance cache refresh snapshot issue
 
 ## 0.72.0
 

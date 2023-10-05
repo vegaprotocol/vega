@@ -181,6 +181,9 @@ func (e *Engine) snapshotBalances() {
 	m := make(map[string]*num.Uint, len(e.partiesAccs))
 	quantums := map[string]*num.Uint{}
 	for k, v := range e.partiesAccs {
+		if k == "*" {
+			continue
+		}
 		total := num.UintZero()
 		for _, a := range v {
 			asset := a.Asset
@@ -206,6 +209,7 @@ func (e *Engine) updateNextBalanceSnapshot(t time.Time) {
 func (e *Engine) OnBalanceSnapshotFrequencyUpdated(ctx context.Context, d time.Duration) error {
 	if e.activeRestore {
 		e.balanceSnapshotFrequency = d
+		e.activeRestore = false
 		return nil
 	}
 	if !e.nextBalancesSnapshot.IsZero() {

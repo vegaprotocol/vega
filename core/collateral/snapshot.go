@@ -113,11 +113,6 @@ func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAcco
 	return err
 }
 
-func (e *Engine) PostRestore(ctx context.Context) error {
-	e.activeRestore = false
-	return nil
-}
-
 func (e *Engine) getOrCreateNetTreasuryAndGlobalInsForAssets(ctx context.Context, assets map[string]struct{}) {
 	// bit of migration - ensure that the network treasury and global insurance account are created for all assets
 	assetStr := make([]string, 0, len(assets))
