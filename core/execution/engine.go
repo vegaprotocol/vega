@@ -236,7 +236,7 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	for _, m := range e.allMarketsCpy {
 		// propagate SLA parameters to markets at a start of a epoch
 		if epoch.Action == vega.EpochAction_EPOCH_ACTION_START {
-			e.propagateSLANetParams(ctx, m)
+			e.propagateSLANetParams(ctx, m, false)
 		}
 
 		m.OnEpochEvent(ctx, epoch)
@@ -269,6 +269,7 @@ func (e *Engine) Hash() []byte {
 	for _, h := range append(hashes, string(accountsHash)) {
 		bytes = append(bytes, []byte(h)...)
 	}
+
 	return crypto.Hash(bytes)
 }
 
@@ -691,7 +692,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 	e.allMarkets[marketConfig.ID] = mkt
 	e.allMarketsCpy = append(e.allMarketsCpy, mkt)
 
-	return e.propagateInitialNetParamsToFutureMarket(ctx, mkt)
+	return e.propagateInitialNetParamsToFutureMarket(ctx, mkt, false)
 }
 
 // submitMarket will submit a new market configuration to the network.
@@ -827,7 +828,7 @@ func (e *Engine) propagateSpotInitialNetParams(ctx context.Context, mkt *spot.Ma
 	return nil
 }
 
-func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mkt *future.Market) error {
+func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mkt *future.Market, isRestore bool) error {
 	if !e.npv.probabilityOfTradingTauScaling.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnMarketProbabilityOfTradingTauScalingUpdate(ctx, e.npv.probabilityOfTradingTauScaling)
 	}
@@ -871,12 +872,12 @@ func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mk
 
 	mkt.OnMarketPartiesMaximumStopOrdersUpdate(ctx, e.npv.marketPartiesMaximumStopOrdersUpdate)
 
-	e.propagateSLANetParams(ctx, mkt)
+	e.propagateSLANetParams(ctx, mkt, isRestore)
 
 	return nil
 }
 
-func (e *Engine) propagateSLANetParams(_ context.Context, mkt common.CommonMarket) {
+func (e *Engine) propagateSLANetParams(_ context.Context, mkt common.CommonMarket, isRestore bool) {
 	if !e.npv.liquidityV2BondPenaltyFactor.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
 		mkt.OnMarketLiquidityV2BondPenaltyFactorUpdate(e.npv.liquidityV2BondPenaltyFactor)
 	}
@@ -901,7 +902,7 @@ func (e *Engine) propagateSLANetParams(_ context.Context, mkt common.CommonMarke
 		mkt.OnMarketLiquidityV2StakeToCCYVolume(e.npv.liquidityV2StakeToCCYVolume)
 	}
 
-	if e.npv.liquidityV2ProvidersFeeCalculationTimeStep != 0 {
+	if !isRestore && e.npv.liquidityV2ProvidersFeeCalculationTimeStep != 0 {
 		mkt.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(e.npv.liquidityV2ProvidersFeeCalculationTimeStep)
 	}
 }

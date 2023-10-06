@@ -128,6 +128,7 @@ type Engine struct {
 	stakeToCcyVolume               num.Decimal
 	nonPerformanceBondPenaltySlope num.Decimal
 	nonPerformanceBondPenaltyMax   num.Decimal
+	feeCalculationTimeStep         time.Duration
 
 	// sla related market parameters
 	slaParams *types.LiquiditySLAParams
@@ -200,10 +201,6 @@ func NewEngine(config Config,
 func (e *Engine) GetLegacyOrders() (orders []string) {
 	orders, e.legacyOrderIDs = e.legacyOrderIDs, []string{}
 	return
-}
-
-func (e *Engine) SetLastFeeDistributionTime(t time.Time) {
-	e.lastFeeDistribution = t
 }
 
 func (e *Engine) GetLastFeeDistributionTime() time.Time {
@@ -468,6 +465,15 @@ func (e *Engine) SetGetStaticPricesFunc(f func() (num.Decimal, num.Decimal, erro
 	e.suppliedEngine.SetGetStaticPricesFunc(f)
 }
 
+func (e *Engine) ReadyForFeesAllocation(now time.Time) bool {
+	return now.Sub(e.lastFeeDistribution) > e.feeCalculationTimeStep
+}
+
+func (e *Engine) ResetFeeAllocationPeriod(t time.Time) {
+	e.ResetAverageLiquidityScores()
+	e.lastFeeDistribution = t
+}
+
 func (e *Engine) OnMinProbabilityOfTradingLPOrdersUpdate(v num.Decimal) {
 	e.suppliedEngine.OnMinProbabilityOfTradingLPOrdersUpdate(v)
 }
@@ -490,6 +496,10 @@ func (e *Engine) OnNonPerformanceBondPenaltySlopeUpdate(nonPerformanceBondPenalt
 
 func (e *Engine) OnNonPerformanceBondPenaltyMaxUpdate(nonPerformanceBondPenaltyMax num.Decimal) {
 	e.nonPerformanceBondPenaltyMax = nonPerformanceBondPenaltyMax
+}
+
+func (e *Engine) OnProvidersFeeCalculationTimeStep(d time.Duration) {
+	e.feeCalculationTimeStep = d
 }
 
 func (e *Engine) onSLAParamsUpdate(slaParams *types.LiquiditySLAParams) {

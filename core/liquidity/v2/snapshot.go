@@ -15,6 +15,8 @@ import (
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
+const defaultFeeCalculationTimeStep = time.Minute
+
 type SnapshotEngine struct {
 	*Engine
 
@@ -294,6 +296,13 @@ func (e *snapshotV2) serialiseScores() ([]byte, error) {
 		lastFeeDistributionTime = e.lastFeeDistribution.UnixNano()
 	}
 
+	var feeCalculationTimeStep time.Duration
+	if e.feeCalculationTimeStep != 0 {
+		feeCalculationTimeStep = e.feeCalculationTimeStep
+	} else {
+		feeCalculationTimeStep = defaultFeeCalculationTimeStep
+	}
+
 	payload := &snapshotpb.Payload{
 		Data: &snapshotpb.Payload_LiquidityV2Scores{
 			LiquidityV2Scores: &snapshotpb.LiquidityV2Scores{
@@ -301,6 +310,7 @@ func (e *snapshotV2) serialiseScores() ([]byte, error) {
 				RunningAverageCounter:   int32(e.nAvg),
 				Scores:                  scores,
 				LastFeeDistributionTime: lastFeeDistributionTime,
+				FeeCalculationTimeStep:  int64(feeCalculationTimeStep),
 			},
 		},
 	}
@@ -436,6 +446,12 @@ func (e *snapshotV2) loadScores(ls *snapshotpb.LiquidityV2Scores, p *types.Paylo
 
 	e.nAvg = int64(ls.RunningAverageCounter)
 	e.lastFeeDistribution = time.Unix(0, ls.LastFeeDistributionTime)
+
+	if ls.FeeCalculationTimeStep != 0 {
+		e.feeCalculationTimeStep = time.Duration(ls.FeeCalculationTimeStep)
+	} else {
+		e.feeCalculationTimeStep = defaultFeeCalculationTimeStep
+	}
 
 	scores := make(map[string]num.Decimal, len(ls.Scores))
 	for _, p := range ls.Scores {

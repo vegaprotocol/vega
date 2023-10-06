@@ -97,7 +97,6 @@ func newMarketLiquidity(t *testing.T) *marketLiquidityTest {
 
 	marketLiquidity.OnMinLPStakeQuantumMultiple(num.DecimalOne())
 	marketLiquidity.OnEarlyExitPenalty(num.DecimalOne())
-	marketLiquidity.OnProvidersFeeCalculationTimeStep(time.Second * 3)
 
 	return &marketLiquidityTest{
 		ctrl:             ctrl,
@@ -266,20 +265,16 @@ func TestLiquidityProvisionsFeeDistribution(t *testing.T) {
 	// start epoch.
 	lastDistributionStep := time.Now()
 	now := lastDistributionStep.Add(time.Second * 5)
+	testLiquidity.liquidityEngine.EXPECT().ReadyForFeesAllocation(gomock.Any()).Return(true)
 
 	testLiquidity.marketLiquidity.OnEpochStart(testLiquidity.ctx, now, uintOne, uintOne, uintOne, decimalOne)
 
-	testLiquidity.liquidityEngine.EXPECT().ResetAverageLiquidityScores()
+	testLiquidity.liquidityEngine.EXPECT().ResetAverageLiquidityScores().AnyTimes()
+	testLiquidity.liquidityEngine.EXPECT().ResetFeeAllocationPeriod(gomock.Any()).AnyTimes()
 
 	testLiquidity.equityShares.EXPECT().AllShares().DoAndReturn(func() map[string]num.Decimal {
 		return weightsPerLP
 	})
-
-	testLiquidity.liquidityEngine.EXPECT().GetLastFeeDistributionTime().DoAndReturn(func() time.Time {
-		return lastDistributionStep
-	})
-
-	testLiquidity.liquidityEngine.EXPECT().SetLastFeeDistributionTime(gomock.Any())
 
 	testLiquidity.liquidityEngine.EXPECT().GetAverageLiquidityScores().DoAndReturn(func() map[string]num.Decimal {
 		return scoresPerLP

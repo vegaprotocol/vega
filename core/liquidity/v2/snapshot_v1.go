@@ -206,6 +206,7 @@ func (e *snapshotV1) loadScores(ls *snapshotpb.LiquidityScores) error {
 	var err error
 
 	e.nAvg = int64(ls.RunningAverageCounter)
+	e.feeCalculationTimeStep = defaultFeeCalculationTimeStep
 
 	scores := make(map[string]num.Decimal, len(ls.Scores))
 	for _, p := range ls.Scores {
