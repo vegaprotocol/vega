@@ -7,6 +7,8 @@ import (
 	"code.vegaprotocol.io/vega/core/teams"
 	"code.vegaprotocol.io/vega/core/types"
 	"github.com/cucumber/godog"
+
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
 func PartiesApplyTheFollowingReferralCode(referralEngine *referral.Engine, teamsEngine *teams.Engine, table *godog.Table) error {
@@ -20,7 +22,10 @@ func PartiesApplyTheFollowingReferralCode(referralEngine *referral.Engine, teams
 		}
 		// If we have team details, submit a new team
 		if r.HasColumn("is_team") && row.IsTeam() {
-			err = teamsEngine.CreateTeam(ctx, row.Party(), types.TeamID(row.Team()), nil)
+			team := &commandspb.ApplyReferralCode{
+				Id: row.Team(),
+			}
+			err = teamsEngine.JoinTeam(ctx, row.Party(), team)
 			if err != nil {
 				return err
 			}
