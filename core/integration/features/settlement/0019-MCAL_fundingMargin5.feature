@@ -1,4 +1,4 @@
-Feature: check when settlement data precision is different/equal to the settlement asset precision
+Feature: check when settlement data precision is different/equal to the settlement asset precision, and also check decimal on the market with different market/position/asset decimal
 
   Background:
 
@@ -7,13 +7,13 @@ Feature: check when settlement data precision is different/equal to the settleme
       | USD | 2              |
     And the perpetual oracles from "0xCAFECAFE1":
       | name          | asset | settlement property | settlement type | schedule property | schedule type  | margin funding factor | interest rate | clamp lower bound | clamp upper bound | quote name | settlement decimals |
-      | perp-oracle-1 | USD   | perp.ETH.value      | TYPE_INTEGER    | perp.funding.cue  | TYPE_TIMESTAMP | 0.5                   | 0.05          | 0.1               | 0.15              | ETH        | 5                   |
+      | perp-oracle-1 | USD | perp.ETH.value | TYPE_INTEGER | perp.funding.cue | TYPE_TIMESTAMP | 0.5 | 0.05 | 0.1 | 0.5 | ETH | 5 |
     And the perpetual oracles from "0xCAFECAFE2":
       | name          | asset | settlement property | settlement type | schedule property | schedule type  | margin funding factor | interest rate | clamp lower bound | clamp upper bound | quote name | settlement decimals |
-      | perp-oracle-2 | USD   | perp.ETH.value      | TYPE_INTEGER    | perp.funding.cue  | TYPE_TIMESTAMP | 0.5                   | 0.05          | 0.1               | 0.15              | ETH        | 2                   |
+      | perp-oracle-2 | USD | perp.ETH.value | TYPE_INTEGER | perp.funding.cue | TYPE_TIMESTAMP | 0.5 | 0.05 | 0.1 | 0.5 | ETH | 2 |
     And the perpetual oracles from "0xCAFECAFE3":
       | name          | asset | settlement property | settlement type | schedule property | schedule type  | margin funding factor | interest rate | clamp lower bound | clamp upper bound | quote name | settlement decimals |
-      | perp-oracle-3 | USD   | perp.ETH.value      | TYPE_INTEGER    | perp.funding.cue  | TYPE_TIMESTAMP | 0.5                   | 0.05          | 0.1               | 0.15              | ETH        | 1                   |
+      | perp-oracle-3 | USD | perp.ETH.value | TYPE_INTEGER | perp.funding.cue | TYPE_TIMESTAMP | 0.5 | 0.05 | 0.1 | 0.5 | ETH | 1 |
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 1                             | 1.0                    |
@@ -34,12 +34,12 @@ Feature: check when settlement data precision is different/equal to the settleme
       | network.markPriceUpdateMaximumFrequency | 5s    |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount        |
-      | party1 | USD | 100000000000000 |
+      | party1 | USD | 10000000000 |
       | party2 | USD   | 100000000     |
       | party3 | USD   | 100000000     |
-      | aux    | USD   | 1000000       |
-      | aux2   | USD   | 1000000       |
-      | lpprov | USD   | 5000000       |
+      | aux    | USD | 100000000 |
+      | aux2   | USD | 100000000 |
+      | lpprov | USD | 500000000 |
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | lp type    |
@@ -65,11 +65,6 @@ Feature: check when settlement data precision is different/equal to the settleme
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
-    And the orders should have the following status:
-      | party  | reference | status           |
-      | lpprov | lp-sell   | STATUS_CANCELLED |
-      | lpprov | lp-buy    | STATUS_CANCELLED |
-
     # back sure we end the block so we're in a new one after opening auction
     When the network moves ahead "1" blocks
 
@@ -80,22 +75,52 @@ Feature: check when settlement data precision is different/equal to the settleme
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general      |
-      | party1 | USD | ETH/DEC19 | 120000 | 99999999880000 |
+      | party1 | USD | ETH/DEC19 | 120000 | 9999880000 |
       | party2 | USD   | ETH/DEC19 | 132000 | 99867000     |
-      | lpprov | USD | ETH/DEC19 | 0 | 3800000 |
+      | lpprov | USD | ETH/DEC19 | 6600000 | 492200000 |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC19 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
-
+      | party3 | ETH/DEC19 | buy | 1 | 2000 | 1 | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin         | general        |
-      | party1 | USD   | ETH/DEC19 | 13200000240000 | 86799999760000 |
+      | party  | asset | market id | margin  | general    |
+      | party1 | USD   | ETH/DEC19 | 1441200 | 9998558800 |
+      | party2 | USD   | ETH/DEC19 | 132000  | 99867000   |
+      | party3 | USD   | ETH/DEC19 | 132000  | 99866000   |
+      | lpprov | USD   | ETH/DEC19 | 6600000 | 492200000  |
 
-    And the orders should have the following status:
-      | party  | reference | status           |
-      | lpprov | lp-sell   | STATUS_CANCELLED |
-      | lpprov | lp-buy    | STATUS_CANCELLED |
+    When the oracles broadcast data with block time signed with "0xCAFECAFE1":
+      | name             | value      | time offset |
+      | perp.funding.cue | 1613061324 | 0s          |
+
+    When the network moves ahead "5" blocks
+
+    When the oracles broadcast data with block time signed with "0xCAFECAFE1":
+      | name             | value      | time offset |
+      | perp.ETH.value   | 300000000  | 0s          |
+      | perp.funding.cue | 1628766252 | 0s          |
+    #1628766252 is half year after the first oracel time
+
+    And the following transfers should happen:
+      | from   | to     | from account            | to account              | market id | amount | asset |
+      | aux2   | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 74700  | USD   |
+      | party2 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 74700  | USD   |
+      | party3 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 74700  | USD   |
+      | market | aux    | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 74700  | USD   |
+      | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 149400 | USD   |
+
+    And the markets are updated:
+      | id        | data source config |
+      | ETH/DEC19 | perp-oracle-2      |
+
+
+
+
+
+
+
+
 
 
 
