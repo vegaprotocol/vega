@@ -267,6 +267,7 @@
 - [9280](https://github.com/vegaprotocol/vega/issues/9280) - Fix block height off by one issue.
 - [9658](https://github.com/vegaprotocol/vega/issues/9658) - Fix `updateVolumeDiscountProgram` GraphQL resolver.
 - [9672](https://github.com/vegaprotocol/vega/issues/9672) - Fix margin being non-zero on `PERPS`, add tests to ensure distressed parties are handled correctly
+- [9280](https://github.com/vegaprotocol/vega/issues/9280) - Get block height directly from `blocks` table.
 
 ## 0.72.1
 
