@@ -39,6 +39,7 @@ import (
 const (
 	namedLogger = "snapshot"
 	numWorkers  = 1000
+	chanSize    = numWorkers * 10
 
 	// This is a limitation by Tendermint. It must be strictly positive, and
 	// non-zero.
@@ -528,8 +529,8 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 	treeKeysCounter := atomic.Int64{}
 	treeKeysCounter.Store(int64(len(treeKeysToSnapshot)))
 
-	treeKeysToSnapshotChan := make(chan treeKeyToSnapshot, numWorkers)
-	serializedStateChan := make(chan snapshotResult, numWorkers)
+	treeKeysToSnapshotChan := make(chan treeKeyToSnapshot, chanSize)
+	serializedStateChan := make(chan snapshotResult, chanSize)
 
 	snapMetricsRecord := newSnapMetricsState()
 	defer func() {
@@ -557,7 +558,7 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 	}
 
 	// analyse the results
-	results := make([]snapshotResult, 0, numWorkers)
+	results := make([]snapshotResult, 0, chanSize)
 	for res := range serializedStateChan {
 		if res.err != nil {
 			e.log.Panic("Failed to update snapshot namespace",

@@ -130,15 +130,19 @@ func (s *Store) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 	}
 
 	evts := make([]events.Event, 0, len(s.store))
+	keys := maps.Keys(s.store)
+	sort.Strings(keys)
 	// first we going to send the initial state through the broker
-	for k, v := range s.store {
-		evts = append(evts, events.NewNetworkParameterEvent(ctx, k, v.String()))
+	for _, k := range keys {
+		evts = append(evts, events.NewNetworkParameterEvent(ctx, k, s.store[k].String()))
 	}
 	s.broker.SendBatch(evts)
 
 	// now iterate over all parameters and update the existing ones
-	for k, v := range state {
-		if err := s.UpdateOptionalValidation(ctx, k, v, false, true); err != nil {
+	keys = maps.Keys(state)
+	sort.Strings(keys)
+	for _, k := range keys {
+		if err := s.UpdateOptionalValidation(ctx, k, state[k], false, true); err != nil {
 			return fmt.Errorf("%v: %v", k, err)
 		}
 	}
@@ -160,7 +164,9 @@ func (s *Store) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 	// now we can iterate again over ALL the net params,
 	// and dispatch the value of them all so any watchers can get updated
 	// with genesis values
-	for k := range s.store {
+	keys = maps.Keys(s.store)
+	sort.Strings(keys)
+	for _, k := range keys {
 		if err := s.dispatchUpdate(ctx, k); err != nil {
 			return fmt.Errorf("could not propagate netparams update to listener, %v: %v", k, err)
 		}

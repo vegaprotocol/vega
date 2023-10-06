@@ -1579,20 +1579,6 @@ func (mr *MockLiquidityEngineMockRecorder) GetAverageLiquidityScores() *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAverageLiquidityScores", reflect.TypeOf((*MockLiquidityEngine)(nil).GetAverageLiquidityScores))
 }
 
-// GetLastFeeDistributionTime mocks base method.
-func (m *MockLiquidityEngine) GetLastFeeDistributionTime() time.Time {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLastFeeDistributionTime")
-	ret0, _ := ret[0].(time.Time)
-	return ret0
-}
-
-// GetLastFeeDistributionTime indicates an expected call of GetLastFeeDistributionTime.
-func (mr *MockLiquidityEngineMockRecorder) GetLastFeeDistributionTime() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastFeeDistributionTime", reflect.TypeOf((*MockLiquidityEngine)(nil).GetLastFeeDistributionTime))
-}
-
 // GetLegacyOrders mocks base method.
 func (m *MockLiquidityEngine) GetLegacyOrders() []string {
 	m.ctrl.T.Helper()
@@ -1735,6 +1721,18 @@ func (mr *MockLiquidityEngineMockRecorder) OnProbabilityOfTradingTauScalingUpdat
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnProbabilityOfTradingTauScalingUpdate", reflect.TypeOf((*MockLiquidityEngine)(nil).OnProbabilityOfTradingTauScalingUpdate), arg0)
 }
 
+// OnProvidersFeeCalculationTimeStep mocks base method.
+func (m *MockLiquidityEngine) OnProvidersFeeCalculationTimeStep(arg0 time.Duration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "OnProvidersFeeCalculationTimeStep", arg0)
+}
+
+// OnProvidersFeeCalculationTimeStep indicates an expected call of OnProvidersFeeCalculationTimeStep.
+func (mr *MockLiquidityEngineMockRecorder) OnProvidersFeeCalculationTimeStep(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnProvidersFeeCalculationTimeStep", reflect.TypeOf((*MockLiquidityEngine)(nil).OnProvidersFeeCalculationTimeStep), arg0)
+}
+
 // OnStakeToCcyVolumeUpdate mocks base method.
 func (m *MockLiquidityEngine) OnStakeToCcyVolumeUpdate(arg0 decimal.Decimal) {
 	m.ctrl.T.Helper()
@@ -1789,6 +1787,20 @@ func (mr *MockLiquidityEngineMockRecorder) ProvisionsPerParty() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProvisionsPerParty", reflect.TypeOf((*MockLiquidityEngine)(nil).ProvisionsPerParty))
 }
 
+// ReadyForFeesAllocation mocks base method.
+func (m *MockLiquidityEngine) ReadyForFeesAllocation(arg0 time.Time) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReadyForFeesAllocation", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ReadyForFeesAllocation indicates an expected call of ReadyForFeesAllocation.
+func (mr *MockLiquidityEngineMockRecorder) ReadyForFeesAllocation(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadyForFeesAllocation", reflect.TypeOf((*MockLiquidityEngine)(nil).ReadyForFeesAllocation), arg0)
+}
+
 // RejectLiquidityProvision mocks base method.
 func (m *MockLiquidityEngine) RejectLiquidityProvision(arg0 context.Context, arg1 string) error {
 	m.ctrl.T.Helper()
@@ -1815,6 +1827,18 @@ func (mr *MockLiquidityEngineMockRecorder) ResetAverageLiquidityScores() *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetAverageLiquidityScores", reflect.TypeOf((*MockLiquidityEngine)(nil).ResetAverageLiquidityScores))
 }
 
+// ResetFeeAllocationPeriod mocks base method.
+func (m *MockLiquidityEngine) ResetFeeAllocationPeriod(arg0 time.Time) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ResetFeeAllocationPeriod", arg0)
+}
+
+// ResetFeeAllocationPeriod indicates an expected call of ResetFeeAllocationPeriod.
+func (mr *MockLiquidityEngineMockRecorder) ResetFeeAllocationPeriod(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetFeeAllocationPeriod", reflect.TypeOf((*MockLiquidityEngine)(nil).ResetFeeAllocationPeriod), arg0)
+}
+
 // ResetSLAEpoch mocks base method.
 func (m *MockLiquidityEngine) ResetSLAEpoch(arg0 time.Time, arg1, arg2 *num.Uint, arg3 decimal.Decimal) {
 	m.ctrl.T.Helper()
@@ -1825,18 +1849,6 @@ func (m *MockLiquidityEngine) ResetSLAEpoch(arg0 time.Time, arg1, arg2 *num.Uint
 func (mr *MockLiquidityEngineMockRecorder) ResetSLAEpoch(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetSLAEpoch", reflect.TypeOf((*MockLiquidityEngine)(nil).ResetSLAEpoch), arg0, arg1, arg2, arg3)
-}
-
-// SetLastFeeDistributionTime mocks base method.
-func (m *MockLiquidityEngine) SetLastFeeDistributionTime(arg0 time.Time) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetLastFeeDistributionTime", arg0)
-}
-
-// SetLastFeeDistributionTime indicates an expected call of SetLastFeeDistributionTime.
-func (mr *MockLiquidityEngineMockRecorder) SetLastFeeDistributionTime(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastFeeDistributionTime", reflect.TypeOf((*MockLiquidityEngine)(nil).SetLastFeeDistributionTime), arg0)
 }
 
 // StopLiquidityProvision mocks base method.
