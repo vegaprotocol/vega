@@ -16,12 +16,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	"github.com/cenkalti/backoff"
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -48,8 +50,10 @@ func (svcs *allServices) UponGenesis(ctx context.Context, rawstate []byte) (err 
 		return nil
 	}
 
-	for k, v := range state {
-		err := svcs.loadAsset(ctx, k, v)
+	keys := maps.Keys(state)
+	sort.Strings(keys)
+	for _, k := range keys {
+		err := svcs.loadAsset(ctx, k, state[k])
 		if err != nil {
 			return err
 		}

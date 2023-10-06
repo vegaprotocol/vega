@@ -215,6 +215,7 @@ func (n *Notary) IsSigned(
 	// aggregate node sig
 	sig := map[string]struct{}{}
 	out := []commandspb.NodeSignature{}
+
 	for k := range n.sigs[idkind] {
 		// is node sig is part of the registered nodes, and is a tendermint validator
 		// add it to the map
@@ -231,6 +232,9 @@ func (n *Notary) IsSigned(
 
 	// now we check the number of required node sigs
 	if n.votePassed(len(sig), n.top.Len()) {
+		sort.Slice(out, func(i, j int) bool {
+			return string(out[i].Sig) < string(out[j].Sig)
+		})
 		return out, true
 	}
 
