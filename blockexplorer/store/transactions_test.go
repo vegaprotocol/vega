@@ -135,6 +135,7 @@ func addTestTxResults(ctx context.Context, t *testing.T, txResults ...txResult) 
 		err := conn.QueryRow(ctx, resultSQL, blockID, txr.index, txr.createdAt, txr.txHash, txr.txResult, txr.submitter, txr.cmdType).Scan(&rowID)
 		require.NoError(t, err)
 		row.RowID = rowID
+		row.BlockID = txr.height
 
 		proto, err := row.ToProto()
 		require.NoError(t, err)
@@ -280,7 +281,7 @@ func TestStore_ListTransactions(t *testing.T) {
 
 	t.Run("should return the transactions after the cursor when first is set", func(t *testing.T) {
 		first := entities.TxCursor{
-			BlockNumber: 6,
+			BlockNumber: 5,
 			TxIndex:     1,
 		}
 		got, err := s.ListTransactions(ctx, nil, nil, nil, nil, 2, &first, 0, nil)
@@ -296,7 +297,7 @@ func TestStore_ListTransactions(t *testing.T) {
 		}
 		got, err := s.ListTransactions(ctx, nil, nil, nil, nil, 2, &first, 0, nil)
 		require.NoError(t, err)
-		want := []*pb.Transaction{inserted[1], inserted[0]}
+		want := []*pb.Transaction{inserted[2], inserted[1]}
 		assert.Equal(t, want, got)
 	})
 }

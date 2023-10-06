@@ -33,7 +33,7 @@ var (
 func (s *Store) GetTransaction(ctx context.Context, txID string) (*pb.Transaction, error) {
 	txID = strings.ToUpper(txID)
 
-	query := `SELECT * FROM tx_results where tx_hash=$1`
+	query := `SELECT t.rowid, b.height as block_id, t.index, t.created_at, t.tx_hash, t.tx_result, t.cmd_type, t.submitter FROM tx_results t JOIN blocks b ON t.block_id = b.rowid WHERE t.tx_hash=$1`
 	var rows []entities.TxResultRow
 
 	if err := pgxscan.Select(ctx, s.pool, &rows, query, txID); err != nil {
@@ -63,7 +63,7 @@ func (s *Store) ListTransactions(ctx context.Context,
 	last uint32,
 	before *entities.TxCursor,
 ) ([]*pb.Transaction, error) {
-	query := `SELECT * FROM tx_results`
+	query := `SELECT t.rowid, b.height as block_id, t.index, t.created_at, t.tx_hash, t.tx_result, t.cmd_type, t.submitter FROM tx_results t JOIN blocks b ON t.block_id = b.rowid`
 
 	args := []interface{}{}
 	predicates := []string{}
@@ -78,7 +78,7 @@ func (s *Store) ListTransactions(ctx context.Context,
 	if before != nil {
 		block := nextBindVar(&args, before.BlockNumber)
 		index := nextBindVar(&args, before.TxIndex)
-		predicate := fmt.Sprintf("(block_id > %s OR (block_id = %s AND index > %s))", block, block, index)
+		predicate := fmt.Sprintf("(b.height > %s OR (b.height = %s AND t.index > %s))", block, block, index)
 		predicates = append(predicates, predicate)
 		limit = last
 		sortOrder = "asc"
@@ -87,7 +87,7 @@ func (s *Store) ListTransactions(ctx context.Context,
 	if after != nil {
 		block := nextBindVar(&args, after.BlockNumber)
 		index := nextBindVar(&args, after.TxIndex)
-		predicate := fmt.Sprintf("(block_id < %s OR (block_id = %s AND index < %s))", block, block, index)
+		predicate := fmt.Sprintf("(b.height < %s OR (b.height = %s AND t.index < %s))", block, block, index)
 		predicates = append(predicates, predicate)
 	}
 
@@ -99,11 +99,11 @@ func (s *Store) ListTransactions(ctx context.Context,
 	}
 
 	if len(cmdTypes) > 0 {
-		predicates = append(predicates, fmt.Sprintf("tx_results.cmd_type = ANY(%s)", nextBindVar(&args, cmdTypes)))
+		predicates = append(predicates, fmt.Sprintf("t.cmd_type = ANY(%s)", nextBindVar(&args, cmdTypes)))
 	}
 
 	if len(exclCmdTypes) > 0 {
-		predicates = append(predicates, fmt.Sprintf("tx_results.cmd_type != ALL(%s)", nextBindVar(&args, exclCmdTypes)))
+		predicates = append(predicates, fmt.Sprintf("t.cmd_type != ALL(%s)", nextBindVar(&args, exclCmdTypes)))
 	}
 
 	if len(parties) > 0 {
@@ -111,7 +111,7 @@ func (s *Store) ListTransactions(ctx context.Context,
 		for i, p := range parties {
 			partiesBytes[i] = []byte(p)
 		}
-		predicates = append(predicates, fmt.Sprintf("tx_results.submitter = ANY(%s)", nextBindVar(&args, partiesBytes)))
+		predicates = append(predicates, fmt.Sprintf("t.submitter = ANY(%s)", nextBindVar(&args, partiesBytes)))
 	}
 
 	for key, value := range filters {
@@ -119,16 +119,16 @@ func (s *Store) ListTransactions(ctx context.Context,
 
 		if key == "tx.submitter" {
 			// tx.submitter is lifted out of attributes and into tx_results by a trigger for faster access
-			predicate = fmt.Sprintf("tx_results.submitter=%s", nextBindVar(&args, value))
+			predicate = fmt.Sprintf("t.submitter=%s", nextBindVar(&args, value))
 		} else if key == "cmd.type" {
-			predicate = fmt.Sprintf("tx_results.cmd_type=%s", nextBindVar(&args, value))
+			predicate = fmt.Sprintf("t.cmd_type=%s", nextBindVar(&args, value))
 		} else if key == "block.height" {
 			// much quicker to filter block height by joining to the block table than looking in attributes
-			predicate = fmt.Sprintf("block_id = (select b.rowid from blocks b where b.height = %s)", nextBindVar(&args, value))
+			predicate = fmt.Sprintf("b.height = %s", nextBindVar(&args, value))
 		} else {
 			predicate = fmt.Sprintf(`
 				EXISTS (SELECT 1 FROM events e JOIN attributes a ON e.rowid = a.event_id
-						WHERE e.tx_id = tx_results.rowid
+						WHERE e.tx_id = t.rowid
 						AND a.composite_key = %s
 						AND a.value = %s)`, nextBindVar(&args, key), nextBindVar(&args, value))
 		}
@@ -139,7 +139,7 @@ func (s *Store) ListTransactions(ctx context.Context,
 		query = fmt.Sprintf("%s WHERE %s", query, strings.Join(predicates, " AND "))
 	}
 
-	query = fmt.Sprintf("%s ORDER BY block_id %s, index %s", query, sortOrder, sortOrder)
+	query = fmt.Sprintf("%s ORDER BY t.block_id %s, t.index %s", query, sortOrder, sortOrder)
 	query = fmt.Sprintf("%s LIMIT %d", query, limit)
 
 	var rows []entities.TxResultRow
