@@ -17,7 +17,6 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -550,15 +549,6 @@ func TestValidSpotMarketSnapshot(t *testing.T) {
 			require.NoError(t, err)
 			b2, _, err := toRestore.GetState(k)
 			require.NoError(t, err)
-
-			snap2 := &snapshot.Payload{}
-			err = proto.Unmarshal(b2, snap2)
-
-			if bytes.Equal(b, b2) == false {
-				fmt.Printf("--------- orig payload: %+v \n", types.PayloadFromProto(snap).Data)
-				fmt.Printf("--------- rest payload: %+v \n", types.PayloadFromProto(snap2).Data)
-			}
-
 			assert.True(t, bytes.Equal(b, b2))
 		}
 	}
