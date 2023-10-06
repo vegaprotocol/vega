@@ -298,9 +298,9 @@ func (e *snapshotV2) serialiseScores() ([]byte, error) {
 
 	var feeCalculationTimeStep time.Duration
 	if e.feeCalculationTimeStep != 0 {
-		e.feeCalculationTimeStep = feeCalculationTimeStep
+		feeCalculationTimeStep = e.feeCalculationTimeStep
 	} else {
-		e.feeCalculationTimeStep = defaultFeeCalculationTimeStep
+		feeCalculationTimeStep = defaultFeeCalculationTimeStep
 	}
 
 	payload := &snapshotpb.Payload{
