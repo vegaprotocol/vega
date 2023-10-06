@@ -507,10 +507,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.TheReferralStakingTiersConfiguration(referralProgramConfig, name, table)
 	})
 	s.Step(`^the parties create the following referral codes:$`, func(table *godog.Table) error {
-		return steps.PartiesCreateTheFollowingReferralCode(execsetup.referralProgram, table)
+		return steps.PartiesCreateTheFollowingReferralCode(execsetup.referralProgram, execsetup.teamsEngine, table)
 	})
 	s.Step(`^the parties apply the following referral codes:$`, func(table *godog.Table) error {
-		return steps.PartiesApplyTheFollowingReferralCode(execsetup.referralProgram, table)
+		return steps.PartiesApplyTheFollowingReferralCode(execsetup.referralProgram, execsetup.teamsEngine, table)
 	})
 	s.Step(`the referral set stats for code "([^"]+)" at epoch "([^"]+)" should have a running volume of (\d+):`, func(code, epoch, volume string, table *godog.Table) error {
 		return steps.TheReferralSetStatsShouldBe(execsetup.broker, code, epoch, volume, table)
