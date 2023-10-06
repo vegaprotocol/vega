@@ -428,21 +428,12 @@ pipeline {
         //
     }
     post {
-        success {
-            retry(3) {
-                script {
-                    slack.slackSendCISuccess name: 'Vega Core CI', channel: '#tradingcore-notify'
-                }
-            }
-        }
-        unsuccessful {
-            retry(3) {
-                script {
-                    slack.slackSendCIFailure name: 'Vega Core CI', channel: '#tradingcore-notify'
-                }
-            }
-        }
         always {
+            retry(3) {
+                script {
+                    slack.slackSendCIStatus name: 'Vega Core CI', channel: '#tradingcore-notify'
+                }
+            }
             cleanWs()
         }
     }
