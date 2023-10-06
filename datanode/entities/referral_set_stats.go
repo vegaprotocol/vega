@@ -15,6 +15,7 @@ type (
 		ReferralSetRunningNotionalTakerVolume string
 		RefereesStats                         []*eventspb.RefereeStats
 		VegaTime                              time.Time
+		RewardFactor                          string
 	}
 
 	FlattenReferralSetStats struct {
@@ -23,8 +24,8 @@ type (
 		VegaTime                              time.Time
 		PartyID                               string
 		DiscountFactor                        string
-		RewardFactor                          string
 		EpochNotionalTakerVolume              string
+		RewardFactor                          string
 	}
 
 	ReferralSetStatsCursor struct {
@@ -91,6 +92,7 @@ func ReferralSetStatsFromProto(proto *eventspb.ReferralSetStatsUpdated, vegaTime
 		ReferralSetRunningNotionalTakerVolume: proto.ReferralSetRunningNotionalTakerVolume,
 		RefereesStats:                         proto.RefereesStats,
 		VegaTime:                              vegaTime,
+		RewardFactor:                          proto.RewardFactor,
 	}, nil
 }
 
