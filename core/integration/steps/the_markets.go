@@ -186,21 +186,21 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 	}
 	// product update
 	if oracle, ok := row.oracleConfig(); ok {
-		oracleSettlement, err := config.OracleConfigs.GetFuture(oracle, "settlement data")
-		if err != nil {
-			panic(err)
-		}
-		oracleTermination, err := config.OracleConfigs.GetFuture(oracle, "trading termination")
-		if err != nil {
-			panic(err)
-		}
-		// we probably want to X-check the current spec, and make sure only filters + pubkeys are changed
-		settleSpec := datasource.FromOracleSpecProto(oracleSettlement.Spec)
-		termSpec := datasource.FromOracleSpecProto(oracleTermination.Spec)
-		settlementDecimals := config.OracleConfigs.GetSettlementDataDP(oracle)
 		// update product -> use type switch even though currently only futures exist
 		switch ti := existing.TradableInstrument.Instrument.Product.(type) {
 		case *types.InstrumentFuture:
+			oracleSettlement, err := config.OracleConfigs.GetFuture(oracle, "settlement data")
+			if err != nil {
+				panic(err)
+			}
+			oracleTermination, err := config.OracleConfigs.GetFuture(oracle, "trading termination")
+			if err != nil {
+				panic(err)
+			}
+			// we probably want to X-check the current spec, and make sure only filters + pubkeys are changed
+			settleSpec := datasource.FromOracleSpecProto(oracleSettlement.Spec)
+			termSpec := datasource.FromOracleSpecProto(oracleTermination.Spec)
+			settlementDecimals := config.OracleConfigs.GetSettlementDataDP(oracle)
 			filters := settleSpec.Data.GetFilters()
 			futureUp := &types.UpdateFutureProduct{
 				QuoteName: ti.Future.QuoteName,
@@ -233,6 +233,25 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 			update.Changes.Instrument = &types.UpdateInstrumentConfiguration{
 				Product: &types.UpdateInstrumentConfigurationFuture{
 					Future: futureUp,
+				},
+			}
+		case *types.InstrumentPerps:
+			perp, err := config.OracleConfigs.GetFullPerp(row.oracleConfig())
+			if err != nil {
+				panic(err)
+			}
+			pfp := types.PerpsFromProto(perp)
+			update.Changes.Instrument = &types.UpdateInstrumentConfiguration{
+				Product: &types.UpdateInstrumentConfigurationPerps{
+					Perps: &types.UpdatePerpsProduct{
+						QuoteName:                           pfp.QuoteName,
+						MarginFundingFactor:                 pfp.MarginFundingFactor,
+						ClampLowerBound:                     pfp.ClampLowerBound,
+						ClampUpperBound:                     pfp.ClampUpperBound,
+						DataSourceSpecForSettlementData:     pfp.DataSourceSpecForSettlementData,
+						DataSourceSpecForSettlementSchedule: pfp.DataSourceSpecForSettlementSchedule,
+						DataSourceSpecBinding:               pfp.DataSourceSpecBinding,
+					},
 				},
 			}
 		default:
