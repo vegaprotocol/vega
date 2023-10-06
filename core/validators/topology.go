@@ -32,6 +32,7 @@ import (
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+	"golang.org/x/exp/maps"
 
 	"github.com/ethereum/go-ethereum/common"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
@@ -566,7 +567,10 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 	}
 
 	// tm is base64 encoded, vega is hex
-	for tm, data := range state {
+	keys := maps.Keys(state)
+	sort.Strings(keys)
+	for _, tm := range keys {
+		data := state[tm]
 		if !data.IsValid() {
 			return fmt.Errorf("missing required field from validator data: %#v", data)
 		}

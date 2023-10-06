@@ -31,6 +31,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -1355,9 +1356,12 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		evts = append(evts, events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
 	}
 	e.broker.SendBatch(evts)
+
 	// reject successor markets in the toSkip list
-	for _, sid := range toSkip {
-		e.RejectMarket(ctx, sid)
+	mids := maps.Values(toSkip)
+	sort.Strings(mids)
+	for _, mid := range mids {
+		e.RejectMarket(ctx, mid)
 	}
 
 	rmCPStates := make([]string, 0, len(toDelete))

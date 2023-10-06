@@ -1117,7 +1117,7 @@ func newUpdatedProposalEvents(ctx context.Context, proposal *proposal) []events.
 		votes = append(votes, events.NewVoteEvent(ctx, *n))
 	}
 
-	sort.Slice(votes, func(i, j int) bool {
+	sort.SliceStable(votes, func(i, j int) bool {
 		return votes[i].Proto().Timestamp < votes[j].Proto().Timestamp
 	})
 
