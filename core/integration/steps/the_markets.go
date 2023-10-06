@@ -236,11 +236,17 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 				},
 			}
 		case *types.InstrumentPerps:
-			perp, err := config.OracleConfigs.GetFullPerp(row.oracleConfig())
+			perp, err := config.OracleConfigs.GetFullPerp(oracle)
 			if err != nil {
 				panic(err)
 			}
 			pfp := types.PerpsFromProto(perp)
+			if pfp.DataSourceSpecForSettlementData == nil || pfp.DataSourceSpecForSettlementData.Data == nil {
+				panic("Oracle does not have a data source for settlement data")
+			}
+			if pfp.DataSourceSpecForSettlementSchedule == nil || pfp.DataSourceSpecForSettlementSchedule.Data == nil {
+				panic("Oracle does not have a data source for settlement schedule")
+			}
 			update.Changes.Instrument = &types.UpdateInstrumentConfiguration{
 				Product: &types.UpdateInstrumentConfigurationPerps{
 					Perps: &types.UpdatePerpsProduct{
@@ -248,8 +254,8 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 						MarginFundingFactor:                 pfp.MarginFundingFactor,
 						ClampLowerBound:                     pfp.ClampLowerBound,
 						ClampUpperBound:                     pfp.ClampUpperBound,
-						DataSourceSpecForSettlementData:     pfp.DataSourceSpecForSettlementData,
-						DataSourceSpecForSettlementSchedule: pfp.DataSourceSpecForSettlementSchedule,
+						DataSourceSpecForSettlementData:     *pfp.DataSourceSpecForSettlementData.Data,
+						DataSourceSpecForSettlementSchedule: *pfp.DataSourceSpecForSettlementSchedule.Data,
 						DataSourceSpecBinding:               pfp.DataSourceSpecBinding,
 					},
 				},
