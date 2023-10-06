@@ -55,9 +55,12 @@ func (t ReferralSetStatsUpdated) Unwrap() *types.ReferralSetStats {
 	volume, _ := num.UintFromString(t.e.ReferralSetRunningNotionalTakerVolume, 10)
 	stats := map[types.PartyID]*types.RefereeStats{}
 	rewardFactor, _ := num.DecimalFromString(t.e.RewardFactor)
+	rewardsMultiplier, _ := num.DecimalFromString(t.e.RewardsMultiplier)
+	rewardsFactorMultiplier, _ := num.DecimalFromString(t.e.RewardsFactorMultiplier)
 
 	for _, stat := range t.e.RefereesStats {
 		discountFactor, _ := num.DecimalFromString(stat.DiscountFactor)
+
 		stats[types.PartyID(stat.PartyId)] = &types.RefereeStats{
 			DiscountFactor: discountFactor,
 		}
@@ -69,6 +72,8 @@ func (t ReferralSetStatsUpdated) Unwrap() *types.ReferralSetStats {
 		ReferralSetRunningVolume: volume,
 		RefereesStats:            stats,
 		RewardFactor:             rewardFactor,
+		RewardsMultiplier:        rewardsMultiplier,
+		RewardsFactorMultiplier:  rewardsFactorMultiplier,
 	}
 }
 
@@ -107,6 +112,8 @@ func NewReferralSetStatsUpdatedEvent(ctx context.Context, update *types.Referral
 			ReferralSetRunningNotionalTakerVolume: update.ReferralSetRunningVolume.String(),
 			RefereesStats:                         refereesStats,
 			RewardFactor:                          update.RewardFactor.String(),
+			RewardsMultiplier:                     update.RewardsMultiplier.String(),
+			RewardsFactorMultiplier:               update.RewardsFactorMultiplier.String(),
 		},
 	}
 }

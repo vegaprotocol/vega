@@ -1152,6 +1152,8 @@ message ReferralSet {
   repeated Membership referees = 5;
   repeated RunningVolume running_volumes = 6;
   string current_reward_factor = 7;
+  string current_rewards_multiplier = 8;
+  string current_rewards_factor_multiplier = 9;
 }
 
 message ReferralMisc {

@@ -454,6 +454,8 @@ func TestReferralSets_AddReferralSetStats(t *testing.T) {
 			RefereesStats:                         getRefereeStats(t, refs, "0.01"),
 			VegaTime:                              block.VegaTime,
 			RewardFactor:                          "0.02",
+			RewardsMultiplier:                     "0.03",
+			RewardsFactorMultiplier:               "0.04",
 		}
 
 		err := rs.AddReferralSetStats(ctx, &stats)
@@ -475,6 +477,8 @@ func TestReferralSets_AddReferralSetStats(t *testing.T) {
 			RefereesStats:                         getRefereeStats(t, refs, "0.01"),
 			VegaTime:                              block.VegaTime,
 			RewardFactor:                          "0.02",
+			RewardsMultiplier:                     "0.03",
+			RewardsFactorMultiplier:               "0.04",
 		}
 
 		err := rs.AddReferralSetStats(ctx, &stats)
@@ -535,8 +539,10 @@ func TestReferralSets_GetReferralSetStats(t *testing.T) {
 					EpochNotionalTakerVolume: strconv.Itoa((i+1)*100 + (j+1)*10),
 				}
 			}),
-			VegaTime:     block.VegaTime,
-			RewardFactor: fmt.Sprintf("0.2%d", i+1),
+			VegaTime:                block.VegaTime,
+			RewardFactor:            fmt.Sprintf("0.2%d", i+1),
+			RewardsMultiplier:       fmt.Sprintf("0.3%d", i+1),
+			RewardsFactorMultiplier: fmt.Sprintf("0.4%d", i+1),
 		}
 
 		require.NoError(t, rs.AddReferralSetStats(ctx, &set))
@@ -550,6 +556,8 @@ func TestReferralSets_GetReferralSetStats(t *testing.T) {
 				DiscountFactor:                        stat.DiscountFactor,
 				RewardFactor:                          set.RewardFactor,
 				EpochNotionalTakerVolume:              stat.EpochNotionalTakerVolume,
+				RewardsMultiplier:                     set.RewardsMultiplier,
+				RewardsFactorMultiplier:               set.RewardsFactorMultiplier,
 			})
 		}
 	}

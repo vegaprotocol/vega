@@ -3821,6 +3821,10 @@ message ReferralSetStats {
   string reward_factor = 5;
   // Current referee notional taker volume
   string epoch_notional_taker_volume = 6;
+  // The multiplier applied to the referral reward factor when calculating referral rewards due to the referrer
+  string rewards_multiplier = 7;
+  // The proportion of the referees taker fees to be rewarded to the referrer
+  string rewards_factor_multiplier = 8;
 }
 
 // Team record containing the team information.

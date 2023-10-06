@@ -145,7 +145,9 @@ func (e *Engine) CreateReferralSet(ctx context.Context, party types.PartyID, det
 			JoinedAt:       now,
 			StartedAtEpoch: e.currentEpoch,
 		},
-		CurrentRewardFactor: num.DecimalZero(),
+		CurrentRewardFactor:            num.DecimalZero(),
+		CurrentRewardsMultiplier:       num.DecimalZero(),
+		CurrentRewardsFactorMultiplier: num.DecimalZero(),
 	}
 
 	e.sets[deterministicSetID] = &newSet
@@ -260,44 +262,21 @@ func (e *Engine) RewardsFactorForParty(party types.PartyID) num.Decimal {
 }
 
 func (e *Engine) RewardsFactorMultiplierAppliedForParty(party types.PartyID) num.Decimal {
-	return num.MinD(
-		e.RewardsFactorForParty(party).Mul(e.RewardsMultiplierForParty(party)),
-		e.rewardProportionUpdate,
-	)
+	setID, ok := e.referees[party]
+	if !ok {
+		return num.DecimalZero()
+	}
+
+	return e.sets[setID].CurrentRewardsFactorMultiplier
 }
 
 func (e *Engine) RewardsMultiplierForParty(party types.PartyID) num.Decimal {
-	if e.programHasEnded {
+	setID, ok := e.referees[party]
+	if !ok {
 		return num.DecimalZero()
 	}
 
-	setID, isReferee := e.referees[party]
-	if !isReferee {
-		// This party is not eligible to referral program rewards.
-		return num.DecimalZero()
-	}
-
-	if e.isSetEligible(setID) != nil {
-		return num.DecimalZero()
-	}
-
-	balance, _ := e.staking.GetAvailableBalance(
-		string(e.sets[setID].Referrer.PartyID),
-	)
-
-	multiplier := num.DecimalOne()
-	for _, v := range e.currentProgram.StakingTiers {
-		if balance.LTE(v.MinimumStakedTokens) {
-			break
-		}
-		multiplier = v.ReferralRewardMultiplier
-	}
-
-	return multiplier
-}
-
-func (e *Engine) VolumeDiscountFactorForParty(party types.PartyID) num.Decimal {
-	return num.DecimalZero()
+	return e.sets[setID].CurrentRewardsMultiplier
 }
 
 func (e *Engine) OnReferralProgramMaxReferralRewardProportionUpdate(_ context.Context, value num.Decimal) error {
@@ -329,6 +308,33 @@ func (e *Engine) OnEpochRestore(_ context.Context, ep types.Epoch) {
 	if ep.Action == vegapb.EpochAction_EPOCH_ACTION_START {
 		e.currentEpoch = ep.Seq
 	}
+}
+
+func (e *Engine) calculateRewardsFactorMultiplierForParty(multiplierForParty, rewardsFactorForParty num.Decimal) num.Decimal {
+	return num.MinD(
+		rewardsFactorForParty.Mul(multiplierForParty),
+		e.rewardProportionUpdate,
+	)
+}
+
+func (e *Engine) calculateMultiplierForParty(setID types.ReferralSetID) num.Decimal {
+	if e.isSetEligible(setID) != nil {
+		return num.DecimalZero()
+	}
+
+	balance, _ := e.staking.GetAvailableBalance(
+		string(e.sets[setID].Referrer.PartyID),
+	)
+
+	multiplier := num.DecimalOne()
+	for _, v := range e.currentProgram.StakingTiers {
+		if balance.LTE(v.MinimumStakedTokens) {
+			break
+		}
+		multiplier = v.ReferralRewardMultiplier
+	}
+
+	return multiplier
 }
 
 func (e *Engine) applyProgramUpdate(ctx context.Context, startEpochTime time.Time) {
@@ -420,7 +426,9 @@ func (e *Engine) loadReferralSetsFromSnapshot(setsProto *snapshotpb.ReferralSets
 				JoinedAt:       time.Unix(0, setProto.Referrer.JoinedAt),
 				StartedAtEpoch: setProto.Referrer.StartedAtEpoch,
 			},
-			CurrentRewardFactor: num.MustDecimalFromString(setProto.CurrentRewardFactor),
+			CurrentRewardFactor:            num.MustDecimalFromString(setProto.CurrentRewardFactor),
+			CurrentRewardsMultiplier:       num.MustDecimalFromString(setProto.CurrentRewardsMultiplier),
+			CurrentRewardsFactorMultiplier: num.MustDecimalFromString(setProto.CurrentRewardsFactorMultiplier),
 		}
 
 		e.referrers[types.PartyID(setProto.Referrer.PartyId)] = setID
@@ -510,7 +518,14 @@ func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, take
 			}
 		}
 
+		rewardsMultiplier := e.calculateMultiplierForParty(setID)
+		set.RewardsMultiplier = rewardsMultiplier
+		set.RewardsFactorMultiplier = e.calculateRewardsFactorMultiplierForParty(rewardsMultiplier, set.RewardFactor)
+
 		e.sets[setID].CurrentRewardFactor = set.RewardFactor
+		e.sets[setID].CurrentRewardsMultiplier = rewardsMultiplier
+		e.sets[setID].CurrentRewardsFactorMultiplier = set.RewardsFactorMultiplier
+
 		allStats[setID] = set
 	}
 

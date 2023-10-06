@@ -123,7 +123,9 @@ func (e *SnapshottedEngine) serialiseReferralSets() ([]byte, error) {
 				JoinedAt:       set.Referrer.JoinedAt.UnixNano(),
 				StartedAtEpoch: set.Referrer.StartedAtEpoch,
 			},
-			CurrentRewardFactor: set.CurrentRewardFactor.String(),
+			CurrentRewardFactor:            set.CurrentRewardFactor.String(),
+			CurrentRewardsMultiplier:       set.CurrentRewardsMultiplier.String(),
+			CurrentRewardsFactorMultiplier: set.CurrentRewardsFactorMultiplier.String(),
 		}
 
 		for _, r := range set.Referees {
