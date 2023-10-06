@@ -296,6 +296,13 @@ func (e *snapshotV2) serialiseScores() ([]byte, error) {
 		lastFeeDistributionTime = e.lastFeeDistribution.UnixNano()
 	}
 
+	var feeCalculationTimeStep time.Duration
+	if e.feeCalculationTimeStep != 0 {
+		e.feeCalculationTimeStep = feeCalculationTimeStep
+	} else {
+		e.feeCalculationTimeStep = defaultFeeCalculationTimeStep
+	}
+
 	payload := &snapshotpb.Payload{
 		Data: &snapshotpb.Payload_LiquidityV2Scores{
 			LiquidityV2Scores: &snapshotpb.LiquidityV2Scores{
@@ -303,7 +310,7 @@ func (e *snapshotV2) serialiseScores() ([]byte, error) {
 				RunningAverageCounter:   int32(e.nAvg),
 				Scores:                  scores,
 				LastFeeDistributionTime: lastFeeDistributionTime,
-				FeeCalculationTimeStep:  int64(e.feeCalculationTimeStep),
+				FeeCalculationTimeStep:  int64(feeCalculationTimeStep),
 			},
 		},
 	}
