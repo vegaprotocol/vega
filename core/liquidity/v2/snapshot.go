@@ -440,7 +440,7 @@ func (e *snapshotV2) loadScores(ls *snapshotpb.LiquidityV2Scores, p *types.Paylo
 	e.nAvg = int64(ls.RunningAverageCounter)
 	e.lastFeeDistribution = time.Unix(0, ls.LastFeeDistributionTime)
 
-	if ls.FeeCalculationTimeStep == 0 {
+	if ls.FeeCalculationTimeStep != 0 {
 		e.feeCalculationTimeStep = time.Duration(ls.FeeCalculationTimeStep)
 	} else {
 		e.feeCalculationTimeStep = defaultFeeCalculationTimeStep
