@@ -15,6 +15,8 @@ import (
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
+const defaultFeeCalculationTimeStep = time.Minute
+
 type SnapshotEngine struct {
 	*Engine
 
@@ -437,7 +439,12 @@ func (e *snapshotV2) loadScores(ls *snapshotpb.LiquidityV2Scores, p *types.Paylo
 
 	e.nAvg = int64(ls.RunningAverageCounter)
 	e.lastFeeDistribution = time.Unix(0, ls.LastFeeDistributionTime)
-	e.feeCalculationTimeStep = time.Duration(ls.FeeCalculationTimeStep)
+
+	if ls.FeeCalculationTimeStep == 0 {
+		e.feeCalculationTimeStep = time.Duration(ls.FeeCalculationTimeStep)
+	} else {
+		e.feeCalculationTimeStep = defaultFeeCalculationTimeStep
+	}
 
 	scores := make(map[string]num.Decimal, len(ls.Scores))
 	for _, p := range ls.Scores {
