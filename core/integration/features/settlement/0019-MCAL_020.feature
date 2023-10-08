@@ -25,10 +25,10 @@ Feature: check when settlement data precision is different/equal to the settleme
       | limits.markets.maxPeggedOrders | 2     |
 
   @Perpetual
-  Scenario: 001 oracle data decimal = asset decimal 0070-MKTD-020
+  Scenario: 001 oracle data decimal = asset decimal, while market decimal is 1,  0070-MKTD-020
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | position decimal places | market type | sla params      |
-      | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle-2      | 1e6                    | 1e6                       | -1                      | perp        | default-futures |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | market type | sla params      |
+      | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle-2      | 1e6                    | 1e6                       | 1              | -1                      | perp        | default-futures |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
@@ -57,10 +57,10 @@ Feature: check when settlement data precision is different/equal to the settleme
     #place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 1      | 849   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 2001  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux  | ETH/DEC19 | buy  | 1 | 8490  | 0 | TYPE_LIMIT | TIF_GTC |
+      | aux  | ETH/DEC19 | sell | 1 | 20010 | 0 | TYPE_LIMIT | TIF_GTC |
+      | aux2 | ETH/DEC19 | buy  | 1 | 10000 | 0 | TYPE_LIMIT | TIF_GTC |
+      | aux  | ETH/DEC19 | sell | 1 | 10000 | 0 | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -68,8 +68,8 @@ Feature: check when settlement data precision is different/equal to the settleme
     When the network moves ahead "1" blocks
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/DEC19 | sell | 1 | 10000 | 0 | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC19 | buy  | 1 | 10000 | 1 | TYPE_LIMIT | TIF_GTC |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
@@ -79,8 +79,8 @@ Feature: check when settlement data precision is different/equal to the settleme
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/DEC19 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party3 | ETH/DEC19 | buy  | 1      | 2000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/DEC19 | sell | 1 | 20000 | 0 | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/DEC19 | buy  | 1 | 20000 | 1 | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
       | party1 | USD   | ETH/DEC19 | 1441200 | 998558800 |
