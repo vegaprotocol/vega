@@ -32,15 +32,15 @@ Feature: check when settlement data precision is different/equal to the settleme
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 5s    |
     And the parties deposit on asset's general account the following amount:
-      | party  | asset | amount        |
-      | party1 | USD | 1000000000 |
-      | party2 | USD | 100000000  |
-      | party3 | USD | 100000000  |
-      | aux    | USD | 300000000  |
-      | aux2   | USD | 300000000  |
-      | lp1    | USD | 500000000  |
-      | lp2    | USD | 500000000  |
-      | lp3    | USD | 500000000  |
+      | party  | asset | amount     |
+      | party1 | USD   | 1000000000 |
+      | party2 | USD   | 100000000  |
+      | party3 | USD   | 100000000  |
+      | aux    | USD   | 300000000  |
+      | aux2   | USD   | 300000000  |
+      | lp1    | USD   | 500000000  |
+      | lp2    | USD   | 500000000  |
+      | lp3    | USD   | 500000000  |
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | lp type    |
