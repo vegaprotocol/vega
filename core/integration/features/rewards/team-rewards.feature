@@ -75,21 +75,20 @@ Feature: Team Rewards
   Scenario: Party funds pool with recurring transfer scoping teams
 
     Given the parties submit the following recurring transfers:
-      | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | entity_scope | teams | ntop | asset    | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets      |
-      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | TEAMS        |       | 1    | USD-1-10 | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID | USD-1-10     | ETH/USD-1-10 |
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | entity_scope | teams       | ntop | asset    | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets      |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | TEAMS        | team1,team2 | 1    | USD-1-10 | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID | USD-1-10     | ETH/USD-1-10 |
     And the parties place the following orders:
       | party    | market id    | side | volume | price | resulting trades | type       | tif     |
       | aux1     | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | referee1 | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-      | aux1     | ETH/USD-1-10 | sell | 9      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | referee2 | ETH/USD-1-10 | buy  | 9      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-      | aux1     | ETH/USD-1-10 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | referee3 | ETH/USD-1-10 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1     | ETH/USD-1-10 | sell | 15     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee2 | ETH/USD-1-10 | buy  | 15     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1     | ETH/USD-1-10 | sell | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee3 | ETH/USD-1-10 | buy  | 5      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    Then debug transfers
     Then "referee1" should have vesting account balance of "5000" for asset "USD-1-10"
-    Then "referee2" should have vesting account balance of "4500" for asset "USD-1-10"
-    Then "referee3" should have vesting account balance of "500" for asset "USD-1-10"
+    And "referee2" should have vesting account balance of "2500" for asset "USD-1-10"
+    And "referee3" should have vesting account balance of "2500" for asset "USD-1-10"
 
 
 
