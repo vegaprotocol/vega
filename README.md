@@ -9,8 +9,4 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 
 ### License
 
-The vega core (i.e. the core directory) is licensed under the BSL 1.1, also included in this repository in the LICENSE.VEGA file.
-
-The vega datanode (i.e. the datanode directory) is licensed under the BSL 1.1, also included in this repository in the LICENSE.DATANODE file.
-
-All code outside of the core and datanode directories is licensed under the MIT, also included in this repository in the LICENSE.MIT file.
+The vega protocol source code (i.e. all code available in this repository) is licensed under the GNU Affero General Public License v3.0, also included in our repository in the LICENSE file.
