@@ -15,30 +15,31 @@ package commands
 import (
 	"fmt"
 
+	"github.com/jessevdk/go-flags"
+
 	"code.vegaprotocol.io/vega/blockexplorer/config"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
-	"github.com/jessevdk/go-flags"
 )
 
 func loadConfig(logger *logging.Logger, vegaHome string) (*config.Config, error) {
-	paths := paths.New(vegaHome)
+	vegaPaths := paths.New(vegaHome)
 
-	loader, err := config.NewLoader(paths)
+	loader, err := config.NewLoader(vegaPaths)
 	if err != nil {
-		return nil, fmt.Errorf("creating config loader: %w", err)
+		return nil, fmt.Errorf("could not create config loader: %w", err)
 	}
 
 	exists, err := loader.ConfigExists()
 	if err != nil {
-		return nil, fmt.Errorf("checking for existence of config file: %w", err)
+		return nil, fmt.Errorf("could not check for existence of config file: %w", err)
 	}
 
 	var cfg *config.Config
 	if exists {
 		cfg, err = loader.Get()
 		if err != nil {
-			return nil, fmt.Errorf("loading config: %w", err)
+			return nil, fmt.Errorf("could not load config: %w", err)
 		}
 	} else {
 		logger.Warn("No config file found; using defaults. Create one with with 'blockexplorer init'")

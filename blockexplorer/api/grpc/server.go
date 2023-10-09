@@ -15,10 +15,11 @@ package grpc
 import (
 	"net"
 
-	"code.vegaprotocol.io/vega/logging"
-	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+
+	"code.vegaprotocol.io/vega/logging"
+	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
 )
 
 type Server struct {
@@ -26,9 +27,10 @@ type Server struct {
 	log           *logging.Logger
 	blockExplorer pb.BlockExplorerServiceServer
 	grpc          *grpc.Server
+	lis           net.Listener
 }
 
-func NewServer(cfg Config, log *logging.Logger, blockExplorerServer pb.BlockExplorerServiceServer) *Server {
+func NewServer(cfg Config, log *logging.Logger, blockExplorerServer pb.BlockExplorerServiceServer, lis net.Listener) *Server {
 	log = log.Named(namedLogger)
 
 	grpcServer := grpc.NewServer()
@@ -42,13 +44,18 @@ func NewServer(cfg Config, log *logging.Logger, blockExplorerServer pb.BlockExpl
 		log:           log,
 		blockExplorer: blockExplorerServer,
 		grpc:          grpcServer,
+		lis:           lis,
 	}
 }
 
-func (g *Server) Serve(lis net.Listener) error {
-	logAddr := logging.String("address", lis.Addr().String())
-	g.log.Info("starting grpc server", logAddr)
-	defer g.log.Info("stopping grpc server", logAddr)
+func (g *Server) Serve() error {
+	g.log.Info("Starting gRPC server", logging.String("address", g.lis.Addr().String()))
+	return g.grpc.Serve(g.lis)
+}
 
-	return g.grpc.Serve(lis)
+func (g *Server) Stop() {
+	if g.grpc != nil {
+		g.log.Info("Stopping gRPC server", logging.String("address", g.lis.Addr().String()))
+		g.grpc.Stop()
+	}
 }

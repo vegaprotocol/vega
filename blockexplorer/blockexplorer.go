@@ -15,57 +15,30 @@ package blockexplorer
 import (
 	"context"
 	"fmt"
-	"net"
+
+	"golang.org/x/sync/errgroup"
 
 	"code.vegaprotocol.io/vega/blockexplorer/api"
-	"code.vegaprotocol.io/vega/blockexplorer/store"
-	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc"
-
 	ourGrpc "code.vegaprotocol.io/vega/blockexplorer/api/grpc"
 	"code.vegaprotocol.io/vega/blockexplorer/config"
+	"code.vegaprotocol.io/vega/blockexplorer/store"
 	"code.vegaprotocol.io/vega/libs/net/pipe"
 	"code.vegaprotocol.io/vega/logging"
 	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
 )
-
-type gatewayService interface {
-	api.GatewayHandler
-	Start() error
-}
-
-type grpcConnector interface {
-	net.Listener
-	DialGRPC(opts ...grpc.DialOption) (*grpc.ClientConn, error)
-	Dial(ctx context.Context, target string) (net.Conn, error)
-}
-
-type server interface {
-	Serve(net.Listener) error
-}
-
-type gateway interface {
-	server
-	Register(api.GatewayHandler, string)
-}
-
-type portal interface {
-	Serve() error
-	GRPCListener() net.Listener
-	GatewayListener() net.Listener
-}
 
 type BlockExplorer struct {
 	config                  config.Config
 	log                     *logging.Logger
 	store                   *store.Store
 	blockExplorerGrpcServer pb.BlockExplorerServiceServer
-	grpcServer              server
-	grpcPipeConn            grpcConnector
-	grpcUI                  gatewayService
-	restAPI                 gatewayService
-	portal                  portal
-	gateway                 gateway
+	internalGRPCServer      *ourGrpc.Server
+	externalGRPCServer      *ourGrpc.Server
+	grpcPipeConn            *pipe.Pipe
+	grpcUI                  *api.GRPCUIHandler
+	restAPI                 *api.RESTHandler
+	portal                  *api.Portal
+	gateway                 *api.Gateway
 }
 
 func NewFromConfig(config config.Config) *BlockExplorer {
@@ -73,10 +46,6 @@ func NewFromConfig(config config.Config) *BlockExplorer {
 	a.config = config
 	a.log = logging.NewLoggerFromConfig(config.Logging)
 	a.store = store.MustNewStore(config.Store, a.log)
-
-	// main grpc api
-	a.blockExplorerGrpcServer = ourGrpc.NewBlockExplorerAPI(a.store, config.API.GRPC, a.log)
-	a.grpcServer = ourGrpc.NewServer(config.API.GRPC, a.log, a.blockExplorerGrpcServer)
 
 	// grpc-ui; a web front end that talks to the grpc api through a 'pipe' (fake connection)
 	a.grpcPipeConn = pipe.NewPipe("grpc-pipe")
@@ -86,51 +55,85 @@ func NewFromConfig(config config.Config) *BlockExplorer {
 	// a.restApiConn = pipe.NewPipe("rest-api")
 	a.restAPI = api.NewRESTHandler(a.log, a.grpcPipeConn, config.API.REST)
 
-	// The gateway collects all the HTTP handlers into a big 'serveMux'
-	a.gateway = api.NewGateway(a.log, config.API.Gateway)
-	a.gateway.Register(a.grpcUI, config.API.GRPCUI.Endpoint)
-	a.gateway.Register(a.restAPI, config.API.REST.Endpoint)
-
 	// However GRPC is special, because it uses HTTP2 and really wants to be in control
 	// of its own connection. Fortunately there's a tool called cMux which creates dummy listeners
 	// and peeks at the stream to decide where to send it. If it's http/2 - send to grpc server
 	// otherwise dispatch to the gateway, which then sends it to which ever handler has registered
 	a.portal = api.NewPortal(config.API, a.log)
+
+	// The gateway collects all the HTTP handlers into a big 'serveMux'
+	a.gateway = api.NewGateway(a.log, config.API.Gateway, a.portal.GatewayListener())
+	a.gateway.Register(a.grpcUI, config.API.GRPCUI.Endpoint)
+	a.gateway.Register(a.restAPI, config.API.REST.Endpoint)
+
+	// main grpc api
+	a.blockExplorerGrpcServer = ourGrpc.NewBlockExplorerAPI(a.store, config.API.GRPC, a.log)
+	a.internalGRPCServer = ourGrpc.NewServer(config.API.GRPC, a.log, a.blockExplorerGrpcServer, a.grpcPipeConn)
+	a.externalGRPCServer = ourGrpc.NewServer(config.API.GRPC, a.log, a.blockExplorerGrpcServer, a.portal.GRPCListener())
+
 	return a
 }
 
 func (a *BlockExplorer) Run(ctx context.Context) error {
-	g, ctx := errgroup.WithContext(ctx)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	g, ctx := errgroup.WithContext(ctx)
 
 	// Two grpc services; one for internal connections using a fast pipe, and another for external
-	g.Go(func() error { return a.grpcServer.Serve(a.grpcPipeConn) })
-	g.Go(func() error { return a.grpcServer.Serve(a.portal.GRPCListener()) })
-
-	// Then start our gateway and portal servers
-	g.Go(func() error { return a.gateway.Serve(a.portal.GatewayListener()) })
-	g.Go(func() error { return a.portal.Serve() })
-
-	// Now we can do all the http 'handlers' that talk to the gateway
-	if err := a.grpcUI.Start(); err != nil {
-		return fmt.Errorf("starting grpc-ui: %w", err)
-	}
-
-	if err := a.restAPI.Start(); err != nil {
-		return fmt.Errorf("starting rest grpc proxy: %w", err)
-	}
-
-	// Lastly try and gracefully shutdown if the context is cancelled
 	g.Go(func() error {
-		<-ctx.Done()
-		return a.Close()
+		return a.internalGRPCServer.Serve()
+	})
+	g.Go(func() error {
+		return a.externalGRPCServer.Serve()
 	})
 
-	return g.Wait()
+	// Then start our gateway and portal servers
+	g.Go(func() error {
+		return a.gateway.Serve()
+	})
+	g.Go(func() error {
+		return a.portal.Serve()
+	})
+
+	// Now we can do all the http 'handlers' that talk to the gateway
+	if err := a.grpcUI.Start(ctx); err != nil {
+		return fmt.Errorf("could not start grpc-ui: %w", err)
+	}
+
+	if err := a.restAPI.Start(ctx); err != nil {
+		return fmt.Errorf("could not start REST<>GRPC proxy: %w", err)
+	}
+
+	// If one of the errgroup.Go func return an error, or the parent context
+	// get cancelled, then we initiate the shutdown.
+	cleaningDone := make(chan any)
+	go func() {
+		<-ctx.Done()
+		a.stop()
+		close(cleaningDone)
+	}()
+
+	err := g.Wait()
+
+	// Ensure goroutine shutting down the block explorer is triggered to avoid
+	// a dead-lock.
+	cancel()
+	<-cleaningDone
+
+	return err
 }
 
-func (a *BlockExplorer) Close() error {
-	// TODO
-	return nil
+func (a *BlockExplorer) stop() {
+	a.log.Info("Shutting down block explorer")
+	a.externalGRPCServer.Stop()
+	a.internalGRPCServer.Stop()
+
+	a.gateway.Stop()
+	a.portal.Stop()
+
+	a.restAPI.Stop()
+	a.grpcUI.Stop()
+
+	a.store.Close()
+	a.log.Info("Resources released")
 }

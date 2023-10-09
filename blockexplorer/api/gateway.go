@@ -13,8 +13,10 @@
 package api
 
 import (
+	"context"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/rs/cors"
 
@@ -26,6 +28,8 @@ type Gateway struct {
 	GatewayConfig
 	httpServerMux *http.ServeMux
 	log           *logging.Logger
+	srv           *http.Server
+	lis           net.Listener
 }
 
 type GatewayHandler interface {
@@ -33,25 +37,35 @@ type GatewayHandler interface {
 	Name() string
 }
 
-func NewGateway(log *logging.Logger, config GatewayConfig) *Gateway {
+func NewGateway(log *logging.Logger, config GatewayConfig, lis net.Listener) *Gateway {
 	log = log.Named(gatewayNamedLogger)
 	return &Gateway{
 		GatewayConfig: config,
 		httpServerMux: http.NewServeMux(),
 		log:           log,
+		lis:           lis,
 	}
 }
 
 func (s *Gateway) Register(handler GatewayHandler, endpoint string) {
-	s.log.Info("registered with api gateway", logging.String("endpoint", endpoint), logging.String("handler", handler.Name()))
+	s.log.Info("Registering with API gateway", logging.String("endpoint", endpoint), logging.String("handler", handler.Name()))
 	s.httpServerMux.Handle(endpoint+"/", http.StripPrefix(endpoint, handler))
 }
 
-func (s *Gateway) Serve(lis net.Listener) error {
-	logAddr := logging.String("address", lis.Addr().String())
-	s.log.Info("gateway starting", logAddr)
-	defer s.log.Info("gateway stopping", logAddr)
+func (s *Gateway) Serve() error {
+	s.log.Info("Starting gateway", logging.String("address", s.lis.Addr().String()))
 	corsOptions := libhttp.CORSOptions(s.CORS)
 	handler := cors.New(corsOptions).Handler(s.httpServerMux)
-	return http.Serve(lis, handler)
+	srv := &http.Server{Handler: handler}
+	s.srv = srv
+	return s.srv.Serve(s.lis)
+}
+
+func (s *Gateway) Stop() {
+	if s.srv != nil {
+		s.log.Info("Stopping gateway", logging.String("address", s.lis.Addr().String()))
+		ctxWithTimeout, cancelFunc := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancelFunc()
+		_ = s.srv.Shutdown(ctxWithTimeout)
+	}
 }

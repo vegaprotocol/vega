@@ -22,7 +22,6 @@ import (
 
 type Pipe struct {
 	ch   chan net.Conn
-	done chan any
 	addr Addr
 }
 
@@ -43,7 +42,6 @@ func (p *Pipe) Accept() (net.Conn, error) {
 
 func (p *Pipe) Close() error {
 	close(p.ch)
-	<-p.done
 	return nil
 }
 
@@ -51,7 +49,7 @@ func (p *Pipe) Addr() net.Addr {
 	return &p.addr
 }
 
-func (p *Pipe) Dial(ctx context.Context, something string) (net.Conn, error) {
+func (p *Pipe) Dial(ctx context.Context, _ string) (net.Conn, error) {
 	conn1, conn2 := net.Pipe()
 	select {
 	case p.ch <- conn1:
@@ -63,14 +61,10 @@ func (p *Pipe) Dial(ctx context.Context, something string) (net.Conn, error) {
 	}
 }
 
-func (p *Pipe) DialGRPC(opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+func (p *Pipe) DialGRPC(ctx context.Context, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	newOpts := make([]grpc.DialOption, 0, len(opts)+1)
 	newOpts = append(newOpts, grpc.WithContextDialer(p.Dial))
 	newOpts = append(newOpts, opts...)
 
-	return grpc.DialContext(
-		context.Background(),
-		p.Addr().String(),
-		newOpts...,
-	)
+	return grpc.DialContext(ctx, p.Addr().String(), newOpts...)
 }

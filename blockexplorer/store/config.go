@@ -27,7 +27,7 @@ func NewDefaultConfig() Config {
 		Postgres: config.PostgresConnection{
 			Host:            "localhost",
 			Port:            5432,
-			Database:        "tendermint",
+			Database:        "tendermint_indexer_db",
 			Username:        "vega",
 			Password:        "vega",
 			ApplicationName: "vega block explorer",
