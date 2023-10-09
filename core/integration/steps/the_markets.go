@@ -260,6 +260,14 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 					},
 				},
 			}
+			// apply update
+			ti.Perps.ClampLowerBound = pfp.ClampLowerBound
+			ti.Perps.ClampUpperBound = pfp.ClampUpperBound
+			ti.Perps.MarginFundingFactor = pfp.MarginFundingFactor
+			ti.Perps.DataSourceSpecBinding = pfp.DataSourceSpecBinding
+			ti.Perps.DataSourceSpecForSettlementData = pfp.DataSourceSpecForSettlementData
+			ti.Perps.DataSourceSpecForSettlementSchedule = pfp.DataSourceSpecForSettlementSchedule
+			existing.TradableInstrument.Instrument.Product = ti
 		default:
 			panic("unsuported product")
 		}

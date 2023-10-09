@@ -508,16 +508,18 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	m.lMonitor.UpdateParameters(m.mkt.LiquidityMonitoringParameters)
 	m.liquidity.UpdateMarketConfig(m.tradableInstrument.RiskModel, m.pMonitor)
 
-	// if we're already in trading terminated, not point to listen to trading termination oracle
-	if m.perp {
-		m.tradableInstrument.Instrument.Product.NotifyOnSettlementData(m.settlementDataPerp)
-	} else if m.mkt.State != types.MarketStateTradingTerminated {
-		m.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(m.tradingTerminated)
-	} else {
-		m.tradableInstrument.Instrument.UnsubscribeTradingTerminated(ctx)
-	}
-	if !m.perp {
-		m.tradableInstrument.Instrument.Product.NotifyOnSettlementData(m.settlementData)
+	// we should not need to rebind a replacement oracle here, the m.tradableInstrument.UpdateInstrument
+	// call handles the callbacks for us. We only need to check the market state and unbind if needed
+	switch m.mkt.State {
+	case types.MarketStateTradingTerminated:
+		if !m.perp {
+			m.tradableInstrument.Instrument.UnsubscribeTradingTerminated(ctx)
+			// never hurts to check margins on a terminated, but unsettled market
+			recalcMargins = true
+		}
+	case types.MarketStateSettled:
+		// market is settled, unsubscribe all
+		m.tradableInstrument.Instrument.Unsubscribe(ctx)
 	}
 
 	m.updateLiquidityFee(ctx)
