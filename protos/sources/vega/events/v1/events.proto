@@ -864,6 +864,8 @@ message ReferralSetStatsUpdated {
   string referral_set_running_notional_taker_volume = 3;
   // Referees' statistics for that epoch.
   repeated RefereeStats referees_stats = 4;
+  // Reward factor applied to the trades.
+  string reward_factor = 5;
 }
 
 message RefereeStats {
@@ -871,8 +873,6 @@ message RefereeStats {
   string party_id = 1;
   // Discount factor applied to the party.
   string discount_factor = 2;
-  // Reward factor applied to the party.
-  string reward_factor = 3;
   // Current referee notional taker volume
   string epoch_notional_taker_volume = 4;
 }

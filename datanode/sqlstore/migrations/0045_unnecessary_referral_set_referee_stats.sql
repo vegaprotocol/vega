@@ -8,6 +8,12 @@ alter table referral_set_stats
 alter table referral_set_stats
     alter column referral_set_running_notional_taker_volume set not null;
 
+alter table referral_set_stats
+    alter column reward_factor type text using (reward_factor::text);
+
+alter table referral_set_stats
+    alter column reward_factor set not null;
+
 
 -- +goose Down
 
@@ -18,9 +24,8 @@ select set_id,
        referral_set_running_notional_taker_volume,
        stats.referee_stats ->> 'party_id'        as party_id,
        stats.referee_stats ->> 'discount_factor' as discount_factor,
-       stats.referee_stats ->> 'reward_factor'   as reward_factor,
+       reward_factor,
        vega_time
 from referral_set_stats,
      jsonb_array_elements(referees_stats) with ordinality stats(referee_stats, position)
     );
-

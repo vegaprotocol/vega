@@ -37,21 +37,26 @@ func TheReferralSetStatsShouldBe(broker *stubs.BrokerStub, code, epochStr, volum
 				return fmt.Errorf("refferal set stats for set ID %q at epoch %q expect a running volume of %v, but got %v", code, epochStr, volumeStr, stat.ReferralSetRunningVolume)
 			}
 
-			return compareRefereesStats(expectedRefereesStats, stat.RefereesStats)
+			return compareRefereesStats(expectedRefereesStats, stat.RefereesStats, stat.RewardFactor)
 		}
 	}
 
 	return fmt.Errorf("no stats found for set ID %q at epoch %q", code, epochStr)
 }
 
-func parseReferralStatsShouldBeTable(table *godog.Table) (map[types.PartyID]*types.RefereeStats, error) {
+type refereeStats struct {
+	DiscountFactor num.Decimal
+	RewardFactor   num.Decimal
+}
+
+func parseReferralStatsShouldBeTable(table *godog.Table) (map[types.PartyID]*refereeStats, error) {
 	rows := StrictParseTable(table, []string{
 		"party",
 		"discount factor",
 		"reward factor",
 	}, []string{})
 
-	stats := map[types.PartyID]*types.RefereeStats{}
+	stats := map[types.PartyID]*refereeStats{}
 	for _, row := range rows {
 		specificRow := newReferralSetStatsShouldBeRow(row)
 		partyID := specificRow.Party()
@@ -59,7 +64,7 @@ func parseReferralStatsShouldBeTable(table *godog.Table) (map[types.PartyID]*typ
 		if alreadyRegistered {
 			return nil, fmt.Errorf("cannot have more than one expectation for party %q", partyID)
 		}
-		stats[partyID] = &types.RefereeStats{
+		stats[partyID] = &refereeStats{
 			DiscountFactor: specificRow.DiscountFactor(),
 			RewardFactor:   specificRow.RewardFactor(),
 		}
@@ -68,7 +73,11 @@ func parseReferralStatsShouldBeTable(table *godog.Table) (map[types.PartyID]*typ
 	return stats, nil
 }
 
-func compareRefereesStats(expectedRefereesStats, foundRefereesStats map[types.PartyID]*types.RefereeStats) error {
+func compareRefereesStats(
+	expectedRefereesStats map[types.PartyID]*refereeStats,
+	foundRefereesStats map[types.PartyID]*types.RefereeStats,
+	foundRewardFactor num.Decimal,
+) error {
 	foundRefereesIDs := maps.Keys(foundRefereesStats)
 	expectedRefereesIDs := maps.Keys(expectedRefereesStats)
 
@@ -108,8 +117,8 @@ func compareRefereesStats(expectedRefereesStats, foundRefereesStats map[types.Pa
 		refereeIDStr := string(refereeID)
 		foundRefereeStats := foundRefereesStats[refereeID]
 		expectedRefereeStats := expectedRefereesStats[refereeID]
-		if !foundRefereeStats.RewardFactor.Equal(expectedRefereeStats.RewardFactor) {
-			return fmt.Errorf("expecting reward factor of %v but got %v for party %q", expectedRefereeStats.RewardFactor.String(), foundRefereeStats.RewardFactor.String(), refereeIDStr)
+		if !expectedRefereeStats.RewardFactor.Equal(foundRewardFactor) {
+			return fmt.Errorf("expecting reward factor of %v but got %v for party %q", expectedRefereeStats.RewardFactor.String(), foundRewardFactor.String(), refereeIDStr)
 		}
 		if !foundRefereeStats.DiscountFactor.Equal(expectedRefereeStats.DiscountFactor) {
 			return fmt.Errorf("expecting discount factor of %v but got %v for party %q", expectedRefereeStats.DiscountFactor.String(), foundRefereeStats.DiscountFactor.String(), refereeIDStr)

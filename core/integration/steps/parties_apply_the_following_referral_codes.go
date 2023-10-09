@@ -4,11 +4,14 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/core/referral"
+	"code.vegaprotocol.io/vega/core/teams"
 	"code.vegaprotocol.io/vega/core/types"
 	"github.com/cucumber/godog"
+
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
-func PartiesApplyTheFollowingReferralCode(referralEngine *referral.Engine, table *godog.Table) error {
+func PartiesApplyTheFollowingReferralCode(referralEngine *referral.Engine, teamsEngine *teams.Engine, table *godog.Table) error {
 	ctx := context.Background()
 
 	for _, r := range parseApplyReferralCodeTable(table) {
@@ -16,6 +19,16 @@ func PartiesApplyTheFollowingReferralCode(referralEngine *referral.Engine, table
 		err := referralEngine.ApplyReferralCode(ctx, row.Party(), row.Code())
 		if err := checkExpectedError(row, err, nil); err != nil {
 			return err
+		}
+		// If we have team details, submit a new team
+		if r.HasColumn("is_team") && row.IsTeam() {
+			team := &commandspb.ApplyReferralCode{
+				Id: row.Team(),
+			}
+			err = teamsEngine.JoinTeam(ctx, row.Party(), team)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -28,6 +41,8 @@ func parseApplyReferralCodeTable(table *godog.Table) []RowWrapper {
 	}, []string{
 		"error",
 		"reference",
+		"is_team",
+		"team",
 	})
 }
 
@@ -60,4 +75,12 @@ func (r applyReferralCodeRow) ExpectError() bool {
 
 func (r applyReferralCodeRow) Reference() string {
 	return r.row.MustStr("reference")
+}
+
+func (r applyReferralCodeRow) IsTeam() bool {
+	return r.row.Bool("is_team")
+}
+
+func (r applyReferralCodeRow) Team() string {
+	return r.row.Str("team")
 }

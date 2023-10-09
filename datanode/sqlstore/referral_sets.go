@@ -110,13 +110,14 @@ func (rs *ReferralSets) AddReferralSetStats(ctx context.Context, stats *entities
 	defer metrics.StartSQLQuery("ReferralSets", "AddReferralSetStats")()
 	_, err := rs.Connection.Exec(
 		ctx,
-		`INSERT INTO referral_set_stats(set_id, at_epoch, referral_set_running_notional_taker_volume, referees_stats, vega_time)
-			values ($1, $2, $3, $4, $5)`,
+		`INSERT INTO referral_set_stats(set_id, at_epoch, referral_set_running_notional_taker_volume, referees_stats, vega_time, reward_factor)
+			values ($1, $2, $3, $4, $5, $6)`,
 		stats.SetID,
 		stats.AtEpoch,
 		stats.ReferralSetRunningNotionalTakerVolume,
 		stats.RefereesStats,
 		stats.VegaTime,
+		stats.RewardFactor,
 	)
 
 	return err
@@ -134,9 +135,9 @@ func (rs *ReferralSets) GetReferralSetStats(ctx context.Context, setID entities.
 		`SELECT at_epoch,
        				vega_time,
        				referral_set_running_notional_taker_volume,
+       				reward_factor,
        				referee_stats->>'party_id' as party_id,
        				referee_stats->>'discount_factor' as discount_factor,
-       				referee_stats->>'reward_factor' as reward_factor,
        				referee_stats->>'epoch_notional_taker_volume' as epoch_notional_taker_volume
 			  FROM referral_set_stats, jsonb_array_elements(referees_stats) AS referee_stats
 			  WHERE set_id = %s`,

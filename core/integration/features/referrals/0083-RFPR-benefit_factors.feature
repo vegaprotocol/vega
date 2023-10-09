@@ -73,12 +73,16 @@ Feature: Setting and applying referee benefit factors
 
     # Create the referral set and codes
     Given the parties create the following referral codes:
-      | party     | code            |
-      | referrer1 | referral-code-1 |
+      | party     | code            | is_team | team  |
+      | referrer1 | referral-code-1 | true    | team1 |
     And the parties apply the following referral codes:
-      | party    | code            |
-      | referee1 | referral-code-1 |
+      | party     | code            | is_team | team  |
+      | referee1  | referral-code-1 | true    | team1 |
 
+    And the team "team1" has the following members:
+      | party     |
+      | referrer1 |
+      | referee1  |
 
   Scenario Outline: Referral set generates variable running taker volume with a referee with variable epochs in set (0083-RFPR-036)(0083-RFPR-037)(0083-RFPR-038)(0083-RFPR-039)(0083-RFPR-040)
     # Expectation: Referral reward factor and referral discount factor should be set correctly according to the spec
