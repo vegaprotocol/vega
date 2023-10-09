@@ -145,6 +145,7 @@ func (e *Engine) CreateReferralSet(ctx context.Context, party types.PartyID, det
 			JoinedAt:       now,
 			StartedAtEpoch: e.currentEpoch,
 		},
+		CurrentRewardFactor: num.DecimalZero(),
 	}
 
 	e.sets[deterministicSetID] = &newSet
@@ -250,12 +251,12 @@ func (e *Engine) RewardsFactorForParty(party types.PartyID) num.Decimal {
 		return num.DecimalZero()
 	}
 
-	factors, ok := e.factorsByReferee[party]
+	setID, ok := e.referees[party]
 	if !ok {
 		return num.DecimalZero()
 	}
 
-	return factors.RewardFactor
+	return e.sets[setID].CurrentRewardFactor
 }
 
 func (e *Engine) RewardsFactorMultiplierAppliedForParty(party types.PartyID) num.Decimal {
@@ -419,6 +420,7 @@ func (e *Engine) loadReferralSetsFromSnapshot(setsProto *snapshotpb.ReferralSets
 				JoinedAt:       time.Unix(0, setProto.Referrer.JoinedAt),
 				StartedAtEpoch: setProto.Referrer.StartedAtEpoch,
 			},
+			CurrentRewardFactor: num.MustDecimalFromString(setProto.CurrentRewardFactor),
 		}
 
 		e.referrers[types.PartyID(setProto.Referrer.PartyId)] = setID
@@ -490,17 +492,27 @@ func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, take
 	e.factorsByReferee = map[types.PartyID]*types.RefereeStats{}
 
 	allStats := map[types.ReferralSetID]*types.ReferralSetStats{}
+	tiersLen := len(e.currentProgram.BenefitTiers)
 
 	for setID := range e.sets {
-		allStats[setID] = &types.ReferralSetStats{
+		set := &types.ReferralSetStats{
 			AtEpoch:                  epoch,
 			SetID:                    setID,
 			RefereesStats:            map[types.PartyID]*types.RefereeStats{},
 			ReferralSetRunningVolume: e.referralSetsNotionalVolumes.RunningSetVolumeForWindow(setID, e.currentProgram.WindowLength),
+			RewardFactor:             num.DecimalZero(),
 		}
-	}
 
-	tiersLen := len(e.currentProgram.BenefitTiers)
+		for i := tiersLen - 1; i >= 0; i-- {
+			tier := e.currentProgram.BenefitTiers[i]
+			if set.RewardFactor.Equal(num.DecimalZero()) && set.ReferralSetRunningVolume.GTE(tier.MinimumRunningNotionalTakerVolume) {
+				set.RewardFactor = tier.ReferralRewardFactor
+			}
+		}
+
+		e.sets[setID].CurrentRewardFactor = set.RewardFactor
+		allStats[setID] = set
+	}
 
 	for party, setID := range e.referees {
 		set := e.sets[setID]
@@ -530,9 +542,6 @@ func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, take
 			tier := e.currentProgram.BenefitTiers[i]
 			if refereeStats.DiscountFactor.Equal(num.DecimalZero()) && epochCount >= tier.MinimumEpochs.Uint64() && runningVolumeForSet.GTE(tier.MinimumRunningNotionalTakerVolume) {
 				refereeStats.DiscountFactor = tier.ReferralDiscountFactor
-			}
-			if refereeStats.RewardFactor.Equal(num.DecimalZero()) && runningVolumeForSet.GTE(tier.MinimumRunningNotionalTakerVolume) {
-				refereeStats.RewardFactor = tier.ReferralRewardFactor
 			}
 		}
 	}
