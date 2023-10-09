@@ -19,10 +19,9 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"code.vegaprotocol.io/vega/blockexplorer/api"
-	"code.vegaprotocol.io/vega/blockexplorer/store"
-
 	ourGrpc "code.vegaprotocol.io/vega/blockexplorer/api/grpc"
 	"code.vegaprotocol.io/vega/blockexplorer/config"
+	"code.vegaprotocol.io/vega/blockexplorer/store"
 	"code.vegaprotocol.io/vega/libs/net/pipe"
 	"code.vegaprotocol.io/vega/logging"
 	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"

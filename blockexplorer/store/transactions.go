@@ -78,7 +78,7 @@ func (s *Store) ListTransactions(ctx context.Context,
 	if before != nil {
 		block := nextBindVar(&args, before.BlockNumber)
 		index := nextBindVar(&args, before.TxIndex)
-		predicate := fmt.Sprintf("(b.height > %s OR (b.height = %s AND t.index > %s))", block, block, index)
+		predicate := fmt.Sprintf("(b.height, t.index) > (%s, %s)", block, index)
 		predicates = append(predicates, predicate)
 		limit = last
 		sortOrder = "asc"
@@ -87,7 +87,7 @@ func (s *Store) ListTransactions(ctx context.Context,
 	if after != nil {
 		block := nextBindVar(&args, after.BlockNumber)
 		index := nextBindVar(&args, after.TxIndex)
-		predicate := fmt.Sprintf("(b.height < %s OR (b.height = %s AND t.index < %s))", block, block, index)
+		predicate := fmt.Sprintf("(b.height, t.index) < (%s, %s)", block, index)
 		predicates = append(predicates, predicate)
 	}
 
