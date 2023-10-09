@@ -151,9 +151,11 @@ func toSnapshotTest(t *testing.T, payloads []*types.Payload, appState *types.App
 			Height: s.Height,
 			Hash:   s.Hash,
 			Meta: &types.Metadata{
-				Version:     s.Meta.Version,
-				NodeHashes:  s.Meta.NodeHashes,
-				ChunkHashes: s.Meta.ChunkHashes,
+				Version:         s.Meta.Version,
+				NodeHashes:      s.Meta.NodeHashes,
+				ChunkHashes:     s.Meta.ChunkHashes,
+				ProtocolVersion: s.Meta.ProtocolVersion,
+				ProtocolUpgrade: s.Meta.ProtocolUpgrade,
 			},
 			Chunks: s.Chunks,
 		},
@@ -171,10 +173,12 @@ func firstState(t *testing.T) (*types.AppState, []*types.Payload) {
 	require.NoError(t, err)
 
 	appState := &types.AppState{
-		Height:  64,
-		Block:   "qwertyuiop1234567890",
-		Time:    chainTime.UnixNano(),
-		ChainID: "testnet-1",
+		Height:          64,
+		Block:           "qwertyuiop1234567890",
+		Time:            chainTime.UnixNano(),
+		ChainID:         "testnet-1",
+		ProtocolUpdgade: true,
+		ProtocolVersion: "v0.72.1",
 	}
 
 	// Random data for active governance.
@@ -487,10 +491,12 @@ func secondState(t *testing.T) (*types.AppState, []*types.Payload) {
 	require.NoError(t, err)
 
 	appState := &types.AppState{
-		Height:  164,
-		Block:   "1234567890qwertyuiop",
-		Time:    chainTime.UnixNano(),
-		ChainID: "testnet-1",
+		Height:          164,
+		Block:           "1234567890qwertyuiop",
+		Time:            chainTime.UnixNano(),
+		ChainID:         "testnet-1",
+		ProtocolUpdgade: true,
+		ProtocolVersion: "v0.74.1",
 	}
 
 	// Random data for active governance.

@@ -87,6 +87,7 @@
 - [9204](https://github.com/vegaprotocol/vega/issues/9204) - Ensure teams names are not duplicates
 - [9080](https://github.com/vegaprotocol/vega/issues/9080) - Add support for vested and vesting account in GraphQL
 - [9147](https://github.com/vegaprotocol/vega/issues/9147) - Add reward multiplier to vesting engine
+- [9593](https://github.com/vegaprotocol/vega/issues/9593) - Version and whether it was taken for a protocol upgrade added to snapshot.
 - [9234](https://github.com/vegaprotocol/vega/issues/9234) - Add support for transfers out of the vested account
 - [9199](https://github.com/vegaprotocol/vega/issues/9199) - Consider running notional volume to determine referrers and referees tier
 - [9214](https://github.com/vegaprotocol/vega/issues/9214) - Add staking tier on referral program

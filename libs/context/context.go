@@ -26,6 +26,7 @@ type (
 	blockHeight     int
 	chainID         int
 	txHash          int
+	snapshot        int
 )
 
 var (
@@ -34,6 +35,7 @@ var (
 	blockHeightKey        blockHeight
 	chainIDKey            chainID
 	txHashKey             txHash
+	snapshotKey           snapshot
 
 	ErrBlockHeightMissing = errors.New("no or invalid block height set on context")
 	ErrChainIDMissing     = errors.New("no or invalid chain id set on context")
@@ -129,4 +131,27 @@ func WithChainID(ctx context.Context, chainID string) context.Context {
 func WithTxHash(ctx context.Context, txHash string) context.Context {
 	txHash = strings.ToUpper(txHash)
 	return context.WithValue(ctx, txHashKey, txHash)
+}
+
+type snapshotInfo struct {
+	version string
+	upgrade bool
+}
+
+func WithSnapshotInfo(ctx context.Context, version string, upgrade bool) context.Context {
+	return context.WithValue(ctx, snapshotKey, snapshotInfo{version: version, upgrade: upgrade})
+}
+
+// InProgressUpgradeFrom returns whether the data in the contexts tells us that the
+// node is restoring from a snapshot taken for a protocol-upgrade by the given version.
+func InProgressUpgradeFrom(ctx context.Context, from string) bool {
+	v := ctx.Value(snapshotKey)
+	if v == nil {
+		return false
+	}
+	si, ok := v.(snapshotInfo)
+	if !ok {
+		return false
+	}
+	return from == si.version && si.upgrade
 }
