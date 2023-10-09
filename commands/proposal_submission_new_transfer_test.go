@@ -34,6 +34,7 @@ func TestCheckProposalSubmissionForNewTransfer(t *testing.T) {
 	t.Run("Submitting a new recurring transfer change with a dispatch strategy and an invalid type", testRecurringWithDispatchInvalidTypes)
 	t.Run("Submitting a new recurring transfer change with a dispatch strategy and incompatible empty asset for metric", testInvalidAssetForMetric)
 	t.Run("Submitting a new recurring transfer change with a dispatch strategy and mismatching destination type for metric", testInvalidDestForMetric)
+	t.Run("Submitting a new transfer change with destination type general and an invalid vega public key", testInvalidGeneralPubKey)
 }
 
 func testInvalidDestForMetric(t *testing.T) {
@@ -306,6 +307,32 @@ func testOneOffWithNegativeDeliverOn(t *testing.T) {
 		},
 	})
 	require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.oneoff.deliveron"), commands.ErrMustBePositiveOrZero)
+}
+
+func testInvalidGeneralPubKey(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_NewTransfer{
+				NewTransfer: &types.NewTransfer{
+					Changes: &types.NewTransferConfiguration{
+						FractionOfBalance: "0.5",
+						Amount:            "1000",
+						SourceType:        types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+						DestinationType:   types.AccountType_ACCOUNT_TYPE_GENERAL,
+						Destination:       "zohar",
+						TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
+						Asset:             "abcde",
+						Kind: &types.NewTransferConfiguration_OneOff{
+							OneOff: &types.OneOffTransfer{
+								DeliverOn: -100,
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+	require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.destination"), commands.ErrShouldBeAValidVegaPublicKey)
 }
 
 func testOneOffWithInvalidDestinationType(t *testing.T) {
