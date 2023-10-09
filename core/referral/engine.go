@@ -386,35 +386,34 @@ func (e *Engine) notifyReferralSetStatsUpdated(ctx context.Context, stats *types
 	e.broker.Send(events.NewReferralSetStatsUpdatedEvent(ctx, stats))
 }
 
-func (e *Engine) loadCurrentReferralProgramFromSnapshot(program *vegapb.ReferralProgram) {
-	if program == nil {
-		e.currentProgram = nil
-		return
+func (e *Engine) load(referralProgramState *types.PayloadReferralProgramState) {
+	if referralProgramState.CurrentProgram != nil {
+		e.currentProgram = types.NewReferralProgramFromProto(referralProgramState.CurrentProgram)
 	}
-
-	e.currentProgram = types.NewReferralProgramFromProto(program)
+	if referralProgramState.NewProgram != nil {
+		e.newProgram = types.NewReferralProgramFromProto(referralProgramState.NewProgram)
+	}
+	e.latestProgramVersion = referralProgramState.LastProgramVersion
+	e.programHasEnded = referralProgramState.ProgramHasEnded
+	e.loadReferralSetsFromSnapshot(referralProgramState.Sets)
+	e.loadFactorsByReferee(referralProgramState.FactorByReferee)
 }
 
-func (e *Engine) loadNewReferralProgramFromSnapshot(program *vegapb.ReferralProgram) {
-	if program == nil {
-		e.newProgram = nil
-		return
+func (e *Engine) loadFactorsByReferee(factors []*snapshotpb.FactorByReferee) {
+	e.factorsByReferee = make(map[types.PartyID]*types.RefereeStats, len(factors))
+	for _, fbr := range factors {
+		party := types.PartyID(fbr.Party)
+		discountFactor, _ := num.UnmarshalBinaryDecimal(fbr.DiscountFactor)
+		takerVolume := num.UintFromBytes(fbr.TakerVolume)
+		e.factorsByReferee[party] = &types.RefereeStats{
+			DiscountFactor: discountFactor,
+			TakerVolume:    takerVolume,
+		}
 	}
-
-	e.newProgram = types.NewReferralProgramFromProto(program)
 }
 
-func (e *Engine) loadReferralMiscFromSnapshot(misc *snapshotpb.ReferralMisc) {
-	e.latestProgramVersion = misc.LastProgramVersion
-	e.programHasEnded = misc.ProgramHasEnded
-}
-
-func (e *Engine) loadReferralSetsFromSnapshot(setsProto *snapshotpb.ReferralSets) {
-	if setsProto == nil {
-		return
-	}
-
-	for _, setProto := range setsProto.Sets {
+func (e *Engine) loadReferralSetsFromSnapshot(setsProto []*snapshotpb.ReferralSet) {
+	for _, setProto := range setsProto {
 		setID := types.ReferralSetID(setProto.Id)
 
 		newSet := &types.ReferralSet{

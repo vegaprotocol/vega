@@ -135,13 +135,10 @@ message Payload {
     Teams teams = 70;
     TeamSwitches team_switches = 71;
     Vesting vesting = 72;
-    CurrentReferralProgram current_referral_program = 73;
-    NewReferralProgram new_referral_program = 74;
-    ReferralSets referral_sets = 75;
+    ReferralProgramData referral_program = 73;
     ActivityStreak activity_streak = 76;
     VolumeDiscountProgram volume_discount_program = 77;
     LiquidityV2Parameters liquidity_v2_parameters = 78;
-    ReferralMisc referral_misc = 79;
   }
 }
 
@@ -1135,16 +1132,13 @@ message PartyReward {
   repeated InVesting in_vesting = 3;
 }
 
-message CurrentReferralProgram {
-  vega.ReferralProgram referral_program = 1;
-}
-
-message NewReferralProgram {
-  vega.ReferralProgram referral_program = 1;
-}
-
-message ReferralSets {
-  repeated ReferralSet sets = 1;
+message ReferralProgramData {
+  repeated FactorByReferee factor_by_referee = 1;
+  vega.ReferralProgram current_program = 2;
+  vega.ReferralProgram new_program = 3;
+  uint64 last_program_version = 4;
+  bool program_has_ended = 5;
+  repeated ReferralSet sets = 6;
 }
 
 message ReferralSet {
@@ -1159,14 +1153,15 @@ message ReferralSet {
   string current_rewards_factor_multiplier = 9;
 }
 
-message ReferralMisc {
-  uint64 last_program_version = 1;
-  bool program_has_ended = 2;
-}
-
 message RunningVolume {
   uint64 epoch = 1;
   bytes volume = 2;
+}
+
+message FactorByReferee {
+  string party = 1;
+  bytes discount_factor = 2;
+  bytes taker_volume = 3;
 }
 
 message AssetLocked {

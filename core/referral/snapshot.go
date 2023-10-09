@@ -18,9 +18,7 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"golang.org/x/exp/maps"
 )
@@ -33,11 +31,8 @@ type SnapshottedEngine struct {
 	stopped bool
 
 	// Keys need to be computed when the engine is instantiated as they are dynamic.
-	hashKeys          []string
-	currentProgramKey string
-	newProgramKey     string
-	referralSetsKey   string
-	referralMiscKey   string
+	hashKeys []string
+	key      string
 }
 
 func (e *SnapshottedEngine) Namespace() types.SnapshotNamespace {
@@ -59,17 +54,8 @@ func (e *SnapshottedEngine) LoadState(_ context.Context, p *types.Payload) ([]ty
 	}
 
 	switch data := p.Data.(type) {
-	case *types.PayloadCurrentReferralProgram:
-		e.loadCurrentReferralProgramFromSnapshot(data.CurrentReferralProgram)
-		return nil, nil
-	case *types.PayloadNewReferralProgram:
-		e.loadNewReferralProgramFromSnapshot(data.NewReferralProgram)
-		return nil, nil
-	case *types.PayloadReferralSets:
-		e.loadReferralSetsFromSnapshot(data.Sets)
-		return nil, nil
-	case *types.PayloadReferralMisc:
-		e.loadReferralMiscFromSnapshot(data.ReferralMisc)
+	case *types.PayloadReferralProgramState:
+		e.load(data)
 		return nil, nil
 	default:
 		return nil, types.ErrUnknownSnapshotType
@@ -90,22 +76,46 @@ func (e *SnapshottedEngine) serialise(k string) ([]byte, error) {
 	}
 
 	switch k {
-	case e.currentProgramKey:
-		return e.serialiseCurrentReferralProgram()
-	case e.newProgramKey:
-		return e.serialiseNewReferralProgram()
-	case e.referralSetsKey:
-		return e.serialiseReferralSets()
-	case e.referralMiscKey:
-		return e.serialiseReferralMisc()
+	case e.key:
+		return e.serialiseReferralProgram()
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 }
 
-func (e *SnapshottedEngine) serialiseReferralSets() ([]byte, error) {
-	setsProto := make([]*snapshotpb.ReferralSet, 0, len(e.sets))
+func (e *SnapshottedEngine) serialiseReferralProgram() ([]byte, error) {
+	referralProgramData := &snapshotpb.ReferralProgramData{
+		LastProgramVersion: e.latestProgramVersion,
+		ProgramHasEnded:    e.programHasEnded,
+	}
 
+	payload := &snapshotpb.Payload{
+		Data: &snapshotpb.Payload_ReferralProgram{
+			ReferralProgram: referralProgramData,
+		},
+	}
+
+	if e.currentProgram != nil {
+		referralProgramData.CurrentProgram = e.currentProgram.IntoProto()
+	}
+	if e.newProgram != nil {
+		referralProgramData.NewProgram = e.newProgram.IntoProto()
+	}
+
+	referralProgramData.FactorByReferee = make([]*snapshotpb.FactorByReferee, 0, len(e.factorsByReferee))
+	for pi, rs := range e.factorsByReferee {
+		df, _ := rs.DiscountFactor.MarshalBinary()
+		tv := rs.TakerVolume.Bytes()
+		referralProgramData.FactorByReferee = append(referralProgramData.FactorByReferee, &snapshotpb.FactorByReferee{
+			Party: pi.String(), DiscountFactor: df, TakerVolume: tv[:],
+		})
+	}
+
+	sort.Slice(referralProgramData.FactorByReferee, func(i, j int) bool {
+		return referralProgramData.FactorByReferee[i].Party < referralProgramData.FactorByReferee[j].Party
+	})
+
+	referralProgramData.Sets = make([]*snapshotpb.ReferralSet, 0, len(e.sets))
 	setIDs := maps.Keys(e.sets)
 
 	sort.SliceStable(setIDs, func(i, j int) bool {
@@ -155,55 +165,7 @@ func (e *SnapshottedEngine) serialiseReferralSets() ([]byte, error) {
 			setProto.RunningVolumes = runningVolumesProto
 		}
 
-		setsProto = append(setsProto, setProto)
-	}
-
-	payload := &snapshotpb.Payload{
-		Data: &snapshotpb.Payload_ReferralSets{
-			ReferralSets: &snapshotpb.ReferralSets{
-				Sets: setsProto,
-			},
-		},
-	}
-
-	serialisedSets, err := proto.Marshal(payload)
-	if err != nil {
-		return nil, fmt.Errorf("could not serialize referral sets payload: %w", err)
-	}
-
-	return serialisedSets, nil
-}
-
-func (e *SnapshottedEngine) serialiseCurrentReferralProgram() ([]byte, error) {
-	var programSnapshot *vegapb.ReferralProgram
-	if e.currentProgram != nil {
-		programSnapshot = e.currentProgram.IntoProto()
-	}
-
-	payload := &snapshotpb.Payload{
-		Data: &snapshotpb.Payload_CurrentReferralProgram{
-			CurrentReferralProgram: &snapshotpb.CurrentReferralProgram{
-				ReferralProgram: programSnapshot,
-			},
-		},
-	}
-
-	serialisedCurrentReferralProgram, err := proto.Marshal(payload)
-	if err != nil {
-		return nil, fmt.Errorf("could not serialize current referral program payload: %w", err)
-	}
-
-	return serialisedCurrentReferralProgram, nil
-}
-
-func (e *SnapshottedEngine) serialiseReferralMisc() ([]byte, error) {
-	payload := &snapshotpb.Payload{
-		Data: &snapshotpb.Payload_ReferralMisc{
-			ReferralMisc: &snapshotpb.ReferralMisc{
-				LastProgramVersion: e.latestProgramVersion,
-				ProgramHasEnded:    e.programHasEnded,
-			},
-		},
+		referralProgramData.Sets = append(referralProgramData.Sets, setProto)
 	}
 
 	serialised, err := proto.Marshal(payload)
@@ -214,51 +176,9 @@ func (e *SnapshottedEngine) serialiseReferralMisc() ([]byte, error) {
 	return serialised, nil
 }
 
-func (e *SnapshottedEngine) serialiseNewReferralProgram() ([]byte, error) {
-	var programSnapshot *vegapb.ReferralProgram
-	if e.newProgram != nil {
-		programSnapshot = e.newProgram.IntoProto()
-	}
-
-	payload := &snapshotpb.Payload{
-		Data: &snapshotpb.Payload_NewReferralProgram{
-			NewReferralProgram: &snapshotpb.NewReferralProgram{
-				ReferralProgram: programSnapshot,
-			},
-		},
-	}
-
-	serialisedNewReferralProgram, err := proto.Marshal(payload)
-	if err != nil {
-		return nil, fmt.Errorf("could not serialize new referral program payload: %w", err)
-	}
-
-	return serialisedNewReferralProgram, nil
-}
-
 func (e *SnapshottedEngine) buildHashKeys() {
-	e.currentProgramKey = (&types.PayloadCurrentReferralProgram{}).Key()
-	e.newProgramKey = (&types.PayloadNewReferralProgram{}).Key()
-	e.referralSetsKey = (&types.PayloadReferralSets{}).Key()
-	e.referralMiscKey = (&types.PayloadReferralMisc{}).Key()
-
-	e.hashKeys = append([]string{}, e.currentProgramKey, e.newProgramKey, e.referralSetsKey, e.referralMiscKey)
-}
-
-func (e *Engine) OnStateLoaded(ctx context.Context) error {
-	if e.programHasEnded {
-		return nil
-	}
-
-	// we need to regenerate the statistics based on the restored state and we call
-	// computeFactorsByReferee to do this
-	partiesTakerVolume := map[types.PartyID]*num.Uint{}
-	for partyID := range e.referees {
-		volumeForEpoch := e.marketActivityTracker.NotionalTakerVolumeForParty(string(partyID))
-		partiesTakerVolume[partyID] = volumeForEpoch
-	}
-	e.computeFactorsByReferee(ctx, e.currentEpoch, partiesTakerVolume)
-	return nil
+	e.key = (&types.PayloadReferralProgramState{}).Key()
+	e.hashKeys = append([]string{}, e.key)
 }
 
 func NewSnapshottedEngine(broker Broker, timeSvc TimeService, mat MarketActivityTracker, staking StakingBalances) *SnapshottedEngine {
