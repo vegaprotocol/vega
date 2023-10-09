@@ -895,11 +895,19 @@ message RefereeJoinedReferralSet {
 message ReferralProgramStarted {
   // Referral program that has started.
   vega.ReferralProgram program = 1;
+  // Time in Unix nanoseconds when the referral program started.
+  int64 started_at = 2;
+  // Epoch at which the referral program started.
+  uint64 at_epoch = 3;
 }
 
 message ReferralProgramUpdated {
   // The updated referral program.
   vega.ReferralProgram program = 1;
+  // Time in Unix nanoseconds when the referral program was updated.
+  int64 updated_at = 2;
+  // Epoch at which the referral program was updated.
+  uint64 at_epoch = 3;
 }
 
 message ReferralProgramEnded {
@@ -907,16 +915,28 @@ message ReferralProgramEnded {
   uint64 version = 1;
   // Unique ID of the referral program.
   string id = 2;
+  // Time in Unix nanoseconds when the referral program ended.
+  int64 ended_at = 3;
+  // Epoch at which the referral program ended.
+  uint64 at_epoch = 4;
 }
 
 message VolumeDiscountProgramStarted {
   // Volume discount program that has started.
   vega.VolumeDiscountProgram program = 1;
+  // Time in Unix nanoseconds when the volume discount program started.
+  int64 started_at = 2;
+  // Epoch at which the volume discount program started.
+  uint64 at_epoch = 3;
 }
 
 message VolumeDiscountProgramUpdated {
   // The updated volume discount program.
   vega.VolumeDiscountProgram program = 1;
+  // Time in Unix nanoseconds when the volume discount program was updated.
+  int64 updated_at = 2;
+  // Epoch at which the volume discount program was updated.
+  uint64 at_epoch = 3;
 }
 
 message VolumeDiscountProgramEnded {
@@ -924,6 +944,10 @@ message VolumeDiscountProgramEnded {
   uint64 version = 1;
   // Unique ID of the volume discount program.
   string id = 2;
+  // Time in Unix nanoseconds when the referral program ended.
+  int64 ended_at = 3;
+  // Epoch at which the referral program ended.
+  uint64 at_epoch = 4;
 }
 
 // Bus event type is used to specify a type of event

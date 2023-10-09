@@ -20,13 +20,14 @@ import (
 	"sort"
 	"time"
 
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 )
 
 const MaximumWindowLength uint64 = 100
@@ -63,7 +64,7 @@ func New(broker Broker, marketActivityTracker MarketActivityTracker) *Engine {
 func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 	switch ep.Action {
 	case vegapb.EpochAction_EPOCH_ACTION_START:
-		e.applyProgramUpdate(ctx, ep.StartTime)
+		e.applyProgramUpdate(ctx, ep.StartTime, ep.Seq)
 	case vegapb.EpochAction_EPOCH_ACTION_END:
 		e.updateNotionalVolumeForEpoch()
 		if !e.programHasEnded {
@@ -108,24 +109,24 @@ func (e *Engine) TakerNotionalForParty(party types.PartyID) num.Decimal {
 	return e.avgVolumePerParty[party]
 }
 
-func (e *Engine) applyProgramUpdate(ctx context.Context, startEpochTime time.Time) {
+func (e *Engine) applyProgramUpdate(ctx context.Context, startEpochTime time.Time, epoch uint64) {
 	if e.newProgram != nil {
 		if e.currentProgram != nil {
 			e.endCurrentProgram()
 			e.startNewProgram()
-			e.notifyVolumeDiscountProgramUpdated(ctx)
+			e.notifyVolumeDiscountProgramUpdated(ctx, startEpochTime, epoch)
 		} else {
 			e.startNewProgram()
-			e.notifyVolumeDiscountProgramStarted(ctx)
+			e.notifyVolumeDiscountProgramStarted(ctx, startEpochTime, epoch)
 		}
 	}
 
 	// This handles a edge case where the new program ends before the next
 	// epoch starts. It can happen when the proposal updating the volume discount
-	// program doesn't specify an end date that is to close to the enactment
+	// program specifies an end date that is within the same epoch as the enactment
 	// time.
 	if e.currentProgram != nil && !e.currentProgram.EndOfProgramTimestamp.IsZero() && !e.currentProgram.EndOfProgramTimestamp.After(startEpochTime) {
-		e.notifyVolumeDiscountProgramEnded(ctx)
+		e.notifyVolumeDiscountProgramEnded(ctx, startEpochTime, epoch)
 		e.endCurrentProgram()
 	}
 }
@@ -141,16 +142,16 @@ func (e *Engine) startNewProgram() {
 	e.newProgram = nil
 }
 
-func (e *Engine) notifyVolumeDiscountProgramStarted(ctx context.Context) {
-	e.broker.Send(events.NewVolumeDiscountProgramStartedEvent(ctx, e.currentProgram))
+func (e *Engine) notifyVolumeDiscountProgramStarted(ctx context.Context, epochTime time.Time, epoch uint64) {
+	e.broker.Send(events.NewVolumeDiscountProgramStartedEvent(ctx, e.currentProgram, epochTime, epoch))
 }
 
-func (e *Engine) notifyVolumeDiscountProgramUpdated(ctx context.Context) {
-	e.broker.Send(events.NewVolumeDiscountProgramUpdatedEvent(ctx, e.currentProgram))
+func (e *Engine) notifyVolumeDiscountProgramUpdated(ctx context.Context, epochTime time.Time, epoch uint64) {
+	e.broker.Send(events.NewVolumeDiscountProgramUpdatedEvent(ctx, e.currentProgram, epochTime, epoch))
 }
 
-func (e *Engine) notifyVolumeDiscountProgramEnded(ctx context.Context) {
-	e.broker.Send(events.NewVolumeDiscountProgramEndedEvent(ctx, e.currentProgram.Version, e.currentProgram.ID))
+func (e *Engine) notifyVolumeDiscountProgramEnded(ctx context.Context, epochTime time.Time, epoch uint64) {
+	e.broker.Send(events.NewVolumeDiscountProgramEndedEvent(ctx, e.currentProgram.Version, e.currentProgram.ID, epochTime, epoch))
 }
 
 func (e *Engine) calculatePartiesVolumeForWindow(windowSize int) {

@@ -43,7 +43,7 @@ type (
 	VolumeDiscountStore interface {
 		AddVolumeDiscountProgram(ctx context.Context, referral *entities.VolumeDiscountProgram) error
 		UpdateVolumeDiscountProgram(ctx context.Context, referral *entities.VolumeDiscountProgram) error
-		EndVolumeDiscountProgram(ctx context.Context, version uint64, vegaTime time.Time, seqNum uint64) error
+		EndVolumeDiscountProgram(ctx context.Context, version uint64, endedAt time.Time, vegaTime time.Time, seqNum uint64) error
 	}
 
 	VolumeDiscountProgram struct {
@@ -90,5 +90,6 @@ func (rp *VolumeDiscountProgram) consumeVolumeDiscountProgramUpdatedEvent(ctx co
 }
 
 func (rp *VolumeDiscountProgram) consumeVolumeDiscountProgramEndedEvent(ctx context.Context, e VolumeDiscountProgramEndedEvent) error {
-	return rp.store.EndVolumeDiscountProgram(ctx, e.GetVolumeDiscountProgramEnded().GetVersion(), rp.vegaTime, e.Sequence())
+	ev := e.GetVolumeDiscountProgramEnded()
+	return rp.store.EndVolumeDiscountProgram(ctx, ev.GetVersion(), time.Unix(0, ev.EndedAt), rp.vegaTime, e.Sequence())
 }

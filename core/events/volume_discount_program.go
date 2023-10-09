@@ -17,6 +17,7 @@ package events
 
 import (
 	"context"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/ptr"
@@ -41,11 +42,13 @@ func (t *VolumeDiscountProgramStarted) StreamMessage() *eventspb.BusEvent {
 	return busEvent
 }
 
-func NewVolumeDiscountProgramStartedEvent(ctx context.Context, p *types.VolumeDiscountProgram) *VolumeDiscountProgramStarted {
+func NewVolumeDiscountProgramStartedEvent(ctx context.Context, p *types.VolumeDiscountProgram, epochTime time.Time, epoch uint64) *VolumeDiscountProgramStarted {
 	return &VolumeDiscountProgramStarted{
 		Base: newBase(ctx, VolumeDiscountProgramStartedEvent),
 		e: &eventspb.VolumeDiscountProgramStarted{
-			Program: p.IntoProto(),
+			Program:   p.IntoProto(),
+			StartedAt: epochTime.UnixNano(),
+			AtEpoch:   epoch,
 		},
 	}
 }
@@ -75,11 +78,13 @@ func (t *VolumeDiscountProgramUpdated) StreamMessage() *eventspb.BusEvent {
 	return busEvent
 }
 
-func NewVolumeDiscountProgramUpdatedEvent(ctx context.Context, p *types.VolumeDiscountProgram) *VolumeDiscountProgramUpdated {
+func NewVolumeDiscountProgramUpdatedEvent(ctx context.Context, p *types.VolumeDiscountProgram, epochTime time.Time, epoch uint64) *VolumeDiscountProgramUpdated {
 	return &VolumeDiscountProgramUpdated{
 		Base: newBase(ctx, VolumeDiscountProgramUpdatedEvent),
 		e: &eventspb.VolumeDiscountProgramUpdated{
-			Program: p.IntoProto(),
+			Program:   p.IntoProto(),
+			UpdatedAt: epochTime.UnixNano(),
+			AtEpoch:   epoch,
 		},
 	}
 }
@@ -109,12 +114,14 @@ func (t *VolumeDiscountProgramEnded) StreamMessage() *eventspb.BusEvent {
 	return busEvent
 }
 
-func NewVolumeDiscountProgramEndedEvent(ctx context.Context, version uint64, id string) *VolumeDiscountProgramEnded {
+func NewVolumeDiscountProgramEndedEvent(ctx context.Context, version uint64, id string, epochTime time.Time, epoch uint64) *VolumeDiscountProgramEnded {
 	return &VolumeDiscountProgramEnded{
 		Base: newBase(ctx, VolumeDiscountProgramEndedEvent),
 		e: &eventspb.VolumeDiscountProgramEnded{
 			Version: version,
 			Id:      id,
+			EndedAt: epochTime.UnixNano(),
+			AtEpoch: epoch,
 		},
 	}
 }

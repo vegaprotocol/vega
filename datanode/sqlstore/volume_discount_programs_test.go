@@ -132,12 +132,14 @@ func getVolumeDiscountEvents(t *testing.T, endTime time.Time) (*eventspb.VolumeD
 			EndOfProgramTimestamp: endTime.Unix(),
 			WindowLength:          100,
 		},
+		StartedAt: endTime.Add(-1 * time.Hour).UnixNano(),
+		AtEpoch:   1,
 	}
 
 	updated := eventspb.VolumeDiscountProgramUpdated{
 		Program: &vega.VolumeDiscountProgram{
 			Version: 2,
-			Id:      started.Program.Id,
+			Id:      helpers.GenerateID(),
 			BenefitTiers: []*vega.VolumeBenefitTier{
 				{
 					MinimumRunningNotionalTakerVolume: "2000",
@@ -151,11 +153,15 @@ func getVolumeDiscountEvents(t *testing.T, endTime time.Time) (*eventspb.VolumeD
 			EndOfProgramTimestamp: endTime.Unix(),
 			WindowLength:          200,
 		},
+		UpdatedAt: endTime.Add(-30 * time.Minute).UnixNano(),
+		AtEpoch:   2,
 	}
 
 	ended := eventspb.VolumeDiscountProgramEnded{
-		Version: 3,
-		Id:      started.Program.Id,
+		Version: 2,
+		Id:      updated.Program.Id,
+		EndedAt: endTime.UnixNano(),
+		AtEpoch: 3,
 	}
 
 	return &started, &updated, &ended
@@ -209,26 +215,27 @@ func TestVolumeDiscountPrograms_EndVolumeDiscountProgram(t *testing.T) {
 	bs, rs := setupVolumeDiscountProgramTest(t)
 	ctx := tempTransaction(t)
 
-	block := addTestBlock(t, ctx, bs)
-	endTime := block.VegaTime.Add(time.Hour)
-	startedEvent, updatedEvent, endedEvent := getVolumeDiscountEvents(t, endTime)
 	t.Run("EndVolumeDiscountProgram should create a new referral program record with the data from the current referral program and set the ended_at timestamp", func(t *testing.T) {
-		started := entities.VolumeDiscountProgramFromProto(startedEvent.Program, block.VegaTime, 0)
+		block := addTestBlock(t, ctx, bs)
+		endTime := block.VegaTime.Add(time.Hour)
+		startedEvent, updatedEvent, endedEvent := getVolumeDiscountEvents(t, endTime)
+
+		started := entities.VolumeDiscountProgramFromProto(startedEvent.Program, block.VegaTime, 1)
 		err := rs.AddVolumeDiscountProgram(ctx, started)
 		require.NoError(t, err)
 
 		block = addTestBlock(t, ctx, bs)
-		updated := entities.VolumeDiscountProgramFromProto(updatedEvent.Program, block.VegaTime, 0)
+		updated := entities.VolumeDiscountProgramFromProto(updatedEvent.Program, block.VegaTime, 2)
 		err = rs.UpdateVolumeDiscountProgram(ctx, updated)
 		require.NoError(t, err)
 
 		block = addTestBlock(t, ctx, bs)
-		err = rs.EndVolumeDiscountProgram(ctx, endedEvent.Version, block.VegaTime, 0)
+		err = rs.EndVolumeDiscountProgram(ctx, endedEvent.Version, endTime, block.VegaTime, 3)
 		require.NoError(t, err)
 
-		ended := entities.VolumeDiscountProgramFromProto(updatedEvent.Program, block.VegaTime, 0)
+		ended := entities.VolumeDiscountProgramFromProto(updatedEvent.Program, block.VegaTime, 3)
 		ended.Version = endedEvent.Version
-		ended.EndedAt = &block.VegaTime
+		ended.EndedAt = &endTime
 
 		var got []entities.VolumeDiscountProgram
 		err = pgxscan.Select(ctx, connectionSource.Connection, &got, "SELECT * FROM volume_discount_programs order by vega_time")
@@ -248,12 +255,12 @@ func TestVolumeDiscountPrograms_GetCurrentVolumeDiscountProgram(t *testing.T) {
 	bs, rs := setupVolumeDiscountProgramTest(t)
 	ctx := tempTransaction(t)
 
-	block := addTestBlock(t, ctx, bs)
-	endTime := block.VegaTime.Add(time.Hour)
-	startedEvent, updatedEvent, endedEvent := getVolumeDiscountEvents(t, endTime)
-
 	t.Run("GetCurrentVolumeDiscountProgram should return the current referral program information", func(t *testing.T) {
-		started := entities.VolumeDiscountProgramFromProto(startedEvent.Program, block.VegaTime, 0)
+		block := addTestBlock(t, ctx, bs)
+		endTime := block.VegaTime.Add(time.Hour)
+		startedEvent, updatedEvent, endedEvent := getVolumeDiscountEvents(t, endTime)
+
+		started := entities.VolumeDiscountProgramFromProto(startedEvent.Program, block.VegaTime, 1)
 		err := rs.AddVolumeDiscountProgram(ctx, started)
 		require.NoError(t, err)
 
@@ -262,7 +269,7 @@ func TestVolumeDiscountPrograms_GetCurrentVolumeDiscountProgram(t *testing.T) {
 		assert.Equal(t, *started, got)
 
 		block = addTestBlock(t, ctx, bs)
-		updated := entities.VolumeDiscountProgramFromProto(updatedEvent.Program, block.VegaTime, 0)
+		updated := entities.VolumeDiscountProgramFromProto(updatedEvent.Program, block.VegaTime, 2)
 		err = rs.UpdateVolumeDiscountProgram(ctx, updated)
 		require.NoError(t, err)
 
@@ -271,12 +278,12 @@ func TestVolumeDiscountPrograms_GetCurrentVolumeDiscountProgram(t *testing.T) {
 		assert.Equal(t, *updated, got)
 
 		block = addTestBlock(t, ctx, bs)
-		err = rs.EndVolumeDiscountProgram(ctx, endedEvent.Version, block.VegaTime, 0)
+		err = rs.EndVolumeDiscountProgram(ctx, endedEvent.Version, endTime, block.VegaTime, 3)
 		require.NoError(t, err)
 
-		ended := entities.VolumeDiscountProgramFromProto(updatedEvent.Program, block.VegaTime, 0)
+		ended := entities.VolumeDiscountProgramFromProto(updatedEvent.Program, block.VegaTime, 3)
 		ended.Version = endedEvent.Version
-		ended.EndedAt = &block.VegaTime
+		ended.EndedAt = &endTime
 
 		got, err = rs.GetCurrentVolumeDiscountProgram(ctx)
 		require.NoError(t, err)

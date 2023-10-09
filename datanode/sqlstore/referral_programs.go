@@ -43,8 +43,8 @@ func (rp *ReferralPrograms) AddReferralProgram(ctx context.Context, referral *en
 
 func (rp *ReferralPrograms) insertReferralProgram(ctx context.Context, referral *entities.ReferralProgram) error {
 	_, err := rp.Connection.Exec(ctx,
-		`INSERT INTO referral_programs (id, version, benefit_tiers, end_of_program_timestamp, window_length, staking_tiers, vega_time, ended_at, seq_num)
-    		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+		`INSERT INTO referral_programs (id, version, benefit_tiers, end_of_program_timestamp, window_length, staking_tiers, vega_time, seq_num)
+    		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
 		referral.ID,
 		referral.Version,
 		referral.BenefitTiers,
@@ -52,7 +52,6 @@ func (rp *ReferralPrograms) insertReferralProgram(ctx context.Context, referral 
 		referral.WindowLength,
 		referral.StakingTiers,
 		referral.VegaTime,
-		referral.EndedAt,
 		referral.SeqNum,
 	)
 	return err
@@ -63,12 +62,12 @@ func (rp *ReferralPrograms) UpdateReferralProgram(ctx context.Context, referral 
 	return rp.insertReferralProgram(ctx, referral)
 }
 
-func (rp *ReferralPrograms) EndReferralProgram(ctx context.Context, version uint64, vegaTime time.Time, seqNum uint64) error {
+func (rp *ReferralPrograms) EndReferralProgram(ctx context.Context, version uint64, endedAt time.Time, vegaTime time.Time, seqNum uint64) error {
 	defer metrics.StartSQLQuery("ReferralPrograms", "EndReferralProgram")()
 	_, err := rp.Connection.Exec(ctx,
-		`INSERT INTO referral_programs (id, version, benefit_tiers, end_of_program_timestamp, window_length, staking_tiers, vega_time, ended_at, seq_num)
-            SELECT id, $1, benefit_tiers, end_of_program_timestamp, window_length, staking_tiers, $2, $2, $3
-            FROM current_referral_program`, version, vegaTime, seqNum,
+		`INSERT INTO referral_programs (id, version, benefit_tiers, end_of_program_timestamp, window_length, staking_tiers, ended_at, vega_time, seq_num)
+            SELECT id, $1, benefit_tiers, end_of_program_timestamp, window_length, staking_tiers, $2, $3, $4
+            FROM current_referral_program`, version, endedAt, vegaTime, seqNum,
 	)
 
 	return err

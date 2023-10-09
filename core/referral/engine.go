@@ -22,13 +22,14 @@ import (
 	"sort"
 	"time"
 
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 )
 
 const MaximumWindowLength uint64 = 100
@@ -301,7 +302,7 @@ func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 	switch ep.Action {
 	case vegapb.EpochAction_EPOCH_ACTION_START:
 		e.currentEpoch = ep.Seq
-		e.applyProgramUpdate(ctx, ep.StartTime)
+		e.applyProgramUpdate(ctx, ep.StartTime, ep.Seq)
 	case vegapb.EpochAction_EPOCH_ACTION_END:
 		e.computeReferralSetsStats(ctx, ep)
 	}
@@ -340,24 +341,24 @@ func (e *Engine) calculateMultiplierForParty(setID types.ReferralSetID) num.Deci
 	return multiplier
 }
 
-func (e *Engine) applyProgramUpdate(ctx context.Context, startEpochTime time.Time) {
+func (e *Engine) applyProgramUpdate(ctx context.Context, startEpochTime time.Time, epoch uint64) {
 	if e.newProgram != nil {
 		if e.currentProgram != nil {
 			e.endCurrentProgram()
 			e.startNewProgram()
-			e.notifyReferralProgramUpdated(ctx)
+			e.notifyReferralProgramUpdated(ctx, startEpochTime, epoch)
 		} else {
 			e.startNewProgram()
-			e.notifyReferralProgramStarted(ctx)
+			e.notifyReferralProgramStarted(ctx, startEpochTime, epoch)
 		}
 	}
 
 	// This handles a edge case where the new program ends before the next
 	// epoch starts. It can happen when the proposal updating the referral
-	// program doesn't specify an end date that is to close to the enactment
+	// program specifies an end date that is within the same epoch as the enactment
 	// time.
 	if e.currentProgram != nil && !e.currentProgram.EndOfProgramTimestamp.IsZero() && !e.currentProgram.EndOfProgramTimestamp.After(startEpochTime) {
-		e.notifyReferralProgramEnded(ctx)
+		e.notifyReferralProgramEnded(ctx, startEpochTime, epoch)
 		e.endCurrentProgram()
 	}
 }
@@ -373,16 +374,16 @@ func (e *Engine) startNewProgram() {
 	e.newProgram = nil
 }
 
-func (e *Engine) notifyReferralProgramStarted(ctx context.Context) {
-	e.broker.Send(events.NewReferralProgramStartedEvent(ctx, e.currentProgram))
+func (e *Engine) notifyReferralProgramStarted(ctx context.Context, epochTime time.Time, epoch uint64) {
+	e.broker.Send(events.NewReferralProgramStartedEvent(ctx, e.currentProgram, epochTime, epoch))
 }
 
-func (e *Engine) notifyReferralProgramUpdated(ctx context.Context) {
-	e.broker.Send(events.NewReferralProgramUpdatedEvent(ctx, e.currentProgram))
+func (e *Engine) notifyReferralProgramUpdated(ctx context.Context, epochTime time.Time, epoch uint64) {
+	e.broker.Send(events.NewReferralProgramUpdatedEvent(ctx, e.currentProgram, epochTime, epoch))
 }
 
-func (e *Engine) notifyReferralProgramEnded(ctx context.Context) {
-	e.broker.Send(events.NewReferralProgramEndedEvent(ctx, e.currentProgram.Version, e.currentProgram.ID))
+func (e *Engine) notifyReferralProgramEnded(ctx context.Context, epochTime time.Time, epoch uint64) {
+	e.broker.Send(events.NewReferralProgramEndedEvent(ctx, e.currentProgram.Version, e.currentProgram.ID, epochTime, epoch))
 }
 
 func (e *Engine) notifyReferralSetStatsUpdated(ctx context.Context, stats *types.ReferralSetStats) {
