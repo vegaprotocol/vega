@@ -114,9 +114,8 @@ func calcPartyInTeamRewardShare(teamScore *types.PartyContributionScore, partyTo
 		if factor, ok := rewardFactors[pcs.Party]; ok {
 			rewardFactor = factor
 		}
-		score := rewardFactor.Mul(pcs.Score)
-		ps = append(ps, &types.PartyContributionScore{Party: pcs.Party, Score: score})
-		totalScores = totalScores.Add(score)
+		ps = append(ps, &types.PartyContributionScore{Party: pcs.Party, Score: rewardFactor})
+		totalScores = totalScores.Add(rewardFactor)
 	}
 	if totalScores.IsZero() {
 		return []*types.PartyContributionScore{}
