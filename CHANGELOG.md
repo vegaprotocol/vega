@@ -270,6 +270,7 @@
 - [9672](https://github.com/vegaprotocol/vega/issues/9672) - Fix margin being non-zero on `PERPS`, add tests to ensure distressed parties are handled correctly
 - [9280](https://github.com/vegaprotocol/vega/issues/9280) - Get block height directly from `blocks` table.
 - [9675](https://github.com/vegaprotocol/vega/issues/9675) - Fix snapshot issue with not applying `providersCalculationStep` at epoch start.
+- [9693](https://github.com/vegaprotocol/vega/issues/9693) - Add missing validation for general account public key in governance transfer
 
 ## 0.72.1
 

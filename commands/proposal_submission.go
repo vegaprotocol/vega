@@ -502,6 +502,10 @@ func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Error
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
 	}
 
+	if changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_GENERAL && !IsVegaPublicKey(changes.Destination) {
+		errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrShouldBeAValidVegaPublicKey)
+	}
+
 	if (changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD ||
 		changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY ||
 		changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE) &&
