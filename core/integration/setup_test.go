@@ -172,6 +172,8 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.stakingAccount = stubs.NewStakingAccountStub()
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.stakingAccount.OnEpochEvent, execsetup.stakingAccount.OnEpochRestore)
 
+	execsetup.teamsEngine = teams.NewEngine(execsetup.epochEngine, execsetup.broker, execsetup.timeService)
+
 	execsetup.stateVarEngine = stubs.NewStateVar()
 	marketActivityTracker := common.NewMarketActivityTracker(execsetup.log, execsetup.epochEngine, execsetup.teamsEngine, execsetup.stakingAccount)
 
@@ -217,8 +219,6 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.vesting.OnEpochEvent, execsetup.vesting.OnEpochRestore)
 
 	execsetup.registerTimeServiceCallbacks()
-
-	execsetup.teamsEngine = teams.NewEngine(execsetup.epochEngine, execsetup.broker, execsetup.timeService)
 
 	if err := execsetup.registerNetParamsCallbacks(); err != nil {
 		panic(fmt.Errorf("failed to register network parameters: %w", err))
