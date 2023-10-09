@@ -274,6 +274,7 @@
 - [9280](https://github.com/vegaprotocol/vega/issues/9280) - Get block height directly from `blocks` table.
 - [9675](https://github.com/vegaprotocol/vega/issues/9675) - Fix snapshot issue with not applying `providersCalculationStep` at epoch start.
 - [9693](https://github.com/vegaprotocol/vega/issues/9693) - Add missing validation for general account public key in governance transfer
+- [9691](https://github.com/vegaprotocol/vega/issues/9691) - Refactor referral engine snapshot
 - [8570](https://github.com/vegaprotocol/vega/issues/8570) - Ensure pagination doesn't trigger a sequential scan on block-explorer transactions table.
 
 ## 0.72.1

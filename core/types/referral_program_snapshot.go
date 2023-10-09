@@ -17,132 +17,47 @@ import (
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
-type PayloadReferralMisc struct {
-	ReferralMisc *snapshotpb.ReferralMisc
+type PayloadReferralProgramState struct {
+	FactorByReferee    []*snapshotpb.FactorByReferee
+	CurrentProgram     *vegapb.ReferralProgram
+	NewProgram         *vegapb.ReferralProgram
+	LastProgramVersion uint64
+	ProgramHasEnded    bool
+	Sets               []*snapshotpb.ReferralSet
 }
 
-func (p *PayloadReferralMisc) Key() string {
-	return "referralMisc"
+func (p *PayloadReferralProgramState) Key() string {
+	return "referral"
 }
 
-func (*PayloadReferralMisc) Namespace() SnapshotNamespace {
+func (*PayloadReferralProgramState) Namespace() SnapshotNamespace {
 	return ReferralProgramSnapshot
 }
 
-func (p *PayloadReferralMisc) IntoProto() *snapshotpb.Payload_ReferralMisc {
-	return &snapshotpb.Payload_ReferralMisc{
-		ReferralMisc: &snapshotpb.ReferralMisc{
-			LastProgramVersion: p.ReferralMisc.LastProgramVersion,
-			ProgramHasEnded:    p.ReferralMisc.ProgramHasEnded,
+func (p *PayloadReferralProgramState) IntoProto() *snapshotpb.Payload_ReferralProgram {
+	return &snapshotpb.Payload_ReferralProgram{
+		ReferralProgram: &snapshotpb.ReferralProgramData{
+			FactorByReferee:    p.FactorByReferee,
+			CurrentProgram:     p.CurrentProgram,
+			NewProgram:         p.NewProgram,
+			LastProgramVersion: p.LastProgramVersion,
+			ProgramHasEnded:    p.ProgramHasEnded,
 		},
 	}
 }
 
-func (*PayloadReferralMisc) isPayload() {}
+func (*PayloadReferralProgramState) isPayload() {}
 
-func (p *PayloadReferralMisc) plToProto() interface{} {
+func (p *PayloadReferralProgramState) plToProto() interface{} {
 	return p.IntoProto()
 }
 
-func PayloadReferralMiscFromProto(payload *snapshotpb.Payload_ReferralMisc) *PayloadReferralMisc {
-	return &PayloadReferralMisc{
-		ReferralMisc: &snapshotpb.ReferralMisc{
-			LastProgramVersion: payload.ReferralMisc.LastProgramVersion,
-			ProgramHasEnded:    payload.ReferralMisc.ProgramHasEnded,
-		},
-	}
-}
-
-type PayloadCurrentReferralProgram struct {
-	CurrentReferralProgram *vegapb.ReferralProgram
-}
-
-func (p *PayloadCurrentReferralProgram) Key() string {
-	return "currentReferralProgram"
-}
-
-func (*PayloadCurrentReferralProgram) Namespace() SnapshotNamespace {
-	return ReferralProgramSnapshot
-}
-
-func (p *PayloadCurrentReferralProgram) IntoProto() *snapshotpb.Payload_CurrentReferralProgram {
-	return &snapshotpb.Payload_CurrentReferralProgram{
-		CurrentReferralProgram: &snapshotpb.CurrentReferralProgram{
-			ReferralProgram: p.CurrentReferralProgram,
-		},
-	}
-}
-
-func (*PayloadCurrentReferralProgram) isPayload() {}
-
-func (p *PayloadCurrentReferralProgram) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func PayloadCurrentReferralProgramFromProto(payload *snapshotpb.Payload_CurrentReferralProgram) *PayloadCurrentReferralProgram {
-	return &PayloadCurrentReferralProgram{
-		CurrentReferralProgram: payload.CurrentReferralProgram.GetReferralProgram(),
-	}
-}
-
-type PayloadNewReferralProgram struct {
-	NewReferralProgram *vegapb.ReferralProgram
-}
-
-func (p *PayloadNewReferralProgram) Key() string {
-	return "newReferralProgram"
-}
-
-func (*PayloadNewReferralProgram) Namespace() SnapshotNamespace {
-	return ReferralProgramSnapshot
-}
-
-func (p *PayloadNewReferralProgram) IntoProto() *snapshotpb.Payload_NewReferralProgram {
-	return &snapshotpb.Payload_NewReferralProgram{
-		NewReferralProgram: &snapshotpb.NewReferralProgram{
-			ReferralProgram: p.NewReferralProgram,
-		},
-	}
-}
-
-func (*PayloadNewReferralProgram) isPayload() {}
-
-func (p *PayloadNewReferralProgram) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func PayloadNewReferralProgramFromProto(teamsPayload *snapshotpb.Payload_NewReferralProgram) *PayloadNewReferralProgram {
-	return &PayloadNewReferralProgram{
-		NewReferralProgram: teamsPayload.NewReferralProgram.GetReferralProgram(),
-	}
-}
-
-type PayloadReferralSets struct {
-	Sets *snapshotpb.ReferralSets
-}
-
-func (p *PayloadReferralSets) Key() string {
-	return "referralSets"
-}
-
-func (*PayloadReferralSets) Namespace() SnapshotNamespace {
-	return ReferralProgramSnapshot
-}
-
-func (p *PayloadReferralSets) IntoProto() *snapshotpb.Payload_ReferralSets {
-	return &snapshotpb.Payload_ReferralSets{
-		ReferralSets: p.Sets,
-	}
-}
-
-func (*PayloadReferralSets) isPayload() {}
-
-func (p *PayloadReferralSets) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func PayloadReferralSetsFromProto(p *snapshotpb.Payload_ReferralSets) *PayloadReferralSets {
-	return &PayloadReferralSets{
-		Sets: p.ReferralSets,
+func PayloadReferralProgramStateFromProto(payload *snapshotpb.Payload_ReferralProgram) *PayloadReferralProgramState {
+	return &PayloadReferralProgramState{
+		FactorByReferee:    payload.ReferralProgram.FactorByReferee,
+		CurrentProgram:     payload.ReferralProgram.CurrentProgram,
+		NewProgram:         payload.ReferralProgram.NewProgram,
+		LastProgramVersion: payload.ReferralProgram.LastProgramVersion,
+		ProgramHasEnded:    payload.ReferralProgram.ProgramHasEnded,
 	}
 }

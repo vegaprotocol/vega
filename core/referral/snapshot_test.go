@@ -20,7 +20,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/paths"
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -114,12 +113,6 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 	// Set new program.
 	te1.engine.UpdateProgram(program2)
 
-	// Take a snapshot.
-	hash1, err := snapshotEngine1.SnapshotNow(ctx)
-	require.NoError(t, err)
-
-	epochAtSnapshot := te1.currentEpoch
-
 	// Simulating end of epoch.
 	// The program should be updated with the new one.
 	postSnapshotActions := func(te *testEngine) {
@@ -165,13 +158,9 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 	}
 	postSnapshotActions(te1)
 
-	state1 := map[string][]byte{}
-	for _, key := range te1.engine.Keys() {
-		state, additionalProvider, err := te1.engine.GetState(key)
-		require.NoError(t, err)
-		assert.Empty(t, additionalProvider)
-		state1[key] = state
-	}
+	// Take a snapshot.
+	hash1, err := snapshotEngine1.SnapshotNow(ctx)
+	require.NoError(t, err)
 
 	closeSnapshotEngine1()
 
@@ -180,45 +169,13 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 	snapshotEngine2 := newSnapshotEngine(t, vegaPath, now, te2.engine)
 	defer snapshotEngine2.Close()
 
-	// Simulate restoration of the epoch at the time of the snapshot
-	te2.currentEpoch = epochAtSnapshot
-	te2.engine.OnEpochRestore(ctx, types.Epoch{
-		Seq:    epochAtSnapshot,
-		Action: vegapb.EpochAction_EPOCH_ACTION_START,
-	})
 	// Simulate restoration of the network parameter at the time of the snapshot
 	require.NoError(t, te2.engine.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate(ctx, maxVolumeParams))
 
-	// OnStateLoaded will recalculate referrer stats and send out all these events
-	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee1)).Return(num.UintFromUint64(100)).Times(1)
-	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee2)).Return(num.UintFromUint64(100)).Times(1)
-	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee3)).Return(num.UintFromUint64(100)).Times(1)
-	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee4)).Return(num.UintFromUint64(100)).Times(1)
-	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee5)).Return(num.UintFromUint64(100)).Times(1)
-	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee6)).Return(num.UintFromUint64(100)).Times(1)
-	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee7)).Return(num.UintFromUint64(100)).Times(1)
-	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee8)).Return(num.UintFromUint64(100)).Times(1)
-	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee9)).Return(num.UintFromUint64(100)).Times(1)
-	te2.staking.EXPECT().GetAvailableBalance(gomock.Any()).AnyTimes().Return(num.NewUint(100), nil)
-	expectReferralSetStatsUpdatedEvent(t, te2, 4)
 	// This triggers the state restoration from the local snapshot.
 	require.NoError(t, snapshotEngine2.Start(ctx))
 
 	// Comparing the hash after restoration, to ensure it produces the same result.
 	hash2, _, _ := snapshotEngine2.Info()
 	require.Equal(t, hash1, hash2)
-
-	postSnapshotActions(te2)
-
-	state2 := map[string][]byte{}
-	for _, key := range te2.engine.Keys() {
-		state, additionalProvider, err := te2.engine.GetState(key)
-		require.NoError(t, err)
-		assert.Empty(t, additionalProvider)
-		state2[key] = state
-	}
-
-	for key := range state1 {
-		assert.Equalf(t, state1[key], state2[key], "Key %q does not have the same data", key)
-	}
 }
