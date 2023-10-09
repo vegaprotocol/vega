@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.73.0
+## 0.73.0
 
 ### 🚨 Breaking changes
 
@@ -35,7 +35,7 @@
 - [8857](https://github.com/vegaprotocol/vega/issues/8857) - Add a step for getting the balance of the liquidity provider liquidity fee account
 - [8847](https://github.com/vegaprotocol/vega/issues/8847) - Implement internal time trigger data source.
 - [8895](https://github.com/vegaprotocol/vega/issues/8895) - Allow to set runtime parameters in the SQL Store connection structure
-- [9678](https://github.com/vegaprotocol/vega/issues/9678) - Cache and forward referral rewards multiplier and factor multiplier 
+- [9678](https://github.com/vegaprotocol/vega/issues/9678) - Cache and forward referral rewards multiplier and factor multiplier
 - [8779](https://github.com/vegaprotocol/vega/issues/8779) - Query all details of liquidity providers via an API.
 - [8924](https://github.com/vegaprotocol/vega/issues/8924) - Refactor slightly to remove need to deep clone `proto` types
 - [8782](https://github.com/vegaprotocol/vega/issues/8782) - List all active liquidity providers for a market via API.
