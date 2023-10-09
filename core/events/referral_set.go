@@ -54,13 +54,12 @@ type ReferralSetStatsUpdated struct {
 func (t ReferralSetStatsUpdated) Unwrap() *types.ReferralSetStats {
 	volume, _ := num.UintFromString(t.e.ReferralSetRunningNotionalTakerVolume, 10)
 	stats := map[types.PartyID]*types.RefereeStats{}
+	rewardFactor, _ := num.DecimalFromString(t.e.RewardFactor)
 
 	for _, stat := range t.e.RefereesStats {
 		discountFactor, _ := num.DecimalFromString(stat.DiscountFactor)
-		rewardFactor, _ := num.DecimalFromString(stat.RewardFactor)
 		stats[types.PartyID(stat.PartyId)] = &types.RefereeStats{
 			DiscountFactor: discountFactor,
-			RewardFactor:   rewardFactor,
 		}
 	}
 
@@ -69,6 +68,7 @@ func (t ReferralSetStatsUpdated) Unwrap() *types.ReferralSetStats {
 		SetID:                    types.ReferralSetID(t.e.SetId),
 		ReferralSetRunningVolume: volume,
 		RefereesStats:            stats,
+		RewardFactor:             rewardFactor,
 	}
 }
 
@@ -91,7 +91,6 @@ func NewReferralSetStatsUpdatedEvent(ctx context.Context, update *types.Referral
 		refereesStats = append(refereesStats, &eventspb.RefereeStats{
 			PartyId:                  string(partyID),
 			DiscountFactor:           stat.DiscountFactor.String(),
-			RewardFactor:             stat.RewardFactor.String(),
 			EpochNotionalTakerVolume: stat.TakerVolume.String(),
 		})
 	}
@@ -107,6 +106,7 @@ func NewReferralSetStatsUpdatedEvent(ctx context.Context, update *types.Referral
 			AtEpoch:                               update.AtEpoch,
 			ReferralSetRunningNotionalTakerVolume: update.ReferralSetRunningVolume.String(),
 			RefereesStats:                         refereesStats,
+			RewardFactor:                          update.RewardFactor.String(),
 		},
 	}
 }

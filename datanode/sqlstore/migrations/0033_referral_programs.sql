@@ -47,6 +47,7 @@ create table referral_set_stats(
     set_id bytea not null,
     at_epoch bigint not null,
     referral_set_running_notional_taker_volume numeric,
+    reward_factor numeric,
     referees_stats jsonb not null,
     vega_time timestamp with time zone not null,
     primary key (vega_time, set_id)
@@ -59,7 +60,7 @@ drop view if exists referral_set_referee_stats;
 
 create view referral_set_referee_stats as (
   select set_id, at_epoch, referral_set_running_notional_taker_volume, stats.referee_stats->>'party_id' as party_id,
-         stats.referee_stats->>'discount_factor' as discount_factor, stats.referee_stats->>'reward_factor' as reward_factor,
+         stats.referee_stats->>'discount_factor' as discount_factor, reward_factor,
          vega_time
   from referral_set_stats,
        jsonb_array_elements(referees_stats) with ordinality stats(referee_stats, position)

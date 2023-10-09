@@ -451,8 +451,9 @@ func TestReferralSets_AddReferralSetStats(t *testing.T) {
 			SetID:                                 set.ID,
 			AtEpoch:                               epoch,
 			ReferralSetRunningNotionalTakerVolume: takerVolume,
-			RefereesStats:                         getRefereeStats(t, refs, "0.01", "0.02"),
+			RefereesStats:                         getRefereeStats(t, refs, "0.01"),
 			VegaTime:                              block.VegaTime,
+			RewardFactor:                          "0.02",
 		}
 
 		err := rs.AddReferralSetStats(ctx, &stats)
@@ -471,8 +472,9 @@ func TestReferralSets_AddReferralSetStats(t *testing.T) {
 			SetID:                                 set.ID,
 			AtEpoch:                               epoch,
 			ReferralSetRunningNotionalTakerVolume: takerVolume,
-			RefereesStats:                         getRefereeStats(t, refs, "0.01", "0.02"),
+			RefereesStats:                         getRefereeStats(t, refs, "0.01"),
 			VegaTime:                              block.VegaTime,
+			RewardFactor:                          "0.02",
 		}
 
 		err := rs.AddReferralSetStats(ctx, &stats)
@@ -488,14 +490,13 @@ func TestReferralSets_AddReferralSetStats(t *testing.T) {
 	})
 }
 
-func getRefereeStats(t *testing.T, refs []entities.ReferralSetReferee, discountFactor, rewardFactor string) []*eventspb.RefereeStats {
+func getRefereeStats(t *testing.T, refs []entities.ReferralSetReferee, discountFactor string) []*eventspb.RefereeStats {
 	t.Helper()
 	stats := make([]*eventspb.RefereeStats, len(refs))
 	for i, r := range refs {
 		stats[i] = &eventspb.RefereeStats{
 			PartyId:        r.Referee.String(),
 			DiscountFactor: discountFactor,
-			RewardFactor:   rewardFactor,
 		}
 	}
 	return stats
@@ -531,11 +532,11 @@ func TestReferralSets_GetReferralSetStats(t *testing.T) {
 				return &eventspb.RefereeStats{
 					PartyId:                  party.ID.String(),
 					DiscountFactor:           fmt.Sprintf("0.1%d%d", i+1, j+1),
-					RewardFactor:             fmt.Sprintf("0.2%d%d", i+1, j+1),
 					EpochNotionalTakerVolume: strconv.Itoa((i+1)*100 + (j+1)*10),
 				}
 			}),
-			VegaTime: block.VegaTime,
+			VegaTime:     block.VegaTime,
+			RewardFactor: fmt.Sprintf("0.2%d", i+1),
 		}
 
 		require.NoError(t, rs.AddReferralSetStats(ctx, &set))
@@ -547,7 +548,7 @@ func TestReferralSets_GetReferralSetStats(t *testing.T) {
 				VegaTime:                              block.VegaTime,
 				PartyID:                               stat.PartyId,
 				DiscountFactor:                        stat.DiscountFactor,
-				RewardFactor:                          stat.RewardFactor,
+				RewardFactor:                          set.RewardFactor,
 				EpochNotionalTakerVolume:              stat.EpochNotionalTakerVolume,
 			})
 		}

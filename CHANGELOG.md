@@ -132,6 +132,7 @@
 - [9542](https://github.com/vegaprotocol/vega/issues/9542) - Ensure all per asset accounts exist after migration
 - [8475](https://github.com/vegaprotocol/vega/issues/8475) - Emit margin levels event when margin balance is cleared.
 - [9664](https://github.com/vegaprotocol/vega/issues/9664) - Handle pagination of release request with github.
+- [9681](https://github.com/vegaprotocol/vega/issues/9681) - Move referral set reward factor to the referral set stats events
 
 ### 🐛 Fixes
 
