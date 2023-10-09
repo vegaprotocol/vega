@@ -1052,7 +1052,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, submission *types.OrderSubmiss
 
 	if mkt, ok := e.allMarkets[submission.MarketID]; ok {
 		if submission.PeggedOrder != nil && !e.canSubmitPeggedOrder() {
-			return nil, &types.ErrTooManyPeggedOrders
+			return nil, types.ErrTooManyPeggedOrders
 		}
 
 		metrics.OrderGaugeAdd(1, submission.MarketID)

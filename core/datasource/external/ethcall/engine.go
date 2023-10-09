@@ -226,7 +226,7 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 	// and the methods used are safe for concurrent access.
 	lastEthBlock, err := e.client.BlockByNumber(ctx, nil)
 	if err != nil {
-		e.log.Errorf("failed to get current block header: %w", err)
+		e.log.Error("failed to get current block header", logging.Error(err))
 		return
 	}
 
@@ -245,7 +245,7 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 		nextBlockNum := big.NewInt(0).SetUint64(prevEthBlock.NumberU64() + 1)
 		nextEthBlock, err := e.client.BlockByNumber(ctx, nextBlockNum)
 		if err != nil {
-			e.log.Errorf("failed to get next block header: %w", err)
+			e.log.Error("failed to get next block header", logging.Error(err))
 			return
 		}
 
@@ -253,7 +253,7 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 			if call.triggered(prevEthBlock, nextEthBlock) {
 				res, err := call.Call(ctx, e.client, nextEthBlock.NumberU64())
 				if err != nil {
-					e.log.Errorf("failed to call contract: %w", err)
+					e.log.Error("failed to call contract", logging.Error(err))
 					event := makeErrorChainEvent(err.Error(), specID, nextEthBlock)
 					e.forwarder.ForwardFromSelf(event)
 					continue
