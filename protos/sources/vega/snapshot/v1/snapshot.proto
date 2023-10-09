@@ -1164,7 +1164,6 @@ message FactorByReferee {
   bytes taker_volume = 3;
 }
 
-
 message AssetLocked {
   string asset = 1;
   repeated EpochBalance epoch_balances = 2;
