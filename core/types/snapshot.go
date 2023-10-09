@@ -237,6 +237,8 @@ func SnapshotFromTree(tree *iavl.ImmutableTree) (*Snapshot, error) {
 		if payload.Namespace() == AppSnapshot {
 			p, _ := payload.Data.(*PayloadAppState)
 			snap.Height = p.AppState.Height
+			snap.Meta.ProtocolVersion = p.AppState.ProtocolVersion
+			snap.Meta.ProtocolUpgrade = p.AppState.ProtocolUpdgade
 		}
 
 		// move onto the next node

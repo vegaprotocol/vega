@@ -31,6 +31,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	"code.vegaprotocol.io/vega/version"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
@@ -300,14 +301,24 @@ func (e *Engine) ReceiveSnapshot(offeredSnapshot *types.Snapshot) tmtypes.Respon
 		}
 	}
 
+	if offeredSnapshot.Meta == nil {
+		e.log.Info("The received snapshot is missing meta-data, rejecting offer",
+			logging.Uint64("snapshot-height", offeredSnapshot.Height),
+		)
+		return tmtypes.ResponseOfferSnapshot{
+			Result: tmtypes.ResponseOfferSnapshot_REJECT,
+		}
+	}
 	e.log.Info("New snapshot received from state-sync",
-		zap.Uint64("snapshot-height", offeredSnapshot.Height),
+		logging.Uint64("snapshot-height", offeredSnapshot.Height),
+		logging.String("from-version", offeredSnapshot.Meta.ProtocolVersion),
+		logging.Bool("protocol-upgrade", offeredSnapshot.Meta.ProtocolUpgrade),
 	)
 
 	if e.config.StartHeight > 0 && offeredSnapshot.Height != uint64(e.config.StartHeight) {
 		e.log.Info("The block height of the received snapshot does not match the expected one, rejecting offer",
-			zap.Uint64("snapshot-height", offeredSnapshot.Height),
-			zap.Int64("expected-height", e.config.StartHeight),
+			logging.Uint64("snapshot-height", offeredSnapshot.Height),
+			logging.Int64("expected-height", e.config.StartHeight),
 		)
 		return tmtypes.ResponseOfferSnapshot{
 			Result: tmtypes.ResponseOfferSnapshot_REJECT,
@@ -325,7 +336,7 @@ func (e *Engine) ReceiveSnapshot(offeredSnapshot *types.Snapshot) tmtypes.Respon
 	e.offeredSnapshot = offeredSnapshot
 
 	e.log.Info("New snapshot received from state-sync accepted",
-		zap.Uint64("snapshot-height", offeredSnapshot.Height),
+		logging.Uint64("snapshot-height", offeredSnapshot.Height),
 	)
 
 	return tmtypes.ResponseOfferSnapshot{
@@ -573,7 +584,6 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 	wg.Wait()
 
 	// all results are int - split them by namespace first
-	updated := false
 	resultByTreeKey := make(map[string]snapshotResult, len(results))
 	for _, tkRes := range results {
 		resultByTreeKey[string(tkRes.input.treeKey)] = tkRes
@@ -606,11 +616,10 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 
 			if len(snapshotRes.state) == 0 {
 				// empty state -> remove data from snapshot
-				updated = e.snapshotTree.RemoveKey(treeKey)
+				e.snapshotTree.RemoveKey(treeKey)
 				continue
 			}
 			e.snapshotTree.AddState(treeKey, snapshotRes.state)
-			updated = true
 		}
 
 		if len(toRemove) == 0 {
@@ -624,7 +633,6 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 			if !ok {
 				continue
 			}
-			updated = true
 			treeKey := tkRes.input.treeKey
 			treeKeyStr := string(treeKey)
 
@@ -642,49 +650,29 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 	}
 
 	// update appstate separately
-	appUpdate := false
 	height, err := vegactx.BlockHeightFromContext(ctx)
 	if err != nil {
 		e.snapshotTreeLock.Unlock()
 		return nil, nil, err
 	}
-	if height != int64(e.appState.Height) {
-		appUpdate = true
-		e.appState.Height = uint64(height)
-	}
+	e.appState.Height = uint64(height)
+
 	_, block := vegactx.TraceIDFromContext(ctx)
-	if block != e.appState.Block {
-		appUpdate = true
-		e.appState.Block = block
-	}
-	vNow := e.timeService.GetTimeNow().UnixNano()
-	if e.appState.Time != vNow {
-		e.appState.Time = vNow
-		appUpdate = true
-	}
+	e.appState.Block = block
+	e.appState.Time = e.timeService.GetTimeNow().UnixNano()
 
 	cid, err := vegactx.ChainIDFromContext(ctx)
 	if err != nil {
 		e.snapshotTreeLock.Unlock()
 		return nil, nil, err
 	}
-	if e.appState.ChainID != cid {
-		e.appState.ChainID = cid
-		appUpdate = true
-	}
+	e.appState.ChainID = cid
+	e.appState.ProtocolVersion = version.Get()
+	e.appState.ProtocolUpdgade = !saveAsync
 
-	if appUpdate {
-		if err = e.updateAppState(); err != nil {
-			e.snapshotTreeLock.Unlock()
-			return nil, nil, err
-		}
-		updated = true
-	}
-
-	if !updated {
-		hash := e.snapshotTree.Hash()
+	if err = e.updateAppState(); err != nil {
 		e.snapshotTreeLock.Unlock()
-		return hash, nil, nil
+		return nil, nil, err
 	}
 
 	doneCh := make(chan interface{})
@@ -730,6 +718,8 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 	e.log.Info("Snapshot taken",
 		logging.Int64("height", height),
 		logging.ByteString("hash", hash),
+		logging.String("protocol-version", e.appState.ProtocolVersion),
+		logging.Bool("protocol-upgrade", e.appState.ProtocolUpdgade),
 	)
 
 	return hash, doneCh, nil
@@ -815,17 +805,24 @@ func (e *Engine) restoreStateFromTree(ctx context.Context) error {
 func (e *Engine) restoreStateFromSnapshot(ctx context.Context, payloads []*types.Payload) error {
 	payloadsPerNamespace := groupPayloadsPerNamespace(payloads)
 
-	// The snapshot engine is responsible of snapshotting the general state
-	// of the node.
+	// this is the state of the application when the snapshot was taken
 	e.appState = payloadsPerNamespace[types.AppSnapshot][0].GetAppState().AppState
 
 	// These values are needed in the context by providers, to send events.
 	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, int64(e.appState.Height)), e.appState.Block)
 	ctx = vegactx.WithChainID(ctx, e.appState.ChainID)
 
+	ctx = vegactx.WithSnapshotInfo(ctx, e.appState.ProtocolVersion, e.appState.ProtocolUpdgade)
+
 	// Restoring state in globally shared services.
 	e.timeService.SetTimeNow(ctx, time.Unix(0, e.appState.Time))
 	e.statsService.SetHeight(e.appState.Height)
+
+	e.log.Info("loading state from snapshot",
+		logging.Uint64("block-height", e.appState.Height),
+		logging.String("version-taken", e.appState.ProtocolVersion),
+		logging.Bool("protocol-upgrade", e.appState.ProtocolUpdgade),
+	)
 
 	// Calling providers that need to be called before restoring their state.
 	for _, provider := range e.preRestoreProviders {

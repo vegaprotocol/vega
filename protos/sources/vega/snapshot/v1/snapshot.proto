@@ -53,8 +53,9 @@ message NodeHash {
 message Metadata {
   int64 version = 1;
   repeated string chunk_hashes = 2;
-  repeated NodeHash node_hashes = 3; // hashes used by snapshot engine, different to chunk hash if data was
-  // split up, or combined into a single chunk
+  repeated NodeHash node_hashes = 3;
+  string protocol_version = 4;
+  bool protocol_upgrade = 5;
 }
 
 // Chunk is simply an as-is chunk belonging to a snapshot
@@ -642,6 +643,8 @@ message AppState {
   string block = 2;
   int64 time = 3;
   string chain_id = 4;
+  string protocol_version = 5;
+  bool protocol_upgrade = 6;
 }
 
 // EpochState details

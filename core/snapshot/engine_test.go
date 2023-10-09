@@ -7,14 +7,17 @@ import (
 
 	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/snapshot/mocks"
+	"code.vegaprotocol.io/vega/core/snapshot/tree"
 	"code.vegaprotocol.io/vega/core/types"
 	typemocks "code.vegaprotocol.io/vega/core/types/mocks"
 	vegactx "code.vegaprotocol.io/vega/libs/context"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	"code.vegaprotocol.io/vega/version"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -424,4 +427,100 @@ func testProvidersSameNamespaceDifferentKeys(t *testing.T) {
 	require.Panics(t, func() {
 		engine.AddProviders(provider3)
 	})
+}
+
+func TestProtocolVersionInAppstatePayload(t *testing.T) {
+	ctrl := gomock.NewController(t)
+
+	vegaPaths := paths.New(t.TempDir())
+	log := logging.NewTestLogger()
+
+	// Some providers matching the snapshot payloads.
+	statsService := mocks.NewMockStatsService(ctrl)
+	timeService := mocks.NewMockTimeService(ctrl)
+	engine, err := snapshot.NewEngine(vegaPaths, snapshot.DefaultConfig(), log, timeService, statsService)
+	require.NoError(t, err)
+
+	ctx := vgcontext.WithBlockHeight(context.Background(), 1000)
+	ctx = vgcontext.WithChainID(ctx, "chain-1")
+	require.NoError(t, engine.Start(ctx))
+
+	timeService.EXPECT().GetTimeNow().AnyTimes()
+	_, err = engine.SnapshotNow(ctx)
+	engine.Close()
+	require.NoError(t, err)
+
+	snapshotTree, err := tree.New(log, tree.WithLevelDBDatabase(vegaPaths))
+	require.NoError(t, err)
+	payloads, err := snapshotTree.AsPayloads()
+	require.NoError(t, err)
+
+	var appstate *types.PayloadAppState
+	for _, p := range payloads {
+		if p.Namespace() == types.AppSnapshot {
+			appstate = p.GetAppState()
+			break
+		}
+	}
+	require.NotNil(t, appstate)
+	assert.True(t, appstate.AppState.ProtocolUpdgade)
+	assert.Equal(t, version.Get(), appstate.AppState.ProtocolVersion)
+}
+
+func TestSnapshotVersionCommunicatedToProviders(t *testing.T) {
+	// The snapshot to be restored via state-sync and then, from local storage.
+	testSnapshot := firstSnapshot(t)
+
+	ctrl := gomock.NewController(t)
+
+	vegaPaths := paths.New(t.TempDir())
+	log := logging.NewTestLogger()
+
+	statsService := mocks.NewMockStatsService(ctrl)
+	timeService := mocks.NewMockTimeService(ctrl)
+	governanceProvider := newGovernanceProvider(t, ctrl)
+	delegationProvider := newDelegationProvider(t, ctrl)
+	epochProvider := newEpochProvider(t, ctrl)
+
+	// new engine same vega-home
+	engine, err := snapshot.NewEngine(vegaPaths, snapshot.DefaultConfig(), log, timeService, statsService)
+	require.NoError(t, err)
+	defer engine.Close()
+
+	engine.AddProviders(governanceProvider, delegationProvider, epochProvider)
+
+	engine.Start(context.Background())
+
+	// Simulating the call to the engine from Tendermint ABCI `OfferSnapshot()`.
+	response := engine.ReceiveSnapshot(testSnapshot.snapshot)
+	require.Equal(t, tmtypes.ResponseOfferSnapshot{
+		Result: tmtypes.ResponseOfferSnapshot_ACCEPT,
+	}, response)
+
+	// When all the chunks are loaded, the state restoration is triggered by
+	// converting the chunks to payload, that are then broadcast to the providers.
+
+	timeService.EXPECT().SetTimeNow(gomock.Any(), time.Unix(0, testSnapshot.appState.Time)).Times(1)
+	statsService.EXPECT().SetHeight(testSnapshot.appState.Height).Times(1)
+	governanceProvider.EXPECT().LoadState(gomock.Any(), testSnapshot.PayloadGovernanceActive()).Return(nil, nil).Times(1)
+	governanceProvider.EXPECT().LoadState(gomock.Any(), testSnapshot.PayloadGovernanceEnacted()).Return(nil, nil).Times(1)
+	delegationProvider.EXPECT().LoadState(gomock.Any(), testSnapshot.PayloadDelegationActive()).Return(nil, nil).Times(1)
+
+	var isUpgradeFrom bool
+	epochProvider.EXPECT().LoadState(gomock.Any(), gomock.Any()).Return(nil, nil).Times(1).Do(
+		func(rctx context.Context, _ *types.Payload) {
+			isUpgradeFrom = vegactx.InProgressUpgradeFrom(rctx, "v0.72.1")
+		},
+	)
+
+	// Loading each chunk in the engine. When done,  the state restoration is
+	// triggered automatically.
+	for idx, rawChunk := range testSnapshot.rawChunks {
+		response := engine.ReceiveSnapshotChunk(context.Background(), rawChunk, vgrand.RandomStr(5))
+		require.Equal(t, tmtypes.ResponseApplySnapshotChunk{
+			Result: tmtypes.ResponseApplySnapshotChunk_ACCEPT,
+		}, response, "The raw chunk with index %d should be accepted", idx)
+	}
+
+	require.True(t, isUpgradeFrom)
 }

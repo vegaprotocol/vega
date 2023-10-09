@@ -46,9 +46,11 @@ type Snapshot struct {
 }
 
 type Metadata struct {
-	Version     int64       // the version of the AVL tree
-	NodeHashes  []*NodeHash // he nodes of the AVL tree ordered such that it can be imported with identical shape
-	ChunkHashes []string
+	Version         int64       // the version of the AVL tree
+	NodeHashes      []*NodeHash // the nodes of the AVL tree ordered such that it can be imported with identical shape
+	ChunkHashes     []string    // the hashes of each chunk so that we can verifiy they are complete when sent over state-sync
+	ProtocolVersion string      // the version of the protocol that generated this snapshot
+	ProtocolUpgrade bool        // whether or not this snapshot was taken for the purpose of a protocol upgrade
 }
 
 // NodeHash contains the data for a node in the IAVL, without its value, but the values hash instead.
@@ -642,10 +644,12 @@ type CollateralAssets struct {
 }
 
 type AppState struct {
-	Height  uint64
-	Block   string
-	Time    int64
-	ChainID string
+	Height          uint64
+	Block           string
+	Time            int64
+	ChainID         string
+	ProtocolVersion string
+	ProtocolUpdgade bool
 }
 
 type NetParams struct {
@@ -739,9 +743,11 @@ func MetadataFromProto(m *snapshot.Metadata) (*Metadata, error) {
 		nh = append(nh, hh)
 	}
 	return &Metadata{
-		Version:     m.Version,
-		ChunkHashes: m.ChunkHashes[:],
-		NodeHashes:  nh,
+		Version:         m.Version,
+		ChunkHashes:     m.ChunkHashes[:],
+		NodeHashes:      nh,
+		ProtocolVersion: m.ProtocolVersion,
+		ProtocolUpgrade: m.ProtocolUpgrade,
 	}, nil
 }
 
@@ -751,9 +757,11 @@ func (m Metadata) IntoProto() *snapshot.Metadata {
 		nh = append(nh, h.IntoProto())
 	}
 	return &snapshot.Metadata{
-		Version:     m.Version,
-		ChunkHashes: m.ChunkHashes[:],
-		NodeHashes:  nh,
+		Version:         m.Version,
+		ChunkHashes:     m.ChunkHashes[:],
+		NodeHashes:      nh,
+		ProtocolVersion: m.ProtocolVersion,
+		ProtocolUpgrade: m.ProtocolUpgrade,
 	}
 }
 
@@ -2728,19 +2736,23 @@ func (c CollateralAssets) IntoProto() *snapshot.CollateralAssets {
 
 func AppStateFromProto(as *snapshot.AppState) *AppState {
 	return &AppState{
-		Height:  as.Height,
-		Block:   as.Block,
-		Time:    as.Time,
-		ChainID: as.ChainId,
+		Height:          as.Height,
+		Block:           as.Block,
+		Time:            as.Time,
+		ChainID:         as.ChainId,
+		ProtocolVersion: as.ProtocolVersion,
+		ProtocolUpdgade: as.ProtocolUpgrade,
 	}
 }
 
 func (a AppState) IntoProto() *snapshot.AppState {
 	return &snapshot.AppState{
-		Height:  a.Height,
-		Block:   a.Block,
-		Time:    a.Time,
-		ChainId: a.ChainID,
+		Height:          a.Height,
+		Block:           a.Block,
+		Time:            a.Time,
+		ChainId:         a.ChainID,
+		ProtocolVersion: a.ProtocolVersion,
+		ProtocolUpgrade: a.ProtocolUpdgade,
 	}
 }
 
