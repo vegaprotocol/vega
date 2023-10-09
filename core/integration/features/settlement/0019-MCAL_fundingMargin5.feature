@@ -46,18 +46,24 @@ Feature: check when settlement data precision is different/equal to the settleme
       | id  | party | market id | commitment amount | fee   | lp type    |
       | lp1 | lp1   | ETH/DEC19 | 1200000           | 0.001 | submission |
 
-    And the parties place the following pegged iceberg orders:
+    Then the parties place the following pegged iceberg orders:
       | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset | reference |
       | lp1   | ETH/DEC19 | 20        | 1                    | buy  | BID              | 50     | 1      | lp-buy-1  |
       | lp1   | ETH/DEC19 | 20        | 1                    | sell | ASK              | 50     | 1      | lp-sell-1 |
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 849   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 2001  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
-    Then the opening auction period ends for market "ETH/DEC19"
-    And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC19"
+    When the opening auction period ends for market "ETH/DEC19"
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     # back sure we end the block so we're in a new one after opening auction
     When the network moves ahead "1" blocks
 
-    When the parties place the following orders:
+    And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
@@ -106,20 +112,25 @@ Feature: check when settlement data precision is different/equal to the settleme
 
     And the oracles broadcast data with block time signed with "0xCAFECAFE2":
       | name             | value      | time offset |
-      | perp.funding.cue | 1628766260 | 0s          |
+      | perp.funding.cue | 1628766270 | 0s          |
 
     When the network moves ahead "5" blocks
 
     Then the oracles broadcast data with block time signed with "0xCAFECAFE2":
       | name             | value      | time offset |
       | perp.ETH.value   | 350000000  | 0s          |
-      | perp.funding.cue | 1728766260 | 0s          |
+      | perp.funding.cue | 1728766270 | 0s          |
 
-
+    # funding loss, win, margin excess transfers:
     And the following transfers should happen:
-      | from   | to     | from account            | to account              | market id | amount | asset |
-      | aux2   | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 74700  | USD   |
-      | party2 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 74700  | USD   |
-      | party3 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 74700  | USD   |
-      | market | aux    | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 74700  | USD   |
-      | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 149400 | USD   |
+      | from   | to     | from account            | to account              | market id | amount    | asset |
+      | aux    | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 515900    | USD   |
+      | aux    | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 298558800 | USD   |
+      | party1 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 483600    | USD   |
+      | party1 | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 998665800 | USD   |
+      | market | party2 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 432741366 | USD   |
+      | market | party3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 432741368 | USD   |
+      | market | aux2   | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 432741366 | USD   |
+      | aux2   | aux2   | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC19 | 432666666 | USD   |
+      | party2 | party2 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC19 | 432666666 | USD   |
+      | party3 | party3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL    | ETH/DEC19 | 432666668 | USD   |
