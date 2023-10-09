@@ -17,7 +17,9 @@ type ReferralSet struct {
 	Referrer *Membership
 	Referees []*Membership
 
-	CurrentRewardFactor num.Decimal
+	CurrentRewardFactor            num.Decimal
+	CurrentRewardsMultiplier       num.Decimal
+	CurrentRewardsFactorMultiplier num.Decimal
 }
 
 type ReferralSetStats struct {
@@ -26,6 +28,8 @@ type ReferralSetStats struct {
 	ReferralSetRunningVolume *num.Uint
 	RefereesStats            map[PartyID]*RefereeStats
 	RewardFactor             num.Decimal
+	RewardsMultiplier        num.Decimal
+	RewardsFactorMultiplier  num.Decimal
 }
 
 type RefereeStats struct {

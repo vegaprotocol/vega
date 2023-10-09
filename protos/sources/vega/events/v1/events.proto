@@ -866,6 +866,10 @@ message ReferralSetStatsUpdated {
   repeated RefereeStats referees_stats = 4;
   // Reward factor applied to the trades.
   string reward_factor = 5;
+  // Rewards multiplier applied to the trades.
+  string rewards_multiplier = 6;
+  // Rewards factor multiplier for the trades.
+  string rewards_factor_multiplier = 7;
 }
 
 message RefereeStats {

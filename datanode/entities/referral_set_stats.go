@@ -16,6 +16,8 @@ type (
 		RefereesStats                         []*eventspb.RefereeStats
 		VegaTime                              time.Time
 		RewardFactor                          string
+		RewardsMultiplier                     string
+		RewardsFactorMultiplier               string
 	}
 
 	FlattenReferralSetStats struct {
@@ -26,6 +28,8 @@ type (
 		DiscountFactor                        string
 		EpochNotionalTakerVolume              string
 		RewardFactor                          string
+		RewardsMultiplier                     string
+		RewardsFactorMultiplier               string
 	}
 
 	ReferralSetStatsCursor struct {
@@ -70,6 +74,8 @@ func (s FlattenReferralSetStats) ToProto() *v2.ReferralSetStats {
 		DiscountFactor:                        s.DiscountFactor,
 		RewardFactor:                          s.RewardFactor,
 		EpochNotionalTakerVolume:              s.EpochNotionalTakerVolume,
+		RewardsMultiplier:                     s.RewardsMultiplier,
+		RewardsFactorMultiplier:               s.RewardsFactorMultiplier,
 	}
 }
 
@@ -93,6 +99,8 @@ func ReferralSetStatsFromProto(proto *eventspb.ReferralSetStatsUpdated, vegaTime
 		RefereesStats:                         proto.RefereesStats,
 		VegaTime:                              vegaTime,
 		RewardFactor:                          proto.RewardFactor,
+		RewardsMultiplier:                     proto.RewardsMultiplier,
+		RewardsFactorMultiplier:               proto.RewardsFactorMultiplier,
 	}, nil
 }
 

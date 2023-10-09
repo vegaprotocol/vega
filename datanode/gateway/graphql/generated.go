@@ -1933,6 +1933,8 @@ type ComplexityRoot struct {
 		PartyId                               func(childComplexity int) int
 		ReferralSetRunningNotionalTakerVolume func(childComplexity int) int
 		RewardFactor                          func(childComplexity int) int
+		RewardsFactorMultiplier               func(childComplexity int) int
+		RewardsMultiplier                     func(childComplexity int) int
 	}
 
 	ReferralSetStatsConnection struct {
@@ -11308,6 +11310,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ReferralSetStats.RewardFactor(childComplexity), true
+
+	case "ReferralSetStats.rewardsFactorMultiplier":
+		if e.complexity.ReferralSetStats.RewardsFactorMultiplier == nil {
+			break
+		}
+
+		return e.complexity.ReferralSetStats.RewardsFactorMultiplier(childComplexity), true
+
+	case "ReferralSetStats.rewardsMultiplier":
+		if e.complexity.ReferralSetStats.RewardsMultiplier == nil {
+			break
+		}
+
+		return e.complexity.ReferralSetStats.RewardsMultiplier(childComplexity), true
 
 	case "ReferralSetStatsConnection.edges":
 		if e.complexity.ReferralSetStatsConnection.Edges == nil {
@@ -69486,6 +69502,94 @@ func (ec *executionContext) fieldContext_ReferralSetStats_referralSetRunningNoti
 	return fc, nil
 }
 
+func (ec *executionContext) _ReferralSetStats_rewardsMultiplier(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSetStats_rewardsMultiplier(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RewardsMultiplier, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReferralSetStats_rewardsMultiplier(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReferralSetStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReferralSetStats_rewardsFactorMultiplier(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSetStats_rewardsFactorMultiplier(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RewardsFactorMultiplier, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReferralSetStats_rewardsFactorMultiplier(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReferralSetStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ReferralSetStatsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetStatsConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ReferralSetStatsConnection_edges(ctx, field)
 	if err != nil {
@@ -69641,6 +69745,10 @@ func (ec *executionContext) fieldContext_ReferralSetStatsEdge_node(ctx context.C
 				return ec.fieldContext_ReferralSetStats_epochNotionalTakerVolume(ctx, field)
 			case "referralSetRunningNotionalTakerVolume":
 				return ec.fieldContext_ReferralSetStats_referralSetRunningNotionalTakerVolume(ctx, field)
+			case "rewardsMultiplier":
+				return ec.fieldContext_ReferralSetStats_rewardsMultiplier(ctx, field)
+			case "rewardsFactorMultiplier":
+				return ec.fieldContext_ReferralSetStats_rewardsFactorMultiplier(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ReferralSetStats", field.Name)
 		},
@@ -105502,6 +105610,20 @@ func (ec *executionContext) _ReferralSetStats(ctx context.Context, sel ast.Selec
 		case "referralSetRunningNotionalTakerVolume":
 
 			out.Values[i] = ec._ReferralSetStats_referralSetRunningNotionalTakerVolume(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "rewardsMultiplier":
+
+			out.Values[i] = ec._ReferralSetStats_rewardsMultiplier(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "rewardsFactorMultiplier":
+
+			out.Values[i] = ec._ReferralSetStats_rewardsFactorMultiplier(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)

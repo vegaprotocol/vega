@@ -136,6 +136,7 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 		te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee7)).Return(num.UintFromUint64(100)).Times(1)
 		te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee8)).Return(num.UintFromUint64(100)).Times(1)
 		te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee9)).Return(num.UintFromUint64(100)).Times(1)
+		te.staking.EXPECT().GetAvailableBalance(gomock.Any()).AnyTimes().Return(num.NewUint(100), nil)
 
 		gomock.InOrder(
 			expectReferralSetStatsUpdatedEvent(t, te, 4),
@@ -198,6 +199,7 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee7)).Return(num.UintFromUint64(100)).Times(1)
 	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee8)).Return(num.UintFromUint64(100)).Times(1)
 	te2.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee9)).Return(num.UintFromUint64(100)).Times(1)
+	te2.staking.EXPECT().GetAvailableBalance(gomock.Any()).AnyTimes().Return(num.NewUint(100), nil)
 	expectReferralSetStatsUpdatedEvent(t, te2, 4)
 	// This triggers the state restoration from the local snapshot.
 	require.NoError(t, snapshotEngine2.Start(ctx))

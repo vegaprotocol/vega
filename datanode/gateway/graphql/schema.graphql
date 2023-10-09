@@ -6092,6 +6092,10 @@ type ReferralSetStats {
   epochNotionalTakerVolume: String!
   "Running volume for the set based on the window length of the current referral program."
   referralSetRunningNotionalTakerVolume: String!
+  "The multiplier applied to the referral reward factor when calculating referral rewards due to the referrer."
+  rewardsMultiplier: String!
+  "The proportion of the referees taker fees to be rewarded to the referrer."
+  rewardsFactorMultiplier: String!
 }
 
 "Team record containing the team information."
