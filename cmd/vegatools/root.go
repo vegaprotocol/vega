@@ -32,6 +32,7 @@ type RootCmd struct {
 	Checkpoint checkpointCmd `command:"checkpoint" description:"Make checkpoint human-readable, or generate checkpoint from human readable format"`
 	Stream     streamCmd     `command:"stream"     description:"Stream events from vega node"`
 	CheckTx    checkTxCmd    `command:"check-tx"   description:"Check an encoded transaction from a dependent app is unmarshalled and re-encoded back to the same encoded value. Checks data integrity"`
+	Events     eventsCmd     `command:"events"     description:"Parse event files written by a core node and write them in humna-readble form"`
 }
 
 var rootCmd RootCmd
@@ -42,6 +43,7 @@ func VegaTools(ctx context.Context, parser *flags.Parser) error {
 		Checkpoint: checkpointCmd{},
 		Stream:     streamCmd{},
 		CheckTx:    checkTxCmd{},
+		Events:     eventsCmd{},
 	}
 
 	var (

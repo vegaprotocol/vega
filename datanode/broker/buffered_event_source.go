@@ -224,7 +224,7 @@ func (m *FileBufferedEventSource) readEventsFromBuffer(ctx context.Context, sink
 				}
 			}
 
-			event, bufferSeqNum, read, err := readRawEvent(bufferFile, offset)
+			event, bufferSeqNum, read, err := ReadRawEvent(bufferFile, offset)
 			if err != nil {
 				sinkErrorCh <- fmt.Errorf("error when reading event from buffer file:%w", err)
 				return
@@ -314,7 +314,7 @@ func (m *FileBufferedEventSource) moveBufferFileToArchive(bufferFilePath string)
 	return nil
 }
 
-func readRawEvent(eventFile *os.File, offset int64) (event []byte, seqNum uint64,
+func ReadRawEvent(eventFile *os.File, offset int64) (event []byte, seqNum uint64,
 	totalBytesRead uint32, err error,
 ) {
 	sizeBytes := make([]byte, broker.NumberOfSizeBytes)
