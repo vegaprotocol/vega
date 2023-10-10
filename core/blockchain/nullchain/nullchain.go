@@ -33,6 +33,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/proto/tendermint/crypto"
 	"github.com/tendermint/tendermint/proto/tendermint/types"
@@ -396,8 +397,7 @@ func (n *NullBlockchain) SendTransactionAsync(ctx context.Context, tx []byte) (*
 	go func() {
 		n.handleTransaction(tx)
 	}()
-	randHash := []byte(vgrand.RandomStr(64))
-	return &tmctypes.ResultBroadcastTx{Hash: randHash}, nil
+	return &tmctypes.ResultBroadcastTx{Hash: tmhash.Sum(tx)}, nil
 }
 
 func (n *NullBlockchain) CheckTransaction(ctx context.Context, tx []byte) (*tmctypes.ResultCheckTx, error) {
@@ -410,8 +410,7 @@ func (n *NullBlockchain) SendTransactionSync(ctx context.Context, tx []byte) (*t
 		return &tmctypes.ResultBroadcastTx{}, ErrChainReplaying
 	}
 	n.handleTransaction(tx)
-	randHash := []byte(vgrand.RandomStr(64))
-	return &tmctypes.ResultBroadcastTx{Hash: randHash}, nil
+	return &tmctypes.ResultBroadcastTx{Hash: tmhash.Sum(tx)}, nil
 }
 
 func (n *NullBlockchain) SendTransactionCommit(ctx context.Context, tx []byte) (*tmctypes.ResultBroadcastTxCommit, error) {
@@ -419,8 +418,7 @@ func (n *NullBlockchain) SendTransactionCommit(ctx context.Context, tx []byte) (
 	// control over when a block ends and gets committed, so I don't think its worth adding the
 	// the complexity of trying to keep track of tx deliveries here.
 	n.log.Error("not implemented")
-	randHash := []byte(vgrand.RandomStr(64))
-	return &tmctypes.ResultBroadcastTxCommit{Hash: randHash}, ErrNotImplemented
+	return &tmctypes.ResultBroadcastTxCommit{Hash: tmhash.Sum(tx)}, ErrNotImplemented
 }
 
 func (n *NullBlockchain) Validators(_ context.Context, _ *int64) ([]*tmtypes.Validator, error) {
