@@ -16,6 +16,7 @@
 package referral_test
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
@@ -180,5 +181,5 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 
 	// Comparing the hash after restoration, to ensure it produces the same result.
 	hash2, _, _ := snapshotEngine2.Info()
-	require.Equal(t, hash1, hash2)
+	require.True(t, bytes.Equal(hash1, hash2))
 }

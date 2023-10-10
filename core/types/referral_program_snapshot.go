@@ -45,6 +45,7 @@ func (p *PayloadReferralProgramState) IntoProto() *snapshotpb.Payload_ReferralPr
 			NewProgram:         p.NewProgram,
 			LastProgramVersion: p.LastProgramVersion,
 			ProgramHasEnded:    p.ProgramHasEnded,
+			Sets:               p.Sets,
 		},
 	}
 }
@@ -62,5 +63,6 @@ func PayloadReferralProgramStateFromProto(payload *snapshotpb.Payload_ReferralPr
 		NewProgram:         payload.ReferralProgram.NewProgram,
 		LastProgramVersion: payload.ReferralProgram.LastProgramVersion,
 		ProgramHasEnded:    payload.ReferralProgram.ProgramHasEnded,
+		Sets:               payload.ReferralProgram.Sets,
 	}
 }
