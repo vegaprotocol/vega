@@ -28,6 +28,7 @@ Feature: Team Rewards
       | lpprov                                                           | USD-1-10 | 10000000000 |
       | aux1                                                             | USD-1-10 | 10000000    |
       | aux2                                                             | USD-1-10 | 10000000    |
+      | aux3                                                             | USD-1-10 | 10000000000 |
       | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | USD-1-10 | 10000000000 |
 
     # Exit opening auctions
@@ -51,46 +52,54 @@ Feature: Team Rewards
     # Create the teams
     Given the following teams with referees are created:
       | referrer  | prefix | code            | team name | referees | balance  | asset    |
-      | referrer1 | ref1   | referral-code-1 | team1     | 2        | 10000000 | USD-1-10 |
-      | referrer2 | ref2   | referral-code-2 | team2     | 4        | 10000000 | USD-1-10 |
-    Then the team "team1" has the following members:
-      | party     |
-      | referrer1 |
-      | ref1-0001 |
-      | ref1-0002 |
-    And the team "team2" has the following members:
-      | party     |
-      | referrer2 |
-      | ref2-0001 |
-      | ref2-0002 |
-      | ref2-0003 |
-      | ref2-0004 |
+      | referrer1 | ref1   | referral-code-1 | team1     | 20       | 10000000 | USD-1-10 |
+      | referrer2 | ref2   | referral-code-2 | team2     | 10       | 10000000 | USD-1-10 |
 
   @TeamStep
-  Scenario: 0056-REWA-107 non-zero reward metric, receive rewards accordingly
+  Scenario: 0056-REWA-106 the top N % determines the rewards
 
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | entity_scope | teams       | ntop | asset    | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets      |
-      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | TEAMS        | team1,team2 | 0.5  | USD-1-10 | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID | USD-1-10     | ETH/USD-1-10 |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | TEAMS        | team1,team2 | 0.2  | USD-1-10 | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID | USD-1-10     | ETH/USD-1-10 |
+    ## Bunch of orders:
+    # Team1: 20, 10, 10, 10, 1 (out of 20)
+    # Team2: 21, 19, 10, 5 (out of 10)
+    # TopN 0.2 should be based on 50/4 and 40/2 -> 12.5 and 20
+    # This is then divided between 5 parties in team1, 4 in team2 respectively,
+    # so team1 parties receive 12.5/5 (or 2.5), whereas team2 referees receive 20/4 (or 5)
+    # We expect to see the vesting account balances of team2 to be 2x those of team1
     And the parties place the following orders:
       | party     | market id    | side | volume | price | resulting trades | type       | tif     |
       | aux1      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | ref1-0001 | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-      | aux1      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | ref2-0001 | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux3      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | ref1-0002 | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux3      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | ref1-0003 | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux3      | ETH/USD-1-10 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | ref1-0004 | ETH/USD-1-10 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux3      | ETH/USD-1-10 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | ref1-0005 | ETH/USD-1-10 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1      | ETH/USD-1-10 | sell | 21     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | ref2-0001 | ETH/USD-1-10 | buy  | 21     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
       | aux1      | ETH/USD-1-10 | sell | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | ref2-0002 | ETH/USD-1-10 | buy  | 5      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1      | ETH/USD-1-10 | sell | 19     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | ref2-0003 | ETH/USD-1-10 | buy  | 19     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | ref2-0004 | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
-    # average is 10 for team1, 7.5 for team2 (total volume 35 -> 17.5)
-    # team1 -> 10,000 / 35 * 20 = 5714.287 ≃ 5714
-    # team2 -> 10,000 / 35 * 15 = 4285.7142 / 2 = 2142.8571 ≃ 2142
-    # Other referees have no volume, no vesting account balance
     Then parties should have the following vesting account balances:
       | party     | asset    | balance |
-      | ref1-0001 | USD-1-10 | 5714    |
-      | ref1-0002 | USD-1-10 | 0       |
-      | ref2-0001 | USD-1-10 | 2142    |
-      | ref2-0002 | USD-1-10 | 2142    |
-      | ref2-0003 | USD-1-10 | 0       |
-      | ref2-0004 | USD-1-10 | 0       |
+      | ref1-0001 | USD-1-10 | 769     |
+      | ref1-0002 | USD-1-10 | 769     |
+      | ref1-0003 | USD-1-10 | 769     |
+      | ref1-0004 | USD-1-10 | 769     |
+      | ref1-0005 | USD-1-10 | 769     |
+      | ref1-0006 | USD-1-10 | 0       |
+      | ref2-0001 | USD-1-10 | 1538    |
+      | ref2-0002 | USD-1-10 | 1538    |
+      | ref2-0003 | USD-1-10 | 1538    |
+      | ref2-0004 | USD-1-10 | 1538    |
+      | ref2-0005 | USD-1-10 | 0       |
     #And "ref1-0002" should have vesting account balance of "0" for asset "USD-1-10"
