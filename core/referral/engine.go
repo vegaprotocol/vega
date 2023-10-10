@@ -550,7 +550,8 @@ func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, take
 			partyTakerVolume = takerVolume
 		}
 		refereeStats := &types.RefereeStats{
-			TakerVolume: partyTakerVolume,
+			TakerVolume:    partyTakerVolume,
+			DiscountFactor: num.DecimalZero(),
 		}
 		e.factorsByReferee[party] = refereeStats
 		setStats.RefereesStats[party] = refereeStats
