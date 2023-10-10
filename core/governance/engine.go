@@ -1121,7 +1121,7 @@ func newUpdatedProposalEvents(ctx context.Context, proposal *proposal) []events.
 	}
 
 	sort.SliceStable(votes, func(i, j int) bool {
-		return votes[i].Proto().Timestamp < votes[j].Proto().Timestamp
+		return votes[i].PartyID() < votes[j].PartyID()
 	})
 
 	evts := make([]events.Event, 0, len(votes))
