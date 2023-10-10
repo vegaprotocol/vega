@@ -657,6 +657,8 @@ func (e *Engine) applyDiscountsAndRewards(taker string, fees *types.Fee, referra
 
 	referrer, err := referral.GetReferrer(types.PartyID(taker))
 	if err != nil {
+		e.log.Error("could not load referrer from taker of trade", logging.PartyID(taker))
+	} else {
 		e.feeStats.RegisterReferrerReward(
 			string(referrer),
 			taker,

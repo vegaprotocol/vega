@@ -25,18 +25,18 @@ import (
 )
 
 type FeeStats struct {
-	TotalRewardsPaid        map[string]*num.Uint
-	ReferrerRewardsGenerate map[string]map[string]*num.Uint
-	RefereeDiscountApplied  map[string]*num.Uint
-	VolumeDiscountApplied   map[string]*num.Uint
+	TotalRewardsPaid         map[string]*num.Uint
+	ReferrerRewardsGenerated map[string]map[string]*num.Uint
+	RefereeDiscountApplied   map[string]*num.Uint
+	VolumeDiscountApplied    map[string]*num.Uint
 }
 
 func NewFeeStats() *FeeStats {
 	return &FeeStats{
-		TotalRewardsPaid:        map[string]*num.Uint{},
-		ReferrerRewardsGenerate: map[string]map[string]*num.Uint{},
-		RefereeDiscountApplied:  map[string]*num.Uint{},
-		VolumeDiscountApplied:   map[string]*num.Uint{},
+		TotalRewardsPaid:         map[string]*num.Uint{},
+		ReferrerRewardsGenerated: map[string]map[string]*num.Uint{},
+		RefereeDiscountApplied:   map[string]*num.Uint{},
+		VolumeDiscountApplied:    map[string]*num.Uint{},
 	}
 }
 
@@ -61,7 +61,7 @@ func NewFeeStatsFromProto(fsp *eventspb.FeeStats) *FeeStats {
 			rg[pa.Party] = num.MustUintFromString(pa.Amount, 10)
 		}
 
-		fs.ReferrerRewardsGenerate[v.Referrer] = rg
+		fs.ReferrerRewardsGenerated[v.Referrer] = rg
 	}
 
 	return fs
@@ -79,10 +79,10 @@ func (f *FeeStats) RegisterReferrerReward(
 
 	total.Add(total, amount)
 
-	rewardsGenerated, ok := f.ReferrerRewardsGenerate[referrer]
+	rewardsGenerated, ok := f.ReferrerRewardsGenerated[referrer]
 	if !ok {
 		rewardsGenerated = map[string]*num.Uint{}
-		f.ReferrerRewardsGenerate[referrer] = rewardsGenerated
+		f.ReferrerRewardsGenerated[referrer] = rewardsGenerated
 	}
 
 	refereeTally, ok := rewardsGenerated[referee]
@@ -118,7 +118,7 @@ func (f *FeeStats) ToProto(asset string) *eventspb.FeeStats {
 	fs := &eventspb.FeeStats{
 		Asset:                    asset,
 		TotalRewardsPaid:         make([]*eventspb.PartyAmount, 0, len(f.TotalRewardsPaid)),
-		ReferrerRewardsGenerated: make([]*eventspb.ReferrerRewardsGenerated, 0, len(f.ReferrerRewardsGenerate)),
+		ReferrerRewardsGenerated: make([]*eventspb.ReferrerRewardsGenerated, 0, len(f.ReferrerRewardsGenerated)),
 		RefereesDiscountApplied:  make([]*eventspb.PartyAmount, 0, len(f.RefereeDiscountApplied)),
 		VolumeDiscountApplied:    make([]*eventspb.PartyAmount, 0, len(f.VolumeDiscountApplied)),
 	}
@@ -153,10 +153,10 @@ func (f *FeeStats) ToProto(asset string) *eventspb.FeeStats {
 		})
 	}
 
-	referrerRewardsGeneratedParties := maps.Keys(f.ReferrerRewardsGenerate)
+	referrerRewardsGeneratedParties := maps.Keys(f.ReferrerRewardsGenerated)
 	sort.Strings(referrerRewardsGeneratedParties)
 	for _, party := range referrerRewardsGeneratedParties {
-		partiesAmounts := f.ReferrerRewardsGenerate[party]
+		partiesAmounts := f.ReferrerRewardsGenerated[party]
 
 		rewardsGenerated := &eventspb.ReferrerRewardsGenerated{
 			Referrer:        party,
