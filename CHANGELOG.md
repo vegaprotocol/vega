@@ -285,6 +285,7 @@
 - [8570](https://github.com/vegaprotocol/vega/issues/8570) - Ensure pagination doesn't trigger a sequential scan on block-explorer transactions table.
 - [9704](https://github.com/vegaprotocol/vega/issues/9704) - Fix referral program snapshot
 - [9705](https://github.com/vegaprotocol/vega/issues/9705) - Ensure vote events are sent in the same order.
+- [9714](https://github.com/vegaprotocol/vega/issues/9714) - Missing data from the fee stats
 
 ## 0.72.1
 
