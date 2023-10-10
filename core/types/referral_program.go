@@ -72,7 +72,9 @@ func (c ReferralProgram) String() string {
 	}
 
 	return fmt.Sprintf(
-		"endOfProgramTimestamp(%d), windowLength(%d), benefitTiers(%s), stakingTiers(%s)",
+		"ID(%s) version(%d) endOfProgramTimestamp(%d), windowLength(%d), benefitTiers(%s), stakingTiers(%s)",
+		c.ID,
+		c.Version,
 		c.EndOfProgramTimestamp.Unix(),
 		c.WindowLength,
 		benefitTierStr,
@@ -107,36 +109,6 @@ func (c ReferralProgram) IntoProto() *vegapb.ReferralProgram {
 		EndOfProgramTimestamp: c.EndOfProgramTimestamp.Unix(),
 		WindowLength:          c.WindowLength,
 	}
-}
-
-func (c ReferralProgram) DeepClone() *ReferralProgram {
-	benefitTiers := make([]*BenefitTier, 0, len(c.BenefitTiers))
-	for _, tier := range c.BenefitTiers {
-		benefitTiers = append(benefitTiers, &BenefitTier{
-			MinimumEpochs:                     tier.MinimumEpochs.Clone(),
-			MinimumRunningNotionalTakerVolume: tier.MinimumRunningNotionalTakerVolume.Clone(),
-			ReferralRewardFactor:              tier.ReferralRewardFactor,
-			ReferralDiscountFactor:            tier.ReferralDiscountFactor,
-		})
-	}
-
-	stakingTiers := make([]*StakingTier, 0, len(c.StakingTiers))
-	for _, tier := range c.StakingTiers {
-		stakingTiers = append(stakingTiers, &StakingTier{
-			MinimumStakedTokens:      tier.MinimumStakedTokens.Clone(),
-			ReferralRewardMultiplier: tier.ReferralRewardMultiplier,
-		})
-	}
-
-	cpy := ReferralProgram{
-		ID:                    c.ID,
-		Version:               c.Version,
-		EndOfProgramTimestamp: c.EndOfProgramTimestamp,
-		WindowLength:          c.WindowLength,
-		BenefitTiers:          benefitTiers,
-		StakingTiers:          stakingTiers,
-	}
-	return &cpy
 }
 
 func NewReferralProgramFromProto(c *vegapb.ReferralProgram) *ReferralProgram {

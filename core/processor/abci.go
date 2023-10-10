@@ -30,11 +30,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"go.uber.org/zap"
+
 	"code.vegaprotocol.io/vega/core/referral"
 	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/teams"
 	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
-	"go.uber.org/zap"
 
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/core/api"
@@ -1949,7 +1950,7 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			app.enactMarketStateUpdate(ctx, prop)
 		case toEnact.IsReferralProgramUpdate():
 			prop.State = types.ProposalStateEnacted
-			app.referralProgram.UpdateProgram(toEnact.ReferralProgramUpdate())
+			app.referralProgram.UpdateProgram(toEnact.ReferralProgramChanges())
 		case toEnact.IsVolumeDiscountProgramUpdate():
 			prop.State = types.ProposalStateEnacted
 			app.volumeDiscountProgram.UpdateProgram(toEnact.VolumeDiscountProgramUpdate())

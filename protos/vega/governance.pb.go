@@ -3016,7 +3016,7 @@ type UpdateReferralProgram struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Configuration for change to update a referral program.
-	Changes *ReferralProgram `protobuf:"bytes,1,opt,name=changes,proto3" json:"changes,omitempty"`
+	Changes *ReferralProgramChanges `protobuf:"bytes,1,opt,name=changes,proto3" json:"changes,omitempty"`
 }
 
 func (x *UpdateReferralProgram) Reset() {
@@ -3051,9 +3051,89 @@ func (*UpdateReferralProgram) Descriptor() ([]byte, []int) {
 	return file_vega_governance_proto_rawDescGZIP(), []int{26}
 }
 
-func (x *UpdateReferralProgram) GetChanges() *ReferralProgram {
+func (x *UpdateReferralProgram) GetChanges() *ReferralProgramChanges {
 	if x != nil {
 		return x.Changes
+	}
+	return nil
+}
+
+type ReferralProgramChanges struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Defined benefit tiers in increasing order. First element will give Tier 1,
+	// second element will give Tier 2, and so on. Determines the level of
+	// benefit a party can expect based on performance criteria.
+	BenefitTiers []*BenefitTier `protobuf:"bytes,1,rep,name=benefit_tiers,json=benefitTiers,proto3" json:"benefit_tiers,omitempty"`
+	// Timestamp as Unix time in seconds, after which when the current epoch ends, the
+	// programs status will become STATE_CLOSED and benefits will be disabled.
+	EndOfProgramTimestamp int64 `protobuf:"varint,2,opt,name=end_of_program_timestamp,json=endOfProgramTimestamp,proto3" json:"end_of_program_timestamp,omitempty"`
+	// Number of epochs over which to evaluate a referral set's running volume.
+	WindowLength uint64 `protobuf:"varint,3,opt,name=window_length,json=windowLength,proto3" json:"window_length,omitempty"`
+	// Defined staking tiers in increasing order. First element will give Tier 1,
+	// second element will give Tier 2, and so on. Determines the level of
+	// benefit a party can expect based on their staking.
+	StakingTiers []*StakingTier `protobuf:"bytes,4,rep,name=staking_tiers,json=stakingTiers,proto3" json:"staking_tiers,omitempty"`
+}
+
+func (x *ReferralProgramChanges) Reset() {
+	*x = ReferralProgramChanges{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_governance_proto_msgTypes[27]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ReferralProgramChanges) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReferralProgramChanges) ProtoMessage() {}
+
+func (x *ReferralProgramChanges) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_governance_proto_msgTypes[27]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReferralProgramChanges.ProtoReflect.Descriptor instead.
+func (*ReferralProgramChanges) Descriptor() ([]byte, []int) {
+	return file_vega_governance_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *ReferralProgramChanges) GetBenefitTiers() []*BenefitTier {
+	if x != nil {
+		return x.BenefitTiers
+	}
+	return nil
+}
+
+func (x *ReferralProgramChanges) GetEndOfProgramTimestamp() int64 {
+	if x != nil {
+		return x.EndOfProgramTimestamp
+	}
+	return 0
+}
+
+func (x *ReferralProgramChanges) GetWindowLength() uint64 {
+	if x != nil {
+		return x.WindowLength
+	}
+	return 0
+}
+
+func (x *ReferralProgramChanges) GetStakingTiers() []*StakingTier {
+	if x != nil {
+		return x.StakingTiers
 	}
 	return nil
 }
@@ -3070,7 +3150,7 @@ type UpdateMarketState struct {
 func (x *UpdateMarketState) Reset() {
 	*x = UpdateMarketState{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_governance_proto_msgTypes[27]
+		mi := &file_vega_governance_proto_msgTypes[28]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3083,7 +3163,7 @@ func (x *UpdateMarketState) String() string {
 func (*UpdateMarketState) ProtoMessage() {}
 
 func (x *UpdateMarketState) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_governance_proto_msgTypes[27]
+	mi := &file_vega_governance_proto_msgTypes[28]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3096,7 +3176,7 @@ func (x *UpdateMarketState) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateMarketState.ProtoReflect.Descriptor instead.
 func (*UpdateMarketState) Descriptor() ([]byte, []int) {
-	return file_vega_governance_proto_rawDescGZIP(), []int{27}
+	return file_vega_governance_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *UpdateMarketState) GetChanges() *UpdateMarketStateConfiguration {
@@ -3122,7 +3202,7 @@ type UpdateMarketStateConfiguration struct {
 func (x *UpdateMarketStateConfiguration) Reset() {
 	*x = UpdateMarketStateConfiguration{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_governance_proto_msgTypes[28]
+		mi := &file_vega_governance_proto_msgTypes[29]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3135,7 +3215,7 @@ func (x *UpdateMarketStateConfiguration) String() string {
 func (*UpdateMarketStateConfiguration) ProtoMessage() {}
 
 func (x *UpdateMarketStateConfiguration) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_governance_proto_msgTypes[28]
+	mi := &file_vega_governance_proto_msgTypes[29]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3148,7 +3228,7 @@ func (x *UpdateMarketStateConfiguration) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateMarketStateConfiguration.ProtoReflect.Descriptor instead.
 func (*UpdateMarketStateConfiguration) Descriptor() ([]byte, []int) {
-	return file_vega_governance_proto_rawDescGZIP(), []int{28}
+	return file_vega_governance_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *UpdateMarketStateConfiguration) GetMarketId() string {
@@ -3184,7 +3264,7 @@ type CancelTransfer struct {
 func (x *CancelTransfer) Reset() {
 	*x = CancelTransfer{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_governance_proto_msgTypes[29]
+		mi := &file_vega_governance_proto_msgTypes[30]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3197,7 +3277,7 @@ func (x *CancelTransfer) String() string {
 func (*CancelTransfer) ProtoMessage() {}
 
 func (x *CancelTransfer) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_governance_proto_msgTypes[29]
+	mi := &file_vega_governance_proto_msgTypes[30]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3210,7 +3290,7 @@ func (x *CancelTransfer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelTransfer.ProtoReflect.Descriptor instead.
 func (*CancelTransfer) Descriptor() ([]byte, []int) {
-	return file_vega_governance_proto_rawDescGZIP(), []int{29}
+	return file_vega_governance_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *CancelTransfer) GetChanges() *CancelTransferConfiguration {
@@ -3232,7 +3312,7 @@ type CancelTransferConfiguration struct {
 func (x *CancelTransferConfiguration) Reset() {
 	*x = CancelTransferConfiguration{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_governance_proto_msgTypes[30]
+		mi := &file_vega_governance_proto_msgTypes[31]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3245,7 +3325,7 @@ func (x *CancelTransferConfiguration) String() string {
 func (*CancelTransferConfiguration) ProtoMessage() {}
 
 func (x *CancelTransferConfiguration) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_governance_proto_msgTypes[30]
+	mi := &file_vega_governance_proto_msgTypes[31]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3258,7 +3338,7 @@ func (x *CancelTransferConfiguration) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelTransferConfiguration.ProtoReflect.Descriptor instead.
 func (*CancelTransferConfiguration) Descriptor() ([]byte, []int) {
-	return file_vega_governance_proto_rawDescGZIP(), []int{30}
+	return file_vega_governance_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *CancelTransferConfiguration) GetTransferId() string {
@@ -3281,7 +3361,7 @@ type NewTransfer struct {
 func (x *NewTransfer) Reset() {
 	*x = NewTransfer{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_governance_proto_msgTypes[31]
+		mi := &file_vega_governance_proto_msgTypes[32]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3294,7 +3374,7 @@ func (x *NewTransfer) String() string {
 func (*NewTransfer) ProtoMessage() {}
 
 func (x *NewTransfer) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_governance_proto_msgTypes[31]
+	mi := &file_vega_governance_proto_msgTypes[32]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3307,7 +3387,7 @@ func (x *NewTransfer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewTransfer.ProtoReflect.Descriptor instead.
 func (*NewTransfer) Descriptor() ([]byte, []int) {
-	return file_vega_governance_proto_rawDescGZIP(), []int{31}
+	return file_vega_governance_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *NewTransfer) GetChanges() *NewTransferConfiguration {
@@ -3355,7 +3435,7 @@ type NewTransferConfiguration struct {
 func (x *NewTransferConfiguration) Reset() {
 	*x = NewTransferConfiguration{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_governance_proto_msgTypes[32]
+		mi := &file_vega_governance_proto_msgTypes[33]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3368,7 +3448,7 @@ func (x *NewTransferConfiguration) String() string {
 func (*NewTransferConfiguration) ProtoMessage() {}
 
 func (x *NewTransferConfiguration) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_governance_proto_msgTypes[32]
+	mi := &file_vega_governance_proto_msgTypes[33]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3381,7 +3461,7 @@ func (x *NewTransferConfiguration) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewTransferConfiguration.ProtoReflect.Descriptor instead.
 func (*NewTransferConfiguration) Descriptor() ([]byte, []int) {
-	return file_vega_governance_proto_rawDescGZIP(), []int{32}
+	return file_vega_governance_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *NewTransferConfiguration) GetSourceType() AccountType {
@@ -3490,7 +3570,7 @@ type OneOffTransfer struct {
 func (x *OneOffTransfer) Reset() {
 	*x = OneOffTransfer{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_governance_proto_msgTypes[33]
+		mi := &file_vega_governance_proto_msgTypes[34]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3503,7 +3583,7 @@ func (x *OneOffTransfer) String() string {
 func (*OneOffTransfer) ProtoMessage() {}
 
 func (x *OneOffTransfer) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_governance_proto_msgTypes[33]
+	mi := &file_vega_governance_proto_msgTypes[34]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3516,7 +3596,7 @@ func (x *OneOffTransfer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OneOffTransfer.ProtoReflect.Descriptor instead.
 func (*OneOffTransfer) Descriptor() ([]byte, []int) {
-	return file_vega_governance_proto_rawDescGZIP(), []int{33}
+	return file_vega_governance_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *OneOffTransfer) GetDeliverOn() int64 {
@@ -3542,7 +3622,7 @@ type RecurringTransfer struct {
 func (x *RecurringTransfer) Reset() {
 	*x = RecurringTransfer{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_governance_proto_msgTypes[34]
+		mi := &file_vega_governance_proto_msgTypes[35]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3555,7 +3635,7 @@ func (x *RecurringTransfer) String() string {
 func (*RecurringTransfer) ProtoMessage() {}
 
 func (x *RecurringTransfer) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_governance_proto_msgTypes[34]
+	mi := &file_vega_governance_proto_msgTypes[35]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3568,7 +3648,7 @@ func (x *RecurringTransfer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecurringTransfer.ProtoReflect.Descriptor instead.
 func (*RecurringTransfer) Descriptor() ([]byte, []int) {
-	return file_vega_governance_proto_rawDescGZIP(), []int{34}
+	return file_vega_governance_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *RecurringTransfer) GetStartEpoch() uint64 {
@@ -4148,12 +4228,27 @@ var file_vega_governance_proto_rawDesc = []byte{
 	0x6d, 0x12, 0x35, 0x0a, 0x07, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x73, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x56, 0x6f, 0x6c, 0x75, 0x6d, 0x65,
 	0x44, 0x69, 0x73, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x67, 0x72, 0x61, 0x6d, 0x52,
-	0x07, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x73, 0x22, 0x48, 0x0a, 0x15, 0x55, 0x70, 0x64, 0x61,
+	0x07, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x73, 0x22, 0x4f, 0x0a, 0x15, 0x55, 0x70, 0x64, 0x61,
 	0x74, 0x65, 0x52, 0x65, 0x66, 0x65, 0x72, 0x72, 0x61, 0x6c, 0x50, 0x72, 0x6f, 0x67, 0x72, 0x61,
-	0x6d, 0x12, 0x2f, 0x0a, 0x07, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x73, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x15, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x52, 0x65, 0x66, 0x65, 0x72, 0x72,
-	0x61, 0x6c, 0x50, 0x72, 0x6f, 0x67, 0x72, 0x61, 0x6d, 0x52, 0x07, 0x63, 0x68, 0x61, 0x6e, 0x67,
-	0x65, 0x73, 0x22, 0x53, 0x0a, 0x11, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x4d, 0x61, 0x72, 0x6b,
+	0x6d, 0x12, 0x36, 0x0a, 0x07, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x73, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x52, 0x65, 0x66, 0x65, 0x72, 0x72,
+	0x61, 0x6c, 0x50, 0x72, 0x6f, 0x67, 0x72, 0x61, 0x6d, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x73,
+	0x52, 0x07, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x73, 0x22, 0xe6, 0x01, 0x0a, 0x16, 0x52, 0x65,
+	0x66, 0x65, 0x72, 0x72, 0x61, 0x6c, 0x50, 0x72, 0x6f, 0x67, 0x72, 0x61, 0x6d, 0x43, 0x68, 0x61,
+	0x6e, 0x67, 0x65, 0x73, 0x12, 0x36, 0x0a, 0x0d, 0x62, 0x65, 0x6e, 0x65, 0x66, 0x69, 0x74, 0x5f,
+	0x74, 0x69, 0x65, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x76, 0x65,
+	0x67, 0x61, 0x2e, 0x42, 0x65, 0x6e, 0x65, 0x66, 0x69, 0x74, 0x54, 0x69, 0x65, 0x72, 0x52, 0x0c,
+	0x62, 0x65, 0x6e, 0x65, 0x66, 0x69, 0x74, 0x54, 0x69, 0x65, 0x72, 0x73, 0x12, 0x37, 0x0a, 0x18,
+	0x65, 0x6e, 0x64, 0x5f, 0x6f, 0x66, 0x5f, 0x70, 0x72, 0x6f, 0x67, 0x72, 0x61, 0x6d, 0x5f, 0x74,
+	0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x15,
+	0x65, 0x6e, 0x64, 0x4f, 0x66, 0x50, 0x72, 0x6f, 0x67, 0x72, 0x61, 0x6d, 0x54, 0x69, 0x6d, 0x65,
+	0x73, 0x74, 0x61, 0x6d, 0x70, 0x12, 0x23, 0x0a, 0x0d, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x5f,
+	0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0c, 0x77, 0x69,
+	0x6e, 0x64, 0x6f, 0x77, 0x4c, 0x65, 0x6e, 0x67, 0x74, 0x68, 0x12, 0x36, 0x0a, 0x0d, 0x73, 0x74,
+	0x61, 0x6b, 0x69, 0x6e, 0x67, 0x5f, 0x74, 0x69, 0x65, 0x72, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x11, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x53, 0x74, 0x61, 0x6b, 0x69, 0x6e, 0x67,
+	0x54, 0x69, 0x65, 0x72, 0x52, 0x0c, 0x73, 0x74, 0x61, 0x6b, 0x69, 0x6e, 0x67, 0x54, 0x69, 0x65,
+	0x72, 0x73, 0x22, 0x53, 0x0a, 0x11, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x4d, 0x61, 0x72, 0x6b,
 	0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x3e, 0x0a, 0x07, 0x63, 0x68, 0x61, 0x6e, 0x67,
 	0x65, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e,
 	0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x53, 0x74, 0x61, 0x74,
@@ -4417,7 +4512,7 @@ func file_vega_governance_proto_rawDescGZIP() []byte {
 }
 
 var file_vega_governance_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_vega_governance_proto_msgTypes = make([]protoimpl.MessageInfo, 37)
+var file_vega_governance_proto_msgTypes = make([]protoimpl.MessageInfo, 38)
 var file_vega_governance_proto_goTypes = []interface{}{
 	(ProposalError)(0),                       // 0: vega.ProposalError
 	(MarketStateUpdateType)(0),               // 1: vega.MarketStateUpdateType
@@ -4451,82 +4546,84 @@ var file_vega_governance_proto_goTypes = []interface{}{
 	(*Vote)(nil),                             // 29: vega.Vote
 	(*UpdateVolumeDiscountProgram)(nil),      // 30: vega.UpdateVolumeDiscountProgram
 	(*UpdateReferralProgram)(nil),            // 31: vega.UpdateReferralProgram
-	(*UpdateMarketState)(nil),                // 32: vega.UpdateMarketState
-	(*UpdateMarketStateConfiguration)(nil),   // 33: vega.UpdateMarketStateConfiguration
-	(*CancelTransfer)(nil),                   // 34: vega.CancelTransfer
-	(*CancelTransferConfiguration)(nil),      // 35: vega.CancelTransferConfiguration
-	(*NewTransfer)(nil),                      // 36: vega.NewTransfer
-	(*NewTransferConfiguration)(nil),         // 37: vega.NewTransferConfiguration
-	(*OneOffTransfer)(nil),                   // 38: vega.OneOffTransfer
-	(*RecurringTransfer)(nil),                // 39: vega.RecurringTransfer
-	nil,                                      // 40: vega.GovernanceData.YesPartyEntry
-	nil,                                      // 41: vega.GovernanceData.NoPartyEntry
-	(*DataSourceDefinition)(nil),             // 42: vega.DataSourceDefinition
-	(*DataSourceSpecToFutureBinding)(nil),    // 43: vega.DataSourceSpecToFutureBinding
-	(*DataSourceSpecToPerpetualBinding)(nil), // 44: vega.DataSourceSpecToPerpetualBinding
-	(*PriceMonitoringParameters)(nil),        // 45: vega.PriceMonitoringParameters
-	(*TargetStakeParameters)(nil),            // 46: vega.TargetStakeParameters
-	(*SimpleModelParams)(nil),                // 47: vega.SimpleModelParams
-	(*LogNormalRiskModel)(nil),               // 48: vega.LogNormalRiskModel
-	(*LiquiditySLAParameters)(nil),           // 49: vega.LiquiditySLAParameters
-	(*LiquidityMonitoringParameters)(nil),    // 50: vega.LiquidityMonitoringParameters
-	(*NetworkParameter)(nil),                 // 51: vega.NetworkParameter
-	(*AssetDetails)(nil),                     // 52: vega.AssetDetails
-	(*AssetDetailsUpdate)(nil),               // 53: vega.AssetDetailsUpdate
-	(*VolumeDiscountProgram)(nil),            // 54: vega.VolumeDiscountProgram
-	(*ReferralProgram)(nil),                  // 55: vega.ReferralProgram
-	(AccountType)(0),                         // 56: vega.AccountType
-	(*DispatchStrategy)(nil),                 // 57: vega.DispatchStrategy
+	(*ReferralProgramChanges)(nil),           // 32: vega.ReferralProgramChanges
+	(*UpdateMarketState)(nil),                // 33: vega.UpdateMarketState
+	(*UpdateMarketStateConfiguration)(nil),   // 34: vega.UpdateMarketStateConfiguration
+	(*CancelTransfer)(nil),                   // 35: vega.CancelTransfer
+	(*CancelTransferConfiguration)(nil),      // 36: vega.CancelTransferConfiguration
+	(*NewTransfer)(nil),                      // 37: vega.NewTransfer
+	(*NewTransferConfiguration)(nil),         // 38: vega.NewTransferConfiguration
+	(*OneOffTransfer)(nil),                   // 39: vega.OneOffTransfer
+	(*RecurringTransfer)(nil),                // 40: vega.RecurringTransfer
+	nil,                                      // 41: vega.GovernanceData.YesPartyEntry
+	nil,                                      // 42: vega.GovernanceData.NoPartyEntry
+	(*DataSourceDefinition)(nil),             // 43: vega.DataSourceDefinition
+	(*DataSourceSpecToFutureBinding)(nil),    // 44: vega.DataSourceSpecToFutureBinding
+	(*DataSourceSpecToPerpetualBinding)(nil), // 45: vega.DataSourceSpecToPerpetualBinding
+	(*PriceMonitoringParameters)(nil),        // 46: vega.PriceMonitoringParameters
+	(*TargetStakeParameters)(nil),            // 47: vega.TargetStakeParameters
+	(*SimpleModelParams)(nil),                // 48: vega.SimpleModelParams
+	(*LogNormalRiskModel)(nil),               // 49: vega.LogNormalRiskModel
+	(*LiquiditySLAParameters)(nil),           // 50: vega.LiquiditySLAParameters
+	(*LiquidityMonitoringParameters)(nil),    // 51: vega.LiquidityMonitoringParameters
+	(*NetworkParameter)(nil),                 // 52: vega.NetworkParameter
+	(*AssetDetails)(nil),                     // 53: vega.AssetDetails
+	(*AssetDetailsUpdate)(nil),               // 54: vega.AssetDetailsUpdate
+	(*VolumeDiscountProgram)(nil),            // 55: vega.VolumeDiscountProgram
+	(*BenefitTier)(nil),                      // 56: vega.BenefitTier
+	(*StakingTier)(nil),                      // 57: vega.StakingTier
+	(AccountType)(0),                         // 58: vega.AccountType
+	(*DispatchStrategy)(nil),                 // 59: vega.DispatchStrategy
 }
 var file_vega_governance_proto_depIdxs = []int32{
-	42, // 0: vega.FutureProduct.data_source_spec_for_settlement_data:type_name -> vega.DataSourceDefinition
-	42, // 1: vega.FutureProduct.data_source_spec_for_trading_termination:type_name -> vega.DataSourceDefinition
-	43, // 2: vega.FutureProduct.data_source_spec_binding:type_name -> vega.DataSourceSpecToFutureBinding
-	42, // 3: vega.PerpetualProduct.data_source_spec_for_settlement_schedule:type_name -> vega.DataSourceDefinition
-	42, // 4: vega.PerpetualProduct.data_source_spec_for_settlement_data:type_name -> vega.DataSourceDefinition
-	44, // 5: vega.PerpetualProduct.data_source_spec_binding:type_name -> vega.DataSourceSpecToPerpetualBinding
+	43, // 0: vega.FutureProduct.data_source_spec_for_settlement_data:type_name -> vega.DataSourceDefinition
+	43, // 1: vega.FutureProduct.data_source_spec_for_trading_termination:type_name -> vega.DataSourceDefinition
+	44, // 2: vega.FutureProduct.data_source_spec_binding:type_name -> vega.DataSourceSpecToFutureBinding
+	43, // 3: vega.PerpetualProduct.data_source_spec_for_settlement_schedule:type_name -> vega.DataSourceDefinition
+	43, // 4: vega.PerpetualProduct.data_source_spec_for_settlement_data:type_name -> vega.DataSourceDefinition
+	45, // 5: vega.PerpetualProduct.data_source_spec_binding:type_name -> vega.DataSourceSpecToPerpetualBinding
 	6,  // 6: vega.InstrumentConfiguration.future:type_name -> vega.FutureProduct
 	5,  // 7: vega.InstrumentConfiguration.spot:type_name -> vega.SpotProduct
 	7,  // 8: vega.InstrumentConfiguration.perpetual:type_name -> vega.PerpetualProduct
 	8,  // 9: vega.NewSpotMarketConfiguration.instrument:type_name -> vega.InstrumentConfiguration
-	45, // 10: vega.NewSpotMarketConfiguration.price_monitoring_parameters:type_name -> vega.PriceMonitoringParameters
-	46, // 11: vega.NewSpotMarketConfiguration.target_stake_parameters:type_name -> vega.TargetStakeParameters
-	47, // 12: vega.NewSpotMarketConfiguration.simple:type_name -> vega.SimpleModelParams
-	48, // 13: vega.NewSpotMarketConfiguration.log_normal:type_name -> vega.LogNormalRiskModel
-	49, // 14: vega.NewSpotMarketConfiguration.sla_params:type_name -> vega.LiquiditySLAParameters
+	46, // 10: vega.NewSpotMarketConfiguration.price_monitoring_parameters:type_name -> vega.PriceMonitoringParameters
+	47, // 11: vega.NewSpotMarketConfiguration.target_stake_parameters:type_name -> vega.TargetStakeParameters
+	48, // 12: vega.NewSpotMarketConfiguration.simple:type_name -> vega.SimpleModelParams
+	49, // 13: vega.NewSpotMarketConfiguration.log_normal:type_name -> vega.LogNormalRiskModel
+	50, // 14: vega.NewSpotMarketConfiguration.sla_params:type_name -> vega.LiquiditySLAParameters
 	8,  // 15: vega.NewMarketConfiguration.instrument:type_name -> vega.InstrumentConfiguration
-	45, // 16: vega.NewMarketConfiguration.price_monitoring_parameters:type_name -> vega.PriceMonitoringParameters
-	50, // 17: vega.NewMarketConfiguration.liquidity_monitoring_parameters:type_name -> vega.LiquidityMonitoringParameters
-	47, // 18: vega.NewMarketConfiguration.simple:type_name -> vega.SimpleModelParams
-	48, // 19: vega.NewMarketConfiguration.log_normal:type_name -> vega.LogNormalRiskModel
+	46, // 16: vega.NewMarketConfiguration.price_monitoring_parameters:type_name -> vega.PriceMonitoringParameters
+	51, // 17: vega.NewMarketConfiguration.liquidity_monitoring_parameters:type_name -> vega.LiquidityMonitoringParameters
+	48, // 18: vega.NewMarketConfiguration.simple:type_name -> vega.SimpleModelParams
+	49, // 19: vega.NewMarketConfiguration.log_normal:type_name -> vega.LogNormalRiskModel
 	12, // 20: vega.NewMarketConfiguration.successor:type_name -> vega.SuccessorConfiguration
-	49, // 21: vega.NewMarketConfiguration.liquidity_sla_parameters:type_name -> vega.LiquiditySLAParameters
+	50, // 21: vega.NewMarketConfiguration.liquidity_sla_parameters:type_name -> vega.LiquiditySLAParameters
 	9,  // 22: vega.NewSpotMarket.changes:type_name -> vega.NewSpotMarketConfiguration
 	10, // 23: vega.NewMarket.changes:type_name -> vega.NewMarketConfiguration
 	16, // 24: vega.UpdateMarket.changes:type_name -> vega.UpdateMarketConfiguration
 	17, // 25: vega.UpdateSpotMarket.changes:type_name -> vega.UpdateSpotMarketConfiguration
 	18, // 26: vega.UpdateMarketConfiguration.instrument:type_name -> vega.UpdateInstrumentConfiguration
-	45, // 27: vega.UpdateMarketConfiguration.price_monitoring_parameters:type_name -> vega.PriceMonitoringParameters
-	50, // 28: vega.UpdateMarketConfiguration.liquidity_monitoring_parameters:type_name -> vega.LiquidityMonitoringParameters
-	47, // 29: vega.UpdateMarketConfiguration.simple:type_name -> vega.SimpleModelParams
-	48, // 30: vega.UpdateMarketConfiguration.log_normal:type_name -> vega.LogNormalRiskModel
-	49, // 31: vega.UpdateMarketConfiguration.liquidity_sla_parameters:type_name -> vega.LiquiditySLAParameters
-	45, // 32: vega.UpdateSpotMarketConfiguration.price_monitoring_parameters:type_name -> vega.PriceMonitoringParameters
-	46, // 33: vega.UpdateSpotMarketConfiguration.target_stake_parameters:type_name -> vega.TargetStakeParameters
-	47, // 34: vega.UpdateSpotMarketConfiguration.simple:type_name -> vega.SimpleModelParams
-	48, // 35: vega.UpdateSpotMarketConfiguration.log_normal:type_name -> vega.LogNormalRiskModel
-	49, // 36: vega.UpdateSpotMarketConfiguration.sla_params:type_name -> vega.LiquiditySLAParameters
+	46, // 27: vega.UpdateMarketConfiguration.price_monitoring_parameters:type_name -> vega.PriceMonitoringParameters
+	51, // 28: vega.UpdateMarketConfiguration.liquidity_monitoring_parameters:type_name -> vega.LiquidityMonitoringParameters
+	48, // 29: vega.UpdateMarketConfiguration.simple:type_name -> vega.SimpleModelParams
+	49, // 30: vega.UpdateMarketConfiguration.log_normal:type_name -> vega.LogNormalRiskModel
+	50, // 31: vega.UpdateMarketConfiguration.liquidity_sla_parameters:type_name -> vega.LiquiditySLAParameters
+	46, // 32: vega.UpdateSpotMarketConfiguration.price_monitoring_parameters:type_name -> vega.PriceMonitoringParameters
+	47, // 33: vega.UpdateSpotMarketConfiguration.target_stake_parameters:type_name -> vega.TargetStakeParameters
+	48, // 34: vega.UpdateSpotMarketConfiguration.simple:type_name -> vega.SimpleModelParams
+	49, // 35: vega.UpdateSpotMarketConfiguration.log_normal:type_name -> vega.LogNormalRiskModel
+	50, // 36: vega.UpdateSpotMarketConfiguration.sla_params:type_name -> vega.LiquiditySLAParameters
 	19, // 37: vega.UpdateInstrumentConfiguration.future:type_name -> vega.UpdateFutureProduct
 	20, // 38: vega.UpdateInstrumentConfiguration.perpetual:type_name -> vega.UpdatePerpetualProduct
-	42, // 39: vega.UpdateFutureProduct.data_source_spec_for_settlement_data:type_name -> vega.DataSourceDefinition
-	42, // 40: vega.UpdateFutureProduct.data_source_spec_for_trading_termination:type_name -> vega.DataSourceDefinition
-	43, // 41: vega.UpdateFutureProduct.data_source_spec_binding:type_name -> vega.DataSourceSpecToFutureBinding
-	42, // 42: vega.UpdatePerpetualProduct.data_source_spec_for_settlement_schedule:type_name -> vega.DataSourceDefinition
-	42, // 43: vega.UpdatePerpetualProduct.data_source_spec_for_settlement_data:type_name -> vega.DataSourceDefinition
-	44, // 44: vega.UpdatePerpetualProduct.data_source_spec_binding:type_name -> vega.DataSourceSpecToPerpetualBinding
-	51, // 45: vega.UpdateNetworkParameter.changes:type_name -> vega.NetworkParameter
-	52, // 46: vega.NewAsset.changes:type_name -> vega.AssetDetails
-	53, // 47: vega.UpdateAsset.changes:type_name -> vega.AssetDetailsUpdate
+	43, // 39: vega.UpdateFutureProduct.data_source_spec_for_settlement_data:type_name -> vega.DataSourceDefinition
+	43, // 40: vega.UpdateFutureProduct.data_source_spec_for_trading_termination:type_name -> vega.DataSourceDefinition
+	44, // 41: vega.UpdateFutureProduct.data_source_spec_binding:type_name -> vega.DataSourceSpecToFutureBinding
+	43, // 42: vega.UpdatePerpetualProduct.data_source_spec_for_settlement_schedule:type_name -> vega.DataSourceDefinition
+	43, // 43: vega.UpdatePerpetualProduct.data_source_spec_for_settlement_data:type_name -> vega.DataSourceDefinition
+	45, // 44: vega.UpdatePerpetualProduct.data_source_spec_binding:type_name -> vega.DataSourceSpecToPerpetualBinding
+	52, // 45: vega.UpdateNetworkParameter.changes:type_name -> vega.NetworkParameter
+	53, // 46: vega.NewAsset.changes:type_name -> vega.AssetDetails
+	54, // 47: vega.UpdateAsset.changes:type_name -> vega.AssetDetailsUpdate
 	14, // 48: vega.ProposalTerms.update_market:type_name -> vega.UpdateMarket
 	13, // 49: vega.ProposalTerms.new_market:type_name -> vega.NewMarket
 	21, // 50: vega.ProposalTerms.update_network_parameter:type_name -> vega.UpdateNetworkParameter
@@ -4535,40 +4632,42 @@ var file_vega_governance_proto_depIdxs = []int32{
 	23, // 53: vega.ProposalTerms.update_asset:type_name -> vega.UpdateAsset
 	11, // 54: vega.ProposalTerms.new_spot_market:type_name -> vega.NewSpotMarket
 	15, // 55: vega.ProposalTerms.update_spot_market:type_name -> vega.UpdateSpotMarket
-	36, // 56: vega.ProposalTerms.new_transfer:type_name -> vega.NewTransfer
-	34, // 57: vega.ProposalTerms.cancel_transfer:type_name -> vega.CancelTransfer
-	32, // 58: vega.ProposalTerms.update_market_state:type_name -> vega.UpdateMarketState
+	37, // 56: vega.ProposalTerms.new_transfer:type_name -> vega.NewTransfer
+	35, // 57: vega.ProposalTerms.cancel_transfer:type_name -> vega.CancelTransfer
+	33, // 58: vega.ProposalTerms.update_market_state:type_name -> vega.UpdateMarketState
 	31, // 59: vega.ProposalTerms.update_referral_program:type_name -> vega.UpdateReferralProgram
 	30, // 60: vega.ProposalTerms.update_volume_discount_program:type_name -> vega.UpdateVolumeDiscountProgram
 	28, // 61: vega.GovernanceData.proposal:type_name -> vega.Proposal
 	29, // 62: vega.GovernanceData.yes:type_name -> vega.Vote
 	29, // 63: vega.GovernanceData.no:type_name -> vega.Vote
-	40, // 64: vega.GovernanceData.yes_party:type_name -> vega.GovernanceData.YesPartyEntry
-	41, // 65: vega.GovernanceData.no_party:type_name -> vega.GovernanceData.NoPartyEntry
+	41, // 64: vega.GovernanceData.yes_party:type_name -> vega.GovernanceData.YesPartyEntry
+	42, // 65: vega.GovernanceData.no_party:type_name -> vega.GovernanceData.NoPartyEntry
 	3,  // 66: vega.Proposal.state:type_name -> vega.Proposal.State
 	25, // 67: vega.Proposal.terms:type_name -> vega.ProposalTerms
 	0,  // 68: vega.Proposal.reason:type_name -> vega.ProposalError
 	26, // 69: vega.Proposal.rationale:type_name -> vega.ProposalRationale
 	4,  // 70: vega.Vote.value:type_name -> vega.Vote.Value
-	54, // 71: vega.UpdateVolumeDiscountProgram.changes:type_name -> vega.VolumeDiscountProgram
-	55, // 72: vega.UpdateReferralProgram.changes:type_name -> vega.ReferralProgram
-	33, // 73: vega.UpdateMarketState.changes:type_name -> vega.UpdateMarketStateConfiguration
-	1,  // 74: vega.UpdateMarketStateConfiguration.update_type:type_name -> vega.MarketStateUpdateType
-	35, // 75: vega.CancelTransfer.changes:type_name -> vega.CancelTransferConfiguration
-	37, // 76: vega.NewTransfer.changes:type_name -> vega.NewTransferConfiguration
-	56, // 77: vega.NewTransferConfiguration.source_type:type_name -> vega.AccountType
-	2,  // 78: vega.NewTransferConfiguration.transfer_type:type_name -> vega.GovernanceTransferType
-	56, // 79: vega.NewTransferConfiguration.destination_type:type_name -> vega.AccountType
-	38, // 80: vega.NewTransferConfiguration.one_off:type_name -> vega.OneOffTransfer
-	39, // 81: vega.NewTransferConfiguration.recurring:type_name -> vega.RecurringTransfer
-	57, // 82: vega.RecurringTransfer.dispatch_strategy:type_name -> vega.DispatchStrategy
-	29, // 83: vega.GovernanceData.YesPartyEntry.value:type_name -> vega.Vote
-	29, // 84: vega.GovernanceData.NoPartyEntry.value:type_name -> vega.Vote
-	85, // [85:85] is the sub-list for method output_type
-	85, // [85:85] is the sub-list for method input_type
-	85, // [85:85] is the sub-list for extension type_name
-	85, // [85:85] is the sub-list for extension extendee
-	0,  // [0:85] is the sub-list for field type_name
+	55, // 71: vega.UpdateVolumeDiscountProgram.changes:type_name -> vega.VolumeDiscountProgram
+	32, // 72: vega.UpdateReferralProgram.changes:type_name -> vega.ReferralProgramChanges
+	56, // 73: vega.ReferralProgramChanges.benefit_tiers:type_name -> vega.BenefitTier
+	57, // 74: vega.ReferralProgramChanges.staking_tiers:type_name -> vega.StakingTier
+	34, // 75: vega.UpdateMarketState.changes:type_name -> vega.UpdateMarketStateConfiguration
+	1,  // 76: vega.UpdateMarketStateConfiguration.update_type:type_name -> vega.MarketStateUpdateType
+	36, // 77: vega.CancelTransfer.changes:type_name -> vega.CancelTransferConfiguration
+	38, // 78: vega.NewTransfer.changes:type_name -> vega.NewTransferConfiguration
+	58, // 79: vega.NewTransferConfiguration.source_type:type_name -> vega.AccountType
+	2,  // 80: vega.NewTransferConfiguration.transfer_type:type_name -> vega.GovernanceTransferType
+	58, // 81: vega.NewTransferConfiguration.destination_type:type_name -> vega.AccountType
+	39, // 82: vega.NewTransferConfiguration.one_off:type_name -> vega.OneOffTransfer
+	40, // 83: vega.NewTransferConfiguration.recurring:type_name -> vega.RecurringTransfer
+	59, // 84: vega.RecurringTransfer.dispatch_strategy:type_name -> vega.DispatchStrategy
+	29, // 85: vega.GovernanceData.YesPartyEntry.value:type_name -> vega.Vote
+	29, // 86: vega.GovernanceData.NoPartyEntry.value:type_name -> vega.Vote
+	87, // [87:87] is the sub-list for method output_type
+	87, // [87:87] is the sub-list for method input_type
+	87, // [87:87] is the sub-list for extension type_name
+	87, // [87:87] is the sub-list for extension extendee
+	0,  // [0:87] is the sub-list for field type_name
 }
 
 func init() { file_vega_governance_proto_init() }
@@ -4906,7 +5005,7 @@ func file_vega_governance_proto_init() {
 			}
 		}
 		file_vega_governance_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UpdateMarketState); i {
+			switch v := v.(*ReferralProgramChanges); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4918,7 +5017,7 @@ func file_vega_governance_proto_init() {
 			}
 		}
 		file_vega_governance_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UpdateMarketStateConfiguration); i {
+			switch v := v.(*UpdateMarketState); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4930,7 +5029,7 @@ func file_vega_governance_proto_init() {
 			}
 		}
 		file_vega_governance_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CancelTransfer); i {
+			switch v := v.(*UpdateMarketStateConfiguration); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4942,7 +5041,7 @@ func file_vega_governance_proto_init() {
 			}
 		}
 		file_vega_governance_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CancelTransferConfiguration); i {
+			switch v := v.(*CancelTransfer); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4954,7 +5053,7 @@ func file_vega_governance_proto_init() {
 			}
 		}
 		file_vega_governance_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NewTransfer); i {
+			switch v := v.(*CancelTransferConfiguration); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4966,7 +5065,7 @@ func file_vega_governance_proto_init() {
 			}
 		}
 		file_vega_governance_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NewTransferConfiguration); i {
+			switch v := v.(*NewTransfer); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4978,7 +5077,7 @@ func file_vega_governance_proto_init() {
 			}
 		}
 		file_vega_governance_proto_msgTypes[33].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*OneOffTransfer); i {
+			switch v := v.(*NewTransferConfiguration); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4990,6 +5089,18 @@ func file_vega_governance_proto_init() {
 			}
 		}
 		file_vega_governance_proto_msgTypes[34].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*OneOffTransfer); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_governance_proto_msgTypes[35].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RecurringTransfer); i {
 			case 0:
 				return &v.state
@@ -5043,19 +5154,19 @@ func file_vega_governance_proto_init() {
 		(*ProposalTerms_UpdateVolumeDiscountProgram)(nil),
 	}
 	file_vega_governance_proto_msgTypes[23].OneofWrappers = []interface{}{}
-	file_vega_governance_proto_msgTypes[28].OneofWrappers = []interface{}{}
-	file_vega_governance_proto_msgTypes[32].OneofWrappers = []interface{}{
+	file_vega_governance_proto_msgTypes[29].OneofWrappers = []interface{}{}
+	file_vega_governance_proto_msgTypes[33].OneofWrappers = []interface{}{
 		(*NewTransferConfiguration_OneOff)(nil),
 		(*NewTransferConfiguration_Recurring)(nil),
 	}
-	file_vega_governance_proto_msgTypes[34].OneofWrappers = []interface{}{}
+	file_vega_governance_proto_msgTypes[35].OneofWrappers = []interface{}{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_vega_governance_proto_rawDesc,
 			NumEnums:      5,
-			NumMessages:   37,
+			NumMessages:   38,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

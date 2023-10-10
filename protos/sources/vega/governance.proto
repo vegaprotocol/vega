@@ -567,7 +567,23 @@ message UpdateVolumeDiscountProgram {
 
 message UpdateReferralProgram {
   // Configuration for change to update a referral program.
-  ReferralProgram changes = 1;
+  ReferralProgramChanges changes = 1;
+}
+
+message ReferralProgramChanges {
+  // Defined benefit tiers in increasing order. First element will give Tier 1,
+  // second element will give Tier 2, and so on. Determines the level of
+  // benefit a party can expect based on performance criteria.
+  repeated BenefitTier benefit_tiers = 1;
+  // Timestamp as Unix time in seconds, after which when the current epoch ends, the
+  // programs status will become STATE_CLOSED and benefits will be disabled.
+  int64 end_of_program_timestamp = 2;
+  // Number of epochs over which to evaluate a referral set's running volume.
+  uint64 window_length = 3;
+  // Defined staking tiers in increasing order. First element will give Tier 1,
+  // second element will give Tier 2, and so on. Determines the level of
+  // benefit a party can expect based on their staking.
+  repeated StakingTier staking_tiers = 4;
 }
 
 message UpdateMarketState {

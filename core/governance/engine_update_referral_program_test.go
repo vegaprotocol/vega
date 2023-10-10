@@ -19,13 +19,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
-	"github.com/stretchr/testify/require"
 )
 
 func TestProposalForUpdateReferralProgram(t *testing.T) {
@@ -53,7 +54,7 @@ func testSubmittingProposalForReferralProgramUpdateSucceeds(t *testing.T) {
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForReferralProgramUpdate(proposer, now, &types.ReferralProgram{
+	proposal := eng.newProposalForReferralProgramUpdate(proposer, now, &types.ReferralProgramChanges{
 		EndOfProgramTimestamp: now.Add(4 * 48 * time.Hour),
 		WindowLength:          15,
 		BenefitTiers: []*types.BenefitTier{
@@ -102,7 +103,7 @@ func testSubmittingProposalForReferralProgramUpdateWithTooManyTiersFails(t *test
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForReferralProgramUpdate(proposer, now, &types.ReferralProgram{
+	proposal := eng.newProposalForReferralProgramUpdate(proposer, now, &types.ReferralProgramChanges{
 		EndOfProgramTimestamp: now.Add(4 * 48 * time.Hour),
 		WindowLength:          15,
 		BenefitTiers: []*types.BenefitTier{
@@ -151,7 +152,7 @@ func testSubmittingProposalForReferralProgramUpdateWithTooHighRewardFactorFails(
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForReferralProgramUpdate(proposer, now, &types.ReferralProgram{
+	proposal := eng.newProposalForReferralProgramUpdate(proposer, now, &types.ReferralProgramChanges{
 		EndOfProgramTimestamp: now.Add(4 * 48 * time.Hour),
 		WindowLength:          15,
 		BenefitTiers: []*types.BenefitTier{
@@ -203,7 +204,7 @@ func testSubmittingProposalForReferralProgramUpdateWithTooHighDiscountFactorFail
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForReferralProgramUpdate(proposer, now, &types.ReferralProgram{
+	proposal := eng.newProposalForReferralProgramUpdate(proposer, now, &types.ReferralProgramChanges{
 		EndOfProgramTimestamp: now.Add(4 * 48 * time.Hour),
 		WindowLength:          15,
 		BenefitTiers: []*types.BenefitTier{
@@ -257,7 +258,7 @@ func testSubmittingProposalForReferralProgramUpdateEndsBeforeEnactsFails(t *test
 	proposer := vgrand.RandomStr(5)
 	rp := &types.ProposalTermsUpdateReferralProgram{
 		UpdateReferralProgram: &types.UpdateReferralProgram{
-			Changes: &types.ReferralProgram{
+			Changes: &types.ReferralProgramChanges{
 				EndOfProgramTimestamp: time.Time{}, // we will set this later
 				WindowLength:          15,
 				BenefitTiers: []*types.BenefitTier{
