@@ -515,8 +515,9 @@ func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, take
 
 		for i := tiersLen - 1; i >= 0; i-- {
 			tier := e.currentProgram.BenefitTiers[i]
-			if set.RewardFactor.Equal(num.DecimalZero()) && set.ReferralSetRunningVolume.GTE(tier.MinimumRunningNotionalTakerVolume) {
+			if set.RewardFactor.IsZero() && set.ReferralSetRunningVolume.GTE(tier.MinimumRunningNotionalTakerVolume) {
 				set.RewardFactor = tier.ReferralRewardFactor
+				break
 			}
 		}
 
@@ -558,8 +559,9 @@ func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, take
 
 		for i := tiersLen - 1; i >= 0; i-- {
 			tier := e.currentProgram.BenefitTiers[i]
-			if refereeStats.DiscountFactor.Equal(num.DecimalZero()) && epochCount >= tier.MinimumEpochs.Uint64() && runningVolumeForSet.GTE(tier.MinimumRunningNotionalTakerVolume) {
+			if refereeStats.DiscountFactor.IsZero() && epochCount >= tier.MinimumEpochs.Uint64() && runningVolumeForSet.GTE(tier.MinimumRunningNotionalTakerVolume) {
 				refereeStats.DiscountFactor = tier.ReferralDiscountFactor
+				break
 			}
 		}
 	}
