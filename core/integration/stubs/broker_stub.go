@@ -30,6 +30,8 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
+var AccountDoesNotExistErr = errors.New("account does not exist")
+
 type AssetParty struct {
 	Asset, Party string
 }
@@ -853,7 +855,7 @@ func (b *BrokerStub) GetPartyGeneralAccount(party, asset string) (vegapb.Account
 // GetPartyVestingAccount returns the latest event WRT the party's general account.
 func (b *BrokerStub) GetPartyVestingAccount(party, asset string) (ga vegapb.Account, err error) {
 	batch := b.GetAccountEvents()
-	err = errors.New("account does not exist")
+	err = AccountDoesNotExistErr
 	for _, e := range batch {
 		v := e.Account()
 		if v.Owner == party && v.Type == vegapb.AccountType_ACCOUNT_TYPE_VESTING_REWARDS && v.Asset == asset {

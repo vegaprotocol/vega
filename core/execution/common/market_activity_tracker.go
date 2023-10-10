@@ -648,8 +648,15 @@ func calculateMetricForTeamUtil(asset string,
 	})
 
 	maxIndex := int(topN.Mul(num.DecimalFromInt64(int64(len(parties)))).IntPart())
+	// ensure non-zero, otherwise we have a divide-by-zero panic on our hands
+	if maxIndex == 0 {
+		maxIndex = 1
+	}
 	if len(teamPartyScores) < maxIndex {
 		maxIndex = len(teamPartyScores)
+	}
+	if maxIndex == 0 {
+		return num.DecimalZero(), teamPartyScores
 	}
 
 	total := num.DecimalZero()

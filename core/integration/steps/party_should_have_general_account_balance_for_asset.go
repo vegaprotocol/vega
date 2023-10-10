@@ -20,6 +20,7 @@ import (
 	"strconv"
 
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+	"github.com/cucumber/godog"
 )
 
 func PartyShouldHaveGeneralAccountBalanceForAsset(
@@ -60,6 +61,27 @@ func PartyShouldHaveVestingAccountBalanceForAsset(
 	return nil
 }
 
+func PartiesShouldHaveVestingAccountBalances(broker *stubs.BrokerStub, table *godog.Table) error {
+	for _, r := range parseVestingRow(table) {
+		row := vestingRow{
+			r: r,
+		}
+		acc, err := broker.GetPartyVestingAccount(row.Party(), row.Asset())
+		if err != nil {
+			if err != stubs.AccountDoesNotExistErr {
+				return err
+			}
+			acc.Balance = "0"
+		}
+		if stringToU64(acc.Balance) != row.Balance() {
+			return fmt.Errorf("invalid vesting account balance for asset (%s) for party(%s), expected (%d) got (%s)",
+				row.Asset(), row.Party(), row.Balance(), acc.Balance,
+			)
+		}
+	}
+	return nil
+}
+
 func PartyShouldHaveVestedAccountBalanceForAsset(
 	broker *stubs.BrokerStub,
 	party, asset, rawBalance string,
@@ -96,4 +118,28 @@ func PartyShouldHaveHoldingAccountBalanceForAsset(
 	}
 
 	return nil
+}
+
+func parseVestingRow(table *godog.Table) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"party",
+		"asset",
+		"balance",
+	}, []string{})
+}
+
+type vestingRow struct {
+	r RowWrapper
+}
+
+func (v vestingRow) Party() string {
+	return v.r.MustStr("party")
+}
+
+func (v vestingRow) Asset() string {
+	return v.r.MustStr("asset")
+}
+
+func (v vestingRow) Balance() uint64 {
+	return v.r.MustU64("balance")
 }

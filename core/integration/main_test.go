@@ -403,6 +403,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^"([^"]*)" should have vesting account balance of "([^"]*)" for asset "([^"]*)"$`, func(party, balance, asset string) error {
 		return steps.PartyShouldHaveVestingAccountBalanceForAsset(execsetup.broker, party, asset, balance)
 	})
+	s.Step(`^parties should have the following vesting account balances:$`, func(table *godog.Table) error {
+		return steps.PartiesShouldHaveVestingAccountBalances(execsetup.broker, table)
+	})
 	s.Step(`^"([^"]*)" should have vested account balance of "([^"]*)" for asset "([^"]*)"$`, func(party, balance, asset string) error {
 		return steps.PartyShouldHaveVestedAccountBalanceForAsset(execsetup.broker, party, asset, balance)
 	})
@@ -517,6 +520,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^the team "([^"]*)" has the following members:$`, func(team string, table *godog.Table) error {
 		return steps.TheTeamHasTheFollowingMembers(execsetup.teamsEngine, team, table)
+	})
+	s.Step(`^the following teams with referees are created:$`, func(table *godog.Table) error {
+		return steps.TheFollowingTeamsWithRefereesAreCreated(execsetup.collateralEngine, execsetup.broker, execsetup.netDeposits, execsetup.referralProgram, execsetup.teamsEngine, table)
 	})
 
 	s.Step(`the referral set stats for code "([^"]+)" at epoch "([^"]+)" should have a running volume of (\d+):`, func(code, epoch, volume string, table *godog.Table) error {
