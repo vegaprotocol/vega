@@ -81,8 +81,8 @@ Feature: Team Rewards
       | party    | market id    | side | volume | price | resulting trades | type       | tif     |
       | aux1     | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | referee1 | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-      | aux1     | ETH/USD-1-10 | sell | 15     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | referee2 | ETH/USD-1-10 | buy  | 15     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1     | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | referee2 | ETH/USD-1-10 | buy  | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
       | aux1     | ETH/USD-1-10 | sell | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | referee3 | ETH/USD-1-10 | buy  | 5      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
