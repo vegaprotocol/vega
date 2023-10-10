@@ -36,7 +36,7 @@ func PartiesCreateTheFollowingReferralCode(referralEngine *referral.Engine, team
 			return err
 		}
 
-		if r.HasColumn("is_team") && row.IsTeam() {
+		if row.IsTeam() {
 			team := &commandspb.CreateReferralSet_Team{
 				Name: row.Team(),
 			}
@@ -94,6 +94,9 @@ func (r createReferralCodeRow) Reference() string {
 }
 
 func (r createReferralCodeRow) IsTeam() bool {
+	if !r.row.HasColumn("is_team") {
+		return false
+	}
 	return r.row.Bool("is_team")
 }
 
