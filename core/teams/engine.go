@@ -197,6 +197,9 @@ func (e *Engine) GetAllPartiesInTeams(minEpochsInTeam uint64) []string {
 
 func (e *Engine) GetTeamMembers(team string, minEpochsInTeam uint64) []string {
 	t := e.teams[(types.TeamID(team))]
+	if t == nil {
+		return []string{}
+	}
 	teamMembers := make([]string, 0, len(t.Referees)+1)
 	for _, m := range t.Referees {
 		if m.StartedAtEpoch-e.currentEpoch >= minEpochsInTeam {

@@ -130,7 +130,7 @@ func TestCalculateRewardsByContributionTeamsRank(t *testing.T) {
 		"t5": t5PartyContribution,
 	}
 
-	rewardMultipliers := map[string]num.Decimal{"p11": num.DecimalFromFloat(2.5), "p12": num.DecimalFromFloat(3), "p22": num.DecimalFromFloat(1.5), "p32": num.DecimalFromInt64(4), "p41": num.DecimalFromFloat(2.5), "p51": num.DecimalFromInt64(6)}
+	rewardMultipliers := map[string]num.Decimal{"p11": num.DecimalFromFloat(2), "p12": num.DecimalFromFloat(3), "p22": num.DecimalFromFloat(1.5), "p32": num.DecimalFromInt64(4), "p41": num.DecimalFromFloat(2.5), "p51": num.DecimalFromInt64(6)}
 
 	now := time.Now()
 	ds := &vega.DispatchStrategy{
@@ -148,19 +148,19 @@ func TestCalculateRewardsByContributionTeamsRank(t *testing.T) {
 	// t2: 0.2
 	// t4: 0.4
 
-	// p11 = 0.2 * 2.5 = 0.5
-	// p12 = 0.5 * 3 = 1.5
+	// r11 = 2
+	// r12 = 3
 	// =====================
-	// s11 = 0.4 * 0.25 = 0.1 * 10000 = 1000
-	// s12 = 0.4 * 0.75 = 0.3 * 10000 = 3000
+	// s11 = 0.4 * 0.4 = 0.24 * 10000 = 1600
+	// s12 = 0.4 * 0.6 = 0.16 * 10000 = 2400
 
-	// p21 = 0.05 = 0.05
-	// p22 = 0.3 * 1.5 = 0.45
+	// r21 = 1
+	// r22 = 1.5
 	// =====================
-	// s21 = 0.2 * 0.1 = 0.02 * 10000 = 200
-	// s22 = 0.2 * 0.9 = 0.18 * 10000 = 1800
+	// s21 = 0.2 * 0.4 = 0.08 * 10000 = 800
+	// s22 = 0.2 * 0.6 = 0.12 * 10000 = 1200
 
-	// p41 = 0.2 = 0.2
+	// p41 = 1
 	// =====================
 	// s41 = 0.4 * 10000 = 4000
 	require.Equal(t, "asset", po.asset)
@@ -168,10 +168,10 @@ func TestCalculateRewardsByContributionTeamsRank(t *testing.T) {
 	require.Equal(t, "accountID", po.fromAccount)
 	require.Equal(t, uint64(2), po.lockedForEpochs)
 	require.Equal(t, now.Unix(), po.timestamp)
-	require.Equal(t, "1000", po.partyToAmount["p11"].String())
-	require.Equal(t, "3000", po.partyToAmount["p12"].String())
-	require.Equal(t, "200", po.partyToAmount["p21"].String())
-	require.Equal(t, "1800", po.partyToAmount["p22"].String())
+	require.Equal(t, "1600", po.partyToAmount["p11"].String())
+	require.Equal(t, "2400", po.partyToAmount["p12"].String())
+	require.Equal(t, "800", po.partyToAmount["p21"].String())
+	require.Equal(t, "1200", po.partyToAmount["p22"].String())
 	require.Equal(t, "4000", po.partyToAmount["p41"].String())
 	require.Equal(t, "10000", po.totalReward.String())
 }
@@ -216,7 +216,7 @@ func TestCalculateRewardsByContributionTeamsProRata(t *testing.T) {
 		"t5": t5PartyContribution,
 	}
 
-	rewardMultipliers := map[string]num.Decimal{"p11": num.DecimalFromFloat(2.5), "p12": num.DecimalFromFloat(3), "p22": num.DecimalFromFloat(1.5), "p32": num.DecimalFromInt64(4), "p41": num.DecimalFromFloat(2.5), "p51": num.DecimalFromInt64(6)}
+	rewardMultipliers := map[string]num.Decimal{"p11": num.DecimalFromFloat(2), "p12": num.DecimalFromFloat(3), "p22": num.DecimalFromFloat(1.5), "p32": num.DecimalFromInt64(3), "p41": num.DecimalFromFloat(2.5), "p51": num.DecimalFromInt64(7)}
 
 	now := time.Now()
 	ds := &vega.DispatchStrategy{
@@ -232,50 +232,50 @@ func TestCalculateRewardsByContributionTeamsProRata(t *testing.T) {
 	// t4: 0.6/2 = 0.3
 	// t5: 0.2/2 = 0.1
 
-	// p11 = 0.2 * 2.5 = 0.5
-	// p12 = 0.5 * 3 = 1.5
+	// r11 = 2 = 0.4
+	// r12 = 3 = 0.6
 	// =====================
-	// s11 = 0.3 * 0.25 = 0.075 * 10000 = 750
-	// s12 = 0.3 * 0.75 = 0.225 * 10000 = 2250
+	// s11 = 0.3 * 0.4 = 0.12 * 10000 = 1200
+	// s12 = 0.3 * 0.6 = 0.18 * 10000 = 1800
 
-	// p21 = 0.05 = 0.05
-	// p22 = 0.3 * 1.5 = 0.45
+	// r21 = 1
+	// r22 = 1.5
 	// =====================
-	// s21 = 0.25 * 0.1 = 0.025 * 10000 = 250
-	// s22 = 0.25 * 0.9 = 0.225 * 10000 = 2250
+	// s21 = 0.25 * 0.4 = 0.1 * 10000 = 1000
+	// s22 = 0.25 * 0.5 = 0.15 * 10000 = 1500
 
-	// p31 = 0.2 = 0.2
-	// p32 = 0.3 * 4 = 1.2
-	// p33 = 0.6 = 0.6
+	// r31 = 1
+	// r32 = 3
+	// r33 = 1
 	// =====================
-	// s31 = 0.05 * 0.1 = 0.005 * 10000 = 50
+	// s31 = 0.05 * 0.2 = 0.01 * 10000 = 100
 	// s32 = 0.05 * 0.6 = 0.03 * 10000 = 300
-	// s32 = 0.05 * 0.3 = 0.015 * 10000 = 150
+	// s32 = 0.05 * 0.2 = 0.01 * 10000 = 100
 
-	// p41 = 0.2 = 0.2
+	// r41 = 2.5
 	// =====================
 	// s41 = 0.3 * 10000 = 3000
 
-	// p51 = 0.2 * 6 = 1.2
-	// p52 = 0.8
+	// r51 = 6
+	// r52 = 1
 	// =====================
-	// s51 = 0.1 * 0.6 = 0.06 * 10000 = 600
-	// s52 = 0.1 * 0.4 = 0.04 * 10000 = 400
+	// s51 = 0.1 * 0.875 = 0.0875 * 10000 = 875
+	// s52 = 0.1 * 0.125 = 0.0125 * 10000 = 125
 
 	require.Equal(t, "asset", po.asset)
 	require.Equal(t, "1", po.epochSeq)
 	require.Equal(t, "accountID", po.fromAccount)
 	require.Equal(t, uint64(2), po.lockedForEpochs)
 	require.Equal(t, now.Unix(), po.timestamp)
-	require.Equal(t, "750", po.partyToAmount["p11"].String())
-	require.Equal(t, "2250", po.partyToAmount["p12"].String())
-	require.Equal(t, "250", po.partyToAmount["p21"].String())
-	require.Equal(t, "2250", po.partyToAmount["p22"].String())
-	require.Equal(t, "50", po.partyToAmount["p31"].String())
+	require.Equal(t, "1200", po.partyToAmount["p11"].String())
+	require.Equal(t, "1800", po.partyToAmount["p12"].String())
+	require.Equal(t, "1000", po.partyToAmount["p21"].String())
+	require.Equal(t, "1500", po.partyToAmount["p22"].String())
+	require.Equal(t, "100", po.partyToAmount["p31"].String())
 	require.Equal(t, "300", po.partyToAmount["p32"].String())
-	require.Equal(t, "150", po.partyToAmount["p33"].String())
+	require.Equal(t, "100", po.partyToAmount["p33"].String())
 	require.Equal(t, "3000", po.partyToAmount["p41"].String())
-	require.Equal(t, "600", po.partyToAmount["p51"].String())
-	require.Equal(t, "400", po.partyToAmount["p52"].String())
+	require.Equal(t, "875", po.partyToAmount["p51"].String())
+	require.Equal(t, "125", po.partyToAmount["p52"].String())
 	require.Equal(t, "10000", po.totalReward.String())
 }
