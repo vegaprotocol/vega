@@ -272,3 +272,48 @@ The pipeline exists to verify that snapshots work in a more realistic environmen
 #### How to debug a failure
 
 The snapshot pipeline jobs will store as an artefact the block-data and the snapshot it loaded from. This allows you to replay the partial chain the in same way locally and reproduce any failure. By finding the last *successful* snapshot pipeline job, those artefacts can be used to replay the partial chain from a working snapshot allowing comparison between logs to find where state started to diverge.
+
+
+### Event-diff soak tests
+
+It checks that the events sent out by core are always sent out in the same order. As the system tests are running `node2` writes out all the events it sends to a data node to a file. At the end of the test run the chain is replayed and another file containing all events is produce. These two files are then diffed. If it fails on Jenkins then you will see output that looks like the following:
+```
+[2023-10-09T15:24:45.689Z] === Starting event-file diff
+[2023-10-09T15:24:45.689Z] Differences found between: /jenkins/workspace/common/system-tests-wrapper/networkdata/testnet/vega/node2/eventlog.evt /jenkins/workspace/common/system-tests-wrapper/networkdata/testnet/vega/node2/eventlog-replay.evt
+```
+
+#### How to debug a failure
+
+The two event files that were diffed will be saved as artefacts in Jenkins, and the first step is to download them locally. From there they are be parsed into human-readable JSON by using the following vega tool,a nd then diffed:
+```
+vega tools events --out=original.out --events=eventlog.evt
+
+vega tools events --out=replay.out --events=eventlog-replay.evt
+
+diff original.out replay.out
+```
+
+Note that for events created during a full system-test run, both the parsing and diff can take some time.
+
+The diff can then be used to hunt down which block produces different events, and which event type it is. For example if the diff flagged up and event like below:
+```
+{
+   "id": "4615-75",
+   "block": "953A2BC530B192B78CA5D4228C377BF3C66FEA65F0C4AF93B0DDBE7AFDE036A7",
+   "type": 11,
+   "vote": {
+      "party_id": "7c2860d661607c3e51df31f7fae478acceb6ad0f45ef0d044b74d37cf7f78ebc",
+      "value": 2,
+      "proposal_id": "2372a4901660ace8d4e5b9e318754abdbf959454610878c13fd8f73317ebacbd",
+      "timestamp": "1696858255513756974",
+      "total_governance_token_balance": "9749958450000000000",
+      "total_governance_token_weight": "1",
+      "total_equity_like_share_weight": "0"
+   },
+   "version": 1,
+   "chain_id": "testnet-001",
+   "tx_hash": "953A2BC530B192B78CA5D4228C377BF3C66FEA65F0C4AF93B0DDBE7AFDE036A7"
+}
+```
+
+we know that it was emitted in block `4615` and was for a `vote` event. From here we can look through all calls to `events.NewVoteEvent()` in core and look for places where we may be iterating over a map, or sorting that may be insufficient, and will cause a different in event order.

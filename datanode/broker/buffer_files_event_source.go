@@ -115,7 +115,7 @@ func (e *bufferFileEventSource) sendAllRawEventsInFile(ctx context.Context, out 
 		case <-ctx.Done():
 			return nil
 		default:
-			rawEvent, _, read, err := readRawEvent(eventFile, offset)
+			rawEvent, _, read, err := ReadRawEvent(eventFile, offset)
 			if err != nil {
 				return fmt.Errorf("failed to read buffered event:%w", err)
 			}
