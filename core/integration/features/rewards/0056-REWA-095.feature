@@ -90,8 +90,8 @@ Feature: Relative return rewards
   Scenario: multiple eligible parties split the reward (0056-REWA-084,0056-REWA-085)
     # setup recurring transfer to the reward account - this will start at the  end of this epoch
     Given the parties submit the following recurring transfers:
-      | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement |
-      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_RELATIVE_RETURN | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_RELATIVE_RETURN | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | IN_A_TEAM        | 1000                | 0                    |
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | asset | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets | lock_period | window_length | distribution_strategy | entity_scope | individual_scope | staking_requirement | notional_requirement | error   |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_RELATIVE_RETURN | VEGA  | 10000  | 1           |           | 1      | DISPATCH_METRIC_RELATIVE_RETURN | ETH          |         | 2           | 2             | PRO_RATA              | INDIVIDUALS  | TEAMS            | 1000                | 0                    | invalid |
 
     Then the network moves ahead "1" epochs
 
