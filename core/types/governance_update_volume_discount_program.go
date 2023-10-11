@@ -17,7 +17,9 @@ package types
 
 import (
 	"fmt"
+	"time"
 
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
@@ -65,7 +67,7 @@ func NewUpdateVolumeDiscountProgramProposalFromProto(p *vegapb.ProposalTerms_Upd
 }
 
 type UpdateVolumeDiscountProgram struct {
-	Changes *VolumeDiscountProgram
+	Changes *VolumeDiscountProgramChanges
 }
 
 func (p UpdateVolumeDiscountProgram) IntoProto() *vegapb.UpdateVolumeDiscountProgram {
@@ -96,6 +98,93 @@ func NewUpdateVolumeDiscountProgramFromProto(p *vegapb.UpdateVolumeDiscountProgr
 	}
 
 	return &UpdateVolumeDiscountProgram{
-		Changes: NewVolumeDiscountProgramFromProto(p.Changes),
+		Changes: NewVolumeDiscountProgramChangesFromProto(p.Changes),
+	}
+}
+
+type VolumeDiscountProgramChanges struct {
+	ID                    string
+	Version               uint64
+	EndOfProgramTimestamp time.Time
+	WindowLength          uint64
+	VolumeBenefitTiers    []*VolumeBenefitTier
+}
+
+func (v VolumeDiscountProgramChanges) IntoProto() *vegapb.VolumeDiscountProgramChanges {
+	benefitTiers := make([]*vegapb.VolumeBenefitTier, 0, len(v.VolumeBenefitTiers))
+	for _, tier := range v.VolumeBenefitTiers {
+		benefitTiers = append(benefitTiers, &vegapb.VolumeBenefitTier{
+			MinimumRunningNotionalTakerVolume: tier.MinimumRunningNotionalTakerVolume.String(),
+			VolumeDiscountFactor:              tier.VolumeDiscountFactor.String(),
+		})
+	}
+
+	return &vegapb.VolumeDiscountProgramChanges{
+		BenefitTiers:          benefitTiers,
+		EndOfProgramTimestamp: v.EndOfProgramTimestamp.Unix(),
+		WindowLength:          v.WindowLength,
+	}
+}
+
+func (v VolumeDiscountProgramChanges) DeepClone() *VolumeDiscountProgramChanges {
+	benefitTiers := make([]*VolumeBenefitTier, 0, len(v.VolumeBenefitTiers))
+	for _, tier := range v.VolumeBenefitTiers {
+		benefitTiers = append(benefitTiers, &VolumeBenefitTier{
+			MinimumRunningNotionalTakerVolume: tier.MinimumRunningNotionalTakerVolume.Clone(),
+			VolumeDiscountFactor:              tier.VolumeDiscountFactor,
+		})
+	}
+
+	cpy := VolumeDiscountProgramChanges{
+		ID:                    v.ID,
+		Version:               v.Version,
+		EndOfProgramTimestamp: v.EndOfProgramTimestamp,
+		WindowLength:          v.WindowLength,
+		VolumeBenefitTiers:    benefitTiers,
+	}
+	return &cpy
+}
+
+func (c VolumeDiscountProgramChanges) String() string {
+	benefitTierStr := ""
+	for i, tier := range c.VolumeBenefitTiers {
+		if i > 1 {
+			benefitTierStr += ", "
+		}
+		benefitTierStr += fmt.Sprintf("%d(minimumRunningNotionalTakerVolume(%s), volumeDiscountFactor(%s))",
+			i,
+			tier.MinimumRunningNotionalTakerVolume.String(),
+			tier.VolumeDiscountFactor.String(),
+		)
+	}
+
+	return fmt.Sprintf(
+		"endOfProgramTimestamp(%d), windowLength(%d), benefitTiers(%s)",
+		c.EndOfProgramTimestamp.Unix(),
+		c.WindowLength,
+		benefitTierStr,
+	)
+}
+
+func NewVolumeDiscountProgramChangesFromProto(v *vegapb.VolumeDiscountProgramChanges) *VolumeDiscountProgramChanges {
+	if v == nil {
+		return &VolumeDiscountProgramChanges{}
+	}
+
+	benefitTiers := make([]*VolumeBenefitTier, 0, len(v.BenefitTiers))
+	for _, tier := range v.BenefitTiers {
+		minimumRunningVolume, _ := num.UintFromString(tier.MinimumRunningNotionalTakerVolume, 10)
+		discountFactor, _ := num.DecimalFromString(tier.VolumeDiscountFactor)
+
+		benefitTiers = append(benefitTiers, &VolumeBenefitTier{
+			MinimumRunningNotionalTakerVolume: minimumRunningVolume,
+			VolumeDiscountFactor:              discountFactor,
+		})
+	}
+
+	return &VolumeDiscountProgramChanges{
+		EndOfProgramTimestamp: time.Unix(v.EndOfProgramTimestamp, 0),
+		WindowLength:          v.WindowLength,
+		VolumeBenefitTiers:    benefitTiers,
 	}
 }

@@ -2457,8 +2457,6 @@ type ComplexityRoot struct {
 	UpdateVolumeDiscountProgram struct {
 		BenefitTiers          func(childComplexity int) int
 		EndOfProgramTimestamp func(childComplexity int) int
-		ID                    func(childComplexity int) int
-		Version               func(childComplexity int) int
 		WindowLength          func(childComplexity int) int
 	}
 
@@ -3292,8 +3290,6 @@ type UpdateSpotMarketConfigurationResolver interface {
 	LiquiditySLAParams(ctx context.Context, obj *vega.UpdateSpotMarketConfiguration) (*vega.LiquiditySLAParameters, error)
 }
 type UpdateVolumeDiscountProgramResolver interface {
-	Version(ctx context.Context, obj *vega.UpdateVolumeDiscountProgram) (int, error)
-	ID(ctx context.Context, obj *vega.UpdateVolumeDiscountProgram) (string, error)
 	BenefitTiers(ctx context.Context, obj *vega.UpdateVolumeDiscountProgram) ([]*vega.VolumeBenefitTier, error)
 	EndOfProgramTimestamp(ctx context.Context, obj *vega.UpdateVolumeDiscountProgram) (int64, error)
 	WindowLength(ctx context.Context, obj *vega.UpdateVolumeDiscountProgram) (int, error)
@@ -13465,20 +13461,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.UpdateVolumeDiscountProgram.EndOfProgramTimestamp(childComplexity), true
-
-	case "UpdateVolumeDiscountProgram.id":
-		if e.complexity.UpdateVolumeDiscountProgram.ID == nil {
-			break
-		}
-
-		return e.complexity.UpdateVolumeDiscountProgram.ID(childComplexity), true
-
-	case "UpdateVolumeDiscountProgram.version":
-		if e.complexity.UpdateVolumeDiscountProgram.Version == nil {
-			break
-		}
-
-		return e.complexity.UpdateVolumeDiscountProgram.Version(childComplexity), true
 
 	case "UpdateVolumeDiscountProgram.windowLength":
 		if e.complexity.UpdateVolumeDiscountProgram.WindowLength == nil {
@@ -84308,94 +84290,6 @@ func (ec *executionContext) fieldContext_UpdateSpotMarketConfiguration_liquidity
 	return fc, nil
 }
 
-func (ec *executionContext) _UpdateVolumeDiscountProgram_version(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateVolumeDiscountProgram) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UpdateVolumeDiscountProgram_version(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.UpdateVolumeDiscountProgram().Version(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_UpdateVolumeDiscountProgram_version(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "UpdateVolumeDiscountProgram",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _UpdateVolumeDiscountProgram_id(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateVolumeDiscountProgram) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UpdateVolumeDiscountProgram_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.UpdateVolumeDiscountProgram().ID(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_UpdateVolumeDiscountProgram_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "UpdateVolumeDiscountProgram",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _UpdateVolumeDiscountProgram_benefitTiers(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateVolumeDiscountProgram) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UpdateVolumeDiscountProgram_benefitTiers(ctx, field)
 	if err != nil {
@@ -110423,46 +110317,6 @@ func (ec *executionContext) _UpdateVolumeDiscountProgram(ctx context.Context, se
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("UpdateVolumeDiscountProgram")
-		case "version":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._UpdateVolumeDiscountProgram_version(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
-		case "id":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._UpdateVolumeDiscountProgram_id(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "benefitTiers":
 			field := field
 

@@ -1743,7 +1743,7 @@ func (e *tstEngine) newProposalForReferralProgramUpdate(partyID string, now time
 	return prop
 }
 
-func (e *tstEngine) newProposalForVolumeDiscountProgramUpdate(partyID string, now time.Time, configuration *types.VolumeDiscountProgram) types.Proposal {
+func (e *tstEngine) newProposalForVolumeDiscountProgramUpdate(partyID string, now time.Time, configuration *types.VolumeDiscountProgramChanges) types.Proposal {
 	id := e.newProposalID()
 	prop := types.Proposal{
 		ID:        id,

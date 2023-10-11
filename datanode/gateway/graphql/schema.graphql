@@ -4354,15 +4354,11 @@ type StakingTier {
 }
 
 type UpdateVolumeDiscountProgram {
-  "The current version of the volume discount program"
-  version: Int!
-  "ID of the proposal that created the discount program"
-  id: ID!
   "The benefit tiers for the program"
   benefitTiers: [VolumeBenefitTier!]!
   "The end time of the program"
   endOfProgramTimestamp: Timestamp!
-  "The window legnth to consider for the volume discount program"
+  "The window length to consider for the volume discount program"
   windowLength: Int!
 }
 
