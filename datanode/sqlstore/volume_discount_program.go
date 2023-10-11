@@ -42,15 +42,14 @@ func (rp *VolumeDiscountPrograms) AddVolumeDiscountProgram(ctx context.Context, 
 
 func (rp *VolumeDiscountPrograms) insertVolumeDiscountProgram(ctx context.Context, program *entities.VolumeDiscountProgram) error {
 	_, err := rp.Connection.Exec(ctx,
-		`INSERT INTO volume_discount_programs (id, version, benefit_tiers, end_of_program_timestamp, window_length, vega_time, ended_at, seq_num)
-    		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+		`INSERT INTO volume_discount_programs (id, version, benefit_tiers, end_of_program_timestamp, window_length, vega_time, seq_num)
+    		VALUES ($1, $2, $3, $4, $5, $6, $7)`,
 		program.ID,
 		program.Version,
 		program.BenefitTiers,
 		program.EndOfProgramTimestamp,
 		program.WindowLength,
 		program.VegaTime,
-		program.EndedAt,
 		program.SeqNum,
 	)
 	return err
@@ -61,12 +60,12 @@ func (rp *VolumeDiscountPrograms) UpdateVolumeDiscountProgram(ctx context.Contex
 	return rp.insertVolumeDiscountProgram(ctx, program)
 }
 
-func (rp *VolumeDiscountPrograms) EndVolumeDiscountProgram(ctx context.Context, version uint64, vegaTime time.Time, seqNum uint64) error {
+func (rp *VolumeDiscountPrograms) EndVolumeDiscountProgram(ctx context.Context, version uint64, endedAt time.Time, vegaTime time.Time, seqNum uint64) error {
 	defer metrics.StartSQLQuery("VolumeDiscountPrograms", "EndVolumeDiscountProgram")()
 	_, err := rp.Connection.Exec(ctx,
-		`INSERT INTO volume_discount_programs (id, version, benefit_tiers, end_of_program_timestamp, window_length, vega_time, ended_at, seq_num)
-            SELECT id, $1, benefit_tiers, end_of_program_timestamp, window_length, $2, $2, $3
-            FROM current_volume_discount_program`, version, vegaTime, seqNum,
+		`INSERT INTO volume_discount_programs (id, version, benefit_tiers, end_of_program_timestamp, window_length, ended_at, vega_time, seq_num)
+            SELECT id, $1, benefit_tiers, end_of_program_timestamp, window_length, $2, $3, $4
+            FROM current_volume_discount_program`, version, endedAt, vegaTime, seqNum,
 	)
 
 	return err

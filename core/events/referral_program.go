@@ -17,6 +17,7 @@ package events
 
 import (
 	"context"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -36,11 +37,13 @@ func (t ReferralProgramStarted) StreamMessage() *eventspb.BusEvent {
 	return busEvent
 }
 
-func NewReferralProgramStartedEvent(ctx context.Context, p *types.ReferralProgram) *ReferralProgramStarted {
+func NewReferralProgramStartedEvent(ctx context.Context, p *types.ReferralProgram, epochTime time.Time, epoch uint64) *ReferralProgramStarted {
 	return &ReferralProgramStarted{
 		Base: newBase(ctx, ReferralProgramStartedEvent),
 		e: eventspb.ReferralProgramStarted{
-			Program: p.IntoProto(),
+			Program:   p.IntoProto(),
+			StartedAt: epochTime.UnixNano(),
+			AtEpoch:   epoch,
 		},
 	}
 }
@@ -74,11 +77,13 @@ func (r ReferralProgramUpdated) GetReferralProgramUpdated() *eventspb.ReferralPr
 	return &r.e
 }
 
-func NewReferralProgramUpdatedEvent(ctx context.Context, p *types.ReferralProgram) *ReferralProgramUpdated {
+func NewReferralProgramUpdatedEvent(ctx context.Context, p *types.ReferralProgram, epochTime time.Time, epoch uint64) *ReferralProgramUpdated {
 	return &ReferralProgramUpdated{
 		Base: newBase(ctx, ReferralProgramUpdatedEvent),
 		e: eventspb.ReferralProgramUpdated{
-			Program: p.IntoProto(),
+			Program:   p.IntoProto(),
+			UpdatedAt: epochTime.UnixNano(),
+			AtEpoch:   epoch,
 		},
 	}
 }
@@ -108,12 +113,14 @@ func (t ReferralProgramEnded) GetReferralProgramEnded() *eventspb.ReferralProgra
 	return &t.e
 }
 
-func NewReferralProgramEndedEvent(ctx context.Context, version uint64, id string) *ReferralProgramEnded {
+func NewReferralProgramEndedEvent(ctx context.Context, version uint64, id string, epochTime time.Time, epoch uint64) *ReferralProgramEnded {
 	return &ReferralProgramEnded{
 		Base: newBase(ctx, ReferralProgramEndedEvent),
 		e: eventspb.ReferralProgramEnded{
 			Version: version,
 			Id:      id,
+			EndedAt: epochTime.UnixNano(),
+			AtEpoch: epoch,
 		},
 	}
 }
