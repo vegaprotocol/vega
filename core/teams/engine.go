@@ -358,8 +358,6 @@ func NewEngine(epochEngine EpochEngine, broker Broker, timeSvc TimeService) *Eng
 		teamSwitches:   map[types.PartyID]teamSwitch{},
 	}
 
-	epochEngine.NotifyOnEpoch(engine.OnEpoch, engine.OnEpochRestore)
-
 	return engine
 }
 
