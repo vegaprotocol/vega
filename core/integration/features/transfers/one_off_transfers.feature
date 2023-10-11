@@ -96,7 +96,7 @@ Scenario: payout time in the past - should be executed immediately
     Then "f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c" should have general account balance of "9985000" for asset "VEGA"
     Then "a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4" should have general account balance of "2500" for asset "VEGA"
 
-Scenario: Transfer from general account to reward account (0057-TRAN-002, 0057-TRAN-007)
+Scenario: Transfer from general account to reward account (0057-TRAN-002, 0057-TRAN-007, 0013-ACCT-028)
     Given the parties submit the following one off transfers:
     | id | from   |  from_account_type    |   to   |   to_account_type                       | asset | amount | delivery_time         |
     | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL |    0000000000000000000000000000000000000000000000000000000000000000   | ACCOUNT_TYPE_GLOBAL_REWARD              | VEGA  |  10000 | 2021-08-25T00:00:00Z  |
