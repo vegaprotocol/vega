@@ -52,6 +52,8 @@ type MarketLiquidity struct {
 	marketActivityTracker *MarketActivityTracker
 	fee                   *fee.Engine
 
+	allocatedFeesStats *types.LiquidityFeeStats
+
 	marketType marketType
 	marketID   string
 	asset      string
@@ -94,6 +96,7 @@ func NewMarketLiquidity(
 		asset:                 asset,
 		priceFactor:           priceFactor,
 		priceRange:            priceRange,
+		allocatedFeesStats:    types.NewLiquidityFeeStats(),
 	}
 
 	return ml
@@ -299,6 +302,7 @@ func (m *MarketLiquidity) OnEpochStart(
 	positionFactor num.Decimal,
 ) {
 	m.liquidityEngine.ResetSLAEpoch(now, markPrice, midPrice, positionFactor)
+	m.allocatedFeesStats.Reset()
 
 	appliedProvisions := m.applyPendingProvisions(ctx, now, targetStake)
 	m.syncPartyCommitmentWithBondAccount(ctx, appliedProvisions)
@@ -306,6 +310,9 @@ func (m *MarketLiquidity) OnEpochStart(
 
 func (m *MarketLiquidity) OnEpochEnd(ctx context.Context, t time.Time) {
 	m.calculateAndDistribute(ctx, t)
+
+	// report liquidity fees allocation stats
+	m.broker.Send(events.NewLiquidityFeeStatsEvent(ctx, m.allocatedFeesStats.ToProto(m.marketID, m.asset)))
 }
 
 func (m *MarketLiquidity) OnMarketClosed(ctx context.Context, t time.Time) {

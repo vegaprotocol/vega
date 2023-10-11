@@ -190,6 +190,8 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.FeesStatsEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PAYMENTS:
 		return events.FundingPaymentEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_FEE_STATS_UPDATED:
+		return events.LiquidityFeeStatsEventFromStream(ctx, be)
 	}
 
 	return nil

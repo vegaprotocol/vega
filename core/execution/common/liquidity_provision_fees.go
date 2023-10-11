@@ -95,6 +95,8 @@ func (m *MarketLiquidity) AllocateFees(ctx context.Context) error {
 	}
 
 	if len(ledgerMovements) > 0 {
+		m.allocatedFeesStats.RegisterTotalFeesAmountPerParty(feeTransfer.TotalFeesAmountPerParty())
+
 		m.broker.Send(events.NewLedgerMovements(ctx, ledgerMovements))
 	}
 
