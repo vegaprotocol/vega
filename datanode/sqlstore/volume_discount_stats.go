@@ -67,6 +67,8 @@ func (s *VolumeDiscountStats) Stats(ctx context.Context, atEpoch *uint64, partyI
 	)
 
 	filters := []string{}
+	filters = append(filters, "jsonb_typeof(parties_volume_discount_stats) != 'null'")
+
 	if atEpoch != nil {
 		filters = append(filters, fmt.Sprintf("at_epoch = %s", nextBindVar(&args, atEpoch)))
 	}
