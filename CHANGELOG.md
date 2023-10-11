@@ -296,6 +296,7 @@
 - [9731](https://github.com/vegaprotocol/vega/issues/9731) - Allow team rewards to apply to all teams.
 - [9727](https://github.com/vegaprotocol/vega/issues/9727) - Initialize teams earlier to avoid panic.
 - [9541](https://github.com/vegaprotocol/vega/issues/9731) - Add filtering for party to the referral fees API.
+- [9751](https://github.com/vegaprotocol/vega/issues/9751) - Make sure that LP fee party accounts exists.
 
 ## 0.72.1
 
