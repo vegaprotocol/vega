@@ -1673,7 +1673,7 @@ func (r *myQueryResolver) ReferralSetReferees(ctx context.Context, id, referrer,
 	return resp.ReferralSetReferees, nil
 }
 
-func (r *myQueryResolver) ReferralSetStats(ctx context.Context, setID string, epoch *int, partyID *string, pagination *v2.Pagination) (*v2.ReferralSetStatsConnection, error) {
+func (r *myQueryResolver) ReferralSetStats(ctx context.Context, setID *string, epoch *int, partyID *string, pagination *v2.Pagination) (*v2.ReferralSetStatsConnection, error) {
 	var epochU64Ptr *uint64
 	if epoch != nil {
 		epochU64 := uint64(*epoch)

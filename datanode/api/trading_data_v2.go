@@ -4256,7 +4256,10 @@ func (t *TradingDataServiceV2) GetReferralSetStats(ctx context.Context, req *v2.
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	setID := entities.ReferralSetID(req.ReferralSetId)
+	var setID *entities.ReferralSetID
+	if req.ReferralSetId != nil {
+		setID = ptr.From(entities.ReferralSetID(*req.ReferralSetId))
+	}
 
 	var referee *entities.PartyID
 	if req.Referee != nil {

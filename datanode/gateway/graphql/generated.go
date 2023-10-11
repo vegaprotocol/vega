@@ -1830,7 +1830,7 @@ type ComplexityRoot struct {
 		ProtocolUpgradeStatus              func(childComplexity int) int
 		ReferralFeeStats                   func(childComplexity int, marketID *string, assetID *string, epoch *int, referrer *string, referee *string) int
 		ReferralSetReferees                func(childComplexity int, id *string, referrer *string, referee *string, pagination *v2.Pagination) int
-		ReferralSetStats                   func(childComplexity int, id string, epoch *int, partyID *string, pagination *v2.Pagination) int
+		ReferralSetStats                   func(childComplexity int, setID *string, epoch *int, partyID *string, pagination *v2.Pagination) int
 		ReferralSets                       func(childComplexity int, id *string, referrer *string, referee *string, pagination *v2.Pagination) int
 		Statistics                         func(childComplexity int) int
 		StopOrder                          func(childComplexity int, id string) int
@@ -3071,7 +3071,7 @@ type QueryResolver interface {
 	ReferralSets(ctx context.Context, id *string, referrer *string, referee *string, pagination *v2.Pagination) (*v2.ReferralSetConnection, error)
 	ReferralFeeStats(ctx context.Context, marketID *string, assetID *string, epoch *int, referrer *string, referee *string) (*v1.FeeStats, error)
 	ReferralSetReferees(ctx context.Context, id *string, referrer *string, referee *string, pagination *v2.Pagination) (*v2.ReferralSetRefereeConnection, error)
-	ReferralSetStats(ctx context.Context, id string, epoch *int, partyID *string, pagination *v2.Pagination) (*v2.ReferralSetStatsConnection, error)
+	ReferralSetStats(ctx context.Context, setID *string, epoch *int, partyID *string, pagination *v2.Pagination) (*v2.ReferralSetStatsConnection, error)
 	Statistics(ctx context.Context) (*v12.Statistics, error)
 	StopOrder(ctx context.Context, id string) (*v1.StopOrderEvent, error)
 	StopOrders(ctx context.Context, filter *v2.StopOrderFilter, pagination *v2.Pagination) (*v2.StopOrderConnection, error)
@@ -10802,7 +10802,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.ReferralSetStats(childComplexity, args["id"].(string), args["epoch"].(*int), args["partyId"].(*string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Query.ReferralSetStats(childComplexity, args["setId"].(*string), args["epoch"].(*int), args["partyId"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.referralSets":
 		if e.complexity.Query.ReferralSets == nil {
@@ -15875,15 +15875,15 @@ func (ec *executionContext) field_Query_referralSetReferees_args(ctx context.Con
 func (ec *executionContext) field_Query_referralSetStats_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+	var arg0 *string
+	if tmp, ok := rawArgs["setId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("setId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["id"] = arg0
+	args["setId"] = arg0
 	var arg1 *int
 	if tmp, ok := rawArgs["epoch"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("epoch"))
@@ -66162,7 +66162,7 @@ func (ec *executionContext) _Query_referralSetStats(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ReferralSetStats(rctx, fc.Args["id"].(string), fc.Args["epoch"].(*int), fc.Args["partyId"].(*string), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Query().ReferralSetStats(rctx, fc.Args["setId"].(*string), fc.Args["epoch"].(*int), fc.Args["partyId"].(*string), fc.Args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
