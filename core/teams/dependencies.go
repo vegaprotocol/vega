@@ -21,7 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/teams EpochEngine,Broker,TimeService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/teams Broker,TimeService
 
 // Broker is used to notify administrative actions on teams and members.
 type Broker interface {
