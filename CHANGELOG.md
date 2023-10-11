@@ -298,6 +298,7 @@
 - [9746](https://github.com/vegaprotocol/vega/issues/9746) - Fix handling of LP fees reward 
 - [9747](https://github.com/vegaprotocol/vega/issues/9747) - Return correct destination type
 - [9541](https://github.com/vegaprotocol/vega/issues/9731) - Add filtering for party to the referral fees API.
+- [9751](https://github.com/vegaprotocol/vega/issues/9751) - Make sure that LP fee party accounts exists.
 
 ## 0.72.1
 
