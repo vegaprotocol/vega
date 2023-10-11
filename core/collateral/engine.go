@@ -938,7 +938,7 @@ func (e *Engine) transferFees(ctx context.Context, marketID string, assetID stri
 	responses := make([]*types.LedgerMovement, 0, len(transfers))
 
 	for _, transfer := range transfers {
-		req, err := e.getFeeTransferRequest(
+		req, err := e.getFeeTransferRequest(ctx,
 			transfer, makerFee, infraFee, liquiFee, marketID, assetID)
 		if err != nil {
 			e.log.Error("Failed to build transfer request for event",
@@ -2001,6 +2001,7 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 }
 
 func (e *Engine) getFeeTransferRequest(
+	ctx context.Context,
 	t *types.Transfer,
 	makerFee, infraFee, liquiFee *types.Account,
 	marketID, assetID string,
@@ -2021,11 +2022,11 @@ func (e *Engine) getFeeTransferRequest(
 	}
 
 	partyLiquidityFeeAccount := func() (*types.Account, error) {
-		return getAccount(marketID, t.Owner, types.AccountTypeLPLiquidityFees)
+		return e.GetOrCreatePartyLiquidityFeeAccount(ctx, t.Owner, marketID, assetID)
 	}
 
 	bonusDistributionAccount := func() (*types.Account, error) {
-		return getAccount(marketID, systemOwner, types.AccountTypeLiquidityFeesBonusDistribution)
+		return e.GetOrCreateLiquidityFeesBonusDistributionAccount(ctx, marketID, assetID)
 	}
 
 	marginAccount := func() (*types.Account, error) {
