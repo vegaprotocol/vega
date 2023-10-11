@@ -172,7 +172,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.stakingAccount = stubs.NewStakingAccountStub()
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.stakingAccount.OnEpochEvent, execsetup.stakingAccount.OnEpochRestore)
 
-	execsetup.teamsEngine = teams.NewEngine(execsetup.epochEngine, execsetup.broker, execsetup.timeService)
+	execsetup.teamsEngine = teams.NewEngine(execsetup.broker, execsetup.timeService)
 
 	execsetup.stateVarEngine = stubs.NewStateVar()
 	marketActivityTracker := common.NewMarketActivityTracker(execsetup.log, execsetup.epochEngine, execsetup.teamsEngine, execsetup.stakingAccount)
