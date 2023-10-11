@@ -847,6 +847,10 @@ type Query {
     assetId: ID
     "Optional epoch to filter for. If omitted, the most recent epoch's data is returned."
     epoch: Int
+    "Optional referrer party ID to filter for"
+    referrer: ID
+    "Optional referee party ID to filter for"
+    referee: ID
   ): ReferralSetFeeStats
 
   referralSetReferees(
@@ -6271,4 +6275,3 @@ type VolumeDiscountStats {
   "Party's running volume."
   runningVolume: String!
 }
-
