@@ -349,4 +349,5 @@ type AccountBalanceChecker interface {
 type Teams interface {
 	GetTeamMembers(team string, minEpochsInTeam uint64) []string
 	GetAllPartiesInTeams(minEpochsInTeam uint64) []string
+	GetAllTeamsWithParties(minEpochsInTeam uint64) map[string][]string
 }

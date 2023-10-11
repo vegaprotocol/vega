@@ -553,9 +553,14 @@ func (mat *MarketActivityTracker) CalculateMetricForIndividuals(ds *vega.Dispatc
 
 // CalculateMetricForTeams calculates the metric for teams and their respective team members for markets in scope of the dispatch strategy.
 func (mat *MarketActivityTracker) CalculateMetricForTeams(ds *vega.DispatchStrategy) ([]*types.PartyContributionScore, map[string][]*types.PartyContributionScore) {
-	teamMembers := make(map[string][]string, len(ds.TeamScope))
-	for _, team := range ds.TeamScope {
-		teamMembers[team] = mat.teams.GetTeamMembers(team, mat.minEpochsInTeamForRewardEligibility)
+	var teamMembers map[string][]string
+	if tsl := len(ds.TeamScope); tsl > 0 {
+		teamMembers = make(map[string][]string, len(ds.TeamScope))
+		for _, team := range ds.TeamScope {
+			teamMembers[team] = mat.teams.GetTeamMembers(team, mat.minEpochsInTeamForRewardEligibility)
+		}
+	} else {
+		teamMembers = mat.teams.GetAllTeamsWithParties(mat.minEpochsInTeamForRewardEligibility)
 	}
 	stakingRequirement, _ := num.UintFromString(ds.StakingRequirement, 10)
 	notionalRequirement, _ := num.UintFromString(ds.NotionalTimeWeightedAveragePositionRequirement, 10)

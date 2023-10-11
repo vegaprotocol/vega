@@ -2408,6 +2408,20 @@ func (mr *MockTeamsMockRecorder) GetAllPartiesInTeams(arg0 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPartiesInTeams", reflect.TypeOf((*MockTeams)(nil).GetAllPartiesInTeams), arg0)
 }
 
+// GetAllTeamsWithParties mocks base method.
+func (m *MockTeams) GetAllTeamsWithParties(arg0 uint64) map[string][]string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllTeamsWithParties", arg0)
+	ret0, _ := ret[0].(map[string][]string)
+	return ret0
+}
+
+// GetAllTeamsWithParties indicates an expected call of GetAllTeamsWithParties.
+func (mr *MockTeamsMockRecorder) GetAllTeamsWithParties(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllTeamsWithParties", reflect.TypeOf((*MockTeams)(nil).GetAllTeamsWithParties), arg0)
+}
+
 // GetTeamMembers mocks base method.
 func (m *MockTeams) GetTeamMembers(arg0 string, arg1 uint64) []string {
 	m.ctrl.T.Helper()
