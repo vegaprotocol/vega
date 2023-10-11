@@ -94,9 +94,9 @@ func (m *MarketLiquidity) AllocateFees(ctx context.Context) error {
 		return fmt.Errorf("failed to transfer fees: %w", err)
 	}
 
-	if len(ledgerMovements) > 0 {
-		m.allocatedFeesStats.RegisterTotalFeesAmountPerParty(feeTransfer.TotalFeesAmountPerParty())
+	m.liquidityEngine.RegisterAllocatedFeesPerParty(feeTransfer.TotalFeesAmountPerParty())
 
+	if len(ledgerMovements) > 0 {
 		m.broker.Send(events.NewLedgerMovements(ctx, ledgerMovements))
 	}
 

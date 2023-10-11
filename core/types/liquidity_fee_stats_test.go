@@ -55,7 +55,7 @@ func TestLiquidityFeeStats(t *testing.T) {
 	require.Equal(t, expectedAmountsPerParty, statsProto.FeesPaidPerParty)
 	require.Equal(t, "19", statsProto.TotalFeesPaid)
 
-	stats.Reset()
+	stats = NewLiquidityFeeStats()
 
 	statsProto = stats.ToProto(market, asset)
 	require.Equal(t, []*v1.PartyAmount{}, statsProto.FeesPaidPerParty)

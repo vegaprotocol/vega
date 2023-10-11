@@ -60,11 +60,6 @@ func (f *LiquidityFeeStats) RegisterTotalFeesAmountPerParty(totalFeesAmountPerPa
 	}
 }
 
-func (f *LiquidityFeeStats) Reset() {
-	f.TotalFeesPaid = num.UintZero()
-	f.FeesPaidPerParty = map[string]*num.Uint{}
-}
-
 func (f *LiquidityFeeStats) ToProto(marketID, asset string) *eventspb.LiquidityFeeStats {
 	fs := &eventspb.LiquidityFeeStats{
 		Market:           marketID,

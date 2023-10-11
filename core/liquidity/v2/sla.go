@@ -38,7 +38,9 @@ func (e *Engine) ResetSLAEpoch(
 	midPrice *num.Uint,
 	positionFactor num.Decimal,
 ) {
+	e.allocatedFeesStats = types.NewLiquidityFeeStats()
 	e.slaEpochStart = now
+
 	if e.auctionState.IsOpeningAuction() {
 		return
 	}
@@ -290,4 +292,12 @@ func (e *Engine) LiquidityProviderSLAStats(now time.Time) []*types.LiquidityProv
 	})
 
 	return stats
+}
+
+func (e *Engine) RegisterAllocatedFeesPerParty(feesPerParty map[string]*num.Uint) {
+	e.allocatedFeesStats.RegisterTotalFeesAmountPerParty(feesPerParty)
+}
+
+func (e *Engine) LiquidityFeeStats() *types.LiquidityFeeStats {
+	return e.allocatedFeesStats
 }

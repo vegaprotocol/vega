@@ -1621,6 +1621,20 @@ func (mr *MockLiquidityEngineMockRecorder) IsProbabilityOfTradingInitialised() *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsProbabilityOfTradingInitialised", reflect.TypeOf((*MockLiquidityEngine)(nil).IsProbabilityOfTradingInitialised))
 }
 
+// LiquidityFeeStats mocks base method.
+func (m *MockLiquidityEngine) LiquidityFeeStats() *types.LiquidityFeeStats {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LiquidityFeeStats")
+	ret0, _ := ret[0].(*types.LiquidityFeeStats)
+	return ret0
+}
+
+// LiquidityFeeStats indicates an expected call of LiquidityFeeStats.
+func (mr *MockLiquidityEngineMockRecorder) LiquidityFeeStats() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LiquidityFeeStats", reflect.TypeOf((*MockLiquidityEngine)(nil).LiquidityFeeStats))
+}
+
 // LiquidityProviderSLAStats mocks base method.
 func (m *MockLiquidityEngine) LiquidityProviderSLAStats(arg0 time.Time) []*vega.LiquidityProviderSLA {
 	m.ctrl.T.Helper()
@@ -1799,6 +1813,18 @@ func (m *MockLiquidityEngine) ReadyForFeesAllocation(arg0 time.Time) bool {
 func (mr *MockLiquidityEngineMockRecorder) ReadyForFeesAllocation(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadyForFeesAllocation", reflect.TypeOf((*MockLiquidityEngine)(nil).ReadyForFeesAllocation), arg0)
+}
+
+// RegisterAllocatedFeesPerParty mocks base method.
+func (m *MockLiquidityEngine) RegisterAllocatedFeesPerParty(arg0 map[string]*num.Uint) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RegisterAllocatedFeesPerParty", arg0)
+}
+
+// RegisterAllocatedFeesPerParty indicates an expected call of RegisterAllocatedFeesPerParty.
+func (mr *MockLiquidityEngineMockRecorder) RegisterAllocatedFeesPerParty(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterAllocatedFeesPerParty", reflect.TypeOf((*MockLiquidityEngine)(nil).RegisterAllocatedFeesPerParty), arg0)
 }
 
 // RejectLiquidityProvision mocks base method.
