@@ -18,10 +18,11 @@ package commands_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"code.vegaprotocol.io/vega/commands"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestCheckProposalSubmissionForReferralProgramUpdate(t *testing.T) {
@@ -79,7 +80,7 @@ func testSubmissionForReferralProgramUpdateWithoutEndOfProgramFails(t *testing.T
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						EndOfProgramTimestamp: 0,
 					},
 				},
@@ -95,7 +96,7 @@ func testSubmissionForReferralProgramUpdateWithNegativeEndOfProgramFails(t *test
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						EndOfProgramTimestamp: -1,
 					},
 				},
@@ -112,7 +113,7 @@ func testSubmissionForReferralProgramUpdateWithEndOfProgramBeforeEnactmentFails(
 			EnactmentTimestamp: 10,
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						EndOfProgramTimestamp: 5,
 					},
 				},
@@ -128,7 +129,7 @@ func testSubmissionForReferralProgramUpdateWithoutWindowLengthFails(t *testing.T
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						WindowLength: 0,
 					},
 				},
@@ -144,7 +145,7 @@ func testSubmissionForReferralProgramUpdateWithWindowLengthOverLimitFails(t *tes
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						WindowLength: 101,
 					},
 				},
@@ -160,7 +161,7 @@ func testSubmissionForReferralProgramUpdateWithoutTierMinimumRunningNotionalTake
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						BenefitTiers: []*types.BenefitTier{
 							{
 								MinimumRunningNotionalTakerVolume: "",
@@ -183,7 +184,7 @@ func testSubmissionForReferralProgramUpdateWithBadFormatForTierMinimumRunningNot
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						BenefitTiers: []*types.BenefitTier{
 							{
 								MinimumRunningNotionalTakerVolume: "qbc",
@@ -206,7 +207,7 @@ func testSubmissionForReferralProgramUpdateWithBadValueForTierMinimumRunningNoti
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						BenefitTiers: []*types.BenefitTier{
 							{
 								MinimumRunningNotionalTakerVolume: "0",
@@ -229,7 +230,7 @@ func testSubmissionForReferralProgramUpdateWithoutTierMinimumEpochsFails(t *test
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						BenefitTiers: []*types.BenefitTier{
 							{
 								MinimumEpochs: "",
@@ -252,7 +253,7 @@ func testSubmissionForReferralProgramUpdateWithBadFormatForTierMinimumEpochsFail
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						BenefitTiers: []*types.BenefitTier{
 							{
 								MinimumEpochs: "qbc",
@@ -275,7 +276,7 @@ func testSubmissionForReferralProgramUpdateWithBadValueForTierMinimumEpochsFails
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						BenefitTiers: []*types.BenefitTier{
 							{
 								MinimumEpochs: "0",
@@ -298,7 +299,7 @@ func testSubmissionForReferralProgramUpdateWithoutTierReferralRewardFactorFails(
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						BenefitTiers: []*types.BenefitTier{
 							{
 								ReferralRewardFactor: "",
@@ -321,7 +322,7 @@ func testSubmissionForReferralProgramUpdateWithBadFormatForTierReferralRewardFac
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						BenefitTiers: []*types.BenefitTier{
 							{
 								ReferralRewardFactor: "qbc",
@@ -344,7 +345,7 @@ func testSubmissionForReferralProgramUpdateWithBadValueForTierReferralRewardFact
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						BenefitTiers: []*types.BenefitTier{
 							{
 								ReferralRewardFactor: "-10",
@@ -367,7 +368,7 @@ func testSubmissionForReferralProgramUpdateWithoutTierReferralDiscountFactorFail
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						BenefitTiers: []*types.BenefitTier{
 							{
 								ReferralDiscountFactor: "",
@@ -390,7 +391,7 @@ func testSubmissionForReferralProgramUpdateWithBadFormatForTierReferralDiscountF
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						BenefitTiers: []*types.BenefitTier{
 							{
 								ReferralDiscountFactor: "qbc",
@@ -413,7 +414,7 @@ func testSubmissionForReferralProgramUpdateWithBadValueForTierReferralDiscountFa
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						BenefitTiers: []*types.BenefitTier{
 							{
 								ReferralDiscountFactor: "-10",
@@ -436,7 +437,7 @@ func testSubmissionForReferralProgramUpdateWithoutStakingTierMinimumStakedTokens
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						StakingTiers: []*types.StakingTier{
 							{
 								MinimumStakedTokens: "",
@@ -459,7 +460,7 @@ func testSubmissionForReferralProgramUpdateWithBadFormatForStakingTierMinimumSta
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						StakingTiers: []*types.StakingTier{
 							{
 								MinimumStakedTokens: "qbc",
@@ -482,7 +483,7 @@ func testSubmissionForReferralProgramUpdateWithBadValueForStakingTierMinimumStak
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						StakingTiers: []*types.StakingTier{
 							{
 								MinimumStakedTokens: "-100",
@@ -505,7 +506,7 @@ func testSubmissionForReferralProgramUpdateWithoutStakingTierReferralRewardMulti
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						StakingTiers: []*types.StakingTier{
 							{
 								ReferralRewardMultiplier: "",
@@ -528,7 +529,7 @@ func testSubmissionForReferralProgramUpdateWithBadFormatForStakingTierReferralRe
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						StakingTiers: []*types.StakingTier{
 							{
 								ReferralRewardMultiplier: "qbc",
@@ -551,7 +552,7 @@ func testSubmissionForReferralProgramUpdateWithBadValueForStakingTierReferralRew
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateReferralProgram{
 				UpdateReferralProgram: &types.UpdateReferralProgram{
-					Changes: &types.ReferralProgram{
+					Changes: &types.ReferralProgramChanges{
 						StakingTiers: []*types.StakingTier{
 							{
 								ReferralRewardMultiplier: "-0.1",

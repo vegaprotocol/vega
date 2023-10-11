@@ -24,6 +24,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/assets/builtin"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
@@ -41,9 +45,6 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var errNoBalanceForParty = errors.New("no balance for party")
@@ -1718,7 +1719,7 @@ func (e *tstEngine) newProposalForMarketUpdate(marketID, partyID string, now tim
 	return prop
 }
 
-func (e *tstEngine) newProposalForReferralProgramUpdate(partyID string, now time.Time, configuration *types.ReferralProgram) types.Proposal {
+func (e *tstEngine) newProposalForReferralProgramUpdate(partyID string, now time.Time, configuration *types.ReferralProgramChanges) types.Proposal {
 	id := e.newProposalID()
 	prop := types.Proposal{
 		ID:        id,
@@ -1742,7 +1743,7 @@ func (e *tstEngine) newProposalForReferralProgramUpdate(partyID string, now time
 	return prop
 }
 
-func (e *tstEngine) newProposalForVolumeDiscountProgramUpdate(partyID string, now time.Time, configuration *types.VolumeDiscountProgram) types.Proposal {
+func (e *tstEngine) newProposalForVolumeDiscountProgramUpdate(partyID string, now time.Time, configuration *types.VolumeDiscountProgramChanges) types.Proposal {
 	id := e.newProposalID()
 	prop := types.Proposal{
 		ID:        id,

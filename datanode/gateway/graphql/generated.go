@@ -151,6 +151,7 @@ type ResolverRoot interface {
 	UpdateMarketConfiguration() UpdateMarketConfigurationResolver
 	UpdateMarketState() UpdateMarketStateResolver
 	UpdateNetworkParameter() UpdateNetworkParameterResolver
+	UpdateReferralProgram() UpdateReferralProgramResolver
 	UpdateSpotMarket() UpdateSpotMarketResolver
 	UpdateSpotMarketConfiguration() UpdateSpotMarketConfigurationResolver
 	UpdateVolumeDiscountProgram() UpdateVolumeDiscountProgramResolver
@@ -2434,7 +2435,10 @@ type ComplexityRoot struct {
 	}
 
 	UpdateReferralProgram struct {
-		Changes func(childComplexity int) int
+		BenefitTiers          func(childComplexity int) int
+		EndOfProgramTimestamp func(childComplexity int) int
+		StakingTiers          func(childComplexity int) int
+		WindowLength          func(childComplexity int) int
 	}
 
 	UpdateSpotMarket struct {
@@ -2453,8 +2457,6 @@ type ComplexityRoot struct {
 	UpdateVolumeDiscountProgram struct {
 		BenefitTiers          func(childComplexity int) int
 		EndOfProgramTimestamp func(childComplexity int) int
-		ID                    func(childComplexity int) int
-		Version               func(childComplexity int) int
 		WindowLength          func(childComplexity int) int
 	}
 
@@ -3272,6 +3274,12 @@ type UpdateMarketStateResolver interface {
 type UpdateNetworkParameterResolver interface {
 	NetworkParameter(ctx context.Context, obj *vega.UpdateNetworkParameter) (*vega.NetworkParameter, error)
 }
+type UpdateReferralProgramResolver interface {
+	BenefitTiers(ctx context.Context, obj *vega.UpdateReferralProgram) ([]*vega.BenefitTier, error)
+	EndOfProgramTimestamp(ctx context.Context, obj *vega.UpdateReferralProgram) (string, error)
+	WindowLength(ctx context.Context, obj *vega.UpdateReferralProgram) (int, error)
+	StakingTiers(ctx context.Context, obj *vega.UpdateReferralProgram) ([]*vega.StakingTier, error)
+}
 type UpdateSpotMarketResolver interface {
 	UpdateSpotMarketConfiguration(ctx context.Context, obj *vega.UpdateSpotMarket) (*vega.UpdateSpotMarketConfiguration, error)
 }
@@ -3282,8 +3290,6 @@ type UpdateSpotMarketConfigurationResolver interface {
 	LiquiditySLAParams(ctx context.Context, obj *vega.UpdateSpotMarketConfiguration) (*vega.LiquiditySLAParameters, error)
 }
 type UpdateVolumeDiscountProgramResolver interface {
-	Version(ctx context.Context, obj *vega.UpdateVolumeDiscountProgram) (int, error)
-	ID(ctx context.Context, obj *vega.UpdateVolumeDiscountProgram) (string, error)
 	BenefitTiers(ctx context.Context, obj *vega.UpdateVolumeDiscountProgram) ([]*vega.VolumeBenefitTier, error)
 	EndOfProgramTimestamp(ctx context.Context, obj *vega.UpdateVolumeDiscountProgram) (int64, error)
 	WindowLength(ctx context.Context, obj *vega.UpdateVolumeDiscountProgram) (int, error)
@@ -13365,12 +13371,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UpdatePerpetualProduct.QuoteName(childComplexity), true
 
-	case "UpdateReferralProgram.changes":
-		if e.complexity.UpdateReferralProgram.Changes == nil {
+	case "UpdateReferralProgram.benefitTiers":
+		if e.complexity.UpdateReferralProgram.BenefitTiers == nil {
 			break
 		}
 
-		return e.complexity.UpdateReferralProgram.Changes(childComplexity), true
+		return e.complexity.UpdateReferralProgram.BenefitTiers(childComplexity), true
+
+	case "UpdateReferralProgram.endOfProgramTimestamp":
+		if e.complexity.UpdateReferralProgram.EndOfProgramTimestamp == nil {
+			break
+		}
+
+		return e.complexity.UpdateReferralProgram.EndOfProgramTimestamp(childComplexity), true
+
+	case "UpdateReferralProgram.stakingTiers":
+		if e.complexity.UpdateReferralProgram.StakingTiers == nil {
+			break
+		}
+
+		return e.complexity.UpdateReferralProgram.StakingTiers(childComplexity), true
+
+	case "UpdateReferralProgram.windowLength":
+		if e.complexity.UpdateReferralProgram.WindowLength == nil {
+			break
+		}
+
+		return e.complexity.UpdateReferralProgram.WindowLength(childComplexity), true
 
 	case "UpdateSpotMarket.marketId":
 		if e.complexity.UpdateSpotMarket.MarketId == nil {
@@ -13434,20 +13461,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.UpdateVolumeDiscountProgram.EndOfProgramTimestamp(childComplexity), true
-
-	case "UpdateVolumeDiscountProgram.id":
-		if e.complexity.UpdateVolumeDiscountProgram.ID == nil {
-			break
-		}
-
-		return e.complexity.UpdateVolumeDiscountProgram.ID(childComplexity), true
-
-	case "UpdateVolumeDiscountProgram.version":
-		if e.complexity.UpdateVolumeDiscountProgram.Version == nil {
-			break
-		}
-
-		return e.complexity.UpdateVolumeDiscountProgram.Version(childComplexity), true
 
 	case "UpdateVolumeDiscountProgram.windowLength":
 		if e.complexity.UpdateVolumeDiscountProgram.WindowLength == nil {
@@ -83745,8 +83758,8 @@ func (ec *executionContext) fieldContext_UpdatePerpetualProduct_dataSourceSpecBi
 	return fc, nil
 }
 
-func (ec *executionContext) _UpdateReferralProgram_changes(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateReferralProgram) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UpdateReferralProgram_changes(ctx, field)
+func (ec *executionContext) _UpdateReferralProgram_benefitTiers(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateReferralProgram) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdateReferralProgram_benefitTiers(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -83759,7 +83772,7 @@ func (ec *executionContext) _UpdateReferralProgram_changes(ctx context.Context, 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Changes, nil
+		return ec.resolvers.UpdateReferralProgram().BenefitTiers(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -83771,33 +83784,167 @@ func (ec *executionContext) _UpdateReferralProgram_changes(ctx context.Context, 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*vega.ReferralProgram)
+	res := resTmp.([]*vega.BenefitTier)
 	fc.Result = res
-	return ec.marshalNReferralProgram2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReferralProgram(ctx, field.Selections, res)
+	return ec.marshalNBenefitTier2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐBenefitTierᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_UpdateReferralProgram_changes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UpdateReferralProgram_benefitTiers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "UpdateReferralProgram",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_ReferralProgram_id(ctx, field)
-			case "version":
-				return ec.fieldContext_ReferralProgram_version(ctx, field)
-			case "benefitTiers":
-				return ec.fieldContext_ReferralProgram_benefitTiers(ctx, field)
-			case "endOfProgramTimestamp":
-				return ec.fieldContext_ReferralProgram_endOfProgramTimestamp(ctx, field)
-			case "windowLength":
-				return ec.fieldContext_ReferralProgram_windowLength(ctx, field)
-			case "stakingTiers":
-				return ec.fieldContext_ReferralProgram_stakingTiers(ctx, field)
+			case "minimumEpochs":
+				return ec.fieldContext_BenefitTier_minimumEpochs(ctx, field)
+			case "minimumRunningNotionalTakerVolume":
+				return ec.fieldContext_BenefitTier_minimumRunningNotionalTakerVolume(ctx, field)
+			case "referralDiscountFactor":
+				return ec.fieldContext_BenefitTier_referralDiscountFactor(ctx, field)
+			case "referralRewardFactor":
+				return ec.fieldContext_BenefitTier_referralRewardFactor(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type ReferralProgram", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type BenefitTier", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdateReferralProgram_endOfProgramTimestamp(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateReferralProgram) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdateReferralProgram_endOfProgramTimestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UpdateReferralProgram().EndOfProgramTimestamp(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdateReferralProgram_endOfProgramTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdateReferralProgram",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdateReferralProgram_windowLength(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateReferralProgram) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdateReferralProgram_windowLength(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UpdateReferralProgram().WindowLength(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdateReferralProgram_windowLength(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdateReferralProgram",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdateReferralProgram_stakingTiers(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateReferralProgram) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdateReferralProgram_stakingTiers(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UpdateReferralProgram().StakingTiers(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.StakingTier)
+	fc.Result = res
+	return ec.marshalNStakingTier2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐStakingTierᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdateReferralProgram_stakingTiers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdateReferralProgram",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "minimumStakedTokens":
+				return ec.fieldContext_StakingTier_minimumStakedTokens(ctx, field)
+			case "referralRewardMultiplier":
+				return ec.fieldContext_StakingTier_referralRewardMultiplier(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type StakingTier", field.Name)
 		},
 	}
 	return fc, nil
@@ -84138,94 +84285,6 @@ func (ec *executionContext) fieldContext_UpdateSpotMarketConfiguration_liquidity
 				return ec.fieldContext_LiquiditySLAParameters_slaCompetitionFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LiquiditySLAParameters", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _UpdateVolumeDiscountProgram_version(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateVolumeDiscountProgram) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UpdateVolumeDiscountProgram_version(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.UpdateVolumeDiscountProgram().Version(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_UpdateVolumeDiscountProgram_version(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "UpdateVolumeDiscountProgram",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _UpdateVolumeDiscountProgram_id(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateVolumeDiscountProgram) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UpdateVolumeDiscountProgram_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.UpdateVolumeDiscountProgram().ID(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_UpdateVolumeDiscountProgram_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "UpdateVolumeDiscountProgram",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -110001,13 +110060,86 @@ func (ec *executionContext) _UpdateReferralProgram(ctx context.Context, sel ast.
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("UpdateReferralProgram")
-		case "changes":
+		case "benefitTiers":
+			field := field
 
-			out.Values[i] = ec._UpdateReferralProgram_changes(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UpdateReferralProgram_benefitTiers(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "endOfProgramTimestamp":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UpdateReferralProgram_endOfProgramTimestamp(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "windowLength":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UpdateReferralProgram_windowLength(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "stakingTiers":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UpdateReferralProgram_stakingTiers(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -110185,46 +110317,6 @@ func (ec *executionContext) _UpdateVolumeDiscountProgram(ctx context.Context, se
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("UpdateVolumeDiscountProgram")
-		case "version":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._UpdateVolumeDiscountProgram_version(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
-		case "id":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._UpdateVolumeDiscountProgram_id(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "benefitTiers":
 			field := field
 
@@ -114181,16 +114273,6 @@ func (ec *executionContext) marshalNRankingScore2ᚖcodeᚗvegaprotocolᚗioᚋv
 		return graphql.Null
 	}
 	return ec._RankingScore(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNReferralProgram2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReferralProgram(ctx context.Context, sel ast.SelectionSet, v *vega.ReferralProgram) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._ReferralProgram(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNReferralSet2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐReferralSet(ctx context.Context, sel ast.SelectionSet, v *v2.ReferralSet) graphql.Marshaler {

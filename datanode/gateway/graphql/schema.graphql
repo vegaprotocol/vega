@@ -4321,7 +4321,18 @@ type UpdateMarketState {
 }
 
 type UpdateReferralProgram {
-  changes: ReferralProgram!
+  "Defined tiers in increasing order. First element will give Tier 1, second element will give Tier 2, etc."
+  benefitTiers: [BenefitTier!]!
+  "Timestamp as RFC3339, after which when the current epoch ends, the programs will end and benefits will be disabled."
+  endOfProgramTimestamp: String!
+  "Number of epochs over which to evaluate a referral set's running volume."
+  windowLength: Int!
+  """
+  Defined staking tiers in increasing order. First element will give Tier 1,
+  second element will give Tier 2, and so on. Determines the level of
+  benefit a party can expect based on their staking.
+  """
+  stakingTiers: [StakingTier!]!
 }
 
 type BenefitTier {
@@ -4343,15 +4354,11 @@ type StakingTier {
 }
 
 type UpdateVolumeDiscountProgram {
-  "The current version of the volume discount program"
-  version: Int!
-  "ID of the proposal that created the discount program"
-  id: ID!
   "The benefit tiers for the program"
   benefitTiers: [VolumeBenefitTier!]!
   "The end time of the program"
   endOfProgramTimestamp: Timestamp!
-  "The window legnth to consider for the volume discount program"
+  "The window length to consider for the volume discount program"
   windowLength: Int!
 }
 

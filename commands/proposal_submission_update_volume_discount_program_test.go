@@ -18,10 +18,11 @@ package commands_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"code.vegaprotocol.io/vega/commands"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestCheckProposalSubmissionForVolumeDiscountProgramUpdate(t *testing.T) {
@@ -67,7 +68,7 @@ func testSubmissionForVolumeDiscountProgramUpdateWithoutEndOfProgramFails(t *tes
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateVolumeDiscountProgram{
 				UpdateVolumeDiscountProgram: &types.UpdateVolumeDiscountProgram{
-					Changes: &types.VolumeDiscountProgram{
+					Changes: &types.VolumeDiscountProgramChanges{
 						EndOfProgramTimestamp: 0,
 					},
 				},
@@ -83,7 +84,7 @@ func testSubmissionForVolumeDiscountProgramUpdateWithNegativeEndOfProgramFails(t
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateVolumeDiscountProgram{
 				UpdateVolumeDiscountProgram: &types.UpdateVolumeDiscountProgram{
-					Changes: &types.VolumeDiscountProgram{
+					Changes: &types.VolumeDiscountProgramChanges{
 						EndOfProgramTimestamp: -1,
 					},
 				},
@@ -100,7 +101,7 @@ func testSubmissionForVolumeDiscountProgramUpdateWithEndOfProgramBeforeEnactment
 			EnactmentTimestamp: 10,
 			Change: &types.ProposalTerms_UpdateVolumeDiscountProgram{
 				UpdateVolumeDiscountProgram: &types.UpdateVolumeDiscountProgram{
-					Changes: &types.VolumeDiscountProgram{
+					Changes: &types.VolumeDiscountProgramChanges{
 						EndOfProgramTimestamp: 5,
 					},
 				},
@@ -116,7 +117,7 @@ func testSubmissionForVolumeDiscountProgramUpdateWithoutWindowLengthFails(t *tes
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateVolumeDiscountProgram{
 				UpdateVolumeDiscountProgram: &types.UpdateVolumeDiscountProgram{
-					Changes: &types.VolumeDiscountProgram{
+					Changes: &types.VolumeDiscountProgramChanges{
 						WindowLength: 0,
 					},
 				},
@@ -132,7 +133,7 @@ func testSubmissionForVolumeDiscountProgramUpdateWithWindowLengthOverLimitFails(
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateVolumeDiscountProgram{
 				UpdateVolumeDiscountProgram: &types.UpdateVolumeDiscountProgram{
-					Changes: &types.VolumeDiscountProgram{
+					Changes: &types.VolumeDiscountProgramChanges{
 						WindowLength: 101,
 					},
 				},
@@ -148,7 +149,7 @@ func testSubmissionForVolumeDiscountProgramUpdateWithoutTierMinimumRunningNotion
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateVolumeDiscountProgram{
 				UpdateVolumeDiscountProgram: &types.UpdateVolumeDiscountProgram{
-					Changes: &types.VolumeDiscountProgram{
+					Changes: &types.VolumeDiscountProgramChanges{
 						BenefitTiers: []*types.VolumeBenefitTier{
 							{
 								MinimumRunningNotionalTakerVolume: "",
@@ -171,7 +172,7 @@ func testSubmissionForVolumeDiscountProgramUpdateWithBadFormatForTierMinimumRunn
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateVolumeDiscountProgram{
 				UpdateVolumeDiscountProgram: &types.UpdateVolumeDiscountProgram{
-					Changes: &types.VolumeDiscountProgram{
+					Changes: &types.VolumeDiscountProgramChanges{
 						BenefitTiers: []*types.VolumeBenefitTier{
 							{
 								MinimumRunningNotionalTakerVolume: "qbc",
@@ -194,7 +195,7 @@ func testSubmissionForVolumeDiscountProgramUpdateWithBadValueForTierMinimumRunni
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateVolumeDiscountProgram{
 				UpdateVolumeDiscountProgram: &types.UpdateVolumeDiscountProgram{
-					Changes: &types.VolumeDiscountProgram{
+					Changes: &types.VolumeDiscountProgramChanges{
 						BenefitTiers: []*types.VolumeBenefitTier{
 							{
 								MinimumRunningNotionalTakerVolume: "0",
@@ -217,7 +218,7 @@ func testSubmissionForVolumeDiscountProgramUpdateWithoutTierVolumeDiscountFactor
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateVolumeDiscountProgram{
 				UpdateVolumeDiscountProgram: &types.UpdateVolumeDiscountProgram{
-					Changes: &types.VolumeDiscountProgram{
+					Changes: &types.VolumeDiscountProgramChanges{
 						BenefitTiers: []*types.VolumeBenefitTier{
 							{
 								VolumeDiscountFactor: "",
@@ -240,7 +241,7 @@ func testSubmissionForVolumeDiscountProgramUpdateWithBadFormatForTierVolumeDisco
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateVolumeDiscountProgram{
 				UpdateVolumeDiscountProgram: &types.UpdateVolumeDiscountProgram{
-					Changes: &types.VolumeDiscountProgram{
+					Changes: &types.VolumeDiscountProgramChanges{
 						BenefitTiers: []*types.VolumeBenefitTier{
 							{
 								VolumeDiscountFactor: "qbc",
@@ -263,7 +264,7 @@ func testSubmissionForVolumeDiscountProgramUpdateWithBadValueForTierVolumeDiscou
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateVolumeDiscountProgram{
 				UpdateVolumeDiscountProgram: &types.UpdateVolumeDiscountProgram{
-					Changes: &types.VolumeDiscountProgram{
+					Changes: &types.VolumeDiscountProgramChanges{
 						BenefitTiers: []*types.VolumeBenefitTier{
 							{
 								VolumeDiscountFactor: "-10",

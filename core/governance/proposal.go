@@ -40,21 +40,21 @@ type ProposalParameters struct {
 // ToEnact wraps the proposal in a type that has a convenient interface
 // to quickly work out what change we're dealing with, and get the data.
 type ToEnact struct {
-	p                     *proposal
-	m                     *ToEnactNewMarket
-	s                     *ToEnactNewSpotMarket
-	newAsset              *types.Asset
-	updatedAsset          *types.Asset
-	n                     *types.NetworkParameter
-	as                    *types.AssetDetails
-	updatedMarket         *types.Market
-	updatedSpotMarket     *types.Market
-	f                     *ToEnactFreeform
-	t                     *ToEnactTransfer
-	c                     *ToEnactCancelTransfer
-	msu                   *ToEnactMarketStateUpdate
-	referralProgram       *types.ReferralProgram
-	volumeDiscountProgram *types.VolumeDiscountProgram
+	p                      *proposal
+	m                      *ToEnactNewMarket
+	s                      *ToEnactNewSpotMarket
+	newAsset               *types.Asset
+	updatedAsset           *types.Asset
+	n                      *types.NetworkParameter
+	as                     *types.AssetDetails
+	updatedMarket          *types.Market
+	updatedSpotMarket      *types.Market
+	f                      *ToEnactFreeform
+	t                      *ToEnactTransfer
+	c                      *ToEnactCancelTransfer
+	msu                    *ToEnactMarketStateUpdate
+	referralProgramChanges *types.ReferralProgram
+	volumeDiscountProgram  *types.VolumeDiscountProgram
 }
 
 type ToEnactMarketStateUpdate struct{}
@@ -79,7 +79,7 @@ func (t ToEnact) IsVolumeDiscountProgramUpdate() bool {
 }
 
 func (t ToEnact) IsReferralProgramUpdate() bool {
-	return t.referralProgram != nil
+	return t.referralProgramChanges != nil
 }
 
 func (t ToEnact) IsMarketStateUpdate() bool {
@@ -155,8 +155,8 @@ func (t *ToEnact) UpdateNetworkParameter() *types.NetworkParameter {
 	return t.n
 }
 
-func (t *ToEnact) ReferralProgramUpdate() *types.ReferralProgram {
-	return t.referralProgram
+func (t *ToEnact) ReferralProgramChanges() *types.ReferralProgram {
+	return t.referralProgramChanges
 }
 
 func (t *ToEnact) VolumeDiscountProgramUpdate() *types.VolumeDiscountProgram {
