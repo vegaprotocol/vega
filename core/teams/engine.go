@@ -348,7 +348,7 @@ func (e *Engine) loadTeamSwitchesFromSnapshot(teamSwitchesSnapshot []*snapshotpb
 	}
 }
 
-func NewEngine(epochEngine EpochEngine, broker Broker, timeSvc TimeService) *Engine {
+func NewEngine(broker Broker, timeSvc TimeService) *Engine {
 	engine := &Engine{
 		broker:      broker,
 		timeService: timeSvc,

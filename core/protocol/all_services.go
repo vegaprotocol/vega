@@ -257,7 +257,7 @@ func newServices(
 	svcs.epochService.NotifyOnEpoch(svcs.topology.OnEpochEvent, svcs.topology.OnEpochRestore)
 	svcs.epochService.NotifyOnEpoch(stats.OnEpochEvent, stats.OnEpochRestore)
 
-	svcs.teamsEngine = teams.NewSnapshottedEngine(svcs.epochService, svcs.broker, svcs.timeService)
+	svcs.teamsEngine = teams.NewSnapshottedEngine(svcs.broker, svcs.timeService)
 	svcs.snapshotEngine.AddProviders(svcs.teamsEngine)
 
 	svcs.statevar = statevar.New(svcs.log, svcs.conf.StateVar, svcs.broker, svcs.topology, svcs.commander)
