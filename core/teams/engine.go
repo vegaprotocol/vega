@@ -195,6 +195,17 @@ func (e *Engine) GetAllPartiesInTeams(minEpochsInTeam uint64) []string {
 	return parties
 }
 
+func (e *Engine) GetAllTeamsWithParties(minEpochsInTeam uint64) map[string][]string {
+	teams := make(map[string][]string, len(e.teams))
+	for t := range e.teams {
+		team := string(t)
+		if members := e.GetTeamMembers(team, minEpochsInTeam); len(members) > 0 {
+			teams[team] = members
+		}
+	}
+	return teams
+}
+
 func (e *Engine) GetTeamMembers(team string, minEpochsInTeam uint64) []string {
 	t := e.teams[(types.TeamID(team))]
 	if t == nil {
