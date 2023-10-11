@@ -257,6 +257,8 @@ func newServices(
 	svcs.epochService.NotifyOnEpoch(svcs.topology.OnEpochEvent, svcs.topology.OnEpochRestore)
 	svcs.epochService.NotifyOnEpoch(stats.OnEpochEvent, stats.OnEpochRestore)
 
+	svcs.teamsEngine = teams.NewSnapshottedEngine(svcs.broker, svcs.timeService)
+
 	svcs.statevar = statevar.New(svcs.log, svcs.conf.StateVar, svcs.broker, svcs.topology, svcs.commander)
 	svcs.marketActivityTracker = common.NewMarketActivityTracker(svcs.log, svcs.epochService, svcs.teamsEngine, svcs.stakingAccounts)
 
@@ -375,7 +377,8 @@ func newServices(
 
 	svcs.snapshotEngine.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
 		svcs.notary, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar,
-		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier, svcs.vesting, svcs.activityStreak, svcs.referralProgram, svcs.volumeDiscount)
+		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier, svcs.vesting, svcs.activityStreak, svcs.referralProgram, svcs.volumeDiscount,
+		svcs.teamsEngine)
 
 	svcs.snapshotEngine.AddProviders(svcs.spam)
 
@@ -417,8 +420,7 @@ func newServices(
 	// switches happen when the end of epoch is reached, it needs to be one of the
 	// last services to register on epoch update, so the computation is made based
 	// on the team the parties belonged to during the epoch and not the new one.
-	svcs.teamsEngine = teams.NewSnapshottedEngine(svcs.epochService, svcs.broker, svcs.timeService)
-	svcs.snapshotEngine.AddProviders(svcs.teamsEngine)
+	svcs.epochService.NotifyOnEpoch(svcs.teamsEngine.OnEpoch, svcs.teamsEngine.OnEpochRestore)
 
 	// setup config reloads for all engines / services /etc
 	svcs.registerConfigWatchers()

@@ -172,7 +172,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.stakingAccount = stubs.NewStakingAccountStub()
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.stakingAccount.OnEpochEvent, execsetup.stakingAccount.OnEpochRestore)
 
-	execsetup.teamsEngine = teams.NewEngine(execsetup.epochEngine, execsetup.broker, execsetup.timeService)
+	execsetup.teamsEngine = teams.NewEngine(execsetup.broker, execsetup.timeService)
 
 	execsetup.stateVarEngine = stubs.NewStateVar()
 	marketActivityTracker := common.NewMarketActivityTracker(execsetup.log, execsetup.epochEngine, execsetup.teamsEngine, execsetup.stakingAccount)
@@ -217,6 +217,13 @@ func newExecutionTestSetup() *executionTestSetup {
 
 	// register this after the rewards engine is created to make sure the on epoch is called in the right order.
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.vesting.OnEpochEvent, execsetup.vesting.OnEpochRestore)
+
+	// The team engine is used to know the team a party belongs to. The computation
+	// of the referral program rewards requires this information. Since the team
+	// switches happen when the end of epoch is reached, it needs to be one of the
+	// last services to register on epoch update, so the computation is made based
+	// on the team the parties belonged to during the epoch and not the new one.
+	execsetup.epochEngine.NotifyOnEpoch(execsetup.teamsEngine.OnEpoch, execsetup.teamsEngine.OnEpochRestore)
 
 	execsetup.registerTimeServiceCallbacks()
 
