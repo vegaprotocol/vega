@@ -203,7 +203,8 @@ func newTestMarket(
 
 	teams := mocks.NewMockTeams(ctrl)
 	bc := mocks.NewMockAccountBalanceChecker(ctrl)
-	mat := common.NewMarketActivityTracker(log, epoch, teams, bc)
+	mat := common.NewMarketActivityTracker(log, teams, bc)
+	epoch.NotifyOnEpoch(mat.OnEpochEvent, mat.OnEpochRestore)
 
 	baseAsset := NewAssetStub(base, baseDP)
 	quoteAsset := NewAssetStub(quote, quoteDP)

@@ -107,7 +107,7 @@ type MarketActivityTracker struct {
 }
 
 // NewMarketActivityTracker instantiates the fees tracker.
-func NewMarketActivityTracker(log *logging.Logger, epochEngine EpochEngine, teams Teams, balanceChecker AccountBalanceChecker) *MarketActivityTracker {
+func NewMarketActivityTracker(log *logging.Logger, teams Teams, balanceChecker AccountBalanceChecker) *MarketActivityTracker {
 	mat := &MarketActivityTracker{
 		assetToMarketTrackers:    map[string]map[string]*marketTracker{},
 		ss:                       &snapshotState{},
@@ -118,7 +118,6 @@ func NewMarketActivityTracker(log *logging.Logger, epochEngine EpochEngine, team
 		partyTakerNotionalVolume: map[string]*num.Uint{},
 	}
 
-	epochEngine.NotifyOnEpoch(mat.onEpochEvent, mat.onEpochRestore)
 	return mat
 }
 
@@ -365,7 +364,7 @@ func (mat *MarketActivityTracker) RemoveMarket(asset, marketID string) {
 }
 
 // onEpochEvent is called when the state of the epoch changes, we only care about new epochs starting.
-func (mat *MarketActivityTracker) onEpochEvent(_ context.Context, epoch types.Epoch) {
+func (mat *MarketActivityTracker) OnEpochEvent(_ context.Context, epoch types.Epoch) {
 	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
 		mat.epochStartTime = epoch.StartTime
 		mat.partyContributionCache = map[string][]*types.PartyContributionScore{}
@@ -434,7 +433,7 @@ func (mat *MarketActivityTracker) UpdateFeesFromTransfers(asset, market string, 
 			mat.addFees(mt.makerFeesPaid, t.Owner, t.Amount.Amount, mt.totalMakerFeesPaid)
 		case types.TransferTypeMakerFeeReceive:
 			mat.addFees(mt.makerFeesReceived, t.Owner, t.Amount.Amount, mt.totalMakerFeesReceived)
-		case types.TransferTypeLiquidityFeeDistribute:
+		case types.TransferTypeLiquidityFeeNetDistribute, types.TransferTypeSlaPerformanceBonusDistribute:
 			mat.addFees(mt.lpFees, t.Owner, t.Amount.Amount, mt.totalLpFees)
 		default:
 		}

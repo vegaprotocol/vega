@@ -55,7 +55,7 @@ func (r *newTransferResolver) Destination(ctx context.Context, obj *vega.NewTran
 }
 
 func (r *newTransferResolver) DestinationType(ctx context.Context, obj *vega.NewTransfer) (vega.AccountType, error) {
-	return obj.Changes.SourceType, nil
+	return obj.Changes.DestinationType, nil
 }
 
 func (r *newTransferResolver) Asset(ctx context.Context, obj *vega.NewTransfer) (*vega.Asset, error) {

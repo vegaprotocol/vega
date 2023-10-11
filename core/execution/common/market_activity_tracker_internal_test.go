@@ -259,7 +259,8 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), epochService, teams, balanceChecker)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
 
@@ -434,7 +435,8 @@ func TestCalculateMetricForPartyAvePosition(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), epochService, teams, balanceChecker)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
 
@@ -617,7 +619,8 @@ func TestCalculateMetricForIndividualReturnVolatility(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), epochService, teams, balanceChecker)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
 
@@ -753,7 +756,8 @@ func TestCalculateMetricForIndividualsRelativeReturn(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), epochService, teams, balanceChecker)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
 
@@ -912,7 +916,8 @@ func TestCalculateMetricForPartyRelativeReturn(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), epochService, teams, balanceChecker)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
 
@@ -1123,7 +1128,8 @@ func TestCalculateMetricForParty(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), epochService, teams, balanceChecker)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
 
