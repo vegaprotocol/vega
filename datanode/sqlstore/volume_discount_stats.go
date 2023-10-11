@@ -85,12 +85,17 @@ func (s *VolumeDiscountStats) Stats(ctx context.Context, atEpoch *uint64, partyI
 		query = fmt.Sprintf("%s where %s", query, strings.Join(filters, " and "))
 	}
 
+	fmt.Printf("QUERY: %v\n", query)
+
 	query, args, err := PaginateQuery[entities.VolumeDiscountStatsCursor](query, args, volumeDiscountStatsOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}
 
+	fmt.Printf("PAGINATED QUERY: %v\n", query)
+
 	if err := pgxscan.Select(ctx, s.Connection, &stats, query, args...); err != nil {
+		fmt.Printf("QUERY ERROR: %v\n", err)
 		return nil, pageInfo, err
 	}
 
