@@ -213,7 +213,7 @@ func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {
 			if r.HasColumn("teams") {
 				teams = strings.Split(r.MustStr("teams"), ",")
 				if len(teams) == 1 && teams[0] == "" {
-					mkts = []string{}
+					teams = []string{}
 				}
 			}
 			ntop = r.MustStr("ntop")
