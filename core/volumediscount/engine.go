@@ -201,7 +201,7 @@ func (e *Engine) computeFactorsByParty(ctx context.Context, epoch uint64) {
 				evt.Stats = append(evt.Stats, &eventspb.PartyVolumeDiscountStats{
 					PartyId:        party.String(),
 					DiscountFactor: tier.VolumeDiscountFactor.String(),
-					RunningVolume:  notionalVolume.String(),
+					RunningVolume:  notionalVolume.Round(0).String(),
 				})
 				break
 			}
