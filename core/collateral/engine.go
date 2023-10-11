@@ -153,7 +153,7 @@ func New(log *logging.Logger, conf Config, ts TimeService, broker Broker) *Engin
 	}
 }
 
-func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
+func (e *Engine) BeginBlock(ctx context.Context) {
 	// FIXME(jeremy): to be removed after the migration from
 	// 72.x to 73, this will ensure all per assets accounts are being
 	// created after the restart
@@ -168,9 +168,6 @@ func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 			e.ensureAllAssetAccounts(ctx, asset)
 		}
 	}
-}
-
-func (e *Engine) BeginBlock() {
 	t := e.timeService.GetTimeNow()
 	if e.nextBalancesSnapshot.IsZero() || !e.nextBalancesSnapshot.After(t) {
 		e.updateNextBalanceSnapshot(t.Add(e.balanceSnapshotFrequency))
