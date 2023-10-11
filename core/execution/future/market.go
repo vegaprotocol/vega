@@ -157,6 +157,12 @@ type Market struct {
 	perp        bool
 
 	stats *types.MarketStats
+
+	// set to false when started
+	// we'll use it only once after an upgrade
+	// to make sure the migraton from the upgrade
+	// are applied properly
+	ensuredMigration73 bool
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -424,6 +430,11 @@ func (m *Market) onEpochEndPartiesStats() {
 }
 
 func (m *Market) BeginBlock(ctx context.Context) {
+	if m.ensuredMigration73 {
+		return
+	}
+	m.ensuredMigration73 = true
+
 	// TODO(jeremy): remove this after the 72 upgrade
 	oevents := []events.Event{}
 	for _, oid := range m.liquidityEngine.GetLegacyOrders() {
