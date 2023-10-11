@@ -257,6 +257,14 @@ func newServices(
 	svcs.epochService.NotifyOnEpoch(svcs.topology.OnEpochEvent, svcs.topology.OnEpochRestore)
 	svcs.epochService.NotifyOnEpoch(stats.OnEpochEvent, stats.OnEpochRestore)
 
+	// The team engine is used to know the team a party belongs to. The computation
+	// of the referral program rewards requires this information. Since the team
+	// switches happen when the end of epoch is reached, it needs to be one of the
+	// last services to register on epoch update, so the computation is made based
+	// on the team the parties belonged to during the epoch and not the new one.
+	svcs.teamsEngine = teams.NewSnapshottedEngine(svcs.epochService, svcs.broker, svcs.timeService)
+	svcs.snapshotEngine.AddProviders(svcs.teamsEngine)
+
 	svcs.statevar = statevar.New(svcs.log, svcs.conf.StateVar, svcs.broker, svcs.topology, svcs.commander)
 	svcs.marketActivityTracker = common.NewMarketActivityTracker(svcs.log, svcs.epochService, svcs.teamsEngine, svcs.stakingAccounts)
 
@@ -411,14 +419,6 @@ func newServices(
 			Watcher: pow.OnEpochDurationChanged,
 		},
 	}
-
-	// The team engine is used to know the team a party belongs to. The computation
-	// of the referral program rewards requires this information. Since the team
-	// switches happen when the end of epoch is reached, it needs to be one of the
-	// last services to register on epoch update, so the computation is made based
-	// on the team the parties belonged to during the epoch and not the new one.
-	svcs.teamsEngine = teams.NewSnapshottedEngine(svcs.epochService, svcs.broker, svcs.timeService)
-	svcs.snapshotEngine.AddProviders(svcs.teamsEngine)
 
 	// setup config reloads for all engines / services /etc
 	svcs.registerConfigWatchers()
