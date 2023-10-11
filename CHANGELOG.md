@@ -144,7 +144,7 @@
 - [406](https://github.com/vegaprotocol/OctoberACs/issues/406) - Add integration test for team rewards `0056-REWA-103`
 - [388](https://github.com/vegaprotocol/OctoberACs/issues/388) - Add integration test for `0029-FEES-031`
 - [387](https://github.com/vegaprotocol/OctoberACs/issues/387) - Add integration test for `0029-FEES-028`
-
+- [9710](https://github.com/vegaprotocol/vega/issues/9710) - Add config to keep spam and `POW` enabled when using null chain.
 
 ### 🐛 Fixes
 
