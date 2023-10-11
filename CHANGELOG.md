@@ -150,6 +150,7 @@
 - [403](https://github.com/vegaprotocol/OctoberACs/issues/403) - Add integration test for team rewards `0056-REWA-100`
 - [402](https://github.com/vegaprotocol/OctoberACs/issues/402) - Add integration test for team rewards `0056-REWA-099`
 - [401](https://github.com/vegaprotocol/OctoberACs/issues/401) - Add integration test for team rewards `0056-REWA-098`
+- [400](https://github.com/vegaprotocol/OctoberACs/issues/400) - Add integration test for team rewards `0056-REWA-097`
 
 ### 🐛 Fixes
 
