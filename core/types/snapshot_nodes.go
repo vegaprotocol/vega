@@ -369,6 +369,10 @@ type PayloadLiquidityV2Parameters struct {
 	Parameters *snapshot.LiquidityV2Parameters
 }
 
+type PayloadLiquidityV2FeeStats struct {
+	Stats *snapshot.LiquidityV2FeeStats
+}
+
 type PayloadSpotLiquidityTarget struct {
 	Target *snapshot.SpotLiquidityTarget
 }
@@ -951,6 +955,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadVolumeDiscountProgramFromProto(dt)
 	case *snapshot.Payload_LiquidityV2Parameters:
 		ret.Data = PayloadLiquidityV2ParamsFromProto(dt)
+	case *snapshot.Payload_LiquidityV2FeeStats:
+		ret.Data = PayloadLiquidityV2FeeStatsFromProto(dt)
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}
@@ -1125,6 +1131,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_VolumeDiscountProgram:
 		ret.Data = dt
 	case *snapshot.Payload_LiquidityV2Parameters:
+		ret.Data = dt
+	case *snapshot.Payload_LiquidityV2FeeStats:
 		ret.Data = dt
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
@@ -1384,6 +1392,28 @@ func (*PayloadLiquidityV2Parameters) Namespace() SnapshotNamespace {
 
 func (p *PayloadLiquidityV2Parameters) Key() string {
 	return fmt.Sprintf("parameters:%v", p.Parameters.MarketId)
+}
+
+func PayloadLiquidityV2FeeStatsFromProto(s *snapshot.Payload_LiquidityV2FeeStats) *PayloadLiquidityV2FeeStats {
+	return &PayloadLiquidityV2FeeStats{
+		Stats: s.LiquidityV2FeeStats,
+	}
+}
+
+func (*PayloadLiquidityV2FeeStats) isPayload() {}
+
+func (p *PayloadLiquidityV2FeeStats) plToProto() interface{} {
+	return &snapshot.Payload_LiquidityV2FeeStats{
+		LiquidityV2FeeStats: p.Stats,
+	}
+}
+
+func (*PayloadLiquidityV2FeeStats) Namespace() SnapshotNamespace {
+	return LiquidityV2Snapshot
+}
+
+func (p *PayloadLiquidityV2FeeStats) Key() string {
+	return fmt.Sprintf("feeStats:%v", p.Stats.MarketId)
 }
 
 func PayloadLiquidityV2ScoresFromProto(s *snapshot.Payload_LiquidityV2Scores) *PayloadLiquidityV2Scores {

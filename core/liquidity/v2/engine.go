@@ -109,6 +109,7 @@ type SlaPenalty struct {
 // Engine handles Liquidity provision.
 type Engine struct {
 	marketID       string
+	asset          string
 	log            *logging.Logger
 	timeService    TimeService
 	broker         Broker
@@ -176,6 +177,7 @@ func NewEngine(config Config,
 
 	e := &Engine{
 		marketID:    marketID,
+		asset:       asset,
 		log:         log,
 		timeService: timeService,
 		broker:      broker,
