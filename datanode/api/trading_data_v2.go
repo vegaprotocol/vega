@@ -4442,7 +4442,7 @@ func (t *TradingDataServiceV2) GetReferralFeeStats(ctx context.Context, req *v2.
 		assetID = ptr.From(entities.AssetID(*req.AssetId))
 	}
 
-	stats, err := t.referralFeeStatsService.GetFeeStats(ctx, marketID, assetID, req.EpochSeq)
+	stats, err := t.referralFeeStatsService.GetFeeStats(ctx, marketID, assetID, req.EpochSeq, req.Referrer, req.Referee)
 	if err != nil {
 		return nil, formatE(ErrGetReferralFeeStats, err)
 	}

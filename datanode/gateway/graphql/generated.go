@@ -1828,7 +1828,7 @@ type ComplexityRoot struct {
 		ProposalsConnection                func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		ProtocolUpgradeProposals           func(childComplexity int, inState *v1.ProtocolUpgradeProposalStatus, approvedBy *string, pagination *v2.Pagination) int
 		ProtocolUpgradeStatus              func(childComplexity int) int
-		ReferralFeeStats                   func(childComplexity int, marketID *string, assetID *string, epoch *int) int
+		ReferralFeeStats                   func(childComplexity int, marketID *string, assetID *string, epoch *int, referrer *string, referee *string) int
 		ReferralSetReferees                func(childComplexity int, id *string, referrer *string, referee *string, pagination *v2.Pagination) int
 		ReferralSetStats                   func(childComplexity int, id string, epoch *int, partyID *string, pagination *v2.Pagination) int
 		ReferralSets                       func(childComplexity int, id *string, referrer *string, referee *string, pagination *v2.Pagination) int
@@ -3069,7 +3069,7 @@ type QueryResolver interface {
 	ProtocolUpgradeStatus(ctx context.Context) (*ProtocolUpgradeStatus, error)
 	ProtocolUpgradeProposals(ctx context.Context, inState *v1.ProtocolUpgradeProposalStatus, approvedBy *string, pagination *v2.Pagination) (*v2.ProtocolUpgradeProposalConnection, error)
 	ReferralSets(ctx context.Context, id *string, referrer *string, referee *string, pagination *v2.Pagination) (*v2.ReferralSetConnection, error)
-	ReferralFeeStats(ctx context.Context, marketID *string, assetID *string, epoch *int) (*v1.FeeStats, error)
+	ReferralFeeStats(ctx context.Context, marketID *string, assetID *string, epoch *int, referrer *string, referee *string) (*v1.FeeStats, error)
 	ReferralSetReferees(ctx context.Context, id *string, referrer *string, referee *string, pagination *v2.Pagination) (*v2.ReferralSetRefereeConnection, error)
 	ReferralSetStats(ctx context.Context, id string, epoch *int, partyID *string, pagination *v2.Pagination) (*v2.ReferralSetStatsConnection, error)
 	Statistics(ctx context.Context) (*v12.Statistics, error)
@@ -10778,7 +10778,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.ReferralFeeStats(childComplexity, args["marketId"].(*string), args["assetId"].(*string), args["epoch"].(*int)), true
+		return e.complexity.Query.ReferralFeeStats(childComplexity, args["marketId"].(*string), args["assetId"].(*string), args["epoch"].(*int), args["referrer"].(*string), args["referee"].(*string)), true
 
 	case "Query.referralSetReferees":
 		if e.complexity.Query.ReferralSetReferees == nil {
@@ -15809,6 +15809,24 @@ func (ec *executionContext) field_Query_referralFeeStats_args(ctx context.Contex
 		}
 	}
 	args["epoch"] = arg2
+	var arg3 *string
+	if tmp, ok := rawArgs["referrer"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("referrer"))
+		arg3, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["referrer"] = arg3
+	var arg4 *string
+	if tmp, ok := rawArgs["referee"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("referee"))
+		arg4, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["referee"] = arg4
 	return args, nil
 }
 
@@ -66015,7 +66033,7 @@ func (ec *executionContext) _Query_referralFeeStats(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ReferralFeeStats(rctx, fc.Args["marketId"].(*string), fc.Args["assetId"].(*string), fc.Args["epoch"].(*int))
+		return ec.resolvers.Query().ReferralFeeStats(rctx, fc.Args["marketId"].(*string), fc.Args["assetId"].(*string), fc.Args["epoch"].(*int), fc.Args["referrer"].(*string), fc.Args["referee"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
