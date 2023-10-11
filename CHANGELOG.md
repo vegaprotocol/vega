@@ -12,6 +12,7 @@
 - [9258](https://github.com/vegaprotocol/vega/issues/9258) - Change HTTP endpoint from `/volume-discount-stats` to `/volume-discount-program/stats`.
 - [9258](https://github.com/vegaprotocol/vega/issues/9258) - Change HTTP endpoint from `/referral-sets/stats/{id}` to `/referral-sets/{id}/stats`.
 - [9719](https://github.com/vegaprotocol/vega/issues/9719) - Remove unnecessary fields from referral and volume discount program proposals.
+- [9733](https://github.com/vegaprotocol/vega/issues/9733) - Making `set_id` optional in `referral set stats` endpoint
 
 ### 🗑️ Deprecation
 
@@ -294,6 +295,7 @@
 - [9734](https://github.com/vegaprotocol/vega/issues/9734) - Fix creation of new account types for existing assets during migration
 - [9731](https://github.com/vegaprotocol/vega/issues/9731) - Allow team rewards to apply to all teams.
 - [9727](https://github.com/vegaprotocol/vega/issues/9727) - Initialize teams earlier to avoid panic.
+- [9541](https://github.com/vegaprotocol/vega/issues/9731) - Add filtering for party to the referral fees API.
 
 ## 0.72.1
 

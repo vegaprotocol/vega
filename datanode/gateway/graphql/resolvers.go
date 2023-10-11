@@ -1673,7 +1673,7 @@ func (r *myQueryResolver) ReferralSetReferees(ctx context.Context, id, referrer,
 	return resp.ReferralSetReferees, nil
 }
 
-func (r *myQueryResolver) ReferralSetStats(ctx context.Context, setID string, epoch *int, partyID *string, pagination *v2.Pagination) (*v2.ReferralSetStatsConnection, error) {
+func (r *myQueryResolver) ReferralSetStats(ctx context.Context, setID *string, epoch *int, partyID *string, pagination *v2.Pagination) (*v2.ReferralSetStatsConnection, error) {
 	var epochU64Ptr *uint64
 	if epoch != nil {
 		epochU64 := uint64(*epoch)
@@ -1730,7 +1730,9 @@ func (r *myQueryResolver) TeamRefereeHistory(ctx context.Context, referee string
 	return history.TeamRefereeHistory, nil
 }
 
-func (r *myQueryResolver) ReferralFeeStats(ctx context.Context, marketID *string, assetID *string, epoch *int) (*v1.FeeStats, error) {
+func (r *myQueryResolver) ReferralFeeStats(ctx context.Context, marketID *string, assetID *string, epoch *int,
+	referrer, referee *string,
+) (*v1.FeeStats, error) {
 	var epochSeq *uint64
 
 	if epoch != nil {
@@ -1741,6 +1743,8 @@ func (r *myQueryResolver) ReferralFeeStats(ctx context.Context, marketID *string
 		MarketId: marketID,
 		AssetId:  assetID,
 		EpochSeq: epochSeq,
+		Referrer: referrer,
+		Referee:  referee,
 	}
 
 	resp, err := r.tradingDataClientV2.GetReferralFeeStats(ctx, req)

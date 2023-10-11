@@ -564,6 +564,7 @@ func TestReferralSets_GetReferralSetStats(t *testing.T) {
 
 		for _, stat := range set.RefereesStats {
 			flattenStats = append(flattenStats, entities.FlattenReferralSetStats{
+				SetID:                                 setID,
 				AtEpoch:                               lastEpoch,
 				ReferralSetRunningNotionalTakerVolume: set.ReferralSetRunningNotionalTakerVolume,
 				VegaTime:                              block.VegaTime,
@@ -577,9 +578,17 @@ func TestReferralSets_GetReferralSetStats(t *testing.T) {
 		}
 	}
 
+	t.Run("Should return the most recent stats of the last epoch regardless the set and the party", func(t *testing.T) {
+		lastStats := flattenReferralSetStatsForEpoch(flattenStats, lastEpoch)
+		got, _, err := rs.GetReferralSetStats(ctx, nil, nil, nil, entities.CursorPagination{})
+		require.NoError(t, err)
+		require.NotNil(t, got)
+		assert.Equal(t, lastStats, got)
+	})
+
 	t.Run("Should return the stats for the most recent epoch if no epoch is provided", func(t *testing.T) {
 		lastStats := flattenReferralSetStatsForEpoch(flattenStats, lastEpoch)
-		got, _, err := rs.GetReferralSetStats(ctx, setID, nil, nil, entities.CursorPagination{})
+		got, _, err := rs.GetReferralSetStats(ctx, &setID, nil, nil, entities.CursorPagination{})
 		require.NoError(t, err)
 		require.NotNil(t, got)
 		assert.Equal(t, lastStats, got)
@@ -588,7 +597,7 @@ func TestReferralSets_GetReferralSetStats(t *testing.T) {
 	t.Run("Should return the stats for the specified epoch if an epoch is provided", func(t *testing.T) {
 		epoch := flattenStats[rand.Intn(len(flattenStats))].AtEpoch
 		statsAtEpoch := flattenReferralSetStatsForEpoch(flattenStats, epoch)
-		got, _, err := rs.GetReferralSetStats(ctx, setID, &epoch, nil, entities.CursorPagination{})
+		got, _, err := rs.GetReferralSetStats(ctx, &setID, &epoch, nil, entities.CursorPagination{})
 		require.NoError(t, err)
 		require.NotNil(t, got)
 		assert.Equal(t, statsAtEpoch, got)
@@ -598,7 +607,7 @@ func TestReferralSets_GetReferralSetStats(t *testing.T) {
 		partyIDStr := flattenStats[rand.Intn(len(flattenStats))].PartyID
 		partyID := entities.PartyID(partyIDStr)
 		statsAtEpoch := flattenReferralSetStatsForParty(flattenStats, partyIDStr)
-		got, _, err := rs.GetReferralSetStats(ctx, setID, nil, &partyID, entities.CursorPagination{})
+		got, _, err := rs.GetReferralSetStats(ctx, &setID, nil, &partyID, entities.CursorPagination{})
 		require.NoError(t, err)
 		require.NotNil(t, got)
 		assert.Equal(t, statsAtEpoch, got)
@@ -610,7 +619,7 @@ func TestReferralSets_GetReferralSetStats(t *testing.T) {
 		partyID := entities.PartyID(partyIDStr)
 		atEpoch := randomStats.AtEpoch
 		statsAtEpoch := flattenReferralSetStatsForParty(flattenReferralSetStatsForEpoch(flattenStats, atEpoch), partyIDStr)
-		got, _, err := rs.GetReferralSetStats(ctx, setID, &atEpoch, &partyID, entities.CursorPagination{})
+		got, _, err := rs.GetReferralSetStats(ctx, &setID, &atEpoch, &partyID, entities.CursorPagination{})
 		require.NoError(t, err)
 		require.NotNil(t, got)
 		assert.Equal(t, statsAtEpoch, got)
@@ -628,10 +637,13 @@ func flattenReferralSetStatsForEpoch(flattenStats []entities.FlattenReferralSetS
 
 	slices.SortStableFunc(lastStats, func(a, b entities.FlattenReferralSetStats) bool {
 		if a.AtEpoch == b.AtEpoch {
-			return a.PartyID < b.PartyID
+			if a.SetID == b.SetID {
+				return a.PartyID < b.PartyID
+			}
+			return a.SetID < b.SetID
 		}
 
-		return a.AtEpoch < b.AtEpoch
+		return a.AtEpoch > b.AtEpoch
 	})
 
 	return lastStats
@@ -648,7 +660,10 @@ func flattenReferralSetStatsForParty(flattenStats []entities.FlattenReferralSetS
 
 	slices.SortStableFunc(lastStats, func(a, b entities.FlattenReferralSetStats) bool {
 		if a.AtEpoch == b.AtEpoch {
-			return a.PartyID < b.PartyID
+			if a.SetID == b.SetID {
+				return a.PartyID < b.PartyID
+			}
+			return a.SetID < b.SetID
 		}
 
 		return a.AtEpoch > b.AtEpoch
