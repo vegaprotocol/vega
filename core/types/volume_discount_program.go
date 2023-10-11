@@ -116,7 +116,9 @@ func (c VolumeDiscountProgram) String() string {
 	}
 
 	return fmt.Sprintf(
-		"endOfProgramTimestamp(%d), windowLength(%d), benefitTiers(%s)",
+		"ID(%s), version(%d) endOfProgramTimestamp(%d), windowLength(%d), benefitTiers(%s)",
+		c.ID,
+		c.Version,
 		c.EndOfProgramTimestamp.Unix(),
 		c.WindowLength,
 		benefitTierStr,

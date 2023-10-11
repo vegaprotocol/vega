@@ -19,13 +19,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
-	"github.com/stretchr/testify/require"
 )
 
 func TestProposalForUpdateDiscountVolumeProgram(t *testing.T) {
@@ -48,7 +49,7 @@ func testSubmittingProposalForVolumeDiscountProgramUpdateSucceeds(t *testing.T) 
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForVolumeDiscountProgramUpdate(proposer, now, &types.VolumeDiscountProgram{
+	proposal := eng.newProposalForVolumeDiscountProgramUpdate(proposer, now, &types.VolumeDiscountProgramChanges{
 		EndOfProgramTimestamp: now.Add(4 * 48 * time.Hour),
 		WindowLength:          15,
 		VolumeBenefitTiers: []*types.VolumeBenefitTier{
@@ -90,7 +91,7 @@ func testSubmittingProposalForVolumeDiscountProgramUpdateWithTooManyTiersFails(t
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForVolumeDiscountProgramUpdate(proposer, now, &types.VolumeDiscountProgram{
+	proposal := eng.newProposalForVolumeDiscountProgramUpdate(proposer, now, &types.VolumeDiscountProgramChanges{
 		EndOfProgramTimestamp: now.Add(4 * 48 * time.Hour),
 		WindowLength:          15,
 		VolumeBenefitTiers: []*types.VolumeBenefitTier{
@@ -132,7 +133,7 @@ func testSubmittingProposalForVolumeDiscountProgramUpdateWithTooHighDiscountFact
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForVolumeDiscountProgramUpdate(proposer, now, &types.VolumeDiscountProgram{
+	proposal := eng.newProposalForVolumeDiscountProgramUpdate(proposer, now, &types.VolumeDiscountProgramChanges{
 		EndOfProgramTimestamp: now.Add(4 * 48 * time.Hour),
 		WindowLength:          15,
 		VolumeBenefitTiers: []*types.VolumeBenefitTier{
