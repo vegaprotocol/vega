@@ -236,10 +236,14 @@ func (s *Store) OnTick(ctx context.Context, _ time.Time) {
 	// This is useful only when a protocol upgrade
 	// is running. we will dispatch all new parameter
 	// on the first time update here.
+	// we propagate all parameters update to paliate
+	// for previous release where parameters didn't
+	// get propagated.
 	if len(s.protocolUpgradeNewParameters) > 0 {
-		sort.Strings(s.protocolUpgradeNewParameters)
+		keys := maps.Keys(s.store)
+		sort.Strings(keys)
 
-		for _, k := range s.protocolUpgradeNewParameters {
+		for _, k := range keys {
 			s.broker.Send(events.NewNetworkParameterEvent(ctx, k, s.store[k].String()))
 		}
 
