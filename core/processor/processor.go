@@ -102,6 +102,7 @@ type ExecutionEngine interface {
 
 	// End of block
 	BlockEnd(ctx context.Context)
+	BeginBlock(ctx context.Context)
 }
 
 type GovernanceEngine interface {

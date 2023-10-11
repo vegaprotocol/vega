@@ -3773,7 +3773,7 @@ message ListReferralSetRefereesResponse {
 // Request to get a referral set's stats
 message GetReferralSetStatsRequest {
   // Unique ID of the set.
-  string referral_set_id = 1;
+  optional string referral_set_id = 1;
   // Epoch at which the set's statistics were updated.
   // If omitted, the last received statistics are returned
   optional uint64 at_epoch = 2;
@@ -3969,6 +3969,10 @@ message GetReferralFeeStatsRequest {
   optional string asset_id = 2;
   // Epoch to get referral fee statistics for. If omitted, the last epoch published is used.
   optional uint64 epoch_seq = 3;
+  // Referrer party ID to filter the statistics for
+  optional string referrer = 4;
+  // Referee party ID to filter the statistics for
+  optional string referee = 5;
 }
 
 // Response that is sent when requesting referral fee statistics.

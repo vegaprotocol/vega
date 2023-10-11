@@ -4256,7 +4256,10 @@ func (t *TradingDataServiceV2) GetReferralSetStats(ctx context.Context, req *v2.
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	setID := entities.ReferralSetID(req.ReferralSetId)
+	var setID *entities.ReferralSetID
+	if req.ReferralSetId != nil {
+		setID = ptr.From(entities.ReferralSetID(*req.ReferralSetId))
+	}
 
 	var referee *entities.PartyID
 	if req.Referee != nil {
@@ -4442,7 +4445,7 @@ func (t *TradingDataServiceV2) GetReferralFeeStats(ctx context.Context, req *v2.
 		assetID = ptr.From(entities.AssetID(*req.AssetId))
 	}
 
-	stats, err := t.referralFeeStatsService.GetFeeStats(ctx, marketID, assetID, req.EpochSeq)
+	stats, err := t.referralFeeStatsService.GetFeeStats(ctx, marketID, assetID, req.EpochSeq, req.Referrer, req.Referee)
 	if err != nil {
 		return nil, formatE(ErrGetReferralFeeStats, err)
 	}

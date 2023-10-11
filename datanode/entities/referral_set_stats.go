@@ -36,6 +36,7 @@ type (
 	}
 
 	FlattenReferralSetStats struct {
+		SetID                                 ReferralSetID
 		AtEpoch                               uint64
 		ReferralSetRunningNotionalTakerVolume string
 		VegaTime                              time.Time
@@ -50,6 +51,7 @@ type (
 	ReferralSetStatsCursor struct {
 		VegaTime time.Time
 		AtEpoch  uint64
+		SetID    string
 		PartyID  string
 	}
 

@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/georgysavva/scany/pgxscan"
 
@@ -63,7 +64,8 @@ func (rfs *ReferralFeeStats) AddFeeStats(ctx context.Context, stats *entities.Re
 	return err
 }
 
-func (rfs *ReferralFeeStats) GetFeeStats(ctx context.Context, marketID *entities.MarketID, assetID *entities.AssetID, epochSeq *uint64) (
+func (rfs *ReferralFeeStats) GetFeeStats(ctx context.Context, marketID *entities.MarketID, assetID *entities.AssetID,
+	epochSeq *uint64, referrerID, refereeID *string) (
 	*entities.ReferralFeeStats, error,
 ) {
 	defer metrics.StartSQLQuery("ReferralFeeStats", "GetFeeStats")()
@@ -73,12 +75,12 @@ func (rfs *ReferralFeeStats) GetFeeStats(ctx context.Context, marketID *entities
 		args  []interface{}
 	)
 
-	if marketID == nil && assetID == nil {
-		return nil, errors.New("marketID or assetID must be provided")
+	if marketID != nil && assetID != nil {
+		return nil, errors.New("only a marketID or assetID should be provided")
 	}
 
 	query := `SELECT * FROM referral_fee_stats`
-	where := make([]string, 0, 3)
+	where := make([]string, 0)
 
 	if epochSeq != nil {
 		where = append(where, fmt.Sprintf("epoch_seq = %s", nextBindVar(&args, *epochSeq)))
@@ -90,6 +92,10 @@ func (rfs *ReferralFeeStats) GetFeeStats(ctx context.Context, marketID *entities
 
 	if marketID != nil {
 		where = append(where, fmt.Sprintf("market_id = %s", nextBindVar(&args, *marketID)))
+	}
+
+	if partyFilter := getPartyFilter(referrerID, refereeID); partyFilter != "" {
+		where = append(where, partyFilter)
 	}
 
 	if len(where) > 0 {
@@ -115,4 +121,44 @@ func (rfs *ReferralFeeStats) GetFeeStats(ctx context.Context, marketID *entities
 	}
 
 	return &stats[0], err
+}
+
+func getPartyFilter(referrerID, refereeID *string) string {
+	builder := strings.Builder{}
+	if referrerID == nil && refereeID == nil {
+		return ""
+	}
+
+	builder.WriteString("(")
+
+	if referrerID != nil {
+		builder.WriteString(fmt.Sprintf(
+			`total_rewards_paid @> '[{"party_id":"%s"}]'`, *referrerID,
+		))
+		builder.WriteString(" OR ")
+		builder.WriteString(fmt.Sprintf(
+			`referrer_rewards_generated @> '[{"referrer":"%s"}]'`, *referrerID,
+		))
+	}
+
+	if refereeID != nil {
+		if referrerID != nil {
+			builder.WriteString(" OR ")
+		}
+		builder.WriteString(fmt.Sprintf(
+			`referrer_rewards_generated @> '[{"generated_reward":[{"party":"%s"}]}]'`, *refereeID,
+		))
+		builder.WriteString(" OR ")
+		builder.WriteString(fmt.Sprintf(
+			`referees_discount_applied @> '[{"party_id":"%s"}]'`, *refereeID,
+		))
+		builder.WriteString(" OR ")
+		builder.WriteString(fmt.Sprintf(
+			`volume_discount_applied @> '[{"party_id":"%s"}]'`, *refereeID,
+		))
+	}
+
+	builder.WriteString(")")
+
+	return builder.String()
 }

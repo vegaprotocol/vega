@@ -629,6 +629,7 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
 	return m.closed
 }
+func (m *Market) BeginBlock(_ context.Context) {}
 
 // BlockEnd notifies the market of the end of the block.
 func (m *Market) BlockEnd(_ context.Context) {

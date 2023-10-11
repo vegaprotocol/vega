@@ -853,6 +853,7 @@ func (app *App) OnBeginBlock(
 	app.protocolUpgradeService.BeginBlock(ctx, uint64(req.Header.Height))
 	app.top.BeginBlock(ctx, req)
 	app.balanceChecker.BeginBlock(ctx)
+	app.exec.BeginBlock(ctx)
 
 	return ctx, resp
 }
