@@ -423,6 +423,57 @@ func (m *Market) onEpochEndPartiesStats() {
 	}
 }
 
+func (m *Market) BeginBlock(ctx context.Context) {
+	// TODO(jeremy): remove this after the 72 upgrade
+	oevents := []events.Event{}
+	for _, oid := range m.liquidityEngine.GetLegacyOrders() {
+		order, foundOnBook, err := m.getOrderByID(oid)
+		if err != nil {
+			continue // err here is ErrOrderNotFound
+		}
+		if !foundOnBook {
+			m.log.Panic("lp order was in the pegged order list?", logging.Order(order))
+		}
+
+		cancellation, err := m.matching.CancelOrder(order)
+		if cancellation == nil || err != nil {
+			m.log.Panic("Failure after cancel order from matching engine",
+				logging.String("party-id", order.Party),
+				logging.String("order-id", oid),
+				logging.String("market", m.mkt.ID),
+				logging.Error(err))
+		}
+
+		_ = m.position.UnregisterOrder(ctx, order)
+		order.Status = types.OrderStatusCancelled
+		oevents = append(oevents, events.NewOrderEvent(ctx, order))
+	}
+
+	if len(oevents) > 0 {
+		m.broker.SendBatch(oevents)
+	}
+
+	// TODO(jeremy): This bit is here specifically to create account
+	// which should have been create with the normal process of
+	// submitting liquidity provisions for the market.
+	// should probably be removed in the near future (aft this release)
+	lpParties := maps.Keys(m.liquidityEngine.ProvisionsPerParty())
+	sort.Strings(lpParties)
+
+	for _, p := range lpParties {
+		_, err := m.collateral.GetOrCreatePartyLiquidityFeeAccount(
+			ctx, p, m.GetID(), m.GetSettlementAsset())
+		if err != nil {
+			m.log.Panic("couldn't create party liquidity fee account")
+		}
+	}
+
+	_, err := m.collateral.GetOrCreateLiquidityFeesBonusDistributionAccount(ctx, m.GetID(), m.GetSettlementAsset())
+	if err != nil {
+		m.log.Panic("failed to get bonus distribution account", logging.Error(err))
+	}
+}
+
 // GetPartiesStats is called at the end of the epoch, only once to
 // be sent to the activity streak engine. This is using the calculated
 // at the end of the epoch based on the countrer in the position engine.
@@ -789,55 +840,6 @@ func (m *Market) GetID() string {
 func (m *Market) PostRestore(ctx context.Context) error {
 	// tell the matching engine about the markets price factor so it can finish restoring orders
 	m.matching.RestoreWithMarketPriceFactor(m.priceFactor)
-
-	// TODO(jeremy): remove this after the 72 upgrade
-	oevents := []events.Event{}
-	for _, oid := range m.liquidityEngine.GetLegacyOrders() {
-		order, foundOnBook, err := m.getOrderByID(oid)
-		if err != nil {
-			continue // err here is ErrOrderNotFound
-		}
-		if !foundOnBook {
-			m.log.Panic("lp order was in the pegged order list?", logging.Order(order))
-		}
-
-		cancellation, err := m.matching.CancelOrder(order)
-		if cancellation == nil || err != nil {
-			m.log.Panic("Failure after cancel order from matching engine",
-				logging.String("party-id", order.Party),
-				logging.String("order-id", oid),
-				logging.String("market", m.mkt.ID),
-				logging.Error(err))
-		}
-
-		_ = m.position.UnregisterOrder(ctx, order)
-		order.Status = types.OrderStatusCancelled
-		oevents = append(oevents, events.NewOrderEvent(ctx, order))
-	}
-
-	if len(oevents) > 0 {
-		m.broker.SendBatch(oevents)
-	}
-
-	// TODO(jeremy): This bit is here specifically to create account
-	// which should have been create with the normal process of
-	// submitting liquidity provisions for the market.
-	// should probably be removed in the near future (aft this release)
-	lpParties := maps.Keys(m.liquidityEngine.ProvisionsPerParty())
-	sort.Strings(lpParties)
-
-	for _, p := range lpParties {
-		_, err := m.collateral.GetOrCreatePartyLiquidityFeeAccount(
-			ctx, p, m.GetID(), m.GetSettlementAsset())
-		if err != nil {
-			m.log.Panic("couldn't create party liquidity fee account")
-		}
-	}
-
-	_, err := m.collateral.GetOrCreateLiquidityFeesBonusDistributionAccount(ctx, m.GetID(), m.GetSettlementAsset())
-	if err != nil {
-		m.log.Panic("failed to get bonus distribution account", logging.Error(err))
-	}
 
 	// if loading from an old snapshot we're restoring positions using the position engine
 	if m.marketActivityTracker.NeedsInitialisation(m.settlementAsset, m.mkt.ID) {

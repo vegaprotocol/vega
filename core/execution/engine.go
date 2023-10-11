@@ -1474,6 +1474,12 @@ func (e *Engine) BlockEnd(ctx context.Context) {
 	}
 }
 
+func (e *Engine) BeginBlock(ctx context.Context) {
+	for _, mkt := range e.allMarketsCpy {
+		mkt.BeginBlock(ctx)
+	}
+}
+
 func (e *Engine) GetMarketState(mktID string) (types.MarketState, error) {
 	if mkt, ok := e.allMarkets[mktID]; ok {
 		return mkt.GetMarketState(), nil

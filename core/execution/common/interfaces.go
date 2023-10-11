@@ -302,6 +302,7 @@ type CommonMarket interface {
 	GetPartiesStats() *types.MarketStats
 	GetMarketState() types.MarketState
 	BlockEnd(context.Context)
+	BeginBlock(context.Context)
 	UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error
 
 	IsOpeningAuction() bool
