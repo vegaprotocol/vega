@@ -89,7 +89,6 @@ func (m *MarketLiquidity) AllocateFees(ctx context.Context) error {
 		return nil
 	}
 
-	m.marketActivityTracker.UpdateFeesFromTransfers(m.asset, m.marketID, feeTransfer.Transfers())
 	ledgerMovements, err := m.transferFees(ctx, feeTransfer)
 	if err != nil {
 		return fmt.Errorf("failed to transfer fees: %w", err)
@@ -212,6 +211,8 @@ func (m *MarketLiquidity) distributeFeesAndCalculateBonuses(
 		bonusPerParty[partyID] = bonus
 	}
 
+	m.marketActivityTracker.UpdateFeesFromTransfers(m.asset, m.marketID, allTransfers.transfers)
+
 	// transfer all the fees.
 	ledgerMovements, err := m.transferFees(ctx, allTransfers)
 	if err != nil {
@@ -279,6 +280,7 @@ func (m *MarketLiquidity) distributePerformanceBonuses(
 		bonusTransfers.transfers = append(bonusTransfers.transfers, transfer)
 	}
 
+	m.marketActivityTracker.UpdateFeesFromTransfers(m.asset, m.marketID, bonusTransfers.transfers)
 	ledgerMovements, err := m.transferFees(ctx, bonusTransfers)
 	if err != nil {
 		m.log.Panic("failed to distribute SLA bonuses", logging.Error(err))

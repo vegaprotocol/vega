@@ -498,7 +498,7 @@ func (mat *MarketActivityTracker) restore(tracker *snapshot.MarketTracker) {
 }
 
 // onEpochRestore is called when the state of the epoch changes, we only care about new epochs starting.
-func (mat *MarketActivityTracker) onEpochRestore(_ context.Context, epoch types.Epoch) {
+func (mat *MarketActivityTracker) OnEpochRestore(_ context.Context, epoch types.Epoch) {
 	mat.currentEpoch = epoch.Seq
 	mat.epochStartTime = epoch.StartTime
 }

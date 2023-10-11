@@ -60,7 +60,7 @@ func TestMarketTracker(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), &TestEpochEngine{}, teams, balanceChecker)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 
 	tracker.MarketProposed("asset1", "market1", "me")
@@ -134,7 +134,7 @@ func TestMarketTracker(t *testing.T) {
 	require.NoError(t, err)
 	teams2 := mocks.NewMockTeams(ctrl)
 	balanceChecker2 := mocks.NewMockAccountBalanceChecker(ctrl)
-	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), &TestEpochEngine{}, teams2, balanceChecker2)
+	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams2, balanceChecker2)
 	pl := snapshotpb.Payload{}
 	require.NoError(t, proto.Unmarshal(state1, &pl))
 
@@ -151,7 +151,8 @@ func TestRemoveMarket(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochService, teams, balanceChecker)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 	tracker.MarketProposed("asset1", "market1", "me")
 	tracker.MarketProposed("asset1", "market2", "me2")
@@ -175,7 +176,8 @@ func TestGetScores(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochService, teams, balanceChecker)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 	tracker.MarketProposed("asset1", "market1", "me")
 	tracker.MarketProposed("asset1", "market2", "me2")
@@ -215,23 +217,23 @@ func TestGetScores(t *testing.T) {
 	transfersM1 := []*types.Transfer{
 		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
 		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
-		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
 		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(400)}},
 		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(300)}},
-		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(900)}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(800)}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(700)}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(700)}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1000)}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1000)}},
 	}
 	tracker.UpdateFeesFromTransfers("asset1", "market1", transfersM1)
 
 	transfersM2 := []*types.Transfer{
 		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(500)}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1500)}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1500)}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1500)}},
 	}
 	tracker.UpdateFeesFromTransfers("asset1", "market2", transfersM2)
 
@@ -283,10 +285,10 @@ func TestGetScores(t *testing.T) {
 
 	epochService.target(context.Background(), types.Epoch{Seq: 3, Action: vgproto.EpochAction_EPOCH_ACTION_START})
 	transfersM1 = []*types.Transfer{
-		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1200)}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1200)}},
 	}
 	transfersM2 = []*types.Transfer{
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(800)}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(800)}},
 	}
 	tracker.UpdateFeesFromTransfers("asset1", "market1", transfersM1)
 	tracker.UpdateFeesFromTransfers("asset1", "market2", transfersM2)
@@ -312,7 +314,8 @@ func TestGetScoresIndividualsDifferentScopes(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochService, teams, balanceChecker)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 	tracker.MarketProposed("asset1", "market1", "me")
 	tracker.MarketProposed("asset1", "market2", "me2")
@@ -352,23 +355,23 @@ func TestGetScoresIndividualsDifferentScopes(t *testing.T) {
 	transfersM1 := []*types.Transfer{
 		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
 		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
-		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
 		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(400)}},
 		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(300)}},
-		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(900)}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(800)}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(700)}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(700)}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1000)}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1000)}},
 	}
 	tracker.UpdateFeesFromTransfers("asset1", "market1", transfersM1)
 
 	transfersM2 := []*types.Transfer{
 		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(500)}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1500)}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1500)}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1500)}},
 	}
 	tracker.UpdateFeesFromTransfers("asset1", "market2", transfersM2)
 
@@ -420,10 +423,10 @@ func TestGetScoresIndividualsDifferentScopes(t *testing.T) {
 
 	epochService.target(context.Background(), types.Epoch{Seq: 3, Action: vgproto.EpochAction_EPOCH_ACTION_START})
 	transfersM1 = []*types.Transfer{
-		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1200)}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1200)}},
 	}
 	transfersM2 = []*types.Transfer{
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(800)}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(800)}},
 	}
 	tracker.UpdateFeesFromTransfers("asset1", "market1", transfersM1)
 	tracker.UpdateFeesFromTransfers("asset1", "market2", transfersM2)
@@ -450,7 +453,7 @@ func TestMarketTrackerStateChange(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), &TestEpochEngine{}, teams, balanceChecker)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 
 	state1, _, err := tracker.GetState(key)
@@ -477,23 +480,24 @@ func TestFeesTrackerWith0(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine, teams, balanceChecker)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	epochEngine.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START})
 
 	tracker.MarketProposed("asset1", "market1", "me")
 	transfersM1 := []*types.Transfer{
 		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
 		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
-		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
 		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
 		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
-		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
 	}
 	tracker.UpdateFeesFromTransfers("asset1", "market1", transfersM1)
 	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_END})
@@ -506,7 +510,8 @@ func TestFeesTracker(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine, teams, balanceChecker)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	epochEngine.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START})
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 
@@ -524,16 +529,16 @@ func TestFeesTracker(t *testing.T) {
 	transfersM1 := []*types.Transfer{
 		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
 		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
-		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
 		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(400)}},
 		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(300)}},
-		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(900)}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(800)}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(700)}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(700)}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1000)}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1000)}},
 	}
 	tracker.UpdateFeesFromTransfers("asset1", "market1", transfersM1)
 
@@ -566,7 +571,7 @@ func TestFeesTracker(t *testing.T) {
 	require.Equal(t, "0.6666666666666667", scores[1].Score.String())
 	require.Equal(t, "party2", scores[1].Party)
 
-	// asset1 TransferTypeLiquidityFeeDistribute
+	// asset1 TransferTypeLiquidityFeeNetDistribute
 	// party1 paid 800
 	// party2 paid 1700
 	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_ALL, WindowLength: 1, Markets: []string{"market1"}})
@@ -597,7 +602,8 @@ func TestFeesTracker(t *testing.T) {
 	ctrl = gomock.NewController(t)
 	teams = mocks.NewMockTeams(ctrl)
 	balanceChecker = mocks.NewMockAccountBalanceChecker(ctrl)
-	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngineLoad, teams, balanceChecker)
+	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	epochEngineLoad.NotifyOnEpoch(trackerLoad.OnEpochEvent, trackerLoad.OnEpochRestore)
 
 	pl := snapshotpb.Payload{}
 	require.NoError(t, proto.Unmarshal(state2, &pl))
@@ -660,7 +666,7 @@ func TestSnapshot(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), &TestEpochEngine{}, teams, balanceChecker)
+	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
 	pl := snapshotpb.Payload{}
 	require.NoError(t, proto.Unmarshal(state1, &pl))
 
@@ -679,7 +685,7 @@ func TestCheckpoint(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), &TestEpochEngine{}, teams, balanceChecker)
+	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
 	trackerLoad.Load(context.Background(), b)
 
 	bLoad, err := trackerLoad.Checkpoint()
@@ -691,12 +697,12 @@ func TestSnapshotRoundTripViaEngine(t *testing.T) {
 	transfersM5 := []*types.Transfer{
 		{Owner: "party3", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
 		{Owner: "party3", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
-		{Owner: "party3", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party3", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
 	}
 	transfersM6 := []*types.Transfer{
 		{Owner: "party4", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(500)}},
 		{Owner: "party4", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(1500)}},
-		{Owner: "party4", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(1500)}},
+		{Owner: "party4", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(1500)}},
 	}
 
 	ctx := vgtest.VegaContext("chainid", 100)
@@ -740,7 +746,7 @@ func TestSnapshotRoundTripViaEngine(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker2 := common.NewMarketActivityTracker(logging.NewTestLogger(), &TestEpochEngine{}, teams, balanceChecker)
+	tracker2 := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
 	snapshotEngine2, err := snp.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
 	require.NoError(t, err)
 	defer snapshotEngine2.Close()
@@ -777,7 +783,8 @@ func TestMarketProposerBonusScenarios(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochService, teams, balanceChecker)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 
 	// setup 4 market for settlement asset1 2 of them proposed by the same proposer, and 2 markets for settlement asset 2
@@ -904,7 +911,8 @@ func TestPositionMetric(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochService, teams, balanceChecker)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 
 	epochStartTime := time.Now()
 	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: epochStartTime})
@@ -1008,7 +1016,9 @@ func TestRelativeReturnMetric(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochService, teams, balanceChecker)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
+
 	epochStartTime := time.Now()
 	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: epochStartTime})
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
@@ -1097,7 +1107,9 @@ func setupDefaultTrackerForTest(t *testing.T) *common.MarketActivityTracker {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochService, teams, balanceChecker)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
+
 	epochStartTime := time.Now()
 	epochService.target(context.Background(), types.Epoch{Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: epochStartTime})
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
@@ -1121,23 +1133,23 @@ func setupDefaultTrackerForTest(t *testing.T) *common.MarketActivityTracker {
 	transfersM1 := []*types.Transfer{
 		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
 		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
-		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
 		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(400)}},
 		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(300)}},
-		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(900)}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(800)}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(700)}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(700)}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1000)}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1000)}},
 	}
 	tracker.UpdateFeesFromTransfers("asset1", "market1", transfersM1)
 
 	transfersM2 := []*types.Transfer{
 		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(500)}},
 		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1500)}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1500)}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeNetDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1500)}},
 	}
 	tracker.UpdateFeesFromTransfers("asset2", "market2", transfersM2)
 

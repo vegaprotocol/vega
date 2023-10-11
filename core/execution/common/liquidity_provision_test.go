@@ -80,7 +80,8 @@ func newMarketLiquidity(t *testing.T) *marketLiquidityTest {
 
 	teams := mocks.NewMockTeams(ctrl)
 	bc := mocks.NewMockAccountBalanceChecker(ctrl)
-	marketTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine, teams, bc)
+	marketTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc)
+	epochEngine.NotifyOnEpoch(marketTracker.OnEpochEvent, marketTracker.OnEpochRestore)
 
 	marketLiquidity := common.NewMarketLiquidity(
 		log,

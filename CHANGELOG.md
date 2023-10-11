@@ -294,6 +294,8 @@
 - [9734](https://github.com/vegaprotocol/vega/issues/9734) - Fix creation of new account types for existing assets during migration
 - [9731](https://github.com/vegaprotocol/vega/issues/9731) - Allow team rewards to apply to all teams.
 - [9727](https://github.com/vegaprotocol/vega/issues/9727) - Initialize teams earlier to avoid panic.
+- [9746](https://github.com/vegaprotocol/vega/issues/9746) - Fix handling of LP fees reward 
+- [9747](https://github.com/vegaprotocol/vega/issues/9747) - Return correct destination type
 
 ## 0.72.1
 
