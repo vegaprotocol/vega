@@ -3466,7 +3466,7 @@ func TestBalanceSnapshot(t *testing.T) {
 	}
 
 	// trigger the balance caching
-	eng.BeginBlock()
+	eng.BeginBlock(ctx)
 
 	// we have 10 units of quantum for each of the 5 tokens, so expect balance to be 50
 	require.Equal(t, "50", eng.GetPartyBalance("zohar").String())
@@ -3482,12 +3482,12 @@ func TestBalanceSnapshot(t *testing.T) {
 	eng.OnBalanceSnapshotFrequencyUpdated(ctx, 5*time.Second)
 
 	// we didn't move the time so no new snapshot has been taken, therefore we expect the balance to still be 50
-	eng.BeginBlock()
+	eng.BeginBlock(ctx)
 	require.Equal(t, "50", eng.GetPartyBalance("zohar").String())
 
 	// now move the time by 5 seconds and recheck - expect 75
 	timeSvc.EXPECT().GetTimeNow().Return(tm.Add(5 * time.Second)).Times(1)
-	eng.BeginBlock()
+	eng.BeginBlock(ctx)
 	require.Equal(t, "75", eng.GetPartyBalance("zohar").String())
 
 	keys := eng.Keys()
@@ -3522,8 +3522,8 @@ func TestBalanceSnapshot(t *testing.T) {
 
 	timeSvc.EXPECT().GetTimeNow().Return(tm.Add(20 * time.Second)).Times(1)
 	timeSvc2.EXPECT().GetTimeNow().Return(tm.Add(20 * time.Second)).Times(1)
-	eng.BeginBlock()
-	newEng.BeginBlock()
+	eng.BeginBlock(ctx)
+	newEng.BeginBlock(ctx)
 
 	payloads = make(map[string]*types.Payload, len(keys))
 	data = make(map[string][]byte, len(keys))

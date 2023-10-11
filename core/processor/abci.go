@@ -162,7 +162,7 @@ type ProtocolUpgradeService interface {
 
 type BalanceChecker interface {
 	GetPartyBalance(party string) *num.Uint
-	BeginBlock()
+	BeginBlock(context.Context)
 }
 
 type EthCallEngine interface {
@@ -852,7 +852,7 @@ func (app *App) OnBeginBlock(
 
 	app.protocolUpgradeService.BeginBlock(ctx, uint64(req.Header.Height))
 	app.top.BeginBlock(ctx, req)
-	app.balanceChecker.BeginBlock()
+	app.balanceChecker.BeginBlock(ctx)
 
 	return ctx, resp
 }
