@@ -136,6 +136,23 @@ type TradingDataServiceV2 struct {
 	volumeDiscountProgramService *service.VolumeDiscountPrograms
 }
 
+func (t *TradingDataServiceV2) GetPartyActivityStreak(ctx context.Context, req *v2.GetPartyActivityStreakRequest) (*v2.GetPartyActivityStreakResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetPartyActivityStreak")()
+
+	if !crypto.IsValidVegaPubKey(req.PartyId) {
+		return nil, formatE(ErrInvalidPartyID)
+	}
+
+	activityStreak, err := t.partyActivityStreak.Get(ctx, entities.PartyID(req.PartyId), req.Epoch)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.GetPartyActivityStreakResponse{
+		ActivityStreak: activityStreak.ToProto(),
+	}, nil
+}
+
 func (t *TradingDataServiceV2) ListFundingPayments(ctx context.Context, req *v2.ListFundingPaymentsRequest) (*v2.ListFundingPaymentsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListFundingPayments")()
 

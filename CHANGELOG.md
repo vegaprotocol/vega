@@ -289,6 +289,7 @@
 - [9704](https://github.com/vegaprotocol/vega/issues/9704) - Fix referral program snapshot
 - [9705](https://github.com/vegaprotocol/vega/issues/9705) - Ensure vote events are sent in the same order.
 - [9714](https://github.com/vegaprotocol/vega/issues/9714) - Missing data from the fee stats
+- [9722](https://github.com/vegaprotocol/vega/issues/9722) - Add missing wiring for activity streak `gRPC`
 
 ## 0.72.1
 
