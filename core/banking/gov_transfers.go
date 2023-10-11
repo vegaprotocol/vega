@@ -336,8 +336,9 @@ func (e *Engine) VerifyGovernanceTransfer(transfer *types.NewTransferConfigurati
 
 	if transfer.RecurringTransferConfig != nil && transfer.RecurringTransferConfig.DispatchStrategy != nil {
 		if len(transfer.RecurringTransferConfig.DispatchStrategy.AssetForMetric) > 0 {
-			_, err := e.assets.Get(transfer.RecurringTransferConfig.DispatchStrategy.AssetForMetric)
-			return fmt.Errorf("could not transfer funds, invalid asset for metric: %w", err)
+			if _, err := e.assets.Get(transfer.RecurringTransferConfig.DispatchStrategy.AssetForMetric); err != nil {
+				return fmt.Errorf("could not transfer funds, invalid asset for metric: %w", err)
+			}
 		}
 	}
 
