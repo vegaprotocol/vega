@@ -160,13 +160,10 @@ func newEngine(t *testing.T) *testEngine {
 
 	ctrl := gomock.NewController(t)
 
-	epochEngine := mocks.NewMockEpochEngine(ctrl)
-	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any())
-
 	broker := mocks.NewMockBroker(ctrl)
 	timeService := mocks.NewMockTimeService(ctrl)
 
-	engine := teams.NewSnapshottedEngine(epochEngine, broker, timeService)
+	engine := teams.NewSnapshottedEngine(broker, timeService)
 
 	engine.OnEpochRestore(context.Background(), types.Epoch{
 		Seq:    10,
