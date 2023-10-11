@@ -866,8 +866,8 @@ type Query {
 
   "Get referral set statistics"
   referralSetStats(
-    "Referral set ID to fetch stats for"
-    id: ID!
+    "Optional referral set ID to fetch stats for"
+    setId: ID
     "Optional epoch to get statistics from. If not provided, the latest statistics are returned"
     epoch: Int
     "Optional party ID. If not provided all parties for the epoch are returned"
