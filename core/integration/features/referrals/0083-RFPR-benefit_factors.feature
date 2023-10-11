@@ -1,5 +1,5 @@
 Feature: Setting and applying referee benefit factors
-  
+
   Background:
 
     # Initialise timings
@@ -76,8 +76,8 @@ Feature: Setting and applying referee benefit factors
       | party     | code            | is_team | team  |
       | referrer1 | referral-code-1 | true    | team1 |
     And the parties apply the following referral codes:
-      | party     | code            | is_team | team  |
-      | referee1  | referral-code-1 | true    | team1 |
+      | party    | code            | is_team | team  |
+      | referee1 | referral-code-1 | true    | team1 |
 
     And the team "team1" has the following members:
       | party     |
@@ -202,12 +202,17 @@ Feature: Setting and applying referee benefit factors
     Then the following trades should be executed:
       | buyer | price | size | seller   |
       | aux1  | 1000  | 200  | referee1 |
+    # fees are split between referee1 and aux1
+    # aux1 has no discounts or rewards so is paying 100, 100
+    # referee1 has a discount of 1 and pays a reward of 2 to the referrer
     And the following transfers should happen:
       | from     | to        | from account                             | to account                               | market id   | amount | asset   |
-      | referee1 | market    | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_LIQUIDITY              | ETH/USD.1.1 | 100    | USD.1.1 |
-      | referee1 |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE         |             | 100    | USD.1.1 |
+      | referee1 | market    | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_LIQUIDITY              | ETH/USD.1.1 | 97     | USD.1.1 |
+      | referee1 |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE         |             | 97     | USD.1.1 |
       | referee1 |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD |             | 2      | USD.1.1 |
       |          | referrer1 | ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD | ACCOUNT_TYPE_GENERAL                     |             | 2      | USD.1.1 |
+      | aux1     | market    | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_LIQUIDITY              | ETH/USD.1.1 | 100    | USD.1.1 |
+      | aux1     |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE         |             | 100    | USD.1.1 |
 
 
   Scenario: Referrer incurs fees when exiting an auction (0029-FEES-024)(0029-FEES-026)
@@ -246,7 +251,7 @@ Feature: Setting and applying referee benefit factors
 
 
   Scenario: Insufficent fees after discounts applied to pay a referral commision to the referrer (0029-FEES-029)
-        # Expectation: rewards (<1) should be floored and therefore no reward paid
+    # Expectation: rewards (<1) should be floored and therefore no reward paid
 
     Given the parties place the following orders:
       | party    | market id   | side | volume | price | resulting trades | type       | tif     |
@@ -272,7 +277,7 @@ Feature: Setting and applying referee benefit factors
 
 
   Scenario: Insufficent fees to be able to apply a referral discount discount for the referee (0029-FEES-030)
-        # Expectation: discounts (<1) should be floored and therefore no discount applied
+    # Expectation: discounts (<1) should be floored and therefore no discount applied
 
     Given the parties place the following orders:
       | party    | market id   | side | volume | price | resulting trades | type       | tif     |
@@ -297,29 +302,32 @@ Feature: Setting and applying referee benefit factors
       | referee1 |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |             | 40     | USD.1.1 |
 
 
-  Scenario: Referal reward factor set greater than referralProgram.maxReferralRewardProportion (0029-FEES-029)
-    # Expectation: the maximum reward proportion should be adhered to
+  Scenario: Referal reward factor set greater than referralProgram.maxReferralRewardProportion (0029-FEES-029, 0029-FEES-031)
+  # Expectation: the maximum reward proportion should be adhered to
 
-    Given the parties place the following orders:
-      | party     | market id   | side | volume | price | resulting trades | type       | tif     |
-      | aux1      | ETH/USD.1.1 | buy  | 30     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | referrer1 | ETH/USD.1.1 | sell | 30     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-    When the network moves ahead "3" epochs
-    Then the referral set stats for code "referral-code-1" at epoch "3" should have a running volume of 3000:
-      | party    | reward factor | discount factor |
-      | referee1 | 0.20          | 0.20            |
+  Given the parties place the following orders:
+    | party     | market id   | side | volume | price | resulting trades | type       | tif     |
+    | aux1      | ETH/USD.1.1 | buy  | 30     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+    | referrer1 | ETH/USD.1.1 | sell | 30     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+  When the network moves ahead "3" epochs
+  Then the referral set stats for code "referral-code-1" at epoch "3" should have a running volume of 3000:
+    | party    | reward factor | discount factor |
+    | referee1 | 0.20          | 0.20            |
 
-    Given the parties place the following orders:
-      | party    | market id   | side | volume | price | resulting trades | type       | tif     |
-      | aux1     | ETH/USD.1.1 | buy  | 100    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | referee1 | ETH/USD.1.1 | sell | 100    | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-    When the following trades should be executed:
-      | buyer | price | size | seller   |
-      | aux1  | 1000  | 100  | referee1 |
-    Then the following transfers should happen:
-      | from     | to        | from account                             | to account                               | market id   | amount | asset   |
-      | referee1 | market    | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_MAKER                  | ETH/USD.1.1 | 72     | USD.1.1 |
-      | referee1 | market    | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_LIQUIDITY              | ETH/USD.1.1 | 72     | USD.1.1 |
-      | referee1 |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE         |             | 72     | USD.1.1 |
-      | referee1 |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD |             | 24     | USD.1.1 |
-      |          | referrer1 | ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD | ACCOUNT_TYPE_GENERAL                     |             | 24     | USD.1.1 |
+  Given the parties place the following orders:
+    | party    | market id   | side | volume | price | resulting trades | type       | tif     |
+    | aux1     | ETH/USD.1.1 | buy  | 100    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+    | referee1 | ETH/USD.1.1 | sell | 100    | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+  When the following trades should be executed:
+    | buyer | price | size | seller   |
+    | aux1  | 1000  | 100  | referee1 |
+
+  # reward factor is 0.2, multiplier is 1 however the maxReferralRewardProportion is set to 0.1 therefore
+  # the actual reward given is 0.1 * 240 = 24
+  Then the following transfers should happen:
+    | from     | to        | from account                             | to account                               | market id   | amount | asset   |
+    | referee1 | market    | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_MAKER                  | ETH/USD.1.1 | 72     | USD.1.1 |
+    | referee1 | market    | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_LIQUIDITY              | ETH/USD.1.1 | 72     | USD.1.1 |
+    | referee1 |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE         |             | 72     | USD.1.1 |
+    | referee1 |           | ACCOUNT_TYPE_GENERAL                     | ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD |             | 24     | USD.1.1 |
+    |          | referrer1 | ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD | ACCOUNT_TYPE_GENERAL                     |             | 24     | USD.1.1 |

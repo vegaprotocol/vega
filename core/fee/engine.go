@@ -684,10 +684,10 @@ func (e *Engine) getAuctionModeFeesAndTransfers(t *types.Trade, referral Referra
 	transfers := make([]*types.Transfer, 0, 12)
 	transfers = append(transfers,
 		e.getAuctionModeFeeTransfers(
-			fee.InfrastructureFee, fee.LiquidityFee, t.Seller)...)
+			sellerFeers.InfrastructureFee, sellerFeers.LiquidityFee, t.Seller)...)
 	transfers = append(transfers,
 		e.getAuctionModeFeeTransfers(
-			fee.InfrastructureFee, fee.LiquidityFee, t.Buyer)...)
+			buyerFeers.InfrastructureFee, buyerFeers.LiquidityFee, t.Buyer)...)
 
 	if buyerReferrerRewards != nil {
 		referrerParty, _ := referral.GetReferrer(types.PartyID(t.Buyer))
