@@ -212,9 +212,9 @@ func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {
 		if entityScope == proto.EntityScope_ENTITY_SCOPE_TEAMS {
 			if r.HasColumn("teams") {
 				teams = strings.Split(r.MustStr("teams"), ",")
-			}
-			if len(teams) == 1 && teams[0] == "" {
-				mkts = []string{}
+				if len(teams) == 1 && teams[0] == "" {
+					mkts = []string{}
+				}
 			}
 			ntop = r.MustStr("ntop")
 		}
