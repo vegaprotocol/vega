@@ -311,10 +311,12 @@ func newServices(
 			svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, stakingLoop, svcs.epochService, svcs.timeService)
 		}
 
-		svcs.spam.DisableSpamProtection() // Disable evaluation for the spam policies by the Spam Engine
+		// disable spam protection based on config
+		if !svcs.conf.Blockchain.Null.SpamProtection {
+			svcs.spam.DisableSpamProtection() // Disable evaluation for the spam policies by the Spam Engine
+		}
 	} else {
 		svcs.codec = &processor.TxCodec{}
-		svcs.spam = spam.New(svcs.log, svcs.conf.Spam, svcs.epochService, svcs.stakingAccounts)
 		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, svcs.stakingAccounts, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams, svcs.banking)
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, svcs.stakingAccounts, svcs.epochService, svcs.timeService)
 	}
@@ -378,7 +380,7 @@ func newServices(
 	svcs.snapshotEngine.AddProviders(svcs.spam)
 
 	pow := pow.New(svcs.log, svcs.conf.PoW, svcs.timeService)
-	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
+	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain && !svcs.conf.Blockchain.Null.SpamProtection {
 		pow.DisableVerification()
 	}
 	svcs.pow = pow

@@ -74,11 +74,12 @@ type ReplayConfig struct {
 
 type NullChainConfig struct {
 	Level                encoding.LogLevel `long:"log-level"`
-	BlockDuration        encoding.Duration `description:"(default 1s)"                           long:"block-duration"`
-	TransactionsPerBlock uint64            `description:"(default 10)"                           long:"transactions-per-block"`
-	GenesisFile          string            `description:"path to a tendermint genesis file"      long:"genesis-file"`
-	IP                   string            `description:"time-forwarding IP (default localhost)" long:"ip"`
-	Port                 int               `description:"time-forwarding port (default 3009)"    long:"port"`
+	BlockDuration        encoding.Duration `description:"(default 1s)"                                          long:"block-duration"`
+	TransactionsPerBlock uint64            `description:"(default 10)"                                          long:"transactions-per-block"`
+	GenesisFile          string            `description:"path to a tendermint genesis file"                     long:"genesis-file"`
+	IP                   string            `description:"time-forwarding IP (default localhost)"                long:"ip"`
+	Port                 int               `description:"time-forwarding port (default 3009)"                   long:"port"`
+	SpamProtection       bool              `description:"enable spam protection for null-chain (default false)" long:"spam-protection"`
 	Replay               ReplayConfig
 }
 
@@ -91,6 +92,7 @@ func NewDefaultNullChainConfig() NullChainConfig {
 		TransactionsPerBlock: 10,
 		IP:                   "localhost",
 		Port:                 3101,
+		SpamProtection:       false,
 		Replay:               ReplayConfig{},
 	}
 }
