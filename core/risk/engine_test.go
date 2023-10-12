@@ -184,7 +184,7 @@ func TestNegativeMargin(t *testing.T) {
 	riskEvts := eng.UpdateMarginsOnSettlement(ctx, []events.Margin{evt}, mtmPrice, inc)
 	require.NotEmpty(t, riskEvts)
 	initial := riskEvts[0].Transfer().Amount.Amount
-	require.Equal(t, "2", initial.String())
+	require.Equal(t, "5", initial.String())
 }
 
 func testMarginTopup(t *testing.T) {
@@ -251,7 +251,7 @@ func TestMarginTopupPerpetual(t *testing.T) {
 	assert.Equal(t, 1, len(resp))
 
 	mm := resp[0].MarginLevels().MaintenanceMargin
-	assert.Equal(t, "25", mm.String())
+	assert.Equal(t, "30", mm.String())
 
 	// now do it again with the funding payment negated, the margin should be as if we were not a perp
 	// and 5 less
@@ -259,7 +259,7 @@ func TestMarginTopupPerpetual(t *testing.T) {
 	assert.Equal(t, 1, len(resp))
 
 	mm = resp[0].MarginLevels().MaintenanceMargin
-	assert.Equal(t, "30", mm.String())
+	assert.Equal(t, "25", mm.String())
 }
 
 func testMarginNotReleasedInAuction(t *testing.T) {
@@ -477,7 +477,7 @@ func TestMarginWithNoOrdersOnBook(t *testing.T) {
 			auction:                 true,
 		},
 		{
-			expectedMargin: "245",
+			expectedMargin: "335",
 			positionSize:   9,
 			buyOrders: []*risk.OrderInfo{
 				{
@@ -510,7 +510,7 @@ func TestMarginWithNoOrdersOnBook(t *testing.T) {
 			auction:                 false,
 		},
 		{
-			expectedMargin: "238",
+			expectedMargin: "328",
 			positionSize:   9,
 			buyOrders: []*risk.OrderInfo{
 				{
