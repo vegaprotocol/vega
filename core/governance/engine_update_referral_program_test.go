@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -43,6 +44,11 @@ func testSubmittingProposalForReferralProgramUpdateSucceeds(t *testing.T) {
 	eng := getTestEngine(t, now)
 
 	// setup
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.netp.Update(ctx, netparams.GovernanceProposalReferralProgramMinClose, "48h")
+	eng.netp.Update(ctx, netparams.GovernanceProposalReferralProgramMinEnact, "48h")
+	eng.netp.Update(ctx, netparams.GovernanceProposalReferralProgramMinProposerBalance, "1000")
+
 	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxReferralTiers, "2")).Times(1)
 	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxReferralTiers, "2"))
 
@@ -92,6 +98,11 @@ func testSubmittingProposalForReferralProgramUpdateWithTooManyTiersFails(t *test
 	eng := getTestEngine(t, now)
 
 	// setup
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.netp.Update(ctx, netparams.GovernanceProposalReferralProgramMinClose, "48h")
+	eng.netp.Update(ctx, netparams.GovernanceProposalReferralProgramMinEnact, "48h")
+	eng.netp.Update(ctx, netparams.GovernanceProposalReferralProgramMinProposerBalance, "1000")
+
 	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxReferralTiers, "1")).Times(1)
 	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxReferralTiers, "1"))
 
@@ -141,6 +152,11 @@ func testSubmittingProposalForReferralProgramUpdateWithTooHighRewardFactorFails(
 	eng := getTestEngine(t, now)
 
 	// setup
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.netp.Update(ctx, netparams.GovernanceProposalReferralProgramMinClose, "48h")
+	eng.netp.Update(ctx, netparams.GovernanceProposalReferralProgramMinEnact, "48h")
+	eng.netp.Update(ctx, netparams.GovernanceProposalReferralProgramMinProposerBalance, "1000")
+
 	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxReferralTiers, "2")).Times(1)
 	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxReferralTiers, "2"))
 
@@ -193,6 +209,11 @@ func testSubmittingProposalForReferralProgramUpdateWithTooHighDiscountFactorFail
 	eng := getTestEngine(t, now)
 
 	// setup
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.netp.Update(ctx, netparams.GovernanceProposalReferralProgramMinClose, "48h")
+	eng.netp.Update(ctx, netparams.GovernanceProposalReferralProgramMinEnact, "48h")
+	eng.netp.Update(ctx, netparams.GovernanceProposalReferralProgramMinProposerBalance, "1000")
+
 	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxReferralTiers, "2")).Times(1)
 	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxReferralTiers, "2"))
 
@@ -245,6 +266,11 @@ func testSubmittingProposalForReferralProgramUpdateEndsBeforeEnactsFails(t *test
 	eng := getTestEngine(t, now)
 
 	// setup
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.netp.Update(ctx, netparams.GovernanceProposalReferralProgramMinClose, "48h")
+	eng.netp.Update(ctx, netparams.GovernanceProposalReferralProgramMinEnact, "48h")
+	eng.netp.Update(ctx, netparams.GovernanceProposalReferralProgramMinProposerBalance, "1000")
+
 	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.ReferralProgramMaxReferralTiers, "2")).Times(1)
 	require.NoError(t, eng.netp.Update(ctx, netparams.ReferralProgramMaxReferralTiers, "2"))
 

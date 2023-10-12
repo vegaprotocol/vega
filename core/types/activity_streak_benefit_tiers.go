@@ -93,10 +93,6 @@ func CheckUntypedActivityStreakBenefitTier(v interface{}) error {
 
 // CheckEthereumConfig verifies the proto.EthereumConfig is valid.
 func CheckActivityStreakBenefitTiers(ptiers *proto.ActivityStreakBenefitTiers) error {
-	if len(ptiers.Tiers) <= 0 {
-		return ErrNoTierSet
-	}
-
 	activityStreakSet := map[uint64]struct{}{}
 
 	for i, v := range ptiers.Tiers {
