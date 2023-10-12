@@ -66,10 +66,10 @@ Feature: When moving into auction, all GFN orders are cancelled
 
     # place GFN orders outside of bounds so we can trigger auction without those order uncrossing
     When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/DEC20 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GFN |
-      | party2 | ETH/DEC20 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GFN |
-      | party4 | ETH/DEC20 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | party1 | ETH/DEC20 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GFN | gfn-buy-1  |
+      | party2 | ETH/DEC20 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GFN | gfn-sell-1 |
+      | party4 | ETH/DEC20 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC | gtc-sell-1 |
     Then the order book should have the following volumes for market "ETH/DEC20":
       | side | volume | price   |
       | buy  | 1      | 1       |
@@ -102,3 +102,8 @@ Feature: When moving into auction, all GFN orders are cancelled
       | sell | 0      | 1110    |
       | sell | 1      | 200000  |
       | sell | 1      | 1000000 |
+    And the orders should have the following status:
+      | party  | reference  | status           |
+      | party1 | gfn-buy-1  | STATUS_CANCELLED |
+      | party2 | gfn-sell-1 | STATUS_CANCELLED |
+      | party4 | gtc-sell-1 | STATUS_ACTIVE    |
