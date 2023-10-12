@@ -240,7 +240,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 
 	if !inc.IsZero() && !openVolume.IsZero() {
 		// openVolume and inc are signed, but this is fine, we only apply the positive values
-		incD := inc.Mul(openVolume)
+		incD := num.MaxD(num.DecimalZero(), inc.Mul(openVolume))
 		if longFP {
 			marginMaintenanceLng = marginMaintenanceLng.Add(incD)
 		} else {
