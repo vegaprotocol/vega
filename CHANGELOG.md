@@ -152,6 +152,7 @@
 - [401](https://github.com/vegaprotocol/OctoberACs/issues/401) - Add integration test for team rewards `0056-REWA-098`
 - [400](https://github.com/vegaprotocol/OctoberACs/issues/400) - Add integration test for team rewards `0056-REWA-097`
 - [2971](https://github.com/vegaprotocol/system-tests/issues/2971) - Fix margin calculation for `PERPS`.
+- [2948](https://github.com/vegaprotocol/system-tests/issues/2948) - Add integration test for failing system test.
 
 ### 🐛 Fixes
 
