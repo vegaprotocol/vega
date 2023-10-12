@@ -4209,9 +4209,10 @@ func (t *TradingDataServiceV2) ListReferralSetReferees(ctx context.Context, req 
 	}
 
 	var (
-		id       *entities.ReferralSetID
-		referrer *entities.PartyID
-		referee  *entities.PartyID
+		id              *entities.ReferralSetID
+		referrer        *entities.PartyID
+		referee         *entities.PartyID
+		daysToAggregate uint32 = 30 // default is 30 days
 	)
 
 	if req.ReferralSetId != nil {
@@ -4226,7 +4227,11 @@ func (t *TradingDataServiceV2) ListReferralSetReferees(ctx context.Context, req 
 		referee = ptr.From(entities.PartyID(*req.Referee))
 	}
 
-	referees, pageInfo, err := t.referralSetsService.ListReferralSetReferees(ctx, id, referrer, referee, pagination)
+	if req.AggregationDays != nil {
+		daysToAggregate = *req.AggregationDays
+	}
+
+	referees, pageInfo, err := t.referralSetsService.ListReferralSetReferees(ctx, id, referrer, referee, pagination, daysToAggregate)
 	if err != nil {
 		return nil, formatE(err)
 	}
