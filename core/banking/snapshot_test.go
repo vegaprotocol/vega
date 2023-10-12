@@ -533,6 +533,7 @@ func TestRecurringTransfersSnapshotRoundTrip(t *testing.T) {
 	p, _ := proto.Marshal(recurring.Recurring.DispatchStrategy)
 	dsHash := hex.EncodeToString(crypto.Hash(p))
 
+	eng.marketActivityTracker.EXPECT().MarketTrackedForAsset("mmm", "zohar").Times(1).Return(true)
 	require.NoError(t, eng.TransferFunds(ctx, recurring))
 
 	// test the new transfer prompts a change

@@ -715,3 +715,49 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 		)
 	})
 }
+
+func TestMarketAssetMismatchRejectsTransfer(t *testing.T) {
+	eng := getTestEngine(t)
+
+	fromAcc := types.Account{
+		Balance: num.NewUint(1000),
+	}
+
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	eng.tsvc.EXPECT().GetTimeNow().Times(1)
+	eng.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	eng.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+
+	recurring := &types.TransferFunds{
+		Kind: types.TransferCommandKindRecurring,
+		Recurring: &types.RecurringTransfer{
+			TransferBase: &types.TransferBase{
+				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+				FromAccountType: types.AccountTypeGeneral,
+				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
+				ToAccountType:   types.AccountTypeGeneral,
+				Asset:           "eth",
+				Amount:          num.NewUint(10),
+				Reference:       "someref",
+			},
+			StartEpoch: 10,
+			EndEpoch:   nil, // forever
+			Factor:     num.MustDecimalFromString("0.9"),
+			DispatchStrategy: &vega.DispatchStrategy{
+				AssetForMetric:       "zohar",
+				Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+				Markets:              []string{"mmm"},
+				EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+				IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
+				WindowLength:         1,
+				LockPeriod:           1,
+				DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK,
+			},
+		},
+	}
+
+	// if in-scope market has a different asset it is rejected
+	eng.marketActivityTracker.EXPECT().MarketTrackedForAsset(gomock.Any(), gomock.Any()).Times(1).Return(false)
+	require.Error(t, eng.TransferFunds(context.Background(), recurring))
+}

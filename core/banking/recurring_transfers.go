@@ -66,6 +66,20 @@ func (e *Engine) recurringTransfer(
 				return fmt.Errorf("could not transfer funds, invalid asset for metric: %w", err)
 			}
 		}
+
+		if hasAsset && len(transfer.DispatchStrategy.Markets) > 0 {
+			asset := transfer.DispatchStrategy.AssetForMetric
+			for _, mid := range transfer.DispatchStrategy.Markets {
+				if !e.marketActivityTracker.MarketTrackedForAsset(mid, asset) {
+					transfer.Status = types.TransferStatusRejected
+					e.log.Debug("cannot transfer funds, invalid market for dispatch asset",
+						logging.String("mid", mid),
+						logging.String("asset", asset),
+					)
+					return errors.New("could not transfer funds, invalid market for dispatch asset")
+				}
+			}
+		}
 	}
 
 	if err := transfer.IsValid(); err != nil {
