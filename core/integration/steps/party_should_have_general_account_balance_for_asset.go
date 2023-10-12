@@ -61,6 +61,27 @@ func PartyShouldHaveVestingAccountBalanceForAsset(
 	return nil
 }
 
+func PartiesShouldHaveVestedAccountBalances(broker *stubs.BrokerStub, table *godog.Table) error {
+	for _, r := range parseVestingRow(table) {
+		row := vestingRow{
+			r: r,
+		}
+		acc, err := broker.GetPartyVestedAccount(row.Party(), row.Asset())
+		if err != nil {
+			if err != stubs.AccountDoesNotExistErr {
+				return err
+			}
+			acc.Balance = "0"
+		}
+		if stringToU64(acc.Balance) != row.Balance() {
+			return fmt.Errorf("invalid vested account balance for asset (%s) for party(%s), expected (%d) got (%s)",
+				row.Asset(), row.Party(), row.Balance(), acc.Balance,
+			)
+		}
+	}
+	return nil
+}
+
 func PartiesShouldHaveVestingAccountBalances(broker *stubs.BrokerStub, table *godog.Table) error {
 	for _, r := range parseVestingRow(table) {
 		row := vestingRow{

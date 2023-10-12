@@ -406,6 +406,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^parties should have the following vesting account balances:$`, func(table *godog.Table) error {
 		return steps.PartiesShouldHaveVestingAccountBalances(execsetup.broker, table)
 	})
+	s.Step(`^parties should have the following vested account balances:$`, func(table *godog.Table) error {
+		return steps.PartiesShouldHaveVestedAccountBalances(execsetup.broker, table)
+	})
 	s.Step(`^"([^"]*)" should have vested account balance of "([^"]*)" for asset "([^"]*)"$`, func(party, balance, asset string) error {
 		return steps.PartyShouldHaveVestedAccountBalanceForAsset(execsetup.broker, party, asset, balance)
 	})
