@@ -82,11 +82,8 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			CollateralReleaseLevel: num.UintZero(),
 		}
 	}
-	// long funding payment -> requires extra margin, if false, same holds for short
-	longFP := inc.IsNegative()
-	if longFP {
-		inc = inc.Abs() // this can be positive or negative, we use it to pad margin levels to ensure funding can be paid either way, always add
-	}
+	// negative increment == short positions require extra margin, otherwise long requires extra margin
+	longFP := inc.IsPositive()
 
 	mPriceDec := markPrice.ToDecimal()
 	// calculate margin maintenance long only if riskiest is > 0
@@ -242,9 +239,8 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 	}
 
 	if !inc.IsZero() && !openVolume.IsZero() {
-		// calculate margin increase based on position
-		// incD = max(0, inc * open volume)
-		incD := num.MaxD(num.DecimalZero(), inc.Mul(openVolume))
+		// openVolume and inc are signed, but this is fine, we only apply the positive values
+		incD := inc.Mul(openVolume)
 		if longFP {
 			marginMaintenanceLng = marginMaintenanceLng.Add(incD)
 		} else {
