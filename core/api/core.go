@@ -702,6 +702,9 @@ func (s *coreService) GetSpamStatistics(ctx context.Context, req *protoapi.GetSp
 		spamStats.Proposals = defaultStats
 		spamStats.IssueSignatures = defaultStats
 		spamStats.Transfers = defaultStats
+		spamStats.CreateReferralSet = defaultStats
+		spamStats.UpdateReferralSet = defaultStats
+		spamStats.ApplyReferralCode = defaultStats
 		spamStats.Votes = &protoapi.VoteSpamStatistics{
 			Statistics:  []*protoapi.VoteSpamStatistic{},
 			MaxForEpoch: math.MaxUint64,

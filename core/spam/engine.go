@@ -356,6 +356,12 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.SpamStatistics {
 			stats.IssueSignatures = policy.GetSpamStats(partyID)
 		case txn.VoteCommand:
 			stats.Votes = policy.GetVoteSpamStats(partyID)
+		case txn.CreateReferralSetCommand:
+			stats.CreateReferralSet = policy.GetSpamStats(partyID)
+		case txn.UpdateReferralSetCommand:
+			stats.UpdateReferralSet = policy.GetSpamStats(partyID)
+		case txn.ApplyReferralCodeCommand:
+			stats.ApplyReferralCode = policy.GetSpamStats(partyID)
 		default:
 			continue
 		}
