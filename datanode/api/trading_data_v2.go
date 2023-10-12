@@ -131,7 +131,7 @@ type TradingDataServiceV2 struct {
 	referralProgramService       *service.ReferralPrograms
 	referralSetsService          *service.ReferralSets
 	teamsService                 *service.Teams
-	referralFeeStatsService      *service.ReferralFeeStats
+	feesStatsService             *service.FeesStats
 	volumeDiscountStatsService   *service.VolumeDiscountStats
 	volumeDiscountProgramService *service.VolumeDiscountPrograms
 }
@@ -4432,9 +4432,9 @@ func (t *TradingDataServiceV2) ListTeamRefereeHistory(ctx context.Context, req *
 	}, nil
 }
 
-func (t *TradingDataServiceV2) GetReferralFeeStats(ctx context.Context, req *v2.GetReferralFeeStatsRequest) (*v2.GetReferralFeeStatsResponse, error) {
+func (t *TradingDataServiceV2) GetFeesStats(ctx context.Context, req *v2.GetFeesStatsRequest) (*v2.GetFeesStatsResponse, error) {
 	if req.MarketId == nil && req.AssetId == nil {
-		return nil, formatE(ErrReferralFeeStatsRequest)
+		return nil, formatE(ErrFeesStatsRequest)
 	}
 
 	var (
@@ -4450,13 +4450,13 @@ func (t *TradingDataServiceV2) GetReferralFeeStats(ctx context.Context, req *v2.
 		assetID = ptr.From(entities.AssetID(*req.AssetId))
 	}
 
-	stats, err := t.referralFeeStatsService.GetFeeStats(ctx, marketID, assetID, req.EpochSeq, req.Referrer, req.Referee)
+	stats, err := t.feesStatsService.GetFeesStats(ctx, marketID, assetID, req.EpochSeq, req.Referrer, req.Referee)
 	if err != nil {
-		return nil, formatE(ErrGetReferralFeeStats, err)
+		return nil, formatE(ErrGetFeesStats, err)
 	}
 
-	return &v2.GetReferralFeeStatsResponse{
-		FeeStats: stats.ToProto(),
+	return &v2.GetFeesStatsResponse{
+		FeesStats: stats.ToProto(),
 	}, nil
 }
 

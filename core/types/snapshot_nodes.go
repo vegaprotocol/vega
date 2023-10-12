@@ -437,7 +437,7 @@ type ExecMarket struct {
 	StopOrders                 *snapshot.StopOrders
 	ExpiringStopOrders         []*Order
 	Product                    *snapshot.Product
-	FeeStats                   *eventspb.FeeStats
+	FeesStats                  *eventspb.FeesStats
 }
 
 type ExecSpotMarket struct {
@@ -462,7 +462,7 @@ type ExecSpotMarket struct {
 	HasTraded                  bool
 	StopOrders                 *snapshot.StopOrders
 	ExpiringStopOrders         []*Order
-	FeeStats                   *eventspb.FeeStats
+	FeesStats                  *eventspb.FeesStats
 }
 
 type PriceMonitor struct {
@@ -3445,7 +3445,7 @@ func ExecSpotMarketFromProto(em *snapshot.SpotMarket) *ExecSpotMarket {
 		Parties:                    em.Parties,
 		Closed:                     em.Closed,
 		StopOrders:                 em.StopOrders,
-		FeeStats:                   em.FeeStats,
+		FeesStats:                  em.FeesStats,
 	}
 	for _, o := range em.ExpiringOrders {
 		or, _ := OrderFromProto(o)
@@ -3476,7 +3476,7 @@ func (e ExecSpotMarket) IntoProto() *snapshot.SpotMarket {
 		Parties:                    e.Parties,
 		Closed:                     e.Closed,
 		StopOrders:                 e.StopOrders,
-		FeeStats:                   e.FeeStats,
+		FeesStats:                  e.FeesStats,
 	}
 	if e.CurrentMarkPrice != nil {
 		ret.CurrentMarkPrice = e.CurrentMarkPrice.String()
@@ -3553,7 +3553,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		IsSucceeded:                em.Succeeded,
 		StopOrders:                 em.StopOrders,
 		Product:                    em.Product,
-		FeeStats:                   em.FeeStats,
+		FeesStats:                  em.FeesStats,
 	}
 
 	for _, o := range em.ExpiringOrders {
@@ -3592,7 +3592,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		Succeeded:                  e.IsSucceeded,
 		StopOrders:                 e.StopOrders,
 		Product:                    e.Product,
-		FeeStats:                   e.FeeStats,
+		FeesStats:                  e.FeesStats,
 	}
 
 	if e.CurrentMarkPrice != nil {

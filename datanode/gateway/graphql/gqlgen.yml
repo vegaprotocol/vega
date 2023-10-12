@@ -648,8 +648,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetStats
   RefereeStats:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.RefereeStats
-  ReferralSetFeeStats:
-    model: code.vegaprotocol.io/vega/protos/vega/events/v1.FeeStats
+  FeesStats:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.FeesStats
   PartyAmount:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.PartyAmount
   ReferrerRewardsGenerated:

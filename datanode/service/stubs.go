@@ -59,7 +59,7 @@ type (
 	Teams                  struct{ *sqlstore.Teams }
 	VestingStats           struct{ *sqlstore.VestingStats }
 	VolumeDiscountStats    struct{ *sqlstore.VolumeDiscountStats }
-	ReferralFeeStats       struct{ *sqlstore.ReferralFeeStats }
+	FeesStats              struct{ *sqlstore.FeesStats }
 	VolumeDiscountPrograms struct {
 		*sqlstore.VolumeDiscountPrograms
 	}
@@ -178,8 +178,8 @@ func NewVolumeDiscountStats(store *sqlstore.VolumeDiscountStats) *VolumeDiscount
 	return &VolumeDiscountStats{VolumeDiscountStats: store}
 }
 
-func NewReferralFeeStats(store *sqlstore.ReferralFeeStats) *ReferralFeeStats {
-	return &ReferralFeeStats{ReferralFeeStats: store}
+func NewFeesStats(store *sqlstore.FeesStats) *FeesStats {
+	return &FeesStats{FeesStats: store}
 }
 
 func NewVolumeDiscountPrograms(store *sqlstore.VolumeDiscountPrograms) *VolumeDiscountPrograms {

@@ -51,7 +51,7 @@ type Engine struct {
 	f              factors
 	positionFactor num.Decimal
 
-	feeStats *FeeStats
+	feesStats *FeesStats
 }
 
 type factors struct {
@@ -70,7 +70,7 @@ func New(log *logging.Logger, cfg Config, feeCfg types.Fees, asset string, posit
 		cfg:            cfg,
 		asset:          asset,
 		positionFactor: positionFactor,
-		feeStats:       NewFeeStats(),
+		feesStats:      NewFeesStats(),
 	}
 	return e, e.UpdateFeeFactors(e.feeCfg)
 }
@@ -81,24 +81,24 @@ func NewFromState(
 	feeCfg types.Fees,
 	asset string,
 	positionFactor num.Decimal,
-	feeStats *eventspb.FeeStats,
+	FeesStats *eventspb.FeesStats,
 ) (*Engine, error) {
 	e, err := New(log, cfg, feeCfg, asset, positionFactor)
 	if err != nil {
 		return nil, err
 	}
 
-	e.feeStats = NewFeeStatsFromProto(feeStats)
+	e.feesStats = NewFeesStatsFromProto(FeesStats)
 
 	return e, nil
 }
 
-func (e *Engine) GetState() *eventspb.FeeStats {
-	return e.feeStats.ToProto(e.asset)
+func (e *Engine) GetState() *eventspb.FeesStats {
+	return e.feesStats.ToProto(e.asset)
 }
 
-func (e *Engine) GetFeesStatsOnEpochEnd() (feeStats *eventspb.FeeStats) {
-	feeStats, e.feeStats = e.feeStats.ToProto(e.asset), NewFeeStats()
+func (e *Engine) GetFeesStatsOnEpochEnd() (FeesStats *eventspb.FeesStats) {
+	FeesStats, e.feesStats = e.feesStats.ToProto(e.asset), NewFeesStats()
 	return
 }
 
@@ -621,7 +621,7 @@ func (e *Engine) applyDiscountsAndRewards(taker string, fees *types.Fee, referra
 		LiquidityFeeReferrerDiscount:      referralLfDiscount,
 	}
 
-	e.feeStats.RegisterRefereeDiscount(
+	e.feesStats.RegisterRefereeDiscount(
 		taker,
 		num.Sum(
 			referralMakerDiscount,
@@ -630,7 +630,7 @@ func (e *Engine) applyDiscountsAndRewards(taker string, fees *types.Fee, referra
 		),
 	)
 
-	e.feeStats.RegisterVolumeDiscount(
+	e.feesStats.RegisterVolumeDiscount(
 		taker,
 		num.Sum(
 			volumeMakerDiscount,
@@ -659,7 +659,7 @@ func (e *Engine) applyDiscountsAndRewards(taker string, fees *types.Fee, referra
 	if err != nil {
 		e.log.Error("could not load referrer from taker of trade", logging.PartyID(taker))
 	} else {
-		e.feeStats.RegisterReferrerReward(
+		e.feesStats.RegisterReferrerReward(
 			string(referrer),
 			taker,
 			num.Sum(

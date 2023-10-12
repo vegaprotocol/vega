@@ -101,7 +101,7 @@ var defaultRetentionPolicies = map[RetentionPeriod][]RetentionPolicy{
 		{HypertableOrCaggName: "vesting_stats", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "volume_discount_stats", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "referral_set_stats", DataRetentionPeriod: "1 year"},
-		{HypertableOrCaggName: "referral_fee_stats", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "fees_stats", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "funding_payment", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "volume_discount_programs", DataRetentionPeriod: "1 year"},
 	},

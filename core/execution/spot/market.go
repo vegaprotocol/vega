@@ -2878,12 +2878,10 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	} else if epoch.Action == vega.EpochAction_EPOCH_ACTION_END {
 		m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow())
 		m.updateLiquidityFee(ctx)
-		feeStats := m.fee.GetFeesStatsOnEpochEnd()
-		feeStats.EpochSeq = epoch.Seq
-		feeStats.Market = m.GetID()
-		m.broker.Send(
-			events.NewFeeStatsEvent(ctx, feeStats),
-		)
+		feesStats := m.fee.GetFeesStatsOnEpochEnd()
+		feesStats.EpochSeq = epoch.Seq
+		feesStats.Market = m.GetID()
+		m.broker.Send(events.NewFeesStatsEvent(ctx, feesStats))
 	}
 }
 

@@ -160,7 +160,7 @@ const (
 	ReferralSetStatsUpdatedEvent
 	VestingStatsUpdatedEvent
 	VolumeDiscountStatsUpdatedEvent
-	FeeStatsEvent
+	FeesStatsEvent
 	FundingPaymentsEvent
 )
 
@@ -252,7 +252,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_SET_STATS_UPDATED:       ReferralSetStatsUpdatedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_VESTING_STATS_UPDATED:            VestingStatsUpdatedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_STATS_UPDATED:    VolumeDiscountStatsUpdatedEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_FEE_STATS_UPDATED:                FeeStatsEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_FEES_STATS_UPDATED:               FeesStatsEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PAYMENTS:                 FundingPaymentsEvent,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
@@ -335,7 +335,7 @@ var (
 		ReferralSetStatsUpdatedEvent:      eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_SET_STATS_UPDATED,
 		VestingStatsUpdatedEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_VESTING_STATS_UPDATED,
 		VolumeDiscountStatsUpdatedEvent:   eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_STATS_UPDATED,
-		FeeStatsEvent:                     eventspb.BusEventType_BUS_EVENT_TYPE_FEE_STATS_UPDATED,
+		FeesStatsEvent:                    eventspb.BusEventType_BUS_EVENT_TYPE_FEES_STATS_UPDATED,
 		FundingPaymentsEvent:              eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PAYMENTS,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
@@ -419,7 +419,7 @@ var (
 		ReferralSetStatsUpdatedEvent:      "ReferralSetStatsUpdatedEvent",
 		VestingStatsUpdatedEvent:          "VestingStatsUpdatedEvent",
 		VolumeDiscountStatsUpdatedEvent:   "VolumeDiscountStatsUpdatedEvent",
-		FeeStatsEvent:                     "FeeStatsEvent",
+		FeesStatsEvent:                    "FeesStatsEvent",
 		FundingPaymentsEvent:              "FundingPaymentsEvent",
 	}
 )

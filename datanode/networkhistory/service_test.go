@@ -1266,7 +1266,7 @@ func emptyDatabaseAndSetSchemaVersion(schemaVersion int64) {
 	}
 }
 
-func panicIfHistorySegmentIdsNotEqual(actual string, expected string, snapshots []segment.Unpublished) {
+func panicIfHistorySegmentIdsNotEqual(actual, expected string, snapshots []segment.Unpublished) {
 	if expected != actual {
 		snapshotPaths := ""
 		for _, sn := range snapshots {
