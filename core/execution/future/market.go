@@ -23,6 +23,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/exp/maps"
+
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
@@ -49,7 +51,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
-	"golang.org/x/exp/maps"
 )
 
 // LiquidityMonitor.
@@ -365,9 +366,7 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 		FeesStats := m.fee.GetFeesStatsOnEpochEnd()
 		FeesStats.Market = m.GetID()
 		FeesStats.EpochSeq = epoch.Seq
-		m.broker.Send(
-			events.NewFeesStatsEvent(ctx, FeesStats),
-		)
+		m.broker.Send(events.NewFeesStatsEvent(ctx, FeesStats))
 	}
 
 	m.updateLiquidityFee(ctx)

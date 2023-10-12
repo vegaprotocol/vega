@@ -151,7 +151,7 @@ func (e *Engine) CalculateForContinuousMode(
 	}
 
 	var (
-		aggressor, maker             string
+		taker, maker                 string
 		totalFeeAmount               = num.UintZero()
 		totalInfrastructureFeeAmount = num.UintZero()
 		totalLiquidityFeeAmount      = num.UintZero()
@@ -162,21 +162,26 @@ func (e *Engine) CalculateForContinuousMode(
 		transfersRecv = make([]*types.Transfer, 0, len(trades)+2)
 	)
 
-	for _, v := range trades {
-		aggressor = v.Buyer
-		if v.Aggressor == types.SideSell {
-			aggressor = v.Seller
+	for _, trade := range trades {
+		taker = trade.Buyer
+		maker = trade.Seller
+		if trade.Aggressor == types.SideSell {
+			taker = trade.Seller
+			maker = trade.Buyer
 		}
-		fee, reward := e.applyDiscountsAndRewards(aggressor, e.calculateContinuousModeFees(v), referral, volumeDiscountService)
-		switch v.Aggressor {
+		fee, reward := e.applyDiscountsAndRewards(taker, e.calculateContinuousModeFees(trade), referral, volumeDiscountService)
+
+		e.feeStats.RegisterMakerFee(maker, taker, fee.MakerFee)
+
+		switch trade.Aggressor {
 		case types.SideBuy:
-			v.BuyerFee = fee
-			v.SellerFee = types.NewFee()
-			maker = v.Seller
+			trade.BuyerFee = fee
+			trade.SellerFee = types.NewFee()
+			maker = trade.Seller
 		case types.SideSell:
-			v.SellerFee = fee
-			v.BuyerFee = types.NewFee()
-			maker = v.Buyer
+			trade.SellerFee = fee
+			trade.BuyerFee = types.NewFee()
+			maker = trade.Buyer
 		}
 
 		totalFeeAmount.AddSum(fee.InfrastructureFee, fee.LiquidityFee, fee.MakerFee)
@@ -184,7 +189,7 @@ func (e *Engine) CalculateForContinuousMode(
 		totalLiquidityFeeAmount.AddSum(fee.LiquidityFee)
 		// create a transfer for the aggressor
 		transfers = append(transfers, &types.Transfer{
-			Owner: aggressor,
+			Owner: taker,
 			Amount: &types.FinancialAmount{
 				Asset:  e.asset,
 				Amount: fee.MakerFee.Clone(),
@@ -211,7 +216,7 @@ func (e *Engine) CalculateForContinuousMode(
 
 	// now create transfer for the infrastructure
 	transfers = append(transfers, &types.Transfer{
-		Owner: aggressor,
+		Owner: taker,
 		Amount: &types.FinancialAmount{
 			Asset:  e.asset,
 			Amount: totalInfrastructureFeeAmount,
@@ -220,7 +225,7 @@ func (e *Engine) CalculateForContinuousMode(
 	})
 	// now create transfer for the liquidity
 	transfers = append(transfers, &types.Transfer{
-		Owner: aggressor,
+		Owner: taker,
 		Amount: &types.FinancialAmount{
 			Asset:  e.asset,
 			Amount: totalLiquidityFeeAmount,
@@ -230,9 +235,9 @@ func (e *Engine) CalculateForContinuousMode(
 
 	// if there's a referral reward - add transfers for it
 	if !totalRewardAmount.IsZero() {
-		referrer, _ := referral.GetReferrer(types.PartyID(aggressor))
+		referrer, _ := referral.GetReferrer(types.PartyID(taker))
 		transfers = append(transfers, &types.Transfer{
-			Owner: aggressor,
+			Owner: taker,
 			Amount: &types.FinancialAmount{
 				Asset:  e.asset,
 				Amount: totalRewardAmount.Clone(),
@@ -250,7 +255,7 @@ func (e *Engine) CalculateForContinuousMode(
 	}
 
 	return &feesTransfer{
-		totalFeesAmountsPerParty: map[string]*num.Uint{aggressor: totalFeeAmount, maker: num.UintZero()},
+		totalFeesAmountsPerParty: map[string]*num.Uint{taker: totalFeeAmount, maker: num.UintZero()},
 		transfers:                append(transfers, transfersRecv...),
 	}, nil
 }
