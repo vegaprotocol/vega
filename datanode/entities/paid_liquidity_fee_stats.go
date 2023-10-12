@@ -41,11 +41,11 @@ func (c *PaidLiquidityFeeStatsCursor) Parse(cursorString string) error {
 }
 
 type PaidLiquidityFeeStats struct {
-	MarketID         MarketID
-	AssetID          AssetID
-	EpochSeq         uint64
-	TotalFeesPaid    string
-	FeesPaidPerParty []*eventspb.PartyAmount
+	MarketID      MarketID
+	AssetID       AssetID
+	EpochSeq      uint64
+	TotalFeesPaid string
+	FeesPerParty  []*eventspb.PartyAmount
 }
 
 func (s PaidLiquidityFeeStats) Cursor() *Cursor {
@@ -70,16 +70,16 @@ func (s PaidLiquidityFeeStats) ToProto() *eventspb.PaidLiquidityFeeStats {
 		Asset:            s.AssetID.String(),
 		EpochSeq:         s.EpochSeq,
 		TotalFeesPaid:    s.TotalFeesPaid,
-		FeesPaidPerParty: s.FeesPaidPerParty,
+		FeesPaidPerParty: s.FeesPerParty,
 	}
 }
 
 func PaidLiquidityFeeStatsFromProto(proto *eventspb.PaidLiquidityFeeStats) *PaidLiquidityFeeStats {
 	return &PaidLiquidityFeeStats{
-		MarketID:         MarketID(proto.Market),
-		AssetID:          AssetID(proto.Asset),
-		EpochSeq:         proto.EpochSeq,
-		TotalFeesPaid:    proto.TotalFeesPaid,
-		FeesPaidPerParty: proto.FeesPaidPerParty,
+		MarketID:      MarketID(proto.Market),
+		AssetID:       AssetID(proto.Asset),
+		EpochSeq:      proto.EpochSeq,
+		TotalFeesPaid: proto.TotalFeesPaid,
+		FeesPerParty:  proto.FeesPaidPerParty,
 	}
 }

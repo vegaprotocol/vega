@@ -17,7 +17,6 @@ package sqlstore_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -76,7 +75,7 @@ func testAddPaidLiquidityFeeStatsEpochIfNotExists(t *testing.T) {
 		AssetID:       asset.ID,
 		EpochSeq:      100,
 		TotalFeesPaid: "100",
-		FeesPaidPerParty: []*eventspb.PartyAmount{
+		FeesPerParty: []*eventspb.PartyAmount{
 			{Party: "party-1", Amount: "50"},
 			{Party: "party-2", Amount: "50"},
 			{Party: "party-3", Amount: "50"},
@@ -108,7 +107,7 @@ func testAddPaidLiquidityFeeStatsEpochExists(t *testing.T) {
 		AssetID:       asset.ID,
 		EpochSeq:      100,
 		TotalFeesPaid: "100",
-		FeesPaidPerParty: []*eventspb.PartyAmount{
+		FeesPerParty: []*eventspb.PartyAmount{
 			{Party: "party-1", Amount: "50"},
 			{Party: "party-2", Amount: "50"},
 			{Party: "party-3", Amount: "50"},
@@ -146,7 +145,7 @@ func setupPaidLiquidityFeeStats(t *testing.T, ctx context.Context, ls *sqlstore.
 			AssetID:       entities.AssetID("deadbaad01"),
 			EpochSeq:      1,
 			TotalFeesPaid: "1000000",
-			FeesPaidPerParty: []*eventspb.PartyAmount{
+			FeesPerParty: []*eventspb.PartyAmount{
 				{
 					Party:  "cafed00d01",
 					Amount: "500000",
@@ -162,7 +161,7 @@ func setupPaidLiquidityFeeStats(t *testing.T, ctx context.Context, ls *sqlstore.
 			AssetID:       entities.AssetID("deadbaad01"),
 			EpochSeq:      2,
 			TotalFeesPaid: "1200000",
-			FeesPaidPerParty: []*eventspb.PartyAmount{
+			FeesPerParty: []*eventspb.PartyAmount{
 				{
 					Party:  "cafed00d01",
 					Amount: "600000",
@@ -178,7 +177,7 @@ func setupPaidLiquidityFeeStats(t *testing.T, ctx context.Context, ls *sqlstore.
 			AssetID:       entities.AssetID("deadbaad01"),
 			EpochSeq:      3,
 			TotalFeesPaid: "1400000",
-			FeesPaidPerParty: []*eventspb.PartyAmount{
+			FeesPerParty: []*eventspb.PartyAmount{
 				{
 					Party:  "cafed00d01",
 					Amount: "700000",
@@ -194,7 +193,7 @@ func setupPaidLiquidityFeeStats(t *testing.T, ctx context.Context, ls *sqlstore.
 			AssetID:       entities.AssetID("deadbaad02"),
 			EpochSeq:      1,
 			TotalFeesPaid: "1200000",
-			FeesPaidPerParty: []*eventspb.PartyAmount{
+			FeesPerParty: []*eventspb.PartyAmount{
 				{
 					Party:  "cafed00d01",
 					Amount: "700000",
@@ -210,7 +209,7 @@ func setupPaidLiquidityFeeStats(t *testing.T, ctx context.Context, ls *sqlstore.
 			AssetID:       entities.AssetID("deadbaad02"),
 			EpochSeq:      2,
 			TotalFeesPaid: "1000000",
-			FeesPaidPerParty: []*eventspb.PartyAmount{
+			FeesPerParty: []*eventspb.PartyAmount{
 				{
 					Party:  "cafed00d01",
 					Amount: "500000",
@@ -226,7 +225,7 @@ func setupPaidLiquidityFeeStats(t *testing.T, ctx context.Context, ls *sqlstore.
 			AssetID:       entities.AssetID("deadbaad02"),
 			EpochSeq:      3,
 			TotalFeesPaid: "5000000",
-			FeesPaidPerParty: []*eventspb.PartyAmount{
+			FeesPerParty: []*eventspb.PartyAmount{
 				{
 					Party:  "cafed00d01",
 					Amount: "25000",
@@ -259,11 +258,7 @@ func testListPaidLiquidityFeeStatsForMarketAndEpoch(t *testing.T) {
 	got, _, err := stores.ls.List(ctx, &want[0].MarketID, nil, &want[0].EpochSeq, nil, pagination)
 	require.NoError(t, err)
 
-	for _, g := range got {
-		fmt.Printf("===== got: %+v \n", g)
-	}
-
-	assert.Len(t, len(want), len(got))
+	assert.Len(t, want, len(got))
 	vgtesting.AssertProtoEqual(t, want[0].ToProto(), got[0].ToProto())
 
 	// get the stats for the second market and epoch
@@ -271,6 +266,7 @@ func testListPaidLiquidityFeeStatsForMarketAndEpoch(t *testing.T) {
 	got, _, err = stores.ls.List(ctx, &want[0].MarketID, nil, &want[0].EpochSeq, nil, pagination)
 	require.NoError(t, err)
 
+	assert.Len(t, want, len(got))
 	vgtesting.AssertProtoEqual(t, want[0].ToProto(), got[0].ToProto())
 }
 

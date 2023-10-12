@@ -53,7 +53,7 @@ func (rfs *PaidLiquidityFeeStats) Add(ctx context.Context, stats *entities.PaidL
 		stats.AssetID,
 		stats.EpochSeq,
 		stats.TotalFeesPaid,
-		stats.FeesPaidPerParty,
+		stats.FeesPerParty,
 	)
 	return err
 }
@@ -68,17 +68,12 @@ func (lfs *PaidLiquidityFeeStats) List(
 ) ([]entities.PaidLiquidityFeeStats, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("PaidLiquidityFeeStats", "List")()
 	var (
-		query    string
 		args     []interface{}
 		pageInfo entities.PageInfo
 	)
 
-	query = `SELECT market_id,
-					asset_id,
-					epoch_seq,
-					total_fees_paid,
-					fees_paid_per_party
-	FROM paid_liquidity_fees cross join jsonb_array_elements(fees_paid_per_party) as fees_paid_per_party`
+	query := `SELECT t.market_id, t.asset_id, t.epoch_seq, t.total_fees_paid, array_to_json(array_agg(j)) as Fees_per_party
+	FROM paid_liquidity_fees t, jsonb_array_elements(t.fees_paid_per_party) j`
 
 	whereClauses := []string{}
 
@@ -99,15 +94,17 @@ func (lfs *PaidLiquidityFeeStats) List(
 	}
 
 	if len(partyIDs) > 0 {
-		whereClauses = append(whereClauses, fmt.Sprintf("fees_per_party->>'party' in (%s)", nextBindVar(&args, assetID)))
+		whereClauses = append(whereClauses, fmt.Sprintf("j->>'party' IN (%s)", nextBindVar(&args, partyIDs)))
 	}
 
 	var whereStr string
 	if len(whereClauses) > 0 {
-		whereStr = " where " + strings.Join(whereClauses, " AND ")
+		whereStr = " WHERE " + strings.Join(whereClauses, " AND ")
 	}
 
-	query = fmt.Sprintf("%s %s", query, whereStr)
+	groupByStr := "GROUP BY market_id, asset_id, epoch_seq"
+
+	query = fmt.Sprintf("%s %s %s", query, whereStr, groupByStr)
 
 	stats := []entities.PaidLiquidityFeeStats{}
 

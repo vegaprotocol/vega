@@ -50,9 +50,9 @@ var (
 	}
 
 	paidLiquidityFeeStatsCursorOrdering = TableOrdering{
-		ColumnOrdering{Name: "epoch_seq", Sorting: DESC},
 		ColumnOrdering{Name: "market_id", Sorting: ASC},
 		ColumnOrdering{Name: "asset_id", Sorting: ASC},
+		ColumnOrdering{Name: "epoch_seq", Sorting: DESC},
 	}
 )
 
