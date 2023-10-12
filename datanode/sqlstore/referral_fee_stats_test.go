@@ -478,7 +478,38 @@ func testGetFeeStatsForRefereeAndEpoch(t *testing.T) {
 	stats := setupFeeStats(t, ctx, stores.fs)
 
 	// get the stats for the first market and epoch
-	want := stats[1]
+	expected := stats[1]
+	want := entities.ReferralFeeStats{
+		MarketID: entities.MarketID("deadbeef01"),
+		AssetID:  entities.AssetID("deadbaad01"),
+		EpochSeq: 2,
+		TotalRewardsPaid: []*eventspb.PartyAmount{
+			{
+				Party:  "cafedaad01",
+				Amount: "1100000",
+			},
+		},
+		ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+			{
+				Referrer: "cafedaad01",
+				GeneratedReward: []*eventspb.PartyAmount{
+					{
+						Party:  "cafed00d01",
+						Amount: "550000",
+					},
+				},
+			},
+		},
+		RefereesDiscountApplied: []*eventspb.PartyAmount{
+			{
+				Party:  "cafed00d01",
+				Amount: "110000",
+			},
+		},
+		VolumeDiscountApplied: []*eventspb.PartyAmount{},
+		VegaTime:              expected.VegaTime,
+	}
+
 	got, err := stores.fs.GetFeeStats(ctx, nil, &want.AssetID, ptr.From(want.EpochSeq), nil,
 		&want.ReferrerRewardsGenerated[0].GeneratedReward[0].Party)
 	require.NoError(t, err)
@@ -503,7 +534,37 @@ func testGetFeeStatsForRefereeLatest(t *testing.T) {
 	stats := setupFeeStats(t, ctx, stores.fs)
 
 	// get the stats for the first market and epoch
-	want := stats[2]
+	expected := stats[2]
+	want := entities.ReferralFeeStats{
+		MarketID: entities.MarketID("deadbeef01"),
+		AssetID:  entities.AssetID("deadbaad01"),
+		EpochSeq: 3,
+		TotalRewardsPaid: []*eventspb.PartyAmount{
+			{
+				Party:  "cafedaad01",
+				Amount: "1200000",
+			},
+		},
+		ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+			{
+				Referrer: "cafedaad01",
+				GeneratedReward: []*eventspb.PartyAmount{
+					{
+						Party:  "cafed00d01",
+						Amount: "600000",
+					},
+				},
+			},
+		},
+		RefereesDiscountApplied: []*eventspb.PartyAmount{
+			{
+				Party:  "cafed00d01",
+				Amount: "120000",
+			},
+		},
+		VolumeDiscountApplied: []*eventspb.PartyAmount{},
+		VegaTime:              expected.VegaTime,
+	}
 	got, err := stores.fs.GetFeeStats(ctx, nil, &want.AssetID, nil, nil,
 		&want.ReferrerRewardsGenerated[0].GeneratedReward[0].Party)
 	require.NoError(t, err)
@@ -516,7 +577,37 @@ func testGetFeeStatsReferee(t *testing.T) {
 	stats := setupFeeStats(t, ctx, stores.fs)
 
 	// get the stats for the first market and epoch
-	want := stats[2]
+	expected := stats[2]
+	want := entities.ReferralFeeStats{
+		MarketID: entities.MarketID("deadbeef01"),
+		AssetID:  entities.AssetID("deadbaad01"),
+		EpochSeq: 3,
+		TotalRewardsPaid: []*eventspb.PartyAmount{
+			{
+				Party:  "cafedaad01",
+				Amount: "1200000",
+			},
+		},
+		ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+			{
+				Referrer: "cafedaad01",
+				GeneratedReward: []*eventspb.PartyAmount{
+					{
+						Party:  "cafed00d01",
+						Amount: "600000",
+					},
+				},
+			},
+		},
+		RefereesDiscountApplied: []*eventspb.PartyAmount{
+			{
+				Party:  "cafed00d01",
+				Amount: "120000",
+			},
+		},
+		VolumeDiscountApplied: []*eventspb.PartyAmount{},
+		VegaTime:              expected.VegaTime,
+	}
 	got, err := stores.fs.GetFeeStats(ctx, nil, &want.AssetID, nil, nil,
 		&want.ReferrerRewardsGenerated[0].GeneratedReward[0].Party)
 	require.NoError(t, err)
