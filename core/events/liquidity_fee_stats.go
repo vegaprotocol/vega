@@ -21,40 +21,40 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
-type LiquidityFeeStats struct {
+type PaidLiquidityFeeStats struct {
 	*Base
-	fs *eventspb.LiquidityFeeStats
+	fs *eventspb.PaidLiquidityFeeStats
 }
 
-func NewLiquidityFeeStatsEvent(ctx context.Context, fs *eventspb.LiquidityFeeStats) *LiquidityFeeStats {
-	stats := &LiquidityFeeStats{
-		Base: newBase(ctx, LiquidityFeeStatsEvent),
+func NewPaidLiquidityFeeStatsEvent(ctx context.Context, fs *eventspb.PaidLiquidityFeeStats) *PaidLiquidityFeeStats {
+	stats := &PaidLiquidityFeeStats{
+		Base: newBase(ctx, PaidLiquidityFeeStatsEvent),
 		fs:   fs,
 	}
 	return stats
 }
 
-func (f *LiquidityFeeStats) LiquidityFeeStats() *eventspb.LiquidityFeeStats {
+func (f *PaidLiquidityFeeStats) LiquidityFeeStats() *eventspb.PaidLiquidityFeeStats {
 	return f.fs
 }
 
-func (f LiquidityFeeStats) Proto() eventspb.LiquidityFeeStats {
+func (f PaidLiquidityFeeStats) Proto() eventspb.PaidLiquidityFeeStats {
 	return *f.fs
 }
 
-func (f LiquidityFeeStats) StreamMessage() *eventspb.BusEvent {
+func (f PaidLiquidityFeeStats) StreamMessage() *eventspb.BusEvent {
 	busEvent := newBusEventFromBase(f.Base)
-	busEvent.Event = &eventspb.BusEvent_LiquidityFeeStats{
-		LiquidityFeeStats: f.fs,
+	busEvent.Event = &eventspb.BusEvent_PaidLiquidityFeeStats{
+		PaidLiquidityFeeStats: f.fs,
 	}
 
 	return busEvent
 }
 
-func LiquidityFeeStatsEventFromStream(ctx context.Context, be *eventspb.BusEvent) *LiquidityFeeStats {
-	stats := &LiquidityFeeStats{
-		Base: newBaseFromBusEvent(ctx, LiquidityFeeStatsEvent, be),
-		fs:   be.GetLiquidityFeeStats(),
+func PaidLiquidityFeeStatsEventFromStream(ctx context.Context, be *eventspb.BusEvent) *PaidLiquidityFeeStats {
+	stats := &PaidLiquidityFeeStats{
+		Base: newBaseFromBusEvent(ctx, PaidLiquidityFeeStatsEvent, be),
+		fs:   be.GetPaidLiquidityFeeStats(),
 	}
 	return stats
 }

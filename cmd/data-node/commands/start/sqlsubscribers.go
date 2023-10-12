@@ -76,6 +76,7 @@ type SQLSubscribers struct {
 	fundingPaymentStore         *sqlstore.FundingPayments
 	volumeDiscountStatsStore    *sqlstore.VolumeDiscountStats
 	volumeDiscountProgramsStore *sqlstore.VolumeDiscountPrograms
+	paidLiquidityFeeStatsStore  *sqlstore.PaidLiquidityFeeStats
 
 	// Services
 	candleService                *candlesv2.Svc
@@ -125,6 +126,7 @@ type SQLSubscribers struct {
 	fundingPaymentService        *service.FundingPayment
 	volumeDiscountStatsService   *service.VolumeDiscountStats
 	volumeDiscountProgramService *service.VolumeDiscountPrograms
+	paidLiquidityFeeStats        *service.PaidLiquidityFeeStats
 
 	// Subscribers
 	accountSub               *sqlsubscribers.Account
@@ -172,6 +174,7 @@ type SQLSubscribers struct {
 	fundingPaymentSub        *sqlsubscribers.FundingPaymentSubscriber
 	volumeDiscountStatsSub   *sqlsubscribers.VolumeDiscountStatsUpdated
 	volumeDiscountProgramSub *sqlsubscribers.VolumeDiscountProgram
+	paidLiquidityFeeStatsSub *sqlsubscribers.PaidLiquidityFeeStats
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -278,6 +281,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.fundingPaymentStore = sqlstore.NewFundingPayments(transactionalConnectionSource)
 	s.volumeDiscountStatsStore = sqlstore.NewVolumeDiscountStats(transactionalConnectionSource)
 	s.volumeDiscountProgramsStore = sqlstore.NewVolumeDiscountPrograms(transactionalConnectionSource)
+	s.paidLiquidityFeeStatsStore = sqlstore.NewPaidLiquidityFeeStats(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
@@ -328,6 +332,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.fundingPaymentService = service.NewFundingPayment(s.fundingPaymentStore)
 	s.volumeDiscountStatsService = service.NewVolumeDiscountStats(s.volumeDiscountStatsStore)
 	s.volumeDiscountProgramService = service.NewVolumeDiscountPrograms(s.volumeDiscountProgramsStore)
+	s.paidLiquidityFeeStats = service.NewPaidLiquidityFeeStats(s.paidLiquidityFeeStatsStore)
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		s.marketDepthService,

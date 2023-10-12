@@ -134,6 +134,7 @@ type TradingDataServiceV2 struct {
 	feesStatsService             *service.FeesStats
 	volumeDiscountStatsService   *service.VolumeDiscountStats
 	volumeDiscountProgramService *service.VolumeDiscountPrograms
+	paidLiquidityFeeStatsService *service.PaidLiquidityFeeStats
 }
 
 func (t *TradingDataServiceV2) GetPartyActivityStreak(ctx context.Context, req *v2.GetPartyActivityStreakRequest) (*v2.GetPartyActivityStreakResponse, error) {
@@ -2033,6 +2034,44 @@ func (t *TradingDataServiceV2) ListLiquidityProviders(ctx context.Context, req *
 
 	return &v2.ListLiquidityProvidersResponse{
 		LiquidityProviders: conn,
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListPaidLiquidityFees(ctx context.Context, req *v2.ListPaidLiquidityFeesRequest) (
+	*v2.ListPaidLiquidityFeesResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListPaidLiquidityFees")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	var marketID *entities.MarketID
+	if req.MarketId != nil {
+		marketID = ptr.From(entities.MarketID(*req.MarketId))
+	}
+
+	var assetID *entities.AssetID
+	if req.AssetId != nil {
+		assetID = ptr.From(entities.AssetID(*req.AssetId))
+	}
+
+	stats, pageInfo, err := t.paidLiquidityFeeStatsService.List(ctx, marketID, assetID, req.EpochSeq, req.PartyIds, pagination)
+	if err != nil {
+		return nil, formatE(ErrListPaidLiquidityFees, err)
+	}
+
+	edges, err := makeEdges[*v2.PaidLiquidityFeesEdge](stats)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.ListPaidLiquidityFeesResponse{
+		PaidLiquidityFees: &v2.PaidLiquidityFeesConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
 	}, nil
 }
 

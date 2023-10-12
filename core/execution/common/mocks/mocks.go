@@ -1621,20 +1621,6 @@ func (mr *MockLiquidityEngineMockRecorder) IsProbabilityOfTradingInitialised() *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsProbabilityOfTradingInitialised", reflect.TypeOf((*MockLiquidityEngine)(nil).IsProbabilityOfTradingInitialised))
 }
 
-// LiquidityFeeStats mocks base method.
-func (m *MockLiquidityEngine) LiquidityFeeStats() *types.LiquidityFeeStats {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LiquidityFeeStats")
-	ret0, _ := ret[0].(*types.LiquidityFeeStats)
-	return ret0
-}
-
-// LiquidityFeeStats indicates an expected call of LiquidityFeeStats.
-func (mr *MockLiquidityEngineMockRecorder) LiquidityFeeStats() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LiquidityFeeStats", reflect.TypeOf((*MockLiquidityEngine)(nil).LiquidityFeeStats))
-}
-
 // LiquidityProviderSLAStats mocks base method.
 func (m *MockLiquidityEngine) LiquidityProviderSLAStats(arg0 time.Time) []*vega.LiquidityProviderSLA {
 	m.ctrl.T.Helper()
@@ -1757,6 +1743,20 @@ func (m *MockLiquidityEngine) OnStakeToCcyVolumeUpdate(arg0 decimal.Decimal) {
 func (mr *MockLiquidityEngineMockRecorder) OnStakeToCcyVolumeUpdate(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnStakeToCcyVolumeUpdate", reflect.TypeOf((*MockLiquidityEngine)(nil).OnStakeToCcyVolumeUpdate), arg0)
+}
+
+// PaidLiquidityFeeStats mocks base method.
+func (m *MockLiquidityEngine) PaidLiquidityFeeStats() *types.PaidLiquidityFeeStats {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaidLiquidityFeeStats")
+	ret0, _ := ret[0].(*types.PaidLiquidityFeeStats)
+	return ret0
+}
+
+// PaidLiquidityFeeStats indicates an expected call of PaidLiquidityFeeStats.
+func (mr *MockLiquidityEngineMockRecorder) PaidLiquidityFeeStats() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaidLiquidityFeeStats", reflect.TypeOf((*MockLiquidityEngine)(nil).PaidLiquidityFeeStats))
 }
 
 // PendingProvision mocks base method.

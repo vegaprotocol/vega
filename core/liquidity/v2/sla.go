@@ -298,6 +298,6 @@ func (e *Engine) RegisterAllocatedFeesPerParty(feesPerParty map[string]*num.Uint
 	e.allocatedFeesStats.RegisterTotalFeesAmountPerParty(feesPerParty)
 }
 
-func (e *Engine) LiquidityFeeStats() *types.LiquidityFeeStats {
+func (e *Engine) PaidLiquidityFeeStats() *types.PaidLiquidityFeeStats {
 	return e.allocatedFeesStats
 }
