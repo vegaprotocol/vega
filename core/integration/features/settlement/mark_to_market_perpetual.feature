@@ -510,6 +510,7 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
       | party1 | ETH/DEC19 | 100000      | 110000 | 120000  | 140000  |
       | party2 | ETH/DEC19 | 110000      | 121000 | 132000  | 154000  |
       | party3 | ETH/DEC19 | 100000      | 110000 | 120000  | 140000  |
+      | party4 | ETH/DEC19 | 110000      | 121000 | 132000  | 154000  |
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
     # funding payment -> external TWAP is based on 1100, short parties are losing, their margin increases more
@@ -523,11 +524,14 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
       | party1 | ETH/DEC19 | 101000      | 111100 | 121200  | 141400  |
       | party2 | ETH/DEC19 | 111000      | 122100 | 133200  | 155400  |
       | party3 | ETH/DEC19 | 100000      | 110000 | 120000  | 140000  |
+      | party4 | ETH/DEC19 | 110000      | 121000 | 132000  | 154000  |
 
     # Repeat the same operations, create new internal TWAP data point at the same price levels
     When the network moves ahead "1" blocks
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3 | ETH/DEC19 | sell | 1      | 1001  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     # Margins obviously increase as the position increased
@@ -535,6 +539,8 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
       | party  | market id | maintenance | search | initial | release |
       | party1 | ETH/DEC19 | 201000      | 221100 | 241200  | 281400  |
       | party2 | ETH/DEC19 | 221000      | 243100 | 265200  | 309400  |
+      | party3 | ETH/DEC19 | 200000      | 220000 | 240000  | 280000  |
+      | party4 | ETH/DEC19 | 220000      | 242000 | 264000  | 308000  |
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     # funding payment -> external TWAP is based on 900, long parties are losing, their margin increases more
     When the network moves ahead "1" blocks
@@ -544,5 +550,7 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
       | perp.funding.cue | 1511924181            | -1s         |
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party2 | ETH/DEC19 | 224000      | 246400 | 268800  | 313600  |
+      | party2 | ETH/DEC19 | 222000      | 244200 | 266400  | 310800  |
       | party1 | ETH/DEC19 | 202000      | 222200 | 242400  | 282800  |
+      | party3 | ETH/DEC19 | 200000      | 220000 | 240000  | 280000  |
+      | party4 | ETH/DEC19 | 220000      | 242000 | 264000  | 308000  |
