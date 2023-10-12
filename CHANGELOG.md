@@ -153,6 +153,8 @@
 - [400](https://github.com/vegaprotocol/OctoberACs/issues/400) - Add integration test for team rewards `0056-REWA-097`
 - [2971](https://github.com/vegaprotocol/system-tests/issues/2971) - Fix margin calculation for `PERPS`.
 - [2948](https://github.com/vegaprotocol/system-tests/issues/2948) - Add integration test for failing system test.
+- [9541](https://github.com/vegaprotocol/vega/issues/9731) - Add filtering for party to the referral fees API.
+- [9541](https://github.com/vegaprotocol/vega/issues/9731) - Add X day aggregate totals for referral set referees.
 
 ### 🐛 Fixes
 
@@ -301,7 +303,7 @@
 - [9734](https://github.com/vegaprotocol/vega/issues/9734) - Fix creation of new account types for existing assets during migration
 - [9731](https://github.com/vegaprotocol/vega/issues/9731) - Allow team rewards to apply to all teams.
 - [9727](https://github.com/vegaprotocol/vega/issues/9727) - Initialize teams earlier to avoid panic.
-- [9746](https://github.com/vegaprotocol/vega/issues/9746) - Fix handling of LP fees reward 
+- [9746](https://github.com/vegaprotocol/vega/issues/9746) - Fix handling of LP fees reward
 - [9747](https://github.com/vegaprotocol/vega/issues/9747) - Return correct destination type
 - [9541](https://github.com/vegaprotocol/vega/issues/9731) - Add filtering for party to the referral fees API.
 - [9751](https://github.com/vegaprotocol/vega/issues/9751) - Make sure that LP fee party accounts exists.

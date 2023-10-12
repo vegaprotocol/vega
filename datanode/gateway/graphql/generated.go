@@ -1829,7 +1829,7 @@ type ComplexityRoot struct {
 		ProtocolUpgradeProposals           func(childComplexity int, inState *v1.ProtocolUpgradeProposalStatus, approvedBy *string, pagination *v2.Pagination) int
 		ProtocolUpgradeStatus              func(childComplexity int) int
 		ReferralFeeStats                   func(childComplexity int, marketID *string, assetID *string, epoch *int, referrer *string, referee *string) int
-		ReferralSetReferees                func(childComplexity int, id *string, referrer *string, referee *string, pagination *v2.Pagination) int
+		ReferralSetReferees                func(childComplexity int, id *string, referrer *string, referee *string, pagination *v2.Pagination, aggregationDays *int) int
 		ReferralSetStats                   func(childComplexity int, setID *string, epoch *int, partyID *string, pagination *v2.Pagination) int
 		ReferralSets                       func(childComplexity int, id *string, referrer *string, referee *string, pagination *v2.Pagination) int
 		Statistics                         func(childComplexity int) int
@@ -1911,10 +1911,12 @@ type ComplexityRoot struct {
 	}
 
 	ReferralSetReferee struct {
-		AtEpoch       func(childComplexity int) int
-		JoinedAt      func(childComplexity int) int
-		RefereeID     func(childComplexity int) int
-		ReferralSetId func(childComplexity int) int
+		AtEpoch                         func(childComplexity int) int
+		JoinedAt                        func(childComplexity int) int
+		RefereeID                       func(childComplexity int) int
+		ReferralSetId                   func(childComplexity int) int
+		TotalRefereeGeneratedRewards    func(childComplexity int) int
+		TotalRefereeNotionalTakerVolume func(childComplexity int) int
 	}
 
 	ReferralSetRefereeConnection struct {
@@ -3070,7 +3072,7 @@ type QueryResolver interface {
 	ProtocolUpgradeProposals(ctx context.Context, inState *v1.ProtocolUpgradeProposalStatus, approvedBy *string, pagination *v2.Pagination) (*v2.ProtocolUpgradeProposalConnection, error)
 	ReferralSets(ctx context.Context, id *string, referrer *string, referee *string, pagination *v2.Pagination) (*v2.ReferralSetConnection, error)
 	ReferralFeeStats(ctx context.Context, marketID *string, assetID *string, epoch *int, referrer *string, referee *string) (*v1.FeeStats, error)
-	ReferralSetReferees(ctx context.Context, id *string, referrer *string, referee *string, pagination *v2.Pagination) (*v2.ReferralSetRefereeConnection, error)
+	ReferralSetReferees(ctx context.Context, id *string, referrer *string, referee *string, pagination *v2.Pagination, aggregationDays *int) (*v2.ReferralSetRefereeConnection, error)
 	ReferralSetStats(ctx context.Context, setID *string, epoch *int, partyID *string, pagination *v2.Pagination) (*v2.ReferralSetStatsConnection, error)
 	Statistics(ctx context.Context) (*v12.Statistics, error)
 	StopOrder(ctx context.Context, id string) (*v1.StopOrderEvent, error)
@@ -10790,7 +10792,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.ReferralSetReferees(childComplexity, args["id"].(*string), args["referrer"].(*string), args["referee"].(*string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Query.ReferralSetReferees(childComplexity, args["id"].(*string), args["referrer"].(*string), args["referee"].(*string), args["pagination"].(*v2.Pagination), args["aggregationDays"].(*int)), true
 
 	case "Query.referralSetStats":
 		if e.complexity.Query.ReferralSetStats == nil {
@@ -11246,6 +11248,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ReferralSetReferee.ReferralSetId(childComplexity), true
+
+	case "ReferralSetReferee.totalRefereeGeneratedRewards":
+		if e.complexity.ReferralSetReferee.TotalRefereeGeneratedRewards == nil {
+			break
+		}
+
+		return e.complexity.ReferralSetReferee.TotalRefereeGeneratedRewards(childComplexity), true
+
+	case "ReferralSetReferee.totalRefereeNotionalTakerVolume":
+		if e.complexity.ReferralSetReferee.TotalRefereeNotionalTakerVolume == nil {
+			break
+		}
+
+		return e.complexity.ReferralSetReferee.TotalRefereeNotionalTakerVolume(childComplexity), true
 
 	case "ReferralSetRefereeConnection.edges":
 		if e.complexity.ReferralSetRefereeConnection.Edges == nil {
@@ -15869,6 +15885,15 @@ func (ec *executionContext) field_Query_referralSetReferees_args(ctx context.Con
 		}
 	}
 	args["pagination"] = arg3
+	var arg4 *int
+	if tmp, ok := rawArgs["aggregationDays"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("aggregationDays"))
+		arg4, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["aggregationDays"] = arg4
 	return args, nil
 }
 
@@ -66101,7 +66126,7 @@ func (ec *executionContext) _Query_referralSetReferees(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ReferralSetReferees(rctx, fc.Args["id"].(*string), fc.Args["referrer"].(*string), fc.Args["referee"].(*string), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Query().ReferralSetReferees(rctx, fc.Args["id"].(*string), fc.Args["referrer"].(*string), fc.Args["referee"].(*string), fc.Args["pagination"].(*v2.Pagination), fc.Args["aggregationDays"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -69067,6 +69092,94 @@ func (ec *executionContext) fieldContext_ReferralSetReferee_atEpoch(ctx context.
 	return fc, nil
 }
 
+func (ec *executionContext) _ReferralSetReferee_totalRefereeNotionalTakerVolume(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetReferee) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSetReferee_totalRefereeNotionalTakerVolume(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalRefereeNotionalTakerVolume, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReferralSetReferee_totalRefereeNotionalTakerVolume(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReferralSetReferee",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReferralSetReferee_totalRefereeGeneratedRewards(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetReferee) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSetReferee_totalRefereeGeneratedRewards(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalRefereeGeneratedRewards, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReferralSetReferee_totalRefereeGeneratedRewards(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReferralSetReferee",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ReferralSetRefereeConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetRefereeConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ReferralSetRefereeConnection_edges(ctx, field)
 	if err != nil {
@@ -69218,6 +69331,10 @@ func (ec *executionContext) fieldContext_ReferralSetRefereeEdge_node(ctx context
 				return ec.fieldContext_ReferralSetReferee_joinedAt(ctx, field)
 			case "atEpoch":
 				return ec.fieldContext_ReferralSetReferee_atEpoch(ctx, field)
+			case "totalRefereeNotionalTakerVolume":
+				return ec.fieldContext_ReferralSetReferee_totalRefereeNotionalTakerVolume(ctx, field)
+			case "totalRefereeGeneratedRewards":
+				return ec.fieldContext_ReferralSetReferee_totalRefereeGeneratedRewards(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ReferralSetReferee", field.Name)
 		},
@@ -105545,6 +105662,20 @@ func (ec *executionContext) _ReferralSetReferee(ctx context.Context, sel ast.Sel
 				return innerFunc(ctx)
 
 			})
+		case "totalRefereeNotionalTakerVolume":
+
+			out.Values[i] = ec._ReferralSetReferee_totalRefereeNotionalTakerVolume(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "totalRefereeGeneratedRewards":
+
+			out.Values[i] = ec._ReferralSetReferee_totalRefereeGeneratedRewards(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

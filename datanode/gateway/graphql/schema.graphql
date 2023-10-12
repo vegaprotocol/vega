@@ -862,6 +862,8 @@ type Query {
     referee: ID
     "Optional pagination information"
     pagination: Pagination
+    "Optional number of days to aggregate referee volume and reward statistics for. If omitted, the default is 30 days."
+    aggregationDays: Int
   ): ReferralSetRefereeConnection!
 
   "Get referral set statistics"
@@ -6056,6 +6058,10 @@ type ReferralSetReferee {
   joinedAt: Timestamp!
   "Epoch in which the party joined the set."
   atEpoch: Int!
+  "Total notional volume of the referee's aggressive trades over the aggregation period, default is 30 days."
+  totalRefereeNotionalTakerVolume: String!
+  "Total rewards generated from the referee over the aggregation period, default is 30 days."
+  totalRefereeGeneratedRewards: String!
 }
 
 "Edge type containing the referral set referee and cursor information returned by a ReferralSetRefereeConnection"

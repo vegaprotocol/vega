@@ -1657,12 +1657,19 @@ func (r *myQueryResolver) ReferralSets(ctx context.Context, id, referrer, refere
 	return resp.ReferralSets, nil
 }
 
-func (r *myQueryResolver) ReferralSetReferees(ctx context.Context, id, referrer, referee *string, pagination *v2.Pagination) (*v2.ReferralSetRefereeConnection, error) {
+func (r *myQueryResolver) ReferralSetReferees(ctx context.Context, id, referrer, referee *string, pagination *v2.Pagination, daysToAggregate *int) (*v2.ReferralSetRefereeConnection, error) {
+	var aggregationDays uint32 = 30 // default to 30 days
+
+	if daysToAggregate != nil {
+		aggregationDays = uint32(*daysToAggregate)
+	}
+
 	req := &v2.ListReferralSetRefereesRequest{
-		ReferralSetId: id,
-		Pagination:    pagination,
-		Referrer:      referrer,
-		Referee:       referee,
+		ReferralSetId:   id,
+		Pagination:      pagination,
+		Referrer:        referrer,
+		Referee:         referee,
+		AggregationDays: &aggregationDays,
 	}
 
 	resp, err := r.tradingDataClientV2.ListReferralSetReferees(ctx, req)

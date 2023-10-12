@@ -211,20 +211,19 @@ func (rs *ReferralSets) GetReferralSetStats(ctx context.Context, setID *entities
 	return stats, pageInfo, nil
 }
 
-func (rs *ReferralSets) ListReferralSetReferees(ctx context.Context, referralSetID *entities.ReferralSetID, referrer, referee *entities.PartyID, pagination entities.CursorPagination) (
-	[]entities.ReferralSetReferee, entities.PageInfo, error,
+func (rs *ReferralSets) ListReferralSetReferees(ctx context.Context, referralSetID *entities.ReferralSetID, referrer, referee *entities.PartyID,
+	pagination entities.CursorPagination, aggregationDays uint32) (
+	[]entities.ReferralSetRefereeStats, entities.PageInfo, error,
 ) {
 	defer metrics.StartSQLQuery("ReferralSets", "ListReferralSetReferees")()
 	var (
-		referees []entities.ReferralSetReferee
+		referees []entities.ReferralSetRefereeStats
 		args     []interface{}
 		err      error
 		pageInfo entities.PageInfo
 	)
 
-	query := `SELECT rf.referral_set_id, rf.referee, rf.joined_at, rf.at_epoch, rf.vega_time
-			 from referral_set_referees rf
-			 join referral_sets rs on rf.referral_set_id = rs.id`
+	query := getSelectQuery(aggregationDays)
 
 	// we only allow one of the following to be used as the filter
 	if referralSetID != nil {
@@ -247,4 +246,29 @@ func (rs *ReferralSets) ListReferralSetReferees(ctx context.Context, referralSet
 	referees, pageInfo = entities.PageEntities[*v2.ReferralSetRefereeEdge](referees, pagination)
 
 	return referees, pageInfo, nil
+}
+
+func getSelectQuery(aggregationDays uint32) string {
+	return fmt.Sprintf(`
+with ref_period_volume (party, period_volume) as (
+    select decode(ref_stats->>'party_id', 'hex'), sum((ref_stats->>'epoch_notional_taker_volume')::numeric) as period_volume
+    from referral_set_stats, jsonb_array_elements(referees_stats) as ref_stats
+    where vega_time between now() - interval '%d days' and now()
+    and   jsonb_typeof(referees_stats) != 'null'
+    group by ref_stats->>'party_id'
+), ref_period_rewards (party, period_rewards) as (
+    select decode(gen_rewards->>'party', 'hex'), sum((gen_rewards ->> 'amount')::numeric) as period_rewards
+    from referral_fee_stats,
+         jsonb_array_elements(referrer_rewards_generated) as ref_rewards,
+            jsonb_array_elements(ref_rewards->'generated_reward') as gen_rewards
+    where vega_time between now() - interval '%d days' and now()
+    and jsonb_typeof(referrer_rewards_generated) != 'null'
+    group by gen_rewards->>'party'
+)
+SELECT rf.referral_set_id, rf.referee, rf.joined_at, rf.at_epoch, rf.vega_time, coalesce(pv.period_volume, 0) period_volume, coalesce(pr.period_rewards, 0) period_rewards_paid
+from referral_set_referees rf
+join referral_sets rs on rf.referral_set_id = rs.id
+left join ref_period_volume pv on rf.referee = pv.party
+left join ref_period_rewards pr on rf.referee = pr.party
+	`, aggregationDays, aggregationDays)
 }
