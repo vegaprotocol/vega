@@ -473,11 +473,11 @@ type TradingDataServiceClient interface {
 	//
 	// Get a list of a referee's team history, i.e. the teams that a referee has been a member of and transferred from/to.
 	ListTeamRefereeHistory(ctx context.Context, in *ListTeamRefereeHistoryRequest, opts ...grpc.CallOption) (*ListTeamRefereeHistoryResponse, error)
-	// Get referral fee statistics
+	// Get fees statistics
 	//
-	// Gets accumulated rewards and discount information for a given asset or market for the latest epoch
+	// Gets accumulated fees, rewards, and applied discount information for a given asset or market for the latest epoch
 	// or a specific epoch.
-	GetReferralFeeStats(ctx context.Context, in *GetReferralFeeStatsRequest, opts ...grpc.CallOption) (*GetReferralFeeStatsResponse, error)
+	GetFeesStats(ctx context.Context, in *GetFeesStatsRequest, opts ...grpc.CallOption) (*GetFeesStatsResponse, error)
 	// Get current volume discount program
 	//
 	// Get the on-going volume discount program.
@@ -1823,9 +1823,9 @@ func (c *tradingDataServiceClient) ListTeamRefereeHistory(ctx context.Context, i
 	return out, nil
 }
 
-func (c *tradingDataServiceClient) GetReferralFeeStats(ctx context.Context, in *GetReferralFeeStatsRequest, opts ...grpc.CallOption) (*GetReferralFeeStatsResponse, error) {
-	out := new(GetReferralFeeStatsResponse)
-	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetReferralFeeStats", in, out, opts...)
+func (c *tradingDataServiceClient) GetFeesStats(ctx context.Context, in *GetFeesStatsRequest, opts ...grpc.CallOption) (*GetFeesStatsResponse, error) {
+	out := new(GetFeesStatsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetFeesStats", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2345,11 +2345,11 @@ type TradingDataServiceServer interface {
 	//
 	// Get a list of a referee's team history, i.e. the teams that a referee has been a member of and transferred from/to.
 	ListTeamRefereeHistory(context.Context, *ListTeamRefereeHistoryRequest) (*ListTeamRefereeHistoryResponse, error)
-	// Get referral fee statistics
+	// Get fees statistics
 	//
-	// Gets accumulated rewards and discount information for a given asset or market for the latest epoch
+	// Gets accumulated fees, rewards, and applied discount information for a given asset or market for the latest epoch
 	// or a specific epoch.
-	GetReferralFeeStats(context.Context, *GetReferralFeeStatsRequest) (*GetReferralFeeStatsResponse, error)
+	GetFeesStats(context.Context, *GetFeesStatsRequest) (*GetFeesStatsResponse, error)
 	// Get current volume discount program
 	//
 	// Get the on-going volume discount program.
@@ -2735,8 +2735,8 @@ func (UnimplementedTradingDataServiceServer) ListTeamReferees(context.Context, *
 func (UnimplementedTradingDataServiceServer) ListTeamRefereeHistory(context.Context, *ListTeamRefereeHistoryRequest) (*ListTeamRefereeHistoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTeamRefereeHistory not implemented")
 }
-func (UnimplementedTradingDataServiceServer) GetReferralFeeStats(context.Context, *GetReferralFeeStatsRequest) (*GetReferralFeeStatsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetReferralFeeStats not implemented")
+func (UnimplementedTradingDataServiceServer) GetFeesStats(context.Context, *GetFeesStatsRequest) (*GetFeesStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFeesStats not implemented")
 }
 func (UnimplementedTradingDataServiceServer) GetCurrentVolumeDiscountProgram(context.Context, *GetCurrentVolumeDiscountProgramRequest) (*GetCurrentVolumeDiscountProgramResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCurrentVolumeDiscountProgram not implemented")
@@ -4649,20 +4649,20 @@ func _TradingDataService_ListTeamRefereeHistory_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingDataService_GetReferralFeeStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetReferralFeeStatsRequest)
+func _TradingDataService_GetFeesStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFeesStatsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TradingDataServiceServer).GetReferralFeeStats(ctx, in)
+		return srv.(TradingDataServiceServer).GetFeesStats(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/datanode.api.v2.TradingDataService/GetReferralFeeStats",
+		FullMethod: "/datanode.api.v2.TradingDataService/GetFeesStats",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServiceServer).GetReferralFeeStats(ctx, req.(*GetReferralFeeStatsRequest))
+		return srv.(TradingDataServiceServer).GetFeesStats(ctx, req.(*GetFeesStatsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -5098,8 +5098,8 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_ListTeamRefereeHistory_Handler,
 		},
 		{
-			MethodName: "GetReferralFeeStats",
-			Handler:    _TradingDataService_GetReferralFeeStats_Handler,
+			MethodName: "GetFeesStats",
+			Handler:    _TradingDataService_GetFeesStats_Handler,
 		},
 		{
 			MethodName: "GetCurrentVolumeDiscountProgram",

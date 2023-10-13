@@ -21,12 +21,14 @@ import (
 	"sort"
 	"time"
 
+	"golang.org/x/exp/maps"
+
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
 	"code.vegaprotocol.io/vega/core/fee"
 	liquiditytarget "code.vegaprotocol.io/vega/core/liquidity/target/spot"
-	liquidity "code.vegaprotocol.io/vega/core/liquidity/v2"
+	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/monitor"
 	"code.vegaprotocol.io/vega/core/monitor/price"
@@ -37,7 +39,6 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
-	"golang.org/x/exp/maps"
 )
 
 func NewMarketFromSnapshot(
@@ -92,8 +93,8 @@ func NewMarketFromSnapshot(
 	quoteAsset := assets[QuoteAssetIndex]
 
 	var feeEngine *fee.Engine
-	if em.FeeStats != nil {
-		feeEngine, err = fee.NewFromState(log, feeConfig, *mkt.Fees, quoteAsset, positionFactor, em.FeeStats)
+	if em.FeesStats != nil {
+		feeEngine, err = fee.NewFromState(log, feeConfig, *mkt.Fees, quoteAsset, positionFactor, em.FeesStats)
 		if err != nil {
 			return nil, fmt.Errorf("unable to instantiate fee engine: %w", err)
 		}
@@ -211,7 +212,7 @@ func (m *Market) GetState() *types.ExecSpotMarket {
 		Parties:                    parties,
 		Closed:                     m.closed,
 		HasTraded:                  m.hasTraded,
-		FeeStats:                   m.fee.GetState(),
+		FeesStats:                  m.fee.GetState(),
 	}
 
 	return em

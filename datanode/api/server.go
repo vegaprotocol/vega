@@ -147,7 +147,7 @@ type GRPCServer struct {
 	referralSetsService          *service.ReferralSets
 	teamsService                 *service.Teams
 	vestingStatsService          *service.VestingStats
-	referralFeeStatsService      *service.ReferralFeeStats
+	FeesStatsService             *service.FeesStats
 	fundingPaymentService        *service.FundingPayment
 	volumeDiscountStatsService   *service.VolumeDiscountStats
 	volumeDiscountProgramService *service.VolumeDiscountPrograms
@@ -210,7 +210,7 @@ func NewGRPCServer(
 	referralSetsService *service.ReferralSets,
 	teamsService *service.Teams,
 	vestingStatsService *service.VestingStats,
-	referralFeeStatsService *service.ReferralFeeStats,
+	FeesStatsService *service.FeesStats,
 	fundingPaymentService *service.FundingPayment,
 	volumeDiscountStatsService *service.VolumeDiscountStats,
 	volumeDiscountProgramService *service.VolumeDiscountPrograms,
@@ -272,7 +272,7 @@ func NewGRPCServer(
 		referralSetsService:          referralSetsService,
 		teamsService:                 teamsService,
 		vestingStatsService:          vestingStatsService,
-		referralFeeStatsService:      referralFeeStatsService,
+		FeesStatsService:             FeesStatsService,
 		fundingPaymentService:        fundingPaymentService,
 		volumeDiscountStatsService:   volumeDiscountStatsService,
 		volumeDiscountProgramService: volumeDiscountProgramService,
@@ -503,7 +503,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		referralProgramService:       g.referralProgramService,
 		referralSetsService:          g.referralSetsService,
 		teamsService:                 g.teamsService,
-		referralFeeStatsService:      g.referralFeeStatsService,
+		feesStatsService:             g.FeesStatsService,
 		fundingPaymentService:        g.fundingPaymentService,
 		volumeDiscountStatsService:   g.volumeDiscountStatsService,
 		volumeDiscountProgramService: g.volumeDiscountProgramService,

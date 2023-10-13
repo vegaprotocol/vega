@@ -21,40 +21,40 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
-type FeeStats struct {
+type FeesStats struct {
 	*Base
-	fs *eventspb.FeeStats
+	fs *eventspb.FeesStats
 }
 
-func NewFeeStatsEvent(ctx context.Context, fs *eventspb.FeeStats) *FeeStats {
-	order := &FeeStats{
-		Base: newBase(ctx, FeeStatsEvent),
+func NewFeesStatsEvent(ctx context.Context, fs *eventspb.FeesStats) *FeesStats {
+	order := &FeesStats{
+		Base: newBase(ctx, FeesStatsEvent),
 		fs:   fs,
 	}
 	return order
 }
 
-func (f *FeeStats) FeeStats() *eventspb.FeeStats {
+func (f *FeesStats) FeesStats() *eventspb.FeesStats {
 	return f.fs
 }
 
-func (f FeeStats) Proto() eventspb.FeeStats {
+func (f FeesStats) Proto() eventspb.FeesStats {
 	return *f.fs
 }
 
-func (f FeeStats) StreamMessage() *eventspb.BusEvent {
+func (f FeesStats) StreamMessage() *eventspb.BusEvent {
 	busEvent := newBusEventFromBase(f.Base)
-	busEvent.Event = &eventspb.BusEvent_FeeStats{
-		FeeStats: f.fs,
+	busEvent.Event = &eventspb.BusEvent_FeesStats{
+		FeesStats: f.fs,
 	}
 
 	return busEvent
 }
 
-func FeeStatsEventFromStream(ctx context.Context, be *eventspb.BusEvent) *FeeStats {
-	order := &FeeStats{
-		Base: newBaseFromBusEvent(ctx, FeeStatsEvent, be),
-		fs:   be.GetFeeStats(),
+func FeesStatsEventFromStream(ctx context.Context, be *eventspb.BusEvent) *FeesStats {
+	order := &FeesStats{
+		Base: newBaseFromBusEvent(ctx, FeesStatsEvent, be),
+		fs:   be.GetFeesStats(),
 	}
 	return order
 }

@@ -28,34 +28,35 @@ import (
 
 	"github.com/georgysavva/scany/pgxscan"
 
+	"github.com/stretchr/testify/require"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
-	"github.com/stretchr/testify/require"
 )
 
-func TestReferralFeeStats_AddFeeStats(t *testing.T) {
-	t.Run("Should add the stats for the epoch if they do not exist", testAddFeeStatsEpochNotExists)
-	t.Run("Should return an error if the epoch already exists for the market/asset", testAddFeeStatsEpochExists)
+func TestFeesStats_AddFeesStats(t *testing.T) {
+	t.Run("Should add the stats for the epoch if they do not exist", testAddFeesStatsEpochNotExists)
+	t.Run("Should return an error if the epoch already exists for the market/asset", testAddFeesStatsEpochExists)
 }
 
-type referralFeeStatsTestStores struct {
+type FeesStatsTestStores struct {
 	bs *sqlstore.Blocks
 	ms *sqlstore.Markets
 	ps *sqlstore.Parties
 	as *sqlstore.Assets
-	fs *sqlstore.ReferralFeeStats
+	fs *sqlstore.FeesStats
 }
 
-func setupReferralFeeStatsStores(t *testing.T) *referralFeeStatsTestStores {
+func setupFeesStatsStores(t *testing.T) *FeesStatsTestStores {
 	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
 	ms := sqlstore.NewMarkets(connectionSource)
 	ps := sqlstore.NewParties(connectionSource)
 	as := sqlstore.NewAssets(connectionSource)
-	fs := sqlstore.NewReferralFeeStats(connectionSource)
+	fs := sqlstore.NewFeesStats(connectionSource)
 
-	return &referralFeeStatsTestStores{
+	return &FeesStatsTestStores{
 		bs: bs,
 		ms: ms,
 		ps: ps,
@@ -64,14 +65,14 @@ func setupReferralFeeStatsStores(t *testing.T) *referralFeeStatsTestStores {
 	}
 }
 
-func testAddFeeStatsEpochNotExists(t *testing.T) {
-	stores := setupReferralFeeStatsStores(t)
+func testAddFeesStatsEpochNotExists(t *testing.T) {
+	stores := setupFeesStatsStores(t)
 	ctx := tempTransaction(t)
 	block := addTestBlock(t, ctx, stores.bs)
 	market := helpers.AddTestMarket(t, ctx, stores.ms, block)
 	asset := addTestAsset(t, ctx, stores.as, block)
 
-	want := entities.ReferralFeeStats{
+	want := entities.FeesStats{
 		MarketID:                 market.ID,
 		AssetID:                  asset.ID,
 		EpochSeq:                 100,
@@ -82,27 +83,27 @@ func testAddFeeStatsEpochNotExists(t *testing.T) {
 		VegaTime:                 block.VegaTime,
 	}
 
-	err := stores.fs.AddFeeStats(ctx, &want)
+	err := stores.fs.AddFeesStats(ctx, &want)
 	require.NoError(t, err)
 
 	// Check that the stats were added
-	var got entities.ReferralFeeStats
+	var got entities.FeesStats
 	err = pgxscan.Get(ctx, connectionSource.Connection, &got,
-		`SELECT * FROM referral_fee_stats WHERE market_id = $1 AND asset_id = $2 AND epoch_seq = $3`,
+		`SELECT * FROM fees_stats WHERE market_id = $1 AND asset_id = $2 AND epoch_seq = $3`,
 		market.ID, asset.ID, want.EpochSeq,
 	)
 	require.NoError(t, err)
 	assert.Equal(t, want, got)
 }
 
-func testAddFeeStatsEpochExists(t *testing.T) {
-	stores := setupReferralFeeStatsStores(t)
+func testAddFeesStatsEpochExists(t *testing.T) {
+	stores := setupFeesStatsStores(t)
 	ctx := tempTransaction(t)
 	block := addTestBlock(t, ctx, stores.bs)
 	market := helpers.AddTestMarket(t, ctx, stores.ms, block)
 	asset := addTestAsset(t, ctx, stores.as, block)
 
-	want := entities.ReferralFeeStats{
+	want := entities.FeesStats{
 		MarketID:                 market.ID,
 		AssetID:                  asset.ID,
 		EpochSeq:                 100,
@@ -113,33 +114,33 @@ func testAddFeeStatsEpochExists(t *testing.T) {
 		VegaTime:                 block.VegaTime,
 	}
 
-	err := stores.fs.AddFeeStats(ctx, &want)
+	err := stores.fs.AddFeesStats(ctx, &want)
 	require.NoError(t, err)
 
 	// now try to insert again and make sure we get an error
-	err = stores.fs.AddFeeStats(ctx, &want)
+	err = stores.fs.AddFeesStats(ctx, &want)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "duplicate key value violates unique constraint")
 }
 
-func TestReferralFeeStats_GetFeeStats(t *testing.T) {
-	t.Run("Should return the stats for the market and epoch requested", testGetFeeStatsForMarketAndEpoch)
-	t.Run("Should return the stats for the asset and epoch requested", testGetFeeStatsForAssetAndEpoch)
-	t.Run("Should return the latest stats for the market requested", testGetFeeStatsForMarketLatest)
-	t.Run("Should return the latest stats for the asset requested", testGetFeeStatsForAssetLatest)
-	t.Run("Should return an error if an asset and market is provided", testGetFeeStatsNoAssetOrMarket)
-	t.Run("Should return the stats for the referrer and epoch requested", testGetFeeStatsForReferrerAndEpoch)
-	t.Run("Should return the stats for the referee and epoch requested", testGetFeeStatsForRefereeAndEpoch)
-	t.Run("Should return the latest stats for the referrer", testGetFeeStatsForReferrerLatest)
-	t.Run("Should return the latest stats for the referee", testGetFeeStatsForRefereeLatest)
-	t.Run("Should return the latest stats for all asset given a referrer", testGetFeeStatsReferrer)
-	t.Run("Should return the latest stats for all asset given a referee", testGetFeeStatsReferee)
+func TestFeesStats_GetFeesStats(t *testing.T) {
+	t.Run("Should return the stats for the market and epoch requested", testGetFeesStatsForMarketAndEpoch)
+	t.Run("Should return the stats for the asset and epoch requested", testGetFeesStatsForAssetAndEpoch)
+	t.Run("Should return the latest stats for the market requested", testGetFeesStatsForMarketLatest)
+	t.Run("Should return the latest stats for the asset requested", testGetFeesStatsForAssetLatest)
+	t.Run("Should return an error if an asset and market is provided", testGetFeesStatsNoAssetOrMarket)
+	t.Run("Should return the stats for the referrer and epoch requested", testGetFeesStatsForReferrerAndEpoch)
+	t.Run("Should return the stats for the referee and epoch requested", testGetFeesStatsForRefereeAndEpoch)
+	t.Run("Should return the latest stats for the referrer", testGetFeesStatsForReferrerLatest)
+	t.Run("Should return the latest stats for the referee", testGetFeesStatsForRefereeLatest)
+	t.Run("Should return the latest stats for all asset given a referrer", testGetFeesStatsReferrer)
+	t.Run("Should return the latest stats for all asset given a referee", testGetFeesStatsReferee)
 }
 
-func setupFeeStats(t *testing.T, ctx context.Context, fs *sqlstore.ReferralFeeStats) []entities.ReferralFeeStats {
+func setupFeesStats(t *testing.T, ctx context.Context, fs *sqlstore.FeesStats) []entities.FeesStats {
 	t.Helper()
 	vegaTime := time.Now().Add(-time.Minute).Round(time.Microsecond) // round to microsecond because Postgres doesn't store nanoseconds at the current time
-	stats := []entities.ReferralFeeStats{
+	stats := []entities.FeesStats{
 		{
 			MarketID: entities.MarketID("deadbeef01"),
 			AssetID:  entities.AssetID("deadbaad01"),
@@ -372,114 +373,114 @@ func setupFeeStats(t *testing.T, ctx context.Context, fs *sqlstore.ReferralFeeSt
 	}
 
 	for _, stat := range stats {
-		err := fs.AddFeeStats(ctx, &stat)
+		err := fs.AddFeesStats(ctx, &stat)
 		require.NoError(t, err)
 	}
 
 	return stats
 }
 
-func testGetFeeStatsForMarketAndEpoch(t *testing.T) {
-	stores := setupReferralFeeStatsStores(t)
+func testGetFeesStatsForMarketAndEpoch(t *testing.T) {
+	stores := setupFeesStatsStores(t)
 	ctx := tempTransaction(t)
-	stats := setupFeeStats(t, ctx, stores.fs)
+	stats := setupFeesStats(t, ctx, stores.fs)
 
 	// get the stats for the first market and epoch
 	want := stats[0]
-	got, err := stores.fs.GetFeeStats(ctx, &want.MarketID, nil, &want.EpochSeq, nil, nil)
+	got, err := stores.fs.GetFeesStats(ctx, &want.MarketID, nil, &want.EpochSeq, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 
 	// get the stats for the second market and epoch
 	want = stats[3]
-	got, err = stores.fs.GetFeeStats(ctx, &want.MarketID, nil, &want.EpochSeq, nil, nil)
+	got, err = stores.fs.GetFeesStats(ctx, &want.MarketID, nil, &want.EpochSeq, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 }
 
-func testGetFeeStatsForAssetAndEpoch(t *testing.T) {
-	stores := setupReferralFeeStatsStores(t)
+func testGetFeesStatsForAssetAndEpoch(t *testing.T) {
+	stores := setupFeesStatsStores(t)
 	ctx := tempTransaction(t)
-	stats := setupFeeStats(t, ctx, stores.fs)
+	stats := setupFeesStats(t, ctx, stores.fs)
 
 	// get the stats for the first market and epoch
 	want := stats[0]
-	got, err := stores.fs.GetFeeStats(ctx, nil, &want.AssetID, &want.EpochSeq, nil, nil)
+	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, &want.EpochSeq, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 
 	// get the stats for the second market and epoch
 	want = stats[3]
-	got, err = stores.fs.GetFeeStats(ctx, nil, &want.AssetID, &want.EpochSeq, nil, nil)
+	got, err = stores.fs.GetFeesStats(ctx, nil, &want.AssetID, &want.EpochSeq, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 }
 
-func testGetFeeStatsForMarketLatest(t *testing.T) {
-	stores := setupReferralFeeStatsStores(t)
+func testGetFeesStatsForMarketLatest(t *testing.T) {
+	stores := setupFeesStatsStores(t)
 	ctx := tempTransaction(t)
-	stats := setupFeeStats(t, ctx, stores.fs)
+	stats := setupFeesStats(t, ctx, stores.fs)
 
 	// get the stats for the first market and epoch
 	want := stats[2]
-	got, err := stores.fs.GetFeeStats(ctx, &want.MarketID, nil, nil, nil, nil)
+	got, err := stores.fs.GetFeesStats(ctx, &want.MarketID, nil, nil, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 
 	// get the stats for the second market and epoch
 	want = stats[5]
-	got, err = stores.fs.GetFeeStats(ctx, &want.MarketID, nil, nil, nil, nil)
+	got, err = stores.fs.GetFeesStats(ctx, &want.MarketID, nil, nil, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 }
 
-func testGetFeeStatsForAssetLatest(t *testing.T) {
-	stores := setupReferralFeeStatsStores(t)
+func testGetFeesStatsForAssetLatest(t *testing.T) {
+	stores := setupFeesStatsStores(t)
 	ctx := tempTransaction(t)
-	stats := setupFeeStats(t, ctx, stores.fs)
+	stats := setupFeesStats(t, ctx, stores.fs)
 
 	// get the stats for the first market and epoch
 	want := stats[2]
-	got, err := stores.fs.GetFeeStats(ctx, nil, &want.AssetID, nil, nil, nil)
+	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 
 	// get the stats for the second market and epoch
 	want = stats[5]
-	got, err = stores.fs.GetFeeStats(ctx, nil, &want.AssetID, nil, nil, nil)
+	got, err = stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 }
 
-func testGetFeeStatsNoAssetOrMarket(t *testing.T) {
-	stores := setupReferralFeeStatsStores(t)
+func testGetFeesStatsNoAssetOrMarket(t *testing.T) {
+	stores := setupFeesStatsStores(t)
 	ctx := tempTransaction(t)
 
-	_, err := stores.fs.GetFeeStats(ctx, ptr.From(entities.MarketID("deadbeef01")), ptr.From(entities.AssetID("deadbeef02")),
+	_, err := stores.fs.GetFeesStats(ctx, ptr.From(entities.MarketID("deadbeef01")), ptr.From(entities.AssetID("deadbeef02")),
 		nil, nil, nil)
 	require.Error(t, err)
 }
 
-func testGetFeeStatsForReferrerAndEpoch(t *testing.T) {
-	stores := setupReferralFeeStatsStores(t)
+func testGetFeesStatsForReferrerAndEpoch(t *testing.T) {
+	stores := setupFeesStatsStores(t)
 	ctx := tempTransaction(t)
-	stats := setupFeeStats(t, ctx, stores.fs)
+	stats := setupFeesStats(t, ctx, stores.fs)
 
 	// get the stats for the first market and epoch
 	want := stats[1]
-	got, err := stores.fs.GetFeeStats(ctx, nil, &want.AssetID, ptr.From(want.EpochSeq), &want.TotalRewardsPaid[0].Party, nil)
+	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, ptr.From(want.EpochSeq), &want.TotalRewardsPaid[0].Party, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 }
 
-func testGetFeeStatsForRefereeAndEpoch(t *testing.T) {
-	stores := setupReferralFeeStatsStores(t)
+func testGetFeesStatsForRefereeAndEpoch(t *testing.T) {
+	stores := setupFeesStatsStores(t)
 	ctx := tempTransaction(t)
-	stats := setupFeeStats(t, ctx, stores.fs)
+	stats := setupFeesStats(t, ctx, stores.fs)
 
 	// get the stats for the first market and epoch
 	expected := stats[1]
-	want := entities.ReferralFeeStats{
+	want := entities.FeesStats{
 		MarketID: entities.MarketID("deadbeef01"),
 		AssetID:  entities.AssetID("deadbaad01"),
 		EpochSeq: 2,
@@ -510,32 +511,32 @@ func testGetFeeStatsForRefereeAndEpoch(t *testing.T) {
 		VegaTime:              expected.VegaTime,
 	}
 
-	got, err := stores.fs.GetFeeStats(ctx, nil, &want.AssetID, ptr.From(want.EpochSeq), nil,
+	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, ptr.From(want.EpochSeq), nil,
 		&want.ReferrerRewardsGenerated[0].GeneratedReward[0].Party)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 }
 
-func testGetFeeStatsForReferrerLatest(t *testing.T) {
-	stores := setupReferralFeeStatsStores(t)
+func testGetFeesStatsForReferrerLatest(t *testing.T) {
+	stores := setupFeesStatsStores(t)
 	ctx := tempTransaction(t)
-	stats := setupFeeStats(t, ctx, stores.fs)
+	stats := setupFeesStats(t, ctx, stores.fs)
 
 	// get the stats for the first market and epoch
 	want := stats[2]
-	got, err := stores.fs.GetFeeStats(ctx, nil, &want.AssetID, nil, &want.TotalRewardsPaid[0].Party, nil)
+	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, &want.TotalRewardsPaid[0].Party, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 }
 
-func testGetFeeStatsForRefereeLatest(t *testing.T) {
-	stores := setupReferralFeeStatsStores(t)
+func testGetFeesStatsForRefereeLatest(t *testing.T) {
+	stores := setupFeesStatsStores(t)
 	ctx := tempTransaction(t)
-	stats := setupFeeStats(t, ctx, stores.fs)
+	stats := setupFeesStats(t, ctx, stores.fs)
 
 	// get the stats for the first market and epoch
 	expected := stats[2]
-	want := entities.ReferralFeeStats{
+	want := entities.FeesStats{
 		MarketID: entities.MarketID("deadbeef01"),
 		AssetID:  entities.AssetID("deadbaad01"),
 		EpochSeq: 3,
@@ -565,20 +566,20 @@ func testGetFeeStatsForRefereeLatest(t *testing.T) {
 		VolumeDiscountApplied: []*eventspb.PartyAmount{},
 		VegaTime:              expected.VegaTime,
 	}
-	got, err := stores.fs.GetFeeStats(ctx, nil, &want.AssetID, nil, nil,
+	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, nil,
 		&want.ReferrerRewardsGenerated[0].GeneratedReward[0].Party)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 }
 
-func testGetFeeStatsReferee(t *testing.T) {
-	stores := setupReferralFeeStatsStores(t)
+func testGetFeesStatsReferee(t *testing.T) {
+	stores := setupFeesStatsStores(t)
 	ctx := tempTransaction(t)
-	stats := setupFeeStats(t, ctx, stores.fs)
+	stats := setupFeesStats(t, ctx, stores.fs)
 
 	// get the stats for the first market and epoch
 	expected := stats[2]
-	want := entities.ReferralFeeStats{
+	want := entities.FeesStats{
 		MarketID: entities.MarketID("deadbeef01"),
 		AssetID:  entities.AssetID("deadbaad01"),
 		EpochSeq: 3,
@@ -608,20 +609,20 @@ func testGetFeeStatsReferee(t *testing.T) {
 		VolumeDiscountApplied: []*eventspb.PartyAmount{},
 		VegaTime:              expected.VegaTime,
 	}
-	got, err := stores.fs.GetFeeStats(ctx, nil, &want.AssetID, nil, nil,
+	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, nil,
 		&want.ReferrerRewardsGenerated[0].GeneratedReward[0].Party)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 }
 
-func testGetFeeStatsReferrer(t *testing.T) {
-	stores := setupReferralFeeStatsStores(t)
+func testGetFeesStatsReferrer(t *testing.T) {
+	stores := setupFeesStatsStores(t)
 	ctx := tempTransaction(t)
-	stats := setupFeeStats(t, ctx, stores.fs)
+	stats := setupFeesStats(t, ctx, stores.fs)
 
 	// get the stats for the first market and epoch
 	want := stats[2]
-	got, err := stores.fs.GetFeeStats(ctx, nil, &want.AssetID, nil, &want.TotalRewardsPaid[0].Party, nil)
+	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, &want.TotalRewardsPaid[0].Party, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
 }

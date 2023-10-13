@@ -30,21 +30,21 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 )
 
-type ReferralFeeStats struct {
+type FeesStats struct {
 	*ConnectionSource
 }
 
-func NewReferralFeeStats(src *ConnectionSource) *ReferralFeeStats {
-	return &ReferralFeeStats{
+func NewFeesStats(src *ConnectionSource) *FeesStats {
+	return &FeesStats{
 		ConnectionSource: src,
 	}
 }
 
-func (rfs *ReferralFeeStats) AddFeeStats(ctx context.Context, stats *entities.ReferralFeeStats) error {
-	defer metrics.StartSQLQuery("ReferralFeeStats", "AddFeeStats")()
+func (rfs *FeesStats) AddFeesStats(ctx context.Context, stats *entities.FeesStats) error {
+	defer metrics.StartSQLQuery("FeesStats", "AddFeesStats")()
 	_, err := rfs.Connection.Exec(
 		ctx,
-		`INSERT INTO referral_fee_stats(
+		`INSERT INTO fees_stats(
                                market_id,
                                asset_id,
                                epoch_seq,
@@ -66,13 +66,13 @@ func (rfs *ReferralFeeStats) AddFeeStats(ctx context.Context, stats *entities.Re
 	return err
 }
 
-func (rfs *ReferralFeeStats) GetFeeStats(ctx context.Context, marketID *entities.MarketID, assetID *entities.AssetID,
+func (rfs *FeesStats) GetFeesStats(ctx context.Context, marketID *entities.MarketID, assetID *entities.AssetID,
 	epochSeq *uint64, referrerID, refereeID *string) (
-	*entities.ReferralFeeStats, error,
+	*entities.FeesStats, error,
 ) {
-	defer metrics.StartSQLQuery("ReferralFeeStats", "GetFeeStats")()
+	defer metrics.StartSQLQuery("FeesStats", "GetFeesStats")()
 	var (
-		stats []entities.ReferralFeeStats
+		stats []entities.FeesStats
 		err   error
 		args  []interface{}
 	)
@@ -81,7 +81,7 @@ func (rfs *ReferralFeeStats) GetFeeStats(ctx context.Context, marketID *entities
 		return nil, errors.New("only a marketID or assetID should be provided")
 	}
 
-	query := `SELECT * FROM referral_fee_stats`
+	query := `SELECT * FROM fees_stats`
 	where := make([]string, 0)
 
 	if epochSeq != nil {

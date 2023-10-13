@@ -545,8 +545,8 @@ func (r *VegaResolverRoot) PartyAmount() PartyAmountResolver {
 	return (*partyAmountResolver)(r)
 }
 
-func (r *VegaResolverRoot) ReferralSetFeeStats() ReferralSetFeeStatsResolver {
-	return (*referralSetFeeStatsResolver)(r)
+func (r *VegaResolverRoot) FeesStats() FeesStatsResolver {
+	return (*feesStatsResolver)(r)
 }
 
 func (r *VegaResolverRoot) ReferrerRewardsGenerated() ReferrerRewardsGeneratedResolver {
@@ -1737,16 +1737,16 @@ func (r *myQueryResolver) TeamRefereeHistory(ctx context.Context, referee string
 	return history.TeamRefereeHistory, nil
 }
 
-func (r *myQueryResolver) ReferralFeeStats(ctx context.Context, marketID *string, assetID *string, epoch *int,
+func (r *myQueryResolver) FeesStats(ctx context.Context, marketID *string, assetID *string, epoch *int,
 	referrer, referee *string,
-) (*v1.FeeStats, error) {
+) (*v1.FeesStats, error) {
 	var epochSeq *uint64
 
 	if epoch != nil {
 		epochSeq = ptr.From(uint64(*epoch))
 	}
 
-	req := &v2.GetReferralFeeStatsRequest{
+	req := &v2.GetFeesStatsRequest{
 		MarketId: marketID,
 		AssetId:  assetID,
 		EpochSeq: epochSeq,
@@ -1754,12 +1754,12 @@ func (r *myQueryResolver) ReferralFeeStats(ctx context.Context, marketID *string
 		Referee:  referee,
 	}
 
-	resp, err := r.tradingDataClientV2.GetReferralFeeStats(ctx, req)
+	resp, err := r.tradingDataClientV2.GetFeesStats(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
-	return resp.FeeStats, nil
+	return resp.FeesStats, nil
 }
 
 // END: Root Resolver

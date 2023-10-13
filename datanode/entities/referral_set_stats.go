@@ -55,7 +55,7 @@ type (
 		PartyID  string
 	}
 
-	ReferralFeeStats struct {
+	FeesStats struct {
 		MarketID                 MarketID
 		AssetID                  AssetID
 		EpochSeq                 uint64
@@ -121,8 +121,8 @@ func ReferralSetStatsFromProto(proto *eventspb.ReferralSetStatsUpdated, vegaTime
 	}, nil
 }
 
-func ReferralFeeStatsFromProto(proto *eventspb.FeeStats, vegaTime time.Time) *ReferralFeeStats {
-	return &ReferralFeeStats{
+func FeesStatsFromProto(proto *eventspb.FeesStats, vegaTime time.Time) *FeesStats {
+	return &FeesStats{
 		MarketID:                 MarketID(proto.Market),
 		AssetID:                  AssetID(proto.Asset),
 		EpochSeq:                 proto.EpochSeq,
@@ -134,8 +134,8 @@ func ReferralFeeStatsFromProto(proto *eventspb.FeeStats, vegaTime time.Time) *Re
 	}
 }
 
-func (stats *ReferralFeeStats) ToProto() *eventspb.FeeStats {
-	return &eventspb.FeeStats{
+func (stats *FeesStats) ToProto() *eventspb.FeesStats {
+	return &eventspb.FeesStats{
 		Market:                   stats.MarketID.String(),
 		Asset:                    stats.AssetID.String(),
 		EpochSeq:                 stats.EpochSeq,
