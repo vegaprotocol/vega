@@ -434,22 +434,28 @@ message PoWStatistic {
 
 // Complete spam statistics captured for a given party
 message SpamStatistics {
-  // Statistics for proposal transactions made by the party
+  // Statistics for proposal transactions made by the party.
   SpamStatistic proposals = 1;
-  // Statistics for delegation transactions made by the party
+  // Statistics for delegation transactions made by the party.
   SpamStatistic delegations = 2;
-  // Statistics for transfer transactions made by the party
+  // Statistics for transfer transactions made by the party.
   SpamStatistic transfers = 3;
-  // Statistics for node announcement transactions made by the party
+  // Statistics for node announcement transactions made by the party.
   SpamStatistic node_announcements = 4;
-  // Statistics for proposal votes made by the party
+  // Statistics for proposal votes made by the party.
   VoteSpamStatistics votes = 5;
-  // Statistics for proof of work difficulty observed per block for the party
+  // Statistics for proof of work difficulty observed per block for the party.
   PoWStatistic pow = 6;
-  // Statistics for multisig signatures issued for the party
+  // Statistics for multisig signatures issued for the party.
   SpamStatistic issue_signatures = 7;
-  // Epoch in which these statistics apply to
+  // Epoch in which these statistics apply to.
   uint64 epoch_seq = 8;
+  // Statistics for transactions made by the party to create referral sets.
+  SpamStatistic create_referral_set = 9;
+  // Statistics for transactions made by the party to update referral sets.
+  SpamStatistic update_referral_set = 10;
+  // Statistics for transactions made by the party to apply referral codes.
+  SpamStatistic apply_referral_code = 11;
 }
 
 // Response containing all the spam statistics of a party for the current epoch

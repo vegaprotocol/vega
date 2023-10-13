@@ -139,6 +139,7 @@
 - [9664](https://github.com/vegaprotocol/vega/issues/9664) - Handle pagination of release request with github.
 - [9681](https://github.com/vegaprotocol/vega/issues/9681) - Move referral set reward factor to the referral set stats events
 - [9708](https://github.com/vegaprotocol/vega/issues/9708) - Use the correct transaction hash when submitting orders through the `nullblockchain`
+- [9755](https://github.com/vegaprotocol/vega/issues/9755) - Add referral program spam statistics to `GetSpamStatistics` core API.
 - [409](https://github.com/vegaprotocol/OctoberACs/issues/409) - Add integration test for team rewards `0056-REWA-106`
 - [410](https://github.com/vegaprotocol/OctoberACs/issues/410) - Add integration test for team rewards `0056-REWA-107`
 - [411](https://github.com/vegaprotocol/OctoberACs/issues/411) - Add integration test for team rewards `0056-REWA-108`
