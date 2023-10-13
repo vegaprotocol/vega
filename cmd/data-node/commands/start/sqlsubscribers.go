@@ -79,54 +79,54 @@ type SQLSubscribers struct {
 	paidLiquidityFeesStatsStore *sqlstore.PaidLiquidityFeesStats
 
 	// Services
-	candleService                *candlesv2.Svc
-	marketDepthService           *service.MarketDepth
-	riskService                  *service.Risk
-	marketDataService            *service.MarketData
-	positionService              *service.Position
-	tradeService                 *service.Trade
-	ledgerService                *service.Ledger
-	rewardService                *service.Reward
-	delegationService            *service.Delegation
-	assetService                 *service.Asset
-	blockService                 *service.Block
-	partyService                 *service.Party
-	accountService               *service.Account
-	orderService                 *service.Order
-	networkLimitsService         *service.NetworkLimits
-	marketsService               *service.Markets
-	epochService                 *service.Epoch
-	depositService               *service.Deposit
-	withdrawalService            *service.Withdrawal
-	governanceService            *service.Governance
-	riskFactorService            *service.RiskFactor
-	networkParameterService      *service.NetworkParameter
-	checkpointService            *service.Checkpoint
-	oracleSpecService            *service.OracleSpec
-	oracleDataService            *service.OracleData
-	liquidityProvisionService    *service.LiquidityProvision
-	transferService              *service.Transfer
-	stakeLinkingService          *service.StakeLinking
-	notaryService                *service.Notary
-	multiSigService              *service.MultiSig
-	keyRotationsService          *service.KeyRotations
-	ethereumKeyRotationsService  *service.EthereumKeyRotation
-	nodeService                  *service.Node
-	chainService                 *service.Chain
-	protocolUpgradeService       *service.ProtocolUpgrade
-	coreSnapshotService          *service.SnapshotData
-	stopOrderService             *service.StopOrders
-	fundingPeriodService         *service.FundingPeriods
-	partyActivityStreakService   *service.PartyActivityStreak
-	referralProgramService       *service.ReferralPrograms
-	referralSetsService          *service.ReferralSets
-	teamsService                 *service.Teams
-	vestingStatsService          *service.VestingStats
-	feesStatsService             *service.FeesStats
-	fundingPaymentService        *service.FundingPayment
-	volumeDiscountStatsService   *service.VolumeDiscountStats
-	volumeDiscountProgramService *service.VolumeDiscountPrograms
-	paidLiquidityFeesStats       *service.PaidLiquidityFeesStats
+	candleService                 *candlesv2.Svc
+	marketDepthService            *service.MarketDepth
+	riskService                   *service.Risk
+	marketDataService             *service.MarketData
+	positionService               *service.Position
+	tradeService                  *service.Trade
+	ledgerService                 *service.Ledger
+	rewardService                 *service.Reward
+	delegationService             *service.Delegation
+	assetService                  *service.Asset
+	blockService                  *service.Block
+	partyService                  *service.Party
+	accountService                *service.Account
+	orderService                  *service.Order
+	networkLimitsService          *service.NetworkLimits
+	marketsService                *service.Markets
+	epochService                  *service.Epoch
+	depositService                *service.Deposit
+	withdrawalService             *service.Withdrawal
+	governanceService             *service.Governance
+	riskFactorService             *service.RiskFactor
+	networkParameterService       *service.NetworkParameter
+	checkpointService             *service.Checkpoint
+	oracleSpecService             *service.OracleSpec
+	oracleDataService             *service.OracleData
+	liquidityProvisionService     *service.LiquidityProvision
+	transferService               *service.Transfer
+	stakeLinkingService           *service.StakeLinking
+	notaryService                 *service.Notary
+	multiSigService               *service.MultiSig
+	keyRotationsService           *service.KeyRotations
+	ethereumKeyRotationsService   *service.EthereumKeyRotation
+	nodeService                   *service.Node
+	chainService                  *service.Chain
+	protocolUpgradeService        *service.ProtocolUpgrade
+	coreSnapshotService           *service.SnapshotData
+	stopOrderService              *service.StopOrders
+	fundingPeriodService          *service.FundingPeriods
+	partyActivityStreakService    *service.PartyActivityStreak
+	referralProgramService        *service.ReferralPrograms
+	referralSetsService           *service.ReferralSets
+	teamsService                  *service.Teams
+	vestingStatsService           *service.VestingStats
+	feesStatsService              *service.FeesStats
+	fundingPaymentService         *service.FundingPayment
+	volumeDiscountStatsService    *service.VolumeDiscountStats
+	volumeDiscountProgramService  *service.VolumeDiscountPrograms
+	paidLiquidityFeesStatsService *service.PaidLiquidityFeesStats
 
 	// Subscribers
 	accountSub                *sqlsubscribers.Account
@@ -226,6 +226,7 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.fundingPaymentSub,
 		s.volumeDiscountStatsSub,
 		s.volumeDiscountProgramSub,
+		s.paidLiquidityFeesStatsSub,
 	}
 }
 
@@ -332,7 +333,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.fundingPaymentService = service.NewFundingPayment(s.fundingPaymentStore)
 	s.volumeDiscountStatsService = service.NewVolumeDiscountStats(s.volumeDiscountStatsStore)
 	s.volumeDiscountProgramService = service.NewVolumeDiscountPrograms(s.volumeDiscountProgramsStore)
-	s.paidLiquidityFeesStats = service.NewPaidLiquidityFeesStats(s.paidLiquidityFeesStatsStore)
+	s.paidLiquidityFeesStatsService = service.NewPaidLiquidityFeesStats(s.paidLiquidityFeesStatsStore)
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		s.marketDepthService,
@@ -395,4 +396,5 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.fundingPaymentSub = sqlsubscribers.NewFundingPaymentsSubscriber(s.fundingPaymentStore)
 	s.volumeDiscountStatsSub = sqlsubscribers.NewVolumeDiscountStatsUpdated(s.volumeDiscountStatsService)
 	s.volumeDiscountProgramSub = sqlsubscribers.NewVolumeDiscountProgram(s.volumeDiscountProgramService)
+	s.paidLiquidityFeesStatsSub = sqlsubscribers.NewPaidLiquidityFeesStats(s.paidLiquidityFeesStatsService)
 }

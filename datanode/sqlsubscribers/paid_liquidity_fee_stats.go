@@ -26,7 +26,7 @@ import (
 type (
 	PaidLiquidityFeesStatsEvent interface {
 		events.Event
-		GetLiquidityFeeStats() *eventspb.PaidLiquidityFeesStats
+		GetPaidLiquidityFeesStats() *eventspb.PaidLiquidityFeesStats
 	}
 
 	PaidLiquidityFeesStatsStore interface {
@@ -61,5 +61,5 @@ func (r *PaidLiquidityFeesStats) Push(ctx context.Context, evt events.Event) err
 }
 
 func (r *PaidLiquidityFeesStats) consumeFeeStatsEvent(ctx context.Context, e PaidLiquidityFeesStatsEvent) error {
-	return r.store.Add(ctx, entities.PaidLiquidityFeesStatsFromProto(e.GetLiquidityFeeStats()))
+	return r.store.Add(ctx, entities.PaidLiquidityFeesStatsFromProto(e.GetPaidLiquidityFeesStats()))
 }
