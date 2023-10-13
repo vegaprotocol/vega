@@ -558,6 +558,10 @@ func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, take
 		e.factorsByReferee[party] = refereeStats
 		setStats.RefereesStats[party] = refereeStats
 
+		if e.isSetEligible(setID) != nil {
+			continue
+		}
+
 		for i := tiersLen - 1; i >= 0; i-- {
 			tier := e.currentProgram.BenefitTiers[i]
 			if refereeStats.DiscountFactor.IsZero() && epochCount >= tier.MinimumEpochs.Uint64() && runningVolumeForSet.GTE(tier.MinimumRunningNotionalTakerVolume) {
