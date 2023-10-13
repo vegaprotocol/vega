@@ -2538,7 +2538,7 @@ func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.T
 			}
 
 		// this could not exists as well, let's just create in this case
-		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward,
+		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeNetworkTreasury,
 			types.AccountTypeMakerPaidFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeAveragePositionReward,
 			types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeValidatorRankingReward:
 			market := noMarket
@@ -2550,7 +2550,6 @@ func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.T
 				// shouldn't happen, we just created it...
 				return nil, err
 			}
-
 		default:
 			return nil, fmt.Errorf("unsupported to account for TransferFunds: %v", accountType.String())
 		}
