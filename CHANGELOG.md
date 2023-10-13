@@ -158,6 +158,7 @@
 - [9541](https://github.com/vegaprotocol/vega/issues/9731) - Add filtering for party to the referral fees API.
 - [9541](https://github.com/vegaprotocol/vega/issues/9731) - Add X day aggregate totals for referral set referees.
 - [2985](https://github.com/vegaprotocol/system-tests/issues/2985) - Coverage for insurance pool transfers, fix deadlock when terminating pending market through governance.
+- [9770](https://github.com/vegaprotocol/vega/issues/9770) - Fix `PnL` flickering bug.
 
 ### 🐛 Fixes
 
@@ -312,6 +313,7 @@
 - [9541](https://github.com/vegaprotocol/vega/issues/9731) - Add filtering for party to the referral fees API.
 - [9751](https://github.com/vegaprotocol/vega/issues/9751) - Make sure that LP fee party accounts exists.
 - [9762](https://github.com/vegaprotocol/vega/issues/9762) - Referral fees API not filtering by party correctly.
+- [9775](https://github.com/vegaprotocol/vega/issues/9775) - Do not pay discount if set is not eligible
 
 ## 0.72.1
 
@@ -464,6 +466,8 @@
 - [8702](https://github.com/vegaprotocol/vega/issues/8702) - Fix panic on auction exit after stop orders expired in auction
 - [8703](https://github.com/vegaprotocol/vega/issues/8703) - Wire stop orders cancellation
 - [8698](https://github.com/vegaprotocol/vega/issues/8698) - Always set the `ToAccount` field when clearing fees.
+- [9773](https://github.com/vegaprotocol/vega/issues/9773) - Ensure invalid market for transfer doesn't panic
+- [9777](https://github.com/vegaprotocol/vega/issues/9777) - Ensure new account types are created for existing assets
 
 ## 0.71.0
 
