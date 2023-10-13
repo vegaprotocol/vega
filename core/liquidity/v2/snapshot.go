@@ -523,7 +523,7 @@ func (e *snapshotV2) loadParameters(ls *snapshotpb.LiquidityV2Parameters, p *typ
 	return err
 }
 
-func (e *snapshotV2) loadFeeStats(ls *snapshotpb.LiquidityV2PaidFeesStats, p *types.Payload) error {
+func (e *snapshotV2) loadFeeStats(ls *snapshotpb.LiquidityV2PaidFeesStats, _ *types.Payload) error {
 	e.allocatedFeesStats = types.NewPaidLiquidityFeesStatsFromProto(ls.Stats)
 	return nil
 }

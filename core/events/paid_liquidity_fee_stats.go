@@ -34,7 +34,7 @@ func NewPaidLiquidityFeesStatsEvent(ctx context.Context, fs *eventspb.PaidLiquid
 	return stats
 }
 
-func (f *PaidLiquidityFeesStats) LiquidityFeesStats() *eventspb.PaidLiquidityFeesStats {
+func (f *PaidLiquidityFeesStats) PaidLiquidityFeesStats() *eventspb.PaidLiquidityFeesStats {
 	return f.fs
 }
 

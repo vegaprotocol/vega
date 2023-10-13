@@ -330,7 +330,7 @@ var (
 	ErrGetCurrentVolumeDiscountProgram = errors.New("failed to get current volume discount program")
 	ErrGetVolumeDiscountStats          = errors.New("failed to get volume discount stats")
 
-	// Paid liquidity fees
+	// Paid liquidity fees.
 	ErrListPaidLiquidityFees = errors.New("failed to list paid liquidity fees")
 )
 
