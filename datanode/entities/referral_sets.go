@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/num"
+
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -43,6 +45,12 @@ type (
 		JoinedAt      time.Time
 		AtEpoch       uint64
 		VegaTime      time.Time
+	}
+
+	ReferralSetRefereeStats struct {
+		ReferralSetReferee
+		PeriodVolume      num.Decimal
+		PeriodRewardsPaid num.Decimal
 	}
 
 	ReferralSetCursor struct {
@@ -109,6 +117,17 @@ func (r ReferralSetReferee) ToProto() *v2.ReferralSetReferee {
 	}
 }
 
+func (r ReferralSetRefereeStats) ToProto() *v2.ReferralSetReferee {
+	return &v2.ReferralSetReferee{
+		ReferralSetId:                   r.ReferralSetID.String(),
+		Referee:                         r.Referee.String(),
+		JoinedAt:                        r.JoinedAt.UnixNano(),
+		AtEpoch:                         r.AtEpoch,
+		TotalRefereeNotionalTakerVolume: r.PeriodVolume.String(),
+		TotalRefereeGeneratedRewards:    r.PeriodRewardsPaid.String(),
+	}
+}
+
 func (r ReferralSetReferee) Cursor() *Cursor {
 	c := ReferralSetRefereeCursor{
 		JoinedAt: r.JoinedAt,
@@ -118,6 +137,13 @@ func (r ReferralSetReferee) Cursor() *Cursor {
 }
 
 func (r ReferralSetReferee) ToProtoEdge(_ ...any) (*v2.ReferralSetRefereeEdge, error) {
+	return &v2.ReferralSetRefereeEdge{
+		Node:   r.ToProto(),
+		Cursor: r.Cursor().Encode(),
+	}, nil
+}
+
+func (r ReferralSetRefereeStats) ToProtoEdge(_ ...any) (*v2.ReferralSetRefereeEdge, error) {
 	return &v2.ReferralSetRefereeEdge{
 		Node:   r.ToProto(),
 		Cursor: r.Cursor().Encode(),

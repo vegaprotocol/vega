@@ -24,6 +24,8 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/num"
+
 	"golang.org/x/exp/slices"
 
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
@@ -125,12 +127,12 @@ func TestReferralSets_RefereeJoinedReferralSet(t *testing.T) {
 }
 
 func setupReferralSetsAndReferees(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, ps *sqlstore.Parties, rs *sqlstore.ReferralSets) (
-	[]entities.ReferralSet, map[string][]entities.ReferralSetReferee,
+	[]entities.ReferralSet, map[string][]entities.ReferralSetRefereeStats,
 ) {
 	t.Helper()
 
 	sets := make([]entities.ReferralSet, 0)
-	referees := make(map[string][]entities.ReferralSetReferee, 0)
+	referees := make(map[string][]entities.ReferralSetRefereeStats, 0)
 
 	for i := 0; i < 10; i++ {
 		block := addTestBlockForTime(t, ctx, bs, time.Now().Add(time.Duration(i-10)*time.Minute))
@@ -147,20 +149,24 @@ func setupReferralSetsAndReferees(t *testing.T, ctx context.Context, bs *sqlstor
 		sets = append(sets, set)
 
 		setID := set.ID.String()
-		referees[setID] = make([]entities.ReferralSetReferee, 0)
+		referees[setID] = make([]entities.ReferralSetRefereeStats, 0)
 
 		for j := 0; j < 10; j++ {
 			block = addTestBlockForTime(t, ctx, bs, block.VegaTime.Add(5*time.Second))
 			referee := addTestParty(t, ctx, ps, block)
-			setReferee := entities.ReferralSetReferee{
-				ReferralSetID: set.ID,
-				Referee:       referee.ID,
-				JoinedAt:      block.VegaTime,
-				AtEpoch:       uint64(block.Height),
-				VegaTime:      block.VegaTime,
+			setReferee := entities.ReferralSetRefereeStats{
+				ReferralSetReferee: entities.ReferralSetReferee{
+					ReferralSetID: set.ID,
+					Referee:       referee.ID,
+					JoinedAt:      block.VegaTime,
+					AtEpoch:       uint64(block.Height),
+					VegaTime:      block.VegaTime,
+				},
+				PeriodVolume:      num.DecimalFromInt64(0),
+				PeriodRewardsPaid: num.DecimalFromInt64(0),
 			}
 
-			err := rs.RefereeJoinedReferralSet(ctx, &setReferee)
+			err := rs.RefereeJoinedReferralSet(ctx, &setReferee.ReferralSetReferee)
 			require.NoError(t, err)
 			referees[setID] = append(referees[setID], setReferee)
 		}
@@ -336,7 +342,7 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 
 	t.Run("Should return all referees in a set if no pagination", func(t *testing.T) {
 		want := refs[:]
-		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, helpers.DefaultNoPagination())
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, helpers.DefaultNoPagination(), 30)
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 		assert.Equal(t, entities.PageInfo{
@@ -349,7 +355,7 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 
 	t.Run("Should return all referees in a set by referrer if no pagination", func(t *testing.T) {
 		want := refs[:]
-		got, pageInfo, err := rs.ListReferralSetReferees(ctx, nil, &set.Referrer, nil, helpers.DefaultNoPagination())
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, nil, &set.Referrer, nil, helpers.DefaultNoPagination(), 30)
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 		assert.Equal(t, entities.PageInfo{
@@ -361,9 +367,9 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 	})
 
 	t.Run("Should return referee in a set", func(t *testing.T) {
-		want := []entities.ReferralSetReferee{refs[r.Intn(len(refs))]}
+		want := []entities.ReferralSetRefereeStats{refs[r.Intn(len(refs))]}
 
-		got, pageInfo, err := rs.ListReferralSetReferees(ctx, nil, nil, &want[0].Referee, helpers.DefaultNoPagination())
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, nil, nil, &want[0].Referee, helpers.DefaultNoPagination(), 30)
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 		assert.Equal(t, entities.PageInfo{
@@ -379,7 +385,7 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 		cursor, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 		require.NoError(t, err)
 
-		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, cursor)
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, cursor, 30)
 		require.NoError(t, err)
 		want := refs[:first]
 		assert.Equal(t, want, got)
@@ -396,7 +402,7 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 		cursor, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 		require.NoError(t, err)
 
-		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, cursor)
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, cursor, 30)
 		require.NoError(t, err)
 		want := refs[len(refs)-int(last):]
 		assert.Equal(t, want, got)
@@ -414,7 +420,7 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 		cursor, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 		require.NoError(t, err)
 
-		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, cursor)
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, cursor, 30)
 		require.NoError(t, err)
 		want := refs[3:6]
 		assert.Equal(t, want, got)
@@ -432,7 +438,7 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 		cursor, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 		require.NoError(t, err)
 
-		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, cursor)
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, cursor, 30)
 		require.NoError(t, err)
 		want := refs[4:7]
 		assert.Equal(t, want, got)
@@ -509,7 +515,7 @@ func TestReferralSets_AddReferralSetStats(t *testing.T) {
 	})
 }
 
-func getRefereeStats(t *testing.T, refs []entities.ReferralSetReferee, discountFactor string) []*eventspb.RefereeStats {
+func getRefereeStats(t *testing.T, refs []entities.ReferralSetRefereeStats, discountFactor string) []*eventspb.RefereeStats {
 	t.Helper()
 	stats := make([]*eventspb.RefereeStats, len(refs))
 	for i, r := range refs {
