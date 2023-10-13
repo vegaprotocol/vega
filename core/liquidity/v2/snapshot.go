@@ -359,8 +359,8 @@ func (e *snapshotV2) serialiseParameters() ([]byte, error) {
 
 func (e *snapshotV2) serialiseFeeStats() ([]byte, error) {
 	payload := &snapshotpb.Payload{
-		Data: &snapshotpb.Payload_LiquidityV2PaidFeeStats{
-			LiquidityV2PaidFeeStats: &snapshotpb.LiquidityV2PaidFeeStats{
+		Data: &snapshotpb.Payload_LiquidityV2PaidFeesStats{
+			LiquidityV2PaidFeesStats: &snapshotpb.LiquidityV2PaidFeesStats{
 				MarketId: e.market,
 				Stats:    e.allocatedFeesStats.ToProto(e.market, e.asset),
 			},
@@ -523,8 +523,8 @@ func (e *snapshotV2) loadParameters(ls *snapshotpb.LiquidityV2Parameters, p *typ
 	return err
 }
 
-func (e *snapshotV2) loadFeeStats(ls *snapshotpb.LiquidityV2PaidFeeStats, p *types.Payload) error {
-	e.allocatedFeesStats = types.NewPaidLiquidityFeeStatsFromProto(ls.Stats)
+func (e *snapshotV2) loadFeeStats(ls *snapshotpb.LiquidityV2PaidFeesStats, p *types.Payload) error {
+	e.allocatedFeesStats = types.NewPaidLiquidityFeesStatsFromProto(ls.Stats)
 	return nil
 }
 
@@ -566,7 +566,7 @@ func (e *snapshotV2) buildHashKeys(market string) {
 	}).Key()
 
 	e.feeStatsKey = (&types.PayloadPaidLiquidityV2FeeStats{
-		Stats: &snapshotpb.LiquidityV2PaidFeeStats{
+		Stats: &snapshotpb.LiquidityV2PaidFeesStats{
 			MarketId: market,
 		},
 	}).Key()

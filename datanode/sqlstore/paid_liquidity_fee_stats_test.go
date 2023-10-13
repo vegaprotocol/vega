@@ -33,28 +33,28 @@ import (
 	vgtesting "code.vegaprotocol.io/vega/datanode/libs/testing"
 )
 
-func TestPaidLiquidityFeeStats_AddFeeStats(t *testing.T) {
-	t.Run("Should add the stats for the epoch if they do not exist", testAddPaidLiquidityFeeStatsEpochIfNotExists)
-	t.Run("Should return an error if the epoch already exists for the market/asset", testAddPaidLiquidityFeeStatsEpochExists)
+func TestPaidLiquidityFeesStats_Add(t *testing.T) {
+	t.Run("Should add the stats for the epoch if they do not exist", testAddPaidLiquidityFeesStatsEpochIfNotExists)
+	t.Run("Should return an error if the epoch already exists for the market/asset", testAddPaidLiquidityFeesStatsEpochExists)
 }
 
-type paidLiquidityFeeStatsTestStores struct {
+type paidLiquidityFeesStatsTestStores struct {
 	bs *sqlstore.Blocks
 	ms *sqlstore.Markets
 	ps *sqlstore.Parties
 	as *sqlstore.Assets
-	ls *sqlstore.PaidLiquidityFeeStats
+	ls *sqlstore.PaidLiquidityFeesStats
 }
 
-func setupPaidLiquidityFeeStatsStores(t *testing.T) *paidLiquidityFeeStatsTestStores {
+func setupPaidLiquidityFeesStatsStores(t *testing.T) *paidLiquidityFeesStatsTestStores {
 	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
 	ms := sqlstore.NewMarkets(connectionSource)
 	ps := sqlstore.NewParties(connectionSource)
 	as := sqlstore.NewAssets(connectionSource)
-	ls := sqlstore.NewPaidLiquidityFeeStats(connectionSource)
+	ls := sqlstore.NewPaidLiquidityFeesStats(connectionSource)
 
-	return &paidLiquidityFeeStatsTestStores{
+	return &paidLiquidityFeesStatsTestStores{
 		bs: bs,
 		ms: ms,
 		ps: ps,
@@ -63,14 +63,14 @@ func setupPaidLiquidityFeeStatsStores(t *testing.T) *paidLiquidityFeeStatsTestSt
 	}
 }
 
-func testAddPaidLiquidityFeeStatsEpochIfNotExists(t *testing.T) {
-	stores := setupPaidLiquidityFeeStatsStores(t)
+func testAddPaidLiquidityFeesStatsEpochIfNotExists(t *testing.T) {
+	stores := setupPaidLiquidityFeesStatsStores(t)
 	ctx := tempTransaction(t)
 	block := addTestBlock(t, ctx, stores.bs)
 	market := helpers.AddTestMarket(t, ctx, stores.ms, block)
 	asset := addTestAsset(t, ctx, stores.as, block)
 
-	want := entities.PaidLiquidityFeeStats{
+	want := entities.PaidLiquidityFeesStats{
 		MarketID:      market.ID,
 		AssetID:       asset.ID,
 		EpochSeq:      100,
@@ -86,23 +86,24 @@ func testAddPaidLiquidityFeeStatsEpochIfNotExists(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check that the stats were added
-	var got entities.PaidLiquidityFeeStats
+	var got entities.PaidLiquidityFeesStats
 	err = pgxscan.Get(ctx, connectionSource.Connection, &got,
-		`SELECT * FROM paid_liquidity_fees WHERE market_id = $1 AND asset_id = $2 AND epoch_seq = $3`,
+		`SELECT market_id, asset_id, epoch_seq, total_fees_paid, fees_paid_per_party as fees_per_party
+		FROM paid_liquidity_fees WHERE market_id = $1 AND asset_id = $2 AND epoch_seq = $3`,
 		market.ID, asset.ID, want.EpochSeq,
 	)
 	require.NoError(t, err)
 	vgtesting.AssertProtoEqual(t, want.ToProto(), got.ToProto())
 }
 
-func testAddPaidLiquidityFeeStatsEpochExists(t *testing.T) {
-	stores := setupPaidLiquidityFeeStatsStores(t)
+func testAddPaidLiquidityFeesStatsEpochExists(t *testing.T) {
+	stores := setupPaidLiquidityFeesStatsStores(t)
 	ctx := tempTransaction(t)
 	block := addTestBlock(t, ctx, stores.bs)
 	market := helpers.AddTestMarket(t, ctx, stores.ms, block)
 	asset := addTestAsset(t, ctx, stores.as, block)
 
-	want := entities.PaidLiquidityFeeStats{
+	want := entities.PaidLiquidityFeesStats{
 		MarketID:      market.ID,
 		AssetID:       asset.ID,
 		EpochSeq:      100,
@@ -123,23 +124,18 @@ func testAddPaidLiquidityFeeStatsEpochExists(t *testing.T) {
 	assert.Contains(t, err.Error(), "duplicate key value violates unique constraint")
 }
 
-func TestPaidLiquidityFeeStats_GetFeeStats(t *testing.T) {
-	t.Run("Should return the stats for the market and epoch requested", testListPaidLiquidityFeeStatsForMarketAndEpoch)
-	// t.Run("Should return the stats for the asset and epoch requested", testListPaidLiquidityFeeStatsForAssetAndEpoch)
-	// t.Run("Should return the latest stats for the market requested", testListPaidLiquidityFeeStatsForMarketLatest)
-	// t.Run("Should return the latest stats for the asset requested", testListPaidLiquidityFeeStatsForAssetLatest)
-	// t.Run("Should return an error if an asset and market is provided", testListPaidLiquidityFeeStatsNoAssetOrMarket)
-	// t.Run("Should return the stats for the referrer and epoch requested", testListPaidLiquidityFeeStatsForReferrerAndEpoch)
-	// t.Run("Should return the stats for the referee and epoch requested", testListPaidLiquidityFeeStatsForRefereeAndEpoch)
-	// t.Run("Should return the latest stats for the referrer", testListPaidLiquidityFeeStatsForReferrerLatest)
-	// t.Run("Should return the latest stats for the referee", testListPaidLiquidityFeeStatsForRefereeLatest)
-	// t.Run("Should return the latest stats for all asset given a referrer", testListPaidLiquidityFeeStatsReferrer)
-	// t.Run("Should return the latest stats for all asset given a referee", testListPaidLiquidityFeeStatsReferee)
+func TestPaidLiquidityFeesStats_List(t *testing.T) {
+	t.Run("Should return the stats for the market and epoch requested", testListPaidLiquidityFeesStatsForMarketAndEpoch)
+	t.Run("Should return the stats for the asset and epoch requested", testListPaidLiquidityFeesStatsForAssetAndEpoch)
+	t.Run("Should return the latest stats for the market requested", testListPaidLiquidityFeesStatsForMarketLatest)
+	t.Run("Should return the latest stats for the asset requested", testListPaidLiquidityFeesStatsForAssetLatest)
+	t.Run("Should return the stats for the party and epoch requested", testListPaidLiquidityFeesStatsForPartyAndEpoch)
+	t.Run("Should return the latest stats for the party", testListPaidLiquidityFeesStatsForPartyLatest)
 }
 
-func setupPaidLiquidityFeeStats(t *testing.T, ctx context.Context, ls *sqlstore.PaidLiquidityFeeStats) []entities.PaidLiquidityFeeStats {
+func setupPaidLiquidityFeesStats(t *testing.T, ctx context.Context, ls *sqlstore.PaidLiquidityFeesStats) []entities.PaidLiquidityFeesStats {
 	t.Helper()
-	stats := []entities.PaidLiquidityFeeStats{
+	stats := []entities.PaidLiquidityFeesStats{
 		{
 			MarketID:      entities.MarketID("deadbeef01"),
 			AssetID:       entities.AssetID("deadbaad01"),
@@ -246,10 +242,10 @@ func setupPaidLiquidityFeeStats(t *testing.T, ctx context.Context, ls *sqlstore.
 	return stats
 }
 
-func testListPaidLiquidityFeeStatsForMarketAndEpoch(t *testing.T) {
-	stores := setupPaidLiquidityFeeStatsStores(t)
+func testListPaidLiquidityFeesStatsForMarketAndEpoch(t *testing.T) {
+	stores := setupPaidLiquidityFeesStatsStores(t)
 	ctx := tempTransaction(t)
-	stats := setupPaidLiquidityFeeStats(t, ctx, stores.ls)
+	stats := setupPaidLiquidityFeesStats(t, ctx, stores.ls)
 
 	pagination := entities.DefaultCursorPagination(true)
 
@@ -258,7 +254,7 @@ func testListPaidLiquidityFeeStatsForMarketAndEpoch(t *testing.T) {
 	got, _, err := stores.ls.List(ctx, &want[0].MarketID, nil, &want[0].EpochSeq, nil, pagination)
 	require.NoError(t, err)
 
-	assert.Len(t, want, len(got))
+	assert.Len(t, got, len(want))
 	vgtesting.AssertProtoEqual(t, want[0].ToProto(), got[0].ToProto())
 
 	// get the stats for the second market and epoch
@@ -266,144 +262,118 @@ func testListPaidLiquidityFeeStatsForMarketAndEpoch(t *testing.T) {
 	got, _, err = stores.ls.List(ctx, &want[0].MarketID, nil, &want[0].EpochSeq, nil, pagination)
 	require.NoError(t, err)
 
-	assert.Len(t, want, len(got))
+	assert.Len(t, got, len(want))
 	vgtesting.AssertProtoEqual(t, want[0].ToProto(), got[0].ToProto())
 }
 
-// func testListPaidLiquidityFeeStatsForAssetAndEpoch(t *testing.T) {
-// 	stores := setupReferralFeeStatsStores(t)
-// 	ctx := tempTransaction(t)
-// 	stats := setupPaidLiquidityFeeStats(t, ctx, stores.fs)
+func testListPaidLiquidityFeesStatsForAssetAndEpoch(t *testing.T) {
+	stores := setupPaidLiquidityFeesStatsStores(t)
+	ctx := tempTransaction(t)
+	stats := setupPaidLiquidityFeesStats(t, ctx, stores.ls)
 
-// 	// get the stats for the first market and epoch
-// 	want := stats[0]
-// 	got, err := stores.fs.GetFeeStats(ctx, nil, &want.AssetID, &want.EpochSeq, nil, nil)
-// 	require.NoError(t, err)
-// 	assert.Equal(t, want, *got)
+	pagination := entities.DefaultCursorPagination(true)
 
-// 	// get the stats for the second market and epoch
-// 	want = stats[3]
-// 	got, err = stores.fs.GetFeeStats(ctx, nil, &want.AssetID, &want.EpochSeq, nil, nil)
-// 	require.NoError(t, err)
-// 	assert.Equal(t, want, *got)
-// }
+	// get the stats for the first market and epoch
+	want := stats[1:2]
+	got, _, err := stores.ls.List(ctx, nil, &want[0].AssetID, &want[0].EpochSeq, nil, pagination)
+	require.NoError(t, err)
 
-// func testListPaidLiquidityFeeStatsForMarketLatest(t *testing.T) {
-// 	stores := setupReferralFeeStatsStores(t)
-// 	ctx := tempTransaction(t)
-// 	stats := setupPaidLiquidityFeeStats(t, ctx, stores.fs)
+	assert.Len(t, got, len(want))
+	vgtesting.AssertProtoEqual(t, want[0].ToProto(), got[0].ToProto())
 
-// 	// get the stats for the first market and epoch
-// 	want := stats[2]
-// 	got, err := stores.fs.GetFeeStats(ctx, &want.MarketID, nil, nil, nil, nil)
-// 	require.NoError(t, err)
-// 	assert.Equal(t, want, *got)
+	// get the stats for the second market and epoch
+	want = stats[4:5]
+	got, _, err = stores.ls.List(ctx, nil, &want[0].AssetID, &want[0].EpochSeq, nil, pagination)
+	require.NoError(t, err)
 
-// 	// get the stats for the second market and epoch
-// 	want = stats[5]
-// 	got, err = stores.fs.GetFeeStats(ctx, &want.MarketID, nil, nil, nil, nil)
-// 	require.NoError(t, err)
-// 	assert.Equal(t, want, *got)
-// }
+	assert.Len(t, got, len(want))
+	vgtesting.AssertProtoEqual(t, want[0].ToProto(), got[0].ToProto())
+}
 
-// func testListPaidLiquidityFeeStatsForAssetLatest(t *testing.T) {
-// 	stores := setupReferralFeeStatsStores(t)
-// 	ctx := tempTransaction(t)
-// 	stats := setupPaidLiquidityFeeStats(t, ctx, stores.fs)
+func testListPaidLiquidityFeesStatsForMarketLatest(t *testing.T) {
+	stores := setupPaidLiquidityFeesStatsStores(t)
+	ctx := tempTransaction(t)
+	stats := setupPaidLiquidityFeesStats(t, ctx, stores.ls)
 
-// 	// get the stats for the first market and epoch
-// 	want := stats[2]
-// 	got, err := stores.fs.GetFeeStats(ctx, nil, &want.AssetID, nil, nil, nil)
-// 	require.NoError(t, err)
-// 	assert.Equal(t, want, *got)
+	pagination := entities.DefaultCursorPagination(true)
 
-// 	// get the stats for the second market and epoch
-// 	want = stats[5]
-// 	got, err = stores.fs.GetFeeStats(ctx, nil, &want.AssetID, nil, nil, nil)
-// 	require.NoError(t, err)
-// 	assert.Equal(t, want, *got)
-// }
+	// get the stats for the first market and epoch
+	want := stats[2:3]
+	got, _, err := stores.ls.List(ctx, &want[0].MarketID, nil, nil, nil, pagination)
+	require.NoError(t, err)
 
-// func testListPaidLiquidityFeeStatsNoAssetOrMarket(t *testing.T) {
-// 	stores := setupReferralFeeStatsStores(t)
-// 	ctx := tempTransaction(t)
+	assert.Len(t, got, len(want))
+	vgtesting.AssertProtoEqual(t, want[0].ToProto(), got[0].ToProto())
 
-// 	_, err := stores.fs.GetFeeStats(ctx, ptr.From(entities.MarketID("deadbeef01")), ptr.From(entities.AssetID("deadbeef02")),
-// 		nil, nil, nil)
-// 	require.Error(t, err)
-// }
+	// get the stats for the second market and epoch
+	want = stats[5:6]
+	got, _, err = stores.ls.List(ctx, &want[0].MarketID, nil, nil, nil, pagination)
+	require.NoError(t, err)
 
-// func testListPaidLiquidityFeeStatsForReferrerAndEpoch(t *testing.T) {
-// 	stores := setupReferralFeeStatsStores(t)
-// 	ctx := tempTransaction(t)
-// 	stats := setupPaidLiquidityFeeStats(t, ctx, stores.fs)
+	assert.Len(t, got, len(want))
+	vgtesting.AssertProtoEqual(t, want[0].ToProto(), got[0].ToProto())
+}
 
-// 	// get the stats for the first market and epoch
-// 	want := stats[1]
-// 	got, err := stores.fs.GetFeeStats(ctx, nil, &want.AssetID, ptr.From(want.EpochSeq), &want.TotalRewardsPaid[0].Party, nil)
-// 	require.NoError(t, err)
-// 	assert.Equal(t, want, *got)
-// }
+func testListPaidLiquidityFeesStatsForAssetLatest(t *testing.T) {
+	stores := setupPaidLiquidityFeesStatsStores(t)
+	ctx := tempTransaction(t)
+	stats := setupPaidLiquidityFeesStats(t, ctx, stores.ls)
 
-// func testListPaidLiquidityFeeStatsForRefereeAndEpoch(t *testing.T) {
-// 	stores := setupReferralFeeStatsStores(t)
-// 	ctx := tempTransaction(t)
-// 	stats := setupPaidLiquidityFeeStats(t, ctx, stores.fs)
+	pagination := entities.DefaultCursorPagination(true)
 
-// 	// get the stats for the first market and epoch
-// 	want := stats[1]
-// 	got, err := stores.fs.GetFeeStats(ctx, nil, &want.AssetID, ptr.From(want.EpochSeq), nil,
-// 		&want.ReferrerRewardsGenerated[0].GeneratedReward[0].Party)
-// 	require.NoError(t, err)
-// 	assert.Equal(t, want, *got)
-// }
+	// get the stats for the first market and epoch
+	want := stats[2:3]
+	got, _, err := stores.ls.List(ctx, nil, &want[0].AssetID, nil, nil, pagination)
+	require.NoError(t, err)
 
-// func testListPaidLiquidityFeeStatsForReferrerLatest(t *testing.T) {
-// 	stores := setupReferralFeeStatsStores(t)
-// 	ctx := tempTransaction(t)
-// 	stats := setupPaidLiquidityFeeStats(t, ctx, stores.fs)
+	assert.Len(t, got, len(want))
+	vgtesting.AssertProtoEqual(t, want[0].ToProto(), got[0].ToProto())
 
-// 	// get the stats for the first market and epoch
-// 	want := stats[2]
-// 	got, err := stores.fs.GetFeeStats(ctx, nil, &want.AssetID, nil, &want.TotalRewardsPaid[0].Party, nil)
-// 	require.NoError(t, err)
-// 	assert.Equal(t, want, *got)
-// }
+	// get the stats for the second market and epoch
+	want = stats[5:6]
+	got, _, err = stores.ls.List(ctx, nil, &want[0].AssetID, nil, nil, pagination)
+	require.NoError(t, err)
 
-// func testListPaidLiquidityFeeStatsForRefereeLatest(t *testing.T) {
-// 	stores := setupReferralFeeStatsStores(t)
-// 	ctx := tempTransaction(t)
-// 	stats := setupPaidLiquidityFeeStats(t, ctx, stores.fs)
+	assert.Len(t, got, len(want))
+	vgtesting.AssertProtoEqual(t, want[0].ToProto(), got[0].ToProto())
+}
 
-// 	// get the stats for the first market and epoch
-// 	want := stats[2]
-// 	got, err := stores.fs.GetFeeStats(ctx, nil, &want.AssetID, nil, nil,
-// 		&want.ReferrerRewardsGenerated[0].GeneratedReward[0].Party)
-// 	require.NoError(t, err)
-// 	assert.Equal(t, want, *got)
-// }
+func testListPaidLiquidityFeesStatsForPartyAndEpoch(t *testing.T) {
+	stores := setupPaidLiquidityFeesStatsStores(t)
+	ctx := tempTransaction(t)
+	stats := setupPaidLiquidityFeesStats(t, ctx, stores.ls)
 
-// func testListPaidLiquidityFeeStatsReferee(t *testing.T) {
-// 	stores := setupReferralFeeStatsStores(t)
-// 	ctx := tempTransaction(t)
-// 	stats := setupPaidLiquidityFeeStats(t, ctx, stores.fs)
+	pagination := entities.DefaultCursorPagination(true)
 
-// 	// get the stats for the first market and epoch
-// 	want := stats[2]
-// 	got, err := stores.fs.GetFeeStats(ctx, nil, &want.AssetID, nil, nil,
-// 		&want.ReferrerRewardsGenerated[0].GeneratedReward[0].Party)
-// 	require.NoError(t, err)
-// 	assert.Equal(t, want, *got)
-// }
+	// get the stats for the first market and epoch
+	want := append(stats[3:4], stats[0:1]...)
+	want[0].FeesPerParty = want[0].FeesPerParty[:1]
+	want[1].FeesPerParty = want[1].FeesPerParty[:1]
 
-// func testListPaidLiquidityFeeStatsReferrer(t *testing.T) {
-// 	stores := setupReferralFeeStatsStores(t)
-// 	ctx := tempTransaction(t)
-// 	stats := setupPaidLiquidityFeeStats(t, ctx, stores.fs)
+	got, _, err := stores.ls.List(ctx, nil, nil, &want[0].EpochSeq, []string{want[0].FeesPerParty[0].Party}, pagination)
+	require.NoError(t, err)
 
-// 	// get the stats for the first market and epoch
-// 	want := stats[2]
-// 	got, err := stores.fs.GetFeeStats(ctx, nil, &want.AssetID, nil, &want.TotalRewardsPaid[0].Party, nil)
-// 	require.NoError(t, err)
-// 	assert.Equal(t, want, *got)
-// }
+	assert.Len(t, got, len(want))
+	vgtesting.AssertProtoEqual(t, want[0].ToProto(), got[0].ToProto())
+	vgtesting.AssertProtoEqual(t, want[1].ToProto(), got[1].ToProto())
+}
+
+func testListPaidLiquidityFeesStatsForPartyLatest(t *testing.T) {
+	stores := setupPaidLiquidityFeesStatsStores(t)
+	ctx := tempTransaction(t)
+	stats := setupPaidLiquidityFeesStats(t, ctx, stores.ls)
+
+	pagination := entities.DefaultCursorPagination(true)
+
+	// get the stats for the first market and epoch
+	want := append(stats[5:6], stats[2:3]...)
+	want[0].FeesPerParty = want[0].FeesPerParty[:1]
+	want[1].FeesPerParty = want[1].FeesPerParty[:1]
+
+	got, _, err := stores.ls.List(ctx, nil, nil, nil, []string{want[0].FeesPerParty[0].Party}, pagination)
+	require.NoError(t, err)
+
+	assert.Len(t, got, len(want))
+	vgtesting.AssertProtoEqual(t, want[0].ToProto(), got[0].ToProto())
+	vgtesting.AssertProtoEqual(t, want[1].ToProto(), got[1].ToProto())
+}

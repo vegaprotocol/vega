@@ -146,7 +146,7 @@ type Engine struct {
 
 	lastFeeDistribution time.Time
 
-	allocatedFeesStats *types.PaidLiquidityFeeStats
+	allocatedFeesStats *types.PaidLiquidityFeesStats
 
 	// FIXME(jerem): to remove in the future,
 	// this is neede for the compatibility layer from

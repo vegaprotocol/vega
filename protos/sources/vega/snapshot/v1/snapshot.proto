@@ -139,7 +139,7 @@ message Payload {
     ActivityStreak activity_streak = 76;
     VolumeDiscountProgram volume_discount_program = 77;
     LiquidityV2Parameters liquidity_v2_parameters = 78;
-    LiquidityV2PaidFeeStats liquidity_v2_paid_fee_stats = 79;
+    LiquidityV2PaidFeesStats liquidity_v2_paid_fees_stats = 79;
   }
 }
 
@@ -927,11 +927,11 @@ message LiquidityV2Parameters {
   string bond_penalty_max = 5;
 }
 
-message LiquidityV2PaidFeeStats {
+message LiquidityV2PaidFeesStats {
   // Market ID these liquidity parameters apply to. Required for key generation
   string market_id = 1;
 
-  vega.events.v1.PaidLiquidityFeeStats stats = 2;
+  vega.events.v1.PaidLiquidityFeesStats stats = 2;
 }
 
 message LiquidityV2Provisions {

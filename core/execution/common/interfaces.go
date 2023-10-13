@@ -247,7 +247,7 @@ type LiquidityEngine interface {
 	LiquidityProviderSLAStats(t time.Time) []*types.LiquidityProviderSLA
 
 	RegisterAllocatedFeesPerParty(feesPerParty map[string]*num.Uint)
-	PaidLiquidityFeeStats() *types.PaidLiquidityFeeStats
+	PaidLiquidityFeesStats() *types.PaidLiquidityFeesStats
 
 	ReadyForFeesAllocation(time.Time) bool
 	ResetFeeAllocationPeriod(t time.Time)

@@ -24,19 +24,19 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-type PaidLiquidityFeeStats struct {
+type PaidLiquidityFeesStats struct {
 	TotalFeesPaid    *num.Uint
 	FeesPaidPerParty map[string]*num.Uint
 }
 
-func NewLiquidityFeeStats() *PaidLiquidityFeeStats {
-	return &PaidLiquidityFeeStats{
+func NewLiquidityFeeStats() *PaidLiquidityFeesStats {
+	return &PaidLiquidityFeesStats{
 		TotalFeesPaid:    num.UintZero(),
 		FeesPaidPerParty: map[string]*num.Uint{},
 	}
 }
 
-func NewPaidLiquidityFeeStatsFromProto(fsp *eventspb.PaidLiquidityFeeStats) *PaidLiquidityFeeStats {
+func NewPaidLiquidityFeesStatsFromProto(fsp *eventspb.PaidLiquidityFeesStats) *PaidLiquidityFeesStats {
 	fs := NewLiquidityFeeStats()
 
 	fs.TotalFeesPaid = num.MustUintFromString(fsp.TotalFeesPaid, 10)
@@ -48,7 +48,7 @@ func NewPaidLiquidityFeeStatsFromProto(fsp *eventspb.PaidLiquidityFeeStats) *Pai
 	return fs
 }
 
-func (f *PaidLiquidityFeeStats) RegisterTotalFeesAmountPerParty(totalFeesAmountPerParty map[string]*num.Uint) {
+func (f *PaidLiquidityFeesStats) RegisterTotalFeesAmountPerParty(totalFeesAmountPerParty map[string]*num.Uint) {
 	for party, amount := range totalFeesAmountPerParty {
 		f.TotalFeesPaid.AddSum(amount)
 
@@ -60,8 +60,8 @@ func (f *PaidLiquidityFeeStats) RegisterTotalFeesAmountPerParty(totalFeesAmountP
 	}
 }
 
-func (f *PaidLiquidityFeeStats) ToProto(marketID, asset string) *eventspb.PaidLiquidityFeeStats {
-	fs := &eventspb.PaidLiquidityFeeStats{
+func (f *PaidLiquidityFeesStats) ToProto(marketID, asset string) *eventspb.PaidLiquidityFeesStats {
+	fs := &eventspb.PaidLiquidityFeesStats{
 		Market:           marketID,
 		Asset:            asset,
 		FeesPaidPerParty: make([]*eventspb.PartyAmount, 0, len(f.FeesPaidPerParty)),

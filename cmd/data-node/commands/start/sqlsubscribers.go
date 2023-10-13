@@ -76,7 +76,7 @@ type SQLSubscribers struct {
 	fundingPaymentStore         *sqlstore.FundingPayments
 	volumeDiscountStatsStore    *sqlstore.VolumeDiscountStats
 	volumeDiscountProgramsStore *sqlstore.VolumeDiscountPrograms
-	paidLiquidityFeeStatsStore  *sqlstore.PaidLiquidityFeeStats
+	paidLiquidityFeesStatsStore *sqlstore.PaidLiquidityFeesStats
 
 	// Services
 	candleService                *candlesv2.Svc
@@ -126,55 +126,55 @@ type SQLSubscribers struct {
 	fundingPaymentService        *service.FundingPayment
 	volumeDiscountStatsService   *service.VolumeDiscountStats
 	volumeDiscountProgramService *service.VolumeDiscountPrograms
-	paidLiquidityFeeStats        *service.PaidLiquidityFeeStats
+	paidLiquidityFeesStats       *service.PaidLiquidityFeesStats
 
 	// Subscribers
-	accountSub               *sqlsubscribers.Account
-	assetSub                 *sqlsubscribers.Asset
-	partySub                 *sqlsubscribers.Party
-	transferResponseSub      *sqlsubscribers.TransferResponse
-	orderSub                 *sqlsubscribers.Order
-	networkLimitsSub         *sqlsubscribers.NetworkLimits
-	marketDataSub            *sqlsubscribers.MarketData
-	tradesSub                *sqlsubscribers.TradeSubscriber
-	rewardsSub               *sqlsubscribers.Reward
-	delegationsSub           *sqlsubscribers.Delegation
-	marketCreatedSub         *sqlsubscribers.MarketCreated
-	marketUpdatedSub         *sqlsubscribers.MarketUpdated
-	epochSub                 *sqlsubscribers.Epoch
-	depositSub               *sqlsubscribers.Deposit
-	withdrawalSub            *sqlsubscribers.Withdrawal
-	proposalsSub             *sqlsubscribers.Proposal
-	votesSub                 *sqlsubscribers.Vote
-	marginLevelsSub          *sqlsubscribers.MarginLevels
-	riskFactorSub            *sqlsubscribers.RiskFactor
-	netParamSub              *sqlsubscribers.NetworkParameter
-	checkpointSub            *sqlsubscribers.Checkpoint
-	oracleSpecSub            *sqlsubscribers.OracleSpec
-	oracleDataSub            *sqlsubscribers.OracleData
-	liquidityProvisionSub    *sqlsubscribers.LiquidityProvision
-	positionsSub             *sqlsubscribers.Position
-	transferSub              *sqlsubscribers.Transfer
-	stakeLinkingSub          *sqlsubscribers.StakeLinking
-	notarySub                *sqlsubscribers.Notary
-	multiSigSignerEventSub   *sqlsubscribers.ERC20MultiSigSignerEvent
-	keyRotationsSub          *sqlsubscribers.KeyRotation
-	ethereumKeyRotationsSub  *sqlsubscribers.EthereumKeyRotation
-	nodeSub                  *sqlsubscribers.Node
-	pupSub                   *sqlsubscribers.ProtocolUpgrade
-	snapSub                  *sqlsubscribers.SnapshotData
-	stopOrdersSub            *sqlsubscribers.StopOrder
-	fundingPeriodSub         *sqlsubscribers.FundingPeriod
-	partyActivityStreakSub   *sqlsubscribers.PartyActivityStreak
-	referralProgramSub       *sqlsubscribers.ReferralProgram
-	referralSetsSub          *sqlsubscribers.ReferralSets
-	teamsSub                 *sqlsubscribers.Teams
-	vestingStatsSub          *sqlsubscribers.VestingStatsUpdated
-	feesStatsSub             *sqlsubscribers.FeesStats
-	fundingPaymentSub        *sqlsubscribers.FundingPaymentSubscriber
-	volumeDiscountStatsSub   *sqlsubscribers.VolumeDiscountStatsUpdated
-	volumeDiscountProgramSub *sqlsubscribers.VolumeDiscountProgram
-	paidLiquidityFeeStatsSub *sqlsubscribers.PaidLiquidityFeeStats
+	accountSub                *sqlsubscribers.Account
+	assetSub                  *sqlsubscribers.Asset
+	partySub                  *sqlsubscribers.Party
+	transferResponseSub       *sqlsubscribers.TransferResponse
+	orderSub                  *sqlsubscribers.Order
+	networkLimitsSub          *sqlsubscribers.NetworkLimits
+	marketDataSub             *sqlsubscribers.MarketData
+	tradesSub                 *sqlsubscribers.TradeSubscriber
+	rewardsSub                *sqlsubscribers.Reward
+	delegationsSub            *sqlsubscribers.Delegation
+	marketCreatedSub          *sqlsubscribers.MarketCreated
+	marketUpdatedSub          *sqlsubscribers.MarketUpdated
+	epochSub                  *sqlsubscribers.Epoch
+	depositSub                *sqlsubscribers.Deposit
+	withdrawalSub             *sqlsubscribers.Withdrawal
+	proposalsSub              *sqlsubscribers.Proposal
+	votesSub                  *sqlsubscribers.Vote
+	marginLevelsSub           *sqlsubscribers.MarginLevels
+	riskFactorSub             *sqlsubscribers.RiskFactor
+	netParamSub               *sqlsubscribers.NetworkParameter
+	checkpointSub             *sqlsubscribers.Checkpoint
+	oracleSpecSub             *sqlsubscribers.OracleSpec
+	oracleDataSub             *sqlsubscribers.OracleData
+	liquidityProvisionSub     *sqlsubscribers.LiquidityProvision
+	positionsSub              *sqlsubscribers.Position
+	transferSub               *sqlsubscribers.Transfer
+	stakeLinkingSub           *sqlsubscribers.StakeLinking
+	notarySub                 *sqlsubscribers.Notary
+	multiSigSignerEventSub    *sqlsubscribers.ERC20MultiSigSignerEvent
+	keyRotationsSub           *sqlsubscribers.KeyRotation
+	ethereumKeyRotationsSub   *sqlsubscribers.EthereumKeyRotation
+	nodeSub                   *sqlsubscribers.Node
+	pupSub                    *sqlsubscribers.ProtocolUpgrade
+	snapSub                   *sqlsubscribers.SnapshotData
+	stopOrdersSub             *sqlsubscribers.StopOrder
+	fundingPeriodSub          *sqlsubscribers.FundingPeriod
+	partyActivityStreakSub    *sqlsubscribers.PartyActivityStreak
+	referralProgramSub        *sqlsubscribers.ReferralProgram
+	referralSetsSub           *sqlsubscribers.ReferralSets
+	teamsSub                  *sqlsubscribers.Teams
+	vestingStatsSub           *sqlsubscribers.VestingStatsUpdated
+	feesStatsSub              *sqlsubscribers.FeesStats
+	fundingPaymentSub         *sqlsubscribers.FundingPaymentSubscriber
+	volumeDiscountStatsSub    *sqlsubscribers.VolumeDiscountStatsUpdated
+	volumeDiscountProgramSub  *sqlsubscribers.VolumeDiscountProgram
+	paidLiquidityFeesStatsSub *sqlsubscribers.PaidLiquidityFeesStats
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -281,7 +281,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.fundingPaymentStore = sqlstore.NewFundingPayments(transactionalConnectionSource)
 	s.volumeDiscountStatsStore = sqlstore.NewVolumeDiscountStats(transactionalConnectionSource)
 	s.volumeDiscountProgramsStore = sqlstore.NewVolumeDiscountPrograms(transactionalConnectionSource)
-	s.paidLiquidityFeeStatsStore = sqlstore.NewPaidLiquidityFeeStats(transactionalConnectionSource)
+	s.paidLiquidityFeesStatsStore = sqlstore.NewPaidLiquidityFeesStats(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
@@ -332,7 +332,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.fundingPaymentService = service.NewFundingPayment(s.fundingPaymentStore)
 	s.volumeDiscountStatsService = service.NewVolumeDiscountStats(s.volumeDiscountStatsStore)
 	s.volumeDiscountProgramService = service.NewVolumeDiscountPrograms(s.volumeDiscountProgramsStore)
-	s.paidLiquidityFeeStats = service.NewPaidLiquidityFeeStats(s.paidLiquidityFeeStatsStore)
+	s.paidLiquidityFeesStats = service.NewPaidLiquidityFeesStats(s.paidLiquidityFeesStatsStore)
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		s.marketDepthService,

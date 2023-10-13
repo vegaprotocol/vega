@@ -22,25 +22,25 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
-type PaidLiquidityFeeStatsCursor struct {
+type PaidLiquidityFeesStatsCursor struct {
 	Epoch    uint64
 	MarketID string
 	AssetID  string
 }
 
-func (c PaidLiquidityFeeStatsCursor) ToString() string {
+func (c PaidLiquidityFeesStatsCursor) ToString() string {
 	bs, _ := json.Marshal(c)
 	return string(bs)
 }
 
-func (c *PaidLiquidityFeeStatsCursor) Parse(cursorString string) error {
+func (c *PaidLiquidityFeesStatsCursor) Parse(cursorString string) error {
 	if cursorString == "" {
 		return nil
 	}
 	return json.Unmarshal([]byte(cursorString), c)
 }
 
-type PaidLiquidityFeeStats struct {
+type PaidLiquidityFeesStats struct {
 	MarketID      MarketID
 	AssetID       AssetID
 	EpochSeq      uint64
@@ -48,8 +48,8 @@ type PaidLiquidityFeeStats struct {
 	FeesPerParty  []*eventspb.PartyAmount
 }
 
-func (s PaidLiquidityFeeStats) Cursor() *Cursor {
-	c := PaidLiquidityFeeStatsCursor{
+func (s PaidLiquidityFeesStats) Cursor() *Cursor {
+	c := PaidLiquidityFeesStatsCursor{
 		Epoch:    s.EpochSeq,
 		MarketID: string(s.MarketID),
 		AssetID:  s.AssetID.String(),
@@ -57,15 +57,15 @@ func (s PaidLiquidityFeeStats) Cursor() *Cursor {
 	return NewCursor(c.ToString())
 }
 
-func (s PaidLiquidityFeeStats) ToProtoEdge(_ ...any) (*v2.PaidLiquidityFeesEdge, error) {
+func (s PaidLiquidityFeesStats) ToProtoEdge(_ ...any) (*v2.PaidLiquidityFeesEdge, error) {
 	return &v2.PaidLiquidityFeesEdge{
 		Node:   s.ToProto(),
 		Cursor: s.Cursor().Encode(),
 	}, nil
 }
 
-func (s PaidLiquidityFeeStats) ToProto() *eventspb.PaidLiquidityFeeStats {
-	return &eventspb.PaidLiquidityFeeStats{
+func (s PaidLiquidityFeesStats) ToProto() *eventspb.PaidLiquidityFeesStats {
+	return &eventspb.PaidLiquidityFeesStats{
 		Market:           s.MarketID.String(),
 		Asset:            s.AssetID.String(),
 		EpochSeq:         s.EpochSeq,
@@ -74,8 +74,8 @@ func (s PaidLiquidityFeeStats) ToProto() *eventspb.PaidLiquidityFeeStats {
 	}
 }
 
-func PaidLiquidityFeeStatsFromProto(proto *eventspb.PaidLiquidityFeeStats) *PaidLiquidityFeeStats {
-	return &PaidLiquidityFeeStats{
+func PaidLiquidityFeesStatsFromProto(proto *eventspb.PaidLiquidityFeesStats) *PaidLiquidityFeesStats {
+	return &PaidLiquidityFeesStats{
 		MarketID:      MarketID(proto.Market),
 		AssetID:       AssetID(proto.Asset),
 		EpochSeq:      proto.EpochSeq,

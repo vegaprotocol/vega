@@ -2711,7 +2711,7 @@ message ListPaidLiquidityFeesResponse {
 // Paid liquidity fees data with the corresponding cursor.
 message PaidLiquidityFeesEdge {
   // Paid liquidity fees data returned by the API.
-  vega.events.v1.PaidLiquidityFeeStats node = 1;
+  vega.events.v1.PaidLiquidityFeesStats node = 1;
   // Cursor that can be used to fetch further data.
   string cursor = 2;
 }

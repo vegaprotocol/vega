@@ -49,7 +49,7 @@ var (
 		ColumnOrdering{Name: "party_id", Sorting: ASC},
 	}
 
-	paidLiquidityFeeStatsCursorOrdering = TableOrdering{
+	paidLiquidityFeesStatsCursorOrdering = TableOrdering{
 		ColumnOrdering{Name: "market_id", Sorting: ASC},
 		ColumnOrdering{Name: "asset_id", Sorting: ASC},
 		ColumnOrdering{Name: "epoch_seq", Sorting: DESC},

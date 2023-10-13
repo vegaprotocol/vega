@@ -24,42 +24,42 @@ import (
 )
 
 type (
-	PaidLiquidityFeeStatsEvent interface {
+	PaidLiquidityFeesStatsEvent interface {
 		events.Event
-		GetLiquidityFeeStats() *eventspb.PaidLiquidityFeeStats
+		GetLiquidityFeeStats() *eventspb.PaidLiquidityFeesStats
 	}
 
-	PaidLiquidityFeeStatsStore interface {
-		Add(ctx context.Context, stats *entities.PaidLiquidityFeeStats) error
+	PaidLiquidityFeesStatsStore interface {
+		Add(ctx context.Context, stats *entities.PaidLiquidityFeesStats) error
 	}
 
-	PaidLiquidityFeeStats struct {
+	PaidLiquidityFeesStats struct {
 		subscriber
-		store PaidLiquidityFeeStatsStore
+		store PaidLiquidityFeesStatsStore
 	}
 )
 
-func NewPaidLiquidityFeeStats(store PaidLiquidityFeeStatsStore) *PaidLiquidityFeeStats {
-	return &PaidLiquidityFeeStats{
+func NewPaidLiquidityFeesStats(store PaidLiquidityFeesStatsStore) *PaidLiquidityFeesStats {
+	return &PaidLiquidityFeesStats{
 		store: store,
 	}
 }
 
-func (r *PaidLiquidityFeeStats) Types() []events.Type {
+func (r *PaidLiquidityFeesStats) Types() []events.Type {
 	return []events.Type{
-		events.PaidLiquidityFeeStatsEvent,
+		events.PaidLiquidityFeesStatsEvent,
 	}
 }
 
-func (r *PaidLiquidityFeeStats) Push(ctx context.Context, evt events.Event) error {
+func (r *PaidLiquidityFeesStats) Push(ctx context.Context, evt events.Event) error {
 	switch e := evt.(type) {
-	case PaidLiquidityFeeStatsEvent:
+	case PaidLiquidityFeesStatsEvent:
 		return r.consumeFeeStatsEvent(ctx, e)
 	default:
 		return nil
 	}
 }
 
-func (r *PaidLiquidityFeeStats) consumeFeeStatsEvent(ctx context.Context, e PaidLiquidityFeeStatsEvent) error {
-	return r.store.Add(ctx, entities.PaidLiquidityFeeStatsFromProto(e.GetLiquidityFeeStats()))
+func (r *PaidLiquidityFeesStats) consumeFeeStatsEvent(ctx context.Context, e PaidLiquidityFeesStatsEvent) error {
+	return r.store.Add(ctx, entities.PaidLiquidityFeesStatsFromProto(e.GetLiquidityFeeStats()))
 }

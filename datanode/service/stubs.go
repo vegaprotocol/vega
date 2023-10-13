@@ -63,8 +63,8 @@ type (
 	VolumeDiscountPrograms struct {
 		*sqlstore.VolumeDiscountPrograms
 	}
-	PaidLiquidityFeeStats struct {
-		*sqlstore.PaidLiquidityFeeStats
+	PaidLiquidityFeesStats struct {
+		*sqlstore.PaidLiquidityFeesStats
 	}
 )
 
@@ -189,6 +189,6 @@ func NewVolumeDiscountPrograms(store *sqlstore.VolumeDiscountPrograms) *VolumeDi
 	return &VolumeDiscountPrograms{VolumeDiscountPrograms: store}
 }
 
-func NewPaidLiquidityFeeStats(store *sqlstore.PaidLiquidityFeeStats) *PaidLiquidityFeeStats {
-	return &PaidLiquidityFeeStats{PaidLiquidityFeeStats: store}
+func NewPaidLiquidityFeesStats(store *sqlstore.PaidLiquidityFeesStats) *PaidLiquidityFeesStats {
+	return &PaidLiquidityFeesStats{PaidLiquidityFeesStats: store}
 }

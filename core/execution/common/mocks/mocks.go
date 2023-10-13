@@ -1745,18 +1745,18 @@ func (mr *MockLiquidityEngineMockRecorder) OnStakeToCcyVolumeUpdate(arg0 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnStakeToCcyVolumeUpdate", reflect.TypeOf((*MockLiquidityEngine)(nil).OnStakeToCcyVolumeUpdate), arg0)
 }
 
-// PaidLiquidityFeeStats mocks base method.
-func (m *MockLiquidityEngine) PaidLiquidityFeeStats() *types.PaidLiquidityFeeStats {
+// PaidLiquidityFeesStats mocks base method.
+func (m *MockLiquidityEngine) PaidLiquidityFeesStats() *types.PaidLiquidityFeesStats {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PaidLiquidityFeeStats")
-	ret0, _ := ret[0].(*types.PaidLiquidityFeeStats)
+	ret := m.ctrl.Call(m, "PaidLiquidityFeesStats")
+	ret0, _ := ret[0].(*types.PaidLiquidityFeesStats)
 	return ret0
 }
 
-// PaidLiquidityFeeStats indicates an expected call of PaidLiquidityFeeStats.
-func (mr *MockLiquidityEngineMockRecorder) PaidLiquidityFeeStats() *gomock.Call {
+// PaidLiquidityFeesStats indicates an expected call of PaidLiquidityFeesStats.
+func (mr *MockLiquidityEngineMockRecorder) PaidLiquidityFeesStats() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaidLiquidityFeeStats", reflect.TypeOf((*MockLiquidityEngine)(nil).PaidLiquidityFeeStats))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaidLiquidityFeesStats", reflect.TypeOf((*MockLiquidityEngine)(nil).PaidLiquidityFeesStats))
 }
 
 // PendingProvision mocks base method.

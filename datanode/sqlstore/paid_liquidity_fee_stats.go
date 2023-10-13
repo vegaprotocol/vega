@@ -28,18 +28,18 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 )
 
-type PaidLiquidityFeeStats struct {
+type PaidLiquidityFeesStats struct {
 	*ConnectionSource
 }
 
-func NewPaidLiquidityFeeStats(src *ConnectionSource) *PaidLiquidityFeeStats {
-	return &PaidLiquidityFeeStats{
+func NewPaidLiquidityFeesStats(src *ConnectionSource) *PaidLiquidityFeesStats {
+	return &PaidLiquidityFeesStats{
 		ConnectionSource: src,
 	}
 }
 
-func (rfs *PaidLiquidityFeeStats) Add(ctx context.Context, stats *entities.PaidLiquidityFeeStats) error {
-	defer metrics.StartSQLQuery("PaidLiquidityFeeStats", "Add")()
+func (rfs *PaidLiquidityFeesStats) Add(ctx context.Context, stats *entities.PaidLiquidityFeesStats) error {
+	defer metrics.StartSQLQuery("PaidLiquidityFeesStats", "Add")()
 	_, err := rfs.Connection.Exec(
 		ctx,
 		`INSERT INTO paid_liquidity_fees(
@@ -58,26 +58,26 @@ func (rfs *PaidLiquidityFeeStats) Add(ctx context.Context, stats *entities.PaidL
 	return err
 }
 
-func (lfs *PaidLiquidityFeeStats) List(
+func (lfs *PaidLiquidityFeesStats) List(
 	ctx context.Context,
 	marketID *entities.MarketID,
 	assetID *entities.AssetID,
 	epochSeq *uint64,
 	partyIDs []string,
 	pagination entities.CursorPagination,
-) ([]entities.PaidLiquidityFeeStats, entities.PageInfo, error) {
-	defer metrics.StartSQLQuery("PaidLiquidityFeeStats", "List")()
+) ([]entities.PaidLiquidityFeesStats, entities.PageInfo, error) {
+	defer metrics.StartSQLQuery("PaidLiquidityFeesStats", "List")()
 	var (
 		args     []interface{}
 		pageInfo entities.PageInfo
 	)
 
-	query := `SELECT t.market_id, t.asset_id, t.epoch_seq, t.total_fees_paid, array_to_json(array_agg(j)) as Fees_per_party
+	query := `SELECT t.market_id, t.asset_id, t.epoch_seq, t.total_fees_paid, array_to_json(array_agg(j)) as fees_per_party
 	FROM paid_liquidity_fees t, jsonb_array_elements(t.fees_paid_per_party) j`
 
 	whereClauses := []string{}
 
-	if (marketID == nil || assetID == nil) && epochSeq == nil && len(partyIDs) == 0 {
+	if (marketID == nil || assetID == nil) && epochSeq == nil {
 		whereClauses = append(whereClauses, "epoch_seq = (SELECT MAX(epoch_seq) FROM paid_liquidity_fees)")
 	}
 
@@ -94,7 +94,15 @@ func (lfs *PaidLiquidityFeeStats) List(
 	}
 
 	if len(partyIDs) > 0 {
-		whereClauses = append(whereClauses, fmt.Sprintf("j->>'party' IN (%s)", nextBindVar(&args, partyIDs)))
+		parties := strings.Builder{}
+		for i, party := range partyIDs {
+			if i > 0 {
+				parties.WriteString(",")
+			}
+			parties.WriteString(nextBindVar(&args, party))
+		}
+
+		whereClauses = append(whereClauses, fmt.Sprintf("j->>'party' IN (%s)", parties.String()))
 	}
 
 	var whereStr string
@@ -106,10 +114,10 @@ func (lfs *PaidLiquidityFeeStats) List(
 
 	query = fmt.Sprintf("%s %s %s", query, whereStr, groupByStr)
 
-	stats := []entities.PaidLiquidityFeeStats{}
+	stats := []entities.PaidLiquidityFeesStats{}
 
-	query, args, err := PaginateQuery[entities.PaidLiquidityFeeStatsCursor](
-		query, args, paidLiquidityFeeStatsCursorOrdering, pagination)
+	query, args, err := PaginateQuery[entities.PaidLiquidityFeesStatsCursor](
+		query, args, paidLiquidityFeesStatsCursorOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}
