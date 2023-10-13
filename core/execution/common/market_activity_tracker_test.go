@@ -66,6 +66,9 @@ func TestMarketTracker(t *testing.T) {
 	tracker.MarketProposed("asset1", "market1", "me")
 	tracker.MarketProposed("asset1", "market2", "me2")
 
+	assert.True(t, tracker.MarketTrackedForAsset("market1", "asset1"))
+	assert.False(t, tracker.MarketTrackedForAsset("market1", "asset2"))
+
 	require.Equal(t, false, tracker.IsMarketEligibleForBonus("asset1", "market1", "VEGA", []string{}, "zohar"))
 	require.Equal(t, false, tracker.IsMarketEligibleForBonus("asset1", "market2", "VEGA", []string{}, "zohar"))
 
