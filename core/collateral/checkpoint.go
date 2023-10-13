@@ -155,8 +155,6 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 		ledgerMovements = append(ledgerMovements, lm)
 	}
 
-	e.getOrCreateNetTreasuryAndGlobalInsForAssets(ctx, assets)
-
 	if len(ledgerMovements) > 0 {
 		e.broker.Send(events.NewLedgerMovements(ctx, ledgerMovements))
 	}

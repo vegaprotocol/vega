@@ -109,24 +109,10 @@ func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAcco
 	e.broker.SendBatch(pevts)
 	var err error
 	e.state.serialisedAccounts, err = proto.Marshal(p.IntoProto())
-	e.getOrCreateNetTreasuryAndGlobalInsForAssets(ctx, assets)
 	e.updateNextBalanceSnapshot(accs.NextBalanceSnapshot)
 	e.snapshotBalances()
 	e.activeRestore = true
 	return err
-}
-
-func (e *Engine) getOrCreateNetTreasuryAndGlobalInsForAssets(ctx context.Context, assets map[string]struct{}) {
-	// bit of migration - ensure that the network treasury and global insurance account are created for all assets
-	assetStr := make([]string, 0, len(assets))
-	for k := range assets {
-		assetStr = append(assetStr, k)
-	}
-	sort.Strings(assetStr)
-	for _, asset := range assetStr {
-		e.GetOrCreateNetworkTreasuryAccount(ctx, asset)
-		e.GetOrCreateGlobalInsuranceAccount(ctx, asset)
-	}
 }
 
 func (e *Engine) restoreAssets(assets *types.CollateralAssets, p *types.Payload) error {
