@@ -160,6 +160,7 @@
 - [2985](https://github.com/vegaprotocol/system-tests/issues/2985) - Coverage for insurance pool transfers, fix deadlock when terminating pending market through governance.
 - [9770](https://github.com/vegaprotocol/vega/issues/9770) - Fix `PnL` flickering bug.
 - [9785](https://github.com/vegaprotocol/vega/issues/9785) - Support transfers to network treasury.
+- [9743](https://github.com/vegaprotocol/system-tests/issues/9743) - Expose maker fees in fees stats API.
 
 ### 🐛 Fixes
 

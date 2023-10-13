@@ -97,16 +97,16 @@ func (f *FeesStats) RegisterMakerFee(makerID, takerID string, amount *num.Uint) 
 
 	total.Add(total, amount)
 
-	makeFeeGenerated, ok := f.MakerFeesGenerated[takerID]
+	makerFeesGenerated, ok := f.MakerFeesGenerated[takerID]
 	if !ok {
-		makeFeeGenerated = map[string]*num.Uint{}
-		f.MakerFeesGenerated[takerID] = makeFeeGenerated
+		makerFeesGenerated = map[string]*num.Uint{}
+		f.MakerFeesGenerated[takerID] = makerFeesGenerated
 	}
 
-	makerTally, ok := makeFeeGenerated[makerID]
+	makerTally, ok := makerFeesGenerated[makerID]
 	if !ok {
 		makerTally = num.NewUint(0)
-		makeFeeGenerated[makerID] = makerTally
+		makerFeesGenerated[makerID] = makerTally
 	}
 
 	makerTally.Add(makerTally, amount)

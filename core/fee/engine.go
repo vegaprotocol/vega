@@ -171,7 +171,7 @@ func (e *Engine) CalculateForContinuousMode(
 		}
 		fee, reward := e.applyDiscountsAndRewards(taker, e.calculateContinuousModeFees(trade), referral, volumeDiscountService)
 
-		e.feeStats.RegisterMakerFee(maker, taker, fee.MakerFee)
+		e.feesStats.RegisterMakerFee(maker, taker, fee.MakerFee)
 
 		switch trade.Aggressor {
 		case types.SideBuy:
