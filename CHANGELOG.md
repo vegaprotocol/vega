@@ -162,6 +162,7 @@
 - [9770](https://github.com/vegaprotocol/vega/issues/9770) - Fix `PnL` flickering bug.
 - [9785](https://github.com/vegaprotocol/vega/issues/9785) - Support transfers to network treasury.
 - [9743](https://github.com/vegaprotocol/system-tests/issues/9743) - Expose maker fees in fees stats API.
+- [9750](https://github.com/vegaprotocol/vega/issues/9750) - Add paid liquidity fees statistics to API.
 
 ### 🐛 Fixes
 
