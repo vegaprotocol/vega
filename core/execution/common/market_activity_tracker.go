@@ -711,6 +711,9 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 	// for each market in scope, for each epoch in the time window get the metric entry, sum up for each epoch in the time window and divide by window size (or calculate variance - for volatility)
 	for _, market := range markets {
 		marketTracker := assetTrackers[market]
+		if marketTracker == nil {
+			continue
+		}
 		switch metric {
 		case vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION:
 			uTotal += marketTracker.getPositionMetricTotal(party, windowSize)

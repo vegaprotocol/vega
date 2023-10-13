@@ -464,6 +464,7 @@
 - [8702](https://github.com/vegaprotocol/vega/issues/8702) - Fix panic on auction exit after stop orders expired in auction
 - [8703](https://github.com/vegaprotocol/vega/issues/8703) - Wire stop orders cancellation
 - [8698](https://github.com/vegaprotocol/vega/issues/8698) - Always set the `ToAccount` field when clearing fees.
+- [9773](https://github.com/vegaprotocol/vega/issues/9773) - Ensure invalid market for transfer doesn't panic
 
 ## 0.71.0
 
