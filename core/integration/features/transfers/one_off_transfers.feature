@@ -159,9 +159,11 @@ Scenario: Transfer from general account to Network Treasury Account by specifyin
     | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL |    0000000000000000000000000000000000000000000000000000000000000000   | ACCOUNT_TYPE_NETWORK_TREASURY | VEGA  | 10000 | 2021-08-26T00:00:01Z  |
 
     Then "f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c" should have general account balance of "9985000" for asset "VEGA"
+    # We check the system account receiving the balance because the treasury transfer is on-chain.
+    And the reward account of type "ACCOUNT_TYPE_PENDING_TRANSFERS" should have balance of "10000" for asset "VEGA"
 
     When the network moves ahead "1" epochs
     Then "f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c" should have general account balance of "9985000" for asset "VEGA"
 
     # We check the system account receiving the balance because the treasury transfer is on-chain.
-    And the reward account of type "ACCOUNT_TYPE_PENDING_TRANSFERS" should have balance of "10000" for asset "VEGA"
+    And the reward account of type "ACCOUNT_TYPE_NETWORK_TREASURY" should have balance of "10000" for asset "VEGA"
