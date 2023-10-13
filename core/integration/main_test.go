@@ -654,6 +654,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the party "([^"]*)" has the following taker notional "([^"]*)"$`, func(party, notional string) error {
 		return steps.PartyHasTheFollowingTakerNotional(party, notional, execsetup.volumeDiscountProgram)
 	})
+
+	s.Step(`^create the network treasury account for asset "([^"]*)"$`, func(asset string) error {
+		return steps.CreateNetworkTreasuryAccount(execsetup.collateralEngine, asset)
+	})
 }
 
 func reconcileAccounts() error {
