@@ -839,8 +839,8 @@ type Query {
     pagination: Pagination
   ): ReferralSetConnection!
 
-  "Get referrer fee and discount stats"
-  referralFeeStats(
+  "Get fees statistics"
+  feesStats(
     "Optional market ID to filter for. If omitted, asset ID must be provided."
     marketId: ID
     "Optional asset ID to filter for. If omitted, market ID must be provided."
@@ -851,7 +851,7 @@ type Query {
     referrer: ID
     "Optional referee party ID to filter for"
     referee: ID
-  ): ReferralSetFeeStats
+  ): FeesStats
 
   referralSetReferees(
     "Optional referral set ID to fetch referees for"
@@ -6205,8 +6205,8 @@ type TeamRefereeHistoryConnection {
   pageInfo: PageInfo!
 }
 
-"Referral rewards and discounts that have been applied on a specific market/asset up to the given epoch."
-type ReferralSetFeeStats {
+"Fees that have been applied on a specific market/asset up to the given epoch."
+type FeesStats {
   "The market the fees were paid in"
   marketId: String!
   "The settlement asset of the market."

@@ -1097,6 +1097,10 @@ func convertSpamStatistics(r *api.GetSpamStatisticsResponse) *nodetypes.SpamStat
 		Delegations:       toSpamStatistic(r.Statistics.Delegations),
 		Transfers:         toSpamStatistic(r.Statistics.Transfers),
 		NodeAnnouncements: toSpamStatistic(r.Statistics.NodeAnnouncements),
+		IssuesSignatures:  toSpamStatistic(r.Statistics.IssueSignatures),
+		CreateReferralSet: toSpamStatistic(r.Statistics.CreateReferralSet),
+		UpdateReferralSet: toSpamStatistic(r.Statistics.UpdateReferralSet),
+		ApplyReferralCode: toSpamStatistic(r.Statistics.ApplyReferralCode),
 		Votes: &nodetypes.VoteSpamStatistics{
 			Proposals:   proposals,
 			MaxForEpoch: r.Statistics.Votes.MaxForEpoch,

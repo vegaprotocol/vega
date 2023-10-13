@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"strings"
 
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
 	"github.com/georgysavva/scany/pgxscan"
 
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -28,21 +30,21 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 )
 
-type ReferralFeeStats struct {
+type FeesStats struct {
 	*ConnectionSource
 }
 
-func NewReferralFeeStats(src *ConnectionSource) *ReferralFeeStats {
-	return &ReferralFeeStats{
+func NewFeesStats(src *ConnectionSource) *FeesStats {
+	return &FeesStats{
 		ConnectionSource: src,
 	}
 }
 
-func (rfs *ReferralFeeStats) AddFeeStats(ctx context.Context, stats *entities.ReferralFeeStats) error {
-	defer metrics.StartSQLQuery("ReferralFeeStats", "AddFeeStats")()
+func (rfs *FeesStats) AddFeesStats(ctx context.Context, stats *entities.FeesStats) error {
+	defer metrics.StartSQLQuery("FeesStats", "AddFeesStats")()
 	_, err := rfs.Connection.Exec(
 		ctx,
-		`INSERT INTO referral_fee_stats(
+		`INSERT INTO fees_stats(
                                market_id,
                                asset_id,
                                epoch_seq,
@@ -64,13 +66,13 @@ func (rfs *ReferralFeeStats) AddFeeStats(ctx context.Context, stats *entities.Re
 	return err
 }
 
-func (rfs *ReferralFeeStats) GetFeeStats(ctx context.Context, marketID *entities.MarketID, assetID *entities.AssetID,
+func (rfs *FeesStats) GetFeesStats(ctx context.Context, marketID *entities.MarketID, assetID *entities.AssetID,
 	epochSeq *uint64, referrerID, refereeID *string) (
-	*entities.ReferralFeeStats, error,
+	*entities.FeesStats, error,
 ) {
-	defer metrics.StartSQLQuery("ReferralFeeStats", "GetFeeStats")()
+	defer metrics.StartSQLQuery("FeesStats", "GetFeesStats")()
 	var (
-		stats []entities.ReferralFeeStats
+		stats []entities.FeesStats
 		err   error
 		args  []interface{}
 	)
@@ -79,7 +81,7 @@ func (rfs *ReferralFeeStats) GetFeeStats(ctx context.Context, marketID *entities
 		return nil, errors.New("only a marketID or assetID should be provided")
 	}
 
-	query := `SELECT * FROM referral_fee_stats`
+	query := `SELECT * FROM fees_stats`
 	where := make([]string, 0)
 
 	if epochSeq != nil {
@@ -120,7 +122,44 @@ func (rfs *ReferralFeeStats) GetFeeStats(ctx context.Context, marketID *entities
 		return nil, errors.New("no referral fee stats found")
 	}
 
+	// the query returns the full JSON object and doesn't filter for the referrer/referee,
+	// it only matches on the records where the json object contains the referrer/referee
+	if referrerID != nil {
+		// filter the results to only include the results for the given referrer
+		stats[0].TotalRewardsPaid = filterPartyAmounts(stats[0].TotalRewardsPaid, *referrerID)
+		stats[0].ReferrerRewardsGenerated = filterReferrerRewardsGenerated(stats[0].ReferrerRewardsGenerated, *referrerID)
+	}
+
+	if refereeID != nil {
+		// filter the results to only include the results for the given referee
+		for i, rrg := range stats[0].ReferrerRewardsGenerated {
+			stats[0].ReferrerRewardsGenerated[i].GeneratedReward = filterPartyAmounts(rrg.GeneratedReward, *refereeID)
+		}
+		stats[0].RefereesDiscountApplied = filterPartyAmounts(stats[0].RefereesDiscountApplied, *refereeID)
+		stats[0].VolumeDiscountApplied = filterPartyAmounts(stats[0].VolumeDiscountApplied, *refereeID)
+	}
+
 	return &stats[0], err
+}
+
+func filterPartyAmounts(totalRewardsPaid []*eventspb.PartyAmount, party string) []*eventspb.PartyAmount {
+	filteredTotalRewardsPaid := make([]*eventspb.PartyAmount, 0)
+	for _, reward := range totalRewardsPaid {
+		if strings.EqualFold(reward.Party, party) {
+			filteredTotalRewardsPaid = append(filteredTotalRewardsPaid, reward)
+		}
+	}
+	return filteredTotalRewardsPaid
+}
+
+func filterReferrerRewardsGenerated(rewardsGenerated []*eventspb.ReferrerRewardsGenerated, referrer string) []*eventspb.ReferrerRewardsGenerated {
+	filteredReferrerRewardsGenerated := make([]*eventspb.ReferrerRewardsGenerated, 0)
+	for _, reward := range rewardsGenerated {
+		if strings.EqualFold(reward.Referrer, referrer) {
+			filteredReferrerRewardsGenerated = append(filteredReferrerRewardsGenerated, reward)
+		}
+	}
+	return filteredReferrerRewardsGenerated
 }
 
 func getPartyFilter(referrerID, refereeID *string) string {

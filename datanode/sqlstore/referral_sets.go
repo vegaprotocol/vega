@@ -258,7 +258,7 @@ with ref_period_volume (party, period_volume) as (
     group by ref_stats->>'party_id'
 ), ref_period_rewards (party, period_rewards) as (
     select decode(gen_rewards->>'party', 'hex'), sum((gen_rewards ->> 'amount')::numeric) as period_rewards
-    from referral_fee_stats,
+    from fees_stats,
          jsonb_array_elements(referrer_rewards_generated) as ref_rewards,
             jsonb_array_elements(ref_rewards->'generated_reward') as gen_rewards
     where vega_time between now() - interval '%d days' and now()

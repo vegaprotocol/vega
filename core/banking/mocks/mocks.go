@@ -540,6 +540,20 @@ func (mr *MockMarketActivityTrackerMockRecorder) MarkPaidProposer(arg0, arg1, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkPaidProposer", reflect.TypeOf((*MockMarketActivityTracker)(nil).MarkPaidProposer), arg0, arg1, arg2, arg3, arg4)
 }
 
+// MarketTrackedForAsset mocks base method.
+func (m *MockMarketActivityTracker) MarketTrackedForAsset(arg0, arg1 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarketTrackedForAsset", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// MarketTrackedForAsset indicates an expected call of MarketTrackedForAsset.
+func (mr *MockMarketActivityTrackerMockRecorder) MarketTrackedForAsset(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarketTrackedForAsset", reflect.TypeOf((*MockMarketActivityTracker)(nil).MarketTrackedForAsset), arg0, arg1)
+}
+
 // MockERC20BridgeView is a mock of ERC20BridgeView interface.
 type MockERC20BridgeView struct {
 	ctrl     *gomock.Controller

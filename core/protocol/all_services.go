@@ -383,7 +383,7 @@ func newServices(
 	svcs.snapshotEngine.AddProviders(svcs.spam)
 
 	pow := pow.New(svcs.log, svcs.conf.PoW, svcs.timeService)
-	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain && !svcs.conf.Blockchain.Null.SpamProtection {
+	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
 		pow.DisableVerification()
 	}
 	svcs.pow = pow

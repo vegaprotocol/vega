@@ -47,8 +47,8 @@ message PartyVestingStats {
   string reward_bonus_multiplier = 2;
 }
 
-// Fee rewards and discounts paid / received per parties during an epoch
-message FeeStats {
+// Fees rewards and discounts paid / received per parties during an epoch
+message FeesStats {
   // Market the fees were paid in
   string market = 1;
   // Settlement asset of the market.
@@ -1136,8 +1136,8 @@ enum BusEventType {
   // Event indicating the updated statistics for the volume discount.
   BUS_EVENT_TYPE_VOLUME_DISCOUNT_STATS_UPDATED = 78;
 
-  // Event indicating the fee stats per market at end of epoch
-  BUS_EVENT_TYPE_FEE_STATS_UPDATED = 79;
+  // Event indicating the fees statistics per market at end of epoch
+  BUS_EVENT_TYPE_FEES_STATS_UPDATED = 79;
 
   // Event indicating a funding period has ended and resulted in funding payment transfers.
   BUS_EVENT_TYPE_FUNDING_PAYMENTS = 80;
@@ -1308,7 +1308,7 @@ message BusEvent {
     // Event notifying of an update to the volume discount statistics.
     VolumeDiscountStatsUpdated volume_discount_stats_updated = 176;
     // Event notifying of an update the fees stats for a market.
-    FeeStats fee_stats = 177;
+    FeesStats fees_stats = 177;
     // Event notifying of funding payments at the end of a funding period.
     FundingPayments funding_payments = 178;
 

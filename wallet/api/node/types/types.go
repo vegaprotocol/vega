@@ -47,6 +47,9 @@ type SpamStatistics struct {
 	Transfers         *SpamStatistic
 	NodeAnnouncements *SpamStatistic
 	IssuesSignatures  *SpamStatistic
+	CreateReferralSet *SpamStatistic
+	UpdateReferralSet *SpamStatistic
+	ApplyReferralCode *SpamStatistic
 	Votes             *VoteSpamStatistics
 	PoW               *PoWStatistics
 }

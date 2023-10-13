@@ -21,6 +21,8 @@ import (
 	"sort"
 	"time"
 
+	"golang.org/x/exp/maps"
+
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
@@ -40,7 +42,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
-	"golang.org/x/exp/maps"
 )
 
 func NewMarketFromSnapshot(
@@ -116,8 +117,8 @@ func NewMarketFromSnapshot(
 	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID, broker)
 
 	var feeEngine *fee.Engine
-	if em.FeeStats != nil {
-		feeEngine, err = fee.NewFromState(log, feeConfig, *mkt.Fees, asset, positionFactor, em.FeeStats)
+	if em.FeesStats != nil {
+		feeEngine, err = fee.NewFromState(log, feeConfig, *mkt.Fees, asset, positionFactor, em.FeesStats)
 		if err != nil {
 			return nil, fmt.Errorf("unable to instantiate fee engine: %w", err)
 		}
@@ -300,7 +301,7 @@ func (m *Market) GetState() *types.ExecMarket {
 		StopOrders:                 m.stopOrders.ToProto(),
 		ExpiringStopOrders:         m.expiringStopOrders.GetState(),
 		Product:                    m.tradableInstrument.Instrument.Product.Serialize(),
-		FeeStats:                   m.fee.GetState(),
+		FeesStats:                  m.fee.GetState(),
 	}
 
 	return em

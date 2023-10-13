@@ -378,12 +378,12 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "Qmf8eRBLC6qrDRWSq4Hw3UYoFBX9AkdXQVN33mkPhaWPEP", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmZJC4jeiFDkzZ536C2Mvmf3skGckMbGAamfoBLJERuP1H", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmZD9VCqXyCikbwv2bxfd7Ejp2v1GvPDvExXNdSNgRnoaY", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmaLKLnUyiQmSgVVVTi1GEdw7zUxdy6ipZZvSnkfEsnxmp", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmWpSgBj2D2u46jjDG52FXhDBq298to7noPkfYZNDneCdy", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmcEkqcYQUALBd4xjrC1nJttRWxD9NZbdPEpX634CQGvoW", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmQYY51bDtR745ZhiiU2SMfYtnnGMVgXVXVCez5jacftto", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmcPW35HdsBUgbQNiJZms56E5TUYvKyeWY8hGbFAqADn7r", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmYxNwnS7CgzLwBTJXCjvYeFFQWQtUzEERgUSfr74stsen", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmZ1BDgrU3qHgT1fnfZoaJCnSmghcerZg2rMp6xw8G2TcR", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmTHvtzTVCRbMvNFpX68SAy2sQBgfccwnwy3Hu1jycy9T6", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmW83by4cR7WULEVirZqPgbKA9xZbGsEEMhsYMEKf3BPnq", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {
@@ -1266,7 +1266,7 @@ func emptyDatabaseAndSetSchemaVersion(schemaVersion int64) {
 	}
 }
 
-func panicIfHistorySegmentIdsNotEqual(actual string, expected string, snapshots []segment.Unpublished) {
+func panicIfHistorySegmentIdsNotEqual(actual, expected string, snapshots []segment.Unpublished) {
 	if expected != actual {
 		snapshotPaths := ""
 		for _, sn := range snapshots {

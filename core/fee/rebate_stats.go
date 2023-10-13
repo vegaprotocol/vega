@@ -24,15 +24,15 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-type FeeStats struct {
+type FeesStats struct {
 	TotalRewardsPaid         map[string]*num.Uint
 	ReferrerRewardsGenerated map[string]map[string]*num.Uint
 	RefereeDiscountApplied   map[string]*num.Uint
 	VolumeDiscountApplied    map[string]*num.Uint
 }
 
-func NewFeeStats() *FeeStats {
-	return &FeeStats{
+func NewFeesStats() *FeesStats {
+	return &FeesStats{
 		TotalRewardsPaid:         map[string]*num.Uint{},
 		ReferrerRewardsGenerated: map[string]map[string]*num.Uint{},
 		RefereeDiscountApplied:   map[string]*num.Uint{},
@@ -40,8 +40,8 @@ func NewFeeStats() *FeeStats {
 	}
 }
 
-func NewFeeStatsFromProto(fsp *eventspb.FeeStats) *FeeStats {
-	fs := NewFeeStats()
+func NewFeesStatsFromProto(fsp *eventspb.FeesStats) *FeesStats {
+	fs := NewFeesStats()
 
 	for _, v := range fsp.RefereesDiscountApplied {
 		fs.RefereeDiscountApplied[v.Party] = num.MustUintFromString(v.Amount, 10)
@@ -67,7 +67,7 @@ func NewFeeStatsFromProto(fsp *eventspb.FeeStats) *FeeStats {
 	return fs
 }
 
-func (f *FeeStats) RegisterReferrerReward(
+func (f *FeesStats) RegisterReferrerReward(
 	referrer, referee string,
 	amount *num.Uint,
 ) {
@@ -94,7 +94,7 @@ func (f *FeeStats) RegisterReferrerReward(
 	refereeTally.Add(refereeTally, amount)
 }
 
-func (f *FeeStats) RegisterRefereeDiscount(party string, amount *num.Uint) {
+func (f *FeesStats) RegisterRefereeDiscount(party string, amount *num.Uint) {
 	total, ok := f.RefereeDiscountApplied[party]
 	if !ok {
 		total = num.NewUint(0)
@@ -104,7 +104,7 @@ func (f *FeeStats) RegisterRefereeDiscount(party string, amount *num.Uint) {
 	total.Add(total, amount)
 }
 
-func (f *FeeStats) RegisterVolumeDiscount(party string, amount *num.Uint) {
+func (f *FeesStats) RegisterVolumeDiscount(party string, amount *num.Uint) {
 	total, ok := f.VolumeDiscountApplied[party]
 	if !ok {
 		total = num.NewUint(0)
@@ -114,8 +114,8 @@ func (f *FeeStats) RegisterVolumeDiscount(party string, amount *num.Uint) {
 	total.Add(total, amount)
 }
 
-func (f *FeeStats) ToProto(asset string) *eventspb.FeeStats {
-	fs := &eventspb.FeeStats{
+func (f *FeesStats) ToProto(asset string) *eventspb.FeesStats {
+	fs := &eventspb.FeesStats{
 		Asset:                    asset,
 		TotalRewardsPaid:         make([]*eventspb.PartyAmount, 0, len(f.TotalRewardsPaid)),
 		ReferrerRewardsGenerated: make([]*eventspb.ReferrerRewardsGenerated, 0, len(f.ReferrerRewardsGenerated)),

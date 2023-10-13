@@ -143,6 +143,15 @@ func (s *Handler) CheckSubmission(req *walletpb.SubmitTransactionRequest, newSta
 	case *walletpb.SubmitTransactionRequest_IssueSignatures:
 		s.merge(stats.IssuesSignatures, newStats.IssuesSignatures)
 		return s.checkTxn(stats.IssuesSignatures)
+	case *walletpb.SubmitTransactionRequest_CreateReferralSet:
+		s.merge(stats.CreateReferralSet, newStats.CreateReferralSet)
+		return s.checkTxn(stats.CreateReferralSet)
+	case *walletpb.SubmitTransactionRequest_UpdateReferralSet:
+		s.merge(stats.UpdateReferralSet, newStats.UpdateReferralSet)
+		return s.checkTxn(stats.UpdateReferralSet)
+	case *walletpb.SubmitTransactionRequest_ApplyReferralCode:
+		s.merge(stats.ApplyReferralCode, newStats.ApplyReferralCode)
+		return s.checkTxn(stats.ApplyReferralCode)
 	case *walletpb.SubmitTransactionRequest_VoteSubmission:
 		s.mergeVotes(stats.Votes, newStats.Votes)
 		return s.checkVote(cmd.VoteSubmission.ProposalId, stats.Votes)

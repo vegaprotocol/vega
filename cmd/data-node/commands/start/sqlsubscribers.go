@@ -72,7 +72,7 @@ type SQLSubscribers struct {
 	referralSetsStore           *sqlstore.ReferralSets
 	teamsStore                  *sqlstore.Teams
 	vestingStatsStore           *sqlstore.VestingStats
-	referralFeeStatsStore       *sqlstore.ReferralFeeStats
+	feesStatsStore              *sqlstore.FeesStats
 	fundingPaymentStore         *sqlstore.FundingPayments
 	volumeDiscountStatsStore    *sqlstore.VolumeDiscountStats
 	volumeDiscountProgramsStore *sqlstore.VolumeDiscountPrograms
@@ -121,7 +121,7 @@ type SQLSubscribers struct {
 	referralSetsService          *service.ReferralSets
 	teamsService                 *service.Teams
 	vestingStatsService          *service.VestingStats
-	referralFeeStatsService      *service.ReferralFeeStats
+	feesStatsService             *service.FeesStats
 	fundingPaymentService        *service.FundingPayment
 	volumeDiscountStatsService   *service.VolumeDiscountStats
 	volumeDiscountProgramService *service.VolumeDiscountPrograms
@@ -168,7 +168,7 @@ type SQLSubscribers struct {
 	referralSetsSub          *sqlsubscribers.ReferralSets
 	teamsSub                 *sqlsubscribers.Teams
 	vestingStatsSub          *sqlsubscribers.VestingStatsUpdated
-	referralFeeStatsSub      *sqlsubscribers.ReferralFeeStats
+	feesStatsSub             *sqlsubscribers.FeesStats
 	fundingPaymentSub        *sqlsubscribers.FundingPaymentSubscriber
 	volumeDiscountStatsSub   *sqlsubscribers.VolumeDiscountStatsUpdated
 	volumeDiscountProgramSub *sqlsubscribers.VolumeDiscountProgram
@@ -219,7 +219,7 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.referralSetsSub,
 		s.teamsSub,
 		s.vestingStatsSub,
-		s.referralFeeStatsSub,
+		s.feesStatsSub,
 		s.fundingPaymentSub,
 		s.volumeDiscountStatsSub,
 		s.volumeDiscountProgramSub,
@@ -274,7 +274,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.referralSetsStore = sqlstore.NewReferralSets(transactionalConnectionSource)
 	s.teamsStore = sqlstore.NewTeams(transactionalConnectionSource)
 	s.vestingStatsStore = sqlstore.NewVestingStats(transactionalConnectionSource)
-	s.referralFeeStatsStore = sqlstore.NewReferralFeeStats(transactionalConnectionSource)
+	s.feesStatsStore = sqlstore.NewFeesStats(transactionalConnectionSource)
 	s.fundingPaymentStore = sqlstore.NewFundingPayments(transactionalConnectionSource)
 	s.volumeDiscountStatsStore = sqlstore.NewVolumeDiscountStats(transactionalConnectionSource)
 	s.volumeDiscountProgramsStore = sqlstore.NewVolumeDiscountPrograms(transactionalConnectionSource)
@@ -324,7 +324,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.referralSetsService = service.NewReferralSets(s.referralSetsStore)
 	s.teamsService = service.NewTeams(s.teamsStore)
 	s.vestingStatsService = service.NewVestingStats(s.vestingStatsStore)
-	s.referralFeeStatsService = service.NewReferralFeeStats(s.referralFeeStatsStore)
+	s.feesStatsService = service.NewFeesStats(s.feesStatsStore)
 	s.fundingPaymentService = service.NewFundingPayment(s.fundingPaymentStore)
 	s.volumeDiscountStatsService = service.NewVolumeDiscountStats(s.volumeDiscountStatsStore)
 	s.volumeDiscountProgramService = service.NewVolumeDiscountPrograms(s.volumeDiscountProgramsStore)
@@ -386,7 +386,7 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.referralSetsSub = sqlsubscribers.NewReferralSets(s.referralSetsService)
 	s.teamsSub = sqlsubscribers.NewTeams(s.teamsService)
 	s.vestingStatsSub = sqlsubscribers.NewVestingStatsUpdated(s.vestingStatsService)
-	s.referralFeeStatsSub = sqlsubscribers.NewReferralFeeStats(s.referralFeeStatsService)
+	s.feesStatsSub = sqlsubscribers.NewFeesStats(s.feesStatsService)
 	s.fundingPaymentSub = sqlsubscribers.NewFundingPaymentsSubscriber(s.fundingPaymentStore)
 	s.volumeDiscountStatsSub = sqlsubscribers.NewVolumeDiscountStatsUpdated(s.volumeDiscountStatsService)
 	s.volumeDiscountProgramSub = sqlsubscribers.NewVolumeDiscountProgram(s.volumeDiscountProgramService)

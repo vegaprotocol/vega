@@ -318,8 +318,8 @@ var (
 	// Referral Programs.
 	ErrGetCurrentReferralProgram = errors.New("failed to get current referral program")
 	ErrGetReferralSetStats       = errors.New("failed to get referral set stats")
-	ErrReferralFeeStatsRequest   = errors.New("marketID or assetID must be provided")
-	ErrGetReferralFeeStats       = errors.New("failed to get current referral fee stats")
+	ErrFeesStatsRequest          = errors.New("marketID or assetID must be provided")
+	ErrGetFeesStats              = errors.New("failed to get current fees stats")
 
 	// Teams.
 	ErrListTeams              = errors.New("failed to list teams")

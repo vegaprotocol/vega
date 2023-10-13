@@ -362,11 +362,11 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 		if !m.finalFeesDistributed {
 			m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow())
 		}
-		feeStats := m.fee.GetFeesStatsOnEpochEnd()
-		feeStats.Market = m.GetID()
-		feeStats.EpochSeq = epoch.Seq
+		FeesStats := m.fee.GetFeesStatsOnEpochEnd()
+		FeesStats.Market = m.GetID()
+		FeesStats.EpochSeq = epoch.Seq
 		m.broker.Send(
-			events.NewFeeStatsEvent(ctx, feeStats),
+			events.NewFeesStatsEvent(ctx, FeesStats),
 		)
 	}
 
@@ -1245,9 +1245,13 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 	_ = m.idgen.NextID()
 	defer func() { m.idgen = nil }()
 	if changes.UpdateType == types.MarketStateUpdateTypeTerminate {
+		final := types.MarketStateClosed
+		if m.mkt.State == types.MarketStatePending || m.mkt.State == types.MarketStateProposed {
+			final = types.MarketStateCancelled
+		}
 		m.uncrossOrderAtAuctionEnd(ctx)
 		// terminate and settle data (either last traded price for perp, or settlement data provided via governance
-		m.tradingTerminatedWithFinalState(ctx, types.MarketStateClosed, num.UintZero().Mul(changes.SettlementPrice, m.priceFactor))
+		m.tradingTerminatedWithFinalState(ctx, final, num.UintZero().Mul(changes.SettlementPrice, m.priceFactor))
 	} else if changes.UpdateType == types.MarketStateUpdateTypeSuspend {
 		m.mkt.State = types.MarketStateSuspendedViaGovernance
 		m.mkt.TradingMode = types.MarketTradingModeSuspendedViaGovernance

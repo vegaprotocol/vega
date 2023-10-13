@@ -799,12 +799,12 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Teams"};
   }
 
-  // Get referral fee statistics
+  // Get fees statistics
   //
-  // Gets accumulated rewards and discount information for a given asset or market for the latest epoch
+  // Gets accumulated fees, rewards, and applied discount information for a given asset or market for the latest epoch
   // or a specific epoch.
-  rpc GetReferralFeeStats(GetReferralFeeStatsRequest) returns (GetReferralFeeStatsResponse) {
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referral program"};
+  rpc GetFeesStats(GetFeesStatsRequest) returns (GetFeesStatsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Fees"};
   }
 
   // Get current volume discount program
@@ -3968,8 +3968,8 @@ message ListTeamRefereeHistoryResponse {
   TeamRefereeHistoryConnection team_referee_history = 1;
 }
 
-// Request that is sent for referral fee statistics.
-message GetReferralFeeStatsRequest {
+// Request that is sent to retrieve fees statistics.
+message GetFeesStatsRequest {
   // Market ID to get referral fee statistics for. If omitted, asset ID must be provided.
   optional string market_id = 1;
   // Asset ID to get referral fee statistics for. If omitted, market ID must be provided.
@@ -3982,10 +3982,10 @@ message GetReferralFeeStatsRequest {
   optional string referee = 5;
 }
 
-// Response that is sent when requesting referral fee statistics.
-message GetReferralFeeStatsResponse {
-  // Fee statistics for the given market or asset, and epoch.
-  vega.events.v1.FeeStats fee_stats = 1;
+// Response that is sent when requesting fees statistics.
+message GetFeesStatsResponse {
+  // Fees statistics for the given market or asset, and epoch.
+  vega.events.v1.FeesStats fees_stats = 1;
 }
 
 // Request to get the current referral program

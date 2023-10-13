@@ -13,6 +13,7 @@
 - [9258](https://github.com/vegaprotocol/vega/issues/9258) - Change HTTP endpoint from `/referral-sets/stats/{id}` to `/referral-sets/{id}/stats`.
 - [9719](https://github.com/vegaprotocol/vega/issues/9719) - Remove unnecessary fields from referral and volume discount program proposals.
 - [9733](https://github.com/vegaprotocol/vega/issues/9733) - Making `set_id` optional in `referral set stats` endpoint
+- [9743](https://github.com/vegaprotocol/vega/issues/9743) - Rename `ReferralFeeStats` endpoints to `FeesStats`, and `FeeStats` event to `FeesStats`.
 
 ### 🗑️ Deprecation
 
@@ -138,6 +139,7 @@
 - [9664](https://github.com/vegaprotocol/vega/issues/9664) - Handle pagination of release request with github.
 - [9681](https://github.com/vegaprotocol/vega/issues/9681) - Move referral set reward factor to the referral set stats events
 - [9708](https://github.com/vegaprotocol/vega/issues/9708) - Use the correct transaction hash when submitting orders through the `nullblockchain`
+- [9755](https://github.com/vegaprotocol/vega/issues/9755) - Add referral program spam statistics to `GetSpamStatistics` core API.
 - [409](https://github.com/vegaprotocol/OctoberACs/issues/409) - Add integration test for team rewards `0056-REWA-106`
 - [410](https://github.com/vegaprotocol/OctoberACs/issues/410) - Add integration test for team rewards `0056-REWA-107`
 - [411](https://github.com/vegaprotocol/OctoberACs/issues/411) - Add integration test for team rewards `0056-REWA-108`
@@ -155,6 +157,7 @@
 - [2948](https://github.com/vegaprotocol/system-tests/issues/2948) - Add integration test for failing system test.
 - [9541](https://github.com/vegaprotocol/vega/issues/9731) - Add filtering for party to the referral fees API.
 - [9541](https://github.com/vegaprotocol/vega/issues/9731) - Add X day aggregate totals for referral set referees.
+- [2985](https://github.com/vegaprotocol/system-tests/issues/2985) - Coverage for insurance pool transfers, fix deadlock when terminating pending market through governance.
 
 ### 🐛 Fixes
 
@@ -188,6 +191,7 @@
 - [8364](https://github.com/vegaprotocol/vega/issues/8364) - Initialising from network history not working after database wipe
 - [8827](https://github.com/vegaprotocol/vega/issues/8827) - Add block height validation to validator initiated transactions and pruning to the `pow` engine cache
 - [8836](https://github.com/vegaprotocol/vega/issues/8836) - Fix enactment of market update state
+- [9760](https://github.com/vegaprotocol/vega/issues/9760) - Validate that a recurring transfer with markets matches the asset in the transfer.
 - [8848](https://github.com/vegaprotocol/vega/issues/8848) - Handle the case where the market is terminated and the epoch ends at the same block.
 - [8853](https://github.com/vegaprotocol/vega/issues/8853) - Liquidity provision amendment bug fixes
 - [8862](https://github.com/vegaprotocol/vega/issues/8862) - Fix settlement via governance
@@ -307,6 +311,7 @@
 - [9747](https://github.com/vegaprotocol/vega/issues/9747) - Return correct destination type
 - [9541](https://github.com/vegaprotocol/vega/issues/9731) - Add filtering for party to the referral fees API.
 - [9751](https://github.com/vegaprotocol/vega/issues/9751) - Make sure that LP fee party accounts exists.
+- [9762](https://github.com/vegaprotocol/vega/issues/9762) - Referral fees API not filtering by party correctly.
 
 ## 0.72.1
 

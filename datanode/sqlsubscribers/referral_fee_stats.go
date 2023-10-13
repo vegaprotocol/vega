@@ -24,42 +24,42 @@ import (
 )
 
 type (
-	FeeStatsEvent interface {
+	FeesStatsEvent interface {
 		events.Event
-		FeeStats() *eventspb.FeeStats
+		FeesStats() *eventspb.FeesStats
 	}
 
-	ReferralFeeStatsStore interface {
-		AddFeeStats(ctx context.Context, feeStats *entities.ReferralFeeStats) error
+	FeesStatsStore interface {
+		AddFeesStats(ctx context.Context, FeesStats *entities.FeesStats) error
 	}
 
-	ReferralFeeStats struct {
+	FeesStats struct {
 		subscriber
-		store ReferralFeeStatsStore
+		store FeesStatsStore
 	}
 )
 
-func NewReferralFeeStats(store ReferralFeeStatsStore) *ReferralFeeStats {
-	return &ReferralFeeStats{
+func NewFeesStats(store FeesStatsStore) *FeesStats {
+	return &FeesStats{
 		store: store,
 	}
 }
 
-func (r *ReferralFeeStats) Types() []events.Type {
+func (r *FeesStats) Types() []events.Type {
 	return []events.Type{
-		events.FeeStatsEvent,
+		events.FeesStatsEvent,
 	}
 }
 
-func (r *ReferralFeeStats) Push(ctx context.Context, evt events.Event) error {
+func (r *FeesStats) Push(ctx context.Context, evt events.Event) error {
 	switch e := evt.(type) {
-	case FeeStatsEvent:
-		return r.consumeFeeStatsEvent(ctx, e)
+	case FeesStatsEvent:
+		return r.consumeFeesStatsEvent(ctx, e)
 	default:
 		return nil
 	}
 }
 
-func (r *ReferralFeeStats) consumeFeeStatsEvent(ctx context.Context, e FeeStatsEvent) error {
-	return r.store.AddFeeStats(ctx, entities.ReferralFeeStatsFromProto(e.FeeStats(), r.vegaTime))
+func (r *FeesStats) consumeFeesStatsEvent(ctx context.Context, e FeesStatsEvent) error {
+	return r.store.AddFeesStats(ctx, entities.FeesStatsFromProto(e.FeesStats(), r.vegaTime))
 }

@@ -353,6 +353,16 @@ func (mat *MarketActivityTracker) GetAllMarketIDs() []string {
 	return mIDs
 }
 
+// MarketTrackedForAsset returns whether the given market is seen to have the given asset by the tracker.
+func (mat *MarketActivityTracker) MarketTrackedForAsset(market, asset string) bool {
+	if markets, ok := mat.assetToMarketTrackers[asset]; ok {
+		if _, ok = markets[market]; ok {
+			return true
+		}
+	}
+	return false
+}
+
 // removeMarket is called when the market is removed from the network. It is not immediately removed to give a chance for rewards to be paid at the end of the epoch for activity during the epoch.
 // Instead it is marked for removal and will be removed at the beginning of the next epoch.
 func (mat *MarketActivityTracker) RemoveMarket(asset, marketID string) {
