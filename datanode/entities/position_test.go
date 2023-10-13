@@ -180,7 +180,7 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 	position.UpdateWithTrade(trade, false, dp)
 	pp := position.ToProto()
 	assert.Equal(t, "0", pp.RealisedPnl)
-	assert.Equal(t, "400", pp.UnrealisedPnl)
+	assert.Equal(t, "0", pp.UnrealisedPnl)
 	// now MTM settlement event, contains the same trades, mark price is 1k
 	ps := events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{
@@ -211,7 +211,7 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 	position.UpdateWithTrade(trade, false, dp)
 	pp = position.ToProto()
 	assert.Equal(t, "0", pp.RealisedPnl)
-	assert.Equal(t, "5744", pp.UnrealisedPnl)
+	assert.Equal(t, "0", pp.UnrealisedPnl)
 	assert.EqualValues(t, 6, pp.OpenVolume)
 	// now assume this last trade was the only trade that occurred before MTM
 	ps = events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1150), []events.TradeSettlement{
@@ -236,8 +236,8 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 	}
 	position.UpdateWithTrade(trade, true, dp)
 	pp = position.ToProto()
-	assert.Equal(t, "1249", pp.RealisedPnl)
-	assert.Equal(t, "6244", pp.UnrealisedPnl)
+	assert.Equal(t, "0", pp.RealisedPnl)
+	assert.Equal(t, "1", pp.UnrealisedPnl)
 	assert.EqualValues(t, 5, pp.OpenVolume)
 	ps = events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1250), []events.TradeSettlement{
 		tradeStub{
@@ -261,7 +261,7 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 	}
 	position.UpdateWithTrade(trade, true, dp)
 	pp = position.ToProto()
-	assert.Equal(t, "6495", pp.RealisedPnl)
+	assert.Equal(t, "1", pp.RealisedPnl)
 	assert.Equal(t, "0", pp.UnrealisedPnl)
 	assert.EqualValues(t, 0, pp.OpenVolume)
 	ps = events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1250), []events.TradeSettlement{
@@ -318,7 +318,7 @@ func TestPnLWithTradeDecimals(t *testing.T) {
 	position.UpdateWithTrade(trade, false, dp)
 	pp = position.ToProto()
 	assert.Equal(t, "-300", pp.RealisedPnl)
-	assert.Equal(t, "3883", pp.UnrealisedPnl)
+	assert.Equal(t, "50", pp.UnrealisedPnl)
 }
 
 type tradeStub struct {

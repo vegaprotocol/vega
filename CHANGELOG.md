@@ -158,6 +158,7 @@
 - [9541](https://github.com/vegaprotocol/vega/issues/9731) - Add filtering for party to the referral fees API.
 - [9541](https://github.com/vegaprotocol/vega/issues/9731) - Add X day aggregate totals for referral set referees.
 - [2985](https://github.com/vegaprotocol/system-tests/issues/2985) - Coverage for insurance pool transfers, fix deadlock when terminating pending market through governance.
+- [9770](https://github.com/vegaprotocol/vega/issues/9770) - Fix `PnL` flickering bug.
 
 ### 🐛 Fixes
 
