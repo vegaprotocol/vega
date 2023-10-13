@@ -465,6 +465,7 @@
 - [8703](https://github.com/vegaprotocol/vega/issues/8703) - Wire stop orders cancellation
 - [8698](https://github.com/vegaprotocol/vega/issues/8698) - Always set the `ToAccount` field when clearing fees.
 - [9773](https://github.com/vegaprotocol/vega/issues/9773) - Ensure invalid market for transfer doesn't panic
+- [9777](https://github.com/vegaprotocol/vega/issues/9777) - Ensure new account types are created for existing assets
 
 ## 0.71.0
 
