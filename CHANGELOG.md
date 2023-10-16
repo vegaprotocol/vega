@@ -174,6 +174,7 @@
 - [8729](https://github.com/vegaprotocol/vega/issues/8729) - Stop order direction not set in datanode
 - [8545](https://github.com/vegaprotocol/vega/issues/8545) - Block Explorer pagination does not order correctly.
 - [8748](https://github.com/vegaprotocol/vega/issues/8748) - `ListSuccessorMarkets` does not return results.
+- [9784](https://github.com/vegaprotocol/vega/issues/9784) - Referral timestamp consistency 
 - [8749](https://github.com/vegaprotocol/vega/issues/8749) - Ensure stop order expiry is in the future
 - [9337](https://github.com/vegaprotocol/vega/issues/9337) - Non deterministic ordering of vesting ledger events
 - [8773](https://github.com/vegaprotocol/vega/issues/8773) - Fix panic with stop orders
