@@ -13,21 +13,23 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package types
+package types_test
 
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	v1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	"github.com/stretchr/testify/require"
 )
 
 func TestLiquidityFeeStats(t *testing.T) {
 	market := "market1"
 	asset := "usdt"
 
-	stats := NewLiquidityFeeStats()
+	stats := types.NewLiquidityFeeStats()
 
 	stats.RegisterTotalFeesAmountPerParty(map[string]*num.Uint{
 		"a": num.UintFromUint64(2),
@@ -55,7 +57,7 @@ func TestLiquidityFeeStats(t *testing.T) {
 	require.Equal(t, expectedAmountsPerParty, statsProto.FeesPaidPerParty)
 	require.Equal(t, "19", statsProto.TotalFeesPaid)
 
-	stats = NewLiquidityFeeStats()
+	stats = types.NewLiquidityFeeStats()
 
 	statsProto = stats.ToProto(market, asset)
 	require.Equal(t, []*v1.PartyAmount{}, statsProto.FeesPaidPerParty)
