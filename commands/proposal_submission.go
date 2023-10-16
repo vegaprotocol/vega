@@ -531,10 +531,7 @@ func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Error
 	dest := changes.DestinationType
 
 	// party accounts: check pubkey
-	if (dest == protoTypes.AccountType_ACCOUNT_TYPE_GENERAL ||
-		dest == protoTypes.AccountType_ACCOUNT_TYPE_BOND ||
-		dest == protoTypes.AccountType_ACCOUNT_TYPE_MARGIN) &&
-		!IsVegaPublicKey(changes.Destination) {
+	if dest == protoTypes.AccountType_ACCOUNT_TYPE_GENERAL && !IsVegaPublicKey(changes.Destination) {
 		errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrShouldBeAValidVegaPublicKey)
 	}
 
@@ -553,9 +550,7 @@ func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Error
 
 	// global destination accounts == no source
 	if (dest == protoTypes.AccountType_ACCOUNT_TYPE_GENERAL ||
-		dest == protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE ||
-		dest == protoTypes.AccountType_ACCOUNT_TYPE_BOND ||
-		dest == protoTypes.AccountType_ACCOUNT_TYPE_MARGIN) &&
+		dest == protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE) &&
 		len(changes.Destination) == 0 {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
 	}
