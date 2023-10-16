@@ -45,15 +45,17 @@ func (rfs *FeesStats) AddFeesStats(ctx context.Context, stats *entities.FeesStat
 	_, err := rfs.Connection.Exec(
 		ctx,
 		`INSERT INTO fees_stats(
-                               market_id,
-                               asset_id,
-                               epoch_seq,
-                               total_rewards_paid,
-                               referrer_rewards_generated,
-                               referees_discount_applied,
-                               volume_discount_applied,
-                               vega_time
-	) values ($1,$2,$3,$4,$5,$6,$7,$8)`,
+			   market_id,
+			   asset_id,
+			   epoch_seq,
+			   total_rewards_paid,
+			   referrer_rewards_generated,
+			   referees_discount_applied,
+			   volume_discount_applied,
+			   total_maker_fees_received,
+			   maker_fees_generated,
+			   vega_time
+	         ) values ($1,$2,$3,$4,$5,$6,$7,$8, $9, $10)`,
 		stats.MarketID,
 		stats.AssetID,
 		stats.EpochSeq,
@@ -61,15 +63,14 @@ func (rfs *FeesStats) AddFeesStats(ctx context.Context, stats *entities.FeesStat
 		stats.ReferrerRewardsGenerated,
 		stats.RefereesDiscountApplied,
 		stats.VolumeDiscountApplied,
+		stats.TotalMakerFeesReceived,
+		stats.MakerFeesGenerated,
 		stats.VegaTime,
 	)
 	return err
 }
 
-func (rfs *FeesStats) GetFeesStats(ctx context.Context, marketID *entities.MarketID, assetID *entities.AssetID,
-	epochSeq *uint64, referrerID, refereeID *string) (
-	*entities.FeesStats, error,
-) {
+func (rfs *FeesStats) GetFeesStats(ctx context.Context, marketID *entities.MarketID, assetID *entities.AssetID, epochSeq *uint64, partyID *string) (*entities.FeesStats, error) {
 	defer metrics.StartSQLQuery("FeesStats", "GetFeesStats")()
 	var (
 		stats []entities.FeesStats
@@ -96,7 +97,7 @@ func (rfs *FeesStats) GetFeesStats(ctx context.Context, marketID *entities.Marke
 		where = append(where, fmt.Sprintf("market_id = %s", nextBindVar(&args, *marketID)))
 	}
 
-	if partyFilter := getPartyFilter(referrerID, refereeID); partyFilter != "" {
+	if partyFilter := getPartyFilter(partyID); partyFilter != "" {
 		where = append(where, partyFilter)
 	}
 
@@ -119,83 +120,84 @@ func (rfs *FeesStats) GetFeesStats(ctx context.Context, marketID *entities.Marke
 	}
 
 	if len(stats) == 0 {
-		return nil, errors.New("no referral fee stats found")
+		return nil, errors.New("no  fees stats found")
 	}
 
-	// the query returns the full JSON object and doesn't filter for the referrer/referee,
-	// it only matches on the records where the json object contains the referrer/referee
-	if referrerID != nil {
-		// filter the results to only include the results for the given referrer
-		stats[0].TotalRewardsPaid = filterPartyAmounts(stats[0].TotalRewardsPaid, *referrerID)
-		stats[0].ReferrerRewardsGenerated = filterReferrerRewardsGenerated(stats[0].ReferrerRewardsGenerated, *referrerID)
-	}
-
-	if refereeID != nil {
-		// filter the results to only include the results for the given referee
-		for i, rrg := range stats[0].ReferrerRewardsGenerated {
-			stats[0].ReferrerRewardsGenerated[i].GeneratedReward = filterPartyAmounts(rrg.GeneratedReward, *refereeID)
-		}
-		stats[0].RefereesDiscountApplied = filterPartyAmounts(stats[0].RefereesDiscountApplied, *refereeID)
-		stats[0].VolumeDiscountApplied = filterPartyAmounts(stats[0].VolumeDiscountApplied, *refereeID)
+	// The query returns the full JSON object and doesn't filter for the party,
+	// it only matches on the records where the json object contains the party.
+	if partyID != nil {
+		stats[0].TotalRewardsPaid = filterPartyAmounts(stats[0].TotalRewardsPaid, *partyID)
+		stats[0].ReferrerRewardsGenerated = filterReferrerRewardsGenerated(stats[0].ReferrerRewardsGenerated, *partyID)
+		stats[0].TotalMakerFeesReceived = filterPartyAmounts(stats[0].TotalMakerFeesReceived, *partyID)
+		stats[0].MakerFeesGenerated = filterMakerFeesGenerated(stats[0].MakerFeesGenerated, *partyID)
+		stats[0].RefereesDiscountApplied = filterPartyAmounts(stats[0].RefereesDiscountApplied, *partyID)
+		stats[0].VolumeDiscountApplied = filterPartyAmounts(stats[0].VolumeDiscountApplied, *partyID)
 	}
 
 	return &stats[0], err
 }
 
 func filterPartyAmounts(totalRewardsPaid []*eventspb.PartyAmount, party string) []*eventspb.PartyAmount {
-	filteredTotalRewardsPaid := make([]*eventspb.PartyAmount, 0)
+	filteredEntries := make([]*eventspb.PartyAmount, 0)
 	for _, reward := range totalRewardsPaid {
 		if strings.EqualFold(reward.Party, party) {
-			filteredTotalRewardsPaid = append(filteredTotalRewardsPaid, reward)
+			filteredEntries = append(filteredEntries, reward)
 		}
 	}
-	return filteredTotalRewardsPaid
+	return filteredEntries
 }
 
-func filterReferrerRewardsGenerated(rewardsGenerated []*eventspb.ReferrerRewardsGenerated, referrer string) []*eventspb.ReferrerRewardsGenerated {
-	filteredReferrerRewardsGenerated := make([]*eventspb.ReferrerRewardsGenerated, 0)
+func filterReferrerRewardsGenerated(rewardsGenerated []*eventspb.ReferrerRewardsGenerated, partyID string) []*eventspb.ReferrerRewardsGenerated {
+	filteredEntries := make([]*eventspb.ReferrerRewardsGenerated, 0)
 	for _, reward := range rewardsGenerated {
-		if strings.EqualFold(reward.Referrer, referrer) {
-			filteredReferrerRewardsGenerated = append(filteredReferrerRewardsGenerated, reward)
+		if strings.EqualFold(reward.Referrer, partyID) {
+			filteredEntries = append(filteredEntries, reward)
 		}
 	}
-	return filteredReferrerRewardsGenerated
+	return filteredEntries
 }
 
-func getPartyFilter(referrerID, refereeID *string) string {
+func filterMakerFeesGenerated(makerFeesGenerated []*eventspb.MakerFeesGenerated, partyID string) []*eventspb.MakerFeesGenerated {
+	filteredEntries := make([]*eventspb.MakerFeesGenerated, 0)
+	for _, reward := range makerFeesGenerated {
+		if strings.EqualFold(reward.Taker, partyID) {
+			filteredEntries = append(filteredEntries, reward)
+		}
+	}
+	return filteredEntries
+}
+
+func getPartyFilter(partyID *string) string {
 	builder := strings.Builder{}
-	if referrerID == nil && refereeID == nil {
+	if partyID == nil {
 		return ""
 	}
 
 	builder.WriteString("(")
 
-	if referrerID != nil {
-		builder.WriteString(fmt.Sprintf(
-			`total_rewards_paid @> '[{"party_id":"%s"}]'`, *referrerID,
-		))
-		builder.WriteString(" OR ")
-		builder.WriteString(fmt.Sprintf(
-			`referrer_rewards_generated @> '[{"referrer":"%s"}]'`, *referrerID,
-		))
-	}
-
-	if refereeID != nil {
-		if referrerID != nil {
-			builder.WriteString(" OR ")
-		}
-		builder.WriteString(fmt.Sprintf(
-			`referrer_rewards_generated @> '[{"generated_reward":[{"party":"%s"}]}]'`, *refereeID,
-		))
-		builder.WriteString(" OR ")
-		builder.WriteString(fmt.Sprintf(
-			`referees_discount_applied @> '[{"party_id":"%s"}]'`, *refereeID,
-		))
-		builder.WriteString(" OR ")
-		builder.WriteString(fmt.Sprintf(
-			`volume_discount_applied @> '[{"party_id":"%s"}]'`, *refereeID,
-		))
-	}
+	builder.WriteString(fmt.Sprintf(
+		`total_rewards_paid @> '[{"party_id":"%s"}]'`, *partyID,
+	))
+	builder.WriteString(" OR ")
+	builder.WriteString(fmt.Sprintf(
+		`referrer_rewards_generated @> '[{"referrer":"%s"}]'`, *partyID,
+	))
+	builder.WriteString(" OR ")
+	builder.WriteString(fmt.Sprintf(
+		`referees_discount_applied @> '[{"party_id":"%s"}]'`, *partyID,
+	))
+	builder.WriteString(" OR ")
+	builder.WriteString(fmt.Sprintf(
+		`volume_discount_applied @> '[{"party_id":"%s"}]'`, *partyID,
+	))
+	builder.WriteString(" OR ")
+	builder.WriteString(fmt.Sprintf(
+		`total_maker_fees_received @> '[{"party_id":"%s"}]'`, *partyID,
+	))
+	builder.WriteString(" OR ")
+	builder.WriteString(fmt.Sprintf(
+		`maker_fees_generated @> '[{"taker":"%s"}]'`, *partyID,
+	))
 
 	builder.WriteString(")")
 

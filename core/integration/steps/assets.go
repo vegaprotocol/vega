@@ -82,3 +82,8 @@ func (r assetRow) maybeQuantum() *num.Decimal {
 
 	return ptr.From(r.row.MustDecimal("quantum"))
 }
+
+func CreateNetworkTreasuryAccount(col *collateral.Engine, asset string) error {
+	_ = col.GetOrCreateNetworkTreasuryAccount(context.Background(), asset)
+	return nil
+}

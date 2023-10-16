@@ -654,6 +654,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.PartyAmount
   ReferrerRewardsGenerated:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.ReferrerRewardsGenerated
+  MakerFeesGenerated:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.MakerFeesGenerated
   Team:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.Team
   TeamEdge:

@@ -13,6 +13,9 @@ Background:
     | party    | asset | amount          |
     | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c   | VEGA  | 10000000        |
 
+    And create the network treasury account for asset "VEGA"
+
+
 Scenario: simple successful transfers (0057-TRAN-001, 0057-TRAN-007, 0057-TRAN-008)
     Given the parties submit the following one off transfers:
     | id | from   |  from_account_type    |   to   |   to_account_type    | asset | amount | delivery_time         |
@@ -148,3 +151,19 @@ Scenario: Cannot cancel scheduled one off transfer (0057-TRAN-010)
    When the parties submit the following transfer cancellations:
     | party  | transfer_id |                error               |
     | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |      1      | recurring transfer does not exists |
+
+@networktreasury
+Scenario: Transfer from general account to Network Treasury Account by specifying "0" address and the account type (0013-ACCT-026)
+    Given the parties submit the following one off transfers:
+    | id | from   |  from_account_type    |   to   |   to_account_type                       | asset | amount | delivery_time         |
+    | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL |    0000000000000000000000000000000000000000000000000000000000000000   | ACCOUNT_TYPE_NETWORK_TREASURY | VEGA  | 10000 | 2021-08-26T00:00:01Z  |
+
+    Then "f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c" should have general account balance of "9985000" for asset "VEGA"
+    # We check the system account receiving the balance because the treasury transfer is on-chain.
+    And the reward account of type "ACCOUNT_TYPE_PENDING_TRANSFERS" should have balance of "10000" for asset "VEGA"
+
+    When the network moves ahead "1" epochs
+    Then "f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c" should have general account balance of "9985000" for asset "VEGA"
+
+    # We check the system account receiving the balance because the treasury transfer is on-chain.
+    And the reward account of type "ACCOUNT_TYPE_NETWORK_TREASURY" should have balance of "10000" for asset "VEGA"
