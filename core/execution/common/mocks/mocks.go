@@ -1745,6 +1745,20 @@ func (mr *MockLiquidityEngineMockRecorder) OnStakeToCcyVolumeUpdate(arg0 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnStakeToCcyVolumeUpdate", reflect.TypeOf((*MockLiquidityEngine)(nil).OnStakeToCcyVolumeUpdate), arg0)
 }
 
+// PaidLiquidityFeesStats mocks base method.
+func (m *MockLiquidityEngine) PaidLiquidityFeesStats() *types.PaidLiquidityFeesStats {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaidLiquidityFeesStats")
+	ret0, _ := ret[0].(*types.PaidLiquidityFeesStats)
+	return ret0
+}
+
+// PaidLiquidityFeesStats indicates an expected call of PaidLiquidityFeesStats.
+func (mr *MockLiquidityEngineMockRecorder) PaidLiquidityFeesStats() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaidLiquidityFeesStats", reflect.TypeOf((*MockLiquidityEngine)(nil).PaidLiquidityFeesStats))
+}
+
 // PendingProvision mocks base method.
 func (m *MockLiquidityEngine) PendingProvision() liquidity.Provisions {
 	m.ctrl.T.Helper()
@@ -1799,6 +1813,18 @@ func (m *MockLiquidityEngine) ReadyForFeesAllocation(arg0 time.Time) bool {
 func (mr *MockLiquidityEngineMockRecorder) ReadyForFeesAllocation(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadyForFeesAllocation", reflect.TypeOf((*MockLiquidityEngine)(nil).ReadyForFeesAllocation), arg0)
+}
+
+// RegisterAllocatedFeesPerParty mocks base method.
+func (m *MockLiquidityEngine) RegisterAllocatedFeesPerParty(arg0 map[string]*num.Uint) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RegisterAllocatedFeesPerParty", arg0)
+}
+
+// RegisterAllocatedFeesPerParty indicates an expected call of RegisterAllocatedFeesPerParty.
+func (mr *MockLiquidityEngineMockRecorder) RegisterAllocatedFeesPerParty(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterAllocatedFeesPerParty", reflect.TypeOf((*MockLiquidityEngine)(nil).RegisterAllocatedFeesPerParty), arg0)
 }
 
 // RejectLiquidityProvision mocks base method.

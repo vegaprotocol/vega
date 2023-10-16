@@ -962,6 +962,19 @@ message VolumeDiscountProgramEnded {
   uint64 at_epoch = 4;
 }
 
+message PaidLiquidityFeesStats {
+  // Market the fees were paid in.
+  string market = 1;
+  // Settlement asset of the market.
+  string asset = 2;
+  // Epoch for which these stats where valid.
+  uint64 epoch_seq = 3;
+  // Total fees paid accross all parties.
+  string total_fees_paid = 4;
+  // Fees paid per party.
+  repeated PartyAmount fees_paid_per_party = 5;
+}
+
 // Bus event type is used to specify a type of event
 // It has 2 styles of event:
 // Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item
@@ -1154,6 +1167,9 @@ enum BusEventType {
   // Event indicating a funding period has ended and resulted in funding payment transfers.
   BUS_EVENT_TYPE_FUNDING_PAYMENTS = 80;
 
+  // Event used to report the updated paid liquidity fee statistics for the market at the end of the epoch
+  BUS_EVENT_TYPE_PAID_LIQUIDITY_FEES_STATS_UPDATED = 81;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1323,6 +1339,8 @@ message BusEvent {
     FeesStats fees_stats = 177;
     // Event notifying of funding payments at the end of a funding period.
     FundingPayments funding_payments = 178;
+    // Event notifying of an update to the liqudity fees stats for a market.
+    PaidLiquidityFeesStats paid_liquidity_fees_stats = 179;
 
     // Market tick events
     MarketEvent market = 1001;

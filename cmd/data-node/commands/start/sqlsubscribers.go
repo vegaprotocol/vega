@@ -76,102 +76,105 @@ type SQLSubscribers struct {
 	fundingPaymentStore         *sqlstore.FundingPayments
 	volumeDiscountStatsStore    *sqlstore.VolumeDiscountStats
 	volumeDiscountProgramsStore *sqlstore.VolumeDiscountPrograms
+	paidLiquidityFeesStatsStore *sqlstore.PaidLiquidityFeesStats
 
 	// Services
-	candleService                *candlesv2.Svc
-	marketDepthService           *service.MarketDepth
-	riskService                  *service.Risk
-	marketDataService            *service.MarketData
-	positionService              *service.Position
-	tradeService                 *service.Trade
-	ledgerService                *service.Ledger
-	rewardService                *service.Reward
-	delegationService            *service.Delegation
-	assetService                 *service.Asset
-	blockService                 *service.Block
-	partyService                 *service.Party
-	accountService               *service.Account
-	orderService                 *service.Order
-	networkLimitsService         *service.NetworkLimits
-	marketsService               *service.Markets
-	epochService                 *service.Epoch
-	depositService               *service.Deposit
-	withdrawalService            *service.Withdrawal
-	governanceService            *service.Governance
-	riskFactorService            *service.RiskFactor
-	networkParameterService      *service.NetworkParameter
-	checkpointService            *service.Checkpoint
-	oracleSpecService            *service.OracleSpec
-	oracleDataService            *service.OracleData
-	liquidityProvisionService    *service.LiquidityProvision
-	transferService              *service.Transfer
-	stakeLinkingService          *service.StakeLinking
-	notaryService                *service.Notary
-	multiSigService              *service.MultiSig
-	keyRotationsService          *service.KeyRotations
-	ethereumKeyRotationsService  *service.EthereumKeyRotation
-	nodeService                  *service.Node
-	chainService                 *service.Chain
-	protocolUpgradeService       *service.ProtocolUpgrade
-	coreSnapshotService          *service.SnapshotData
-	stopOrderService             *service.StopOrders
-	fundingPeriodService         *service.FundingPeriods
-	partyActivityStreakService   *service.PartyActivityStreak
-	referralProgramService       *service.ReferralPrograms
-	referralSetsService          *service.ReferralSets
-	teamsService                 *service.Teams
-	vestingStatsService          *service.VestingStats
-	feesStatsService             *service.FeesStats
-	fundingPaymentService        *service.FundingPayment
-	volumeDiscountStatsService   *service.VolumeDiscountStats
-	volumeDiscountProgramService *service.VolumeDiscountPrograms
+	candleService                 *candlesv2.Svc
+	marketDepthService            *service.MarketDepth
+	riskService                   *service.Risk
+	marketDataService             *service.MarketData
+	positionService               *service.Position
+	tradeService                  *service.Trade
+	ledgerService                 *service.Ledger
+	rewardService                 *service.Reward
+	delegationService             *service.Delegation
+	assetService                  *service.Asset
+	blockService                  *service.Block
+	partyService                  *service.Party
+	accountService                *service.Account
+	orderService                  *service.Order
+	networkLimitsService          *service.NetworkLimits
+	marketsService                *service.Markets
+	epochService                  *service.Epoch
+	depositService                *service.Deposit
+	withdrawalService             *service.Withdrawal
+	governanceService             *service.Governance
+	riskFactorService             *service.RiskFactor
+	networkParameterService       *service.NetworkParameter
+	checkpointService             *service.Checkpoint
+	oracleSpecService             *service.OracleSpec
+	oracleDataService             *service.OracleData
+	liquidityProvisionService     *service.LiquidityProvision
+	transferService               *service.Transfer
+	stakeLinkingService           *service.StakeLinking
+	notaryService                 *service.Notary
+	multiSigService               *service.MultiSig
+	keyRotationsService           *service.KeyRotations
+	ethereumKeyRotationsService   *service.EthereumKeyRotation
+	nodeService                   *service.Node
+	chainService                  *service.Chain
+	protocolUpgradeService        *service.ProtocolUpgrade
+	coreSnapshotService           *service.SnapshotData
+	stopOrderService              *service.StopOrders
+	fundingPeriodService          *service.FundingPeriods
+	partyActivityStreakService    *service.PartyActivityStreak
+	referralProgramService        *service.ReferralPrograms
+	referralSetsService           *service.ReferralSets
+	teamsService                  *service.Teams
+	vestingStatsService           *service.VestingStats
+	feesStatsService              *service.FeesStats
+	fundingPaymentService         *service.FundingPayment
+	volumeDiscountStatsService    *service.VolumeDiscountStats
+	volumeDiscountProgramService  *service.VolumeDiscountPrograms
+	paidLiquidityFeesStatsService *service.PaidLiquidityFeesStats
 
 	// Subscribers
-	accountSub               *sqlsubscribers.Account
-	assetSub                 *sqlsubscribers.Asset
-	partySub                 *sqlsubscribers.Party
-	transferResponseSub      *sqlsubscribers.TransferResponse
-	orderSub                 *sqlsubscribers.Order
-	networkLimitsSub         *sqlsubscribers.NetworkLimits
-	marketDataSub            *sqlsubscribers.MarketData
-	tradesSub                *sqlsubscribers.TradeSubscriber
-	rewardsSub               *sqlsubscribers.Reward
-	delegationsSub           *sqlsubscribers.Delegation
-	marketCreatedSub         *sqlsubscribers.MarketCreated
-	marketUpdatedSub         *sqlsubscribers.MarketUpdated
-	epochSub                 *sqlsubscribers.Epoch
-	depositSub               *sqlsubscribers.Deposit
-	withdrawalSub            *sqlsubscribers.Withdrawal
-	proposalsSub             *sqlsubscribers.Proposal
-	votesSub                 *sqlsubscribers.Vote
-	marginLevelsSub          *sqlsubscribers.MarginLevels
-	riskFactorSub            *sqlsubscribers.RiskFactor
-	netParamSub              *sqlsubscribers.NetworkParameter
-	checkpointSub            *sqlsubscribers.Checkpoint
-	oracleSpecSub            *sqlsubscribers.OracleSpec
-	oracleDataSub            *sqlsubscribers.OracleData
-	liquidityProvisionSub    *sqlsubscribers.LiquidityProvision
-	positionsSub             *sqlsubscribers.Position
-	transferSub              *sqlsubscribers.Transfer
-	stakeLinkingSub          *sqlsubscribers.StakeLinking
-	notarySub                *sqlsubscribers.Notary
-	multiSigSignerEventSub   *sqlsubscribers.ERC20MultiSigSignerEvent
-	keyRotationsSub          *sqlsubscribers.KeyRotation
-	ethereumKeyRotationsSub  *sqlsubscribers.EthereumKeyRotation
-	nodeSub                  *sqlsubscribers.Node
-	pupSub                   *sqlsubscribers.ProtocolUpgrade
-	snapSub                  *sqlsubscribers.SnapshotData
-	stopOrdersSub            *sqlsubscribers.StopOrder
-	fundingPeriodSub         *sqlsubscribers.FundingPeriod
-	partyActivityStreakSub   *sqlsubscribers.PartyActivityStreak
-	referralProgramSub       *sqlsubscribers.ReferralProgram
-	referralSetsSub          *sqlsubscribers.ReferralSets
-	teamsSub                 *sqlsubscribers.Teams
-	vestingStatsSub          *sqlsubscribers.VestingStatsUpdated
-	feesStatsSub             *sqlsubscribers.FeesStats
-	fundingPaymentSub        *sqlsubscribers.FundingPaymentSubscriber
-	volumeDiscountStatsSub   *sqlsubscribers.VolumeDiscountStatsUpdated
-	volumeDiscountProgramSub *sqlsubscribers.VolumeDiscountProgram
+	accountSub                *sqlsubscribers.Account
+	assetSub                  *sqlsubscribers.Asset
+	partySub                  *sqlsubscribers.Party
+	transferResponseSub       *sqlsubscribers.TransferResponse
+	orderSub                  *sqlsubscribers.Order
+	networkLimitsSub          *sqlsubscribers.NetworkLimits
+	marketDataSub             *sqlsubscribers.MarketData
+	tradesSub                 *sqlsubscribers.TradeSubscriber
+	rewardsSub                *sqlsubscribers.Reward
+	delegationsSub            *sqlsubscribers.Delegation
+	marketCreatedSub          *sqlsubscribers.MarketCreated
+	marketUpdatedSub          *sqlsubscribers.MarketUpdated
+	epochSub                  *sqlsubscribers.Epoch
+	depositSub                *sqlsubscribers.Deposit
+	withdrawalSub             *sqlsubscribers.Withdrawal
+	proposalsSub              *sqlsubscribers.Proposal
+	votesSub                  *sqlsubscribers.Vote
+	marginLevelsSub           *sqlsubscribers.MarginLevels
+	riskFactorSub             *sqlsubscribers.RiskFactor
+	netParamSub               *sqlsubscribers.NetworkParameter
+	checkpointSub             *sqlsubscribers.Checkpoint
+	oracleSpecSub             *sqlsubscribers.OracleSpec
+	oracleDataSub             *sqlsubscribers.OracleData
+	liquidityProvisionSub     *sqlsubscribers.LiquidityProvision
+	positionsSub              *sqlsubscribers.Position
+	transferSub               *sqlsubscribers.Transfer
+	stakeLinkingSub           *sqlsubscribers.StakeLinking
+	notarySub                 *sqlsubscribers.Notary
+	multiSigSignerEventSub    *sqlsubscribers.ERC20MultiSigSignerEvent
+	keyRotationsSub           *sqlsubscribers.KeyRotation
+	ethereumKeyRotationsSub   *sqlsubscribers.EthereumKeyRotation
+	nodeSub                   *sqlsubscribers.Node
+	pupSub                    *sqlsubscribers.ProtocolUpgrade
+	snapSub                   *sqlsubscribers.SnapshotData
+	stopOrdersSub             *sqlsubscribers.StopOrder
+	fundingPeriodSub          *sqlsubscribers.FundingPeriod
+	partyActivityStreakSub    *sqlsubscribers.PartyActivityStreak
+	referralProgramSub        *sqlsubscribers.ReferralProgram
+	referralSetsSub           *sqlsubscribers.ReferralSets
+	teamsSub                  *sqlsubscribers.Teams
+	vestingStatsSub           *sqlsubscribers.VestingStatsUpdated
+	feesStatsSub              *sqlsubscribers.FeesStats
+	fundingPaymentSub         *sqlsubscribers.FundingPaymentSubscriber
+	volumeDiscountStatsSub    *sqlsubscribers.VolumeDiscountStatsUpdated
+	volumeDiscountProgramSub  *sqlsubscribers.VolumeDiscountProgram
+	paidLiquidityFeesStatsSub *sqlsubscribers.PaidLiquidityFeesStats
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -223,6 +226,7 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.fundingPaymentSub,
 		s.volumeDiscountStatsSub,
 		s.volumeDiscountProgramSub,
+		s.paidLiquidityFeesStatsSub,
 	}
 }
 
@@ -278,6 +282,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.fundingPaymentStore = sqlstore.NewFundingPayments(transactionalConnectionSource)
 	s.volumeDiscountStatsStore = sqlstore.NewVolumeDiscountStats(transactionalConnectionSource)
 	s.volumeDiscountProgramsStore = sqlstore.NewVolumeDiscountPrograms(transactionalConnectionSource)
+	s.paidLiquidityFeesStatsStore = sqlstore.NewPaidLiquidityFeesStats(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
@@ -328,6 +333,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.fundingPaymentService = service.NewFundingPayment(s.fundingPaymentStore)
 	s.volumeDiscountStatsService = service.NewVolumeDiscountStats(s.volumeDiscountStatsStore)
 	s.volumeDiscountProgramService = service.NewVolumeDiscountPrograms(s.volumeDiscountProgramsStore)
+	s.paidLiquidityFeesStatsService = service.NewPaidLiquidityFeesStats(s.paidLiquidityFeesStatsStore)
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		s.marketDepthService,
@@ -390,4 +396,5 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.fundingPaymentSub = sqlsubscribers.NewFundingPaymentsSubscriber(s.fundingPaymentStore)
 	s.volumeDiscountStatsSub = sqlsubscribers.NewVolumeDiscountStatsUpdated(s.volumeDiscountStatsService)
 	s.volumeDiscountProgramSub = sqlsubscribers.NewVolumeDiscountProgram(s.volumeDiscountProgramService)
+	s.paidLiquidityFeesStatsSub = sqlsubscribers.NewPaidLiquidityFeesStats(s.paidLiquidityFeesStatsService)
 }

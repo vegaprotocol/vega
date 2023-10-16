@@ -76,6 +76,8 @@ func newMarketLiquidity(t *testing.T) *marketLiquidityTest {
 
 	fees, _ := fee.New(log, fee.NewDefaultConfig(), types.Fees{Factors: &types.FeeFactors{}}, settlementAsset, num.DecimalOne())
 
+	liquidityEngine.EXPECT().RegisterAllocatedFeesPerParty(gomock.Any()).AnyTimes()
+	liquidityEngine.EXPECT().PaidLiquidityFeesStats().Return(types.NewLiquidityFeeStats()).AnyTimes()
 	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).AnyTimes()
 
 	teams := mocks.NewMockTeams(ctrl)

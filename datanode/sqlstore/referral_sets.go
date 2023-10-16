@@ -48,6 +48,12 @@ var (
 		ColumnOrdering{Name: "set_id", Sorting: ASC},
 		ColumnOrdering{Name: "party_id", Sorting: ASC},
 	}
+
+	paidLiquidityFeesStatsCursorOrdering = TableOrdering{
+		ColumnOrdering{Name: "market_id", Sorting: ASC},
+		ColumnOrdering{Name: "asset_id", Sorting: ASC},
+		ColumnOrdering{Name: "epoch_seq", Sorting: DESC},
+	}
 )
 
 func NewReferralSets(connectionSource *ConnectionSource) *ReferralSets {

@@ -94,6 +94,13 @@ func TestEngineSnapshotV2(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, provisioned, "this will help testing the pending provisions, so it should not directly be added as provision")
 
+	originalEngine.engine.RegisterAllocatedFeesPerParty(map[string]*num.Uint{
+		"party-1": num.UintFromUint64(1),
+		"party-2": num.UintFromUint64(2),
+		"party-3": num.UintFromUint64(2),
+		"party-4": num.UintFromUint64(3),
+	})
+
 	// Verifying we can salvage the state for each key, and they are a valid
 	// Payload.
 	engine1Keys := originalEngine.engine.V2StateProvider().Keys()
@@ -149,6 +156,7 @@ func TestEngineSnapshotV2(t *testing.T) {
 	// Check that the restored state is complete, and lead to the same results.
 	now := time.Now()
 
+	// Check for penalties
 	penalties1 := originalEngine.engine.CalculateSLAPenalties(now)
 	penalties2 := otherEngine.engine.CalculateSLAPenalties(now)
 	assert.Equal(t, penalties1.AllPartiesHaveFullFeePenalty, penalties2.AllPartiesHaveFullFeePenalty)
@@ -165,6 +173,20 @@ func TestEngineSnapshotV2(t *testing.T) {
 		originalEngine.engine.CalculateSuppliedStake(),
 		otherEngine.engine.CalculateSuppliedStake(),
 	)
+
+	// Check for fees stats
+	feesStats1 := originalEngine.engine.PaidLiquidityFeesStats()
+	feesStats2 := otherEngine.engine.PaidLiquidityFeesStats()
+	assert.Equal(t,
+		feesStats1.TotalFeesPaid.String(),
+		feesStats2.TotalFeesPaid.String(),
+	)
+
+	for k, s1 := range feesStats1.FeesPaidPerParty {
+		s2, ok := feesStats2.FeesPaidPerParty[k]
+		assert.True(t, ok)
+		assert.Equal(t, s1.String(), s2.String())
+	}
 }
 
 func TestStopSnapshotTaking(t *testing.T) {

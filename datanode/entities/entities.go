@@ -37,7 +37,8 @@ type Entities interface {
 		ERC20MultiSigSignerRemovedEvent | EthereumKeyRotation | AggregatedBalance | AggregatedLedgerEntry |
 		ProtocolUpgradeProposal | CoreSnapshotData | EpochRewardSummary | SuccessorMarket | StopOrder |
 		LiquidityProvider | FundingPeriod | FundingPeriodDataPoint | ReferralSet | ReferralSetRefereeStats |
-		FlattenReferralSetStats | Team | TeamMember | TeamMemberHistory | FundingPayment | FlattenVolumeDiscountStats
+		FlattenReferralSetStats | Team | TeamMember | TeamMemberHistory | FundingPayment | FlattenVolumeDiscountStats |
+		PaidLiquidityFeesStats
 }
 
 type PagedEntity[T proto.Message] interface {

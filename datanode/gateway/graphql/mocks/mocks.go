@@ -1780,6 +1780,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ListOrders(arg0, arg1 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListOrders", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListOrders), varargs...)
 }
 
+// ListPaidLiquidityFees mocks base method.
+func (m *MockTradingDataServiceClientV2) ListPaidLiquidityFees(arg0 context.Context, arg1 *v2.ListPaidLiquidityFeesRequest, arg2 ...grpc.CallOption) (*v2.ListPaidLiquidityFeesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListPaidLiquidityFees", varargs...)
+	ret0, _ := ret[0].(*v2.ListPaidLiquidityFeesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListPaidLiquidityFees indicates an expected call of ListPaidLiquidityFees.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ListPaidLiquidityFees(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPaidLiquidityFees", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListPaidLiquidityFees), varargs...)
+}
+
 // ListParties mocks base method.
 func (m *MockTradingDataServiceClientV2) ListParties(arg0 context.Context, arg1 *v2.ListPartiesRequest, arg2 ...grpc.CallOption) (*v2.ListPartiesResponse, error) {
 	m.ctrl.T.Helper()

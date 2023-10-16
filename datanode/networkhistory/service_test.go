@@ -378,12 +378,12 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmNx7ftarYcLKQ1QnpVv3R9gFeRSkmjk4aAGVdQzqbhL61", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmeKifM2MXjTHATfv49marCjFF3up281B3WLNY3ZaGC8Yy", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmcqK1dMRGkiaoTYaEYpr73Zp5WB7KJj8rYSN78p8V9Jh6", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmYz8Va3rKES8pQjC7KweomqeR86W9XEp6o3KUA2V8yoa6", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmeuUZRZv9tzsWuktxKmkN4pBeT7XGMbcWTefrNJqtqpsh", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmP1BJnHyevTNH888gmN1mcNHN9YNsyxKREx6hVa9eLQYF", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmQhDsQ2B3DW8atmg8yoPvvAENeFxAK7Kh38hqceVucXKS", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmVt8swjn9PiBUcTm9GgqNtDuYYS7Cn9zCJgsWhh1fmbW5", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmcRiZxgfi2puvBf45y9gj7NusMRNEQaJW7E15fotbY2qo", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmXkUYKR4rn3YJVxyWhJRXejVdfNdoMwNvnMD3b3VSnXso", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmPmUYmPbSPx2wqWhNdFS5yqceX2KbDwSbaZV2pV5wr8XP", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmcVLUZayWrqBtP5B8KC2sjCBb7kpHXeqJYcAqRGUKXLLN", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {

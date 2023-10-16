@@ -494,6 +494,13 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Liquidity providers"};
   }
 
+  // List paid liquidity fees data
+  //
+  // List information about paid liquidity fees for a given market, or asset ID.
+  rpc ListPaidLiquidityFees(ListPaidLiquidityFeesRequest) returns (ListPaidLiquidityFeesResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Liquidity providers"};
+  }
+
   // Get governance data
   //
   // Get a single proposal's details either by proposal ID or by reference
@@ -2675,6 +2682,42 @@ message LiquidityProviderConnection {
 message ListLiquidityProvidersResponse {
   // Page of liquidity providers and corresponding page information.
   LiquidityProviderConnection liquidity_providers = 1;
+}
+
+// Paid liquidity fees request.
+message ListPaidLiquidityFeesRequest {
+  // Restrict fee data to those fees generated in the given market.
+  optional string market_id = 1;
+  // Restrict fee statistics to those paid in the given asset.
+  optional string asset_id = 2;
+  // Epoch to get paid liquidity fee statistics for. If omitted, the last complete epoch is used.
+  optional uint64 epoch_seq = 3;
+  // Restrict fee data to those fees paid to the given parties.
+  repeated string party_ids = 4;
+  // Pagination information to limit the data that is returned.
+  optional Pagination pagination = 5;
+}
+
+// Paid liquidity fees response.
+message ListPaidLiquidityFeesResponse {
+  // Page of paid liquidity fees and corresponding page information.
+  PaidLiquidityFeesConnection paid_liquidity_fees = 1;
+}
+
+// Paid liquidity fees data with the corresponding cursor.
+message PaidLiquidityFeesEdge {
+  // Paid liquidity fees data returned by the API.
+  vega.events.v1.PaidLiquidityFeesStats node = 1;
+  // Cursor that can be used to fetch further data.
+  string cursor = 2;
+}
+
+// Paid liquidity fees data and corresponding page information.
+message PaidLiquidityFeesConnection {
+  // Page of paid liquidity fees data.
+  repeated PaidLiquidityFeesEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
 }
 
 // -- Governance Data --

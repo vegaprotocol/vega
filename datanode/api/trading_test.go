@@ -171,6 +171,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	fundingPaymentService := service.NewFundingPayment(sqlstore.NewFundingPayments(sqlConn))
 	volumeDiscountStatsService := service.NewVolumeDiscountStats(sqlstore.NewVolumeDiscountStats(sqlConn))
 	volumeDiscountProgramService := service.NewVolumeDiscountPrograms(sqlstore.NewVolumeDiscountPrograms(sqlConn))
+	paidLiquidityFeesStatsService := service.NewPaidLiquidityFeesStats(sqlstore.NewPaidLiquidityFeesStats(sqlConn))
 
 	g := api.NewGRPCServer(
 		logger,
@@ -224,6 +225,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 		fundingPaymentService,
 		volumeDiscountStatsService,
 		volumeDiscountProgramService,
+		paidLiquidityFeesStatsService,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")

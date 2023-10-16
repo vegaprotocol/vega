@@ -109,6 +109,7 @@ type SlaPenalty struct {
 // Engine handles Liquidity provision.
 type Engine struct {
 	marketID       string
+	asset          string
 	log            *logging.Logger
 	timeService    TimeService
 	broker         Broker
@@ -145,6 +146,8 @@ type Engine struct {
 
 	lastFeeDistribution time.Time
 
+	allocatedFeesStats *types.PaidLiquidityFeesStats
+
 	// FIXME(jerem): to remove in the future,
 	// this is neede for the compatibility layer from
 	// 72 > 73, as we would need to cancel all remaining LP
@@ -174,6 +177,7 @@ func NewEngine(config Config,
 
 	e := &Engine{
 		marketID:    marketID,
+		asset:       asset,
 		log:         log,
 		timeService: timeService,
 		broker:      broker,
@@ -195,6 +199,7 @@ func NewEngine(config Config,
 		openPlusPriceRange:  one.Add(slaParams.PriceRange),
 		openMinusPriceRange: one.Sub(slaParams.PriceRange),
 		slaParams:           slaParams,
+		allocatedFeesStats:  types.NewLiquidityFeeStats(),
 	}
 	e.ResetAverageLiquidityScores() // initialise
 
