@@ -18,7 +18,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
       | market.fee.factors.makerFee                   | 0.004 |
     And the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
-      | lqm-params         | 1.0              | 20s         | 1              |  
+      | lqm-params         | 1.0              | 20s         | 1              |
     #risk factor short:3.5569036
     #risk factor long:0.801225765
     And the following assets are registered:
@@ -114,7 +114,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
     #AC 0044-LIME-063: When the LP increases its commitment and the increment is higher than its general account balance, the increments are rejected
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee  | lp type   | error                             |
-      | lp_1 | lp1   | ETH/MAR22 | 600000            | 0.02 | amendment | commitment submission not allowed |
+      | lp_1 | lp1   | ETH/MAR22 | 600000            | 0.02 | amendment | commitment submission rejected, not enough stake |
 
     #AC 0044-LIME-101: During continuous trading an LP can submit a transaction to decrease commitment but it will only happen at the end of current epoch.
     And the parties submit the following liquidity provision:
@@ -189,7 +189,3 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
       | lp1  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 206    | USD   |
       | lp2  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 310    | USD   |
     And the insurance pool balance should be "1546" for the market "ETH/MAR22"
-
-
-
-
