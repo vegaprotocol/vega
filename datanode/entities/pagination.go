@@ -107,7 +107,10 @@ func NewCursorPagination(first *int32, after *string, last *int32, before *strin
 }
 
 func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
-	if cp == nil {
+	if cp == nil || (cp != nil && cp.First == nil && cp.Last == nil) {
+		if cp != nil && cp.NewestFirst != nil {
+			return DefaultCursorPagination(*cp.NewestFirst), nil
+		}
 		return DefaultCursorPagination(true), nil
 	}
 
