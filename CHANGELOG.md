@@ -14,6 +14,7 @@
 - [9719](https://github.com/vegaprotocol/vega/issues/9719) - Remove unnecessary fields from referral and volume discount program proposals.
 - [9733](https://github.com/vegaprotocol/vega/issues/9733) - Making `set_id` optional in `referral set stats` endpoint
 - [9743](https://github.com/vegaprotocol/vega/issues/9743) - Rename `ReferralFeeStats` endpoints to `FeesStats`, and `FeeStats` event to `FeesStats`.
+- [9408](https://github.com/vegaprotocol/vega/issues/9408) - Enforce pagination range.
 
 ### 🗑️ Deprecation
 

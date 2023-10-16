@@ -120,7 +120,7 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 	}
 
 	if cp.First != nil {
-		if *cp.First < 0 {
+		if *cp.First < 0 || *cp.First > defaultPageSize {
 			return CursorPagination{}, ErrCursorOverflow
 		}
 		forwardOffset = &offset{
@@ -135,7 +135,7 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 			forwardOffset.Cursor = &after
 		}
 	} else if cp.Last != nil {
-		if *cp.Last < 0 {
+		if *cp.Last < 0 || *cp.Last > defaultPageSize {
 			return CursorPagination{}, ErrCursorOverflow
 		}
 		backwardOffset = &offset{
@@ -228,8 +228,8 @@ func validatePagination(pagination CursorPagination) error {
 	}
 
 	limit := *cursorOffset.Limit
-	if limit <= 0 {
-		return errors.New("pagination limit must be greater than 0")
+	if limit <= 0 || limit > defaultPageSize {
+		return errors.Errorf("pagination limit must be in range 0-%d", defaultPageSize)
 	}
 
 	return nil
