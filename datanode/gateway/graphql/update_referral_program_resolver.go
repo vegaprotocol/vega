@@ -17,7 +17,6 @@ package gql
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/vega/protos/vega"
 )
@@ -28,8 +27,8 @@ func (u updateReferralProgramResolver) BenefitTiers(_ context.Context, obj *vega
 	return obj.Changes.BenefitTiers, nil
 }
 
-func (u updateReferralProgramResolver) EndOfProgramTimestamp(_ context.Context, obj *vega.UpdateReferralProgram) (string, error) {
-	return time.Unix(obj.Changes.EndOfProgramTimestamp, 0).String(), nil
+func (u updateReferralProgramResolver) EndOfProgramTimestamp(_ context.Context, obj *vega.UpdateReferralProgram) (int64, error) {
+	return obj.Changes.EndOfProgramTimestamp, nil
 }
 
 func (u updateReferralProgramResolver) WindowLength(_ context.Context, obj *vega.UpdateReferralProgram) (int, error) {

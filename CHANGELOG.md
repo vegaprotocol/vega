@@ -175,6 +175,7 @@
 - [8749](https://github.com/vegaprotocol/vega/issues/8749) - Ensure stop order expiry is in the future
 - [9337](https://github.com/vegaprotocol/vega/issues/9337) - Non deterministic ordering of vesting ledger events
 - [8773](https://github.com/vegaprotocol/vega/issues/8773) - Fix panic with stop orders
+- [9784](https://github.com/vegaprotocol/vega/issues/9784) - Referral `api` timestamp consistency  
 - [9343](https://github.com/vegaprotocol/vega/issues/9343) - Prevent malicious validator submitting Ethereum oracle chain event prior to initial start time
 - [8792](https://github.com/vegaprotocol/vega/issues/8792) - Fix panic when starting null block chain node.
 - [8739](https://github.com/vegaprotocol/vega/issues/8739) - Cancel orders for rejected markets.
