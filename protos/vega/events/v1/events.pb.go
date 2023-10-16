@@ -246,7 +246,7 @@ const (
 	BusEventType_BUS_EVENT_TYPE_FEES_STATS_UPDATED BusEventType = 79
 	// Event indicating a funding period has ended and resulted in funding payment transfers.
 	BusEventType_BUS_EVENT_TYPE_FUNDING_PAYMENTS BusEventType = 80
-	// Event indicating the paid liquidity fees stats per market at end of epoch
+	// Event used to report the updated paid liquidity fee statistics for the market at the end of the epoch
 	BusEventType_BUS_EVENT_TYPE_PAID_LIQUIDITY_FEES_STATS_UPDATED BusEventType = 81
 	// Event indicating a market related event, for example when a market opens
 	BusEventType_BUS_EVENT_TYPE_MARKET BusEventType = 101
@@ -8267,7 +8267,7 @@ type BusEvent_FundingPayments struct {
 }
 
 type BusEvent_PaidLiquidityFeesStats struct {
-	// Event notifying of an update the liqudity fees stats for a market.
+	// Event notifying of an update to the liqudity fees stats for a market.
 	PaidLiquidityFeesStats *PaidLiquidityFeesStats `protobuf:"bytes,179,opt,name=paid_liquidity_fees_stats,json=paidLiquidityFeesStats,proto3,oneof"`
 }
 
