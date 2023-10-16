@@ -1738,7 +1738,7 @@ func (r *myQueryResolver) TeamRefereeHistory(ctx context.Context, referee string
 }
 
 func (r *myQueryResolver) FeesStats(ctx context.Context, marketID *string, assetID *string, epoch *int,
-	referrer, referee *string,
+	partyID *string,
 ) (*v1.FeesStats, error) {
 	var epochSeq *uint64
 
@@ -1750,8 +1750,7 @@ func (r *myQueryResolver) FeesStats(ctx context.Context, marketID *string, asset
 		MarketId: marketID,
 		AssetId:  assetID,
 		EpochSeq: epochSeq,
-		Referrer: referrer,
-		Referee:  referee,
+		PartyId:  partyID,
 	}
 
 	resp, err := r.tradingDataClientV2.GetFeesStats(ctx, req)

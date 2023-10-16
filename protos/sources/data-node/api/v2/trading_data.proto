@@ -3976,10 +3976,8 @@ message GetFeesStatsRequest {
   optional string asset_id = 2;
   // Epoch to get referral fee statistics for. If omitted, the last epoch published is used.
   optional uint64 epoch_seq = 3;
-  // Referrer party ID to filter the statistics for
-  optional string referrer = 4;
-  // Referee party ID to filter the statistics for
-  optional string referee = 5;
+  // Party ID to filter the statistics for
+  optional string party_id = 4;
 }
 
 // Response that is sent when requesting fees statistics.
