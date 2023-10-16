@@ -10,8 +10,8 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | 0.000001      | 0.1 | 0  | 0 | 1.0   |
     And the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
-      | lqm-params         | 1.0              | 20s         | 1              |  
-    
+      | lqm-params         | 1.0              | 20s         | 1              |
+
     And the following network parameters are set:
       | name                                          | value |
       | market.value.windowLength                     | 60s   |
@@ -209,7 +209,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     #AC: 0044-LIME-030, lp increases commitment and they do not have sufficient collateral in the settlement asset
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee  | lp type   | error                             |
-      | lp_1 | lp1   | ETH/MAR22 | 600000            | 0.02 | amendment | commitment submission not allowed |
+      | lp_1 | lp1   | ETH/MAR22 | 600000            | 0.02 | amendment | commitment submission rejected, not enough stake |
     Then the network moves ahead "1" blocks
     And the supplied stake should be "60000" for the market "ETH/MAR22"
 
@@ -261,5 +261,3 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | from   | to  | from account                | to account                     | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 33     | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_LP_LIQUIDITY_FEES | ETH/MAR22 | 6      | USD   |
-
-

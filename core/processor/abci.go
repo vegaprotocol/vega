@@ -1787,7 +1787,10 @@ func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx)
 
 	err = app.exec.CancelLiquidityProvision(ctx, lpc, tx.Party())
 	if err != nil {
-		app.log.Error("error on cancelling order", logging.String("liquidity-provision-market-id", lpc.MarketID), logging.Error(err))
+		app.log.Debug("error on cancelling order",
+			logging.PartyID(tx.Party()),
+			logging.String("liquidity-provision-market-id", lpc.MarketID),
+			logging.Error(err))
 		return err
 	}
 	if app.cfg.LogOrderCancelDebug {
@@ -1814,7 +1817,10 @@ func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx, 
 	// Submit the amend liquidity provision request to the Vega trading core
 	err = app.exec.AmendLiquidityProvision(ctx, lpa, tx.Party(), deterministicID)
 	if err != nil {
-		app.log.Error("error on amending Liquidity Provision", logging.String("liquidity-provision-market-id", lpa.MarketID), logging.Error(err))
+		app.log.Debug("error on amending Liquidity Provision",
+			logging.String("liquidity-provision-market-id", lpa.MarketID),
+			logging.PartyID(tx.Party()),
+			logging.Error(err))
 		return err
 	}
 	if app.cfg.LogOrderAmendDebug {
