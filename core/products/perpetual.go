@@ -525,7 +525,7 @@ func (p *Perpetual) receiveDataPoint(ctx context.Context, data dscommon.Data) er
 // receiveDataPoint will be hooked up as a subscriber to the oracle data for incoming settlement data from a data-source.
 func (p *Perpetual) addExternalDataPoint(ctx context.Context, price *num.Uint, t int64) {
 	if !p.readyForData() {
-		p.log.Error("external data point for perpetual received before initial period", logging.String("id", p.id), logging.Int64("t", t))
+		p.log.Debug("external data point for perpetual received before initial period", logging.String("id", p.id), logging.Int64("t", t))
 		return
 	}
 	twap, err := p.externalTWAP.addPoint(&dataPoint{price: price.Clone(), t: t})
