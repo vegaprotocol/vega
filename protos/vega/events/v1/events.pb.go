@@ -7056,15 +7056,15 @@ type PaidLiquidityFeesStats struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market the fees were paid in
+	// Market the fees were paid in.
 	Market string `protobuf:"bytes,1,opt,name=market,proto3" json:"market,omitempty"`
-	// Settlement asset of the market
+	// Settlement asset of the market.
 	Asset string `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
-	// Epoch for which these stats where valid
+	// Epoch for which these stats where valid.
 	EpochSeq uint64 `protobuf:"varint,3,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
-	// Total fees paid accross all parties
+	// Total fees paid accross all parties.
 	TotalFeesPaid string `protobuf:"bytes,4,opt,name=total_fees_paid,json=totalFeesPaid,proto3" json:"total_fees_paid,omitempty"`
-	// Fees paid per party
+	// Fees paid per party.
 	FeesPaidPerParty []*PartyAmount `protobuf:"bytes,5,rep,name=fees_paid_per_party,json=feesPaidPerParty,proto3" json:"fees_paid_per_party,omitempty"`
 }
 

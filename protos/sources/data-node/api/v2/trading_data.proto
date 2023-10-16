@@ -2686,9 +2686,9 @@ message ListLiquidityProvidersResponse {
 
 // Paid liquidity fees request.
 message ListPaidLiquidityFeesRequest {
-  // Restrict fee data to those fees generated in the given markets.
+  // Restrict fee data to those fees generated in the given market.
   optional string market_id = 1;
-  // Restrict fee statistics to those paid in the given assets.
+  // Restrict fee statistics to those paid in the given asset.
   optional string asset_id = 2;
   // Epoch to get paid liquidity fee statistics for. If omitted, the last complete epoch is used.
   optional uint64 epoch_seq = 3;

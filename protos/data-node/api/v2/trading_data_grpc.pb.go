@@ -303,7 +303,7 @@ type TradingDataServiceClient interface {
 	ListLiquidityProviders(ctx context.Context, in *ListLiquidityProvidersRequest, opts ...grpc.CallOption) (*ListLiquidityProvidersResponse, error)
 	// List paid liquidity fees data
 	//
-	// List information about paid liquidity fees for a given market, or asset id.
+	// List information about paid liquidity fees for a given market, or asset ID.
 	ListPaidLiquidityFees(ctx context.Context, in *ListPaidLiquidityFeesRequest, opts ...grpc.CallOption) (*ListPaidLiquidityFeesResponse, error)
 	// Get governance data
 	//
@@ -2188,7 +2188,7 @@ type TradingDataServiceServer interface {
 	ListLiquidityProviders(context.Context, *ListLiquidityProvidersRequest) (*ListLiquidityProvidersResponse, error)
 	// List paid liquidity fees data
 	//
-	// List information about paid liquidity fees for a given market, or asset id.
+	// List information about paid liquidity fees for a given market, or asset ID.
 	ListPaidLiquidityFees(context.Context, *ListPaidLiquidityFeesRequest) (*ListPaidLiquidityFeesResponse, error)
 	// Get governance data
 	//

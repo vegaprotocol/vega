@@ -12310,17 +12310,13 @@ type ListPaidLiquidityFeesRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market ID to get paid liquidity fee statistics for.
-	// If omitted the statistics for all markets will be returned.
+	// Restrict fee data to those fees generated in the given market.
 	MarketId *string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3,oneof" json:"market_id,omitempty"`
-	// Asset ID to get paid liquidity fee statistics for.
-	// If omitted the statistics for all assets will be returned.
+	// Restrict fee statistics to those paid in the given asset.
 	AssetId *string `protobuf:"bytes,2,opt,name=asset_id,json=assetId,proto3,oneof" json:"asset_id,omitempty"`
-	// Epoch to get paid liquidity fee statistics for.
-	// If omitted, the last epoch published is used.
+	// Epoch to get paid liquidity fee statistics for. If omitted, the last complete epoch is used.
 	EpochSeq *uint64 `protobuf:"varint,3,opt,name=epoch_seq,json=epochSeq,proto3,oneof" json:"epoch_seq,omitempty"`
-	// Restrict the paid liquidity fees to those owned by the parties in this list.
-	// Pass an empty list for no filter.
+	// Restrict fee data to those fees paid to the given parties.
 	PartyIds []string `protobuf:"bytes,4,rep,name=party_ids,json=partyIds,proto3" json:"party_ids,omitempty"`
 	// Pagination information to limit the data that is returned.
 	Pagination *Pagination `protobuf:"bytes,5,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`

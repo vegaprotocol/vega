@@ -1166,7 +1166,7 @@ enum BusEventType {
 
   // Event indicating a funding period has ended and resulted in funding payment transfers.
   BUS_EVENT_TYPE_FUNDING_PAYMENTS = 80;
-  
+
   // Event indicating the paid liquidity fees stats per market at end of epoch
   BUS_EVENT_TYPE_PAID_LIQUIDITY_FEES_STATS_UPDATED = 81;
 
