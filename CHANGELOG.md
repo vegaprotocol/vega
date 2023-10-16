@@ -317,6 +317,7 @@
 - [9751](https://github.com/vegaprotocol/vega/issues/9751) - Make sure that LP fee party accounts exists.
 - [9762](https://github.com/vegaprotocol/vega/issues/9762) - Referral fees API not filtering by party correctly.
 - [9775](https://github.com/vegaprotocol/vega/issues/9775) - Do not pay discount if set is not eligible
+- [9788](https://github.com/vegaprotocol/vega/issues/9788) - Fix transfer account validation.
 
 ## 0.72.1
 

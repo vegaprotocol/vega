@@ -37,19 +37,12 @@ import (
 
 const ReferenceMaxLen int = 100
 
-var (
-	validSources = map[protoTypes.AccountType]struct{}{
-		protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE:        {},
-		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:    {},
-		protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY: {},
-		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE: {},
-	}
-	validDestinations = map[protoTypes.AccountType]struct{}{
+var validTransfers = map[protoTypes.AccountType]map[protoTypes.AccountType]struct{}{
+	protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY: {
 		protoTypes.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
-		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:              {},
-		protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE:                  {},
-		protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY:           {},
 		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE:           {},
+		protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE:                  {},
+		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:              {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES:     {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES:    {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES: {},
@@ -58,8 +51,41 @@ var (
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN:     {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
 		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
-	}
-)
+	},
+	protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE: {
+		protoTypes.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_BOND:                       {},
+		protoTypes.AccountType_ACCOUNT_TYPE_MARGIN:                     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE:           {},
+		protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE:                  {},
+		protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY:           {},
+		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:              {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES:     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES: {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN:     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
+	},
+	protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE: {
+		protoTypes.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_BOND:                       {},
+		protoTypes.AccountType_ACCOUNT_TYPE_MARGIN:                     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE:                  {},
+		protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY:           {},
+		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:              {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES:     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES: {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN:     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
+	},
+}
 
 func CheckProposalSubmission(cmd *commandspb.ProposalSubmission) error {
 	return checkProposalSubmission(cmd).ErrorOrNil()
@@ -494,48 +520,47 @@ func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Error
 	if changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.source_type", ErrIsRequired)
 	}
-
+	validDest, ok := validTransfers[changes.SourceType]
 	// source account type may be one of the following:
-	if _, ok := validSources[changes.SourceType]; !ok {
+	if !ok {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.source_type", ErrIsNotValid)
 	}
-
 	if changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsRequired)
 	}
 
-	if changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD && changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD {
+	if _, ok := validDest[changes.DestinationType]; !ok {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
 	}
+	dest := changes.DestinationType
 
-	if changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY && changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
-	}
-
-	// destination account type may be one of the following:
-	if _, ok := validDestinations[changes.DestinationType]; !ok {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
-	}
-
-	if changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_GENERAL && !IsVegaPublicKey(changes.Destination) {
+	// party accounts: check pubkey
+	if (dest == protoTypes.AccountType_ACCOUNT_TYPE_GENERAL ||
+		dest == protoTypes.AccountType_ACCOUNT_TYPE_BOND ||
+		dest == protoTypes.AccountType_ACCOUNT_TYPE_MARGIN) &&
+		!IsVegaPublicKey(changes.Destination) {
 		errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrShouldBeAValidVegaPublicKey)
 	}
 
-	if (changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD ||
-		changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY ||
-		changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE) &&
-		len(changes.Source) > 0 {
+	// insurance account type requires a source, other sources are global
+	if changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE {
+		if len(changes.Source) == 0 {
+			return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.source", ErrIsNotValid)
+		}
+		// destination == source
+		if dest == changes.SourceType && changes.Source == changes.Destination {
+			return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
+		}
+	} else if len(changes.Source) > 0 {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.source", ErrIsNotValid)
 	}
 
-	if (changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD ||
-		changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY ||
-		changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE) &&
-		len(changes.Destination) > 0 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
-	}
-
-	if changes.SourceType == changes.DestinationType && changes.Source == changes.Destination {
+	// global destination accounts == no source
+	if (dest == protoTypes.AccountType_ACCOUNT_TYPE_GENERAL ||
+		dest == protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE ||
+		dest == protoTypes.AccountType_ACCOUNT_TYPE_BOND ||
+		dest == protoTypes.AccountType_ACCOUNT_TYPE_MARGIN) &&
+		len(changes.Destination) == 0 {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
 	}
 
