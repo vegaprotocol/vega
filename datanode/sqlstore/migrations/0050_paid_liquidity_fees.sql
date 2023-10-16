@@ -7,7 +7,8 @@ create table if not exists paid_liquidity_fees (
       epoch_seq bigint not null,
       total_fees_paid text not null,
       fees_paid_per_party jsonb not null,
-      primary key (market_id, asset_id, epoch_seq)
+      vega_time timestamp with time zone not null,
+      primary key (vega_time, market_id, asset_id, epoch_seq)
 );
 
 create index paid_liquidity_fees_market_id_idx on paid_liquidity_fees(market_id);

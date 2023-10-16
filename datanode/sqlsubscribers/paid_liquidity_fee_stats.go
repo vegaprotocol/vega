@@ -61,5 +61,5 @@ func (r *PaidLiquidityFeesStats) Push(ctx context.Context, evt events.Event) err
 }
 
 func (r *PaidLiquidityFeesStats) consumeFeeStatsEvent(ctx context.Context, e PaidLiquidityFeesStatsEvent) error {
-	return r.store.Add(ctx, entities.PaidLiquidityFeesStatsFromProto(e.PaidLiquidityFeesStats()))
+	return r.store.Add(ctx, entities.PaidLiquidityFeesStatsFromProto(e.PaidLiquidityFeesStats(), r.vegaTime))
 }

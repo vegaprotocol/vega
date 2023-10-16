@@ -18,6 +18,7 @@ package sqlstore_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
@@ -80,6 +81,7 @@ func testAddPaidLiquidityFeesStatsEpochIfNotExists(t *testing.T) {
 			{Party: "party-2", Amount: "50"},
 			{Party: "party-3", Amount: "50"},
 		},
+		VegaTime: time.Now(),
 	}
 
 	err := stores.ls.Add(ctx, &want)
@@ -113,6 +115,7 @@ func testAddPaidLiquidityFeesStatsEpochExists(t *testing.T) {
 			{Party: "party-2", Amount: "50"},
 			{Party: "party-3", Amount: "50"},
 		},
+		VegaTime: time.Now(),
 	}
 
 	err := stores.ls.Add(ctx, &want)

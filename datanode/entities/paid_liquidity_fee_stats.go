@@ -17,6 +17,7 @@ package entities
 
 import (
 	"encoding/json"
+	"time"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -46,6 +47,7 @@ type PaidLiquidityFeesStats struct {
 	EpochSeq      uint64
 	TotalFeesPaid string
 	FeesPerParty  []*eventspb.PartyAmount
+	VegaTime      time.Time
 }
 
 func (s PaidLiquidityFeesStats) Cursor() *Cursor {
@@ -74,12 +76,13 @@ func (s PaidLiquidityFeesStats) ToProto() *eventspb.PaidLiquidityFeesStats {
 	}
 }
 
-func PaidLiquidityFeesStatsFromProto(proto *eventspb.PaidLiquidityFeesStats) *PaidLiquidityFeesStats {
+func PaidLiquidityFeesStatsFromProto(proto *eventspb.PaidLiquidityFeesStats, vegaTime time.Time) *PaidLiquidityFeesStats {
 	return &PaidLiquidityFeesStats{
 		MarketID:      MarketID(proto.Market),
 		AssetID:       AssetID(proto.Asset),
 		EpochSeq:      proto.EpochSeq,
 		TotalFeesPaid: proto.TotalFeesPaid,
 		FeesPerParty:  proto.FeesPaidPerParty,
+		VegaTime:      vegaTime,
 	}
 }

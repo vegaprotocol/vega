@@ -47,13 +47,15 @@ func (rfs *PaidLiquidityFeesStats) Add(ctx context.Context, stats *entities.Paid
 			asset_id,
 			epoch_seq,
 			total_fees_paid,
-			fees_paid_per_party
-		) values ($1,$2,$3,$4,$5)`,
+			fees_paid_per_party,
+			vega_time
+		) values ($1,$2,$3,$4,$5,$6)`,
 		stats.MarketID,
 		stats.AssetID,
 		stats.EpochSeq,
 		stats.TotalFeesPaid,
 		stats.FeesPerParty,
+		stats.VegaTime,
 	)
 	return err
 }
@@ -110,7 +112,7 @@ func (lfs *PaidLiquidityFeesStats) List(
 		whereStr = " WHERE " + strings.Join(whereClauses, " AND ")
 	}
 
-	groupByStr := "GROUP BY market_id, asset_id, epoch_seq"
+	groupByStr := "GROUP BY market_id, asset_id, epoch_seq, vega_time"
 
 	query = fmt.Sprintf("%s %s %s", query, whereStr, groupByStr)
 
