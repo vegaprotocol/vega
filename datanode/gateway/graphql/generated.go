@@ -3145,7 +3145,6 @@ type RecurringTransferResolver interface {
 type ReferralProgramResolver interface {
 	Version(ctx context.Context, obj *vega.ReferralProgram) (int, error)
 
-	EndOfProgramTimestamp(ctx context.Context, obj *vega.ReferralProgram) (string, error)
 	WindowLength(ctx context.Context, obj *vega.ReferralProgram) (int, error)
 }
 type ReferralSetRefereeResolver interface {
@@ -3313,7 +3312,7 @@ type UpdateNetworkParameterResolver interface {
 }
 type UpdateReferralProgramResolver interface {
 	BenefitTiers(ctx context.Context, obj *vega.UpdateReferralProgram) ([]*vega.BenefitTier, error)
-	EndOfProgramTimestamp(ctx context.Context, obj *vega.UpdateReferralProgram) (string, error)
+	EndOfProgramTimestamp(ctx context.Context, obj *vega.UpdateReferralProgram) (int64, error)
 	WindowLength(ctx context.Context, obj *vega.UpdateReferralProgram) (int, error)
 	StakingTiers(ctx context.Context, obj *vega.UpdateReferralProgram) ([]*vega.StakingTier, error)
 }
@@ -69271,7 +69270,7 @@ func (ec *executionContext) _ReferralProgram_endOfProgramTimestamp(ctx context.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.ReferralProgram().EndOfProgramTimestamp(rctx, obj)
+		return obj.EndOfProgramTimestamp, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -69283,19 +69282,19 @@ func (ec *executionContext) _ReferralProgram_endOfProgramTimestamp(ctx context.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ReferralProgram_endOfProgramTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ReferralProgram",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -84830,9 +84829,9 @@ func (ec *executionContext) _UpdateReferralProgram_endOfProgramTimestamp(ctx con
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTimestamp2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_UpdateReferralProgram_endOfProgramTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -84842,7 +84841,7 @@ func (ec *executionContext) fieldContext_UpdateReferralProgram_endOfProgramTimes
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timestamp does not have child fields")
 		},
 	}
 	return fc, nil
@@ -106526,25 +106525,12 @@ func (ec *executionContext) _ReferralProgram(ctx context.Context, sel ast.Select
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "endOfProgramTimestamp":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._ReferralProgram_endOfProgramTimestamp(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._ReferralProgram_endOfProgramTimestamp(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "windowLength":
 			field := field
 

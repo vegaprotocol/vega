@@ -19,7 +19,6 @@ import (
 	"context"
 	"errors"
 	"math"
-	"time"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
@@ -42,11 +41,6 @@ func (r *referralProgramResolver) WindowLength(ctx context.Context, obj *vega.Re
 	}
 
 	return int(obj.WindowLength), nil
-}
-
-func (r *referralProgramResolver) EndOfProgramTimestamp(ctx context.Context, obj *vega.ReferralProgram) (string, error) {
-	endTime := time.Unix(obj.EndOfProgramTimestamp, 0)
-	return endTime.Format(time.RFC3339), nil
 }
 
 type currentReferralProgramResolver VegaResolverRoot

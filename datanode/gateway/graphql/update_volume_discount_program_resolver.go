@@ -17,6 +17,7 @@ package gql
 
 import (
 	"context"
+	"time"
 
 	"code.vegaprotocol.io/vega/protos/vega"
 )
@@ -32,7 +33,8 @@ func (r *updateVolumeDiscountProgramResolver) BenefitTiers(
 func (r *updateVolumeDiscountProgramResolver) EndOfProgramTimestamp(
 	_ context.Context, obj *vega.UpdateVolumeDiscountProgram,
 ) (int64, error) {
-	return obj.Changes.EndOfProgramTimestamp, nil
+	endTime := time.Unix(obj.Changes.EndOfProgramTimestamp, 0)
+	return endTime.UnixNano(), nil
 }
 
 func (r *updateVolumeDiscountProgramResolver) WindowLength(
