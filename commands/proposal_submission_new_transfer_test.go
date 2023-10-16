@@ -18,6 +18,7 @@ package commands_test
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -50,6 +51,7 @@ func TestCheckProposalSubmissionForNewTransfer(t *testing.T) {
 	t.Run("Submitting a new recurring transfer change with a dispatch strategy and incompatible empty asset for metric", testInvalidAssetForMetric)
 	t.Run("Submitting a new recurring transfer change with a dispatch strategy and mismatching destination type for metric", testInvalidDestForMetric)
 	t.Run("Submitting a new transfer change with destination type general and an invalid vega public key", testInvalidGeneralPubKey)
+	t.Run("Submitting a new transfer change with destination type general and an invalid vega public key", testOnlyGeneralValid)
 }
 
 func testInvalidDestForMetric(t *testing.T) {
@@ -324,6 +326,77 @@ func testOneOffWithNegativeDeliverOn(t *testing.T) {
 		},
 	})
 	require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.oneoff.deliveron"), commands.ErrMustBePositiveOrZero)
+}
+
+func testOnlyGeneralValid(t *testing.T) {
+	partyAccs := []types.AccountType{
+		types.AccountType_ACCOUNT_TYPE_MARGIN,
+		types.AccountType_ACCOUNT_TYPE_BOND,
+	}
+	// start with a valid transfer to the general account
+	prop := &commandspb.ProposalSubmission{
+		Rationale: &types.ProposalRationale{
+			Description: "valid",
+			Title:       "test",
+		},
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:   time.Now().Unix() + 100,
+			EnactmentTimestamp: time.Now().Unix() + 200,
+			Change: &types.ProposalTerms_NewTransfer{
+				NewTransfer: &types.NewTransfer{
+					Changes: &types.NewTransferConfiguration{
+						FractionOfBalance: "0.5",
+						Amount:            "1000",
+						SourceType:        types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
+						DestinationType:   types.AccountType_ACCOUNT_TYPE_GENERAL,
+						Destination:       crypto.RandomHash(),
+						TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
+						Asset:             "abcde",
+						Kind: &types.NewTransferConfiguration_OneOff{
+							OneOff: &types.OneOffTransfer{
+								DeliverOn: 0,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	err := checkProposalSubmission(prop)
+	require.True(t, err.Empty())
+	// none of the other accounts are valid destination types:
+	for _, at := range partyAccs {
+		prop := &commandspb.ProposalSubmission{
+			Rationale: &types.ProposalRationale{
+				Description: "invalid",
+				Title:       "test",
+			},
+			Terms: &types.ProposalTerms{
+				ClosingTimestamp:   time.Now().Unix() + 100,
+				EnactmentTimestamp: time.Now().Unix() + 200,
+				Change: &types.ProposalTerms_NewTransfer{
+					NewTransfer: &types.NewTransfer{
+						Changes: &types.NewTransferConfiguration{
+							FractionOfBalance: "0.5",
+							Amount:            "1000",
+							SourceType:        types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
+							DestinationType:   at,
+							Destination:       crypto.RandomHash(), // ensure a valid hash
+							TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
+							Asset:             "abcde",
+							Kind: &types.NewTransferConfiguration_OneOff{
+								OneOff: &types.OneOffTransfer{
+									DeliverOn: 0,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		err = checkProposalSubmission(prop)
+		require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.destination_type"), commands.ErrIsNotValid)
+	}
 }
 
 func testInvalidGeneralPubKey(t *testing.T) {

@@ -54,8 +54,6 @@ var validTransfers = map[protoTypes.AccountType]map[protoTypes.AccountType]struc
 	},
 	protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE: {
 		protoTypes.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
-		protoTypes.AccountType_ACCOUNT_TYPE_BOND:                       {},
-		protoTypes.AccountType_ACCOUNT_TYPE_MARGIN:                     {},
 		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE:           {},
 		protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE:                  {},
 		protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY:           {},
@@ -71,8 +69,6 @@ var validTransfers = map[protoTypes.AccountType]map[protoTypes.AccountType]struc
 	},
 	protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE: {
 		protoTypes.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
-		protoTypes.AccountType_ACCOUNT_TYPE_BOND:                       {},
-		protoTypes.AccountType_ACCOUNT_TYPE_MARGIN:                     {},
 		protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE:                  {},
 		protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY:           {},
 		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:              {},
