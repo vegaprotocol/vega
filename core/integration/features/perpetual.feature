@@ -122,3 +122,83 @@ Feature: Simple test creating a perpetual market.
       | market id | state                              | settlement price |
       | ETH/DEC19 | MARKET_STATE_UPDATE_TYPE_TERMINATE | 976              |
     Then the market state should be "STATE_CLOSED" for the market "ETH/DEC19"
+
+  @PerpetualCancel
+  Scenario: 003 Cancel a perps market in opening auction
+    # the amount ought to be 390,500.000,000,000,000,000,000
+    Given the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size        | minimum visible size | side | pegged reference | volume           | offset | reference   |
+      | lpprov | ETH/DEC19 | 4000000000000000 | 3905000000000000     | buy  | BID              | 4000000000000000 | 1      | lp-ice-buy  |
+      | lpprov | ETH/DEC19 | 4000000000000000 | 3905000000000000     | sell | ASK              | 4000000000000000 | 1      | lp-ice-sell |
+    And the parties place the following orders:
+      | party   | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | trader1 | ETH/DEC19 | buy  | 5      | 1001   | 0                | TYPE_LIMIT | TIF_GTC | t1-b-1    |
+      | trader1 | ETH/DEC19 | buy  | 5      | 900    | 0                | TYPE_LIMIT | TIF_GTC | t1-b-2    |
+      | trader1 | ETH/DEC19 | buy  | 1      | 100    | 0                | TYPE_LIMIT | TIF_GTC | t1-b-3    |
+      | trader2 | ETH/DEC19 | sell | 5      | 1200   | 0                | TYPE_LIMIT | TIF_GTC | t2-s-1    |
+      | trader2 | ETH/DEC19 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | t2-s-2    |
+    When the opening auction period ends for market "ETH/DEC19"
+    Then the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode                 | auction trigger         |
+      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING |
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin      | general                   |
+      | trader1 | ETH   | ETH/DEC19 | 60659552186 | 9999999999999939340447814 |
+
+
+    # example of how to use the oracle
+    When the oracles broadcast data with block time signed with "0xCAFECAFE1":
+      | name           | value | time offset |
+      | perp.ETH.value | 975   | -2s         |
+      | perp.ETH.value | 977   | -1s         |
+
+    And the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | trader2 | ETH/DEC19 | sell | 1      | 951   | 0                | TYPE_LIMIT | TIF_GTC | t2-s-2    |
+    Then the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            | auction trigger             |
+      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
+    When the market states are updated through governance:
+      | market id | state                              | settlement price |
+      | ETH/DEC19 | MARKET_STATE_UPDATE_TYPE_TERMINATE | 976              |
+    Then the market state should be "STATE_CLOSED" for the market "ETH/DEC19"
+
+  @PerpetualCancel
+  Scenario: 003 Cancel a perps market in opening auction
+    # the amount ought to be 390,500.000,000,000,000,000,000
+    Given the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size        | minimum visible size | side | pegged reference | volume           | offset | reference   |
+      | lpprov | ETH/DEC19 | 4000000000000000 | 3905000000000000     | buy  | BID              | 4000000000000000 | 1      | lp-ice-buy  |
+      | lpprov | ETH/DEC19 | 4000000000000000 | 3905000000000000     | sell | ASK              | 4000000000000000 | 1      | lp-ice-sell |
+    And the parties place the following orders:
+      | party   | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | trader1 | ETH/DEC19 | buy  | 5      | 1001   | 0                | TYPE_LIMIT | TIF_GTC | t1-b-1    |
+      | trader1 | ETH/DEC19 | buy  | 5      | 900    | 0                | TYPE_LIMIT | TIF_GTC | t1-b-2    |
+      | trader1 | ETH/DEC19 | buy  | 1      | 100    | 0                | TYPE_LIMIT | TIF_GTC | t1-b-3    |
+      | trader2 | ETH/DEC19 | sell | 5      | 1200   | 0                | TYPE_LIMIT | TIF_GTC | t2-s-1    |
+      | trader2 | ETH/DEC19 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | t2-s-2    |
+    When the opening auction period ends for market "ETH/DEC19"
+    Then the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode                 | auction trigger         |
+      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING |
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin      | general                   |
+      | trader1 | ETH   | ETH/DEC19 | 60659552186 | 9999999999999939340447814 |
+
+
+    # example of how to use the oracle
+    When the oracles broadcast data with block time signed with "0xCAFECAFE1":
+      | name           | value | time offset |
+      | perp.ETH.value | 975   | -2s         |
+      | perp.ETH.value | 977   | -1s         |
+
+    And the market states are updated through governance:
+      | market id | state                              | settlement price |
+      | ETH/DEC19 | MARKET_STATE_UPDATE_TYPE_TERMINATE | 976              |
+    Then the market state should be "STATE_CANCELLED" for the market "ETH/DEC19"

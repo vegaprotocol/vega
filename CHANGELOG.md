@@ -299,6 +299,7 @@
 - [9658](https://github.com/vegaprotocol/vega/issues/9658) - Fix `updateVolumeDiscountProgram` GraphQL resolver.
 - [9672](https://github.com/vegaprotocol/vega/issues/9672) - Fix margin being non-zero on `PERPS`, add tests to ensure distressed parties are handled correctly
 - [9280](https://github.com/vegaprotocol/vega/issues/9280) - Get block height directly from `blocks` table.
+- [9787](https://github.com/vegaprotocol/vega/issues/9787) - Do not sort market input so that tracking of dispatch strategies are not disturbed.
 - [9675](https://github.com/vegaprotocol/vega/issues/9675) - Fix snapshot issue with not applying `providersCalculationStep` at epoch start.
 - [9693](https://github.com/vegaprotocol/vega/issues/9693) - Add missing validation for general account public key in governance transfer
 - [9691](https://github.com/vegaprotocol/vega/issues/9691) - Refactor referral engine snapshot
@@ -316,6 +317,7 @@
 - [9751](https://github.com/vegaprotocol/vega/issues/9751) - Make sure that LP fee party accounts exists.
 - [9762](https://github.com/vegaprotocol/vega/issues/9762) - Referral fees API not filtering by party correctly.
 - [9775](https://github.com/vegaprotocol/vega/issues/9775) - Do not pay discount if set is not eligible
+- [9788](https://github.com/vegaprotocol/vega/issues/9788) - Fix transfer account validation.
 
 ## 0.72.1
 
