@@ -308,7 +308,10 @@ func (m *MarketLiquidity) OnEpochEnd(ctx context.Context, t time.Time) {
 	m.calculateAndDistribute(ctx, t)
 
 	// report liquidity fees allocation stats
-	m.broker.Send(events.NewPaidLiquidityFeesStatsEvent(ctx, m.liquidityEngine.PaidLiquidityFeesStats().ToProto(m.marketID, m.asset)))
+	feeStats := m.liquidityEngine.PaidLiquidityFeesStats()
+	if !feeStats.TotalFeesPaid.IsZero() {
+		m.broker.Send(events.NewPaidLiquidityFeesStatsEvent(ctx, feeStats.ToProto(m.marketID, m.asset)))
+	}
 }
 
 func (m *MarketLiquidity) OnMarketClosed(ctx context.Context, t time.Time) {
