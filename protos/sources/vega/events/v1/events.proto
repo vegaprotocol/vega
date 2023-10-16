@@ -963,15 +963,15 @@ message VolumeDiscountProgramEnded {
 }
 
 message PaidLiquidityFeesStats {
-  // Market the fees were paid in
+  // Market the fees were paid in.
   string market = 1;
-  // Settlement asset of the market
+  // Settlement asset of the market.
   string asset = 2;
-  // Epoch for which these stats where valid
+  // Epoch for which these stats where valid.
   uint64 epoch_seq = 3;
-  // Total fees paid accross all parties
+  // Total fees paid accross all parties.
   string total_fees_paid = 4;
-  // Fees paid per party
+  // Fees paid per party.
   repeated PartyAmount fees_paid_per_party = 5;
 }
 

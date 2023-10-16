@@ -115,7 +115,8 @@ func (e *snapshotV2) LoadState(ctx context.Context, p *types.Payload) ([]types.S
 	case *types.PayloadLiquidityV2Parameters:
 		return nil, e.loadParameters(pl.Parameters, p)
 	case *types.PayloadPaidLiquidityV2FeeStats:
-		return nil, e.loadFeeStats(pl.Stats, p)
+		e.loadFeeStats(pl.Stats, p)
+		return nil, nil
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
@@ -523,9 +524,8 @@ func (e *snapshotV2) loadParameters(ls *snapshotpb.LiquidityV2Parameters, p *typ
 	return err
 }
 
-func (e *snapshotV2) loadFeeStats(ls *snapshotpb.LiquidityV2PaidFeesStats, _ *types.Payload) error {
+func (e *snapshotV2) loadFeeStats(ls *snapshotpb.LiquidityV2PaidFeesStats, _ *types.Payload) {
 	e.allocatedFeesStats = types.NewPaidLiquidityFeesStatsFromProto(ls.Stats)
-	return nil
 }
 
 func (e *snapshotV2) buildHashKeys(market string) {
