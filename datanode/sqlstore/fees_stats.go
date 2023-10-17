@@ -97,23 +97,19 @@ func (rfs *FeesStats) GetFeesStats(ctx context.Context, marketID *entities.Marke
 		where = append(where, fmt.Sprintf("market_id = %s", nextBindVar(&args, *marketID)))
 	}
 
+	if epochSeq == nil { // we want the most recent stat so order and limit the query
+		where = append(where, "epoch_seq = (SELECT MAX(epoch_seq) FROM fees_stats)")
+	}
+
 	if partyFilter := getPartyFilter(partyID); partyFilter != "" {
 		where = append(where, partyFilter)
 	}
 
 	if len(where) > 0 {
-		for i, w := range where {
-			if i == 0 {
-				query = fmt.Sprintf("%s WHERE %s", query, w)
-				continue
-			}
-			query = fmt.Sprintf("%s AND %s", query, w)
-		}
+		query = fmt.Sprintf("%s where %s", query, strings.Join(where, " and "))
 	}
 
-	if epochSeq == nil { // we want the most recent stat so order and limit the query
-		query = fmt.Sprintf("%s ORDER BY epoch_seq DESC LIMIT 1", query)
-	}
+	query = fmt.Sprintf("%s order by market_id, asset_id, epoch_seq desc", query)
 
 	if err = pgxscan.Select(ctx, rfs.Connection, &stats, query, args...); err != nil {
 		return nil, err

@@ -252,6 +252,119 @@ func setupFeesStats(t *testing.T, ctx context.Context, fs *sqlstore.FeesStats) [
 			VegaTime:              vegaTime.Add(15 * time.Second),
 		},
 		{
+			MarketID: entities.MarketID("deadbeef11"),
+			AssetID:  entities.AssetID("deadbaad01"),
+			EpochSeq: 1,
+			TotalRewardsPaid: []*eventspb.PartyAmount{
+				{
+					Party:  "cafedaad01",
+					Amount: "1000000",
+				},
+			},
+			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+				{
+					Referrer: "cafedaad01",
+					GeneratedReward: []*eventspb.PartyAmount{
+						{
+							Party:  "cafed00d01",
+							Amount: "500000",
+						},
+						{
+							Party:  "cafed00d02",
+							Amount: "500000",
+						},
+					},
+				},
+			},
+			RefereesDiscountApplied: []*eventspb.PartyAmount{
+				{
+					Party:  "cafed00d01",
+					Amount: "100000",
+				},
+				{
+					Party:  "cafed00d02",
+					Amount: "100000",
+				},
+			},
+			VegaTime: vegaTime.Add(5 * time.Second),
+		},
+		{
+			MarketID: entities.MarketID("deadbeef11"),
+			AssetID:  entities.AssetID("deadbaad01"),
+			EpochSeq: 2,
+			TotalRewardsPaid: []*eventspb.PartyAmount{
+				{
+					Party:  "cafedaad01",
+					Amount: "1100000",
+				},
+			},
+			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+				{
+					Referrer: "cafedaad01",
+					GeneratedReward: []*eventspb.PartyAmount{
+						{
+							Party:  "cafed00d01",
+							Amount: "550000",
+						},
+						{
+							Party:  "cafed00d02",
+							Amount: "550000",
+						},
+					},
+				},
+			},
+			RefereesDiscountApplied: []*eventspb.PartyAmount{
+				{
+					Party:  "cafed00d01",
+					Amount: "110000",
+				},
+				{
+					Party:  "cafed00d02",
+					Amount: "110000",
+				},
+			},
+			VolumeDiscountApplied: []*eventspb.PartyAmount{},
+			VegaTime:              vegaTime.Add(10 * time.Second),
+		},
+		{
+			MarketID: entities.MarketID("deadbeef11"),
+			AssetID:  entities.AssetID("deadbaad01"),
+			EpochSeq: 3,
+			TotalRewardsPaid: []*eventspb.PartyAmount{
+				{
+					Party:  "cafedaad01",
+					Amount: "1200000",
+				},
+			},
+			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+				{
+					Referrer: "cafedaad01",
+					GeneratedReward: []*eventspb.PartyAmount{
+						{
+							Party:  "cafed00d01",
+							Amount: "600000",
+						},
+						{
+							Party:  "cafed00d02",
+							Amount: "600000",
+						},
+					},
+				},
+			},
+			RefereesDiscountApplied: []*eventspb.PartyAmount{
+				{
+					Party:  "cafed00d01",
+					Amount: "120000",
+				},
+				{
+					Party:  "cafed00d02",
+					Amount: "120000",
+				},
+			},
+			VolumeDiscountApplied: []*eventspb.PartyAmount{},
+			VegaTime:              vegaTime.Add(15 * time.Second),
+		},
+		{
 			MarketID: entities.MarketID("deadbeef02"),
 			AssetID:  entities.AssetID("deadbaad02"),
 			EpochSeq: 1,
@@ -405,7 +518,7 @@ func testGetFeesStatsForAssetAndEpoch(t *testing.T) {
 	assert.Equal(t, want, *got)
 
 	// get the stats for the second market and epoch
-	want = stats[3]
+	want = stats[6]
 	got, err = stores.fs.GetFeesStats(ctx, nil, &want.AssetID, &want.EpochSeq, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
@@ -423,7 +536,7 @@ func testGetFeesStatsForMarketLatest(t *testing.T) {
 	assert.Equal(t, want, *got)
 
 	// get the stats for the second market and epoch
-	want = stats[5]
+	want = stats[8]
 	got, err = stores.fs.GetFeesStats(ctx, &want.MarketID, nil, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
@@ -441,7 +554,7 @@ func testGetFeesStatsForAssetLatest(t *testing.T) {
 	assert.Equal(t, want, *got)
 
 	// get the stats for the second market and epoch
-	want = stats[5]
+	want = stats[8]
 	got, err = stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, want, *got)
