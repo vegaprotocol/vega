@@ -30,13 +30,17 @@ package entities
 import (
 	"encoding/base64"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/pkg/errors"
 )
 
-var defaultPageSize int32 = 1000
+const (
+	defaultPageSize int32 = 1000
+	maxPageSize     int32 = 5000
+)
 
-var ErrCursorOverflow = errors.New("negative pagination value")
+var ErrCursorOverflow = errors.Errorf("pagination limit must be in range 0-%d", maxPageSize)
 
 type Pagination interface{}
 
@@ -123,7 +127,7 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 	}
 
 	if cp.First != nil {
-		if *cp.First < 0 || *cp.First > defaultPageSize {
+		if *cp.First < 0 || *cp.First > maxPageSize {
 			return CursorPagination{}, ErrCursorOverflow
 		}
 		forwardOffset = &offset{
@@ -138,7 +142,7 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 			forwardOffset.Cursor = &after
 		}
 	} else if cp.Last != nil {
-		if *cp.Last < 0 || *cp.Last > defaultPageSize {
+		if *cp.Last < 0 || *cp.Last > maxPageSize {
 			return CursorPagination{}, ErrCursorOverflow
 		}
 		backwardOffset = &offset{
@@ -158,7 +162,7 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 		}
 
 		forwardOffset = &offset{
-			Limit:  &defaultPageSize,
+			Limit:  ptr.From(defaultPageSize),
 			Cursor: &after,
 		}
 	} else if cp.Before != nil {
@@ -168,7 +172,7 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 		}
 
 		backwardOffset = &offset{
-			Limit:  &defaultPageSize,
+			Limit:  ptr.From(defaultPageSize),
 			Cursor: &before,
 		}
 	}
@@ -195,7 +199,7 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 func DefaultCursorPagination(newestFirst bool) CursorPagination {
 	return CursorPagination{
 		Forward: &offset{
-			Limit: &defaultPageSize,
+			Limit: ptr.From(defaultPageSize),
 		},
 		NewestFirst: newestFirst,
 	}
@@ -231,8 +235,8 @@ func validatePagination(pagination CursorPagination) error {
 	}
 
 	limit := *cursorOffset.Limit
-	if limit <= 0 || limit > defaultPageSize {
-		return errors.Errorf("pagination limit must be in range 0-%d", defaultPageSize)
+	if limit <= 0 || limit > maxPageSize {
+		return ErrCursorOverflow
 	}
 
 	return nil
