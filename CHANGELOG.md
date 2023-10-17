@@ -323,6 +323,7 @@
 - [9775](https://github.com/vegaprotocol/vega/issues/9775) - Do not pay discount if set is not eligible
 - [9788](https://github.com/vegaprotocol/vega/issues/9788) - Fix transfer account validation.
 - [9797](https://github.com/vegaprotocol/vega/issues/9797) - Default pagination limits are not always correctly set.
+- [9813](https://github.com/vegaprotocol/vega/issues/9813) - Add validation for team scope vs individual scope
 
 ## 0.72.1
 

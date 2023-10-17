@@ -234,6 +234,11 @@ func validateDispatchStrategy(toAccountType vega.AccountType, dispatchStrategy *
 	if dispatchStrategy.EntityScope == vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS && dispatchStrategy.IndividualScope == vega.IndividualScope_INDIVIDUAL_SCOPE_UNSPECIFIED {
 		errs.AddForProperty(prefix+".individual_scope", ErrIsRequired)
 	}
+
+	if dispatchStrategy.EntityScope == vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS && len(dispatchStrategy.TeamScope) > 0 {
+		errs.AddForProperty(prefix+".team_scope", errors.New("should not be set when entity_scope is set to "+dispatchStrategy.EntityScope.String()))
+	}
+
 	if dispatchStrategy.EntityScope != vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS && dispatchStrategy.IndividualScope != vega.IndividualScope_INDIVIDUAL_SCOPE_UNSPECIFIED {
 		errs.AddForProperty(prefix+".individual_scope", errors.New("should not be set when entity_scope is set to "+dispatchStrategy.EntityScope.String()))
 	}
