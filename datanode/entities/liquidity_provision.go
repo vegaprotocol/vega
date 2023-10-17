@@ -76,6 +76,37 @@ type LiquidityProvision struct {
 	VegaTime         time.Time
 }
 
+type CurrentAndPreviousLiquidityProvisions struct {
+	ID                       LiquidityProvisionID
+	PartyID                  PartyID
+	CreatedAt                time.Time
+	UpdatedAt                time.Time
+	MarketID                 MarketID
+	CommitmentAmount         decimal.Decimal
+	Fee                      decimal.Decimal
+	Sells                    []LiquidityOrderReference
+	Buys                     []LiquidityOrderReference
+	Version                  int64
+	Status                   LiquidityProvisionStatus
+	Reference                string
+	TxHash                   TxHash
+	VegaTime                 time.Time
+	PreviousID               LiquidityProvisionID
+	PreviousPartyID          PartyID
+	PreviousCreatedAt        *time.Time
+	PreviousUpdatedAt        *time.Time
+	PreviousMarketID         MarketID
+	PreviousCommitmentAmount *decimal.Decimal
+	PreviousFee              *decimal.Decimal
+	PreviousSells            []LiquidityOrderReference
+	PreviousBuys             []LiquidityOrderReference
+	PreviousVersion          *int64
+	PreviousStatus           *LiquidityProvisionStatus
+	PreviousReference        *string
+	PreviousTxHash           TxHash
+	PreviousVegaTime         *time.Time
+}
+
 func LiquidityProvisionFromProto(lpProto *vega.LiquidityProvision, txHash TxHash, vegaTime time.Time) (LiquidityProvision, error) {
 	lpID := LiquidityProvisionID(lpProto.Id)
 	partyID := PartyID(lpProto.PartyId)
@@ -147,6 +178,85 @@ func (lp LiquidityProvision) ToProto() *vega.LiquidityProvision {
 	}
 }
 
+func (lp CurrentAndPreviousLiquidityProvisions) ToProto() *v2.LiquidityProvision {
+	sells := make([]*vega.LiquidityOrderReference, 0)
+	buys := make([]*vega.LiquidityOrderReference, 0)
+
+	for _, sell := range lp.Sells {
+		sells = append(sells, sell.LiquidityOrderReference)
+	}
+	for _, buy := range lp.Buys {
+		buys = append(buys, buy.LiquidityOrderReference)
+	}
+
+	if lp.Status == LiquidityProvisionStatusPending && (lp.PreviousStatus != nil && *lp.PreviousStatus == LiquidityProvisionStatusActive) {
+		// check to see if the previous state is active, if so, then that is still the active state,
+		// and the current state is pending
+		return lp.currentWithPendingLP(sells, buys)
+	}
+
+	return &v2.LiquidityProvision{
+		Id:               lp.ID.String(),
+		PartyId:          lp.PartyID.String(),
+		CreatedAt:        lp.CreatedAt.UnixNano(),
+		UpdatedAt:        lp.UpdatedAt.UnixNano(),
+		MarketId:         lp.MarketID.String(),
+		CommitmentAmount: lp.CommitmentAmount.String(),
+		Fee:              lp.Fee.String(),
+		Sells:            sells,
+		Buys:             buys,
+		Version:          uint64(lp.Version),
+		Status:           vega.LiquidityProvision_Status(lp.Status),
+		Reference:        lp.Reference,
+	}
+}
+
+func (lp CurrentAndPreviousLiquidityProvisions) currentWithPendingLP(sells, buys []*vega.LiquidityOrderReference) *v2.LiquidityProvision {
+	previousSells := make([]*vega.LiquidityOrderReference, 0)
+	previousBuys := make([]*vega.LiquidityOrderReference, 0)
+
+	if lp.PreviousSells != nil {
+		for _, sell := range lp.PreviousSells {
+			previousSells = append(previousSells, sell.LiquidityOrderReference)
+		}
+	}
+	if lp.PreviousBuys != nil {
+		for _, buy := range lp.PreviousBuys {
+			previousBuys = append(previousBuys, buy.LiquidityOrderReference)
+		}
+	}
+	pending := vega.LiquidityProvision{
+		Id:               lp.ID.String(),
+		PartyId:          lp.PartyID.String(),
+		CreatedAt:        lp.CreatedAt.UnixNano(),
+		UpdatedAt:        lp.UpdatedAt.UnixNano(),
+		MarketId:         lp.MarketID.String(),
+		CommitmentAmount: lp.CommitmentAmount.String(),
+		Fee:              lp.Fee.String(),
+		Sells:            sells,
+		Buys:             buys,
+		Version:          uint64(lp.Version),
+		Status:           vega.LiquidityProvision_Status(lp.Status),
+		Reference:        lp.Reference,
+	}
+
+	return &v2.LiquidityProvision{
+		Id:               (lp.PreviousID).String(),
+		PartyId:          (lp.PreviousPartyID).String(),
+		CreatedAt:        (lp.PreviousCreatedAt).UnixNano(),
+		UpdatedAt:        (lp.PreviousUpdatedAt).UnixNano(),
+		MarketId:         (lp.PreviousMarketID).String(),
+		CommitmentAmount: (lp.PreviousCommitmentAmount).String(),
+		Fee:              (lp.PreviousFee).String(),
+		Sells:            previousSells,
+		Buys:             previousBuys,
+		Version:          uint64(*lp.PreviousVersion),
+		Status:           vega.LiquidityProvision_Status(*lp.PreviousStatus),
+		Reference:        *lp.PreviousReference,
+		Pending:          &pending,
+	}
+}
+
 type LiquidityProvisionKey struct {
 	ID       LiquidityProvisionID
 	VegaTime time.Time
@@ -178,7 +288,15 @@ func (lp LiquidityProvision) Cursor() *Cursor {
 	return NewCursor(lc.String())
 }
 
-func (lp LiquidityProvision) ToProtoEdge(_ ...any) (*v2.LiquidityProvisionsEdge, error) {
+func (lp CurrentAndPreviousLiquidityProvisions) Cursor() *Cursor {
+	lc := LiquidityProvisionCursor{
+		VegaTime: lp.VegaTime,
+		ID:       lp.ID,
+	}
+	return NewCursor(lc.String())
+}
+
+func (lp CurrentAndPreviousLiquidityProvisions) ToProtoEdge(_ ...any) (*v2.LiquidityProvisionsEdge, error) {
 	return &v2.LiquidityProvisionsEdge{
 		Node:   lp.ToProto(),
 		Cursor: lp.Cursor().Encode(),

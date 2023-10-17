@@ -132,7 +132,7 @@ func (lp *LiquidityProvision) Get(ctx context.Context, partyID entities.PartyID,
 	reference string,
 	live bool,
 	pagination entities.Pagination,
-) ([]entities.LiquidityProvision, entities.PageInfo, error) {
+) ([]entities.CurrentAndPreviousLiquidityProvisions, entities.PageInfo, error) {
 	if len(partyID) == 0 && len(marketID) == 0 {
 		return nil, entities.PageInfo{}, errors.New("market or party filters are required")
 	}
@@ -335,7 +335,7 @@ where liquidity_provider_sla != 'null' and liquidity_provider_sla is not null
 
 func (lp *LiquidityProvision) getWithCursorPagination(ctx context.Context, partyID entities.PartyID, marketID entities.MarketID,
 	reference string, live bool, pagination entities.CursorPagination,
-) ([]entities.LiquidityProvision, entities.PageInfo, error) {
+) ([]entities.CurrentAndPreviousLiquidityProvisions, entities.PageInfo, error) {
 	query, bindVars := lp.buildLiquidityProvisionsSelect(partyID, marketID, reference, live)
 
 	var err error
@@ -345,7 +345,7 @@ func (lp *LiquidityProvision) getWithCursorPagination(ctx context.Context, party
 		return nil, pageInfo, err
 	}
 
-	var liquidityProvisions []entities.LiquidityProvision
+	var liquidityProvisions []entities.CurrentAndPreviousLiquidityProvisions
 
 	if err = pgxscan.Select(ctx, lp.Connection, &liquidityProvisions, query, bindVars...); err != nil {
 		return nil, entities.PageInfo{}, err
@@ -359,14 +359,27 @@ func (lp *LiquidityProvision) buildLiquidityProvisionsSelect(partyID entities.Pa
 	reference string, live bool,
 ) (string, []interface{}) {
 	var bindVars []interface{}
-	selectSQL := ""
+	sourceTable := "liquidity_provisions"
 	if live {
-		selectSQL = fmt.Sprintf(`select %s
-from live_liquidity_provisions`, sqlOracleLiquidityProvisionColumns)
-	} else {
-		selectSQL = fmt.Sprintf(`select %s
-from liquidity_provisions`, sqlOracleLiquidityProvisionColumns)
+		sourceTable = "live_liquidity_provisions"
 	}
+
+	selectSQL := fmt.Sprintf(`with lps as (
+	select llp.id, llp.party_id, llp.created_at, llp.updated_at, llp.market_id,
+		   llp.commitment_amount, llp.fee, llp.sells, llp.buys, llp.version,
+		   llp.status, llp.reference, llp.tx_hash, llp.vega_time,
+		   lp.id previous_id, lp.party_id previous_party_id, lp.created_at previous_created_at,
+		   lp.updated_at previous_updated_at, lp.market_id previous_market_id,
+		   lp.commitment_amount previous_commitment_amount, lp.fee previous_fee,
+		   lp.sells previous_sells, lp.buys previous_buys, lp.version previous_version,
+		   lp.status previous_status, lp.reference previous_reference, lp.tx_hash previous_tx_hash,
+		   lp.vega_time previous_vega_time
+	from %s llp
+	left join liquidity_provisions lp on llp.id = lp.id and llp.version - 1 = lp.version and lp.status = 'STATUS_ACTIVE'
+)
+	select *
+	from lps
+	`, sourceTable)
 
 	where := ""
 

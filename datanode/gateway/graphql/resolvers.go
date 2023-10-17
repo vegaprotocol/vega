@@ -577,6 +577,14 @@ func (r *VegaResolverRoot) PaidLiquidityFees() PaidLiquidityFeesResolver {
 	return (*paidLiquidityFeesResolver)(r)
 }
 
+func (r *VegaResolverRoot) Entities() EntitiesResolver {
+	return (*entitiesResolver)(r)
+}
+
+func (r *VegaResolverRoot) PendingLiquidityProvision() PendingLiquidityProvisionResolver {
+	return (*pendingLiquidityProvisionResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -2356,7 +2364,7 @@ func (r *myOrderResolver) IcebergOrder(_ context.Context, order *vegapb.Order) I
 	return (*icebergOrderResolver)(r)
 }
 
-func (r *myOrderResolver) LiquidityProvision(ctx context.Context, obj *vegapb.Order) (*vegapb.LiquidityProvision, error) {
+func (r *myOrderResolver) LiquidityProvision(ctx context.Context, obj *vegapb.Order) (*v2.LiquidityProvision, error) {
 	if obj == nil || len(obj.LiquidityProvisionId) <= 0 {
 		return nil, nil
 	}
