@@ -42,7 +42,7 @@ type LevelDbBackedIndex struct {
 func NewIndex(dataDir string, log *logging.Logger) (*LevelDbBackedIndex, error) {
 	db, err := leveldb.OpenFile(filepath.Join(dataDir, "index.db"), nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open level db file:%w", err)
+		return nil, fmt.Errorf("failed to open level db file: %w", err)
 	}
 
 	return &LevelDbBackedIndex{
@@ -58,14 +58,14 @@ func (l LevelDbBackedIndex) Get(height int64) (segment.Full, error) {
 	}
 
 	if err != nil {
-		return segment.Full{}, fmt.Errorf("failed to get index entry:%w", err)
+		return segment.Full{}, fmt.Errorf("failed to get index entry: %w", err)
 	}
 
 	var indexEntry segment.Full
 	err = json.Unmarshal(value, &indexEntry)
 
 	if err != nil {
-		return segment.Full{}, fmt.Errorf("failed to unmarshal value:%w", err)
+		return segment.Full{}, fmt.Errorf("failed to unmarshal value: %w", err)
 	}
 
 	return indexEntry, nil
@@ -80,12 +80,12 @@ func heightToKey(height int64) []byte {
 func (l LevelDbBackedIndex) Add(indexEntry segment.Full) error {
 	bytes, err := json.Marshal(indexEntry)
 	if err != nil {
-		return fmt.Errorf("failed to marshal index entry:%w", err)
+		return fmt.Errorf("failed to marshal index entry: %w", err)
 	}
 
 	err = l.db.Put(heightToKey(indexEntry.HeightTo), bytes, &opt.WriteOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to put index entry:%w", err)
+		return fmt.Errorf("failed to put index entry: %w", err)
 	}
 
 	return nil
@@ -93,7 +93,7 @@ func (l LevelDbBackedIndex) Add(indexEntry segment.Full) error {
 
 func (l LevelDbBackedIndex) Remove(indexEntry segment.Full) error {
 	if err := l.db.Delete(heightToKey(indexEntry.HeightTo), &opt.WriteOptions{}); err != nil {
-		return fmt.Errorf("failed to delete key:%w", err)
+		return fmt.Errorf("failed to delete key: %w", err)
 	}
 
 	return nil
@@ -146,7 +146,7 @@ func (l LevelDbBackedIndex) listAllEntries() (segment.Segments[segment.Full], er
 		var indexEntry segment.Full
 		err := json.Unmarshal(bytes, &indexEntry)
 		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal index entry:%w", err)
+			return nil, fmt.Errorf("failed to unmarshal index entry: %w", err)
 		}
 
 		segments = append(segments, indexEntry)
@@ -158,7 +158,7 @@ func (l LevelDbBackedIndex) listAllEntries() (segment.Segments[segment.Full], er
 func (l LevelDbBackedIndex) GetHighestBlockHeightEntry() (segment.Full, error) {
 	entries, err := l.ListAllEntriesOldestFirst()
 	if err != nil {
-		return segment.Full{}, fmt.Errorf("failed to list all entries:%w", err)
+		return segment.Full{}, fmt.Errorf("failed to list all entries: %w", err)
 	}
 
 	if len(entries) == 0 {

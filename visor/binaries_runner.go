@@ -176,16 +176,22 @@ func (r *BinariesRunner) prepareVegaArgs(runConf *config.RunConfig, isRestart bo
 }
 
 func (r *BinariesRunner) Run(ctx context.Context, runConf *config.RunConfig, isRestart bool) chan error {
-	r.log.Debug("Starting Vega binary")
-
+	r.log.Debug("Preparing Vega args")
+	errChan := make(chan error)
 	eg, ctx := errgroup.WithContext(ctx)
 
-	eg.Go(func() error {
-		args, err := r.prepareVegaArgs(runConf, isRestart)
-		if err != nil {
-			return fmt.Errorf("failed to prepare args for Vega binary: %w", err)
-		}
+	// this may call a datanode CLI so to avoid a race we do this sync before we start
+	// the data node process
+	args, err := r.prepareVegaArgs(runConf, isRestart)
+	if err != nil {
+		go func() {
+			errChan <- fmt.Errorf("failed to prepare args for Vega binary: %w", err)
+		}()
+		return errChan
+	}
 
+	eg.Go(func() error {
+		r.log.Debug("Starting Vega binary")
 		return r.runBinary(ctx, runConf.Vega.Binary.Path, args)
 	})
 
@@ -195,8 +201,6 @@ func (r *BinariesRunner) Run(ctx context.Context, runConf *config.RunConfig, isR
 			return r.runBinary(ctx, runConf.DataNode.Binary.Path, runConf.DataNode.Binary.Args)
 		})
 	}
-
-	errChan := make(chan error)
 
 	go func() {
 		err := eg.Wait()

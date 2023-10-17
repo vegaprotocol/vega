@@ -46,7 +46,7 @@ func latestDataNodeHistorySegment(binary string, binaryArgs Args) (*latestSegmen
 		args = append(args, dataNodeArg)
 	}
 
-	args = append(args, []string{"network-history", "latest-history-segment"}...)
+	args = append(args, []string{"network-history", "latest-history-segment", "--output=json"}...)
 	args = append(args, binaryArgs.GetFlagWithArg(homeFlagName)...)
 
 	var output latestSegmentCommanndOutput
