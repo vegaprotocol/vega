@@ -43,7 +43,7 @@ func (r *feesStatsResolver) Epoch(_ context.Context, obj *eventspb.FeesStats) (i
 	return int(obj.EpochSeq), nil
 }
 
-func (r *feesStatsResolver) TotalMakeFeesReceived(_ context.Context, obj *eventspb.FeesStats) ([]*eventspb.PartyAmount, error) {
+func (r *feesStatsResolver) TotalMakerFeesReceived(_ context.Context, obj *eventspb.FeesStats) ([]*eventspb.PartyAmount, error) {
 	return obj.TotalMakerFeesReceived, nil
 }
 

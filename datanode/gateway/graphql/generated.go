@@ -714,7 +714,7 @@ type ComplexityRoot struct {
 		MarketID                 func(childComplexity int) int
 		RefereesDiscountApplied  func(childComplexity int) int
 		ReferrerRewardsGenerated func(childComplexity int) int
-		TotalMakeFeesReceived    func(childComplexity int) int
+		TotalMakerFeesReceived   func(childComplexity int) int
 		TotalRewardsPaid         func(childComplexity int) int
 		VolumeDiscountApplied    func(childComplexity int) int
 	}
@@ -2699,8 +2699,6 @@ type FeesStatsResolver interface {
 	MarketID(ctx context.Context, obj *v1.FeesStats) (string, error)
 	AssetID(ctx context.Context, obj *v1.FeesStats) (string, error)
 	Epoch(ctx context.Context, obj *v1.FeesStats) (int, error)
-
-	TotalMakeFeesReceived(ctx context.Context, obj *v1.FeesStats) ([]*v1.PartyAmount, error)
 }
 type FundingPaymentResolver interface {
 	FundingPeriodSeq(ctx context.Context, obj *v2.FundingPayment) (int, error)
@@ -5521,12 +5519,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FeesStats.ReferrerRewardsGenerated(childComplexity), true
 
-	case "FeesStats.totalMakeFeesReceived":
-		if e.complexity.FeesStats.TotalMakeFeesReceived == nil {
+	case "FeesStats.totalMakerFeesReceived":
+		if e.complexity.FeesStats.TotalMakerFeesReceived == nil {
 			break
 		}
 
-		return e.complexity.FeesStats.TotalMakeFeesReceived(childComplexity), true
+		return e.complexity.FeesStats.TotalMakerFeesReceived(childComplexity), true
 
 	case "FeesStats.totalRewardsPaid":
 		if e.complexity.FeesStats.TotalRewardsPaid == nil {
@@ -31525,8 +31523,8 @@ func (ec *executionContext) fieldContext_FeesStats_volumeDiscountApplied(ctx con
 	return fc, nil
 }
 
-func (ec *executionContext) _FeesStats_totalMakeFeesReceived(ctx context.Context, field graphql.CollectedField, obj *v1.FeesStats) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_FeesStats_totalMakeFeesReceived(ctx, field)
+func (ec *executionContext) _FeesStats_totalMakerFeesReceived(ctx context.Context, field graphql.CollectedField, obj *v1.FeesStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FeesStats_totalMakerFeesReceived(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -31539,7 +31537,7 @@ func (ec *executionContext) _FeesStats_totalMakeFeesReceived(ctx context.Context
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.FeesStats().TotalMakeFeesReceived(rctx, obj)
+		return obj.TotalMakerFeesReceived, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -31556,12 +31554,12 @@ func (ec *executionContext) _FeesStats_totalMakeFeesReceived(ctx context.Context
 	return ec.marshalNPartyAmount2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐPartyAmountᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_FeesStats_totalMakeFeesReceived(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_FeesStats_totalMakerFeesReceived(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "FeesStats",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "partyId":
@@ -67220,8 +67218,8 @@ func (ec *executionContext) fieldContext_Query_feesStats(ctx context.Context, fi
 				return ec.fieldContext_FeesStats_refereesDiscountApplied(ctx, field)
 			case "volumeDiscountApplied":
 				return ec.fieldContext_FeesStats_volumeDiscountApplied(ctx, field)
-			case "totalMakeFeesReceived":
-				return ec.fieldContext_FeesStats_totalMakeFeesReceived(ctx, field)
+			case "totalMakerFeesReceived":
+				return ec.fieldContext_FeesStats_totalMakerFeesReceived(ctx, field)
 			case "makerFeesGenerated":
 				return ec.fieldContext_FeesStats_makerFeesGenerated(ctx, field)
 			}
@@ -94809,26 +94807,13 @@ func (ec *executionContext) _FeesStats(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "totalMakeFeesReceived":
-			field := field
+		case "totalMakerFeesReceived":
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._FeesStats_totalMakeFeesReceived(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._FeesStats_totalMakerFeesReceived(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "makerFeesGenerated":
 
 			out.Values[i] = ec._FeesStats_makerFeesGenerated(ctx, field, obj)
