@@ -24,20 +24,19 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/config"
-	"github.com/stretchr/testify/assert"
-	tmTypes "github.com/tendermint/tendermint/abci/types"
-
 	"code.vegaprotocol.io/vega/blockexplorer/entities"
 	"code.vegaprotocol.io/vega/blockexplorer/store"
-	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
-	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
-	"github.com/stretchr/testify/require"
-
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
+	"code.vegaprotocol.io/vega/libs/config"
 	"code.vegaprotocol.io/vega/logging"
+	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
+
 	"github.com/cenkalti/backoff"
 	"github.com/jackc/pgx/v4"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	tmTypes "github.com/tendermint/tendermint/abci/types"
 )
 
 var (
@@ -167,11 +166,12 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 	txr, err := (&tmTypes.TxResult{}).Marshal()
 	require.NoError(t, err)
 
+	now := time.Now()
 	txResults := []txResult{
 		{
 			height:    0,
 			index:     1,
-			createdAt: time.Date(2023, 7, 10, 9, 0, 0, 100, time.UTC),
+			createdAt: now,
 			txHash:    "deadbeef01",
 			txResult:  txr,
 			submitter: "TEST",
@@ -180,7 +180,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 		{
 			height:    0,
 			index:     2,
-			createdAt: time.Date(2023, 7, 10, 9, 0, 0, 200, time.UTC),
+			createdAt: now.Add(100),
 			txHash:    "deadbeef02",
 			txResult:  txr,
 			submitter: "TEST",
@@ -189,7 +189,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 		{
 			height:    1,
 			index:     1,
-			createdAt: time.Date(2023, 7, 10, 9, 0, 1, 100, time.UTC),
+			createdAt: now.Add(1 * time.Second),
 			txHash:    "deadbeef03",
 			txResult:  txr,
 			submitter: "TEST",
@@ -198,7 +198,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 		{
 			height:    2,
 			index:     1,
-			createdAt: time.Date(2023, 7, 10, 9, 0, 2, 100, time.UTC),
+			createdAt: now.Add(2 * time.Second),
 			txHash:    "deadbeef04",
 			txResult:  txr,
 			submitter: "TEST",
@@ -207,7 +207,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 		{
 			height:    2,
 			index:     2,
-			createdAt: time.Date(2023, 7, 10, 9, 0, 2, 150, time.UTC),
+			createdAt: now.Add(2*time.Second + 50),
 			txHash:    "deadbeef05",
 			txResult:  txr,
 			submitter: "TEST",
@@ -216,7 +216,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 		{
 			height:    2,
 			index:     4,
-			createdAt: time.Date(2023, 7, 10, 9, 0, 2, 800, time.UTC),
+			createdAt: now.Add(2*time.Second + 700),
 			txHash:    "deadbeef06",
 			txResult:  txr,
 			submitter: "TEST",
@@ -225,7 +225,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 		{
 			height:    3,
 			index:     1,
-			createdAt: time.Date(2023, 7, 10, 9, 0, 3, 100, time.UTC),
+			createdAt: now.Add(3 * time.Second),
 			txHash:    "deadbeef07",
 			txResult:  txr,
 			submitter: "TEST",
@@ -234,7 +234,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 		{
 			height:    4,
 			index:     1,
-			createdAt: time.Date(2023, 7, 10, 9, 0, 4, 100, time.UTC),
+			createdAt: now.Add(4 * time.Second),
 			txHash:    "deadbeef08",
 			txResult:  txr,
 			submitter: "TEST",
@@ -243,7 +243,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 		{
 			height:    5,
 			index:     1,
-			createdAt: time.Date(2023, 7, 10, 9, 0, 5, 100, time.UTC),
+			createdAt: now.Add(5 * time.Second),
 			txHash:    "deadbeef09",
 			txResult:  txr,
 			submitter: "TEST",
@@ -252,7 +252,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 		{
 			height:    6,
 			index:     1,
-			createdAt: time.Date(2023, 7, 10, 9, 0, 6, 100, time.UTC),
+			createdAt: now.Add(6 * time.Second),
 			txHash:    "deadbeef10",
 			txResult:  txr,
 			submitter: "TEST",
