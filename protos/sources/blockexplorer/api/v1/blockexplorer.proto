@@ -111,4 +111,8 @@ message Transaction {
   optional string error = 10;
   // Timestamp when the transaction happened, using RFC3399 format.
   string created_at = 11;
+  // Version format of the transaction
+  vega.commands.v1.TxVersion version = 12;
+  // Proof of Work parameters of the transaction
+  vega.commands.v1.ProofOfWork pow = 13;
 }

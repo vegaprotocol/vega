@@ -76,6 +76,8 @@ func (t *TxResultRow) ToProto() (*pb.Transaction, error) {
 		Cursor:    cursor.String(),
 		Command:   inputData,
 		Signature: cTx.Signature,
+		Pow:       cTx.Pow,
+		Version:   cTx.Version,
 		CreatedAt: t.CreatedAt.Format(time.RFC3339),
 	}, nil
 }
