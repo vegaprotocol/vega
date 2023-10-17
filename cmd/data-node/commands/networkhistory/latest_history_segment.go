@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	coreConfig "code.vegaprotocol.io/vega/core/config"
 	vgjson "code.vegaprotocol.io/vega/libs/json"
@@ -89,15 +90,15 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 
 		latestSegment = response.Segments[0]
 	} else {
-		networkHistoryStore, err := store.New(ctx, log, cmd.Config.ChainID, cmd.Config.NetworkHistory.Store,
-			vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome), cmd.Config.MaxMemoryPercent)
+		// we don't need to fire up a whole IPFS node, lets just dip our fingers into the DB
+		idx, err := store.NewIndex(filepath.Join(vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome), "store", "index"), log)
 		if err != nil {
-			handleErr(log, cmd.Output.IsJSON(), "failed to create network history store", err)
+			handleErr(log, cmd.Output.IsJSON(), "failed to create new index", err)
 			os.Exit(1)
 		}
-		defer networkHistoryStore.Stop()
+		defer idx.Close()
 
-		segments, err := networkHistoryStore.ListAllIndexEntriesOldestFirst()
+		segments, err := idx.ListAllEntriesOldestFirst()
 		if err != nil {
 			handleErr(log, cmd.Output.IsJSON(), "failed to list all network history segments", err)
 			os.Exit(1)
