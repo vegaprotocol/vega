@@ -326,6 +326,7 @@
 - [9797](https://github.com/vegaprotocol/vega/issues/9797) - Default pagination limits are not always correctly set.
 - [9813](https://github.com/vegaprotocol/vega/issues/9813) - Add validation for team scope vs individual scope
 - [8570](https://github.com/vegaprotocol/vega/issues/8570) - Make sure the filtering by `cmd_type` on block explorer doesn't result with a bad query planning.
+- [9801](https://github.com/vegaprotocol/vega/issues/9801) - Set right numbers on volume discount in fees stats
 
 ## 0.72.1
 
