@@ -163,6 +163,7 @@
 - [9785](https://github.com/vegaprotocol/vega/issues/9785) - Support transfers to network treasury.
 - [9743](https://github.com/vegaprotocol/system-tests/issues/9743) - Expose maker fees in fees stats API.
 - [9750](https://github.com/vegaprotocol/vega/issues/9750) - Add paid liquidity fees statistics to API.
+- [8919](https://github.com/vegaprotocol/vega/issues/8919) - Add `CreatedAt` field to transaction type in the block explorer API.
 
 ### 🐛 Fixes
 
