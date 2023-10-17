@@ -415,7 +415,7 @@ type Transaction struct {
 	// Optional error happening when processing / checking the transaction
 	// This should be set if error code is not 0
 	Error *string `protobuf:"bytes,10,opt,name=error,proto3,oneof" json:"error,omitempty"`
-	// Timestamp when the transaction happened, using RCF3399 format.
+	// Timestamp when the transaction happened, using RFC3399 format.
 	CreatedAt string `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 }
 

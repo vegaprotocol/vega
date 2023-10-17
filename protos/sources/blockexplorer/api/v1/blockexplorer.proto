@@ -109,6 +109,6 @@ message Transaction {
   // Optional error happening when processing / checking the transaction
   // This should be set if error code is not 0
   optional string error = 10;
-  // Timestamp when the transaction happened, using RCF3399 format.
+  // Timestamp when the transaction happened, using RFC3399 format.
   string created_at = 11;
 }
