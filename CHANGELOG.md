@@ -14,6 +14,7 @@
 - [9719](https://github.com/vegaprotocol/vega/issues/9719) - Remove unnecessary fields from referral and volume discount program proposals.
 - [9733](https://github.com/vegaprotocol/vega/issues/9733) - Making `set_id` optional in `referral set stats` endpoint
 - [9743](https://github.com/vegaprotocol/vega/issues/9743) - Rename `ReferralFeeStats` endpoints to `FeesStats`, and `FeeStats` event to `FeesStats`.
+- [9408](https://github.com/vegaprotocol/vega/issues/9408) - Enforce pagination range.
 
 ### 🗑️ Deprecation
 
@@ -160,6 +161,8 @@
 - [2985](https://github.com/vegaprotocol/system-tests/issues/2985) - Coverage for insurance pool transfers, fix deadlock when terminating pending market through governance.
 - [9770](https://github.com/vegaprotocol/vega/issues/9770) - Fix `PnL` flickering bug.
 - [9785](https://github.com/vegaprotocol/vega/issues/9785) - Support transfers to network treasury.
+- [9743](https://github.com/vegaprotocol/system-tests/issues/9743) - Expose maker fees in fees stats API.
+- [9750](https://github.com/vegaprotocol/vega/issues/9750) - Add paid liquidity fees statistics to API.
 
 ### 🐛 Fixes
 
@@ -171,6 +174,7 @@
 - [8729](https://github.com/vegaprotocol/vega/issues/8729) - Stop order direction not set in datanode
 - [8545](https://github.com/vegaprotocol/vega/issues/8545) - Block Explorer pagination does not order correctly.
 - [8748](https://github.com/vegaprotocol/vega/issues/8748) - `ListSuccessorMarkets` does not return results.
+- [9784](https://github.com/vegaprotocol/vega/issues/9784) - Referral timestamp consistency 
 - [8749](https://github.com/vegaprotocol/vega/issues/8749) - Ensure stop order expiry is in the future
 - [9337](https://github.com/vegaprotocol/vega/issues/9337) - Non deterministic ordering of vesting ledger events
 - [8773](https://github.com/vegaprotocol/vega/issues/8773) - Fix panic with stop orders
@@ -298,6 +302,7 @@
 - [9658](https://github.com/vegaprotocol/vega/issues/9658) - Fix `updateVolumeDiscountProgram` GraphQL resolver.
 - [9672](https://github.com/vegaprotocol/vega/issues/9672) - Fix margin being non-zero on `PERPS`, add tests to ensure distressed parties are handled correctly
 - [9280](https://github.com/vegaprotocol/vega/issues/9280) - Get block height directly from `blocks` table.
+- [9787](https://github.com/vegaprotocol/vega/issues/9787) - Do not sort market input so that tracking of dispatch strategies are not disturbed.
 - [9675](https://github.com/vegaprotocol/vega/issues/9675) - Fix snapshot issue with not applying `providersCalculationStep` at epoch start.
 - [9693](https://github.com/vegaprotocol/vega/issues/9693) - Add missing validation for general account public key in governance transfer
 - [9691](https://github.com/vegaprotocol/vega/issues/9691) - Refactor referral engine snapshot
@@ -315,6 +320,8 @@
 - [9751](https://github.com/vegaprotocol/vega/issues/9751) - Make sure that LP fee party accounts exists.
 - [9762](https://github.com/vegaprotocol/vega/issues/9762) - Referral fees API not filtering by party correctly.
 - [9775](https://github.com/vegaprotocol/vega/issues/9775) - Do not pay discount if set is not eligible
+- [9788](https://github.com/vegaprotocol/vega/issues/9788) - Fix transfer account validation.
+- [9797](https://github.com/vegaprotocol/vega/issues/9797) - Default pagination limits are not always correctly set.
 
 ## 0.72.1
 
@@ -575,6 +582,7 @@
 - [8157](https://github.com/vegaprotocol/vega/issues/8157) - Handle kill/interrupt signals in datanode, and clean up properly.
 - [7914](https://github.com/vegaprotocol/vega/issues/7914) - Offer node signatures after snapshot restore
 - [8187](https://github.com/vegaprotocol/vega/issues/8187) - Expose Live Only filter to the `GraphQL` Orders filter.
+- [9793](https://github.com/vegaprotocol/vega/issues/9793) - Map network owner correctly in creating account from transfer.
 
 ## 0.70.0
 

@@ -25,8 +25,8 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | 0.5         | 0.5                          | 1                             | 1.0                    |
     And the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
-      | lqm-params         | 1.0              | 20s         | 10             |  
-    
+      | lqm-params         | 1.0              | 20s         | 10             |
+
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
       | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA        |
@@ -192,7 +192,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
     #AC: 0044-LIME-030, lp increases commitment and they do not have sufficient collateral in the settlement asset
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee  | lp type   | error                             |
-      | lp_1 | lp1   | ETH/MAR22 | 600000            | 0.02 | amendment | commitment submission not allowed |
+      | lp_1 | lp1   | ETH/MAR22 | 600000            | 0.02 | amendment | commitment submission rejected, not enough stake |
     Then the network moves ahead "1" blocks
     And the supplied stake should be "60000" for the market "ETH/MAR22"
 
@@ -201,6 +201,3 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | id   | party | market id | commitment amount | fee  | lp type   |
       | lp_1 | lp1   | ETH/MAR22 | 60000             | 0.02 | amendment |
     And the supplied stake should be "70000" for the market "ETH/MAR22"
-
-
-

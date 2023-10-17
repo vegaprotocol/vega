@@ -329,6 +329,9 @@ var (
 	// Volume discount Programs.
 	ErrGetCurrentVolumeDiscountProgram = errors.New("failed to get current volume discount program")
 	ErrGetVolumeDiscountStats          = errors.New("failed to get volume discount stats")
+
+	// Paid liquidity fees.
+	ErrListPaidLiquidityFees = errors.New("failed to list paid liquidity fees")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

@@ -654,6 +654,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.PartyAmount
   ReferrerRewardsGenerated:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.ReferrerRewardsGenerated
+  MakerFeesGenerated:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.MakerFeesGenerated
   Team:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.Team
   TeamEdge:
@@ -688,3 +690,9 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.VolumeDiscountStatsEdge
   VolumeDiscountStats:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.VolumeDiscountStats
+  PaidLiquidityFees:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.PaidLiquidityFeesStats
+  PaidLiquidityFeesConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PaidLiquidityFeesConnection
+  PaidLiquidityFeesEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PaidLiquidityFeesEdge

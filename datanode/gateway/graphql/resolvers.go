@@ -573,6 +573,10 @@ func (r *VegaResolverRoot) UpdateReferralProgram() UpdateReferralProgramResolver
 	return (*updateReferralProgramResolver)(r)
 }
 
+func (r *VegaResolverRoot) PaidLiquidityFees() PaidLiquidityFeesResolver {
+	return (*paidLiquidityFeesResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -1738,7 +1742,7 @@ func (r *myQueryResolver) TeamRefereeHistory(ctx context.Context, referee string
 }
 
 func (r *myQueryResolver) FeesStats(ctx context.Context, marketID *string, assetID *string, epoch *int,
-	referrer, referee *string,
+	partyID *string,
 ) (*v1.FeesStats, error) {
 	var epochSeq *uint64
 
@@ -1750,8 +1754,7 @@ func (r *myQueryResolver) FeesStats(ctx context.Context, marketID *string, asset
 		MarketId: marketID,
 		AssetId:  assetID,
 		EpochSeq: epochSeq,
-		Referrer: referrer,
-		Referee:  referee,
+		PartyId:  partyID,
 	}
 
 	resp, err := r.tradingDataClientV2.GetFeesStats(ctx, req)
@@ -1760,6 +1763,34 @@ func (r *myQueryResolver) FeesStats(ctx context.Context, marketID *string, asset
 	}
 
 	return resp.FeesStats, nil
+}
+
+func (r *myQueryResolver) PaidLiquidityFees(
+	ctx context.Context,
+	marketID *string,
+	assetID *string,
+	epoch *int,
+	partyIDs []string,
+) (*v2.PaidLiquidityFeesConnection, error) {
+	var epochSeq *uint64
+
+	if epoch != nil {
+		epochSeq = ptr.From(uint64(*epoch))
+	}
+
+	req := &v2.ListPaidLiquidityFeesRequest{
+		MarketId: marketID,
+		AssetId:  assetID,
+		EpochSeq: epochSeq,
+		PartyIds: partyIDs,
+	}
+
+	resp, err := r.tradingDataClientV2.ListPaidLiquidityFees(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.PaidLiquidityFees, nil
 }
 
 // END: Root Resolver

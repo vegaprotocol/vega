@@ -306,6 +306,12 @@ func (m *MarketLiquidity) OnEpochStart(
 
 func (m *MarketLiquidity) OnEpochEnd(ctx context.Context, t time.Time) {
 	m.calculateAndDistribute(ctx, t)
+
+	// report liquidity fees allocation stats
+	feeStats := m.liquidityEngine.PaidLiquidityFeesStats()
+	if !feeStats.TotalFeesPaid.IsZero() {
+		m.broker.Send(events.NewPaidLiquidityFeesStatsEvent(ctx, feeStats.ToProto(m.marketID, m.asset)))
+	}
 }
 
 func (m *MarketLiquidity) OnMarketClosed(ctx context.Context, t time.Time) {
@@ -396,7 +402,7 @@ func (m *MarketLiquidity) updateSharesWithLiquidityScores(shares, scores map[str
 
 func (m *MarketLiquidity) canSubmitCommitment(marketState types.MarketState) bool {
 	switch marketState {
-	case types.MarketStateActive, types.MarketStatePending, types.MarketStateSuspended, types.MarketStateProposed:
+	case types.MarketStateActive, types.MarketStatePending, types.MarketStateSuspended, types.MarketStateProposed, types.MarketStateSuspendedViaGovernance:
 		return true
 	}
 
@@ -679,7 +685,7 @@ func (m *MarketLiquidity) ensureAndTransferCollateral(
 	// first check if there's enough funds in the gen + bond
 	// account to cover the new commitment
 	if !m.collateral.CanCoverBond(m.marketID, party, m.asset, commitmentAmount.Clone()) {
-		return nil, ErrCommitmentSubmissionNotAllowed
+		return nil, ErrNotEnoughStake
 	}
 
 	// build our transfer to be sent to collateral

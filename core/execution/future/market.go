@@ -49,6 +49,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+
 	"golang.org/x/exp/maps"
 )
 
@@ -362,12 +363,10 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 		if !m.finalFeesDistributed {
 			m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow())
 		}
-		FeesStats := m.fee.GetFeesStatsOnEpochEnd()
-		FeesStats.Market = m.GetID()
-		FeesStats.EpochSeq = epoch.Seq
-		m.broker.Send(
-			events.NewFeesStatsEvent(ctx, FeesStats),
-		)
+		feesStats := m.fee.GetFeesStatsOnEpochEnd()
+		feesStats.Market = m.GetID()
+		feesStats.EpochSeq = epoch.Seq
+		m.broker.Send(events.NewFeesStatsEvent(ctx, feesStats))
 	}
 
 	m.updateLiquidityFee(ctx)

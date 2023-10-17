@@ -107,15 +107,7 @@ func (e *Engine) recurringTransfer(
 	// in the recurringTransfer map/slice
 	e.recurringTransfers = append(e.recurringTransfers, transfer)
 	e.recurringTransfersMap[transfer.ID] = transfer
-
-	if transfer.DispatchStrategy != nil {
-		hash := e.hashDispatchStrategy(transfer.DispatchStrategy)
-		if _, ok := e.hashToStrategy[hash]; !ok {
-			e.hashToStrategy[hash] = &dispatchStrategyCacheEntry{ds: transfer.DispatchStrategy, refCount: 1}
-		} else {
-			e.hashToStrategy[hash].refCount++
-		}
-	}
+	e.registerDispatchStrategy(transfer.DispatchStrategy)
 
 	return nil
 }

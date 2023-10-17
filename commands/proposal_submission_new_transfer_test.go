@@ -18,6 +18,7 @@ package commands_test
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -50,6 +51,7 @@ func TestCheckProposalSubmissionForNewTransfer(t *testing.T) {
 	t.Run("Submitting a new recurring transfer change with a dispatch strategy and incompatible empty asset for metric", testInvalidAssetForMetric)
 	t.Run("Submitting a new recurring transfer change with a dispatch strategy and mismatching destination type for metric", testInvalidDestForMetric)
 	t.Run("Submitting a new transfer change with destination type general and an invalid vega public key", testInvalidGeneralPubKey)
+	t.Run("Submitting a new transfer change with destination type general and an invalid vega public key", testOnlyGeneralValid)
 }
 
 func testInvalidDestForMetric(t *testing.T) {
@@ -137,7 +139,7 @@ func testInvalidDestForMetric(t *testing.T) {
 							Changes: &types.NewTransferConfiguration{
 								FractionOfBalance: "0.5",
 								Amount:            "1000",
-								SourceType:        types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+								SourceType:        types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
 								DestinationType:   tp,
 								Destination:       "",
 								TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
@@ -178,7 +180,7 @@ func testInvalidAssetForMetric(t *testing.T) {
 						Changes: &types.NewTransferConfiguration{
 							FractionOfBalance: "0.5",
 							Amount:            "1000",
-							SourceType:        types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+							SourceType:        types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
 							DestinationType:   inv,
 							Destination:       "",
 							TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
@@ -205,7 +207,7 @@ func testInvalidAssetForMetric(t *testing.T) {
 					Changes: &types.NewTransferConfiguration{
 						FractionOfBalance: "0.5",
 						Amount:            "1000",
-						SourceType:        types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+						SourceType:        types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
 						DestinationType:   types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES,
 						Destination:       "",
 						TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
@@ -224,7 +226,7 @@ func testInvalidAssetForMetric(t *testing.T) {
 		},
 	})
 
-	require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.asset_for_metric"), commands.ErrShouldBeAValidVegaID)
+	require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy.asset_for_metric"), commands.ErrShouldBeAValidVegaID, err.Error())
 }
 
 func testRecurringWithDispatchInvalidTypes(t *testing.T) {
@@ -240,6 +242,8 @@ func testRecurringWithDispatchInvalidTypes(t *testing.T) {
 	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY)
 	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN)
 	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION)
+	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_INSURANCE)
+	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_GENERAL)
 
 	delete(invalidTypes, types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
 
@@ -251,7 +255,7 @@ func testRecurringWithDispatchInvalidTypes(t *testing.T) {
 						Changes: &types.NewTransferConfiguration{
 							FractionOfBalance: "0.5",
 							Amount:            "1000",
-							SourceType:        types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+							SourceType:        types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
 							DestinationType:   inv,
 							Destination:       "",
 							TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
@@ -267,7 +271,7 @@ func testRecurringWithDispatchInvalidTypes(t *testing.T) {
 				},
 			},
 		})
-		require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.destination_type"), commands.ErrIsNotValid)
+		require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.destination_type"), commands.ErrIsNotValid, inv.String())
 	}
 }
 
@@ -279,7 +283,7 @@ func testRecurringWithDestinationAndDispatch(t *testing.T) {
 					Changes: &types.NewTransferConfiguration{
 						FractionOfBalance: "0.5",
 						Amount:            "1000",
-						SourceType:        types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+						SourceType:        types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
 						DestinationType:   types.AccountType_ACCOUNT_TYPE_GENERAL,
 						Destination:       "zohar",
 						TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
@@ -306,7 +310,7 @@ func testOneOffWithNegativeDeliverOn(t *testing.T) {
 					Changes: &types.NewTransferConfiguration{
 						FractionOfBalance: "0.5",
 						Amount:            "1000",
-						SourceType:        types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+						SourceType:        types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
 						DestinationType:   types.AccountType_ACCOUNT_TYPE_GENERAL,
 						Destination:       "zohar",
 						TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
@@ -324,6 +328,77 @@ func testOneOffWithNegativeDeliverOn(t *testing.T) {
 	require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.oneoff.deliveron"), commands.ErrMustBePositiveOrZero)
 }
 
+func testOnlyGeneralValid(t *testing.T) {
+	partyAccs := []types.AccountType{
+		types.AccountType_ACCOUNT_TYPE_MARGIN,
+		types.AccountType_ACCOUNT_TYPE_BOND,
+	}
+	// start with a valid transfer to the general account
+	prop := &commandspb.ProposalSubmission{
+		Rationale: &types.ProposalRationale{
+			Description: "valid",
+			Title:       "test",
+		},
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:   time.Now().Unix() + 100,
+			EnactmentTimestamp: time.Now().Unix() + 200,
+			Change: &types.ProposalTerms_NewTransfer{
+				NewTransfer: &types.NewTransfer{
+					Changes: &types.NewTransferConfiguration{
+						FractionOfBalance: "0.5",
+						Amount:            "1000",
+						SourceType:        types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
+						DestinationType:   types.AccountType_ACCOUNT_TYPE_GENERAL,
+						Destination:       crypto.RandomHash(),
+						TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
+						Asset:             "abcde",
+						Kind: &types.NewTransferConfiguration_OneOff{
+							OneOff: &types.OneOffTransfer{
+								DeliverOn: 0,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	err := checkProposalSubmission(prop)
+	require.True(t, err.Empty())
+	// none of the other accounts are valid destination types:
+	for _, at := range partyAccs {
+		prop := &commandspb.ProposalSubmission{
+			Rationale: &types.ProposalRationale{
+				Description: "invalid",
+				Title:       "test",
+			},
+			Terms: &types.ProposalTerms{
+				ClosingTimestamp:   time.Now().Unix() + 100,
+				EnactmentTimestamp: time.Now().Unix() + 200,
+				Change: &types.ProposalTerms_NewTransfer{
+					NewTransfer: &types.NewTransfer{
+						Changes: &types.NewTransferConfiguration{
+							FractionOfBalance: "0.5",
+							Amount:            "1000",
+							SourceType:        types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
+							DestinationType:   at,
+							Destination:       crypto.RandomHash(), // ensure a valid hash
+							TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
+							Asset:             "abcde",
+							Kind: &types.NewTransferConfiguration_OneOff{
+								OneOff: &types.OneOffTransfer{
+									DeliverOn: 0,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		err = checkProposalSubmission(prop)
+		require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.destination_type"), commands.ErrIsNotValid)
+	}
+}
+
 func testInvalidGeneralPubKey(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
@@ -332,7 +407,7 @@ func testInvalidGeneralPubKey(t *testing.T) {
 					Changes: &types.NewTransferConfiguration{
 						FractionOfBalance: "0.5",
 						Amount:            "1000",
-						SourceType:        types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+						SourceType:        types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
 						DestinationType:   types.AccountType_ACCOUNT_TYPE_GENERAL,
 						Destination:       "zohar",
 						TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
@@ -352,14 +427,13 @@ func testInvalidGeneralPubKey(t *testing.T) {
 
 func testOneOffWithInvalidDestinationType(t *testing.T) {
 	dests := []types.AccountType{
-		types.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES,
-		types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES,
-		types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES,
-		types.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS,
-		types.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
-		types.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN,
-		types.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY,
-		types.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING,
+		types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
+		types.AccountType_ACCOUNT_TYPE_SETTLEMENT,
+		types.AccountType_ACCOUNT_TYPE_MARGIN,
+		types.AccountType_ACCOUNT_TYPE_BOND,
+		types.AccountType_ACCOUNT_TYPE_FEES_MAKER,
+		types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE,
+		types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY,
 	}
 
 	for _, dest := range dests {
@@ -370,7 +444,7 @@ func testOneOffWithInvalidDestinationType(t *testing.T) {
 						Changes: &types.NewTransferConfiguration{
 							FractionOfBalance: "0.5",
 							Amount:            "1000",
-							SourceType:        types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+							SourceType:        types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
 							DestinationType:   dest,
 							TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
 							Asset:             "abcde",
@@ -395,8 +469,9 @@ func testNewRecurringGovernanceTransferInvalidEndEpoch(t *testing.T) {
 					Changes: &types.NewTransferConfiguration{
 						FractionOfBalance: "0.5",
 						Amount:            "1000",
-						SourceType:        types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+						SourceType:        types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
 						DestinationType:   types.AccountType_ACCOUNT_TYPE_GENERAL,
+						Destination:       crypto.RandomHash(),
 						TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
 						Asset:             "abcde",
 						Kind: &types.NewTransferConfiguration_Recurring{
@@ -421,8 +496,9 @@ func testNewTransferWithNoKind(t *testing.T) {
 					Changes: &types.NewTransferConfiguration{
 						FractionOfBalance: "0.5",
 						Amount:            "1000",
-						SourceType:        types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+						SourceType:        types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
 						DestinationType:   types.AccountType_ACCOUNT_TYPE_GENERAL,
+						Destination:       crypto.RandomHash(),
 						TransferType:      types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
 						Asset:             "abcde",
 					},
@@ -475,7 +551,7 @@ func testNewTransferChangeSubmissionWithoutDestinationTypeFails(t *testing.T) {
 			Change: &types.ProposalTerms_NewTransfer{
 				NewTransfer: &types.NewTransfer{
 					Changes: &types.NewTransferConfiguration{
-						SourceType: types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+						SourceType: types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
 					},
 				},
 			},
@@ -512,7 +588,7 @@ func testNewTransferChangeSubmissionInvalidDestinationTypeFails(t *testing.T) {
 				Change: &types.ProposalTerms_NewTransfer{
 					NewTransfer: &types.NewTransfer{
 						Changes: &types.NewTransferConfiguration{
-							SourceType:      types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+							SourceType:      types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
 							DestinationType: types.AccountType(at),
 						},
 					},
@@ -546,7 +622,6 @@ func testNewTransferChangeSubmissionInvalidSourceTypeFails(t *testing.T) {
 	}
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE))
-	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_INSURANCE))
 	delete(allAccountTypes, int32(types.AccountType_ACCOUNT_TYPE_UNSPECIFIED))
 
@@ -562,10 +637,10 @@ func testNewTransferChangeSubmissionInvalidSourceTypeFails(t *testing.T) {
 				},
 			},
 		})
-		require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.source_type"), commands.ErrIsNotValid)
+		require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.source_type"), commands.ErrIsNotValid, types.AccountType(at).String())
 	}
 
-	validSourceAccountTypes := []types.AccountType{types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD, types.AccountType_ACCOUNT_TYPE_INSURANCE}
+	validSourceAccountTypes := []types.AccountType{types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY, types.AccountType_ACCOUNT_TYPE_INSURANCE}
 	for _, at := range validSourceAccountTypes {
 		err := checkProposalSubmission(&commandspb.ProposalSubmission{
 			Terms: &types.ProposalTerms{
@@ -588,7 +663,7 @@ func testNewTransferChangeSubmissionInvalidSourceFails(t *testing.T) {
 			Change: &types.ProposalTerms_NewTransfer{
 				NewTransfer: &types.NewTransfer{
 					Changes: &types.NewTransferConfiguration{
-						SourceType:      types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+						SourceType:      types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
 						Source:          "some source",
 						DestinationType: types.AccountType_ACCOUNT_TYPE_GENERAL,
 					},
@@ -606,14 +681,15 @@ func testNewTransferChangeSubmissionInvalidDestinationFails(t *testing.T) {
 				NewTransfer: &types.NewTransfer{
 					Changes: &types.NewTransferConfiguration{
 						SourceType:      types.AccountType_ACCOUNT_TYPE_INSURANCE,
-						DestinationType: types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
-						Destination:     "some destination",
+						Source:          "some market",
+						DestinationType: types.AccountType_ACCOUNT_TYPE_INSURANCE,
+						Destination:     "",
 					},
 				},
 			},
 		},
 	})
-	require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.destination"), commands.ErrIsNotValid)
+	require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.destination"), commands.ErrIsNotValid, err.Error())
 }
 
 func testCancelTransferChangeSubmission(t *testing.T) {
@@ -675,7 +751,7 @@ func testNewTransferChangeSubmissionInvalidTransferTypeFails(t *testing.T) {
 				Change: &types.ProposalTerms_NewTransfer{
 					NewTransfer: &types.NewTransfer{
 						Changes: &types.NewTransferConfiguration{
-							SourceType:      types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+							SourceType:      types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
 							DestinationType: types.AccountType_ACCOUNT_TYPE_GENERAL,
 							Destination:     crypto.RandomHash(),
 							TransferType:    tp,
@@ -694,7 +770,7 @@ func testNewTransferChangeSubmissionInvalidTransferTypeFails(t *testing.T) {
 
 func testNewTransferChangeSubmissionInvalidAmountFails(t *testing.T) {
 	transfer := &types.NewTransferConfiguration{
-		SourceType:      types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+		SourceType:      types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
 		DestinationType: types.AccountType_ACCOUNT_TYPE_GENERAL,
 		Destination:     crypto.RandomHash(),
 		TransferType:    types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
@@ -759,7 +835,7 @@ func testNewTransferChangeSubmissionInvalidAmountFails(t *testing.T) {
 
 func testNewTransferChangeSubmissionInvalidAseetFails(t *testing.T) {
 	transfer := &types.NewTransferConfiguration{
-		SourceType:      types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+		SourceType:      types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
 		DestinationType: types.AccountType_ACCOUNT_TYPE_GENERAL,
 		Destination:     crypto.RandomHash(),
 		TransferType:    types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
@@ -797,7 +873,7 @@ func testNewTransferChangeSubmissionInvalidFractionFails(t *testing.T) {
 	}
 
 	transfer := &types.NewTransferConfiguration{
-		SourceType:      types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+		SourceType:      types.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY,
 		DestinationType: types.AccountType_ACCOUNT_TYPE_GENERAL,
 		Destination:     crypto.RandomHash(),
 		TransferType:    types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,

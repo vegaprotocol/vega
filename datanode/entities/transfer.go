@@ -137,6 +137,10 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 		VegaTime: time.Unix(0, t.Timestamp),
 	}
 
+	if t.From == "0000000000000000000000000000000000000000000000000000000000000000" {
+		fromAcc.PartyID = PartyID("network")
+	}
+
 	err := accountSource.Obtain(ctx, &fromAcc)
 	if err != nil {
 		return nil, fmt.Errorf("obtaining from account id for transfer:%w", err)
@@ -149,6 +153,10 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 		Type:     t.ToAccountType,
 		TxHash:   txHash,
 		VegaTime: vegaTime,
+	}
+
+	if t.To == "0000000000000000000000000000000000000000000000000000000000000000" {
+		toAcc.PartyID = PartyID("network")
 	}
 
 	err = accountSource.Obtain(ctx, &toAcc)

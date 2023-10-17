@@ -84,56 +84,57 @@ var httpBodyChunkSize = 1024 * 1024
 
 type TradingDataServiceV2 struct {
 	v2.UnimplementedTradingDataServiceServer
-	config                       Config
-	log                          *logging.Logger
-	eventService                 EventService
-	orderService                 *service.Order
-	networkLimitsService         *service.NetworkLimits
-	marketDataService            *service.MarketData
-	tradeService                 *service.Trade
-	multiSigService              *service.MultiSig
-	notaryService                *service.Notary
-	assetService                 *service.Asset
-	candleService                *candlesv2.Svc
-	marketsService               *service.Markets
-	partyService                 *service.Party
-	riskService                  *service.Risk
-	positionService              *service.Position
-	accountService               *service.Account
-	rewardService                *service.Reward
-	depositService               *service.Deposit
-	withdrawalService            *service.Withdrawal
-	oracleSpecService            *service.OracleSpec
-	oracleDataService            *service.OracleData
-	liquidityProvisionService    *service.LiquidityProvision
-	governanceService            *service.Governance
-	transfersService             *service.Transfer
-	delegationService            *service.Delegation
-	marketService                *service.Markets
-	marketDepthService           *service.MarketDepth
-	nodeService                  *service.Node
-	epochService                 *service.Epoch
-	riskFactorService            *service.RiskFactor
-	networkParameterService      *service.NetworkParameter
-	checkpointService            *service.Checkpoint
-	stakeLinkingService          *service.StakeLinking
-	ledgerService                *service.Ledger
-	keyRotationService           *service.KeyRotations
-	ethereumKeyRotationService   *service.EthereumKeyRotation
-	blockService                 BlockService
-	protocolUpgradeService       *service.ProtocolUpgrade
-	NetworkHistoryService        NetworkHistoryService
-	coreSnapshotService          *service.SnapshotData
-	stopOrderService             *service.StopOrders
-	fundingPeriodService         *service.FundingPeriods
-	partyActivityStreak          *service.PartyActivityStreak
-	fundingPaymentService        *service.FundingPayment
-	referralProgramService       *service.ReferralPrograms
-	referralSetsService          *service.ReferralSets
-	teamsService                 *service.Teams
-	feesStatsService             *service.FeesStats
-	volumeDiscountStatsService   *service.VolumeDiscountStats
-	volumeDiscountProgramService *service.VolumeDiscountPrograms
+	config                        Config
+	log                           *logging.Logger
+	eventService                  EventService
+	orderService                  *service.Order
+	networkLimitsService          *service.NetworkLimits
+	marketDataService             *service.MarketData
+	tradeService                  *service.Trade
+	multiSigService               *service.MultiSig
+	notaryService                 *service.Notary
+	assetService                  *service.Asset
+	candleService                 *candlesv2.Svc
+	marketsService                *service.Markets
+	partyService                  *service.Party
+	riskService                   *service.Risk
+	positionService               *service.Position
+	accountService                *service.Account
+	rewardService                 *service.Reward
+	depositService                *service.Deposit
+	withdrawalService             *service.Withdrawal
+	oracleSpecService             *service.OracleSpec
+	oracleDataService             *service.OracleData
+	liquidityProvisionService     *service.LiquidityProvision
+	governanceService             *service.Governance
+	transfersService              *service.Transfer
+	delegationService             *service.Delegation
+	marketService                 *service.Markets
+	marketDepthService            *service.MarketDepth
+	nodeService                   *service.Node
+	epochService                  *service.Epoch
+	riskFactorService             *service.RiskFactor
+	networkParameterService       *service.NetworkParameter
+	checkpointService             *service.Checkpoint
+	stakeLinkingService           *service.StakeLinking
+	ledgerService                 *service.Ledger
+	keyRotationService            *service.KeyRotations
+	ethereumKeyRotationService    *service.EthereumKeyRotation
+	blockService                  BlockService
+	protocolUpgradeService        *service.ProtocolUpgrade
+	NetworkHistoryService         NetworkHistoryService
+	coreSnapshotService           *service.SnapshotData
+	stopOrderService              *service.StopOrders
+	fundingPeriodService          *service.FundingPeriods
+	partyActivityStreak           *service.PartyActivityStreak
+	fundingPaymentService         *service.FundingPayment
+	referralProgramService        *service.ReferralPrograms
+	referralSetsService           *service.ReferralSets
+	teamsService                  *service.Teams
+	feesStatsService              *service.FeesStats
+	volumeDiscountStatsService    *service.VolumeDiscountStats
+	volumeDiscountProgramService  *service.VolumeDiscountPrograms
+	paidLiquidityFeesStatsService *service.PaidLiquidityFeesStats
 }
 
 func (t *TradingDataServiceV2) GetPartyActivityStreak(ctx context.Context, req *v2.GetPartyActivityStreakRequest) (*v2.GetPartyActivityStreakResponse, error) {
@@ -2033,6 +2034,44 @@ func (t *TradingDataServiceV2) ListLiquidityProviders(ctx context.Context, req *
 
 	return &v2.ListLiquidityProvidersResponse{
 		LiquidityProviders: conn,
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListPaidLiquidityFees(ctx context.Context, req *v2.ListPaidLiquidityFeesRequest) (
+	*v2.ListPaidLiquidityFeesResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListPaidLiquidityFees")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	var marketID *entities.MarketID
+	if req.MarketId != nil {
+		marketID = ptr.From(entities.MarketID(*req.MarketId))
+	}
+
+	var assetID *entities.AssetID
+	if req.AssetId != nil {
+		assetID = ptr.From(entities.AssetID(*req.AssetId))
+	}
+
+	stats, pageInfo, err := t.paidLiquidityFeesStatsService.List(ctx, marketID, assetID, req.EpochSeq, req.PartyIds, pagination)
+	if err != nil {
+		return nil, formatE(ErrListPaidLiquidityFees, err)
+	}
+
+	edges, err := makeEdges[*v2.PaidLiquidityFeesEdge](stats)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.ListPaidLiquidityFeesResponse{
+		PaidLiquidityFees: &v2.PaidLiquidityFeesConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
 	}, nil
 }
 
@@ -4450,7 +4489,7 @@ func (t *TradingDataServiceV2) GetFeesStats(ctx context.Context, req *v2.GetFees
 		assetID = ptr.From(entities.AssetID(*req.AssetId))
 	}
 
-	stats, err := t.feesStatsService.GetFeesStats(ctx, marketID, assetID, req.EpochSeq, req.Referrer, req.Referee)
+	stats, err := t.feesStatsService.GetFeesStats(ctx, marketID, assetID, req.EpochSeq, req.PartyId)
 	if err != nil {
 		return nil, formatE(ErrGetFeesStats, err)
 	}

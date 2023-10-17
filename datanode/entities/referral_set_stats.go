@@ -54,17 +54,6 @@ type (
 		SetID    string
 		PartyID  string
 	}
-
-	FeesStats struct {
-		MarketID                 MarketID
-		AssetID                  AssetID
-		EpochSeq                 uint64
-		TotalRewardsPaid         []*eventspb.PartyAmount
-		ReferrerRewardsGenerated []*eventspb.ReferrerRewardsGenerated
-		RefereesDiscountApplied  []*eventspb.PartyAmount
-		VolumeDiscountApplied    []*eventspb.PartyAmount
-		VegaTime                 time.Time
-	}
 )
 
 func (s FlattenReferralSetStats) Cursor() *Cursor {
@@ -119,29 +108,4 @@ func ReferralSetStatsFromProto(proto *eventspb.ReferralSetStatsUpdated, vegaTime
 		RewardsMultiplier:                     proto.RewardsMultiplier,
 		RewardsFactorMultiplier:               proto.RewardsFactorMultiplier,
 	}, nil
-}
-
-func FeesStatsFromProto(proto *eventspb.FeesStats, vegaTime time.Time) *FeesStats {
-	return &FeesStats{
-		MarketID:                 MarketID(proto.Market),
-		AssetID:                  AssetID(proto.Asset),
-		EpochSeq:                 proto.EpochSeq,
-		TotalRewardsPaid:         proto.TotalRewardsPaid,
-		ReferrerRewardsGenerated: proto.ReferrerRewardsGenerated,
-		RefereesDiscountApplied:  proto.RefereesDiscountApplied,
-		VolumeDiscountApplied:    proto.VolumeDiscountApplied,
-		VegaTime:                 vegaTime,
-	}
-}
-
-func (stats *FeesStats) ToProto() *eventspb.FeesStats {
-	return &eventspb.FeesStats{
-		Market:                   stats.MarketID.String(),
-		Asset:                    stats.AssetID.String(),
-		EpochSeq:                 stats.EpochSeq,
-		TotalRewardsPaid:         stats.TotalRewardsPaid,
-		ReferrerRewardsGenerated: stats.ReferrerRewardsGenerated,
-		RefereesDiscountApplied:  stats.RefereesDiscountApplied,
-		VolumeDiscountApplied:    stats.VolumeDiscountApplied,
-	}
 }

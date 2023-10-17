@@ -17,28 +17,22 @@ package gql
 
 import (
 	"context"
-	"time"
 
-	"code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
-type updateVolumeDiscountProgramResolver VegaResolverRoot
+type (
+	paidLiquidityFeesResolver VegaResolverRoot
+)
 
-func (r *updateVolumeDiscountProgramResolver) BenefitTiers(
-	_ context.Context, obj *vega.UpdateVolumeDiscountProgram,
-) ([]*vega.VolumeBenefitTier, error) {
-	return obj.Changes.BenefitTiers, nil
+func (r *paidLiquidityFeesResolver) MarketID(_ context.Context, obj *eventspb.PaidLiquidityFeesStats) (string, error) {
+	return obj.Market, nil
 }
 
-func (r *updateVolumeDiscountProgramResolver) EndOfProgramTimestamp(
-	_ context.Context, obj *vega.UpdateVolumeDiscountProgram,
-) (int64, error) {
-	endTime := time.Unix(obj.Changes.EndOfProgramTimestamp, 0)
-	return endTime.UnixNano(), nil
+func (r *paidLiquidityFeesResolver) AssetID(_ context.Context, obj *eventspb.PaidLiquidityFeesStats) (string, error) {
+	return obj.Asset, nil
 }
 
-func (r *updateVolumeDiscountProgramResolver) WindowLength(
-	_ context.Context, obj *vega.UpdateVolumeDiscountProgram,
-) (int, error) {
-	return int(obj.Changes.WindowLength), nil
+func (r *paidLiquidityFeesResolver) Epoch(_ context.Context, obj *eventspb.PaidLiquidityFeesStats) (int, error) {
+	return int(obj.EpochSeq), nil
 }

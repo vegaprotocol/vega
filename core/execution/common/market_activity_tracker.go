@@ -221,9 +221,8 @@ func (mat *MarketActivityTracker) GetMarketsWithEligibleProposer(asset string, m
 				}
 			}
 		}
+		sort.Strings(mkts)
 	}
-
-	sort.Strings(mkts)
 
 	assets := []string{}
 	if len(asset) > 0 {
