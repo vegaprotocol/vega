@@ -40,7 +40,7 @@ const (
 	maxPageSize     int32 = 5000
 )
 
-var ErrCursorOverflow = errors.New("negative pagination value")
+var ErrCursorOverflow = errors.Errorf("pagination limit must be in range 0-%d", maxPageSize)
 
 type Pagination interface{}
 
@@ -236,7 +236,7 @@ func validatePagination(pagination CursorPagination) error {
 
 	limit := *cursorOffset.Limit
 	if limit <= 0 || limit > maxPageSize {
-		return errors.Errorf("pagination limit must be in range 0-%d", maxPageSize)
+		return ErrCursorOverflow
 	}
 
 	return nil
