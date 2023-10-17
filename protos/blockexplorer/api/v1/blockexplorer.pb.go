@@ -417,9 +417,9 @@ type Transaction struct {
 	Error *string `protobuf:"bytes,10,opt,name=error,proto3,oneof" json:"error,omitempty"`
 	// Timestamp when the transaction happened, using RFC3399 format.
 	CreatedAt string `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	// The version format of the transaction
+	// Version format of the transaction
 	Version v1.TxVersion `protobuf:"varint,12,opt,name=version,proto3,enum=vega.commands.v1.TxVersion" json:"version,omitempty"`
-	// The POW parameters of the transaction
+	// Proof of Work parameters of the transaction
 	Pow *v1.ProofOfWork `protobuf:"bytes,13,opt,name=pow,proto3" json:"pow,omitempty"`
 }
 
