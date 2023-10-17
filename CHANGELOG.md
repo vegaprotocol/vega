@@ -164,6 +164,7 @@
 - [9743](https://github.com/vegaprotocol/system-tests/issues/9743) - Expose maker fees in fees stats API.
 - [9750](https://github.com/vegaprotocol/vega/issues/9750) - Add paid liquidity fees statistics to API.
 - [8919](https://github.com/vegaprotocol/vega/issues/8919) - Add `CreatedAt` field to transaction type in the block explorer API.
+- [7248](https://github.com/vegaprotocol/vega/issues/7248) - Add transaction proof of work and version in block explorer API.
 
 ### 🐛 Fixes
 
@@ -175,7 +176,7 @@
 - [8729](https://github.com/vegaprotocol/vega/issues/8729) - Stop order direction not set in datanode
 - [8545](https://github.com/vegaprotocol/vega/issues/8545) - Block Explorer pagination does not order correctly.
 - [8748](https://github.com/vegaprotocol/vega/issues/8748) - `ListSuccessorMarkets` does not return results.
-- [9784](https://github.com/vegaprotocol/vega/issues/9784) - Referral timestamp consistency 
+- [9784](https://github.com/vegaprotocol/vega/issues/9784) - Referral timestamp consistency
 - [8749](https://github.com/vegaprotocol/vega/issues/8749) - Ensure stop order expiry is in the future
 - [9337](https://github.com/vegaprotocol/vega/issues/9337) - Non deterministic ordering of vesting ledger events
 - [8773](https://github.com/vegaprotocol/vega/issues/8773) - Fix panic with stop orders
