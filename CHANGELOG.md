@@ -324,6 +324,7 @@
 - [9788](https://github.com/vegaprotocol/vega/issues/9788) - Fix transfer account validation.
 - [9544](https://github.com/vegaprotocol/vega/issues/9544) - Fix race in visor restart logic.
 - [9797](https://github.com/vegaprotocol/vega/issues/9797) - Default pagination limits are not always correctly set.
+- [9813](https://github.com/vegaprotocol/vega/issues/9813) - Add validation for team scope vs individual scope
 
 ## 0.72.1
 
