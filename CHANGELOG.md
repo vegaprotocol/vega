@@ -325,6 +325,7 @@
 - [9544](https://github.com/vegaprotocol/vega/issues/9544) - Fix race in visor restart logic.
 - [9797](https://github.com/vegaprotocol/vega/issues/9797) - Default pagination limits are not always correctly set.
 - [9813](https://github.com/vegaprotocol/vega/issues/9813) - Add validation for team scope vs individual scope
+- [8570](https://github.com/vegaprotocol/vega/issues/8570) - Make sure the filtering by `cmd_type` on block explorer doesn't result with a bad query planning.
 
 ## 0.72.1
 
