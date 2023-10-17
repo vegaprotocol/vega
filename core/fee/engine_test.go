@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -67,7 +68,7 @@ func TestFeeEngine(t *testing.T) {
 	t.Run("calculate continuous trading fee", testCalcContinuousTrading)
 	t.Run("calculate continuous trading fee + check amounts", testCalcContinuousTradingAndCheckAmounts)
 
-	t.Run("calculate continuous trading fee + check amounts with discounts and rewards", testCalcContinuousTradingAndCheckAmounts)
+	t.Run("calculate continuous trading fee + check amounts with discounts and rewards", testCalcContinuousTradingAndCheckAmountsWithDiscount)
 
 	t.Run("calculate continuous trading fee empty trade", testCalcContinuousTradingErrorEmptyTrade)
 	t.Run("calculate auction trading fee empty trade", testCalcAuctionTradingErrorEmptyTrade)
@@ -145,13 +146,13 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
-	eng.UpdateFeeFactors(types.Fees{
+	require.NoError(t, eng.UpdateFeeFactors(types.Fees{
 		Factors: &types.FeeFactors{
 			MakerFee:          num.DecimalFromFloat(.000250),
 			InfrastructureFee: num.DecimalFromFloat(0.0005),
 			LiquidityFee:      num.DecimalFromFloat(0.001),
 		},
-	})
+	}))
 	trades := []*types.Trade{
 		{
 			Aggressor: types.SideSell,
@@ -190,6 +191,134 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 	assert.Equal(t, infra, 1)
 	assert.Equal(t, recv, len(trades))
 	assert.Equal(t, pay, len(trades))
+	assert.Equal(t, &eventspb.FeesStats{
+		Market:                   "",
+		Asset:                    testAsset,
+		EpochSeq:                 0,
+		TotalRewardsPaid:         []*eventspb.PartyAmount{},
+		ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{},
+		RefereesDiscountApplied: []*eventspb.PartyAmount{
+			{
+				Party:  "party1",
+				Amount: "0",
+			},
+		},
+		VolumeDiscountApplied: []*eventspb.PartyAmount{
+			{
+				Party:  "party1",
+				Amount: "0",
+			},
+		},
+		TotalMakerFeesReceived: []*eventspb.PartyAmount{
+			{
+				Party:  "party2",
+				Amount: "125",
+			},
+		},
+		MakerFeesGenerated: []*eventspb.MakerFeesGenerated{
+			{
+				Taker: "party1",
+				MakerFeesPaid: []*eventspb.PartyAmount{
+					{
+						Party:  "party2",
+						Amount: "125",
+					},
+				},
+			},
+		},
+	}, eng.GetFeesStatsOnEpochEnd())
+}
+
+func testCalcContinuousTradingAndCheckAmountsWithDiscount(t *testing.T) {
+	eng := getTestFee(t)
+	ctrl := gomock.NewController(t)
+	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
+	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
+	discountRewardService.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalFromFloat(0.3)).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalFromFloat(0.2)).AnyTimes()
+	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalFromFloat(0.1)).AnyTimes()
+	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+	require.NoError(t, eng.UpdateFeeFactors(types.Fees{
+		Factors: &types.FeeFactors{
+			MakerFee:          num.DecimalFromFloat(.000250),
+			InfrastructureFee: num.DecimalFromFloat(0.0005),
+			LiquidityFee:      num.DecimalFromFloat(0.001),
+		},
+	}))
+	trades := []*types.Trade{
+		{
+			Aggressor: types.SideSell,
+			Seller:    "party1",
+			Buyer:     "party2",
+			Size:      5,
+			Price:     num.NewUint(100000),
+		},
+	}
+
+	ft, err := eng.CalculateForContinuousMode(trades, discountRewardService, volumeDiscountService)
+	assert.NotNil(t, ft)
+	assert.Nil(t, err)
+	transfers := ft.Transfers()
+	var pay, recv, infra, liquidity int
+	for _, v := range transfers {
+		if v.Type == types.TransferTypeLiquidityFeePay {
+			liquidity++
+			assert.Equal(t, num.NewUint(252), v.Amount.Amount)
+		}
+		if v.Type == types.TransferTypeInfrastructureFeePay {
+			infra++
+			assert.Equal(t, num.NewUint(127), v.Amount.Amount)
+		}
+		if v.Type == types.TransferTypeMakerFeeReceive {
+			recv++
+			assert.Equal(t, num.NewUint(64), v.Amount.Amount)
+		}
+		if v.Type == types.TransferTypeMakerFeePay {
+			pay++
+			assert.Equal(t, num.NewUint(64), v.Amount.Amount)
+		}
+	}
+
+	assert.Equal(t, liquidity, 1)
+	assert.Equal(t, infra, 1)
+	assert.Equal(t, recv, len(trades))
+	assert.Equal(t, pay, len(trades))
+	assert.Equal(t, &eventspb.FeesStats{
+		Market:                   "",
+		Asset:                    testAsset,
+		EpochSeq:                 0,
+		TotalRewardsPaid:         []*eventspb.PartyAmount{},
+		ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{},
+		RefereesDiscountApplied: []*eventspb.PartyAmount{
+			{
+				Party:  "party1",
+				Amount: "262",
+			},
+		},
+		VolumeDiscountApplied: []*eventspb.PartyAmount{
+			{
+				Party:  "party1",
+				Amount: "60",
+			},
+		},
+		TotalMakerFeesReceived: []*eventspb.PartyAmount{
+			{
+				Party:  "party2",
+				Amount: "64",
+			},
+		},
+		MakerFeesGenerated: []*eventspb.MakerFeesGenerated{
+			{
+				Taker: "party1",
+				MakerFeesPaid: []*eventspb.PartyAmount{
+					{
+						Party:  "party2",
+						Amount: "64",
+					},
+				},
+			},
+		},
+	}, eng.GetFeesStatsOnEpochEnd())
 }
 
 func testCalcContinuousTradingAndCheckAmountsWithDiscountsAndRewardsBySide(t *testing.T, aggressorSide types.Side) {

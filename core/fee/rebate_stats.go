@@ -190,10 +190,10 @@ func (f *FeesStats) ToProto(asset string) *eventspb.FeesStats {
 		})
 	}
 
-	volumeDiscountAppliedParties := maps.Keys(f.RefereeDiscountApplied)
+	volumeDiscountAppliedParties := maps.Keys(f.VolumeDiscountApplied)
 	sort.Strings(volumeDiscountAppliedParties)
 	for _, party := range volumeDiscountAppliedParties {
-		amount := f.RefereeDiscountApplied[party]
+		amount := f.VolumeDiscountApplied[party]
 		fs.VolumeDiscountApplied = append(fs.VolumeDiscountApplied, &eventspb.PartyAmount{
 			Party:  party,
 			Amount: amount.String(),
