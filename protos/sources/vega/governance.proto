@@ -571,7 +571,7 @@ message VolumeDiscountProgramChanges {
   // benefit a party can expect based on performance criteria.
   repeated VolumeBenefitTier benefit_tiers = 1;
   // Timestamp as Unix time in seconds, after which when the current epoch
-  // ends, the programs will end and benefits will be disabled.
+  // ends, the program will end and benefits will be disabled.
   int64 end_of_program_timestamp = 2;
   // Number of epochs over which to evaluate a referral set's running volume.
   uint64 window_length = 3;
@@ -587,8 +587,8 @@ message ReferralProgramChanges {
   // second element will give Tier 2, and so on. Determines the level of
   // benefit a party can expect based on performance criteria.
   repeated BenefitTier benefit_tiers = 1;
-  // Timestamp as Unix time in seconds, after which when the current epoch ends, the
-  // programs status will become STATE_CLOSED and benefits will be disabled.
+  // Timestamp as Unix time in seconds, after which when the current epoch
+  // ends, the program will end and benefits will be disabled.
   int64 end_of_program_timestamp = 2;
   // Number of epochs over which to evaluate a referral set's running volume.
   uint64 window_length = 3;

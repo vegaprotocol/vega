@@ -8191,17 +8191,14 @@ type ReferralProgram struct {
 	Version uint64 `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
 	// Unique ID generated from the proposal that created this program.
 	Id string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
-	// Defined benefit tiers in increasing order. First element will give Tier 1,
-	// second element will give Tier 2, and so on. Determines the level of
-	// benefit a party can expect based on performance criteria.
+	// Defined benefit tiers ordered by increasing discounts.
 	BenefitTiers []*BenefitTier `protobuf:"bytes,3,rep,name=benefit_tiers,json=benefitTiers,proto3" json:"benefit_tiers,omitempty"`
-	// Timestamp as Unix time in seconds, after which when the current epoch ends,
-	// the programs will end and benefits will be disabled.
+	// Timestamp in Unix nanoseconds, after which when the current epoch ends,
+	// the program will end and benefits will be disabled.
 	EndOfProgramTimestamp int64 `protobuf:"varint,4,opt,name=end_of_program_timestamp,json=endOfProgramTimestamp,proto3" json:"end_of_program_timestamp,omitempty"`
-	// Number of epochs over which to evaluate a referral set's running volume.
+	// Number of epochs over which the referral set's running volume is evaluated.
 	WindowLength uint64 `protobuf:"varint,5,opt,name=window_length,json=windowLength,proto3" json:"window_length,omitempty"`
-	// Defined staking tiers in increasing order. First element will give Tier 1,
-	// second element will give Tier 2, and so on. Determines the level of
+	// Defined benefit tiers ordered by increasing reward multiplier. Determines the level of
 	// benefit a party can expect based on their staking.
 	StakingTiers []*StakingTier `protobuf:"bytes,6,rep,name=staking_tiers,json=stakingTiers,proto3" json:"staking_tiers,omitempty"`
 }
@@ -8288,7 +8285,7 @@ type VolumeBenefitTier struct {
 	// Required running notional taker volume in quantum units for parties
 	// to access this tier.
 	MinimumRunningNotionalTakerVolume string `protobuf:"bytes,1,opt,name=minimum_running_notional_taker_volume,json=minimumRunningNotionalTakerVolume,proto3" json:"minimum_running_notional_taker_volume,omitempty"`
-	// Proportion of the taker fees to be discounted
+	// Proportion of the taker fees to be discounted.
 	VolumeDiscountFactor string `protobuf:"bytes,2,opt,name=volume_discount_factor,json=volumeDiscountFactor,proto3" json:"volume_discount_factor,omitempty"`
 }
 
@@ -8349,9 +8346,9 @@ type BenefitTier struct {
 	// Required number of epochs a party must have been in a referral set to
 	// access this tier.
 	MinimumEpochs string `protobuf:"bytes,2,opt,name=minimum_epochs,json=minimumEpochs,proto3" json:"minimum_epochs,omitempty"`
-	// Proportion of the referee's taker fees to be rewarded to the referrer
+	// Proportion of the referee's taker fees to be rewarded to the referrer.
 	ReferralRewardFactor string `protobuf:"bytes,3,opt,name=referral_reward_factor,json=referralRewardFactor,proto3" json:"referral_reward_factor,omitempty"`
-	// Proportion of the referee's taker fees to be discounted
+	// Proportion of the referee's taker fees to be discounted.
 	ReferralDiscountFactor string `protobuf:"bytes,4,opt,name=referral_discount_factor,json=referralDiscountFactor,proto3" json:"referral_discount_factor,omitempty"`
 }
 
@@ -8586,14 +8583,12 @@ type VolumeDiscountProgram struct {
 	Version uint64 `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
 	// Unique ID generated from the proposal that created this program.
 	Id string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
-	// Defined benefit tiers in increasing order. First element will give Tier 1,
-	// second element will give Tier 2, and so on. Determines the level of
-	// benefit a party can expect based on performance criteria.
+	// Defined benefit tiers ordered by increasing discounts.
 	BenefitTiers []*VolumeBenefitTier `protobuf:"bytes,3,rep,name=benefit_tiers,json=benefitTiers,proto3" json:"benefit_tiers,omitempty"`
-	// Timestamp as Unix time in seconds, after which when the current epoch
-	// ends, the programs will end and benefits will be disabled.
+	// Timestamp in Unix seconds, after which when the current epoch
+	// ends, the program will end and benefits will be disabled.
 	EndOfProgramTimestamp int64 `protobuf:"varint,4,opt,name=end_of_program_timestamp,json=endOfProgramTimestamp,proto3" json:"end_of_program_timestamp,omitempty"`
-	// Number of epochs over which to evaluate a referral set's running volume.
+	// Number of epochs over which a referral set's running volume is evaluated.
 	WindowLength uint64 `protobuf:"varint,5,opt,name=window_length,json=windowLength,proto3" json:"window_length,omitempty"`
 }
 
@@ -8670,7 +8665,7 @@ type ActivityStreakBenefitTiers struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The tiers.
+	// Defined benefit tiers ordered by increasing reward multipliers.
 	Tiers []*ActivityStreakBenefitTier `protobuf:"bytes,1,rep,name=tiers,proto3" json:"tiers,omitempty"`
 }
 
@@ -8719,11 +8714,11 @@ type ActivityStreakBenefitTier struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The minimum number of epochs necessary for this tier.
+	// Number of epochs a party must be active to receive the multiplier.
 	MinimumActivityStreak uint64 `protobuf:"varint,1,opt,name=minimum_activity_streak,json=minimumActivityStreak,proto3" json:"minimum_activity_streak,omitempty"`
-	// The reward multiplier applicable for this tier.
+	// Reward multiplier applicable to this tier.
 	RewardMultiplier string `protobuf:"bytes,2,opt,name=reward_multiplier,json=rewardMultiplier,proto3" json:"reward_multiplier,omitempty"`
-	// The vesting bonus applicable for this tier.
+	// Vesting bonus applicable to this tier.
 	VestingMultiplier string `protobuf:"bytes,3,opt,name=vesting_multiplier,json=vestingMultiplier,proto3" json:"vesting_multiplier,omitempty"`
 }
 
