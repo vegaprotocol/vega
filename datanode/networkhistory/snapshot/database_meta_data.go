@@ -40,6 +40,9 @@ type DatabaseMetadata struct {
 	CurrentStateTablesDropConstraintsSql   []string
 	HistoryStateTablesCreateConstraintsSql []string
 	HistoryStateTablesDropConstraintsSql   []string
+
+	AllTablesEnableAutoVacuumSql  []string
+	AllTablesDisableAutoVacuumSql []string
 }
 
 type TableMetadata struct {
@@ -117,6 +120,8 @@ func NewDatabaseMetaData(ctx context.Context, connPool *pgxpool.Pool) (DatabaseM
 		return DatabaseMetadata{}, fmt.Errorf("failed to get drop constrains sql:%w", err)
 	}
 
+	allTablesEnableAutoVacuumSql, allTablesDisableAutoVacuumSql := createAutovacuumSql(tableNames)
+
 	result := DatabaseMetadata{
 		TableNameToMetaData:                    map[string]TableMetadata{},
 		DatabaseVersion:                        dbVersion,
@@ -125,6 +130,8 @@ func NewDatabaseMetaData(ctx context.Context, connPool *pgxpool.Pool) (DatabaseM
 		CurrentStateTablesDropConstraintsSql:   currentStateDropConstraintsSql,
 		HistoryStateTablesCreateConstraintsSql: historyCreateConstraintsSql,
 		HistoryStateTablesDropConstraintsSql:   historyDropConstraintsSql,
+		AllTablesEnableAutoVacuumSql:           allTablesEnableAutoVacuumSql,
+		AllTablesDisableAutoVacuumSql:          allTablesDisableAutoVacuumSql,
 	}
 	for _, tableName := range tableNames {
 		partitionCol := ""
@@ -145,6 +152,19 @@ func NewDatabaseMetaData(ctx context.Context, connPool *pgxpool.Pool) (DatabaseM
 	}
 
 	return result, nil
+}
+
+func createAutovacuumSql(tableNames []string) ([]string, []string) {
+	allTablesEnableAutoVacuumSql := make([]string, 0, len(tableNames))
+	for _, tableName := range tableNames {
+		allTablesEnableAutoVacuumSql = append(allTablesEnableAutoVacuumSql, fmt.Sprintf("ALTER TABLE %s SET (autovacuum_enabled = true)", tableName))
+	}
+
+	allTablesDisableAutoVacuumSql := make([]string, 0, len(tableNames))
+	for _, tableName := range tableNames {
+		allTablesDisableAutoVacuumSql = append(allTablesDisableAutoVacuumSql, fmt.Sprintf("ALTER TABLE %s SET (autovacuum_enabled = false)", tableName))
+	}
+	return allTablesEnableAutoVacuumSql, allTablesDisableAutoVacuumSql
 }
 
 func (d DatabaseMetadata) GetHistoryTableNames() []string {
