@@ -289,10 +289,18 @@ type TradingDataServiceClient interface {
 	//
 	// Get a list of assets available on the Vega network
 	ListAssets(ctx context.Context, in *ListAssetsRequest, opts ...grpc.CallOption) (*ListAssetsResponse, error)
+	// Deprecated: Do not use.
 	// List liquidity provisions
 	//
-	// Get a list of liquidity provisions for a given market.
+	// DEPRECATED: When a liquidity provider amends a provision, and it's accepted by the network, the pending
+	// provision is returned by the API instead of the provision that is currently active.
+	// Use ListAllLiquidityProvisions instead.
 	ListLiquidityProvisions(ctx context.Context, in *ListLiquidityProvisionsRequest, opts ...grpc.CallOption) (*ListLiquidityProvisionsResponse, error)
+	// List liquidity provisions
+	//
+	// Get a list of liquidity provisions for a given market. This API returns a current and pending liquidity provision
+	// in the event that a provision has been updated by the provider but the updated provision will not be active until the next epoch.
+	ListAllLiquidityProvisions(ctx context.Context, in *ListAllLiquidityProvisionsRequest, opts ...grpc.CallOption) (*ListAllLiquidityProvisionsResponse, error)
 	// Observe liquidity provisions
 	//
 	// Subscribe to a stream of liquidity provision events for a given market and party
@@ -1335,9 +1343,19 @@ func (c *tradingDataServiceClient) ListAssets(ctx context.Context, in *ListAsset
 	return out, nil
 }
 
+// Deprecated: Do not use.
 func (c *tradingDataServiceClient) ListLiquidityProvisions(ctx context.Context, in *ListLiquidityProvisionsRequest, opts ...grpc.CallOption) (*ListLiquidityProvisionsResponse, error) {
 	out := new(ListLiquidityProvisionsResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListLiquidityProvisions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListAllLiquidityProvisions(ctx context.Context, in *ListAllLiquidityProvisionsRequest, opts ...grpc.CallOption) (*ListAllLiquidityProvisionsResponse, error) {
+	out := new(ListAllLiquidityProvisionsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListAllLiquidityProvisions", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2178,10 +2196,18 @@ type TradingDataServiceServer interface {
 	//
 	// Get a list of assets available on the Vega network
 	ListAssets(context.Context, *ListAssetsRequest) (*ListAssetsResponse, error)
+	// Deprecated: Do not use.
 	// List liquidity provisions
 	//
-	// Get a list of liquidity provisions for a given market.
+	// DEPRECATED: When a liquidity provider amends a provision, and it's accepted by the network, the pending
+	// provision is returned by the API instead of the provision that is currently active.
+	// Use ListAllLiquidityProvisions instead.
 	ListLiquidityProvisions(context.Context, *ListLiquidityProvisionsRequest) (*ListLiquidityProvisionsResponse, error)
+	// List liquidity provisions
+	//
+	// Get a list of liquidity provisions for a given market. This API returns a current and pending liquidity provision
+	// in the event that a provision has been updated by the provider but the updated provision will not be active until the next epoch.
+	ListAllLiquidityProvisions(context.Context, *ListAllLiquidityProvisionsRequest) (*ListAllLiquidityProvisionsResponse, error)
 	// Observe liquidity provisions
 	//
 	// Subscribe to a stream of liquidity provision events for a given market and party
@@ -2627,6 +2653,9 @@ func (UnimplementedTradingDataServiceServer) ListAssets(context.Context, *ListAs
 }
 func (UnimplementedTradingDataServiceServer) ListLiquidityProvisions(context.Context, *ListLiquidityProvisionsRequest) (*ListLiquidityProvisionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListLiquidityProvisions not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListAllLiquidityProvisions(context.Context, *ListAllLiquidityProvisionsRequest) (*ListAllLiquidityProvisionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAllLiquidityProvisions not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ObserveLiquidityProvisions(*ObserveLiquidityProvisionsRequest, TradingDataService_ObserveLiquidityProvisionsServer) error {
 	return status.Errorf(codes.Unimplemented, "method ObserveLiquidityProvisions not implemented")
@@ -3868,6 +3897,24 @@ func _TradingDataService_ListLiquidityProvisions_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ListAllLiquidityProvisions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAllLiquidityProvisionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListAllLiquidityProvisions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListAllLiquidityProvisions",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListAllLiquidityProvisions(ctx, req.(*ListAllLiquidityProvisionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ObserveLiquidityProvisions_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ObserveLiquidityProvisionsRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -4982,6 +5029,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListLiquidityProvisions",
 			Handler:    _TradingDataService_ListLiquidityProvisions_Handler,
+		},
+		{
+			MethodName: "ListAllLiquidityProvisions",
+			Handler:    _TradingDataService_ListAllLiquidityProvisions_Handler,
 		},
 		{
 			MethodName: "ListLiquidityProviders",

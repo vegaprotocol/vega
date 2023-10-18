@@ -351,7 +351,7 @@ func (lp *LiquidityProvision) getWithCursorPagination(ctx context.Context, party
 		return nil, entities.PageInfo{}, err
 	}
 
-	pagedLiquidityProvisions, pageInfo := entities.PageEntities[*v2.LiquidityProvisionsEdge](liquidityProvisions, pagination)
+	pagedLiquidityProvisions, pageInfo := entities.PageEntities[*v2.LiquidityProvisionWithPendingEdge](liquidityProvisions, pagination)
 	return pagedLiquidityProvisions, pageInfo, nil
 }
 

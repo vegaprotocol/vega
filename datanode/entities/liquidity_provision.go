@@ -196,18 +196,20 @@ func (lp CurrentAndPreviousLiquidityProvisions) ToProto() *v2.LiquidityProvision
 	}
 
 	return &v2.LiquidityProvision{
-		Id:               lp.ID.String(),
-		PartyId:          lp.PartyID.String(),
-		CreatedAt:        lp.CreatedAt.UnixNano(),
-		UpdatedAt:        lp.UpdatedAt.UnixNano(),
-		MarketId:         lp.MarketID.String(),
-		CommitmentAmount: lp.CommitmentAmount.String(),
-		Fee:              lp.Fee.String(),
-		Sells:            sells,
-		Buys:             buys,
-		Version:          uint64(lp.Version),
-		Status:           vega.LiquidityProvision_Status(lp.Status),
-		Reference:        lp.Reference,
+		Current: &vega.LiquidityProvision{
+			Id:               lp.ID.String(),
+			PartyId:          lp.PartyID.String(),
+			CreatedAt:        lp.CreatedAt.UnixNano(),
+			UpdatedAt:        lp.UpdatedAt.UnixNano(),
+			MarketId:         lp.MarketID.String(),
+			CommitmentAmount: lp.CommitmentAmount.String(),
+			Fee:              lp.Fee.String(),
+			Sells:            sells,
+			Buys:             buys,
+			Version:          uint64(lp.Version),
+			Status:           vega.LiquidityProvision_Status(lp.Status),
+			Reference:        lp.Reference,
+		},
 	}
 }
 
@@ -241,19 +243,21 @@ func (lp CurrentAndPreviousLiquidityProvisions) currentWithPendingLP(sells, buys
 	}
 
 	return &v2.LiquidityProvision{
-		Id:               (lp.PreviousID).String(),
-		PartyId:          (lp.PreviousPartyID).String(),
-		CreatedAt:        (lp.PreviousCreatedAt).UnixNano(),
-		UpdatedAt:        (lp.PreviousUpdatedAt).UnixNano(),
-		MarketId:         (lp.PreviousMarketID).String(),
-		CommitmentAmount: (lp.PreviousCommitmentAmount).String(),
-		Fee:              (lp.PreviousFee).String(),
-		Sells:            previousSells,
-		Buys:             previousBuys,
-		Version:          uint64(*lp.PreviousVersion),
-		Status:           vega.LiquidityProvision_Status(*lp.PreviousStatus),
-		Reference:        *lp.PreviousReference,
-		Pending:          &pending,
+		Current: &vega.LiquidityProvision{
+			Id:               (lp.PreviousID).String(),
+			PartyId:          (lp.PreviousPartyID).String(),
+			CreatedAt:        (lp.PreviousCreatedAt).UnixNano(),
+			UpdatedAt:        (lp.PreviousUpdatedAt).UnixNano(),
+			MarketId:         (lp.PreviousMarketID).String(),
+			CommitmentAmount: (lp.PreviousCommitmentAmount).String(),
+			Fee:              (lp.PreviousFee).String(),
+			Sells:            previousSells,
+			Buys:             previousBuys,
+			Version:          uint64(*lp.PreviousVersion),
+			Status:           vega.LiquidityProvision_Status(*lp.PreviousStatus),
+			Reference:        *lp.PreviousReference,
+		},
+		Pending: &pending,
 	}
 }
 
@@ -296,8 +300,15 @@ func (lp CurrentAndPreviousLiquidityProvisions) Cursor() *Cursor {
 	return NewCursor(lc.String())
 }
 
-func (lp CurrentAndPreviousLiquidityProvisions) ToProtoEdge(_ ...any) (*v2.LiquidityProvisionsEdge, error) {
+func (lp LiquidityProvision) ToProtoEdge(_ ...any) (*v2.LiquidityProvisionsEdge, error) {
 	return &v2.LiquidityProvisionsEdge{
+		Node:   lp.ToProto(),
+		Cursor: lp.Cursor().Encode(),
+	}, nil
+}
+
+func (lp CurrentAndPreviousLiquidityProvisions) ToProtoEdge(_ ...any) (*v2.LiquidityProvisionWithPendingEdge, error) {
+	return &v2.LiquidityProvisionWithPendingEdge{
 		Node:   lp.ToProto(),
 		Cursor: lp.Cursor().Encode(),
 	}, nil

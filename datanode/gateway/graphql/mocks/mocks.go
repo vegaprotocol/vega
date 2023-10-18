@@ -1120,6 +1120,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ListAccounts(arg0, arg1 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAccounts", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListAccounts), varargs...)
 }
 
+// ListAllLiquidityProvisions mocks base method.
+func (m *MockTradingDataServiceClientV2) ListAllLiquidityProvisions(arg0 context.Context, arg1 *v2.ListAllLiquidityProvisionsRequest, arg2 ...grpc.CallOption) (*v2.ListAllLiquidityProvisionsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListAllLiquidityProvisions", varargs...)
+	ret0, _ := ret[0].(*v2.ListAllLiquidityProvisionsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAllLiquidityProvisions indicates an expected call of ListAllLiquidityProvisions.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ListAllLiquidityProvisions(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllLiquidityProvisions", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListAllLiquidityProvisions), varargs...)
+}
+
 // ListAllNetworkHistorySegments mocks base method.
 func (m *MockTradingDataServiceClientV2) ListAllNetworkHistorySegments(arg0 context.Context, arg1 *v2.ListAllNetworkHistorySegmentsRequest, arg2 ...grpc.CallOption) (*v2.ListAllNetworkHistorySegmentsResponse, error) {
 	m.ctrl.T.Helper()
