@@ -137,7 +137,7 @@ func (p *BMIProcessor) ProcessBatch(
 	}
 
 	submissionsIDs := make([]string, 0, len(batch.Submissions)+stopOrderSize)
-	for i := 0; i < len(batch.Submissions); i++ {
+	for i := 0; i < len(batch.Submissions)+stopOrderSize; i++ {
 		submissionsIDs = append(submissionsIDs, idgen.NextID())
 	}
 

@@ -475,8 +475,19 @@ service TradingDataService {
 
   // List liquidity provisions
   //
-  // Get a list of liquidity provisions for a given market.
+  // DEPRECATED: When a liquidity provider amends a provision, and it's accepted by the network, the pending
+  // provision is returned by the API instead of the provision that is currently active.
+  // Use ListAllLiquidityProvisions instead.
   rpc ListLiquidityProvisions(ListLiquidityProvisionsRequest) returns (ListLiquidityProvisionsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Liquidity"};
+    option deprecated = true;
+  }
+
+  // List liquidity provisions
+  //
+  // Get a list of liquidity provisions for a given market. This API returns a current and pending liquidity provision
+  // in the event that a provision has been updated by the provider but the updated provision will not be active until the next epoch.
+  rpc ListAllLiquidityProvisions(ListAllLiquidityProvisionsRequest) returns (ListAllLiquidityProvisionsResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Liquidity"};
   }
 
@@ -2595,13 +2606,27 @@ message AssetsConnection {
 
 // Request for listing liquidity provisions
 message ListLiquidityProvisionsRequest {
-  // Restrict liquidity provision orders to those placed on the given market.
+  // Restrict liquidity provisions to those placed on the given market.
   optional string market_id = 1;
-  // Restrict liquidity provision orders to those placed by the given party.
+  // Restrict liquidity provisions to those placed by the given party.
   optional string party_id = 2;
-  // Restrict liquidity provision orders to those with the given order reference.
+  // Restrict liquidity provisions to those with the given order reference.
   optional string reference = 3;
-  // Whether to include live liquidity provision orders. If not set, live orders will not be included.
+  // Whether to include live liquidity provisions. If not set, live orders will not be included.
+  optional bool live = 4;
+  // Pagination controls.
+  optional Pagination pagination = 5;
+}
+
+// Request for listing liquidity provisions
+message ListAllLiquidityProvisionsRequest {
+  // Restrict liquidity provisions to those placed on the given market.
+  optional string market_id = 1;
+  // Restrict liquidity provisions to those placed by the given party.
+  optional string party_id = 2;
+  // Restrict liquidity provisions to those with the given order reference.
+  optional string reference = 3;
+  // Whether to include live liquidity provisions. If not set, live orders will not be included.
   optional bool live = 4;
   // Pagination controls.
   optional Pagination pagination = 5;
@@ -2613,10 +2638,34 @@ message ListLiquidityProvisionsResponse {
   LiquidityProvisionsConnection liquidity_provisions = 1;
 }
 
+// Response from listing liquidity provisions
+message ListAllLiquidityProvisionsResponse {
+  // Page of liquidity provisions data and corresponding page information.
+  LiquidityProvisionsWithPendingConnection liquidity_provisions = 1;
+}
+
+// Liquidity provider commitment. For API purposes this can report a pending liquidity provision,
+// the current live provision or both in the event that an update has been accepted on the network, but has yet
+// to go live and thus there is still a pending provision that will become active in the next epoch.
+message LiquidityProvision {
+  // Liquidity provision that is currently live.
+  vega.LiquidityProvision current = 1;
+  // Liquidity provision that is currently pending and will go live in the next epoch.
+  optional vega.LiquidityProvision pending = 2;
+}
+
 // Liquidity provision data with the corresponding cursor.
 message LiquidityProvisionsEdge {
   // Data corresponding to a liquidity provider's commitment.
   vega.LiquidityProvision node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Liquidity provision data with the corresponding cursor.
+message LiquidityProvisionWithPendingEdge {
+  // Data corresponding to a liquidity provider's commitment.
+  LiquidityProvision node = 1;
   // Cursor that can be used to fetch further pages.
   string cursor = 2;
 }
@@ -2626,6 +2675,14 @@ message LiquidityProvisionsConnection {
   // Page of liquidity provisions data and their corresponding cursors.
   repeated LiquidityProvisionsEdge edges = 1;
   // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+// Page of liquidity provisions data and corresponding page information
+message LiquidityProvisionsWithPendingConnection {
+  // Page of liquidity provisions data and their corresponding cursors.
+  repeated LiquidityProvisionWithPendingEdge edges = 1;
+  // Page information that is used to fetch further pages.
   PageInfo page_info = 2;
 }
 

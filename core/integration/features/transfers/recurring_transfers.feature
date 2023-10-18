@@ -294,3 +294,24 @@ Scenario: As a user I can make a recurring transfer to Global Rewards account by
     When the network moves ahead "1" epochs
     Then "a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4" should have general account balance of "2500" for asset "VEGA"
     And the reward account of type "ACCOUNT_TYPE_GLOBAL_REWARD" should have balance of "1000" for asset "VEGA"
+
+
+@networktreasury-recurring
+Scenario: As a user I can make a recurring transfer to Network Treasury account by specifying the "0" address and the account type (0013-ACCT-026)
+    Given the parties deposit on asset's general account the following amount:
+    | party    | asset | amount |
+    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4   | VEGA  | 4000  |
+
+    Given the parties submit the following recurring transfers:
+    | id | from   |  from_account_type    |   to   |   to_account_type    | asset | amount | start_epoch | end_epoch | factor |
+    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 |  ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_NETWORK_TREASURY | VEGA  |  1000 |  1          |     2     |   1    |
+
+    # end of epoch 0
+    When the network moves ahead "7" blocks
+    Then "a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4" should have general account balance of "4000" for asset "VEGA"
+
+    # end of epoch 1
+    # transferring 1k from a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 to 0000000000000000000000000000000000000000000000000000000000000000
+    When the network moves ahead "1" epochs
+    Then "a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4" should have general account balance of "2500" for asset "VEGA"
+    And the reward account of type "ACCOUNT_TYPE_NETWORK_TREASURY" should have balance of "1000" for asset "VEGA"

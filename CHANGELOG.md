@@ -15,6 +15,7 @@
 - [9733](https://github.com/vegaprotocol/vega/issues/9733) - Making `set_id` optional in `referral set stats` endpoint
 - [9743](https://github.com/vegaprotocol/vega/issues/9743) - Rename `ReferralFeeStats` endpoints to `FeesStats`, and `FeeStats` event to `FeesStats`.
 - [9408](https://github.com/vegaprotocol/vega/issues/9408) - Enforce pagination range.
+- [9757](https://github.com/vegaprotocol/vega/issues/9757) - Liquidity provisions `API` shows the pending `LP` instead of the current when an update is accepted by the network.
 
 ### 🗑️ Deprecation
 
@@ -329,6 +330,7 @@
 - [9813](https://github.com/vegaprotocol/vega/issues/9813) - Add validation for team scope vs individual scope
 - [8570](https://github.com/vegaprotocol/vega/issues/8570) - Make sure the filtering by `cmd_type` on block explorer doesn't result with a bad query planning.
 - [9801](https://github.com/vegaprotocol/vega/issues/9801) - Set right numbers on volume discount in fees stats
+- [9835](https://github.com/vegaprotocol/vega/issues/9835) - Fix panic batch market instruction.
 
 ## 0.72.1
 

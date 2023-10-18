@@ -1937,7 +1937,27 @@ func (t *TradingDataServiceV2) ListLiquidityProvisions(ctx context.Context, req 
 			"partyID: %s, marketID: %s, reference: %s", partyID, marketID, reference))
 	}
 
-	edges, err := makeEdges[*v2.LiquidityProvisionsEdge](lps)
+	provisions := make([]entities.LiquidityProvision, len(lps))
+	for i, lp := range lps {
+		provisions[i] = entities.LiquidityProvision{
+			ID:               lp.ID,
+			PartyID:          lp.PartyID,
+			CreatedAt:        lp.CreatedAt,
+			UpdatedAt:        lp.UpdatedAt,
+			MarketID:         lp.MarketID,
+			CommitmentAmount: lp.CommitmentAmount,
+			Fee:              lp.Fee,
+			Sells:            lp.Sells,
+			Buys:             lp.Buys,
+			Version:          lp.Version,
+			Status:           lp.Status,
+			Reference:        lp.Reference,
+			TxHash:           lp.TxHash,
+			VegaTime:         lp.VegaTime,
+		}
+	}
+
+	edges, err := makeEdges[*v2.LiquidityProvisionsEdge](provisions)
 	if err != nil {
 		return nil, formatE(err)
 	}
@@ -1948,6 +1968,43 @@ func (t *TradingDataServiceV2) ListLiquidityProvisions(ctx context.Context, req 
 	}
 
 	return &v2.ListLiquidityProvisionsResponse{
+		LiquidityProvisions: liquidityProvisionConnection,
+	}, nil
+}
+
+// ListAllLiquidityProvisions gets a list of liquidity provisions for a given market. This is similar to the list liquidity provisions API
+// but returns a current and pending liquidity provision in the event a provision has been updated by the provider
+// but the updated provision will not be active until the next epoch.
+func (t *TradingDataServiceV2) ListAllLiquidityProvisions(ctx context.Context, req *v2.ListAllLiquidityProvisionsRequest) (*v2.ListAllLiquidityProvisionsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetLiquidityProvisionsWithPending")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	partyID := entities.PartyID(ptr.UnBox(req.PartyId))
+	marketID := entities.MarketID(ptr.UnBox(req.MarketId))
+	reference := ptr.UnBox(req.Reference)
+	live := ptr.UnBox(req.Live)
+
+	lps, pageInfo, err := t.liquidityProvisionService.Get(ctx, partyID, marketID, reference, live, pagination)
+	if err != nil {
+		return nil, formatE(ErrLiquidityProvisionServiceGet, errors.Wrapf(err,
+			"partyID: %s, marketID: %s, reference: %s", partyID, marketID, reference))
+	}
+
+	edges, err := makeEdges[*v2.LiquidityProvisionWithPendingEdge](lps)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	liquidityProvisionConnection := &v2.LiquidityProvisionsWithPendingConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListAllLiquidityProvisionsResponse{
 		LiquidityProvisions: liquidityProvisionConnection,
 	}, nil
 }

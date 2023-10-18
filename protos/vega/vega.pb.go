@@ -6303,11 +6303,11 @@ type LiquidityProvision struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Unique party ID for the creator of the provision.
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// Timestamp in Unix nanoseconds for when the order was created.
+	// Timestamp in Unix nanoseconds for when the liquidity provision was created.
 	CreatedAt int64 `protobuf:"varint,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	// Timestamp in Unix nanoseconds for when the order was updated.
+	// Timestamp in Unix nanoseconds for when the liquidity provision was updated.
 	UpdatedAt int64 `protobuf:"varint,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	// Market ID for the order.
+	// Market ID for the liquidity provision.
 	MarketId string `protobuf:"bytes,5,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Specified as a unitless number that represents the amount of settlement asset of the market.
 	// This field is an unsigned integer scaled to the asset's decimal places.
@@ -6318,9 +6318,9 @@ type LiquidityProvision struct {
 	Sells []*LiquidityOrderReference `protobuf:"bytes,8,rep,name=sells,proto3" json:"sells,omitempty"`
 	// Set of liquidity buy orders to meet the liquidity provision obligation.
 	Buys []*LiquidityOrderReference `protobuf:"bytes,9,rep,name=buys,proto3" json:"buys,omitempty"`
-	// Version of this liquidity provision order.
+	// Version of this liquidity provision.
 	Version uint64 `protobuf:"varint,10,opt,name=version,proto3" json:"version,omitempty"`
-	// Status of this liquidity provision order.
+	// Status of this liquidity provision.
 	Status LiquidityProvision_Status `protobuf:"varint,11,opt,name=status,proto3,enum=vega.LiquidityProvision_Status" json:"status,omitempty"`
 	// Reference shared between this liquidity provision and all its orders.
 	Reference string `protobuf:"bytes,12,opt,name=reference,proto3" json:"reference,omitempty"`
