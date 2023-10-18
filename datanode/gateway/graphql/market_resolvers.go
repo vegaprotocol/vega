@@ -77,6 +77,40 @@ func (r *myMarketResolver) LiquidityProvisionsConnection(
 	return res.LiquidityProvisions, nil
 }
 
+func (r *myMarketResolver) LiquidityProvisions(ctx context.Context, market *vega.Market, party *string, live *bool, pagination *v2.Pagination) (
+	*v2.LiquidityProvisionsWithPendingConnection, error,
+) {
+	var pid string
+	if party != nil {
+		pid = *party
+	}
+
+	var marketID string
+	if market != nil {
+		marketID = market.Id
+	}
+
+	var l bool
+	if live != nil {
+		l = *live
+	}
+
+	req := v2.ListAllLiquidityProvisionsRequest{
+		PartyId:    &pid,
+		MarketId:   &marketID,
+		Live:       &l,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.ListAllLiquidityProvisions(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+
+	return res.LiquidityProvisions, nil
+}
+
 func (r *myMarketResolver) Data(ctx context.Context, market *types.Market) (*types.MarketData, error) {
 	req := v2.GetLatestMarketDataRequest{
 		MarketId: market.Id,

@@ -1957,6 +1957,45 @@ func (r *myPartyResolver) LiquidityProvisionsConnection(
 	return res.LiquidityProvisions, nil
 }
 
+func (r *myPartyResolver) LiquidityProvisions(ctx context.Context, party *vega.Party, market, ref *string,
+	live *bool, pagination *v2.Pagination,
+) (*v2.LiquidityProvisionsWithPendingConnection, error) {
+	var partyID string
+	if party != nil {
+		partyID = party.Id
+	}
+	var mid string
+	if market != nil {
+		mid = *market
+	}
+
+	var refID string
+	if ref != nil {
+		refID = *ref
+	}
+
+	var l bool
+	if live != nil {
+		l = *live
+	}
+
+	req := v2.ListAllLiquidityProvisionsRequest{
+		PartyId:    &partyID,
+		MarketId:   &mid,
+		Reference:  &refID,
+		Live:       &l,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.ListAllLiquidityProvisions(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+
+	return res.LiquidityProvisions, nil
+}
+
 func (r *myPartyResolver) MarginsConnection(ctx context.Context, party *vegapb.Party, marketID *string,
 	pagination *v2.Pagination,
 ) (*v2.MarginConnection, error) {
