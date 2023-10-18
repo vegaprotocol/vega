@@ -1688,17 +1688,14 @@ message ReferralProgram {
   uint64 version = 1;
   // Unique ID generated from the proposal that created this program.
   string id = 2;
-  // Defined benefit tiers in increasing order. First element will give Tier 1,
-  // second element will give Tier 2, and so on. Determines the level of
-  // benefit a party can expect based on performance criteria.
+  // Defined benefit tiers ordered by increasing discounts.
   repeated BenefitTier benefit_tiers = 3;
-  // Timestamp as Unix time in seconds, after which when the current epoch ends,
-  // the programs will end and benefits will be disabled.
+  // Timestamp in Unix nanoseconds, after which when the current epoch ends,
+  // the program will end and benefits will be disabled.
   int64 end_of_program_timestamp = 4;
-  // Number of epochs over which to evaluate a referral set's running volume.
+  // Number of epochs over which the referral set's running volume is evaluated.
   uint64 window_length = 5;
-  // Defined staking tiers in increasing order. First element will give Tier 1,
-  // second element will give Tier 2, and so on. Determines the level of
+  // Defined benefit tiers ordered by increasing reward multiplier. Determines the level of
   // benefit a party can expect based on their staking.
   repeated StakingTier staking_tiers = 6;
 }
@@ -1707,7 +1704,7 @@ message VolumeBenefitTier {
   // Required running notional taker volume in quantum units for parties
   // to access this tier.
   string minimum_running_notional_taker_volume = 1;
-  // Proportion of the taker fees to be discounted
+  // Proportion of the taker fees to be discounted.
   string volume_discount_factor = 2;
 }
 
@@ -1718,9 +1715,9 @@ message BenefitTier {
   // Required number of epochs a party must have been in a referral set to
   // access this tier.
   string minimum_epochs = 2;
-  // Proportion of the referee's taker fees to be rewarded to the referrer
+  // Proportion of the referee's taker fees to be rewarded to the referrer.
   string referral_reward_factor = 3;
-  // Proportion of the referee's taker fees to be discounted
+  // Proportion of the referee's taker fees to be discounted.
   string referral_discount_factor = 4;
 }
 
@@ -1748,29 +1745,27 @@ message VolumeDiscountProgram {
   uint64 version = 1;
   // Unique ID generated from the proposal that created this program.
   string id = 2;
-  // Defined benefit tiers in increasing order. First element will give Tier 1,
-  // second element will give Tier 2, and so on. Determines the level of
-  // benefit a party can expect based on performance criteria.
+  // Defined benefit tiers ordered by increasing discounts.
   repeated VolumeBenefitTier benefit_tiers = 3;
-  // Timestamp as Unix time in seconds, after which when the current epoch
-  // ends, the programs will end and benefits will be disabled.
+  // Timestamp in Unix seconds, after which when the current epoch
+  // ends, the program will end and benefits will be disabled.
   int64 end_of_program_timestamp = 4;
-  // Number of epochs over which to evaluate a referral set's running volume.
+  // Number of epochs over which a referral set's running volume is evaluated.
   uint64 window_length = 5;
 }
 
 // A list of activity streak benefit tiers
 message ActivityStreakBenefitTiers {
-  // The tiers.
+  // Defined benefit tiers ordered by increasing reward multipliers.
   repeated ActivityStreakBenefitTier tiers = 1;
 }
 
 // An activity streak benefit tier
 message ActivityStreakBenefitTier {
-  // The minimum number of epochs necessary for this tier.
+  // Number of epochs a party must be active to receive the multiplier.
   uint64 minimum_activity_streak = 1;
-  // The reward multiplier applicable for this tier.
+  // Reward multiplier applicable to this tier.
   string reward_multiplier = 2;
-  // The vesting bonus applicable for this tier.
+  // Vesting bonus applicable to this tier.
   string vesting_multiplier = 3;
 }
