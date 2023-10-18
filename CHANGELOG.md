@@ -329,6 +329,7 @@
 - [9813](https://github.com/vegaprotocol/vega/issues/9813) - Add validation for team scope vs individual scope
 - [8570](https://github.com/vegaprotocol/vega/issues/8570) - Make sure the filtering by `cmd_type` on block explorer doesn't result with a bad query planning.
 - [9801](https://github.com/vegaprotocol/vega/issues/9801) - Set right numbers on volume discount in fees stats
+- [9835](https://github.com/vegaprotocol/vega/issues/9835) - Fix panic batch market instruction.
 
 ## 0.72.1
 
