@@ -291,7 +291,7 @@ type TradingDataServiceClient interface {
 	ListAssets(ctx context.Context, in *ListAssetsRequest, opts ...grpc.CallOption) (*ListAssetsResponse, error)
 	// List liquidity provisions
 	//
-	// Get a list of liquidity provisions for a given market
+	// Get a list of liquidity provisions for a given market.
 	ListLiquidityProvisions(ctx context.Context, in *ListLiquidityProvisionsRequest, opts ...grpc.CallOption) (*ListLiquidityProvisionsResponse, error)
 	// Observe liquidity provisions
 	//
@@ -440,17 +440,19 @@ type TradingDataServiceClient interface {
 	//
 	// Get a list of data points for a perpetual market's funding periods.
 	ListFundingPeriodDataPoints(ctx context.Context, in *ListFundingPeriodDataPointsRequest, opts ...grpc.CallOption) (*ListFundingPeriodDataPointsResponse, error)
-	// List funding payments for a party
+	// List funding payments
 	//
-	// Get a list of data points for a perpetual market's funding payment for a party.
+	// Get a list of funding payment gains and losses for a party as a result of their position on a perpetual market when a funding
+	// period ends.
 	ListFundingPayments(ctx context.Context, in *ListFundingPaymentsRequest, opts ...grpc.CallOption) (*ListFundingPaymentsResponse, error)
 	// List party activity streak
 	//
-	// Get a party's activity across epochs
+	// Get a party's activity across epochs.
 	GetPartyActivityStreak(ctx context.Context, in *GetPartyActivityStreakRequest, opts ...grpc.CallOption) (*GetPartyActivityStreakResponse, error)
 	// Get current referral program
 	//
-	// Get the on-going referral program.
+	// Get the current referral program for the network. This program may not be active if it has ended
+	// and has not been replaced by another.
 	GetCurrentReferralProgram(ctx context.Context, in *GetCurrentReferralProgramRequest, opts ...grpc.CallOption) (*GetCurrentReferralProgramResponse, error)
 	// List referral sets
 	//
@@ -479,14 +481,16 @@ type TradingDataServiceClient interface {
 	ListTeamRefereeHistory(ctx context.Context, in *ListTeamRefereeHistoryRequest, opts ...grpc.CallOption) (*ListTeamRefereeHistoryResponse, error)
 	// Get fees statistics
 	//
-	// Gets accumulated fees, rewards, and applied discount information for a given asset or market for the latest epoch
-	// or a specific epoch.
+	// Get accumulated fees, rewards, and applied discount information. Either a market or an asset must be supplied as filter.
 	GetFeesStats(ctx context.Context, in *GetFeesStatsRequest, opts ...grpc.CallOption) (*GetFeesStatsResponse, error)
 	// Get current volume discount program
 	//
-	// Get the on-going volume discount program.
+	// Get the current volume discount program for the network. This program may not be active if it has ended
+	// and has not been replaced by another.
 	GetCurrentVolumeDiscountProgram(ctx context.Context, in *GetCurrentVolumeDiscountProgramRequest, opts ...grpc.CallOption) (*GetCurrentVolumeDiscountProgramResponse, error)
-	// Get the volume discount statistics for a given epoch for all parties
+	// Get volume discount statistics
+	//
+	// Get the information about a party's running traded volume, and the discount factor it earns them.
 	GetVolumeDiscountStats(ctx context.Context, in *GetVolumeDiscountStatsRequest, opts ...grpc.CallOption) (*GetVolumeDiscountStatsResponse, error)
 	// Export network history as CSV
 	//
@@ -2176,7 +2180,7 @@ type TradingDataServiceServer interface {
 	ListAssets(context.Context, *ListAssetsRequest) (*ListAssetsResponse, error)
 	// List liquidity provisions
 	//
-	// Get a list of liquidity provisions for a given market
+	// Get a list of liquidity provisions for a given market.
 	ListLiquidityProvisions(context.Context, *ListLiquidityProvisionsRequest) (*ListLiquidityProvisionsResponse, error)
 	// Observe liquidity provisions
 	//
@@ -2325,17 +2329,19 @@ type TradingDataServiceServer interface {
 	//
 	// Get a list of data points for a perpetual market's funding periods.
 	ListFundingPeriodDataPoints(context.Context, *ListFundingPeriodDataPointsRequest) (*ListFundingPeriodDataPointsResponse, error)
-	// List funding payments for a party
+	// List funding payments
 	//
-	// Get a list of data points for a perpetual market's funding payment for a party.
+	// Get a list of funding payment gains and losses for a party as a result of their position on a perpetual market when a funding
+	// period ends.
 	ListFundingPayments(context.Context, *ListFundingPaymentsRequest) (*ListFundingPaymentsResponse, error)
 	// List party activity streak
 	//
-	// Get a party's activity across epochs
+	// Get a party's activity across epochs.
 	GetPartyActivityStreak(context.Context, *GetPartyActivityStreakRequest) (*GetPartyActivityStreakResponse, error)
 	// Get current referral program
 	//
-	// Get the on-going referral program.
+	// Get the current referral program for the network. This program may not be active if it has ended
+	// and has not been replaced by another.
 	GetCurrentReferralProgram(context.Context, *GetCurrentReferralProgramRequest) (*GetCurrentReferralProgramResponse, error)
 	// List referral sets
 	//
@@ -2364,14 +2370,16 @@ type TradingDataServiceServer interface {
 	ListTeamRefereeHistory(context.Context, *ListTeamRefereeHistoryRequest) (*ListTeamRefereeHistoryResponse, error)
 	// Get fees statistics
 	//
-	// Gets accumulated fees, rewards, and applied discount information for a given asset or market for the latest epoch
-	// or a specific epoch.
+	// Get accumulated fees, rewards, and applied discount information. Either a market or an asset must be supplied as filter.
 	GetFeesStats(context.Context, *GetFeesStatsRequest) (*GetFeesStatsResponse, error)
 	// Get current volume discount program
 	//
-	// Get the on-going volume discount program.
+	// Get the current volume discount program for the network. This program may not be active if it has ended
+	// and has not been replaced by another.
 	GetCurrentVolumeDiscountProgram(context.Context, *GetCurrentVolumeDiscountProgramRequest) (*GetCurrentVolumeDiscountProgramResponse, error)
-	// Get the volume discount statistics for a given epoch for all parties
+	// Get volume discount statistics
+	//
+	// Get the information about a party's running traded volume, and the discount factor it earns them.
 	GetVolumeDiscountStats(context.Context, *GetVolumeDiscountStatsRequest) (*GetVolumeDiscountStatsResponse, error)
 	// Export network history as CSV
 	//
