@@ -475,30 +475,30 @@ service TradingDataService {
 
   // List liquidity provisions
   //
-  // Get a list of liquidity provisions for a given market
+  // Get a list of liquidity provisions for a given market.
   rpc ListLiquidityProvisions(ListLiquidityProvisionsRequest) returns (ListLiquidityProvisionsResponse) {
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Liquidity provisions"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Liquidity"};
   }
 
   // Observe liquidity provisions
   //
   // Subscribe to a stream of liquidity provision events for a given market and party
   rpc ObserveLiquidityProvisions(ObserveLiquidityProvisionsRequest) returns (stream ObserveLiquidityProvisionsResponse) {
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Liquidity provisions"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Liquidity"};
   }
 
   // List liquidity providers data
   //
   // List information about active liquidity provider(s) for a given market, or liquidity provider's party ID.
   rpc ListLiquidityProviders(ListLiquidityProvidersRequest) returns (ListLiquidityProvidersResponse) {
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Liquidity providers"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Liquidity"};
   }
 
   // List paid liquidity fees data
   //
   // List information about paid liquidity fees for a given market, or asset ID.
   rpc ListPaidLiquidityFees(ListPaidLiquidityFeesRequest) returns (ListPaidLiquidityFeesResponse) {
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Liquidity providers"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Liquidity"};
   }
 
   // Get governance data
@@ -742,23 +742,25 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Markets"};
   }
 
-  // List funding payments for a party
+  // List funding payments
   //
-  // Get a list of data points for a perpetual market's funding payment for a party.
+  // Get a list of funding payment gains and losses for a party as a result of their position on a perpetual market when a funding
+  // period ends.
   rpc ListFundingPayments(ListFundingPaymentsRequest) returns (ListFundingPaymentsResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Markets"};
   }
 
   // List party activity streak
   //
-  // Get a party's activity across epochs
+  // Get a party's activity across epochs.
   rpc GetPartyActivityStreak(GetPartyActivityStreakRequest) returns (GetPartyActivityStreakResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referral program"};
   }
 
   // Get current referral program
   //
-  // Get the on-going referral program.
+  // Get the current referral program for the network. This program may not be active if it has ended
+  // and has not been replaced by another.
   rpc GetCurrentReferralProgram(GetCurrentReferralProgramRequest) returns (GetCurrentReferralProgramResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Referral program"};
   }
@@ -808,20 +810,22 @@ service TradingDataService {
 
   // Get fees statistics
   //
-  // Gets accumulated fees, rewards, and applied discount information for a given asset or market for the latest epoch
-  // or a specific epoch.
+  // Get accumulated fees, rewards, and applied discount information. Either a market or an asset must be supplied as filter.
   rpc GetFeesStats(GetFeesStatsRequest) returns (GetFeesStatsResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Fees"};
   }
 
   // Get current volume discount program
   //
-  // Get the on-going volume discount program.
+  // Get the current volume discount program for the network. This program may not be active if it has ended
+  // and has not been replaced by another.
   rpc GetCurrentVolumeDiscountProgram(GetCurrentVolumeDiscountProgramRequest) returns (GetCurrentVolumeDiscountProgramResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Volume discount program"};
   }
 
-  // Get the volume discount statistics for a given epoch for all parties
+  // Get volume discount statistics
+  //
+  // Get the information about a party's running traded volume, and the discount factor it earns them.
   rpc GetVolumeDiscountStats(GetVolumeDiscountStatsRequest) returns (GetVolumeDiscountStatsResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Volume discount program"};
   }
@@ -2469,7 +2473,7 @@ message GetDepositResponse {
 message ListDepositsRequest {
   // Restrict deposits to those made by the given party ID.
   string party_id = 1;
-  // Pagination information to limit the data that is returned.
+  // Pagination controls.
   optional Pagination pagination = 2;
   // Date range of the requested data, if provided.
   optional DateRange date_range = 3;
@@ -2515,7 +2519,7 @@ message GetWithdrawalResponse {
 message ListWithdrawalsRequest {
   // Restrict withdrawals to those made by this party ID.
   string party_id = 1;
-  // Pagination information to limit the data that is returned.
+  // Pagination controls.
   optional Pagination pagination = 2;
   // Date range of the requested data, if provided.
   optional DateRange date_range = 3;
@@ -2694,7 +2698,7 @@ message ListPaidLiquidityFeesRequest {
   optional uint64 epoch_seq = 3;
   // Restrict fee data to those fees paid to the given parties.
   repeated string party_ids = 4;
-  // Pagination information to limit the data that is returned.
+  // Pagination controls.
   optional Pagination pagination = 5;
 }
 
@@ -2824,7 +2828,7 @@ message ListDelegationsRequest {
   optional string node_id = 2;
   // Return delegations made in the given epoch. If not set, delegations for the current epoch will be returned.
   optional string epoch_id = 3;
-  // Pagination information to limit the data that is returned.
+  // Pagination controls.
   optional Pagination pagination = 4;
 }
 
@@ -2913,7 +2917,7 @@ message GetNodeResponse {
 message ListNodesRequest {
   // Return the node list for the given epoch. If not set, the node list for the current epoch will be returned.
   optional uint64 epoch_seq = 1;
-  // Pagination information to limit the data that is returned.
+  // Pagination controls.
   optional Pagination pagination = 2;
 }
 
@@ -3291,7 +3295,7 @@ message ListProtocolUpgradeProposalsRequest {
   optional vega.events.v1.ProtocolUpgradeProposalStatus status = 1;
   // Restrict protocol upgrade proposals to those approved by the given node ID.
   optional string approved_by = 2;
-  // Pagination information to limit the data that is returned.
+  // Pagination controls.
   optional Pagination pagination = 3;
 }
 
@@ -3493,27 +3497,27 @@ message ListEntitiesResponse {
 
 // Request to get a party's activity streaks across epochs
 message GetPartyActivityStreakRequest {
-  // The party ID.
+  // Party ID to get the activity streak for.
   string party_id = 1 [(google.api.field_behavior) = REQUIRED];
-  // An optional epoch, returns last if not specified.
+  // Epoch to get the activity streak for. If not set, the last complete epoch is used.
   optional uint64 epoch = 2;
 }
 
 // Response when getting a party's activity streaks across epochs
 message GetPartyActivityStreakResponse {
-  // A party's activity streak in a given epoch
+  // Party's activity streak in a given epoch.
   vega.events.v1.PartyActivityStreak activity_streak = 1;
 }
 
 // A funding payment for a party on a perpetual market
 message FundingPayment {
-  // Party ID that received the funding payment.
+  // Party that received the funding payment.
   string party_id = 1;
-  // Market ID that produced the funding payment.
+  // Market that produced the funding payment.
   string market_id = 2;
   // Funding period sequence this payment was calculated from.
   uint64 funding_period_seq = 3;
-  // Timestamp in Unix nanoseconds at which this funding payment occured.
+  // Timestamp, in Unix nanoseconds, at which this funding payment occured.
   int64 timestamp = 4;
   // Funding payment amount, where a positive value indicates an earned payment received and a negative value a loss.
   string amount = 5;
@@ -3525,7 +3529,7 @@ message ListFundingPaymentsRequest {
   string party_id = 1 [(google.api.field_behavior) = REQUIRED];
   // Restrict funding payments returned to those generated by the given market.
   optional string market_id = 2;
-  // Optional pagination information to limit the data that is returned.
+  // Pagination controls.
   optional Pagination pagination = 3;
 }
 
@@ -3555,9 +3559,9 @@ message ListFundingPaymentsResponse {
 message ListFundingPeriodsRequest {
   // Market ID to get funding periods for.
   string market_id = 1 [(google.api.field_behavior) = REQUIRED];
-  // Optional date range to limit results to a specific funding period.
+  // Restrict the funding periods to those within the given date range.
   optional DateRange date_range = 2;
-  // Optional pagination information to limit the data that is returned.
+  // Pagination controls.
   optional Pagination pagination = 3;
 }
 
@@ -3592,7 +3596,7 @@ message ListFundingPeriodDataPointsRequest {
   optional vega.events.v1.FundingPeriodDataPoint.Source source = 3;
   // Restrict the data points to those that contributed to the given funding period sequence.
   optional uint64 seq = 4;
-  // Optional pagination information to limit the data that is returned.
+  // Pagination controls.
   optional Pagination pagination = 5;
 }
 
@@ -3646,10 +3650,10 @@ message EstimatePositionRequest {
   int64 open_volume = 2 [(google.api.field_behavior) = REQUIRED];
   // Open and/or hypothetical orders.
   repeated OrderInfo orders = 3;
-  // Optional argument specifying collateral available for the position, if provided then response will contain the liquidation price estimate.
+  // Collateral available for the position. If provided then response will contain the liquidation price estimate.
   // Collateral available needs to be provided scaled to asset decimal places. Liquidation price returned is scaled to asset decimal places by default.
   optional string collateral_available = 4;
-  // Argument specifying if the liquidation price estimates should be scaled to market decimal places, by default they are scaled to asset decimal places.
+  // Whether the liquidation price estimates should be scaled to market decimal places or by asset decimal places. If not set, asset decimal places are used.
   optional bool scale_liquidation_price_to_market_decimals = 5;
 }
 
@@ -3696,9 +3700,7 @@ message GetCurrentReferralProgramResponse {
   ReferralProgram current_referral_program = 1;
 }
 
-// Referral program for reporting purposes differs slightly from the referral program
-// message in the referral program created and referral program updated events, as it includes
-// an optional timestamp that is set when the referral program has ended.
+// Referral program details.
 message ReferralProgram {
   // Incremental version of the program. It is incremented after each program
   // update.
@@ -3708,16 +3710,15 @@ message ReferralProgram {
   // Defined tiers in increasing order. First element will give Tier 1, second
   // element will give Tier 2, and so on.
   repeated vega.BenefitTier benefit_tiers = 3;
-  // Timestamp as Unix time in nanoseconds, after which when the current epoch ends, the
-  // programs will end and benefits will be disabled.
+  // Timestamp in Unix nanoseconds, after which when the current epoch ends, the
+  // program will end and benefits will be disabled.
   int64 end_of_program_timestamp = 4;
-  // Number of epochs over which to evaluate a referral set's running volume.
+  // Number of epochs over which the referral set's running volume is evaluated.
   uint64 window_length = 5;
-  // Defined staking tiers in increasing order. First element will give Tier 1,
-  // second element will give Tier 2, and so on. Determines the level of
+  // Defined benefit tiers ordered by increasing reward multiplier. Determines the level of
   // benefit a party can expect based on their staking.
   repeated vega.StakingTier staking_tiers = 6;
-  // Timestamp as Unix time in nanoseconds at which the program ended.
+  // Timestamp, in Unix nanoseconds, when the program ended.
   optional int64 ended_at = 7;
 }
 
@@ -3727,9 +3728,9 @@ message ReferralSet {
   string id = 1;
   // Party that created the set.
   string referrer = 2;
-  // Time in Unix nanoseconds when the set was created.
+  // Timestamp, in Unix nanoseconds, when the set was created.
   int64 created_at = 3;
-  // Time in Unix nanoseconds when the set was updated.
+  // Timestamp, in Unix nanoseconds, when the set was updated.
   int64 updated_at = 4;
 }
 
@@ -3753,7 +3754,7 @@ message ReferralSetConnection {
 message ListReferralSetsRequest {
   // Referral set ID to retrieve information for
   optional string referral_set_id = 1;
-  // pagination information to limit the data that is returned.
+  // Pagination controls.
   optional Pagination pagination = 2;
   // Referrer to filter by. If referrer set ID is provided, this field is ignored.
   optional string referrer = 3;
@@ -3773,13 +3774,13 @@ message ReferralSetReferee {
   string referral_set_id = 1;
   // Party that joined the set.
   string referee = 2;
-  // Time in Unix nanoseconds when the party joined the set.
+  // Timestamp, in Unix nanoseconds, when the party joined the set.
   int64 joined_at = 3;
   // Epoch at which the party joined the set.
   uint64 at_epoch = 4;
-  // Total notional volume of the referee's aggressive trades over the aggregation period, default is 30 days.
+  // Total notional volume of the referee's aggressive trades over the aggregation period.
   string total_referee_notional_taker_volume = 5;
-  // Total rewards generated by the referee over the aggregation period, default is 30 days.
+  // Total rewards generated by the referee over the aggregation period.
   string total_referee_generated_rewards = 6;
 }
 
@@ -3803,14 +3804,13 @@ message ReferralSetRefereeConnection {
 message ListReferralSetRefereesRequest {
   // Referral set ID to retrieve information for
   optional string referral_set_id = 1;
-  // Pagination information to limit the data that is returned.
+  // Pagination controls.
   optional Pagination pagination = 2;
   // Referrer to filter by. If referrer set ID is provided, this field is ignored.
   optional string referrer = 3;
   // Referee to filter by. If referrer set ID or referrer is provided, this field is ignored.
   optional string referee = 4;
-  // Days to aggregate party volume and rewards over. If omitted, the referee's volume and rewards generated
-  // for the past 30 days will be summed.
+  // Days to aggregate party volume and rewards over. If omitted, 30 days will be used.
   optional uint32 aggregation_days = 5;
 }
 
@@ -3822,15 +3822,13 @@ message ListReferralSetRefereesResponse {
 
 // Request to get a referral set's stats
 message GetReferralSetStatsRequest {
-  // Unique ID of the set.
+  // Restrict referral set statistics to those for the given referral set.
   optional string referral_set_id = 1;
-  // Epoch at which the set's statistics were updated.
-  // If omitted, the last received statistics are returned
+  // Epoch to get referral set statistics for. If not set, the last complete epoch is used.
   optional uint64 at_epoch = 2;
-  // Referee's party ID to filter statistics for.
-  // If omitted the statistics for all referees will be returned.
+  // Restrict referral set statisitcs to those for the given referee.
   optional string referee = 3;
-  // pagination information to limit the data that is returned.
+  // Pagination controls.
   optional Pagination pagination = 4;
 }
 
@@ -3856,9 +3854,9 @@ message ReferralSetStatsEdge {
   string cursor = 2;
 }
 
-// Referral set statistics for a given epoch for all parties.
+// Referral set statistics for a given epoch for a party.
 message ReferralSetStats {
-  // Epoch at which the set's statistics are updated.
+  // Epoch at which the set's statistics were updated.
   uint64 at_epoch = 1;
   // Running volume for the set based on the window length of the current
   // referral program.
@@ -3869,11 +3867,11 @@ message ReferralSetStats {
   string discount_factor = 4;
   // Reward factor applied to the party.
   string reward_factor = 5;
-  // Current referee notional taker volume
+  // Current referee notional taker volume.
   string epoch_notional_taker_volume = 6;
-  // The multiplier applied to the referral reward factor when calculating referral rewards due to the referrer
+  // Multiplier applied to the referral reward factor when calculating referral rewards due to the referrer.
   string rewards_multiplier = 7;
-  // The proportion of the referees taker fees to be rewarded to the referrer
+  // Proportion of the referee's taker fees to be rewarded to the referrer.
   string rewards_factor_multiplier = 8;
 }
 
@@ -3889,9 +3887,9 @@ message Team {
   optional string team_url = 4;
   // Link to an image of the team's avatar.
   optional string avatar_url = 5;
-  // Time in Unix nanoseconds when the team was created.
+  // Timestamp in Unix nanoseconds when the team was created.
   int64 created_at = 6;
-  // Tells if a party can join the team or not.
+  // Whether or not the team is closed to new party members.
   bool closed = 7;
   // Epoch at which the team was created.
   uint64 created_at_epoch = 8;
@@ -3899,7 +3897,7 @@ message Team {
 
 // Team data item with the corresponding cursor.
 message TeamEdge {
-  // Team data
+  // Team data.
   Team node = 1;
   // Cursor that can be used to fetch further pages.
   string cursor = 2;
@@ -3915,11 +3913,11 @@ message TeamConnection {
 
 // Request to list all teams
 message ListTeamsRequest {
-  // Optional team ID to filter for a specific team
+  // Restrict teams to those with the given team ID.
   optional string team_id = 1;
-  // Optional party ID to filter by a specific referrer, or referee
+  // Restrict teams to those where the given party is a referrer or a referee.
   optional string party_id = 2;
-  // Optional pagination information to limit the data that is returned.
+  // Pagination controls.
   optional Pagination pagination = 3;
 }
 
@@ -3933,7 +3931,7 @@ message ListTeamsResponse {
 message ListTeamRefereesRequest {
   // Team ID to list referees for.
   string team_id = 1 [(google.api.field_behavior) = REQUIRED];
-  // Optional pagination control
+  // Pagination controls.
   optional Pagination pagination = 2;
 }
 
@@ -3943,7 +3941,7 @@ message TeamReferee {
   string team_id = 1;
   // Party that joined the team.
   string referee = 2;
-  // Time in Unix nanoseconds when the party joined a team.
+  // Timestamp in Unix nanoseconds when the party joined the team.
   int64 joined_at = 3;
   // Epoch at which the party joined the team.
   uint64 joined_at_epoch = 4;
@@ -3951,7 +3949,7 @@ message TeamReferee {
 
 // Team referee data item with the corresponding cursor.
 message TeamRefereeEdge {
-  // Team referee data
+  // Team referee data.
   TeamReferee node = 1;
   // Cursor that can be used to fetch further pages.
   string cursor = 2;
@@ -3975,7 +3973,7 @@ message ListTeamRefereesResponse {
 message TeamRefereeHistory {
   // ID of the team the referee joined.
   string team_id = 1;
-  // Time in Unix nanoseconds when the party joined a team.
+  // Timestamp in Unix nanoseconds when the party joined the team.
   int64 joined_at = 2;
   // Epoch at which the party joined the team.
   uint64 joined_at_epoch = 3;
@@ -3983,7 +3981,7 @@ message TeamRefereeHistory {
 
 // Team referee history data item with the corresponding cursor.
 message TeamRefereeHistoryEdge {
-  // Team referee data
+  // Team referee data.
   TeamRefereeHistory node = 1;
   // Cursor that can be used to fetch further pages.
   string cursor = 2;
@@ -4001,7 +3999,7 @@ message TeamRefereeHistoryConnection {
 message ListTeamRefereeHistoryRequest {
   // Party ID to list referee history for.
   string referee = 1 [(google.api.field_behavior) = REQUIRED];
-  // Optional pagination control
+  // Pagination controls.
   optional Pagination pagination = 2;
 }
 
@@ -4013,19 +4011,19 @@ message ListTeamRefereeHistoryResponse {
 
 // Request that is sent to retrieve fees statistics.
 message GetFeesStatsRequest {
-  // Market ID to get referral fee statistics for. If omitted, asset ID must be provided.
+  // Restrict fee statistics to those related for the given market.
   optional string market_id = 1;
-  // Asset ID to get referral fee statistics for. If omitted, market ID must be provided.
+  // Restrict fee statistics to those related for the given asset.
   optional string asset_id = 2;
-  // Epoch to get referral fee statistics for. If omitted, the last epoch published is used.
+  // Epoch to get referral fee statistics for. If not set, the last complete epoch is used.
   optional uint64 epoch_seq = 3;
-  // Party ID to filter the statistics for
+  // Restrict fee statistics to those for the given party.
   optional string party_id = 4;
 }
 
 // Response that is sent when requesting fees statistics.
 message GetFeesStatsResponse {
-  // Fees statistics for the given market or asset, and epoch.
+  // Fees statistics for the given request.
   vega.events.v1.FeesStats fees_stats = 1;
 }
 
@@ -4040,18 +4038,17 @@ message GetCurrentVolumeDiscountProgramResponse {
 
 // Request to get the volume discount statistics for a given epoch.
 message GetVolumeDiscountStatsRequest {
-  // Epoch at which the statistics apply. If not set, last
-  // epoch is used.
+  // Epoch to get volume discount statistics for. If not set, last epoch is used.
   optional uint64 at_epoch = 1;
-  // Party ID to return volume discount statistics for.
+  // Restrict volume discount statistics to those for the given party.
   optional string party_id = 2;
-  // pagination information to limit the data that is returned.
+  // Pagination controls.
   optional Pagination pagination = 3;
 }
 
 // Response containing the volume discount statistics for the given epoch.
 message GetVolumeDiscountStatsResponse {
-  // Volume discount statistics for the epoch.
+  // Volume discount statistics for an epoch.
   VolumeDiscountStatsConnection stats = 1;
 }
 
@@ -4075,32 +4072,29 @@ message VolumeDiscountStatsEdge {
 message VolumeDiscountStats {
   // Epoch at which the statistics apply.
   uint64 at_epoch = 1;
-  // Party ID.
+  // Party ID for which the statistics apply.
   string party_id = 2;
-  // Discount factor applied to the volume.
+  // Discount factor applied given the party's running volume.
   string discount_factor = 3;
   // The party's running volume.
   string running_volume = 4;
 }
 
-// Volume discount program for reporting purposes differs slightly from the volume discount program
-// message in the volume discount program started and volume discount updated events, as it includes
-// an optional timestamp that is set when the program has ended.
+// Volume discount program details.
 message VolumeDiscountProgram {
   // Incremental version of the program. It is incremented after each program
   // update.
   uint64 version = 1;
   // Unique ID generated from the proposal that created this program.
   string id = 2;
-  // Defined benefit tiers in increasing order. First element will give Tier 1,
-  // second element will give Tier 2, and so on. Determines the level of
+  // Defined benefit tiers ordered by increasing discounts. Determines the level of
   // benefit a party can expect based on performance criteria.
   repeated vega.VolumeBenefitTier benefit_tiers = 3;
-  // Timestamp as Unix time in nanoseconds, after which when the current epoch
-  // ends, the programs will end and benefits will be disabled.
+  // Timestamp in Unix nanoseconds, after which when the current epoch
+  // ends, the program will end and benefits will be disabled.
   int64 end_of_program_timestamp = 4;
-  // Number of epochs over which to evaluate a volume discount statistics' running volume.
+  // Number of epochs over which a volume discount statistics' running volume is evaluated.
   uint64 window_length = 5;
-  // Timestamp as Unix time in nanoseconds at which the program ended.
+  // Timestamp in Unix nanoseconds, at which the program ended.
   optional int64 ended_at = 6;
 }
