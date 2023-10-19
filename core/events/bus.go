@@ -163,6 +163,7 @@ const (
 	FeesStatsEvent
 	FundingPaymentsEvent
 	PaidLiquidityFeesStatsEvent
+	VestingBalancesSummaryEvent
 )
 
 var (
@@ -256,6 +257,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_FEES_STATS_UPDATED:                FeesStatsEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PAYMENTS:                  FundingPaymentsEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_PAID_LIQUIDITY_FEES_STATS_UPDATED: PaidLiquidityFeesStatsEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VESTING_SUMMARY:                   VestingBalancesSummaryEvent,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -340,6 +342,7 @@ var (
 		FeesStatsEvent:                    eventspb.BusEventType_BUS_EVENT_TYPE_FEES_STATS_UPDATED,
 		FundingPaymentsEvent:              eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PAYMENTS,
 		PaidLiquidityFeesStatsEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_PAID_LIQUIDITY_FEES_STATS_UPDATED,
+		VestingBalancesSummaryEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_VESTING_SUMMARY,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -425,6 +428,7 @@ var (
 		FeesStatsEvent:                    "FeesStatsEvent",
 		FundingPaymentsEvent:              "FundingPaymentsEvent",
 		PaidLiquidityFeesStatsEvent:       "LiquidityFeesStatsEvent",
+		VestingBalancesSummaryEvent:       "VestingBalancesSummaryEvent",
 	}
 )
 
