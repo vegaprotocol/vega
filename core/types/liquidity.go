@@ -200,9 +200,9 @@ type LiquidityProvision struct {
 	CommitmentAmount *num.Uint
 	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers
 	Fee num.Decimal
-	// Version of this liquidity provision order
+	// Version of this liquidity provision
 	Version uint64
-	// Status of this liquidity provision order
+	// Status of this liquidity provision
 	Status LiquidityProvisionStatus
 	// A reference shared between this liquidity provision and all it's orders
 	Reference string

@@ -120,7 +120,7 @@ message NewMarketConfiguration {
   int64 position_decimal_places = 6;
   // DEPRECATED: Use liquidity SLA parameters instead.
   // Percentage move up and down from the mid price which specifies the range of
-  // price levels over which automated liquidity provision orders will be deployed.
+  // price levels over which automated liquidity provisions will be deployed.
   optional string lp_price_range = 8;
   // Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume.
   string linear_slippage_factor = 9;
@@ -187,7 +187,7 @@ message UpdateMarketConfiguration {
   }
   // DEPRECATED: Use liquidity SLA parameters instead.
   // Percentage move up and down from the mid price which specifies the range of
-  // price levels over which automated liquidity provision orders will be deployed.
+  // price levels over which automated liquidity provisions will be deployed.
   optional string lp_price_range = 5;
   // Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume.
   string linear_slippage_factor = 6;

@@ -1830,7 +1830,7 @@ type Market struct {
 	// The number of decimal places for a position.
 	PositionDecimalPlaces int64 `protobuf:"varint,11,opt,name=position_decimal_places,json=positionDecimalPlaces,proto3" json:"position_decimal_places,omitempty"`
 	// Percentage move up and down from the mid price which specifies the range of
-	// price levels over which automated liquidity provision orders will be deployed.
+	// price levels over which automated liquidity provisions will be deployed.
 	LpPriceRange string `protobuf:"bytes,12,opt,name=lp_price_range,json=lpPriceRange,proto3" json:"lp_price_range,omitempty"`
 	// Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume.
 	LinearSlippageFactor string `protobuf:"bytes,13,opt,name=linear_slippage_factor,json=linearSlippageFactor,proto3" json:"linear_slippage_factor,omitempty"`

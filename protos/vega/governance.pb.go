@@ -1076,7 +1076,7 @@ type NewMarketConfiguration struct {
 	PositionDecimalPlaces int64 `protobuf:"varint,6,opt,name=position_decimal_places,json=positionDecimalPlaces,proto3" json:"position_decimal_places,omitempty"`
 	// DEPRECATED: Use liquidity SLA parameters instead.
 	// Percentage move up and down from the mid price which specifies the range of
-	// price levels over which automated liquidity provision orders will be deployed.
+	// price levels over which automated liquidity provisions will be deployed.
 	LpPriceRange *string `protobuf:"bytes,8,opt,name=lp_price_range,json=lpPriceRange,proto3,oneof" json:"lp_price_range,omitempty"`
 	// Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume.
 	LinearSlippageFactor string `protobuf:"bytes,9,opt,name=linear_slippage_factor,json=linearSlippageFactor,proto3" json:"linear_slippage_factor,omitempty"`
@@ -1531,7 +1531,7 @@ type UpdateMarketConfiguration struct {
 	RiskParameters isUpdateMarketConfiguration_RiskParameters `protobuf_oneof:"risk_parameters"`
 	// DEPRECATED: Use liquidity SLA parameters instead.
 	// Percentage move up and down from the mid price which specifies the range of
-	// price levels over which automated liquidity provision orders will be deployed.
+	// price levels over which automated liquidity provisions will be deployed.
 	LpPriceRange *string `protobuf:"bytes,5,opt,name=lp_price_range,json=lpPriceRange,proto3,oneof" json:"lp_price_range,omitempty"`
 	// Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume.
 	LinearSlippageFactor string `protobuf:"bytes,6,opt,name=linear_slippage_factor,json=linearSlippageFactor,proto3" json:"linear_slippage_factor,omitempty"`

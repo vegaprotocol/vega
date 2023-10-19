@@ -235,7 +235,7 @@ func TestLedger(t *testing.T) {
 	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[6], accounts[7], blocks[13], int64(41), entities.LedgerMovementTypeRewardPayout, int64(2260), int64(17050), txHashFromString("ledger_entry_13")))
 	_ = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[4], accounts[11], blocks[13], int64(72), entities.LedgerMovementTypeRewardPayout, int64(2188), int64(17122), txHashFromString("ledger_entry_14")))
 
-	tStart, _ := time.Parse("2006 Jan 02 15:04:05", "2012 Dec 07 00:00:00")
+	tStart := time.Now().Add(-5 * 24 * time.Hour)
 	tEnd := time.Now()
 
 	t.Run("get all ledger records", func(t *testing.T) {
