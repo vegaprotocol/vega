@@ -303,6 +303,7 @@ func (t *delegatingConnection) CopyTo(ctx context.Context, w io.Writer, sql stri
 	if err != nil {
 		return nil, err
 	}
+	defer conn.Release()
 	return conn.Conn().PgConn().CopyTo(ctx, w, sql)
 }
 
