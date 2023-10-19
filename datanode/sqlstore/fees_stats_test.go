@@ -76,7 +76,7 @@ func testAddFeesStatsEpochNotExists(t *testing.T) {
 		MarketID:                 market.ID,
 		AssetID:                  asset.ID,
 		EpochSeq:                 100,
-		TotalRewardsPaid:         nil,
+		TotalRewardsReceived:     nil,
 		ReferrerRewardsGenerated: nil,
 		RefereesDiscountApplied:  nil,
 		VolumeDiscountApplied:    nil,
@@ -107,7 +107,7 @@ func testAddFeesStatsEpochExists(t *testing.T) {
 		MarketID:                 market.ID,
 		AssetID:                  asset.ID,
 		EpochSeq:                 100,
-		TotalRewardsPaid:         nil,
+		TotalRewardsReceived:     nil,
 		ReferrerRewardsGenerated: nil,
 		RefereesDiscountApplied:  nil,
 		VolumeDiscountApplied:    nil,
@@ -142,7 +142,7 @@ func setupFeesStats(t *testing.T, ctx context.Context, fs *sqlstore.FeesStats) [
 			MarketID: entities.MarketID("deadbeef01"),
 			AssetID:  entities.AssetID("deadbaad01"),
 			EpochSeq: 1,
-			TotalRewardsPaid: []*eventspb.PartyAmount{
+			TotalRewardsReceived: []*eventspb.PartyAmount{
 				{
 					Party:  "cafedaad01",
 					Amount: "1000000",
@@ -179,7 +179,7 @@ func setupFeesStats(t *testing.T, ctx context.Context, fs *sqlstore.FeesStats) [
 			MarketID: entities.MarketID("deadbeef01"),
 			AssetID:  entities.AssetID("deadbaad01"),
 			EpochSeq: 2,
-			TotalRewardsPaid: []*eventspb.PartyAmount{
+			TotalRewardsReceived: []*eventspb.PartyAmount{
 				{
 					Party:  "cafedaad01",
 					Amount: "1100000",
@@ -217,7 +217,7 @@ func setupFeesStats(t *testing.T, ctx context.Context, fs *sqlstore.FeesStats) [
 			MarketID: entities.MarketID("deadbeef01"),
 			AssetID:  entities.AssetID("deadbaad01"),
 			EpochSeq: 3,
-			TotalRewardsPaid: []*eventspb.PartyAmount{
+			TotalRewardsReceived: []*eventspb.PartyAmount{
 				{
 					Party:  "cafedaad01",
 					Amount: "1200000",
@@ -255,7 +255,7 @@ func setupFeesStats(t *testing.T, ctx context.Context, fs *sqlstore.FeesStats) [
 			MarketID: entities.MarketID("deadbeef02"),
 			AssetID:  entities.AssetID("deadbaad02"),
 			EpochSeq: 1,
-			TotalRewardsPaid: []*eventspb.PartyAmount{
+			TotalRewardsReceived: []*eventspb.PartyAmount{
 				{
 					Party:  "cafedaad02",
 					Amount: "2000000",
@@ -293,7 +293,7 @@ func setupFeesStats(t *testing.T, ctx context.Context, fs *sqlstore.FeesStats) [
 			MarketID: entities.MarketID("deadbeef02"),
 			AssetID:  entities.AssetID("deadbaad02"),
 			EpochSeq: 2,
-			TotalRewardsPaid: []*eventspb.PartyAmount{
+			TotalRewardsReceived: []*eventspb.PartyAmount{
 				{
 					Party:  "cafedaad02",
 					Amount: "2100000",
@@ -331,7 +331,7 @@ func setupFeesStats(t *testing.T, ctx context.Context, fs *sqlstore.FeesStats) [
 			MarketID: entities.MarketID("deadbeef02"),
 			AssetID:  entities.AssetID("deadbaad02"),
 			EpochSeq: 3,
-			TotalRewardsPaid: []*eventspb.PartyAmount{
+			TotalRewardsReceived: []*eventspb.PartyAmount{
 				{
 					Party:  "cafedaad02",
 					Amount: "2200000",
@@ -466,7 +466,7 @@ func testGetFeesStatsForPartyAndEpoch(t *testing.T) {
 		MarketID: entities.MarketID("deadbeef01"),
 		AssetID:  entities.AssetID("deadbaad01"),
 		EpochSeq: 2,
-		TotalRewardsPaid: []*eventspb.PartyAmount{
+		TotalRewardsReceived: []*eventspb.PartyAmount{
 			{
 				Party:  "cafedaad01",
 				Amount: "1100000",
@@ -510,7 +510,7 @@ func testGetFeesStatsForPartyLatest(t *testing.T) {
 		MarketID: entities.MarketID("deadbeef01"),
 		AssetID:  entities.AssetID("deadbaad01"),
 		EpochSeq: 3,
-		TotalRewardsPaid: []*eventspb.PartyAmount{
+		TotalRewardsReceived: []*eventspb.PartyAmount{
 			{
 				Party:  "cafedaad01",
 				Amount: "1200000",
@@ -553,7 +553,7 @@ func testGetFeesStatsParty(t *testing.T) {
 		MarketID: entities.MarketID("deadbeef01"),
 		AssetID:  entities.AssetID("deadbaad01"),
 		EpochSeq: 3,
-		TotalRewardsPaid: []*eventspb.PartyAmount{
+		TotalRewardsReceived: []*eventspb.PartyAmount{
 			{
 				Party:  "cafedaad01",
 				Amount: "1200000",

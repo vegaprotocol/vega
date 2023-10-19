@@ -6,6 +6,9 @@ alter table fees_stats
 alter table fees_stats
     add column maker_fees_generated jsonb not null default '[]';
 
+alter table fees_stats
+    rename column total_rewards_paid TO total_rewards_received;
+
 
 -- +goose Down
 
@@ -15,3 +18,5 @@ alter table fees_stats
 alter table fees_stats
     drop column maker_fees_generated;
 
+alter table fees_stats
+    rename column total_rewards_received TO total_rewards_paid;

@@ -25,13 +25,15 @@ import (
 )
 
 type FeesStats struct {
-	// TotalMakerFeesReceived is the total maker fees received by the maker side.
+	// TotalMakerFeesReceived is the total of maker fees received by the maker side.
 	// maker -> amount
 	TotalMakerFeesReceived map[string]*num.Uint
 	// MakerFeesGenerated tracks maker fees paid by taker (aggressor) to the maker.
 	// taker -> maker -> amount
-	MakerFeesGenerated       map[string]map[string]*num.Uint
-	TotalRewardsPaid         map[string]*num.Uint
+	MakerFeesGenerated map[string]map[string]*num.Uint
+	// TotalRewardsReceived is the total of rewards received by the referrer.
+	// referrer -> amount
+	TotalRewardsReceived     map[string]*num.Uint
 	ReferrerRewardsGenerated map[string]map[string]*num.Uint
 	RefereeDiscountApplied   map[string]*num.Uint
 	VolumeDiscountApplied    map[string]*num.Uint
@@ -41,7 +43,7 @@ func NewFeesStats() *FeesStats {
 	return &FeesStats{
 		TotalMakerFeesReceived:   map[string]*num.Uint{},
 		MakerFeesGenerated:       map[string]map[string]*num.Uint{},
-		TotalRewardsPaid:         map[string]*num.Uint{},
+		TotalRewardsReceived:     map[string]*num.Uint{},
 		ReferrerRewardsGenerated: map[string]map[string]*num.Uint{},
 		RefereeDiscountApplied:   map[string]*num.Uint{},
 		VolumeDiscountApplied:    map[string]*num.Uint{},
@@ -59,8 +61,8 @@ func NewFeesStatsFromProto(fsp *eventspb.FeesStats) *FeesStats {
 		fs.VolumeDiscountApplied[v.Party] = num.MustUintFromString(v.Amount, 10)
 	}
 
-	for _, v := range fsp.TotalRewardsPaid {
-		fs.TotalRewardsPaid[v.Party] = num.MustUintFromString(v.Amount, 10)
+	for _, v := range fsp.TotalRewardsReceived {
+		fs.TotalRewardsReceived[v.Party] = num.MustUintFromString(v.Amount, 10)
 	}
 
 	for _, v := range fsp.ReferrerRewardsGenerated {
@@ -116,10 +118,10 @@ func (f *FeesStats) RegisterReferrerReward(
 	referrer, referee string,
 	amount *num.Uint,
 ) {
-	total, ok := f.TotalRewardsPaid[referrer]
+	total, ok := f.TotalRewardsReceived[referrer]
 	if !ok {
 		total = num.NewUint(0)
-		f.TotalRewardsPaid[referrer] = total
+		f.TotalRewardsReceived[referrer] = total
 	}
 
 	total.Add(total, amount)
@@ -133,7 +135,7 @@ func (f *FeesStats) RegisterReferrerReward(
 	refereeTally, ok := rewardsGenerated[referee]
 	if !ok {
 		refereeTally = num.NewUint(0)
-		rewardsGenerated[referrer] = refereeTally
+		rewardsGenerated[referee] = refereeTally
 	}
 
 	refereeTally.Add(refereeTally, amount)
@@ -162,7 +164,7 @@ func (f *FeesStats) RegisterVolumeDiscount(party string, amount *num.Uint) {
 func (f *FeesStats) ToProto(asset string) *eventspb.FeesStats {
 	fs := &eventspb.FeesStats{
 		Asset:                    asset,
-		TotalRewardsPaid:         make([]*eventspb.PartyAmount, 0, len(f.TotalRewardsPaid)),
+		TotalRewardsReceived:     make([]*eventspb.PartyAmount, 0, len(f.TotalRewardsReceived)),
 		ReferrerRewardsGenerated: make([]*eventspb.ReferrerRewardsGenerated, 0, len(f.ReferrerRewardsGenerated)),
 		RefereesDiscountApplied:  make([]*eventspb.PartyAmount, 0, len(f.RefereeDiscountApplied)),
 		VolumeDiscountApplied:    make([]*eventspb.PartyAmount, 0, len(f.VolumeDiscountApplied)),
@@ -170,11 +172,11 @@ func (f *FeesStats) ToProto(asset string) *eventspb.FeesStats {
 		MakerFeesGenerated:       make([]*eventspb.MakerFeesGenerated, 0, len(f.MakerFeesGenerated)),
 	}
 
-	totalRewardsPaidParties := maps.Keys(f.TotalRewardsPaid)
-	sort.Strings(totalRewardsPaidParties)
-	for _, party := range totalRewardsPaidParties {
-		amount := f.TotalRewardsPaid[party]
-		fs.TotalRewardsPaid = append(fs.TotalRewardsPaid, &eventspb.PartyAmount{
+	totalRewardsReceivedParties := maps.Keys(f.TotalRewardsReceived)
+	sort.Strings(totalRewardsReceivedParties)
+	for _, party := range totalRewardsReceivedParties {
+		amount := f.TotalRewardsReceived[party]
+		fs.TotalRewardsReceived = append(fs.TotalRewardsReceived, &eventspb.PartyAmount{
 			Party:  party,
 			Amount: amount.String(),
 		})

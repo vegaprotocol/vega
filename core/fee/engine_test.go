@@ -195,7 +195,7 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 		Market:                   "",
 		Asset:                    testAsset,
 		EpochSeq:                 0,
-		TotalRewardsPaid:         []*eventspb.PartyAmount{},
+		TotalRewardsReceived:     []*eventspb.PartyAmount{},
 		ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{},
 		RefereesDiscountApplied: []*eventspb.PartyAmount{
 			{
@@ -237,7 +237,7 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscount(t *testing.T) {
 	discountRewardService.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalFromFloat(0.3)).AnyTimes()
 	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalFromFloat(0.2)).AnyTimes()
 	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalFromFloat(0.1)).AnyTimes()
-	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID("party3"), nil).AnyTimes()
 	require.NoError(t, eng.UpdateFeeFactors(types.Fees{
 		Factors: &types.FeeFactors{
 			MakerFee:          num.DecimalFromFloat(.000250),
@@ -284,11 +284,24 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscount(t *testing.T) {
 	assert.Equal(t, recv, len(trades))
 	assert.Equal(t, pay, len(trades))
 	assert.Equal(t, &eventspb.FeesStats{
-		Market:                   "",
-		Asset:                    testAsset,
-		EpochSeq:                 0,
-		TotalRewardsPaid:         []*eventspb.PartyAmount{},
-		ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{},
+		Asset: testAsset,
+		TotalRewardsReceived: []*eventspb.PartyAmount{
+			{
+				Party:  "party3",
+				Amount: "110",
+			},
+		},
+		ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+			{
+				Referrer: "party3",
+				GeneratedReward: []*eventspb.PartyAmount{
+					{
+						Party:  "party1",
+						Amount: "110",
+					},
+				},
+			},
+		},
 		RefereesDiscountApplied: []*eventspb.PartyAmount{
 			{
 				Party:  "party1",

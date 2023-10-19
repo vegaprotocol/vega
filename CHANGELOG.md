@@ -334,6 +334,7 @@
 - [9841](https://github.com/vegaprotocol/vega/issues/9841) - Release `postgres` connections after ledger export is complete
 - [9833](https://github.com/vegaprotocol/vega/issues/9833) - Validate market exists before enacting governance transfer.
 - [9725](https://github.com/vegaprotocol/vega/issues/9725) - List ledger entries `API` documentation and functionality.
+- [9818](https://github.com/vegaprotocol/vega/issues/9818) - Correctly register generated rewards in fees statistics.
 
 ## 0.72.1
 
