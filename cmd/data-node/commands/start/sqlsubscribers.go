@@ -77,6 +77,8 @@ type SQLSubscribers struct {
 	volumeDiscountStatsStore    *sqlstore.VolumeDiscountStats
 	volumeDiscountProgramsStore *sqlstore.VolumeDiscountPrograms
 	paidLiquidityFeesStatsStore *sqlstore.PaidLiquidityFeesStats
+	partyLockedBalancesStore    *sqlstore.PartyLockedBalance
+	partyVestingBalancesStore   *sqlstore.PartyVestingBalance
 
 	// Services
 	candleService                 *candlesv2.Svc
@@ -127,6 +129,8 @@ type SQLSubscribers struct {
 	volumeDiscountStatsService    *service.VolumeDiscountStats
 	volumeDiscountProgramService  *service.VolumeDiscountPrograms
 	paidLiquidityFeesStatsService *service.PaidLiquidityFeesStats
+	partyLockedBalancesService    *service.PartyLockedBalances
+	partyVestingBalancesService   *service.PartyVestingBalances
 
 	// Subscribers
 	accountSub                *sqlsubscribers.Account
@@ -175,6 +179,7 @@ type SQLSubscribers struct {
 	volumeDiscountStatsSub    *sqlsubscribers.VolumeDiscountStatsUpdated
 	volumeDiscountProgramSub  *sqlsubscribers.VolumeDiscountProgram
 	paidLiquidityFeesStatsSub *sqlsubscribers.PaidLiquidityFeesStats
+	// TODO: Add the party locked and vesting balances subscribers here!!
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -227,6 +232,7 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.volumeDiscountStatsSub,
 		s.volumeDiscountProgramSub,
 		s.paidLiquidityFeesStatsSub,
+		// TODO: Add the party locked and vesting balances subscribers here!!
 	}
 }
 
@@ -283,6 +289,8 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.volumeDiscountStatsStore = sqlstore.NewVolumeDiscountStats(transactionalConnectionSource)
 	s.volumeDiscountProgramsStore = sqlstore.NewVolumeDiscountPrograms(transactionalConnectionSource)
 	s.paidLiquidityFeesStatsStore = sqlstore.NewPaidLiquidityFeesStats(transactionalConnectionSource)
+	s.partyLockedBalancesStore = sqlstore.NewPartyLockedBalances(transactionalConnectionSource)
+	s.partyVestingBalancesStore = sqlstore.NewPartyVestingBalances(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
@@ -334,6 +342,8 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.volumeDiscountStatsService = service.NewVolumeDiscountStats(s.volumeDiscountStatsStore)
 	s.volumeDiscountProgramService = service.NewVolumeDiscountPrograms(s.volumeDiscountProgramsStore)
 	s.paidLiquidityFeesStatsService = service.NewPaidLiquidityFeesStats(s.paidLiquidityFeesStatsStore)
+	s.partyLockedBalancesService = service.NewPartyLockedBalances(s.partyLockedBalancesStore)
+	s.partyVestingBalancesService = service.NewPartyVestingBalances(s.partyVestingBalancesStore)
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		s.marketDepthService,
@@ -397,4 +407,5 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.volumeDiscountStatsSub = sqlsubscribers.NewVolumeDiscountStatsUpdated(s.volumeDiscountStatsService)
 	s.volumeDiscountProgramSub = sqlsubscribers.NewVolumeDiscountProgram(s.volumeDiscountProgramService)
 	s.paidLiquidityFeesStatsSub = sqlsubscribers.NewPaidLiquidityFeesStats(s.paidLiquidityFeesStatsService)
+	// TODO: Add the party locked and vesting balances subscribers here!!
 }
