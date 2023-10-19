@@ -2876,7 +2876,7 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 		m.liquidity.UpdateSLAParameters(m.mkt.LiquiditySLAParams)
 		m.liquidity.OnEpochStart(ctx, m.timeService.GetTimeNow(), m.markPrice, m.midPrice(), m.getTargetStake(), m.positionFactor)
 	} else if epoch.Action == vega.EpochAction_EPOCH_ACTION_END {
-		m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow())
+		m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow(), epoch)
 		m.updateLiquidityFee(ctx)
 		feesStats := m.fee.GetFeesStatsOnEpochEnd()
 		feesStats.EpochSeq = epoch.Seq
