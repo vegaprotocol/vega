@@ -23,6 +23,8 @@ create table if not exists fees_stats_by_party
     PRIMARY KEY (party_id, market_id, asset_id, vega_time)
 );
 
+drop index if exists fees_stats_by_party_market_party;
+
 create index fees_stats_by_party_market_party on fees_stats_by_party
     using btree (party_id, asset_id);
 
@@ -36,3 +38,5 @@ alter table fees_stats
 
 alter table fees_stats
     rename column total_rewards_received TO total_rewards_paid;
+
+drop table if exists fees_stats_by_party;
