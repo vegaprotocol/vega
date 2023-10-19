@@ -79,5 +79,5 @@ END;
 $$;
 -- +goose StatementEnd
 
-alter table current_market_data drop column if exists product_data;
-alter table market_data drop column if exists product_data;
+alter table current_market_data drop column if exists liquidity_provider_sla;
+alter table market_data drop column if exists liquidity_provider_sla;
