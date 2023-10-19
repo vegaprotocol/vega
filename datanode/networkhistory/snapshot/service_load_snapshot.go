@@ -240,9 +240,14 @@ func (b *Service) loadSegmentsWithTransaction(ctx context.Context, log LoadLog, 
 	optimiseForAppend, currentStateOnly bool, dbMetaData DatabaseMetadata,
 	historyTableLastTimestampMap map[string]time.Time,
 ) (int64, error) {
-	err := executeAllSql(ctx, conn, log, dbMetaData.CurrentStateTablesDropConstraintsSql)
+	err := executeAllSql(ctx, conn, log, dbMetaData.AllTablesDisableAutoVacuumSql)
 	if err != nil {
-		return 0, fmt.Errorf("failed to executed current state table drop constraints sql: %w", err)
+		return 0, fmt.Errorf("failed to execute disable autovacuum sql: %w", err)
+	}
+
+	err = executeAllSql(ctx, conn, log, dbMetaData.CurrentStateTablesDropConstraintsSql)
+	if err != nil {
+		return 0, fmt.Errorf("failed to execute current state table drop constraints sql: %w", err)
 	}
 
 	var droppedIndexes []IndexInfo
@@ -292,6 +297,11 @@ func (b *Service) loadSegmentsWithTransaction(ctx context.Context, log LoadLog, 
 	err = executeAllSql(ctx, conn, log, dbMetaData.CurrentStateTablesCreateConstraintsSql)
 	if err != nil {
 		return 0, fmt.Errorf("failed to executed current state table create constraints sql: %w", err)
+	}
+
+	err = executeAllSql(ctx, conn, log, dbMetaData.AllTablesEnableAutoVacuumSql)
+	if err != nil {
+		return 0, fmt.Errorf("failed to execute enable autovacuum sql: %w", err)
 	}
 
 	return historyRowsCopied + currentStateRowsCopied, nil
