@@ -335,6 +335,7 @@
 - [9833](https://github.com/vegaprotocol/vega/issues/9833) - Validate market exists before enacting governance transfer.
 - [9725](https://github.com/vegaprotocol/vega/issues/9725) - List ledger entries `API` documentation and functionality.
 - [9818](https://github.com/vegaprotocol/vega/issues/9818) - Correctly register generated rewards in fees statistics.
+- [9850](https://github.com/vegaprotocol/vega/issues/9850) - Do not use default cursor when Before or After is defined.
 
 ## 0.72.1
 

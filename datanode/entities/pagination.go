@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	defaultPageSize int32 = 1000
+	DefaultPageSize int32 = 1000
 	maxPageSize     int32 = 5000
 )
 
@@ -87,8 +87,8 @@ func (c *Cursor) Value() string {
 
 type CursorPagination struct {
 	Pagination
-	Forward     *offset
-	Backward    *offset
+	Forward     *CursorOffset
+	Backward    *CursorOffset
 	NewestFirst bool
 }
 
@@ -111,7 +111,7 @@ func NewCursorPagination(first *int32, after *string, last *int32, before *strin
 }
 
 func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
-	if cp == nil || (cp != nil && cp.First == nil && cp.Last == nil) {
+	if cp == nil || (cp != nil && cp.First == nil && cp.Last == nil && cp.After == nil && cp.Before == nil) {
 		if cp != nil && cp.NewestFirst != nil {
 			return DefaultCursorPagination(*cp.NewestFirst), nil
 		}
@@ -120,7 +120,7 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 
 	var after, before Cursor
 	var err error
-	var forwardOffset, backwardOffset *offset
+	var forwardOffset, backwardOffset *CursorOffset
 
 	if cp.Before != nil && cp.After != nil {
 		return CursorPagination{}, errors.New("cannot set both a before and after cursor")
@@ -130,7 +130,7 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 		if *cp.First < 0 || *cp.First > maxPageSize {
 			return CursorPagination{}, ErrCursorOverflow
 		}
-		forwardOffset = &offset{
+		forwardOffset = &CursorOffset{
 			Limit: cp.First,
 		}
 		// Proto cursors should be encoded values, so we want to decode them in order to use them
@@ -145,7 +145,7 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 		if *cp.Last < 0 || *cp.Last > maxPageSize {
 			return CursorPagination{}, ErrCursorOverflow
 		}
-		backwardOffset = &offset{
+		backwardOffset = &CursorOffset{
 			Limit: cp.Last,
 		}
 		// Proto cursors should be encoded values, so we want to decode them in order to use them
@@ -161,8 +161,8 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 			return CursorPagination{}, errors.Wrap(err, "failed to decode after cursor")
 		}
 
-		forwardOffset = &offset{
-			Limit:  ptr.From(defaultPageSize),
+		forwardOffset = &CursorOffset{
+			Limit:  ptr.From(DefaultPageSize),
 			Cursor: &after,
 		}
 	} else if cp.Before != nil {
@@ -171,8 +171,8 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 			return CursorPagination{}, errors.Wrap(err, "failed to decode before cursor")
 		}
 
-		backwardOffset = &offset{
-			Limit:  ptr.From(defaultPageSize),
+		backwardOffset = &CursorOffset{
+			Limit:  ptr.From(DefaultPageSize),
 			Cursor: &before,
 		}
 	}
@@ -198,23 +198,23 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 
 func DefaultCursorPagination(newestFirst bool) CursorPagination {
 	return CursorPagination{
-		Forward: &offset{
-			Limit: ptr.From(defaultPageSize),
+		Forward: &CursorOffset{
+			Limit: ptr.From(DefaultPageSize),
 		},
 		NewestFirst: newestFirst,
 	}
 }
 
-type offset struct {
+type CursorOffset struct {
 	Limit  *int32
 	Cursor *Cursor
 }
 
-func (o offset) IsSet() bool {
+func (o CursorOffset) IsSet() bool {
 	return o.Limit != nil
 }
 
-func (o offset) HasCursor() bool {
+func (o CursorOffset) HasCursor() bool {
 	return o.Cursor != nil && o.Cursor.IsSet()
 }
 
@@ -223,7 +223,7 @@ func validatePagination(pagination CursorPagination) error {
 		return errors.New("cannot provide both forward and backward cursors")
 	}
 
-	var cursorOffset offset
+	var cursorOffset CursorOffset
 
 	if pagination.HasForward() {
 		cursorOffset = *pagination.Forward
