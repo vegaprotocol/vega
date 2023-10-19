@@ -827,6 +827,13 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Fees"};
   }
 
+  // Get fees statistics for a party
+  //
+  // Get accumulated fees, rewards, and applied discount information. A party ID must be supplied as filter.
+  rpc GetFeesStatsForParty(GetFeesStatsForPartyRequest) returns (GetFeesStatsForPartyResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Fees"};
+  }
+
   // Get current volume discount program
   //
   // Get the current volume discount program for the network. This program may not be active if it has ended
@@ -4090,6 +4097,24 @@ message GetFeesStatsResponse {
   vega.events.v1.FeesStats fees_stats = 1;
 }
 
+// Request that is sent to retrieve fees statistics for a given party.
+message GetFeesStatsForPartyRequest {
+  // Restrict fees statistics to those for the given party.
+  string party_id = 1;
+  // Restrict fees statistics to those related to the given asset.
+  optional string asset_id = 2;
+  // Epoch to filter from (included). If omitted, `to epoch` must not be set. If both omitted, the most recent epoch's data is returned.
+  optional uint64 from_epoch = 3;
+  // Epoch to filter to (included). If omitted, the range goes from `from epoch` to the most recent epoch.
+  optional uint64 to_epoch = 4;
+}
+
+// Response that is sent when requesting fees statistics for a given party.
+message GetFeesStatsForPartyResponse {
+  // Fees statistics for the given request.
+  repeated FeesStatsForParty fees_stats_for_party = 1;
+}
+
 // Request to get the current referral program
 message GetCurrentVolumeDiscountProgramRequest {}
 
@@ -4160,4 +4185,17 @@ message VolumeDiscountProgram {
   uint64 window_length = 5;
   // Timestamp in Unix nanoseconds, at which the program ended.
   optional int64 ended_at = 6;
+}
+
+message FeesStatsForParty {
+  // Settlement asset of the market.
+  string asset_id = 1;
+  // Total referral rewards received by referrer of the referral set.
+  string total_rewards_received = 2;
+  // Total referral discounts applied to referee fees.
+  string referees_discount_applied = 3;
+  // Total volume discounts applied to referee fees.
+  string volume_discount_applied = 4;
+  // Total maker fees received by the maker side.
+  string total_maker_fees_received = 5;
 }

@@ -3,9 +3,10 @@ package protos_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/protos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"code.vegaprotocol.io/vega/protos"
 )
 
 func Test_CoreBindings(t *testing.T) {
@@ -44,7 +45,7 @@ func Test_DataNodeBindings(t *testing.T) {
 	t.Run("CoreBindings should return the core http bindings", func(t *testing.T) {
 		bindings, err := protos.DataNodeBindings()
 		require.NoError(t, err)
-		wantCount := 103
+		wantCount := 104
 
 		assert.Len(t, bindings.HTTP.Rules, wantCount)
 

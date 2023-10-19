@@ -1765,6 +1765,32 @@ func (r *myQueryResolver) FeesStats(ctx context.Context, marketID *string, asset
 	return resp.FeesStats, nil
 }
 
+func (r *myQueryResolver) FeesStatsForParty(ctx context.Context, partyID string, assetID *string, fromEpoch, toEpoch *int) ([]*v2.FeesStatsForParty, error) {
+	var fromEpochU, toEpochU *uint64
+
+	if fromEpoch != nil {
+		fromEpochU = ptr.From(uint64(*fromEpoch))
+	}
+
+	if toEpoch != nil {
+		toEpochU = ptr.From(uint64(*toEpoch))
+	}
+
+	req := &v2.GetFeesStatsForPartyRequest{
+		PartyId:   partyID,
+		AssetId:   assetID,
+		FromEpoch: fromEpochU,
+		ToEpoch:   toEpochU,
+	}
+
+	resp, err := r.tradingDataClientV2.GetFeesStatsForParty(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.FeesStatsForParty, nil
+}
+
 func (r *myQueryResolver) PaidLiquidityFees(
 	ctx context.Context,
 	marketID *string,
