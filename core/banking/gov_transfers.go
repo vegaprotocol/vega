@@ -334,6 +334,24 @@ func (e *Engine) VerifyGovernanceTransfer(transfer *types.NewTransferConfigurati
 		return errors.New("missing asset for governance transfer")
 	}
 
+	// check if destination market insurance account exist
+	if transfer.DestinationType == types.AccountTypeInsurance && len(transfer.Destination) > 0 {
+		_, err := e.col.GetSystemAccountBalance(transfer.Asset, transfer.Destination, transfer.DestinationType)
+		if err != nil {
+			return err
+		}
+	}
+
+	// verify systemn destination account which ought to preexist actually exists
+	if (transfer.RecurringTransferConfig == nil || transfer.RecurringTransferConfig.DispatchStrategy == nil) &&
+		len(transfer.Destination) == 0 &&
+		transfer.DestinationType != types.AccountTypeGeneral {
+		_, err := e.col.GetSystemAccountBalance(transfer.Asset, transfer.Destination, transfer.DestinationType)
+		if err != nil {
+			return err
+		}
+	}
+
 	if transfer.RecurringTransferConfig != nil && transfer.RecurringTransferConfig.DispatchStrategy != nil {
 		if len(transfer.RecurringTransferConfig.DispatchStrategy.AssetForMetric) > 0 {
 			if _, err := e.assets.Get(transfer.RecurringTransferConfig.DispatchStrategy.AssetForMetric); err != nil {
