@@ -1346,7 +1346,7 @@ message LiquidityOrderReference {
 
 // Liquidity provider commitment
 message LiquidityProvision {
-  // Status of a liquidity provision order.
+  // Status of a liquidity provision.
   enum Status {
     // Always invalid
     STATUS_UNSPECIFIED = 0;

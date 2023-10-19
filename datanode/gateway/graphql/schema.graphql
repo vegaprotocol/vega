@@ -440,18 +440,29 @@ type TransactionSubmitted {
 
 "Filter input for historical balance queries"
 input AccountFilter {
+  "Restrict accounts to those holding balances in this asset ID."
   assetId: ID
+  "Restrict accounts to those owned by the parties in this list. Pass an empty list for no filter."
   partyIds: [ID!]
+  "Restrict accounts to those connected to the markets in this list. Pass an empty list for no filter."
   marketIds: [ID!]
+  "Restrict accounts to those connected to any of the types in this list. Pass an empty list for no filter."
   accountTypes: [AccountType!]
 }
 
-"Filter for historical entry ledger queries"
+"Filter for historical entry ledger queries, you must provide at least one party in FromAccountFilter, or ToAccountFilter"
 input LedgerEntryFilter {
+  """
+  Determines whether an entry must have accounts matching both the account_from_filter
+  and the account_to_filter. If set to 'true', entries must have matches in both filters.
+  If set to `false`, entries matching only the account_from_filter or the account_to_filter will also be included.
+  """
   CloseOnAccountFilters: Boolean
+  "Used to set values for filtering sender accounts. Party must be provided in this filter or to_account_filter, or both."
   FromAccountFilter: AccountFilter
+  "Used to set values for filtering receiver accounts. Party must be provided in this filter or from_account_filter, or both."
   ToAccountFilter: AccountFilter
-
+  "List of transfer types that is used for filtering sender and receiver accounts."
   TransferTypes: [TransferType]
 }
 
@@ -674,10 +685,22 @@ type Query {
     pagination: Pagination
   ): MarketDataConnection
 
-  "Get ledger entries by asset, market, party, account type, transfer type within the given date range."
+  """
+  Get ledger entries by asset, market, party, account type, transfer type within the given date range.
+  Note: The date range is restricted to any 5 days.
+        If no start or end date is provided, only ledger entries from the last 5 days will be returned.
+        If a start and end date are provided, but the end date is more than 5 days after the start date, only data up to 5 days after the start date will be returned.
+        If a start date is provided but no end date, the end date will be set to 5 days after the start date.
+        If no start date is provided, but the end date is, the start date will be set to 5 days before the end date.
+  """
   ledgerEntries(
+    "Filter to apply when querying the ledger. At least one party in the 'from' account filter, or 'to' account filter must be provided."
     filter: LedgerEntryFilter
+    """
+    Date range filter to apply to the ledger entries.
+    """
     dateRange: DateRange
+    "Optional pagination control"
     pagination: Pagination
   ): AggregatedLedgerEntriesConnection!
 
@@ -4881,7 +4904,7 @@ type LiquidityOrder {
   offset: String!
 }
 
-"Status of a liquidity provision order"
+"Status of a liquidity provision"
 enum LiquidityProvisionStatus {
   "An active liquidity provision"
   STATUS_ACTIVE

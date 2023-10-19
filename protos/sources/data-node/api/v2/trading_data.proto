@@ -129,11 +129,12 @@ service TradingDataService {
 
   // List ledger entries
   //
-  // Get a list of ledger entries within the given date range.
+  // Get a list of ledger entries within the given date range. The date range is restricted to a maximum of 5 days.
   // This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
   // It returns a time series - implemented as a list of AggregateLedgerEntry structs - with a row for every time
   // the summed ledger entries of the set of specified accounts changes.
   // Each account filter must contain no more than one party ID.
+  // At least one party ID must be specified in the from or to account filter.
   //
   // Entries can be filtered by:
   //   - the sending account (market ID, asset ID, account type)
@@ -1089,7 +1090,7 @@ message OrderFilter {
   repeated vega.Order.Type types = 2;
   // Restrict orders to those with the given Time In Force.
   repeated vega.Order.TimeInForce time_in_forces = 3;
-  // Indicator if liquidity provision orders should be included or not in the list.
+  // Indicator if liquidity provisions should be included or not in the list.
   bool exclude_liquidity = 4;
   // Restrict orders to those placed by the given party IDs.
   repeated string party_ids = 5;
@@ -1327,9 +1328,9 @@ message LedgerEntryFilter {
   // and the account_to_filter. If set to 'true', entries must have matches in both filters.
   // If set to `false`, entries matching only the account_from_filter or the account_to_filter will also be included.
   bool close_on_account_filters = 1;
-  // Used to set values for filtering sender accounts.
+  // Used to set values for filtering sender accounts. Party must be provided in this filter or 'to' account filter, or both.
   AccountFilter from_account_filter = 2;
-  // Used to set values for filtering receiver accounts.
+  // Used to set values for filtering receiver accounts. Party must be provided in this filter or 'from' account filter, or both.
   AccountFilter to_account_filter = 3;
   // List of transfer types that is used for filtering sender and receiver accounts.
   repeated vega.TransferType transfer_types = 5;
@@ -1376,14 +1377,19 @@ message AggregatedLedgerEntry {
 
 // -- LedgerEntries --
 
-// Request that is sent when listing ledger entries
+// Request that is sent when listing ledger entries.
 message ListLedgerEntriesRequest {
-  // 'LedgerEntryFilter' that contains all values and conditions according to which
-  // the listing of ledger entries is filtered.
+  // Ledger entry filter that contains all values and conditions according to which
+  // the listing of ledger entries is filtered.You must provide at least one party in
+  // 'from' account filter, or 'to' account filter.
   LedgerEntryFilter filter = 1;
   // Optional pagination control.
   optional Pagination pagination = 2;
   // Date range for which to list ledger entries.
+  // If not set, the date range is restricted to the last 5 days.
+  // If a start and end date is provided, but the range is more than 5 days, the end date will be restricted to 5 days from the start.
+  // If a start date is provided, but no end date, the end date will be set to 5 days from the start.
+  // If an end date is provided, but no start date, the start date will be set to 5 days before the end.
   optional DateRange date_range = 3;
 }
 
@@ -2688,9 +2694,9 @@ message LiquidityProvisionsWithPendingConnection {
 
 // Request sent to subscribe to liquidity provisions
 message ObserveLiquidityProvisionsRequest {
-  // Target market to observe for liquidity provision orders.
+  // Target market to observe for liquidity provisions.
   optional string market_id = 1;
-  // Target party to observe for submitted liquidity provision orders.
+  // Target party to observe for submitted liquidity provisions.
   optional string party_id = 2;
 }
 

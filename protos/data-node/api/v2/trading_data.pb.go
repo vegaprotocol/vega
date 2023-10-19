@@ -1359,7 +1359,7 @@ type OrderFilter struct {
 	Types []vega.Order_Type `protobuf:"varint,2,rep,packed,name=types,proto3,enum=vega.Order_Type" json:"types,omitempty"`
 	// Restrict orders to those with the given Time In Force.
 	TimeInForces []vega.Order_TimeInForce `protobuf:"varint,3,rep,packed,name=time_in_forces,json=timeInForces,proto3,enum=vega.Order_TimeInForce" json:"time_in_forces,omitempty"`
-	// Indicator if liquidity provision orders should be included or not in the list.
+	// Indicator if liquidity provisions should be included or not in the list.
 	ExcludeLiquidity bool `protobuf:"varint,4,opt,name=exclude_liquidity,json=excludeLiquidity,proto3" json:"exclude_liquidity,omitempty"`
 	// Restrict orders to those placed by the given party IDs.
 	PartyIds []string `protobuf:"bytes,5,rep,name=party_ids,json=partyIds,proto3" json:"party_ids,omitempty"`
@@ -3022,9 +3022,9 @@ type LedgerEntryFilter struct {
 	// and the account_to_filter. If set to 'true', entries must have matches in both filters.
 	// If set to `false`, entries matching only the account_from_filter or the account_to_filter will also be included.
 	CloseOnAccountFilters bool `protobuf:"varint,1,opt,name=close_on_account_filters,json=closeOnAccountFilters,proto3" json:"close_on_account_filters,omitempty"`
-	// Used to set values for filtering sender accounts.
+	// Used to set values for filtering sender accounts. Party must be provided in this filter or 'to' account filter, or both.
 	FromAccountFilter *AccountFilter `protobuf:"bytes,2,opt,name=from_account_filter,json=fromAccountFilter,proto3" json:"from_account_filter,omitempty"`
-	// Used to set values for filtering receiver accounts.
+	// Used to set values for filtering receiver accounts. Party must be provided in this filter or 'from' account filter, or both.
 	ToAccountFilter *AccountFilter `protobuf:"bytes,3,opt,name=to_account_filter,json=toAccountFilter,proto3" json:"to_account_filter,omitempty"`
 	// List of transfer types that is used for filtering sender and receiver accounts.
 	TransferTypes []vega.TransferType `protobuf:"varint,5,rep,packed,name=transfer_types,json=transferTypes,proto3,enum=vega.TransferType" json:"transfer_types,omitempty"`
@@ -3239,18 +3239,23 @@ func (x *AggregatedLedgerEntry) GetToAccountBalance() string {
 	return ""
 }
 
-// Request that is sent when listing ledger entries
+// Request that is sent when listing ledger entries.
 type ListLedgerEntriesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// 'LedgerEntryFilter' that contains all values and conditions according to which
-	// the listing of ledger entries is filtered.
+	// Ledger entry filter that contains all values and conditions according to which
+	// the listing of ledger entries is filtered.You must provide at least one party in
+	// 'from' account filter, or 'to' account filter.
 	Filter *LedgerEntryFilter `protobuf:"bytes,1,opt,name=filter,proto3" json:"filter,omitempty"`
 	// Optional pagination control.
 	Pagination *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
 	// Date range for which to list ledger entries.
+	// If not set, the date range is restricted to the last 5 days.
+	// If a start and end date is provided, but the range is more than 5 days, the end date will be restricted to 5 days from the start.
+	// If a start date is provided, but no end date, the end date will be set to 5 days from the start.
+	// If an end date is provided, but no start date, the start date will be set to 5 days before the end.
 	DateRange *DateRange `protobuf:"bytes,3,opt,name=date_range,json=dateRange,proto3,oneof" json:"date_range,omitempty"`
 }
 
@@ -12204,9 +12209,9 @@ type ObserveLiquidityProvisionsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Target market to observe for liquidity provision orders.
+	// Target market to observe for liquidity provisions.
 	MarketId *string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3,oneof" json:"market_id,omitempty"`
-	// Target party to observe for submitted liquidity provision orders.
+	// Target party to observe for submitted liquidity provisions.
 	PartyId *string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3,oneof" json:"party_id,omitempty"`
 }
 

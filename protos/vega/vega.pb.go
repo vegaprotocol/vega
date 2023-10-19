@@ -2010,7 +2010,7 @@ func (Withdrawal_Status) EnumDescriptor() ([]byte, []int) {
 	return file_vega_vega_proto_rawDescGZIP(), []int{19, 0}
 }
 
-// Status of a liquidity provision order.
+// Status of a liquidity provision.
 type LiquidityProvision_Status int32
 
 const (

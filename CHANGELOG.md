@@ -184,7 +184,7 @@
 - [9343](https://github.com/vegaprotocol/vega/issues/9343) - Prevent malicious validator submitting Ethereum oracle chain event prior to initial start time
 - [8792](https://github.com/vegaprotocol/vega/issues/8792) - Fix panic when starting null block chain node.
 - [8739](https://github.com/vegaprotocol/vega/issues/8739) - Cancel orders for rejected markets.
-- [9831](https://github.com/vegaprotocol/vega/issues/9831) - Disable auto vacuum during network history load  
+- [9831](https://github.com/vegaprotocol/vega/issues/9831) - Disable auto vacuum during network history load
 - [9685](https://github.com/vegaprotocol/vega/issues/9685) - All events for core are sent out in a stable order.
 - [9594](https://github.com/vegaprotocol/vega/issues/9594) - non deterministic order events on market termination
 - [9350](https://github.com/vegaprotocol/vega/issues/9350) - Clear account ledger events causing segment divergence
@@ -333,6 +333,8 @@
 - [9835](https://github.com/vegaprotocol/vega/issues/9835) - Fix panic batch market instruction.
 - [9841](https://github.com/vegaprotocol/vega/issues/9841) - Release `postgres` connections after ledger export is complete
 - [9833](https://github.com/vegaprotocol/vega/issues/9833) - Validate market exists before enacting governance transfer.
+- [9725](https://github.com/vegaprotocol/vega/issues/9725) - List ledger entries `API` documentation and functionality.
+
 ## 0.72.1
 
 ### 🐛 Fixes
