@@ -48,7 +48,7 @@ func (rfs *FeesStats) AddFeesStats(ctx context.Context, stats *entities.FeesStat
 			   market_id,
 			   asset_id,
 			   epoch_seq,
-			   total_rewards_paid,
+			   total_rewards_received,
 			   referrer_rewards_generated,
 			   referees_discount_applied,
 			   volume_discount_applied,
@@ -59,7 +59,7 @@ func (rfs *FeesStats) AddFeesStats(ctx context.Context, stats *entities.FeesStat
 		stats.MarketID,
 		stats.AssetID,
 		stats.EpochSeq,
-		stats.TotalRewardsPaid,
+		stats.TotalRewardsReceived,
 		stats.ReferrerRewardsGenerated,
 		stats.RefereesDiscountApplied,
 		stats.VolumeDiscountApplied,
@@ -126,7 +126,7 @@ func (rfs *FeesStats) GetFeesStats(ctx context.Context, marketID *entities.Marke
 	// The query returns the full JSON object and doesn't filter for the party,
 	// it only matches on the records where the json object contains the party.
 	if partyID != nil {
-		stats[0].TotalRewardsPaid = filterPartyAmounts(stats[0].TotalRewardsPaid, *partyID)
+		stats[0].TotalRewardsReceived = filterPartyAmounts(stats[0].TotalRewardsReceived, *partyID)
 		stats[0].ReferrerRewardsGenerated = filterReferrerRewardsGenerated(stats[0].ReferrerRewardsGenerated, *partyID)
 		stats[0].TotalMakerFeesReceived = filterPartyAmounts(stats[0].TotalMakerFeesReceived, *partyID)
 		stats[0].MakerFeesGenerated = filterMakerFeesGenerated(stats[0].MakerFeesGenerated, *partyID)
@@ -137,9 +137,9 @@ func (rfs *FeesStats) GetFeesStats(ctx context.Context, marketID *entities.Marke
 	return &stats[0], err
 }
 
-func filterPartyAmounts(totalRewardsPaid []*eventspb.PartyAmount, party string) []*eventspb.PartyAmount {
+func filterPartyAmounts(totalRewardsReceived []*eventspb.PartyAmount, party string) []*eventspb.PartyAmount {
 	filteredEntries := make([]*eventspb.PartyAmount, 0)
-	for _, reward := range totalRewardsPaid {
+	for _, reward := range totalRewardsReceived {
 		if strings.EqualFold(reward.Party, party) {
 			filteredEntries = append(filteredEntries, reward)
 		}
@@ -176,7 +176,7 @@ func getPartyFilter(partyID *string) string {
 	builder.WriteString("(")
 
 	builder.WriteString(fmt.Sprintf(
-		`total_rewards_paid @> '[{"party_id":"%s"}]'`, *partyID,
+		`total_rewards_received @> '[{"party_id":"%s"}]'`, *partyID,
 	))
 	builder.WriteString(" OR ")
 	builder.WriteString(fmt.Sprintf(

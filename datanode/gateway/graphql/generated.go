@@ -715,7 +715,7 @@ type ComplexityRoot struct {
 		RefereesDiscountApplied  func(childComplexity int) int
 		ReferrerRewardsGenerated func(childComplexity int) int
 		TotalMakerFeesReceived   func(childComplexity int) int
-		TotalRewardsPaid         func(childComplexity int) int
+		TotalRewardsReceived     func(childComplexity int) int
 		VolumeDiscountApplied    func(childComplexity int) int
 	}
 
@@ -5545,12 +5545,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FeesStats.TotalMakerFeesReceived(childComplexity), true
 
-	case "FeesStats.totalRewardsPaid":
-		if e.complexity.FeesStats.TotalRewardsPaid == nil {
+	case "FeesStats.totalRewardsReceived":
+		if e.complexity.FeesStats.TotalRewardsReceived == nil {
 			break
 		}
 
-		return e.complexity.FeesStats.TotalRewardsPaid(childComplexity), true
+		return e.complexity.FeesStats.TotalRewardsReceived(childComplexity), true
 
 	case "FeesStats.volumeDiscountApplied":
 		if e.complexity.FeesStats.VolumeDiscountApplied == nil {
@@ -31499,8 +31499,8 @@ func (ec *executionContext) fieldContext_FeesStats_epoch(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _FeesStats_totalRewardsPaid(ctx context.Context, field graphql.CollectedField, obj *v1.FeesStats) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_FeesStats_totalRewardsPaid(ctx, field)
+func (ec *executionContext) _FeesStats_totalRewardsReceived(ctx context.Context, field graphql.CollectedField, obj *v1.FeesStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FeesStats_totalRewardsReceived(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -31513,7 +31513,7 @@ func (ec *executionContext) _FeesStats_totalRewardsPaid(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TotalRewardsPaid, nil
+		return obj.TotalRewardsReceived, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -31530,7 +31530,7 @@ func (ec *executionContext) _FeesStats_totalRewardsPaid(ctx context.Context, fie
 	return ec.marshalNPartyAmount2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐPartyAmountᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_FeesStats_totalRewardsPaid(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_FeesStats_totalRewardsReceived(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "FeesStats",
 		Field:      field,
@@ -67872,8 +67872,8 @@ func (ec *executionContext) fieldContext_Query_feesStats(ctx context.Context, fi
 				return ec.fieldContext_FeesStats_assetId(ctx, field)
 			case "epoch":
 				return ec.fieldContext_FeesStats_epoch(ctx, field)
-			case "totalRewardsPaid":
-				return ec.fieldContext_FeesStats_totalRewardsPaid(ctx, field)
+			case "totalRewardsReceived":
+				return ec.fieldContext_FeesStats_totalRewardsReceived(ctx, field)
 			case "referrerRewardsGenerated":
 				return ec.fieldContext_FeesStats_referrerRewardsGenerated(ctx, field)
 			case "refereesDiscountApplied":
@@ -95459,9 +95459,9 @@ func (ec *executionContext) _FeesStats(ctx context.Context, sel ast.SelectionSet
 				return innerFunc(ctx)
 
 			})
-		case "totalRewardsPaid":
+		case "totalRewardsReceived":
 
-			out.Values[i] = ec._FeesStats_totalRewardsPaid(ctx, field, obj)
+			out.Values[i] = ec._FeesStats_totalRewardsReceived(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)

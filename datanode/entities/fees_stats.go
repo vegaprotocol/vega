@@ -10,7 +10,7 @@ type FeesStats struct {
 	MarketID                 MarketID
 	AssetID                  AssetID
 	EpochSeq                 uint64
-	TotalRewardsPaid         []*eventspb.PartyAmount
+	TotalRewardsReceived     []*eventspb.PartyAmount
 	ReferrerRewardsGenerated []*eventspb.ReferrerRewardsGenerated
 	RefereesDiscountApplied  []*eventspb.PartyAmount
 	VolumeDiscountApplied    []*eventspb.PartyAmount
@@ -24,7 +24,7 @@ func FeesStatsFromProto(proto *eventspb.FeesStats, vegaTime time.Time) *FeesStat
 		MarketID:                 MarketID(proto.Market),
 		AssetID:                  AssetID(proto.Asset),
 		EpochSeq:                 proto.EpochSeq,
-		TotalRewardsPaid:         proto.TotalRewardsPaid,
+		TotalRewardsReceived:     proto.TotalRewardsReceived,
 		ReferrerRewardsGenerated: proto.ReferrerRewardsGenerated,
 		RefereesDiscountApplied:  proto.RefereesDiscountApplied,
 		VolumeDiscountApplied:    proto.VolumeDiscountApplied,
@@ -39,7 +39,7 @@ func (stats *FeesStats) ToProto() *eventspb.FeesStats {
 		Market:                   stats.MarketID.String(),
 		Asset:                    stats.AssetID.String(),
 		EpochSeq:                 stats.EpochSeq,
-		TotalRewardsPaid:         stats.TotalRewardsPaid,
+		TotalRewardsReceived:     stats.TotalRewardsReceived,
 		ReferrerRewardsGenerated: stats.ReferrerRewardsGenerated,
 		RefereesDiscountApplied:  stats.RefereesDiscountApplied,
 		VolumeDiscountApplied:    stats.VolumeDiscountApplied,
