@@ -131,361 +131,7 @@ func TestFeesStats_GetFeesStats(t *testing.T) {
 	t.Run("Should return an error if an asset and market is provided", testGetFeesStatsNoAssetOrMarket)
 	t.Run("Should return the stats for the party and epoch requested", testGetFeesStatsForPartyAndEpoch)
 	t.Run("Should return the latest stats for the party", testGetFeesStatsForPartyLatest)
-	t.Run("Should return the latest stats for all asset given a party", testGetFeesStatsParty)
-}
-
-func setupFeesStats(t *testing.T, ctx context.Context, fs *sqlstore.FeesStats) []entities.FeesStats {
-	t.Helper()
-	vegaTime := time.Now().Add(-time.Minute).Round(time.Microsecond) // round to microsecond because Postgres doesn't store nanoseconds at the current time
-	stats := []entities.FeesStats{
-		{
-			MarketID: entities.MarketID("deadbeef01"),
-			AssetID:  entities.AssetID("deadbaad01"),
-			EpochSeq: 1,
-			TotalRewardsReceived: []*eventspb.PartyAmount{
-				{
-					Party:  "cafedaad01",
-					Amount: "1000000",
-				},
-			},
-			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
-				{
-					Referrer: "cafedaad01",
-					GeneratedReward: []*eventspb.PartyAmount{
-						{
-							Party:  "cafed00d01",
-							Amount: "500000",
-						},
-						{
-							Party:  "cafed00d02",
-							Amount: "500000",
-						},
-					},
-				},
-			},
-			RefereesDiscountApplied: []*eventspb.PartyAmount{
-				{
-					Party:  "cafed00d01",
-					Amount: "100000",
-				},
-				{
-					Party:  "cafed00d02",
-					Amount: "100000",
-				},
-			},
-			VegaTime: vegaTime.Add(5 * time.Second),
-		},
-		{
-			MarketID: entities.MarketID("deadbeef01"),
-			AssetID:  entities.AssetID("deadbaad01"),
-			EpochSeq: 2,
-			TotalRewardsReceived: []*eventspb.PartyAmount{
-				{
-					Party:  "cafedaad01",
-					Amount: "1100000",
-				},
-			},
-			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
-				{
-					Referrer: "cafedaad01",
-					GeneratedReward: []*eventspb.PartyAmount{
-						{
-							Party:  "cafed00d01",
-							Amount: "550000",
-						},
-						{
-							Party:  "cafed00d02",
-							Amount: "550000",
-						},
-					},
-				},
-			},
-			RefereesDiscountApplied: []*eventspb.PartyAmount{
-				{
-					Party:  "cafed00d01",
-					Amount: "110000",
-				},
-				{
-					Party:  "cafed00d02",
-					Amount: "110000",
-				},
-			},
-			VolumeDiscountApplied: []*eventspb.PartyAmount{},
-			VegaTime:              vegaTime.Add(10 * time.Second),
-		},
-		{
-			MarketID: entities.MarketID("deadbeef01"),
-			AssetID:  entities.AssetID("deadbaad01"),
-			EpochSeq: 3,
-			TotalRewardsReceived: []*eventspb.PartyAmount{
-				{
-					Party:  "cafedaad01",
-					Amount: "1200000",
-				},
-			},
-			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
-				{
-					Referrer: "cafedaad01",
-					GeneratedReward: []*eventspb.PartyAmount{
-						{
-							Party:  "cafed00d01",
-							Amount: "600000",
-						},
-						{
-							Party:  "cafed00d02",
-							Amount: "600000",
-						},
-					},
-				},
-			},
-			RefereesDiscountApplied: []*eventspb.PartyAmount{
-				{
-					Party:  "cafed00d01",
-					Amount: "120000",
-				},
-				{
-					Party:  "cafed00d02",
-					Amount: "120000",
-				},
-			},
-			VolumeDiscountApplied: []*eventspb.PartyAmount{},
-			VegaTime:              vegaTime.Add(15 * time.Second),
-		},
-		{
-			MarketID: entities.MarketID("deadbeef11"),
-			AssetID:  entities.AssetID("deadbaad01"),
-			EpochSeq: 1,
-			TotalRewardsPaid: []*eventspb.PartyAmount{
-				{
-					Party:  "cafedaad01",
-					Amount: "1000000",
-				},
-			},
-			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
-				{
-					Referrer: "cafedaad01",
-					GeneratedReward: []*eventspb.PartyAmount{
-						{
-							Party:  "cafed00d01",
-							Amount: "500000",
-						},
-						{
-							Party:  "cafed00d02",
-							Amount: "500000",
-						},
-					},
-				},
-			},
-			RefereesDiscountApplied: []*eventspb.PartyAmount{
-				{
-					Party:  "cafed00d01",
-					Amount: "100000",
-				},
-				{
-					Party:  "cafed00d02",
-					Amount: "100000",
-				},
-			},
-			VegaTime: vegaTime.Add(5 * time.Second),
-		},
-		{
-			MarketID: entities.MarketID("deadbeef11"),
-			AssetID:  entities.AssetID("deadbaad01"),
-			EpochSeq: 2,
-			TotalRewardsPaid: []*eventspb.PartyAmount{
-				{
-					Party:  "cafedaad01",
-					Amount: "1100000",
-				},
-			},
-			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
-				{
-					Referrer: "cafedaad01",
-					GeneratedReward: []*eventspb.PartyAmount{
-						{
-							Party:  "cafed00d01",
-							Amount: "550000",
-						},
-						{
-							Party:  "cafed00d02",
-							Amount: "550000",
-						},
-					},
-				},
-			},
-			RefereesDiscountApplied: []*eventspb.PartyAmount{
-				{
-					Party:  "cafed00d01",
-					Amount: "110000",
-				},
-				{
-					Party:  "cafed00d02",
-					Amount: "110000",
-				},
-			},
-			VolumeDiscountApplied: []*eventspb.PartyAmount{},
-			VegaTime:              vegaTime.Add(10 * time.Second),
-		},
-		{
-			MarketID: entities.MarketID("deadbeef11"),
-			AssetID:  entities.AssetID("deadbaad01"),
-			EpochSeq: 3,
-			TotalRewardsPaid: []*eventspb.PartyAmount{
-				{
-					Party:  "cafedaad01",
-					Amount: "1200000",
-				},
-			},
-			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
-				{
-					Referrer: "cafedaad01",
-					GeneratedReward: []*eventspb.PartyAmount{
-						{
-							Party:  "cafed00d01",
-							Amount: "600000",
-						},
-						{
-							Party:  "cafed00d02",
-							Amount: "600000",
-						},
-					},
-				},
-			},
-			RefereesDiscountApplied: []*eventspb.PartyAmount{
-				{
-					Party:  "cafed00d01",
-					Amount: "120000",
-				},
-				{
-					Party:  "cafed00d02",
-					Amount: "120000",
-				},
-			},
-			VolumeDiscountApplied: []*eventspb.PartyAmount{},
-			VegaTime:              vegaTime.Add(15 * time.Second),
-		},
-		{
-			MarketID: entities.MarketID("deadbeef02"),
-			AssetID:  entities.AssetID("deadbaad02"),
-			EpochSeq: 1,
-			TotalRewardsReceived: []*eventspb.PartyAmount{
-				{
-					Party:  "cafedaad02",
-					Amount: "2000000",
-				},
-			},
-			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
-				{
-					Referrer: "cafedaad02",
-					GeneratedReward: []*eventspb.PartyAmount{
-						{
-							Party:  "cafed00d03",
-							Amount: "2000000",
-						},
-						{
-							Party:  "cafed00d04",
-							Amount: "2000000",
-						},
-					},
-				},
-			},
-			RefereesDiscountApplied: []*eventspb.PartyAmount{
-				{
-					Party:  "cafed00d03",
-					Amount: "200000",
-				},
-				{
-					Party:  "cafed00d04",
-					Amount: "200000",
-				},
-			},
-			VolumeDiscountApplied: []*eventspb.PartyAmount{},
-			VegaTime:              vegaTime.Add(5 * time.Second),
-		},
-		{
-			MarketID: entities.MarketID("deadbeef02"),
-			AssetID:  entities.AssetID("deadbaad02"),
-			EpochSeq: 2,
-			TotalRewardsReceived: []*eventspb.PartyAmount{
-				{
-					Party:  "cafedaad02",
-					Amount: "2100000",
-				},
-			},
-			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
-				{
-					Referrer: "cafedaad01",
-					GeneratedReward: []*eventspb.PartyAmount{
-						{
-							Party:  "cafed00d03",
-							Amount: "1050000",
-						},
-						{
-							Party:  "cafed00d04",
-							Amount: "1050000",
-						},
-					},
-				},
-			},
-			RefereesDiscountApplied: []*eventspb.PartyAmount{
-				{
-					Party:  "cafed00d03",
-					Amount: "210000",
-				},
-				{
-					Party:  "cafed00d04",
-					Amount: "210000",
-				},
-			},
-			VolumeDiscountApplied: []*eventspb.PartyAmount{},
-			VegaTime:              vegaTime.Add(10 * time.Second),
-		},
-		{
-			MarketID: entities.MarketID("deadbeef02"),
-			AssetID:  entities.AssetID("deadbaad02"),
-			EpochSeq: 3,
-			TotalRewardsReceived: []*eventspb.PartyAmount{
-				{
-					Party:  "cafedaad02",
-					Amount: "2200000",
-				},
-			},
-			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
-				{
-					Referrer: "cafedaad01",
-					GeneratedReward: []*eventspb.PartyAmount{
-						{
-							Party:  "cafed00d03",
-							Amount: "1100000",
-						},
-						{
-							Party:  "cafed00d04",
-							Amount: "1100000",
-						},
-					},
-				},
-			},
-			RefereesDiscountApplied: []*eventspb.PartyAmount{
-				{
-					Party:  "cafed00d03",
-					Amount: "220000",
-				},
-				{
-					Party:  "cafed00d04",
-					Amount: "220000",
-				},
-			},
-			VolumeDiscountApplied: []*eventspb.PartyAmount{},
-			VegaTime:              vegaTime.Add(15 * time.Second),
-		},
-	}
-
-	for _, stat := range stats {
-		err := fs.AddFeesStats(ctx, &stat)
-		require.NoError(t, err)
-	}
-
-	return stats
+	t.Run("Should return the stats for all asset given a party", testGetFeesStatsForParty)
 }
 
 func testGetFeesStatsForMarketAndEpoch(t *testing.T) {
@@ -655,45 +301,375 @@ func testGetFeesStatsForPartyLatest(t *testing.T) {
 	assert.Equal(t, want, *got)
 }
 
-func testGetFeesStatsParty(t *testing.T) {
+func testGetFeesStatsForParty(t *testing.T) {
 	stores := setupFeesStatsStores(t)
 	ctx := tempTransaction(t)
-	stats := setupFeesStats(t, ctx, stores.fs)
+	_ = setupFeesStats(t, ctx, stores.fs)
 
-	// get the stats for the first market and epoch
-	expected := stats[2]
-	want := entities.FeesStats{
-		MarketID: entities.MarketID("deadbeef01"),
-		AssetID:  entities.AssetID("deadbaad01"),
-		EpochSeq: 3,
-		TotalRewardsReceived: []*eventspb.PartyAmount{
-			{
-				Party:  "cafedaad01",
-				Amount: "1200000",
-			},
+	want := []entities.FeesStatsForParty{
+		{
+			AssetID:                 entities.AssetID("deadbaad01"),
+			TotalRewardsReceived:    "4600000",
+			RefereesDiscountApplied: "0",
+			VolumeDiscountApplied:   "0",
+			TotalMakerFeesReceived:  "0",
 		},
-		ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
-			{
-				Referrer: "cafedaad01",
-				GeneratedReward: []*eventspb.PartyAmount{
-					{
-						Party:  "cafed00d01",
-						Amount: "600000",
-					},
-					{
-						Party:  "cafed00d02",
-						Amount: "600000",
+	}
+	got, err := stores.fs.StatsForParty(ctx, "cafedaad01", ptr.From(entities.AssetID("deadbaad01")), ptr.From(uint64(2)), ptr.From(uint64(3)))
+	require.NoError(t, err)
+	assert.Equal(t, want, got)
+}
+
+func setupFeesStats(t *testing.T, ctx context.Context, fs *sqlstore.FeesStats) []entities.FeesStats {
+	t.Helper()
+	vegaTime := time.Now().Add(-time.Minute).Round(time.Microsecond) // round to microsecond because Postgres doesn't store nanoseconds at the current time
+	stats := []entities.FeesStats{
+		{
+			MarketID: entities.MarketID("deadbeef01"),
+			AssetID:  entities.AssetID("deadbaad01"),
+			EpochSeq: 1,
+			TotalRewardsReceived: []*eventspb.PartyAmount{
+				{
+					Party:  "cafedaad01",
+					Amount: "1000000",
+				},
+			},
+			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+				{
+					Referrer: "cafedaad01",
+					GeneratedReward: []*eventspb.PartyAmount{
+						{
+							Party:  "cafed00d01",
+							Amount: "500000",
+						},
+						{
+							Party:  "cafed00d02",
+							Amount: "500000",
+						},
 					},
 				},
 			},
+			RefereesDiscountApplied: []*eventspb.PartyAmount{
+				{
+					Party:  "cafed00d01",
+					Amount: "100000",
+				},
+				{
+					Party:  "cafed00d02",
+					Amount: "100000",
+				},
+			},
+			VegaTime: vegaTime.Add(5 * time.Second),
 		},
-		RefereesDiscountApplied: []*eventspb.PartyAmount{},
-		VolumeDiscountApplied:   []*eventspb.PartyAmount{},
-		TotalMakerFeesReceived:  []*eventspb.PartyAmount{},
-		MakerFeesGenerated:      []*eventspb.MakerFeesGenerated{},
-		VegaTime:                expected.VegaTime,
+		{
+			MarketID: entities.MarketID("deadbeef01"),
+			AssetID:  entities.AssetID("deadbaad01"),
+			EpochSeq: 2,
+			TotalRewardsReceived: []*eventspb.PartyAmount{
+				{
+					Party:  "cafedaad01",
+					Amount: "1100000",
+				},
+			},
+			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+				{
+					Referrer: "cafedaad01",
+					GeneratedReward: []*eventspb.PartyAmount{
+						{
+							Party:  "cafed00d01",
+							Amount: "550000",
+						},
+						{
+							Party:  "cafed00d02",
+							Amount: "550000",
+						},
+					},
+				},
+			},
+			RefereesDiscountApplied: []*eventspb.PartyAmount{
+				{
+					Party:  "cafed00d01",
+					Amount: "110000",
+				},
+				{
+					Party:  "cafed00d02",
+					Amount: "110000",
+				},
+			},
+			VolumeDiscountApplied: []*eventspb.PartyAmount{},
+			VegaTime:              vegaTime.Add(10 * time.Second),
+		},
+		{
+			MarketID: entities.MarketID("deadbeef01"),
+			AssetID:  entities.AssetID("deadbaad01"),
+			EpochSeq: 3,
+			TotalRewardsReceived: []*eventspb.PartyAmount{
+				{
+					Party:  "cafedaad01",
+					Amount: "1200000",
+				},
+			},
+			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+				{
+					Referrer: "cafedaad01",
+					GeneratedReward: []*eventspb.PartyAmount{
+						{
+							Party:  "cafed00d01",
+							Amount: "600000",
+						},
+						{
+							Party:  "cafed00d02",
+							Amount: "600000",
+						},
+					},
+				},
+			},
+			RefereesDiscountApplied: []*eventspb.PartyAmount{
+				{
+					Party:  "cafed00d01",
+					Amount: "120000",
+				},
+				{
+					Party:  "cafed00d02",
+					Amount: "120000",
+				},
+			},
+			VolumeDiscountApplied: []*eventspb.PartyAmount{},
+			VegaTime:              vegaTime.Add(15 * time.Second),
+		},
+		{
+			MarketID: entities.MarketID("deadbeef11"),
+			AssetID:  entities.AssetID("deadbaad01"),
+			EpochSeq: 1,
+			TotalRewardsReceived: []*eventspb.PartyAmount{
+				{
+					Party:  "cafedaad01",
+					Amount: "1000000",
+				},
+			},
+			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+				{
+					Referrer: "cafedaad01",
+					GeneratedReward: []*eventspb.PartyAmount{
+						{
+							Party:  "cafed00d01",
+							Amount: "500000",
+						},
+						{
+							Party:  "cafed00d02",
+							Amount: "500000",
+						},
+					},
+				},
+			},
+			RefereesDiscountApplied: []*eventspb.PartyAmount{
+				{
+					Party:  "cafed00d01",
+					Amount: "100000",
+				},
+				{
+					Party:  "cafed00d02",
+					Amount: "100000",
+				},
+			},
+			VegaTime: vegaTime.Add(5 * time.Second),
+		},
+		{
+			MarketID: entities.MarketID("deadbeef11"),
+			AssetID:  entities.AssetID("deadbaad01"),
+			EpochSeq: 2,
+			TotalRewardsReceived: []*eventspb.PartyAmount{
+				{
+					Party:  "cafedaad01",
+					Amount: "1100000",
+				},
+			},
+			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+				{
+					Referrer: "cafedaad01",
+					GeneratedReward: []*eventspb.PartyAmount{
+						{
+							Party:  "cafed00d01",
+							Amount: "550000",
+						},
+						{
+							Party:  "cafed00d02",
+							Amount: "550000",
+						},
+					},
+				},
+			},
+			RefereesDiscountApplied: []*eventspb.PartyAmount{
+				{
+					Party:  "cafed00d01",
+					Amount: "110000",
+				},
+				{
+					Party:  "cafed00d02",
+					Amount: "110000",
+				},
+			},
+			VolumeDiscountApplied: []*eventspb.PartyAmount{},
+			VegaTime:              vegaTime.Add(10 * time.Second),
+		},
+		{
+			MarketID: entities.MarketID("deadbeef11"),
+			AssetID:  entities.AssetID("deadbaad01"),
+			EpochSeq: 3,
+			TotalRewardsReceived: []*eventspb.PartyAmount{
+				{
+					Party:  "cafedaad01",
+					Amount: "1200000",
+				},
+			},
+			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+				{
+					Referrer: "cafedaad01",
+					GeneratedReward: []*eventspb.PartyAmount{
+						{
+							Party:  "cafed00d01",
+							Amount: "600000",
+						},
+						{
+							Party:  "cafed00d02",
+							Amount: "600000",
+						},
+					},
+				},
+			},
+			RefereesDiscountApplied: []*eventspb.PartyAmount{
+				{
+					Party:  "cafed00d01",
+					Amount: "120000",
+				},
+				{
+					Party:  "cafed00d02",
+					Amount: "120000",
+				},
+			},
+			VolumeDiscountApplied: []*eventspb.PartyAmount{},
+			VegaTime:              vegaTime.Add(15 * time.Second),
+		},
+		{
+			MarketID: entities.MarketID("deadbeef02"),
+			AssetID:  entities.AssetID("deadbaad02"),
+			EpochSeq: 1,
+			TotalRewardsReceived: []*eventspb.PartyAmount{
+				{
+					Party:  "cafedaad02",
+					Amount: "2000000",
+				},
+			},
+			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+				{
+					Referrer: "cafedaad02",
+					GeneratedReward: []*eventspb.PartyAmount{
+						{
+							Party:  "cafed00d03",
+							Amount: "2000000",
+						},
+						{
+							Party:  "cafed00d04",
+							Amount: "2000000",
+						},
+					},
+				},
+			},
+			RefereesDiscountApplied: []*eventspb.PartyAmount{
+				{
+					Party:  "cafed00d03",
+					Amount: "200000",
+				},
+				{
+					Party:  "cafed00d04",
+					Amount: "200000",
+				},
+			},
+			VolumeDiscountApplied: []*eventspb.PartyAmount{},
+			VegaTime:              vegaTime.Add(5 * time.Second),
+		},
+		{
+			MarketID: entities.MarketID("deadbeef02"),
+			AssetID:  entities.AssetID("deadbaad02"),
+			EpochSeq: 2,
+			TotalRewardsReceived: []*eventspb.PartyAmount{
+				{
+					Party:  "cafedaad02",
+					Amount: "2100000",
+				},
+			},
+			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+				{
+					Referrer: "cafedaad01",
+					GeneratedReward: []*eventspb.PartyAmount{
+						{
+							Party:  "cafed00d03",
+							Amount: "1050000",
+						},
+						{
+							Party:  "cafed00d04",
+							Amount: "1050000",
+						},
+					},
+				},
+			},
+			RefereesDiscountApplied: []*eventspb.PartyAmount{
+				{
+					Party:  "cafed00d03",
+					Amount: "210000",
+				},
+				{
+					Party:  "cafed00d04",
+					Amount: "210000",
+				},
+			},
+			VolumeDiscountApplied: []*eventspb.PartyAmount{},
+			VegaTime:              vegaTime.Add(10 * time.Second),
+		},
+		{
+			MarketID: entities.MarketID("deadbeef02"),
+			AssetID:  entities.AssetID("deadbaad02"),
+			EpochSeq: 3,
+			TotalRewardsReceived: []*eventspb.PartyAmount{
+				{
+					Party:  "cafedaad02",
+					Amount: "2200000",
+				},
+			},
+			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+				{
+					Referrer: "cafedaad01",
+					GeneratedReward: []*eventspb.PartyAmount{
+						{
+							Party:  "cafed00d03",
+							Amount: "1100000",
+						},
+						{
+							Party:  "cafed00d04",
+							Amount: "1100000",
+						},
+					},
+				},
+			},
+			RefereesDiscountApplied: []*eventspb.PartyAmount{
+				{
+					Party:  "cafed00d03",
+					Amount: "220000",
+				},
+				{
+					Party:  "cafed00d04",
+					Amount: "220000",
+				},
+			},
+			VolumeDiscountApplied: []*eventspb.PartyAmount{},
+			VegaTime:              vegaTime.Add(15 * time.Second),
+		},
 	}
-	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, &want.ReferrerRewardsGenerated[0].Referrer)
-	require.NoError(t, err)
-	assert.Equal(t, want, *got)
+
+	for _, stat := range stats {
+		err := fs.AddFeesStats(ctx, &stat)
+		require.NoError(t, err)
+	}
+
+	return stats
 }

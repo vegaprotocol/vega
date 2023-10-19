@@ -318,8 +318,12 @@ var (
 	// Referral Programs.
 	ErrGetCurrentReferralProgram = errors.New("failed to get current referral program")
 	ErrGetReferralSetStats       = errors.New("failed to get referral set stats")
-	ErrFeesStatsRequest          = errors.New("marketID or assetID must be provided")
-	ErrGetFeesStats              = errors.New("failed to get current fees stats")
+
+	// Fees stats.
+	ErrGetFeesStats             = errors.New("failed to get current fees stats")
+	ErrFeesStatsRequest         = errors.New("marketID or assetID must be provided")
+	ErrGetFeesStatsForParty     = errors.New("failed to get current fees stats for party")
+	ErrFeesStatsForPartyRequest = errors.New("fromEpoch must be set when toEpoch is set")
 
 	// Teams.
 	ErrListTeams              = errors.New("failed to list teams")

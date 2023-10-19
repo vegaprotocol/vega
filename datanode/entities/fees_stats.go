@@ -47,3 +47,11 @@ func (stats *FeesStats) ToProto() *eventspb.FeesStats {
 		MakerFeesGenerated:       stats.MakerFeesGenerated,
 	}
 }
+
+type FeesStatsForParty struct {
+	AssetID                 AssetID
+	TotalRewardsReceived    string
+	RefereesDiscountApplied string
+	VolumeDiscountApplied   string
+	TotalMakerFeesReceived  string
+}

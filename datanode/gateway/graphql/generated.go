@@ -719,6 +719,14 @@ type ComplexityRoot struct {
 		VolumeDiscountApplied    func(childComplexity int) int
 	}
 
+	FeesStatsForParty struct {
+		AssetId                 func(childComplexity int) int
+		RefereesDiscountApplied func(childComplexity int) int
+		TotalMakerFeesReceived  func(childComplexity int) int
+		TotalRewardsReceived    func(childComplexity int) int
+		VolumeDiscountApplied   func(childComplexity int) int
+	}
+
 	Filter struct {
 		Conditions func(childComplexity int) int
 		Key        func(childComplexity int) int
@@ -1850,6 +1858,7 @@ type ComplexityRoot struct {
 		EstimatePosition                   func(childComplexity int, marketID string, openVolume string, orders []*OrderInfo, collateralAvailable *string, scaleLiquidationPriceToMarketDecimals *bool) int
 		EthereumKeyRotations               func(childComplexity int, nodeID *string) int
 		FeesStats                          func(childComplexity int, marketID *string, assetID *string, epoch *int, partyID *string) int
+		FeesStatsForParty                  func(childComplexity int, partyID string, assetID *string, fromEpoch *int, toEpoch *int) int
 		FundingPayments                    func(childComplexity int, partyID string, marketID *string, pagination *v2.Pagination) int
 		FundingPeriodDataPoints            func(childComplexity int, marketID string, dateRange *v2.DateRange, source *v1.FundingPeriodDataPoint_Source, pagination *v2.Pagination) int
 		FundingPeriods                     func(childComplexity int, marketID string, dateRange *v2.DateRange, pagination *v2.Pagination) int
@@ -3128,6 +3137,7 @@ type QueryResolver interface {
 	ProtocolUpgradeProposals(ctx context.Context, inState *v1.ProtocolUpgradeProposalStatus, approvedBy *string, pagination *v2.Pagination) (*v2.ProtocolUpgradeProposalConnection, error)
 	ReferralSets(ctx context.Context, id *string, referrer *string, referee *string, pagination *v2.Pagination) (*v2.ReferralSetConnection, error)
 	FeesStats(ctx context.Context, marketID *string, assetID *string, epoch *int, partyID *string) (*v1.FeesStats, error)
+	FeesStatsForParty(ctx context.Context, partyID string, assetID *string, fromEpoch *int, toEpoch *int) ([]*v2.FeesStatsForParty, error)
 	ReferralSetReferees(ctx context.Context, id *string, referrer *string, referee *string, pagination *v2.Pagination, aggregationDays *int) (*v2.ReferralSetRefereeConnection, error)
 	ReferralSetStats(ctx context.Context, setID *string, epoch *int, partyID *string, pagination *v2.Pagination) (*v2.ReferralSetStatsConnection, error)
 	Statistics(ctx context.Context) (*v12.Statistics, error)
@@ -5558,6 +5568,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FeesStats.VolumeDiscountApplied(childComplexity), true
+
+	case "FeesStatsForParty.assetId":
+		if e.complexity.FeesStatsForParty.AssetId == nil {
+			break
+		}
+
+		return e.complexity.FeesStatsForParty.AssetId(childComplexity), true
+
+	case "FeesStatsForParty.refereesDiscountApplied":
+		if e.complexity.FeesStatsForParty.RefereesDiscountApplied == nil {
+			break
+		}
+
+		return e.complexity.FeesStatsForParty.RefereesDiscountApplied(childComplexity), true
+
+	case "FeesStatsForParty.totalMakerFeesReceived":
+		if e.complexity.FeesStatsForParty.TotalMakerFeesReceived == nil {
+			break
+		}
+
+		return e.complexity.FeesStatsForParty.TotalMakerFeesReceived(childComplexity), true
+
+	case "FeesStatsForParty.totalRewardsReceived":
+		if e.complexity.FeesStatsForParty.TotalRewardsReceived == nil {
+			break
+		}
+
+		return e.complexity.FeesStatsForParty.TotalRewardsReceived(childComplexity), true
+
+	case "FeesStatsForParty.volumeDiscountApplied":
+		if e.complexity.FeesStatsForParty.VolumeDiscountApplied == nil {
+			break
+		}
+
+		return e.complexity.FeesStatsForParty.VolumeDiscountApplied(childComplexity), true
 
 	case "Filter.conditions":
 		if e.complexity.Filter.Conditions == nil {
@@ -10680,6 +10725,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.FeesStats(childComplexity, args["marketId"].(*string), args["assetId"].(*string), args["epoch"].(*int), args["partyId"].(*string)), true
 
+	case "Query.feesStatsForParty":
+		if e.complexity.Query.FeesStatsForParty == nil {
+			break
+		}
+
+		args, err := ec.field_Query_feesStatsForParty_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.FeesStatsForParty(childComplexity, args["partyId"].(string), args["assetId"].(*string), args["fromEpoch"].(*int), args["toEpoch"].(*int)), true
+
 	case "Query.fundingPayments":
 		if e.complexity.Query.FundingPayments == nil {
 			break
@@ -15430,6 +15487,48 @@ func (ec *executionContext) field_Query_ethereumKeyRotations_args(ctx context.Co
 		}
 	}
 	args["nodeId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_feesStatsForParty_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyId"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["assetId"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["fromEpoch"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fromEpoch"))
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["fromEpoch"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["toEpoch"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("toEpoch"))
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["toEpoch"] = arg3
 	return args, nil
 }
 
@@ -31794,6 +31893,226 @@ func (ec *executionContext) fieldContext_FeesStats_makerFeesGenerated(ctx contex
 				return ec.fieldContext_MakerFeesGenerated_makerFeesPaid(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MakerFeesGenerated", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeesStatsForParty_assetId(ctx context.Context, field graphql.CollectedField, obj *v2.FeesStatsForParty) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FeesStatsForParty_assetId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AssetId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FeesStatsForParty_assetId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeesStatsForParty",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeesStatsForParty_totalRewardsReceived(ctx context.Context, field graphql.CollectedField, obj *v2.FeesStatsForParty) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FeesStatsForParty_totalRewardsReceived(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalRewardsReceived, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FeesStatsForParty_totalRewardsReceived(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeesStatsForParty",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeesStatsForParty_refereesDiscountApplied(ctx context.Context, field graphql.CollectedField, obj *v2.FeesStatsForParty) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FeesStatsForParty_refereesDiscountApplied(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RefereesDiscountApplied, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FeesStatsForParty_refereesDiscountApplied(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeesStatsForParty",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeesStatsForParty_volumeDiscountApplied(ctx context.Context, field graphql.CollectedField, obj *v2.FeesStatsForParty) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FeesStatsForParty_volumeDiscountApplied(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VolumeDiscountApplied, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FeesStatsForParty_volumeDiscountApplied(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeesStatsForParty",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeesStatsForParty_totalMakerFeesReceived(ctx context.Context, field graphql.CollectedField, obj *v2.FeesStatsForParty) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FeesStatsForParty_totalMakerFeesReceived(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalMakerFeesReceived, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FeesStatsForParty_totalMakerFeesReceived(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeesStatsForParty",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -67902,6 +68221,70 @@ func (ec *executionContext) fieldContext_Query_feesStats(ctx context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_feesStatsForParty(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_feesStatsForParty(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().FeesStatsForParty(rctx, fc.Args["partyId"].(string), fc.Args["assetId"].(*string), fc.Args["fromEpoch"].(*int), fc.Args["toEpoch"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.FeesStatsForParty)
+	fc.Result = res
+	return ec.marshalOFeesStatsForParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFeesStatsForParty(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_feesStatsForParty(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "assetId":
+				return ec.fieldContext_FeesStatsForParty_assetId(ctx, field)
+			case "totalRewardsReceived":
+				return ec.fieldContext_FeesStatsForParty_totalRewardsReceived(ctx, field)
+			case "refereesDiscountApplied":
+				return ec.fieldContext_FeesStatsForParty_refereesDiscountApplied(ctx, field)
+			case "volumeDiscountApplied":
+				return ec.fieldContext_FeesStatsForParty_volumeDiscountApplied(ctx, field)
+			case "totalMakerFeesReceived":
+				return ec.fieldContext_FeesStatsForParty_totalMakerFeesReceived(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type FeesStatsForParty", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_feesStatsForParty_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_referralSetReferees(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_referralSetReferees(ctx, field)
 	if err != nil {
@@ -95512,6 +95895,62 @@ func (ec *executionContext) _FeesStats(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
+var feesStatsForPartyImplementors = []string{"FeesStatsForParty"}
+
+func (ec *executionContext) _FeesStatsForParty(ctx context.Context, sel ast.SelectionSet, obj *v2.FeesStatsForParty) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, feesStatsForPartyImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FeesStatsForParty")
+		case "assetId":
+
+			out.Values[i] = ec._FeesStatsForParty_assetId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "totalRewardsReceived":
+
+			out.Values[i] = ec._FeesStatsForParty_totalRewardsReceived(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "refereesDiscountApplied":
+
+			out.Values[i] = ec._FeesStatsForParty_refereesDiscountApplied(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "volumeDiscountApplied":
+
+			out.Values[i] = ec._FeesStatsForParty_volumeDiscountApplied(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "totalMakerFeesReceived":
+
+			out.Values[i] = ec._FeesStatsForParty_totalMakerFeesReceived(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var filterImplementors = []string{"Filter"}
 
 func (ec *executionContext) _Filter(ctx context.Context, sel ast.SelectionSet, obj *Filter) graphql.Marshaler {
@@ -106645,6 +107084,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_feesStats(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "feesStatsForParty":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_feesStatsForParty(ctx, field)
 				return res
 			}
 
@@ -119194,6 +119653,54 @@ func (ec *executionContext) marshalOFeesStats2ᚖcodeᚗvegaprotocolᚗioᚋvega
 		return graphql.Null
 	}
 	return ec._FeesStats(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOFeesStatsForParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFeesStatsForParty(ctx context.Context, sel ast.SelectionSet, v []*v2.FeesStatsForParty) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOFeesStatsForParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFeesStatsForParty(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOFeesStatsForParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐFeesStatsForParty(ctx context.Context, sel ast.SelectionSet, v *v2.FeesStatsForParty) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._FeesStatsForParty(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐFilterᚄ(ctx context.Context, sel ast.SelectionSet, v []*Filter) graphql.Marshaler {

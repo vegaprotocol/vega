@@ -72,7 +72,7 @@ func (b *ListBatcher[T]) Flush(ctx context.Context, connection Connection) ([]T,
 		pgx.CopyFromRows(rows),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to copy %s entries into database:%w", b.tableName, err)
+		return nil, fmt.Errorf("failed to copy %q entries into database: %w", b.tableName, err)
 	}
 
 	if copyCount != int64(len(b.pending)) {

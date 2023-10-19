@@ -4556,6 +4556,36 @@ func (t *TradingDataServiceV2) GetFeesStats(ctx context.Context, req *v2.GetFees
 	}, nil
 }
 
+func (t *TradingDataServiceV2) GetFeesStatsForParty(ctx context.Context, req *v2.GetFeesStatsForPartyRequest) (*v2.GetFeesStatsForPartyResponse, error) {
+	if req.ToEpoch != nil && req.FromEpoch == nil {
+		return nil, formatE(ErrFeesStatsForPartyRequest)
+	}
+
+	var assetID *entities.AssetID
+	if req.AssetId != nil {
+		assetID = ptr.From(entities.AssetID(*req.AssetId))
+	}
+
+	stats, err := t.feesStatsService.StatsForParty(ctx, entities.PartyID(req.PartyId), assetID, req.FromEpoch, req.ToEpoch)
+	if err != nil {
+		return nil, formatE(ErrGetFeesStatsForParty, err)
+	}
+
+	statsProto := make([]*v2.FeesStatsForParty, 0, len(stats))
+	for _, s := range stats {
+		statsProto = append(statsProto, &v2.FeesStatsForParty{
+			AssetId:                 s.AssetID.String(),
+			TotalRewardsReceived:    s.TotalRewardsReceived,
+			RefereesDiscountApplied: s.RefereesDiscountApplied,
+			VolumeDiscountApplied:   s.VolumeDiscountApplied,
+			TotalMakerFeesReceived:  s.TotalMakerFeesReceived,
+		})
+	}
+	return &v2.GetFeesStatsForPartyResponse{
+		FeesStatsForParty: statsProto,
+	}, nil
+}
+
 func (t *TradingDataServiceV2) GetCurrentVolumeDiscountProgram(ctx context.Context, _ *v2.GetCurrentVolumeDiscountProgramRequest) (
 	*v2.GetCurrentVolumeDiscountProgramResponse, error,
 ) {

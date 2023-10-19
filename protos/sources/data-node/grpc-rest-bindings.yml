@@ -185,6 +185,8 @@ http:
       get: "/api/v2/teams/referees/history/{referee}"
     - selector: datanode.api.v2.TradingDataService.GetFeesStats
       get: "/api/v2/fees/stats"
+    - selector: datanode.api.v2.TradingDataService.GetFeesStatsForParty
+      get: "/api/v2/fees/stats/parties/{party_id}"
     - selector: datanode.api.v2.TradingDataService.GetCurrentVolumeDiscountProgram
       get: "/api/v2/volume-discount-programs/current"
     - selector: datanode.api.v2.TradingDataService.GetVolumeDiscountStats
