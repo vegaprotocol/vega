@@ -51,15 +51,16 @@ func TestLiquidityFeeStats(t *testing.T) {
 		{Party: "d", Amount: "4"},
 	}
 
-	statsProto := stats.ToProto(market, asset)
+	statsProto := stats.ToProto(market, asset, 100)
 	require.Equal(t, market, statsProto.Market)
 	require.Equal(t, asset, statsProto.Asset)
+	require.Equal(t, uint64(100), statsProto.EpochSeq)
 	require.Equal(t, expectedAmountsPerParty, statsProto.FeesPaidPerParty)
 	require.Equal(t, "19", statsProto.TotalFeesPaid)
 
 	stats = types.NewLiquidityFeeStats()
 
-	statsProto = stats.ToProto(market, asset)
+	statsProto = stats.ToProto(market, asset, 100)
 	require.Equal(t, []*v1.PartyAmount{}, statsProto.FeesPaidPerParty)
 	require.Equal(t, "0", statsProto.TotalFeesPaid)
 
@@ -77,7 +78,7 @@ func TestLiquidityFeeStats(t *testing.T) {
 		{Party: "d", Amount: "44"},
 	}
 
-	statsProto = stats.ToProto(market, asset)
+	statsProto = stats.ToProto(market, asset, 100)
 	require.Equal(t, expectedAmountsPerParty, statsProto.FeesPaidPerParty)
 	require.Equal(t, "110", statsProto.TotalFeesPaid)
 }

@@ -164,6 +164,7 @@ type Market struct {
 	// to make sure the migraton from the upgrade
 	// are applied properly
 	ensuredMigration73 bool
+	epoch              types.Epoch
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -357,11 +358,12 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	case vegapb.EpochAction_EPOCH_ACTION_START:
 		m.liquidity.UpdateSLAParameters(m.mkt.LiquiditySLAParams)
 		m.liquidity.OnEpochStart(ctx, m.timeService.GetTimeNow(), m.markPrice, m.midPrice(), m.getTargetStake(), m.positionFactor)
+		m.epoch = epoch
 	case vegapb.EpochAction_EPOCH_ACTION_END:
 		// compute parties stats for the previous epoch
 		m.onEpochEndPartiesStats()
 		if !m.finalFeesDistributed {
-			m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow())
+			m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow(), epoch)
 		}
 		feesStats := m.fee.GetFeesStatsOnEpochEnd()
 		feesStats.Market = m.GetID()
@@ -373,6 +375,7 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 }
 
 func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
+	m.epoch = epoch
 	m.liquidityEngine.OnEpochRestore(epoch)
 }
 
@@ -1128,7 +1131,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time, finalState types.
 			m.log.Panic("failed to allocate liquidity provision fees", logging.Error(err))
 		}
 
-		m.liquidity.OnEpochEnd(ctx, t)
+		m.liquidity.OnEpochEnd(ctx, t, m.epoch)
 		m.finalFeesDistributed = true
 	}
 
