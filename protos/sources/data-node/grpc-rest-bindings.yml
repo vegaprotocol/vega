@@ -65,6 +65,8 @@ http:
       get: "/api/v2/erc20/asset/limits/bundle"
     - selector: datanode.api.v2.TradingDataService.GetERC20WithdrawalApproval
       get: "/api/v2/erc20/asset/withdrawal/bundle"
+    - selector: datanode.api.v2.TradingDataService.GetRiskFactors
+      get: "/api/v2/market/{market_id}/risk/factors"
     - selector: datanode.api.v2.TradingDataService.GetLastTrade
       get: "/api/v2/market/{market_id}/trade/latest"
     - selector: datanode.api.v2.TradingDataService.ListTrades
