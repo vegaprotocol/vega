@@ -214,7 +214,16 @@ func PaginateQuery[T any, PT parserPtr[T]](
 	ordering TableOrdering,
 	pagination entities.CursorPagination,
 ) (string, []interface{}, error) {
-	return paginateQueryInternal[T, PT](query, args, ordering, pagination, false)
+	return paginateQueryInternal[T, PT](query, args, ordering, pagination, false, false)
+}
+
+func PaginateQueryWithWhere[T any, PT parserPtr[T]](
+	query string,
+	args []interface{},
+	ordering TableOrdering,
+	pagination entities.CursorPagination,
+) (string, []interface{}, error) {
+	return paginateQueryInternal[T, PT](query, args, ordering, pagination, false, true)
 }
 
 func PaginateQueryWithoutOrderBy[T any, PT parserPtr[T]](
@@ -223,7 +232,7 @@ func PaginateQueryWithoutOrderBy[T any, PT parserPtr[T]](
 	ordering TableOrdering,
 	pagination entities.CursorPagination,
 ) (string, []interface{}, error) {
-	return paginateQueryInternal[T, PT](query, args, ordering, pagination, true)
+	return paginateQueryInternal[T, PT](query, args, ordering, pagination, true, false)
 }
 
 func paginateQueryInternal[T any, PT parserPtr[T]](
@@ -232,6 +241,7 @@ func paginateQueryInternal[T any, PT parserPtr[T]](
 	ordering TableOrdering,
 	pagination entities.CursorPagination,
 	omitOrderBy bool,
+	forceWhere bool,
 ) (string, []interface{}, error) {
 	// Extract a cursor struct from the pagination struct
 	cursor, err := parseCursor[T, PT](pagination)
@@ -254,7 +264,7 @@ func paginateQueryInternal[T any, PT parserPtr[T]](
 	}
 	if !isEmpty {
 		whereOrAnd := "WHERE"
-		if strings.Contains(strings.ToUpper(query), "WHERE") {
+		if !forceWhere && strings.Contains(strings.ToUpper(query), "WHERE") {
 			whereOrAnd = "AND"
 		}
 
