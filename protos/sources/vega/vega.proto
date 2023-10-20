@@ -1621,6 +1621,8 @@ message Reward {
   string market_id = 7;
   // Type of reward being paid.
   string reward_type = 8;
+  // The epoch when the reward is being released.
+  uint64 locked_until_epoch = 9;
 }
 
 // Details for rewards for a single asset

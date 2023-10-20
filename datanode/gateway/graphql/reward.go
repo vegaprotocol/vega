@@ -63,6 +63,15 @@ func (r *rewardResolver) Epoch(ctx context.Context, obj *vega.Reward) (*vega.Epo
 	return epoch, nil
 }
 
+func (r *rewardResolver) LockedUntilEpoch(ctx context.Context, obj *vega.Reward) (*vega.Epoch, error) {
+	epoch, err := r.r.getEpochByID(ctx, obj.LockedUntilEpoch)
+	if err != nil {
+		return nil, err
+	}
+
+	return epoch, nil
+}
+
 func (r *rewardResolver) RewardType(ctx context.Context, obj *vega.Reward) (vega.AccountType, error) {
 	accountType, ok := vega.AccountType_value[obj.RewardType]
 	if !ok {
