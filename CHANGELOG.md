@@ -326,6 +326,7 @@
 - [9762](https://github.com/vegaprotocol/vega/issues/9762) - Referral fees API not filtering by party correctly.
 - [9775](https://github.com/vegaprotocol/vega/issues/9775) - Do not pay discount if set is not eligible
 - [9788](https://github.com/vegaprotocol/vega/issues/9788) - Fix transfer account validation.
+- [9859](https://github.com/vegaprotocol/vega/issues/9859) - Cache nonces in `pow` engine to prevent reuse.
 - [9544](https://github.com/vegaprotocol/vega/issues/9544) - Fix race in visor restart logic.
 - [9797](https://github.com/vegaprotocol/vega/issues/9797) - Default pagination limits are not always correctly set.
 - [9813](https://github.com/vegaprotocol/vega/issues/9813) - Add validation for team scope vs individual scope

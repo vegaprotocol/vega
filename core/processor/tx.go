@@ -142,6 +142,10 @@ func (t Tx) Command() txn.Command {
 	}
 }
 
+func (t Tx) GetNonce() uint64 {
+	return t.inputData.Nonce
+}
+
 func (t Tx) GetPoWNonce() uint64 {
 	// The proof-of-work is not required by validator commands. So, it can be
 	// nil.
