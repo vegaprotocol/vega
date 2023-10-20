@@ -40,6 +40,9 @@ func NewPaidLiquidityFeesStats(src *ConnectionSource) *PaidLiquidityFeesStats {
 
 func (rfs *PaidLiquidityFeesStats) Add(ctx context.Context, stats *entities.PaidLiquidityFeesStats) error {
 	defer metrics.StartSQLQuery("PaidLiquidityFeesStats", "Add")()
+	// It's possible that a market closes in the same block as an end of epoch event.
+	// In this case, the market close event will cause a paid liquidity fee stats event to be sent
+	// as well as the epoch end event. In this case we just want to ignore the second event.
 	_, err := rfs.Connection.Exec(
 		ctx,
 		`INSERT INTO paid_liquidity_fees(
@@ -49,7 +52,7 @@ func (rfs *PaidLiquidityFeesStats) Add(ctx context.Context, stats *entities.Paid
 			total_fees_paid,
 			fees_paid_per_party,
 			vega_time
-		) values ($1,$2,$3,$4,$5,$6)`,
+		) values ($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING`,
 		stats.MarketID,
 		stats.AssetID,
 		stats.EpochSeq,

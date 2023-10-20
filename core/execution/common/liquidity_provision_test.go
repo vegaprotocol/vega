@@ -348,7 +348,7 @@ func TestLiquidityProvisionsFeeDistribution(t *testing.T) {
 		}).AnyTimes()
 
 	// end epoch - this should trigger the SLA fees distribution.
-	testLiquidity.marketLiquidity.OnEpochEnd(testLiquidity.ctx, now)
+	testLiquidity.marketLiquidity.OnEpochEnd(testLiquidity.ctx, now, types.Epoch{})
 
 	for _, provider := range keys {
 		generalAcc, err := testLiquidity.collateralEngine.GetPartyGeneralAccount(

@@ -259,7 +259,7 @@ type LiquidityEngine interface {
 
 type MarketLiquidityEngine interface {
 	OnEpochStart(context.Context, time.Time, *num.Uint, *num.Uint, *num.Uint, num.Decimal)
-	OnEpochEnd(context.Context, time.Time)
+	OnEpochEnd(context.Context, time.Time, types.Epoch)
 	OnTick(context.Context, time.Time)
 	EndBlock(*num.Uint, *num.Uint, num.Decimal)
 	SubmitLiquidityProvision(context.Context, *types.LiquidityProvisionSubmission, string, string, types.MarketState) error
