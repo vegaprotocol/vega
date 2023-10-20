@@ -448,12 +448,10 @@ message MarketEvent {
 message TransferFees {
   // the transfer that triggered the colleciton of fees.
   string transfer_id = 1;
-  // the asset in which the fee was paid.
-  string asset = 2;
   // the amount of fees transferred.
-  string amount = 3;
-  // the party paying the fees.
-  string party_id = 4;
+  string amount = 2;
+  // the epoch when the transfer was dispatched, and fees were paid (zero for one-off transfers).
+  uint64 epoch = 3;
 }
 
 message TransactionResult {

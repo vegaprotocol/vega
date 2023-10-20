@@ -2382,7 +2382,7 @@ func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 	}
 
 	var (
-		transfers []entities.Transfer
+		transfers []entities.TransferDetails
 		pageInfo  entities.PageInfo
 	)
 	if req.Pubkey == nil {

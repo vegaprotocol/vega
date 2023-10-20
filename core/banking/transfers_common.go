@@ -101,6 +101,7 @@ func (e *Engine) processTransfer(
 	amount *num.Uint,
 	reference string,
 	transferID string,
+	epoch uint64,
 	// optional oneoff transfer
 	// in case we need to schedule the delivery
 	oneoff *types.OneOffTransfer,
@@ -144,7 +145,7 @@ func (e *Engine) processTransfer(
 	if err != nil {
 		return nil, err
 	}
-	e.broker.Send(events.NewTransferFeesEvent(ctx, transferID, asset, from, feeTransfer.Amount.Amount))
+	e.broker.Send(events.NewTransferFeesEvent(ctx, transferID, feeTransfer.Amount.Amount, epoch))
 
 	return tresps, nil
 }

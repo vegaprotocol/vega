@@ -100,5 +100,5 @@ func (rf *Transfer) consume(ctx context.Context, event TransferEvent) error {
 func (rf *Transfer) handleFees(ctx context.Context, e TransferFeesEvent) error {
 	tf := e.TransferFees()
 	rec := entities.TransferFeesFromProto(&tf, rf.vegaTime)
-	return errors.Wrap(rf.store.UpsertFees(ctx, rec))
+	return errors.Wrap(rf.store.UpsertFees(ctx, rec), "inserting transfer fee into SQL store failed")
 }

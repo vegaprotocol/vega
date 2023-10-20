@@ -93,7 +93,7 @@ func (e *Engine) oneOffTransfer(
 
 	tresps, err := e.processTransfer(
 		ctx, transfer.From, transfer.To, transfer.Asset, "", transfer.FromAccountType,
-		transfer.ToAccountType, transfer.Amount, transfer.Reference, transfer.ID, transfer,
+		transfer.ToAccountType, transfer.Amount, transfer.Reference, transfer.ID, 0, transfer,
 	)
 	if err != nil {
 		transfer.Status = types.TransferStatusRejected

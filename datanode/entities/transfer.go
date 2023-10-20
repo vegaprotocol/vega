@@ -74,11 +74,10 @@ type Transfer struct {
 }
 
 type TransferFees struct {
-	ID       TransferID
-	PartyID  PartyID
-	VegaTime time.Time
-	AssetID  AssetID
-	Amount   *num.Uint
+	TransferID TransferID
+	Epoch      uint64
+	Amount     *num.Uint
+	VegaTime   time.Time
 }
 
 func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*eventspb.Transfer, error) {
@@ -143,21 +142,19 @@ func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*e
 
 func (f *TransferFees) ToProto() *eventspb.TransferFees {
 	return &eventspb.TransferFees{
-		TransferId: f.ID.String(),
-		Asset:      f.AssetID.String(),
+		TransferId: f.TransferID.String(),
 		Amount:     f.Amount.String(),
-		PartyId:    f.Amount.String(),
+		Epoch:      f.Epoch,
 	}
 }
 
 func TransferFeesFromProto(f *eventspb.TransferFees, vegaTime time.Time) *TransferFees {
 	amt, _ := num.UintFromString(f.Amount, 10)
 	return &TransferFees{
-		ID:       TransferID(f.TransferId),
-		PartyID:  PartyID(f.PartyId),
-		AssetID:  AssetID(f.Asset),
-		Amount:   amt,
-		VegaTime: vegaTime,
+		TransferID: TransferID(f.TransferId),
+		Epoch:      f.Epoch,
+		Amount:     amt,
+		VegaTime:   vegaTime,
 	}
 }
 
@@ -274,6 +271,37 @@ func (t Transfer) Cursor() *Cursor {
 	return NewCursor(wc.String())
 }
 
+func (d TransferDetails) ToProtoEdge(input ...any) (*v2.TransferEdge, error) {
+	if len(input) != 2 {
+		return nil, fmt.Errorf("expected account source and context argument")
+	}
+
+	ctx, ok := input[0].(context.Context)
+	if !ok {
+		return nil, fmt.Errorf("first argument must be a context.Context, got: %v", input[0])
+	}
+
+	as, ok := input[1].(AccountSource)
+	if !ok {
+		return nil, fmt.Errorf("second argument must be an AccountSource, got: %v", input[1])
+	}
+	tfProto, err := d.Transfer.ToProto(ctx, as)
+	if err != nil {
+		return nil, err
+	}
+	fees := make([]*eventspb.TransferFees, 0, len(d.Fees))
+	for _, f := range d.Fees {
+		fees = append(fees, f.ToProto())
+	}
+	return &v2.TransferEdge{
+		Node: &v2.TransferNode{
+			Transfer: tfProto,
+			Fees:     fees,
+		},
+		Cursor: d.Transfer.Cursor().Encode(),
+	}, nil
+}
+
 func (t Transfer) ToProtoEdge(input ...any) (*v2.TransferEdge, error) {
 	if len(input) != 2 {
 		return nil, fmt.Errorf("expected account source and context argument")
@@ -294,7 +322,9 @@ func (t Transfer) ToProtoEdge(input ...any) (*v2.TransferEdge, error) {
 		return nil, err
 	}
 	return &v2.TransferEdge{
-		Node:   transferProto,
+		Node: &v2.TransferNode{
+			Transfer: transferProto,
+		},
 		Cursor: t.Cursor().Encode(),
 	}, nil
 }

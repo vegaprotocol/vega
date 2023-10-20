@@ -28,14 +28,13 @@ type TransferFees struct {
 	pb *eventspb.TransferFees
 }
 
-func NewTransferFeesEvent(ctx context.Context, transferID, asset, partyID string, amount *num.Uint) *TransferFees {
+func NewTransferFeesEvent(ctx context.Context, transferID string, amount *num.Uint, epoch uint64) *TransferFees {
 	return &TransferFees{
 		Base: newBase(ctx, TransferFeesEvent),
 		pb: &eventspb.TransferFees{
 			TransferId: transferID,
-			Asset:      asset,
 			Amount:     amount.String(),
-			PartyId:    partyID,
+			Epoch:      epoch,
 		},
 	}
 }
