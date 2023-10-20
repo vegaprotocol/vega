@@ -2362,8 +2362,13 @@ func (t *TradingDataServiceV2) GetTransfer(ctx context.Context, req *v2.GetTrans
 	if err != nil {
 		return nil, formatE(err)
 	}
+	fees := make([]*eventspb.TransferFees, 0, len(transfer.Fees))
+	for _, f := range transfer.Fees {
+		fees = append(fees, f.ToProto())
+	}
 	return &v2.GetTransferResponse{
 		Transfer: tp,
+		Fees:     fees,
 	}, nil
 }
 

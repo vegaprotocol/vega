@@ -33,6 +33,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -47,6 +48,11 @@ type AccountSource interface {
 type _Transfer struct{}
 
 type TransferID = ID[_Transfer]
+
+type TransferDetails struct {
+	Transfer
+	Fees []*TransferFees
+}
 
 type Transfer struct {
 	ID               TransferID
@@ -65,6 +71,14 @@ type Transfer struct {
 	Factor           *decimal.Decimal
 	DispatchStrategy *vega.DispatchStrategy
 	Reason           *string
+}
+
+type TransferFees struct {
+	ID       TransferID
+	PartyID  PartyID
+	VegaTime time.Time
+	AssetID  AssetID
+	Amount   *num.Uint
 }
 
 func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*eventspb.Transfer, error) {
@@ -125,6 +139,26 @@ func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*e
 	}
 
 	return &proto, nil
+}
+
+func (f *TransferFees) ToProto() *eventspb.TransferFees {
+	return &eventspb.TransferFees{
+		TransferId: f.ID.String(),
+		Asset:      f.AssetID.String(),
+		Amount:     f.Amount.String(),
+		PartyId:    f.Amount.String(),
+	}
+}
+
+func TransferFeesFromProto(f *eventspb.TransferFees, vegaTime time.Time) *TransferFees {
+	amt, _ := num.UintFromString(f.Amount, 10)
+	return &TransferFees{
+		ID:       TransferID(f.TransferId),
+		PartyID:  PartyID(f.PartyId),
+		AssetID:  AssetID(f.Asset),
+		Amount:   amt,
+		VegaTime: vegaTime,
+	}
 }
 
 func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash, vegaTime time.Time, accountSource AccountSource) (*Transfer, error) {

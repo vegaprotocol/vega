@@ -1724,6 +1724,8 @@ message GetTransferRequest {
 message GetTransferResponse {
   // Transfer requested by ID.
   vega.events.v1.Transfer transfer = 1;
+  // Fees paid for this transfer.
+  repeated vega.events.v1.TransferFees fees = 2;
 }
 
 // -- Network Limits --

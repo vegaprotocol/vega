@@ -126,7 +126,7 @@ func TestTrasferByID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("f%s", err)
 	}
-	retrievedTransferProto, _ := retrieved.ToProto(ctx, accounts)
+	retrievedTransferProto, _ := retrieved.Transfer.ToProto(ctx, accounts)
 	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
 
 	retrievedByParty, _, err := transfers.GetTransfersToParty(ctx, accountTo.PartyID, entities.CursorPagination{})

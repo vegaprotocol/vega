@@ -35,10 +35,16 @@ import (
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/jackc/pgx/v4"
 )
 
 type Transfers struct {
 	*ConnectionSource
+}
+
+var transferFeesOrdering = TableOrdering{
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "transfer_id", Sorting: ASC},
 }
 
 var transfersOrdering = TableOrdering{
@@ -98,6 +104,21 @@ func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) err
 		return err
 	}
 
+	return nil
+}
+
+func (t *Transfers) UpsertFees(ctx context.Context, tf *entities.TransferFees) error {
+	defer metrics.StartSQLQuery("Transfers", "UpsertFees")()
+	query := `INSERT INTO  transfer_fees(
+				transfer_id,
+				asset_id,
+				party_id,
+				amount,
+				vega_time
+			) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING;` // conflicts shouldn't happen, so maybe we should error here?
+	if _, err := t.Connection.Exec(ctx, query, tf.TransferID, tf.Asset, tf.PartyID, tf.Amount, tf.VegaTime); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -185,12 +206,31 @@ func (t *Transfers) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]
 	return transfers, nil
 }
 
-func (t *Transfers) GetByID(ctx context.Context, id string) (entities.Transfer, error) {
-	var tr entities.Transfer
+func (t *Transfers) GetByID(ctx context.Context, id string) (entities.TransferDetails, error) {
+	var tr entities.TransferDetails
+	tID := entities.TransferID(id)
 	query := `SELECT * FROM transfers_current WHERE id=$1`
 
-	err := pgxscan.Get(ctx, t.Connection, &tr, query, entities.TransferID(id))
-	return tr, t.wrapE(err)
+	if err := pgxscan.Get(ctx, t.Connection, &tr.Transfer, query, tID); err != nil {
+		return tr, t.wrapE(err)
+	}
+
+	query = `SELECT * FROM transfer_fees WHERE transfer_id=$1;`
+	rows, err := t.Connection.Query(ctx, query, tID)
+	if rows != nil {
+		defer rows.Close()
+	}
+	if err.Is(pgx.ErrNoRows) {
+		// no rows is fine, means no fees have been paid yet
+		return tr, nil
+	}
+	if err != nil {
+		return tr, t.wrapE(err)
+	}
+	if err := pgxscan.ScanAll(&tr.Fees, rows); err != nil {
+		return tr, t.wrapE(err)
+	}
+	return tr, nil
 }
 
 func (t *Transfers) getTransfers(ctx context.Context, pagination entities.CursorPagination, where string, args ...interface{}) ([]entities.Transfer,

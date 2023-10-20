@@ -45,14 +45,16 @@ func (t TransferFees) Proto() eventspb.TransferFees {
 }
 
 func (t TransferFees) StreamMessage() *eventspb.BusEvent {
-	p := t.Proto()
-
 	busEvent := newBusEventFromBase(t.Base)
 	busEvent.Event = &eventspb.BusEvent_TransferFees{
 		TransferFees: t.pb,
 	}
 
 	return busEvent
+}
+
+func (t TransferFees) TransferFees() eventspb.TransferFees {
+	return t.Proto()
 }
 
 func TransferFeesEventFromStream(ctx context.Context, be *eventspb.BusEvent) *TransferFees {
