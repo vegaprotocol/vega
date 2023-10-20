@@ -38,6 +38,8 @@ const (
 	minBanDuration = time.Second * 30 // minimum ban duration
 )
 
+var ErrNonceAlreadyUsedByParty = errors.New("nonce already used by party")
+
 var banDurationAsEpochFraction = num.DecimalOne().Div(num.DecimalFromInt64(48)) // 1/48 of an epoch will be the default 30 minutes ban
 
 type EpochEngine interface {
@@ -53,6 +55,11 @@ type params struct {
 	spamPoWIncreasingDifficulty bool
 	fromBlock                   uint64
 	untilBlock                  *uint64
+}
+
+type nonceRef struct {
+	party string
+	nonce uint64
 }
 
 // isActive for a given block height returns true if:
@@ -93,6 +100,10 @@ type Engine struct {
 	heightToTid      map[uint64][]string // height to slice of seen tid in scope ring buffer
 	lastPruningBlock uint64
 
+	// tracking the nonces used in the input data to make sure they are not reused
+	seenNonceRef     map[nonceRef]struct{}
+	heightToNonceRef map[uint64][]nonceRef
+
 	mempoolSeenTid map[string]struct{} // tids seen already in this node's mempool, cleared at the end of the block
 
 	noVerify bool // disables verification of PoW in scenario, where we use the null chain and we do not want to send transaction w/o verification
@@ -109,17 +120,19 @@ func New(log *logging.Logger, config Config, timeService TimeService) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	e := &Engine{
-		bannedParties:  map[string]time.Time{},
-		log:            log,
-		hashKeys:       []string{(&types.PayloadProofOfWork{}).Key()},
-		activeParams:   []*params{},
-		activeStates:   []*state{},
-		seenTx:         map[string]struct{}{},
-		heightToTx:     map[uint64][]string{},
-		seenTid:        map[string]struct{}{},
-		mempoolSeenTid: map[string]struct{}{},
-		heightToTid:    map[uint64][]string{},
-		timeService:    timeService,
+		bannedParties:    map[string]time.Time{},
+		log:              log,
+		hashKeys:         []string{(&types.PayloadProofOfWork{}).Key()},
+		activeParams:     []*params{},
+		activeStates:     []*state{},
+		seenTx:           map[string]struct{}{},
+		heightToTx:       map[uint64][]string{},
+		heightToNonceRef: map[uint64][]nonceRef{},
+		seenTid:          map[string]struct{}{},
+		seenNonceRef:     map[nonceRef]struct{}{},
+		mempoolSeenTid:   map[string]struct{}{},
+		heightToTid:      map[uint64][]string{},
+		timeService:      timeService,
 	}
 	e.log.Info("PoW spam protection started")
 	return e
@@ -177,8 +190,12 @@ func (e *Engine) EndOfBlock() {
 				for _, v := range e.heightToTid[block] {
 					delete(e.seenTid, v)
 				}
+				for _, v := range e.heightToNonceRef[block] {
+					delete(e.seenNonceRef, v)
+				}
 				delete(e.heightToTx, block)
 				delete(e.heightToTid, block)
+				delete(e.heightToNonceRef, block)
 			}
 		}
 	}
@@ -215,8 +232,12 @@ func (e *Engine) EndOfBlock() {
 			for _, v := range e.heightToTid[block] {
 				delete(e.seenTid, v)
 			}
+			for _, v := range e.heightToNonceRef[block] {
+				delete(e.seenNonceRef, v)
+			}
 			delete(e.heightToTx, block)
 			delete(e.heightToTid, block)
+			delete(e.heightToNonceRef, block)
 			delete(e.activeStates[i].blockToPartyState, block)
 		}
 	}
@@ -299,7 +320,9 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 
 	// if version supports pow, save the pow result and the tid
 	e.heightToTid[tx.BlockHeight()] = append(e.heightToTid[tx.BlockHeight()], tx.GetPoWTID())
+	e.heightToNonceRef[tx.BlockHeight()] = append(e.heightToNonceRef[tx.BlockHeight()], nonceRef{tx.Party(), tx.GetNonce()})
 	e.seenTid[tx.GetPoWTID()] = struct{}{}
+	e.seenNonceRef[nonceRef{tx.Party(), tx.GetNonce()}] = struct{}{}
 
 	// if it's the first transaction we're seeing from any party for this block height, initialise the state
 	if _, ok := state.blockToPartyState[txBlock]; !ok {
@@ -458,6 +481,14 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 			e.log.Debug("tid already used", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
 		}
 		return h, errors.New("proof of work tid already used")
+	}
+
+	// check if the nonce was seen in scope
+	if _, ok := e.seenNonceRef[nonceRef{tx.Party(), tx.GetNonce()}]; ok {
+		if e.log.IsDebug() {
+			e.log.Debug("nonce already used by party", logging.Uint64("nonce", tx.GetNonce()), logging.String("party", tx.Party()))
+		}
+		return h, ErrNonceAlreadyUsedByParty
 	}
 
 	// verify the proof of work
