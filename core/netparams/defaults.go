@@ -174,7 +174,7 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalTransferRequiredMajority:      NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.66"),
 		GovernanceProposalTransferMinProposerBalance:    NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
 		GovernanceProposalTransferMinVoterBalance:       NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
-		GovernanceTransferMaxAmount:                     NewDecimal(gteD1).Mutable(true).MustUpdate("7000000000000000000000"),
+		GovernanceTransferMaxAmount:                     NewDecimal(gteD1).Mutable(true).MustUpdate("7000"),
 		GovernanceTransferMaxFraction:                   NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("1"),
 
 		// Update referral program.

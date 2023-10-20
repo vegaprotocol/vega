@@ -131,7 +131,193 @@ func TestFeesStats_GetFeesStats(t *testing.T) {
 	t.Run("Should return an error if an asset and market is provided", testGetFeesStatsNoAssetOrMarket)
 	t.Run("Should return the stats for the party and epoch requested", testGetFeesStatsForPartyAndEpoch)
 	t.Run("Should return the latest stats for the party", testGetFeesStatsForPartyLatest)
-	t.Run("Should return the latest stats for all asset given a party", testGetFeesStatsParty)
+	t.Run("Should return the stats for all asset given a party", testGetFeesStatsForParty)
+}
+
+func testGetFeesStatsForMarketAndEpoch(t *testing.T) {
+	stores := setupFeesStatsStores(t)
+	ctx := tempTransaction(t)
+	stats := setupFeesStats(t, ctx, stores.fs)
+
+	// get the stats for the first market and epoch
+	want := stats[0]
+	got, err := stores.fs.GetFeesStats(ctx, &want.MarketID, nil, &want.EpochSeq, nil)
+	require.NoError(t, err)
+	assert.Equal(t, want, *got)
+
+	// get the stats for the second market and epoch
+	want = stats[3]
+	got, err = stores.fs.GetFeesStats(ctx, &want.MarketID, nil, &want.EpochSeq, nil)
+	require.NoError(t, err)
+	assert.Equal(t, want, *got)
+}
+
+func testGetFeesStatsForAssetAndEpoch(t *testing.T) {
+	stores := setupFeesStatsStores(t)
+	ctx := tempTransaction(t)
+	stats := setupFeesStats(t, ctx, stores.fs)
+
+	// get the stats for the first market and epoch
+	want := stats[0]
+	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, &want.EpochSeq, nil)
+	require.NoError(t, err)
+	assert.Equal(t, want, *got)
+
+	// get the stats for the second market and epoch
+	want = stats[6]
+	got, err = stores.fs.GetFeesStats(ctx, nil, &want.AssetID, &want.EpochSeq, nil)
+	require.NoError(t, err)
+	assert.Equal(t, want, *got)
+}
+
+func testGetFeesStatsForMarketLatest(t *testing.T) {
+	stores := setupFeesStatsStores(t)
+	ctx := tempTransaction(t)
+	stats := setupFeesStats(t, ctx, stores.fs)
+
+	// get the stats for the first market and epoch
+	want := stats[2]
+	got, err := stores.fs.GetFeesStats(ctx, &want.MarketID, nil, nil, nil)
+	require.NoError(t, err)
+	assert.Equal(t, want, *got)
+
+	// get the stats for the second market and epoch
+	want = stats[8]
+	got, err = stores.fs.GetFeesStats(ctx, &want.MarketID, nil, nil, nil)
+	require.NoError(t, err)
+	assert.Equal(t, want, *got)
+}
+
+func testGetFeesStatsForAssetLatest(t *testing.T) {
+	stores := setupFeesStatsStores(t)
+	ctx := tempTransaction(t)
+	stats := setupFeesStats(t, ctx, stores.fs)
+
+	// get the stats for the first market and epoch
+	want := stats[2]
+	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, nil)
+	require.NoError(t, err)
+	assert.Equal(t, want, *got)
+
+	// get the stats for the second market and epoch
+	want = stats[8]
+	got, err = stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, nil)
+	require.NoError(t, err)
+	assert.Equal(t, want, *got)
+}
+
+func testGetFeesStatsNoAssetOrMarket(t *testing.T) {
+	stores := setupFeesStatsStores(t)
+	ctx := tempTransaction(t)
+
+	_, err := stores.fs.GetFeesStats(ctx, ptr.From(entities.MarketID("deadbeef01")), ptr.From(entities.AssetID("deadbeef02")), nil, nil)
+	require.Error(t, err)
+}
+
+func testGetFeesStatsForPartyAndEpoch(t *testing.T) {
+	stores := setupFeesStatsStores(t)
+	ctx := tempTransaction(t)
+	stats := setupFeesStats(t, ctx, stores.fs)
+
+	// get the stats for the first market and epoch
+	expected := stats[1]
+	want := entities.FeesStats{
+		MarketID: entities.MarketID("deadbeef01"),
+		AssetID:  entities.AssetID("deadbaad01"),
+		EpochSeq: 2,
+		TotalRewardsReceived: []*eventspb.PartyAmount{
+			{
+				Party:  "cafedaad01",
+				Amount: "1100000",
+			},
+		},
+		ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+			{
+				Referrer: "cafedaad01",
+				GeneratedReward: []*eventspb.PartyAmount{
+					{
+						Party:  "cafed00d01",
+						Amount: "550000",
+					},
+					{
+						Party:  "cafed00d02",
+						Amount: "550000",
+					},
+				},
+			},
+		},
+		RefereesDiscountApplied: []*eventspb.PartyAmount{},
+		VolumeDiscountApplied:   []*eventspb.PartyAmount{},
+		TotalMakerFeesReceived:  []*eventspb.PartyAmount{},
+		MakerFeesGenerated:      []*eventspb.MakerFeesGenerated{},
+		VegaTime:                expected.VegaTime,
+	}
+
+	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, ptr.From(want.EpochSeq), &want.ReferrerRewardsGenerated[0].Referrer)
+	require.NoError(t, err)
+	assert.Equal(t, want, *got)
+}
+
+func testGetFeesStatsForPartyLatest(t *testing.T) {
+	stores := setupFeesStatsStores(t)
+	ctx := tempTransaction(t)
+	stats := setupFeesStats(t, ctx, stores.fs)
+
+	// get the stats for the first market and epoch
+	expected := stats[2]
+	want := entities.FeesStats{
+		MarketID: entities.MarketID("deadbeef01"),
+		AssetID:  entities.AssetID("deadbaad01"),
+		EpochSeq: 3,
+		TotalRewardsReceived: []*eventspb.PartyAmount{
+			{
+				Party:  "cafedaad01",
+				Amount: "1200000",
+			},
+		},
+		ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+			{
+				Referrer: "cafedaad01",
+				GeneratedReward: []*eventspb.PartyAmount{
+					{
+						Party:  "cafed00d01",
+						Amount: "600000",
+					},
+					{
+						Party:  "cafed00d02",
+						Amount: "600000",
+					},
+				},
+			},
+		},
+		RefereesDiscountApplied: []*eventspb.PartyAmount{},
+		VolumeDiscountApplied:   []*eventspb.PartyAmount{},
+		TotalMakerFeesReceived:  []*eventspb.PartyAmount{},
+		MakerFeesGenerated:      []*eventspb.MakerFeesGenerated{},
+		VegaTime:                expected.VegaTime,
+	}
+	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, &want.ReferrerRewardsGenerated[0].Referrer)
+	require.NoError(t, err)
+	assert.Equal(t, want, *got)
+}
+
+func testGetFeesStatsForParty(t *testing.T) {
+	stores := setupFeesStatsStores(t)
+	ctx := tempTransaction(t)
+	_ = setupFeesStats(t, ctx, stores.fs)
+
+	want := []entities.FeesStatsForParty{
+		{
+			AssetID:                 entities.AssetID("deadbaad01"),
+			TotalRewardsReceived:    "4600000",
+			RefereesDiscountApplied: "0",
+			VolumeDiscountApplied:   "0",
+			TotalMakerFeesReceived:  "0",
+		},
+	}
+	got, err := stores.fs.StatsForParty(ctx, "cafedaad01", ptr.From(entities.AssetID("deadbaad01")), ptr.From(uint64(2)), ptr.From(uint64(3)))
+	require.NoError(t, err)
+	assert.Equal(t, want, got)
 }
 
 func setupFeesStats(t *testing.T, ctx context.Context, fs *sqlstore.FeesStats) []entities.FeesStats {
@@ -215,6 +401,119 @@ func setupFeesStats(t *testing.T, ctx context.Context, fs *sqlstore.FeesStats) [
 		},
 		{
 			MarketID: entities.MarketID("deadbeef01"),
+			AssetID:  entities.AssetID("deadbaad01"),
+			EpochSeq: 3,
+			TotalRewardsReceived: []*eventspb.PartyAmount{
+				{
+					Party:  "cafedaad01",
+					Amount: "1200000",
+				},
+			},
+			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+				{
+					Referrer: "cafedaad01",
+					GeneratedReward: []*eventspb.PartyAmount{
+						{
+							Party:  "cafed00d01",
+							Amount: "600000",
+						},
+						{
+							Party:  "cafed00d02",
+							Amount: "600000",
+						},
+					},
+				},
+			},
+			RefereesDiscountApplied: []*eventspb.PartyAmount{
+				{
+					Party:  "cafed00d01",
+					Amount: "120000",
+				},
+				{
+					Party:  "cafed00d02",
+					Amount: "120000",
+				},
+			},
+			VolumeDiscountApplied: []*eventspb.PartyAmount{},
+			VegaTime:              vegaTime.Add(15 * time.Second),
+		},
+		{
+			MarketID: entities.MarketID("deadbeef11"),
+			AssetID:  entities.AssetID("deadbaad01"),
+			EpochSeq: 1,
+			TotalRewardsReceived: []*eventspb.PartyAmount{
+				{
+					Party:  "cafedaad01",
+					Amount: "1000000",
+				},
+			},
+			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+				{
+					Referrer: "cafedaad01",
+					GeneratedReward: []*eventspb.PartyAmount{
+						{
+							Party:  "cafed00d01",
+							Amount: "500000",
+						},
+						{
+							Party:  "cafed00d02",
+							Amount: "500000",
+						},
+					},
+				},
+			},
+			RefereesDiscountApplied: []*eventspb.PartyAmount{
+				{
+					Party:  "cafed00d01",
+					Amount: "100000",
+				},
+				{
+					Party:  "cafed00d02",
+					Amount: "100000",
+				},
+			},
+			VegaTime: vegaTime.Add(5 * time.Second),
+		},
+		{
+			MarketID: entities.MarketID("deadbeef11"),
+			AssetID:  entities.AssetID("deadbaad01"),
+			EpochSeq: 2,
+			TotalRewardsReceived: []*eventspb.PartyAmount{
+				{
+					Party:  "cafedaad01",
+					Amount: "1100000",
+				},
+			},
+			ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+				{
+					Referrer: "cafedaad01",
+					GeneratedReward: []*eventspb.PartyAmount{
+						{
+							Party:  "cafed00d01",
+							Amount: "550000",
+						},
+						{
+							Party:  "cafed00d02",
+							Amount: "550000",
+						},
+					},
+				},
+			},
+			RefereesDiscountApplied: []*eventspb.PartyAmount{
+				{
+					Party:  "cafed00d01",
+					Amount: "110000",
+				},
+				{
+					Party:  "cafed00d02",
+					Amount: "110000",
+				},
+			},
+			VolumeDiscountApplied: []*eventspb.PartyAmount{},
+			VegaTime:              vegaTime.Add(10 * time.Second),
+		},
+		{
+			MarketID: entities.MarketID("deadbeef11"),
 			AssetID:  entities.AssetID("deadbaad01"),
 			EpochSeq: 3,
 			TotalRewardsReceived: []*eventspb.PartyAmount{
@@ -373,214 +672,4 @@ func setupFeesStats(t *testing.T, ctx context.Context, fs *sqlstore.FeesStats) [
 	}
 
 	return stats
-}
-
-func testGetFeesStatsForMarketAndEpoch(t *testing.T) {
-	stores := setupFeesStatsStores(t)
-	ctx := tempTransaction(t)
-	stats := setupFeesStats(t, ctx, stores.fs)
-
-	// get the stats for the first market and epoch
-	want := stats[0]
-	got, err := stores.fs.GetFeesStats(ctx, &want.MarketID, nil, &want.EpochSeq, nil)
-	require.NoError(t, err)
-	assert.Equal(t, want, *got)
-
-	// get the stats for the second market and epoch
-	want = stats[3]
-	got, err = stores.fs.GetFeesStats(ctx, &want.MarketID, nil, &want.EpochSeq, nil)
-	require.NoError(t, err)
-	assert.Equal(t, want, *got)
-}
-
-func testGetFeesStatsForAssetAndEpoch(t *testing.T) {
-	stores := setupFeesStatsStores(t)
-	ctx := tempTransaction(t)
-	stats := setupFeesStats(t, ctx, stores.fs)
-
-	// get the stats for the first market and epoch
-	want := stats[0]
-	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, &want.EpochSeq, nil)
-	require.NoError(t, err)
-	assert.Equal(t, want, *got)
-
-	// get the stats for the second market and epoch
-	want = stats[3]
-	got, err = stores.fs.GetFeesStats(ctx, nil, &want.AssetID, &want.EpochSeq, nil)
-	require.NoError(t, err)
-	assert.Equal(t, want, *got)
-}
-
-func testGetFeesStatsForMarketLatest(t *testing.T) {
-	stores := setupFeesStatsStores(t)
-	ctx := tempTransaction(t)
-	stats := setupFeesStats(t, ctx, stores.fs)
-
-	// get the stats for the first market and epoch
-	want := stats[2]
-	got, err := stores.fs.GetFeesStats(ctx, &want.MarketID, nil, nil, nil)
-	require.NoError(t, err)
-	assert.Equal(t, want, *got)
-
-	// get the stats for the second market and epoch
-	want = stats[5]
-	got, err = stores.fs.GetFeesStats(ctx, &want.MarketID, nil, nil, nil)
-	require.NoError(t, err)
-	assert.Equal(t, want, *got)
-}
-
-func testGetFeesStatsForAssetLatest(t *testing.T) {
-	stores := setupFeesStatsStores(t)
-	ctx := tempTransaction(t)
-	stats := setupFeesStats(t, ctx, stores.fs)
-
-	// get the stats for the first market and epoch
-	want := stats[2]
-	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, nil)
-	require.NoError(t, err)
-	assert.Equal(t, want, *got)
-
-	// get the stats for the second market and epoch
-	want = stats[5]
-	got, err = stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, nil)
-	require.NoError(t, err)
-	assert.Equal(t, want, *got)
-}
-
-func testGetFeesStatsNoAssetOrMarket(t *testing.T) {
-	stores := setupFeesStatsStores(t)
-	ctx := tempTransaction(t)
-
-	_, err := stores.fs.GetFeesStats(ctx, ptr.From(entities.MarketID("deadbeef01")), ptr.From(entities.AssetID("deadbeef02")), nil, nil)
-	require.Error(t, err)
-}
-
-func testGetFeesStatsForPartyAndEpoch(t *testing.T) {
-	stores := setupFeesStatsStores(t)
-	ctx := tempTransaction(t)
-	stats := setupFeesStats(t, ctx, stores.fs)
-
-	// get the stats for the first market and epoch
-	expected := stats[1]
-	want := entities.FeesStats{
-		MarketID: entities.MarketID("deadbeef01"),
-		AssetID:  entities.AssetID("deadbaad01"),
-		EpochSeq: 2,
-		TotalRewardsReceived: []*eventspb.PartyAmount{
-			{
-				Party:  "cafedaad01",
-				Amount: "1100000",
-			},
-		},
-		ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
-			{
-				Referrer: "cafedaad01",
-				GeneratedReward: []*eventspb.PartyAmount{
-					{
-						Party:  "cafed00d01",
-						Amount: "550000",
-					},
-					{
-						Party:  "cafed00d02",
-						Amount: "550000",
-					},
-				},
-			},
-		},
-		RefereesDiscountApplied: []*eventspb.PartyAmount{},
-		VolumeDiscountApplied:   []*eventspb.PartyAmount{},
-		TotalMakerFeesReceived:  []*eventspb.PartyAmount{},
-		MakerFeesGenerated:      []*eventspb.MakerFeesGenerated{},
-		VegaTime:                expected.VegaTime,
-	}
-
-	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, ptr.From(want.EpochSeq), &want.ReferrerRewardsGenerated[0].Referrer)
-	require.NoError(t, err)
-	assert.Equal(t, want, *got)
-}
-
-func testGetFeesStatsForPartyLatest(t *testing.T) {
-	stores := setupFeesStatsStores(t)
-	ctx := tempTransaction(t)
-	stats := setupFeesStats(t, ctx, stores.fs)
-
-	// get the stats for the first market and epoch
-	expected := stats[2]
-	want := entities.FeesStats{
-		MarketID: entities.MarketID("deadbeef01"),
-		AssetID:  entities.AssetID("deadbaad01"),
-		EpochSeq: 3,
-		TotalRewardsReceived: []*eventspb.PartyAmount{
-			{
-				Party:  "cafedaad01",
-				Amount: "1200000",
-			},
-		},
-		ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
-			{
-				Referrer: "cafedaad01",
-				GeneratedReward: []*eventspb.PartyAmount{
-					{
-						Party:  "cafed00d01",
-						Amount: "600000",
-					},
-					{
-						Party:  "cafed00d02",
-						Amount: "600000",
-					},
-				},
-			},
-		},
-		RefereesDiscountApplied: []*eventspb.PartyAmount{},
-		VolumeDiscountApplied:   []*eventspb.PartyAmount{},
-		TotalMakerFeesReceived:  []*eventspb.PartyAmount{},
-		MakerFeesGenerated:      []*eventspb.MakerFeesGenerated{},
-		VegaTime:                expected.VegaTime,
-	}
-	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, &want.ReferrerRewardsGenerated[0].Referrer)
-	require.NoError(t, err)
-	assert.Equal(t, want, *got)
-}
-
-func testGetFeesStatsParty(t *testing.T) {
-	stores := setupFeesStatsStores(t)
-	ctx := tempTransaction(t)
-	stats := setupFeesStats(t, ctx, stores.fs)
-
-	// get the stats for the first market and epoch
-	expected := stats[2]
-	want := entities.FeesStats{
-		MarketID: entities.MarketID("deadbeef01"),
-		AssetID:  entities.AssetID("deadbaad01"),
-		EpochSeq: 3,
-		TotalRewardsReceived: []*eventspb.PartyAmount{
-			{
-				Party:  "cafedaad01",
-				Amount: "1200000",
-			},
-		},
-		ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
-			{
-				Referrer: "cafedaad01",
-				GeneratedReward: []*eventspb.PartyAmount{
-					{
-						Party:  "cafed00d01",
-						Amount: "600000",
-					},
-					{
-						Party:  "cafed00d02",
-						Amount: "600000",
-					},
-				},
-			},
-		},
-		RefereesDiscountApplied: []*eventspb.PartyAmount{},
-		VolumeDiscountApplied:   []*eventspb.PartyAmount{},
-		TotalMakerFeesReceived:  []*eventspb.PartyAmount{},
-		MakerFeesGenerated:      []*eventspb.MakerFeesGenerated{},
-		VegaTime:                expected.VegaTime,
-	}
-	got, err := stores.fs.GetFeesStats(ctx, nil, &want.AssetID, nil, &want.ReferrerRewardsGenerated[0].Referrer)
-	require.NoError(t, err)
-	assert.Equal(t, want, *got)
 }

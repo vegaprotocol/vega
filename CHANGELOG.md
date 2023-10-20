@@ -166,6 +166,7 @@
 - [9750](https://github.com/vegaprotocol/vega/issues/9750) - Add paid liquidity fees statistics to API.
 - [8919](https://github.com/vegaprotocol/vega/issues/8919) - Add `CreatedAt` field to transaction type in the block explorer API.
 - [7248](https://github.com/vegaprotocol/vega/issues/7248) - Add transaction proof of work and version in block explorer API.
+- [9815](https://github.com/vegaprotocol/vega/issues/9815) - Introduce API to get fees statistics for a given party.
 
 ### 🐛 Fixes
 
@@ -335,7 +336,8 @@
 - [9833](https://github.com/vegaprotocol/vega/issues/9833) - Validate market exists before enacting governance transfer.
 - [9725](https://github.com/vegaprotocol/vega/issues/9725) - List ledger entries `API` documentation and functionality.
 - [9818](https://github.com/vegaprotocol/vega/issues/9818) - Correctly register generated rewards in fees statistics.
-
+- [9850](https://github.com/vegaprotocol/vega/issues/9850) - Do not use default cursor when Before or After is defined.
+- [9855](https://github.com/vegaprotocol/vega/issues/9855) - Use max governance transfer amount as a quantum multiplier
 ## 0.72.1
 
 ### 🐛 Fixes
