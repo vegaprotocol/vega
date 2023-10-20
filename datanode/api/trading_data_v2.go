@@ -135,6 +135,77 @@ type TradingDataServiceV2 struct {
 	volumeDiscountStatsService    *service.VolumeDiscountStats
 	volumeDiscountProgramService  *service.VolumeDiscountPrograms
 	paidLiquidityFeesStatsService *service.PaidLiquidityFeesStats
+	partyLockedBalances           *service.PartyLockedBalances
+	partyVestingBalances          *service.PartyVestingBalances
+}
+
+func (t *TradingDataServiceV2) GetVestingBalancesSummary(
+	ctx context.Context,
+	req *v2.GetVestingBalancesSummaryRequest,
+) (*v2.GetVestingBalancesSummaryResponse, error) {
+	if !crypto.IsValidVegaPubKey(req.PartyId) {
+		return nil, formatE(ErrInvalidPartyID)
+	}
+
+	var assetId *entities.AssetID
+	if req.AssetId != nil {
+		if !crypto.IsValidVegaID(*req.AssetId) {
+			return nil, formatE(ErrInvalidAssetID)
+		}
+		assetId = ptr.From(entities.AssetID(*req.AssetId))
+	}
+
+	// then get separately both things
+	vestingBalances, err := t.partyVestingBalances.Get(
+		ctx, ptr.From(entities.PartyID(req.PartyId)), assetId,
+	)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	lockedBalances, err := t.partyLockedBalances.Get(
+		ctx, ptr.From(entities.PartyID(req.PartyId)), assetId,
+	)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	var (
+		outVesting = make([]*eventspb.PartyVestingBalance, 0, len(vestingBalances))
+		outLocked  = make([]*eventspb.PartyLockedBalance, 0, len(lockedBalances))
+		epoch      *uint64
+	)
+	if len(vestingBalances) > 0 {
+		epoch = ptr.From(vestingBalances[0].AtEpoch)
+	} else if len(lockedBalances) > 0 {
+		epoch = ptr.From(lockedBalances[0].AtEpoch)
+	}
+
+	for _, v := range vestingBalances {
+		outVesting = append(
+			outVesting, &eventspb.PartyVestingBalance{
+				Asset:   v.AssetID.String(),
+				Balance: v.Balance.String(),
+			},
+		)
+	}
+
+	for _, v := range lockedBalances {
+		outLocked = append(
+			outLocked, &eventspb.PartyLockedBalance{
+				Asset:      v.AssetID.String(),
+				UntilEpoch: v.UntilEpoch,
+				Balance:    v.Balance.String(),
+			},
+		)
+	}
+
+	return &v2.GetVestingBalancesSummaryResponse{
+		PartyId:         req.PartyId,
+		EpochSeq:        epoch,
+		VestingBalances: outVesting,
+		LockedBalances:  outLocked,
+	}, nil
 }
 
 func (t *TradingDataServiceV2) GetPartyActivityStreak(ctx context.Context, req *v2.GetPartyActivityStreakRequest) (*v2.GetPartyActivityStreakResponse, error) {

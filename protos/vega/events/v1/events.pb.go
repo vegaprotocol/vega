@@ -735,12 +735,15 @@ func (ERC20MultiSigSignerEvent_Type) EnumDescriptor() ([]byte, []int) {
 	return file_vega_events_v1_events_proto_rawDescGZIP(), []int{27, 0}
 }
 
+// Summary of the vesting and locked balances for an epoch
 type VestingBalancesSummary struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	EpochSeq              uint64                 `protobuf:"varint,1,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
+	// Epoch for which these balances are valid.
+	EpochSeq uint64 `protobuf:"varint,1,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
+	// Parties' summaries.
 	PartiesVestingSummary []*PartyVestingSummary `protobuf:"bytes,2,rep,name=parties_vesting_summary,json=partiesVestingSummary,proto3" json:"parties_vesting_summary,omitempty"`
 }
 
@@ -790,13 +793,17 @@ func (x *VestingBalancesSummary) GetPartiesVestingSummary() []*PartyVestingSumma
 	return nil
 }
 
+// Summary of a party's vesting balances
 type PartyVestingSummary struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Party                string                 `protobuf:"bytes,1,opt,name=party,proto3" json:"party,omitempty"`
-	PartyLockedBalances  []*PartyLockedBalance  `protobuf:"bytes,2,rep,name=party_locked_balances,json=partyLockedBalances,proto3" json:"party_locked_balances,omitempty"`
+	// Party ID.
+	Party string `protobuf:"bytes,1,opt,name=party,proto3" json:"party,omitempty"`
+	// List of locked balances.
+	PartyLockedBalances []*PartyLockedBalance `protobuf:"bytes,2,rep,name=party_locked_balances,json=partyLockedBalances,proto3" json:"party_locked_balances,omitempty"`
+	// List of vesting balances.
 	PartyVestingBalances []*PartyVestingBalance `protobuf:"bytes,3,rep,name=party_vesting_balances,json=partyVestingBalances,proto3" json:"party_vesting_balances,omitempty"`
 }
 
@@ -853,14 +860,18 @@ func (x *PartyVestingSummary) GetPartyVestingBalances() []*PartyVestingBalance {
 	return nil
 }
 
+// A party's locked balance for a given asset.
 type PartyLockedBalance struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Asset      string `protobuf:"bytes,1,opt,name=asset,proto3" json:"asset,omitempty"`
+	// Asset ID.
+	Asset string `protobuf:"bytes,1,opt,name=asset,proto3" json:"asset,omitempty"`
+	// Epoch in which the balance will be released.
 	UntilEpoch uint64 `protobuf:"varint,2,opt,name=until_epoch,json=untilEpoch,proto3" json:"until_epoch,omitempty"`
-	Balance    string `protobuf:"bytes,3,opt,name=balance,proto3" json:"balance,omitempty"`
+	// Locked balance.
+	Balance string `protobuf:"bytes,3,opt,name=balance,proto3" json:"balance,omitempty"`
 }
 
 func (x *PartyLockedBalance) Reset() {
@@ -916,12 +927,15 @@ func (x *PartyLockedBalance) GetBalance() string {
 	return ""
 }
 
+// Balance that is being vested for the party.
 type PartyVestingBalance struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Asset   string `protobuf:"bytes,1,opt,name=asset,proto3" json:"asset,omitempty"`
+	// Asset ID.
+	Asset string `protobuf:"bytes,1,opt,name=asset,proto3" json:"asset,omitempty"`
+	// Balance that is vested.
 	Balance string `protobuf:"bytes,2,opt,name=balance,proto3" json:"balance,omitempty"`
 }
 

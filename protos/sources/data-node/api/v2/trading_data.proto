@@ -849,6 +849,13 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Volume discount program"};
   }
 
+  // Get vesting balances summary
+  //
+  // Get information about a party's vesting and locked balances
+  rpc GetVestingBalancesSummary(GetVestingBalancesSummaryRequest) returns (GetVestingBalancesSummaryResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Vesting"};
+  }
+
   // Export network history as CSV
   //
   // Export CSV table data from network history between two block heights.
@@ -972,6 +979,26 @@ message PageInfo {
   string start_cursor = 3;
   // End cursor.
   string end_cursor = 4;
+}
+
+// Request sent to list the vesting and locked balances for a party
+message GetVestingBalancesSummaryRequest {
+  // Party ID to query vesting balances for.
+  string party_id = 1 [(google.api.field_behavior) = REQUIRED];
+  // Optional asset ID, all asset balances returned if not set.
+  optional string asset_id = 2;
+}
+
+// List of vesting and locked balances for a party.
+message GetVestingBalancesSummaryResponse {
+  // Party ID.
+  string party_id = 1;
+  // Epoch for which these balances are valid.
+  optional uint64 epoch_seq = 2;
+  // List of locked balances for the party.
+  repeated vega.events.v1.PartyLockedBalance locked_balances = 3;
+  // List of vesting balances for the party.
+  repeated vega.events.v1.PartyVestingBalance vesting_balances = 4;
 }
 
 // -- Accounts --

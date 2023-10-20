@@ -115,7 +115,7 @@ func TestDistributeAfterDelay(t *testing.T) {
 
 	// set asset to return proper quantum
 	v.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(dummyAsset{quantum: 10}), nil)
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
@@ -126,15 +126,15 @@ func TestDistributeAfterDelay(t *testing.T) {
 	// then the remain 10,
 	// and it'll be all
 	v.AddReward("party1", "eth", num.NewUint(100), 3)
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
@@ -151,7 +151,7 @@ func TestDistributeAfterDelay(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(2)
+	v.broker.EXPECT().Send(gomock.Any()).Times(3)
 
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
@@ -169,14 +169,14 @@ func TestDistributeAfterDelay(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(2)
+	v.broker.EXPECT().Send(gomock.Any()).Times(3)
 
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
 
 	// try it again and nothing happen
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
@@ -199,7 +199,7 @@ func TestDistributeWithNoDelay(t *testing.T) {
 
 	// set asset to return proper quantum
 	v.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(dummyAsset{quantum: 10}), nil)
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
@@ -222,7 +222,7 @@ func TestDistributeWithNoDelay(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(2)
+	v.broker.EXPECT().Send(gomock.Any()).Times(3)
 
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
@@ -240,14 +240,14 @@ func TestDistributeWithNoDelay(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(2)
+	v.broker.EXPECT().Send(gomock.Any()).Times(3)
 
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
 
 	// try it again and nothing happen
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
@@ -270,7 +270,7 @@ func TestDistributeWithStreakRate(t *testing.T) {
 
 	// set asset to return proper quantum
 	v.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(dummyAsset{quantum: 10}), nil)
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
@@ -295,7 +295,7 @@ func TestDistributeWithStreakRate(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(2)
+	v.broker.EXPECT().Send(gomock.Any()).Times(3)
 
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
@@ -313,14 +313,14 @@ func TestDistributeWithStreakRate(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(2)
+	v.broker.EXPECT().Send(gomock.Any()).Times(3)
 
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
 
 	// try it again and nothing happen
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
@@ -343,7 +343,7 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 
 	// set asset to return proper quantum
 	v.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(dummyAsset{quantum: 10}), nil)
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
@@ -353,7 +353,7 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 	v.AddReward("party1", "eth", num.NewUint(100), 2)
 	// then another for 1 epoch
 	v.AddReward("party1", "eth", num.NewUint(100), 1)
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
@@ -370,7 +370,7 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(2)
+	v.broker.EXPECT().Send(gomock.Any()).Times(3)
 
 	// this will deliver 100 more as well ready to be paid
 	v.OnEpochEvent(context.Background(), types.Epoch{
@@ -389,7 +389,7 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(2)
+	v.broker.EXPECT().Send(gomock.Any()).Times(3)
 
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
@@ -408,7 +408,7 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(2)
+	v.broker.EXPECT().Send(gomock.Any()).Times(3)
 
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
@@ -426,14 +426,14 @@ func TestDistributeMultipleAfterDelay(t *testing.T) {
 		},
 	)
 	// one call to the broker
-	v.broker.EXPECT().Send(gomock.Any()).Times(2)
+	v.broker.EXPECT().Send(gomock.Any()).Times(3)
 
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})
 
 	// try it again and nothing happen
-	v.broker.EXPECT().Send(gomock.Any()).Times(1)
+	v.broker.EXPECT().Send(gomock.Any()).Times(2)
 	v.OnEpochEvent(context.Background(), types.Epoch{
 		Action: vegapb.EpochAction_EPOCH_ACTION_END,
 	})

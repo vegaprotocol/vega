@@ -2606,6 +2606,46 @@ type Party {
 
   "The activity streak"
   activityStreak("An optional epoch" epoch: Int): PartyActivityStreak
+
+  "The current reward vesting summary of the party for the last epoch"
+  vestingBalancesSummary(
+    "An optional asset ID"
+    assetId: ID
+  ): PartyVestingBalancesSummary!
+}
+
+"""
+A party reward locked balance.
+"""
+type PartyLockedBalance {
+  "The asset locked"
+  asset: Asset!
+  "The amount locked"
+  balance: String!
+  "Epoch in which the funds will be moved to the vesting balance"
+  untilEpoch: Int!
+}
+
+"""
+A party's reward vesting balance.
+"""
+type PartyVestingBalance {
+  "The asset being vested"
+  asset: Asset!
+  "The amount locked"
+  balance: String!
+}
+
+"""
+Summary of a party's reward vesting balances.
+"""
+type PartyVestingBalancesSummary{
+  "The epoch for which this summary is valid"
+  epoch: Int
+  "The party vesting balances"
+  vestingBalances: [PartyVestingBalance!]
+  "The party's vesting balances"
+  lockedBalances: [PartyLockedBalance!]
 }
 
 """

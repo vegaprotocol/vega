@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package gql
 
 import (
@@ -575,6 +563,18 @@ func (r *VegaResolverRoot) UpdateReferralProgram() UpdateReferralProgramResolver
 
 func (r *VegaResolverRoot) PaidLiquidityFees() PaidLiquidityFeesResolver {
 	return (*paidLiquidityFeesResolver)(r)
+}
+
+func (r *VegaResolverRoot) PartyLockedBalance() PartyLockedBalanceResolver {
+	return (*partyLockedBalanceResolver)(r)
+}
+
+func (r *VegaResolverRoot) PartyVestingBalance() PartyVestingBalanceResolver {
+	return (*partyVestingBalanceResolver)(r)
+}
+
+func (r *VegaResolverRoot) PartyVestingBalancesSummary() PartyVestingBalancesSummaryResolver {
+	return (*partyVestingBalancesSummary)(r)
 }
 
 type protocolUpgradeProposalResolver VegaResolverRoot
@@ -1831,6 +1831,22 @@ func (r *myNodeSignatureResolver) Signature(_ context.Context, obj *commandspb.N
 // BEGIN: Party Resolver
 
 type myPartyResolver VegaResolverRoot
+
+func (r *myPartyResolver) VestingBalancesSummary(
+	ctx context.Context,
+	obj *vega.Party,
+	assetID *string,
+) (*v2.GetVestingBalancesSummaryResponse, error) {
+	res, err := r.r.clt2.GetVestingBalancesSummary(ctx, &v2.GetVestingBalancesSummaryRequest{
+		PartyId: obj.Id,
+		AssetId: assetID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
 
 func (r *myPartyResolver) ActivityStreak(
 	ctx context.Context,

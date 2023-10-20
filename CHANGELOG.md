@@ -168,6 +168,8 @@
 - [7248](https://github.com/vegaprotocol/vega/issues/7248) - Add transaction proof of work and version in block explorer API.
 - [9815](https://github.com/vegaprotocol/vega/issues/9815) - Introduce API to get fees statistics for a given party.
 - [9861](https://github.com/vegaprotocol/vega/issues/9861) - Add `lockedUntilEpoch` to rewards API
+- [9846](https://github.com/vegaprotocol/vega/issues/9846) - Add API for vesting and locked balances.
+
 ### 🐛 Fixes
 
 - [8417](https://github.com/vegaprotocol/vega/issues/8417) - Fix normalisation of Ethereum calls that return structures

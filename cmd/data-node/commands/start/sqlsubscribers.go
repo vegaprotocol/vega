@@ -179,7 +179,7 @@ type SQLSubscribers struct {
 	volumeDiscountStatsSub    *sqlsubscribers.VolumeDiscountStatsUpdated
 	volumeDiscountProgramSub  *sqlsubscribers.VolumeDiscountProgram
 	paidLiquidityFeesStatsSub *sqlsubscribers.PaidLiquidityFeesStats
-	// TODO: Add the party locked and vesting balances subscribers here!!
+	vestingSummarySub         *sqlsubscribers.VestingBalancesSummary
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -232,7 +232,7 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.volumeDiscountStatsSub,
 		s.volumeDiscountProgramSub,
 		s.paidLiquidityFeesStatsSub,
-		// TODO: Add the party locked and vesting balances subscribers here!!
+		s.vestingSummarySub,
 	}
 }
 
@@ -407,5 +407,5 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.volumeDiscountStatsSub = sqlsubscribers.NewVolumeDiscountStatsUpdated(s.volumeDiscountStatsService)
 	s.volumeDiscountProgramSub = sqlsubscribers.NewVolumeDiscountProgram(s.volumeDiscountProgramService)
 	s.paidLiquidityFeesStatsSub = sqlsubscribers.NewPaidLiquidityFeesStats(s.paidLiquidityFeesStatsService)
-	// TODO: Add the party locked and vesting balances subscribers here!!
+	s.vestingSummarySub = sqlsubscribers.NewVestingBalancesSummary(s.partyVestingBalancesStore, s.partyLockedBalancesStore)
 }
