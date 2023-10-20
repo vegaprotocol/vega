@@ -577,6 +577,10 @@ func (r *VegaResolverRoot) PartyVestingBalancesSummary() PartyVestingBalancesSum
 	return (*partyVestingBalancesSummary)(r)
 }
 
+func (r *VegaResolverRoot) TransferNode() TransferNodeResolver {
+	return (*transferNodeResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {

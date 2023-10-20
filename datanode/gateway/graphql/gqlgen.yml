@@ -403,6 +403,10 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.EthereumKeyRotation
   Transfer:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.Transfer
+  TransferFees:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.TransferFees
+  TransferNode:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TransferNode
   OneOffTransfer:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.OneOffTransfer
   RecurringTransfer:
