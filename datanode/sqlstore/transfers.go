@@ -43,11 +43,6 @@ type Transfers struct {
 	*ConnectionSource
 }
 
-var transferFeesOrdering = TableOrdering{
-	ColumnOrdering{Name: "vega_time", Sorting: ASC},
-	ColumnOrdering{Name: "transfer_id", Sorting: ASC},
-}
-
 var transfersOrdering = TableOrdering{
 	ColumnOrdering{Name: "vega_time", Sorting: ASC},
 	ColumnOrdering{Name: "id", Sorting: ASC},

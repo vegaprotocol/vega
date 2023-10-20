@@ -446,11 +446,11 @@ message MarketEvent {
 }
 
 message TransferFees {
-  // the transfer that triggered the colleciton of fees.
+  // Transfer that triggered the collection of fees.
   string transfer_id = 1;
-  // the amount of fees transferred.
+  // Amount of fees paid.
   string amount = 2;
-  // the epoch when the transfer was dispatched, and fees were paid (zero for one-off transfers).
+  // Epoch when the transfer was dispatched, and fees were paid.
   uint64 epoch = 3;
 }
 
@@ -1395,7 +1395,7 @@ message BusEvent {
     PaidLiquidityFeesStats paid_liquidity_fees_stats = 179;
     // Event notifying of an update to the vesting and locked balances.
     VestingBalancesSummary vesting_balances_summary = 180;
-    // Event notifying of fees being transferred related to a transfer.
+    // Event notifying of fees related to a transfer being paid.
     TransferFees transfer_fees = 181;
 
     // Market tick events

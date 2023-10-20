@@ -3519,11 +3519,11 @@ type TransferFees struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// the transfer that triggered the colleciton of fees.
+	// Transfer that triggered the collection of fees.
 	TransferId string `protobuf:"bytes,1,opt,name=transfer_id,json=transferId,proto3" json:"transfer_id,omitempty"`
-	// the amount of fees transferred.
+	// Amount of fees paid.
 	Amount string `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount,omitempty"`
-	// the epoch when the transfer was dispatched, and fees were paid (zero for one-off transfers).
+	// Epoch when the transfer was dispatched, and fees were paid.
 	Epoch uint64 `protobuf:"varint,3,opt,name=epoch,proto3" json:"epoch,omitempty"`
 }
 
@@ -8625,7 +8625,7 @@ type BusEvent_VestingBalancesSummary struct {
 }
 
 type BusEvent_TransferFees struct {
-	// Event notifying of fees being transferred related to a transfer.
+	// Event notifying of fees related to a transfer being paid.
 	TransferFees *TransferFees `protobuf:"bytes,181,opt,name=transfer_fees,json=transferFees,proto3,oneof"`
 }
 
