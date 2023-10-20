@@ -36,6 +36,7 @@ type Tx interface {
 	GetPoWNonce() uint64
 	GetPoWTID() string
 	GetVersion() uint32
+	GetNonce() uint64
 }
 
 type Codec interface {

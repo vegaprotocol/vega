@@ -414,13 +414,31 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 		}, pageInfo)
 	})
 
-	t.Run("Should return the requested page if first and after cursor are set", func(t *testing.T) {
+	t.Run("Should return the requested page if set id and first and after cursor are set", func(t *testing.T) {
 		first := int32(3)
 		after := refs[2].Cursor().Encode()
 		cursor, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 		require.NoError(t, err)
 
 		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, cursor, 30)
+		require.NoError(t, err)
+		want := refs[3:6]
+		assert.Equal(t, want, got)
+		assert.Equal(t, entities.PageInfo{
+			HasNextPage:     true,
+			HasPreviousPage: true,
+			StartCursor:     want[0].Cursor().Encode(),
+			EndCursor:       want[len(want)-1].Cursor().Encode(),
+		}, pageInfo)
+	})
+
+	t.Run("Should return the requested page if first and after cursor are set", func(t *testing.T) {
+		first := int32(3)
+		after := refs[2].Cursor().Encode()
+		cursor, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
+		require.NoError(t, err)
+
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, nil, nil, nil, cursor, 30)
 		require.NoError(t, err)
 		want := refs[3:6]
 		assert.Equal(t, want, got)

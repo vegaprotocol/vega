@@ -43,6 +43,7 @@ func (tx *testTx) Unmarshal(interface{}) error { return nil }
 func (tx *testTx) GetPoWTID() string           { return tx.powTxID }
 func (tx *testTx) GetVersion() uint32          { return 2 }
 func (tx *testTx) GetPoWNonce() uint64         { return tx.powNonce }
+func (tx *testTx) GetNonce() uint64            { return 0 }
 func (tx *testTx) Signature() []byte           { return tx.signature }
 func (tx *testTx) Payload() []byte             { return tx.payload }
 func (tx *testTx) PubKey() []byte              { return tx.pubkey }

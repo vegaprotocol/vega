@@ -87,6 +87,7 @@ type PayloadProofOfWork struct {
 	BlockHash        []string
 	HeightToTx       map[uint64][]string
 	HeightToTid      map[uint64][]string
+	HeightToNonceRef map[uint64][]*snapshot.NonceRef
 	BannedParties    map[string]int64
 	ActiveParams     []*snapshot.ProofOfWorkParams
 	ActiveStates     []*snapshot.ProofOfWorkState
@@ -4696,6 +4697,7 @@ func PayloadProofOfWorkFromProto(s *snapshot.Payload_ProofOfWork) *PayloadProofO
 		BannedParties:    make(map[string]int64, len(s.ProofOfWork.Banned)),
 		HeightToTx:       make(map[uint64][]string, len(s.ProofOfWork.TxAtHeight)),
 		HeightToTid:      make(map[uint64][]string, len(s.ProofOfWork.TidAtHeight)),
+		HeightToNonceRef: make(map[uint64][]*snapshot.NonceRef, len(s.ProofOfWork.NonceRefsAtHeight)),
 		ActiveParams:     s.ProofOfWork.PowParams,
 		ActiveStates:     s.ProofOfWork.PowState,
 		LastPruningBlock: s.ProofOfWork.LastPruningBlock,
@@ -4709,6 +4711,9 @@ func PayloadProofOfWorkFromProto(s *snapshot.Payload_ProofOfWork) *PayloadProofO
 	}
 	for _, tah := range s.ProofOfWork.TidAtHeight {
 		pow.HeightToTid[tah.Height] = tah.Transactions
+	}
+	for _, nah := range s.ProofOfWork.NonceRefsAtHeight {
+		pow.HeightToNonceRef[nah.Height] = nah.Refs
 	}
 	return pow
 }
@@ -4731,16 +4736,23 @@ func (p *PayloadProofOfWork) IntoProto() *snapshot.Payload_ProofOfWork {
 		tidAtHeight = append(tidAtHeight, &snapshot.TransactionsAtHeight{Height: k, Transactions: v})
 	}
 	sort.Slice(tidAtHeight, func(i, j int) bool { return tidAtHeight[i].Height < tidAtHeight[j].Height })
+
+	nonceRefsAtHeight := make([]*snapshot.NonceRefsAtHeight, 0, len(p.HeightToNonceRef))
+	for k, v := range p.HeightToNonceRef {
+		nonceRefsAtHeight = append(nonceRefsAtHeight, &snapshot.NonceRefsAtHeight{Height: k, Refs: v})
+	}
+	sort.Slice(nonceRefsAtHeight, func(i, j int) bool { return nonceRefsAtHeight[i].Height < nonceRefsAtHeight[j].Height })
 	return &snapshot.Payload_ProofOfWork{
 		ProofOfWork: &snapshot.ProofOfWork{
-			BlockHeight:      p.BlockHeight,
-			BlockHash:        p.BlockHash,
-			Banned:           banned,
-			TxAtHeight:       txAtHeight,
-			TidAtHeight:      tidAtHeight,
-			PowParams:        p.ActiveParams,
-			PowState:         p.ActiveStates,
-			LastPruningBlock: p.LastPruningBlock,
+			BlockHeight:       p.BlockHeight,
+			BlockHash:         p.BlockHash,
+			Banned:            banned,
+			TxAtHeight:        txAtHeight,
+			TidAtHeight:       tidAtHeight,
+			PowParams:         p.ActiveParams,
+			PowState:          p.ActiveStates,
+			LastPruningBlock:  p.LastPruningBlock,
+			NonceRefsAtHeight: nonceRefsAtHeight,
 		},
 	}
 }

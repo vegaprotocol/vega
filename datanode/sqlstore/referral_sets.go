@@ -231,16 +231,25 @@ func (rs *ReferralSets) ListReferralSetReferees(ctx context.Context, referralSet
 
 	query := getSelectQuery(aggregationDays)
 
+	var hasWhere bool
 	// we only allow one of the following to be used as the filter
 	if referralSetID != nil {
 		query = fmt.Sprintf("%s where rf.referral_set_id = %s", query, nextBindVar(&args, referralSetID))
+		hasWhere = true
 	} else if referrer != nil {
 		query = fmt.Sprintf("%s where rs.referrer = %s", query, nextBindVar(&args, referrer))
+		hasWhere = true
 	} else if referee != nil {
 		query = fmt.Sprintf("%s where rf.referee = %s", query, nextBindVar(&args, referee))
+		hasWhere = true
 	}
 
-	query, args, err = PaginateQuery[entities.ReferralSetRefereeCursor](query, args, referralSetRefereeOrdering, pagination)
+	paginate := PaginateQueryWithWhere[entities.ReferralSetRefereeCursor]
+	if hasWhere {
+		paginate = PaginateQuery[entities.ReferralSetRefereeCursor]
+	}
+
+	query, args, err = paginate(query, args, referralSetRefereeOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}

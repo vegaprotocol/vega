@@ -1050,6 +1050,7 @@ message ProofOfWork {
   repeated ProofOfWorkParams pow_params = 8;
   repeated ProofOfWorkState pow_state = 9;
   uint64 last_pruning_block = 10;
+  repeated NonceRefsAtHeight nonce_refs_at_height = 11;
 }
 
 message BannedParty {
@@ -1085,6 +1086,16 @@ message ProofOfWorkPartyStateForBlock {
 message TransactionsAtHeight {
   uint64 height = 1;
   repeated string transactions = 2;
+}
+
+message NonceRef {
+  string party = 1;
+  uint64 nonce = 2;
+}
+
+message NonceRefsAtHeight {
+  uint64 height = 1;
+  repeated NonceRef refs = 2;
 }
 
 message ProtocolUpgradeProposals {
