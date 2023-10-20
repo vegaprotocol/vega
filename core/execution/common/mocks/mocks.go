@@ -2190,15 +2190,15 @@ func (mr *MockMarketLiquidityEngineMockRecorder) OnEarlyExitPenalty(arg0 interfa
 }
 
 // OnEpochEnd mocks base method.
-func (m *MockMarketLiquidityEngine) OnEpochEnd(arg0 context.Context, arg1 time.Time) {
+func (m *MockMarketLiquidityEngine) OnEpochEnd(arg0 context.Context, arg1 time.Time, arg2 types.Epoch) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "OnEpochEnd", arg0, arg1)
+	m.ctrl.Call(m, "OnEpochEnd", arg0, arg1, arg2)
 }
 
 // OnEpochEnd indicates an expected call of OnEpochEnd.
-func (mr *MockMarketLiquidityEngineMockRecorder) OnEpochEnd(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockMarketLiquidityEngineMockRecorder) OnEpochEnd(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnEpochEnd", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).OnEpochEnd), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnEpochEnd", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).OnEpochEnd), arg0, arg1, arg2)
 }
 
 // OnEpochStart mocks base method.

@@ -36,7 +36,7 @@ import (
 
 func TestPaidLiquidityFeesStats_Add(t *testing.T) {
 	t.Run("Should add the stats for the epoch if they do not exist", testAddPaidLiquidityFeesStatsEpochIfNotExists)
-	t.Run("Should not return an error if the epoch already exists for the market/asset", testAddPaidLiquidityFeesStatsEpochExists)
+	t.Run("Should not return an error if the epoch already exists for the market/asset/vega_time", testAddPaidLiquidityFeesStatsEpochExists)
 }
 
 type paidLiquidityFeesStatsTestStores struct {
