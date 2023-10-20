@@ -104,11 +104,20 @@ func CheckActivityStreakBenefitTiers(ptiers *proto.ActivityStreakBenefitTiers) e
 			return fmt.Errorf("duplicate minimum_activity_streak entry for: %d", v.MinimumActivityStreak)
 		}
 		activityStreakSet[v.MinimumActivityStreak] = struct{}{}
-		if _, err := num.DecimalFromString(v.RewardMultiplier); err != nil {
+		d, err := num.DecimalFromString(v.RewardMultiplier)
+		if err != nil {
 			return fmt.Errorf("%d.reward_multiplier, invalid decimal: %w", i, err)
 		}
-		if _, err := num.DecimalFromString(v.VestingMultiplier); err != nil {
+		if d.LessThan(num.DecimalOne()) {
+			return fmt.Errorf("%d.reward_multiplier, less than 1.0", i)
+		}
+
+		d, err = num.DecimalFromString(v.VestingMultiplier)
+		if err != nil {
 			return fmt.Errorf("%d.vesting_multiplier, invalid decimal: %w", i, err)
+		}
+		if d.LessThan(num.DecimalOne()) {
+			return fmt.Errorf("%d.vesting_multiplier, less than 1.0", i)
 		}
 	}
 
