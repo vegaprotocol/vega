@@ -25,7 +25,7 @@ import (
 
 func TestActivityStreakNetworkParameter(t *testing.T) {
 	err := types.CheckActivityStreakBenefitTiers(&proto.ActivityStreakBenefitTiers{})
-	require.ErrorIs(t, err, types.ErrNoTierSet)
+	require.NoError(t, err)
 
 	// a valid tier
 	tier := &proto.ActivityStreakBenefitTier{

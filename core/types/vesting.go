@@ -88,10 +88,6 @@ func CheckUntypedVestingBenefitTier(v interface{}) error {
 
 // CheckEthereumConfig verifies the proto.EthereumConfig is valid.
 func CheckVestingBenefitTiers(ptiers *proto.VestingBenefitTiers) error {
-	if len(ptiers.Tiers) <= 0 {
-		return ErrNoTierSet
-	}
-
 	minQuantumVolumeSet := map[num.Uint]struct{}{}
 
 	for i, v := range ptiers.Tiers {
