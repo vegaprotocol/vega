@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
-	types "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/stretchr/testify/assert"
@@ -162,12 +161,6 @@ func TestCheckLiquidityProvisionAmendment(t *testing.T) {
 			args: args{
 				cmd: &commandspb.LiquidityProvisionAmendment{
 					MarketId: "",
-					Sells: []*types.LiquidityOrder{
-						{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: "10", Proportion: 1},
-					},
-					Buys: []*types.LiquidityOrder{
-						{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: "10", Proportion: 1},
-					},
 				},
 			},
 			wantErr:   assert.Error,

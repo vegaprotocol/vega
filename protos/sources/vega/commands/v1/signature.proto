@@ -4,13 +4,12 @@ package vega.commands.v1;
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega/commands/v1";
 
-// Signature to authenticate a transaction and to be verified by the Vega
-// network.
+// Signature definition that allows the network to authenticate external data.
 message Signature {
   // Hex encoded bytes of the signature.
   string value = 1;
   // Algorithm used to create the signature.
   string algo = 2;
-  // Version of the signature used to create the signature.
+  // Version of the algorithm used to create the signature.
   uint32 version = 3;
 }

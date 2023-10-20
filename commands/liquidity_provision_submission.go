@@ -126,8 +126,6 @@ func checkLiquidityProvisionAmendment(cmd *commandspb.LiquidityProvisionAmendmen
 
 	if len(cmd.CommitmentAmount) <= 0 &&
 		len(cmd.Fee) <= 0 &&
-		len(cmd.Sells) <= 0 &&
-		len(cmd.Buys) <= 0 &&
 		len(cmd.Reference) <= 0 {
 		return errs.FinalAddForProperty("liquidity_provision_amendment", ErrIsRequired)
 	}

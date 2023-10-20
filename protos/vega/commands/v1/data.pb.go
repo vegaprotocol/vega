@@ -26,11 +26,11 @@ type OracleDataSubmission_OracleSource int32
 const (
 	// Default value
 	OracleDataSubmission_ORACLE_SOURCE_UNSPECIFIED OracleDataSubmission_OracleSource = 0
-	// Specifies that the payload will be base64 encoded JSON conforming to the Open Oracle standard
+	// Specifies that the payload will be base64 encoded JSON conforming to the Open Oracle standard.
 	OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE OracleDataSubmission_OracleSource = 1
-	// Specifies that the payload will be base64 encoded JSON, but does not specify the shape of the data
+	// Specifies that the payload will be base64 encoded JSON, but does not specify the shape of the data.
 	OracleDataSubmission_ORACLE_SOURCE_JSON OracleDataSubmission_OracleSource = 2
-	// Specifies that the payload will be base64 encoded JSON conforming to the ETH standard
+	// Specifies that the payload will be base64 encoded JSON conforming to the ETH standard.
 	OracleDataSubmission_ORACLE_SOURCE_ETHEREUM OracleDataSubmission_OracleSource = 3
 )
 
@@ -77,17 +77,15 @@ func (OracleDataSubmission_OracleSource) EnumDescriptor() ([]byte, []int) {
 	return file_vega_commands_v1_data_proto_rawDescGZIP(), []int{0, 0}
 }
 
-// Command to submit new Oracle data from third party providers
+// Command to submit new oracle data from third party providers
 type OracleDataSubmission struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Source from which the data is coming from. Must be base64 encoded.
-	// Oracle data is a type of external data source data.
+	// Source from which the data is coming from.
 	Source OracleDataSubmission_OracleSource `protobuf:"varint,1,opt,name=source,proto3,enum=vega.commands.v1.OracleDataSubmission_OracleSource" json:"source,omitempty"`
-	// Data provided by the data source
-	// In the case of Open Oracle - it will be the entire object - it will contain messages, signatures and price data.
+	// Data provided by the data source.
 	Payload []byte `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
 }
 

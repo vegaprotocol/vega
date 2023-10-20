@@ -8,15 +8,13 @@ import "vega/vega.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega/commands/v1";
 
-// Batch of order instructions.
-// This command accepts only the following batches of commands
-// and will be processed in the following order:
+// A command that allows the submission of a batch market instruction which wraps up multiple market instructions into a single transaction.
+// These instructions are then processed sequentially in the following order:
 // - OrderCancellation
 // - OrderAmendment
 // - OrderSubmission
-// The total amount of commands in the batch across all three lists of
-// instructions is restricted by the following network parameter:
-// "spam.protection.max.batchSize"
+// - StopOrderSubmission
+// where the maximum allow of instructions in a batch is controlled by the network parameter "spam.protection.max.batchSize".
 message BatchMarketInstructions {
   // List of order cancellations to be processed sequentially.
   repeated OrderCancellation cancellations = 1;
@@ -30,83 +28,73 @@ message BatchMarketInstructions {
   repeated StopOrdersSubmission stop_orders_submission = 5;
 }
 
-// Stop order submission submits stops orders.
-// It is possible to make a single stop order submission by
-// specifying a single direction,
-// or an OCO (One Cancels the Other) stop order submission
-// by specifying a configuration for both directions
+// A command that allows a party to submit a stop order for a given market.
+// A stop order is a normal order that remains off the order book and is only submitted if a given trigger is breached from a particular direction.
+// If both rises-above and falls-below are configured, then if one is triggered the other will be cancelled (OCO).
 message StopOrdersSubmission {
-  // Stop order that will be triggered
-  // if the price rises above a given trigger price.
+  // Stop order that will be triggered if the price rises above a given trigger price.
   optional StopOrderSetup rises_above = 1;
-  // Stop order that will be triggered
-  // if the price falls below a given trigger price.
+  // Stop order that will be triggered if the price falls below a given trigger price.
   optional StopOrderSetup falls_below = 2;
 }
 
-// Price and expiry configuration for a stop order
+// Price and expiry configuration for a stop order.
 message StopOrderSetup {
   // Order to be submitted once the trigger is breached.
   OrderSubmission order_submission = 1;
-  // Optional expiry timestamp.
+  // Timestamp, in Unix nanoseconds, for when the stop order should expire. If not set the stop order will not expire.
   optional int64 expires_at = 2;
   // Strategy to adopt if the expiry time is reached.
   optional vega.StopOrder.ExpiryStrategy expiry_strategy = 3;
 
-  // Trigger that will need to be breached for the order
-  // to be submitted to the book.
+  // Trigger that will need to be breached for the order to be submitted to the book.
   oneof trigger {
-    // Fixed price at which the order will be submitted.
+    // Order will be submitted if the last traded price on the market breaches the given price.
     string price = 100;
-    // Trailing percentage at which the order will be submitted.
+    // Order will be submitted if the last traded price has moved the given percent from the highest/lowest mark price since the stop order was submitted.
     string trailing_percent_offset = 101;
   }
 }
 
-// Cancel a stop order.
-// The following combinations are available:
-// Empty object will cancel all stop orders for the party
-// Market ID alone will cancel all stop orders in a market
-// Market ID and order ID will cancel a specific stop order in a market
-// If the stop order is part of an OCO, both stop orders will be cancelled
+// A command that instructs the network to cancel untriggered stop orders that were submitted by the sender of this transaction.
+// If any cancelled stop order is part of an OCO, both stop orders will be cancelled.
+// It is not possible to cancel another party's stop orders with this command.
 message StopOrdersCancellation {
-  // Optional market ID.
+  // Restrict cancellations to those submitted to the given market. If not set, all stop orders across all markets will be cancelled.
   optional string market_id = 1;
-  // Optional order ID.
+  // Restrict cancellations to a stop order with the given ID. If set, then a market ID must also be provided.
   optional string stop_order_id = 2;
 }
 
-// Order submission is a request to submit or create a new order on Vega
+// A command that submits an order to the Vega network for a given market.
 message OrderSubmission {
-  // Market ID for the order, required field.
+  // Market ID to submit the order to.
   string market_id = 1;
   // Price for the order, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places,
   // required field for limit orders, however it is not required for market orders.
   // This field is an unsigned integer scaled to the market's decimal places.
   string price = 2;
-  // Size for the order, for example, in a futures market the size equals the number of units, cannot be negative.
+  // Size for the order, for example, in a futures market the size equals the number of units.
   uint64 size = 3;
-  // Side for the order, e.g. SIDE_BUY or SIDE_SELL, required field.
+  // Which side of the order book the order is for, e.g. buy or sell.
   vega.Side side = 4;
-  // Time in force indicates how long an order will remain active before it is executed or expires, required field.
+  // Time in force indicates how long an order will remain active before it is executed or expires..
   vega.Order.TimeInForce time_in_force = 5;
-  // Timestamp in Unix nanoseconds for when the order will expire,
-  // required field only for `Order.TimeInForce`.TIME_IN_FORCE_GTT`.
+  // Timestamp, in Unix nanoseconds, for when the order will expire. Can only be set when the order's time-in-force is GTT.
   int64 expires_at = 6;
-  // Type for the order, required field - See `Order.Type`.
+  // Type of the order.
   vega.Order.Type type = 7;
-  // Reference given for the order, this is typically used to retrieve an order submitted through consensus, currently
-  // set internally by the node to return a unique reference ID for the order submission.
+  // Arbitrary optional reference for the order, to be used as a human-readable non-unique identifier for the order.
   string reference = 8;
-  // Used to specify the details for a pegged order.
+  // Pegged order details. If set, the order's price will be offset from a particular reference price of the order book at all times.
   vega.PeggedOrder pegged_order = 9;
-  // Only valid for Limit orders. Cannot be True at the same time as Reduce-Only.
+  // If set, the order will only be executed if it would not trade on entry to the order book. Only valid for limit orders.
   bool post_only = 10;
-  // Only valid for Non-Persistent orders. Cannot be True at the same time as Post-Only.
-  // If set, order will only be executed if the outcome of the trade moves the trader's position closer to 0.
+  // If set, the order will only be executed if the outcome of the trade moves the trader's position closer to 0.
+  // Only valid for non-persistent orders.
   bool reduce_only = 11;
-  // Parameters used to specify an iceberg order.
+  // Iceberg order details. If set, the order will exist on the order book in chunks.
   optional IcebergOpts iceberg_opts = 12;
 }
 
@@ -118,27 +106,24 @@ message IcebergOpts {
   uint64 minimum_visible_size = 2;
 }
 
-// Order cancellation is a request to cancel an existing order on Vega
+// A command that instructs the network to cancel orders, active or partially filled, that were previously submitted by the sender of this transaction.
+// It is not possible to cancel another party's order with this command.
 message OrderCancellation {
-  // Unique ID for the order. This is set by the system after consensus. Required field.
+  // Restrict cancellations to an order with the given ID. If set, then a market ID must also be provided.
   string order_id = 1;
-  // Market ID for the order, required field.
+  // Restrict cancellations to those submitted to the given market. If not set, all stop orders across all markets will be cancelled.
   string market_id = 2;
 }
 
-// An order amendment is a request to amend or update an existing order on Vega
+// A command that allows a party to update the details of an existing order.
+// Any field that is left unset or as a default value indicates that this field on the original order will be left unchanged.
+// It is not possible to change an order's type through this command.
 message OrderAmendment {
-  // The `orderID` and `marketID` fields are used for looking up the order only and cannot be amended by this command.
-
-  // Order ID, this is required to find the order and will not be updated, required field.
+  // ID of the order to amend.
   string order_id = 1;
-  // Market ID, this is required to find the order and will not be updated.
+  // Market ID that the order was originally submitted to.
   string market_id = 2;
-
-  // All fields below can be altered by this command:
-
-  // Amend the price for the order if the price value is set, otherwise price will remain unchanged.
-  // This field is an unsigned integer scaled to the market's decimal places.
+  // New price for the order. This field is an unsigned integer scaled to the market's decimal places.
   optional string price = 3;
   // Amend the size for the order by the delta specified:
   // - To reduce the size from the current value set a negative integer value
@@ -146,71 +131,76 @@ message OrderAmendment {
   // - To leave the size unchanged set a value of zero
   // This field needs to be scaled using the market's position decimal places.
   int64 size_delta = 4;
-  // Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged.
+  // Timestamp, in Unix nanoseconds, for the new expiry time for the order.
   optional int64 expires_at = 5;
-  // Amend the time in force for the order, set to TIME_IN_FORCE_UNSPECIFIED to remain unchanged.
+  // New time in force for the order.
   vega.Order.TimeInForce time_in_force = 6;
-  // Amend the pegged order offset for the order. This field is an unsigned integer scaled to the market's decimal places.
+  // New pegged offset for the order.
+  // This field is an unsigned integer scaled to the market's decimal places.
   string pegged_offset = 7;
-  // Amend the pegged order reference for the order.
+  // New pegged reference for the order.
   vega.PeggedReference pegged_reference = 8;
 }
 
-// A liquidity provision submitted for a given market
+// A command that indicates to the network the party's intention to supply liquidity to the given market and become a liquidity provider.
+// An active liquidity provider for a market will earn fees based on the trades that occur in the market.
 message LiquidityProvisionSubmission {
   reserved 4, 5;
-  // Market ID for the order.
+  // Market that the submitter wishes to provide liquidity for.
   string market_id = 1;
-  // Specified as a unitless number that represents the amount of settlement asset of the market.
+  // Amount that the submitter will commit as liquidity to the market, specified as a unitless number in the settlement asset of the market.
   // This field is an unsigned integer scaled using the asset's decimal places.
   string commitment_amount = 2;
   // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers.
   string fee = 3;
-  // Reference to be added to every order created out of this liquidity provision submission.
+  // Arbitrary reference to be added to every order created out of this liquidity provision submission.
   string reference = 6;
 }
 
-// Cancel a liquidity provision request
+// Command that allows a liquidity provider to inform the network that they will stop providing liquidity for a market.
 message LiquidityProvisionCancellation {
-  // Unique ID for the market with the liquidity provision to be cancelled.
+  // Market that the submitter will stop providing liquidity for.
   string market_id = 1;
 }
 
-// Amend a liquidity provision request
+// Command that allows a liquidity provider to update the details of their existing liquidity commitment.
+// Any field that is left unset or as a default value indicates that this field on the original submission will be left unchanged.
 message LiquidityProvisionAmendment {
-  // Unique ID for the market with the liquidity provision to be amended.
+  reserved 4, 5;
+  // Market that the submitter wants to amend the liquidity commitment for.
   string market_id = 1;
-
-  // From here at least one of the following is required to consider the command valid.
-  string commitment_amount = 2; // empty strings means no change
-  string fee = 3; // empty strings means no change
-  repeated vega.LiquidityOrder sells = 4; // empty slice means no change
-  repeated vega.LiquidityOrder buys = 5; // empty slice means no change
-  string reference = 6; // empty string means no change
+  // New commitment amount.
+  string commitment_amount = 2;
+  // New nominated liquidity fee factor.
+  string fee = 3;
+  // New arbitrary reference to be added to every order created out of this liquidity provision submission.
+  string reference = 6;
 }
 
-// Represents the submission request to withdraw funds for a party on Vega
+// Command to instruct the network to process an asset withdrawal from the Vega network.
+// The process is specific to the destination foreign chain, for example, a withdrawal to Ethereum will generate signatures
+// that allow funds to be taken across the bridge.
 message WithdrawSubmission {
-  // Amount to be withdrawn. This field is an unsigned integer scaled to the asset's decimal places.
+  // Amount to be withdrawn, as an unsigned integer scaled to the asset's decimal places.
   string amount = 1;
   // Asset to be withdrawn.
   string asset = 2;
-  // Foreign chain specifics.
+  // Details specific to the foreign chain, such as the receiver address.
   vega.WithdrawExt ext = 3;
 }
 
-// Command to submit a new proposal for the
-// Vega network governance
+// Command that allows a token holder to submit a governance proposal that can be voted on by any other token holders, and eventually enacted on the Vega network.
+// For example this command can be used to propose a new market.
 message ProposalSubmission {
-  // Reference identifying the proposal.
+  // Arbitrary human-readable reference identifying the proposal.
   string reference = 1;
-  // Proposal configuration and the actual change that is meant to be executed when proposal is enacted.
+  // Proposal terms containing the type and details of the proposal, as well as time spans for voting and enactment.
   vega.ProposalTerms terms = 2;
   // Rationale behind a proposal.
   vega.ProposalRationale rationale = 3;
 }
 
-// Command to submit a new vote for a governance proposal.
+// Command that allows a token holder to vote for or against an active governance proposal.
 message VoteSubmission {
   // Submit vote for the specified proposal ID.
   string proposal_id = 1;
@@ -218,37 +208,40 @@ message VoteSubmission {
   vega.Vote.Value value = 2;
 }
 
-// Command to submit an instruction to delegate some stake to a node
+// Command to allow a token holder to delegate their tokens to a validator to help secure the network.
+// A token holder delegating to a validator will earn rewards based on the amount they have delegated, and the performance of the chosen validator.
 message DelegateSubmission {
-  // Delegate to the specified node ID.
+  // Node ID to delegate stake to.
   string node_id = 1;
-  // Amount of stake to delegate. This field is an unsigned integer scaled to the asset's decimal places.
+  // Amount of stake to delegate, as an unsigned integer scaled to the governance asset's decimal places.
   string amount = 2;
 }
 
+// Command to allow a token holder to instruct the network to remove their delegated stake from a given validator node.
 message UndelegateSubmission {
   enum Method {
     reserved 3;
 
     METHOD_UNSPECIFIED = 0;
+    // Undelegate straight away, losing all rewards for the current epoch.
     METHOD_NOW = 1;
+    // Undelegate at the end of an epoch, retaining all rewards for the current epoch.
     METHOD_AT_END_OF_EPOCH = 2;
   }
-
-  // Node ID to delegate to.
+  // Node ID to undelegate stake from.
   string node_id = 1;
-  // Optional, if not specified = ALL.
-  // If provided, this field must be an unsigned integer passed as a string
-  // and needs to be scaled using the asset decimal places for the token.
+  // Amount to undelegate, as an unsigned integer scaled to the governance asset's decimal places.
+  // If not set, then all delegations to the given validator node will be removed.
   string amount = 2;
   // Method of delegation.
   Method method = 3;
 }
 
-// Transfer initiated by a party
+// Command that allows a party to move assets from one account to another.
+// A transfer can be set up as a single one-off transfer, or a recurring transfer that occurs once at the start of each epoch.
+// Each transfer incurs a fee as specified by the network parameter `transfer.fee.factor`
 message Transfer {
-  // Account type from which the funds of the party
-  // should be taken.
+  // Account type from which the funds of the party should be taken.
   vega.AccountType from_account_type = 1;
   // Public key of the destination account.
   string to = 2;
@@ -256,98 +249,103 @@ message Transfer {
   vega.AccountType to_account_type = 3;
   // Asset ID of the asset to be transferred.
   string asset = 4;
-  // Amount to be taken from the source account. This field is an unsigned integer scaled to the asset's decimal places.
+  // Amount to be taken from the source account, as an unsigned integer scaled to the asset's decimal places.
   string amount = 5;
   // Reference to be attached to the transfer.
   string reference = 6;
   // Specific details of the transfer.
   oneof kind {
+    // Details of a one-off transfer that is executed once at a specified time.
     OneOffTransfer one_off = 101;
+    // Details of a transfer that is executed once every epoch until stopped.
     RecurringTransfer recurring = 102;
   }
 }
 
-// Specific details for a one off transfer
+// Details for a one-off transfer.
 message OneOffTransfer {
-  // Timestamp in Unix nanoseconds for when the transfer should be delivered into the receiver's account.
+  // Timestamp, in Unix nanoseconds, for when the transfer should be executed, i.e., assets transferred into the receiver's account.
   int64 deliver_on = 1;
 }
 
-// Specific details for a recurring transfer
+// Details for a recurring transfer
 message RecurringTransfer {
-  // First epoch from which this transfer shall be paid.
+  // First epoch from which this transfer shall be executed.
   uint64 start_epoch = 1;
-  // Last epoch at which this transfer shall be paid.
+  // Last epoch at which this transfer shall be executed.
   optional uint64 end_epoch = 2;
-  // Factor needs to be > 0.
+  // Factor that the initial transfer amount is multiplied by for each epoch that it is executed.
+  // For example if the initial transfer amount is 1000 and the factor is 0.5, then the amounts transferred per epoch will be 1000, 500, 250, 125, etc.
   string factor = 3;
   // Optional parameter defining how a transfer is dispatched.
   vega.DispatchStrategy dispatch_strategy = 4;
 }
 
-// Request for cancelling a recurring transfer
+// Command that can be used by the party that initiated a transfer to instruct the network to stop an active recurring transaction.
 message CancelTransfer {
   // Transfer ID of the transfer to cancel.
   string transfer_id = 1;
 }
 
-// Transaction for a validator to submit signatures to a smart contract
+// Command that can be used by a validator to instruct the network to generate signatures to add or remove validators from the multisig-control contract.
+// Signatures can only be generated for validator nodes that have been promoted or demoted from the consensus validator set, and any attempt to generate signatures for another node will be rejected.
+// The generated signatures can only be submitted to the contract by the Ethereum addresses included in the command.
 message IssueSignatures {
   // Ethereum address which will submit the signatures to the smart contract.
   string submitter = 1;
   // What kind of signatures to generate, namely for whether a signer is being added or removed.
   NodeSignatureKind kind = 2;
   // Node ID of the validator node that will be signed in or out of the smart contract.
-  string validator_node_id = 3; // the node for which to emit the signatures.
+  string validator_node_id = 3;
 }
 
-// Request for creating a referral set
-//
-// Creates a referral set. The creator automatically becomes
-// the leader, called a referrer. This cannot be changed.
-// A referrer cannot be part of an existing set as referrer or referee.
+// Command that a party can use to instruct the network to create a new referral set on the network.
+// The submitter of this command will become the referrer of the new set and cannot be the referrer or a referee of another set.
+// A referrer can use the referral set ID as a referral code to attract others to the Vega network and have fees reduced for the referral set.
 message CreateReferralSet {
+  // Whether or not the referral set should be considered a team that can participate in team games on the network.
   bool is_team = 1;
+  // Team details, if the referral set is to be considered a team.
   optional Team team = 2;
 
   message Team {
-    // Team name to be added to the referral banner.
+    // Name of the team.
     string name = 10;
-    // Optional link to a team forum, discord, etc.
+    // External link to the team's homepage.
     optional string team_url = 11;
-    // Optional link to an image to be used as the team avatar.
+    // External link to an avatar for the team.
     optional string avatar_url = 12;
-    // Is this team closed for external other users
+    // Whether or not the team is closed to new party members.
     bool closed = 13;
   }
 }
 
-// Request for updating a referral set's properties
+// A command that allows the referrer of a referral set to update team details for a referral set.
+// Any field that is left unset or has a default value indicates that this field on the original referral set will be left unchanged.
 message UpdateReferralSet {
   // ID of the referral set to update.
   string id = 1;
+  // Whether or not the referral set should be considered a team that can participate in team games on the network.
   bool is_team = 2;
+  // Team details, if the referral set is to be considered a team.
   optional Team team = 3;
 
   message Team {
-    // Optional team name to be added to the referral banner.
+    // New name of the team.
     optional string name = 10;
-    // Optional link to a team forum, discord, etc.
+    // New link to the team's homepage.
     optional string team_url = 11;
-    // Optional link to an image to be used as the team avatar.
+    // New link to an avatar for the team.
     optional string avatar_url = 12;
-    // Is this team closed for external other users
+    // Whether or not the team is closed to new party members.
     optional bool closed = 13;
   }
 }
 
-// Request to apply a referral code
-//
-// A party that joins a referral team is called a referee. A referee cannot
-// create a referral set or join multiple sets.
-// To switch, the referee can ask to join another set, and the switch will
-// be effective at the end of the epoch.
+// Command that allows the submitter to join a referral set and earn a collective reduction in fees based on the activity of all members of that set.
+// A party that joins a referral set is called a referee. A referee can only be a member of one referral set and cannot themselves be or become a referrer.
+// To switch to another referral set, a subsequent command can be sent and the switch will take effect at the end of the epoch.
 message ApplyReferralCode {
-  // Referral code for the set to join.
+  // Referral code, normally the referral set ID, for the party to join.
   string id = 1;
 }
