@@ -60,10 +60,11 @@ func (f *PaidLiquidityFeesStats) RegisterTotalFeesAmountPerParty(totalFeesAmount
 	}
 }
 
-func (f *PaidLiquidityFeesStats) ToProto(marketID, asset string) *eventspb.PaidLiquidityFeesStats {
+func (f *PaidLiquidityFeesStats) ToProto(marketID, asset string, epochSeq uint64) *eventspb.PaidLiquidityFeesStats {
 	fs := &eventspb.PaidLiquidityFeesStats{
 		Market:           marketID,
 		Asset:            asset,
+		EpochSeq:         epochSeq,
 		FeesPaidPerParty: make([]*eventspb.PartyAmount, 0, len(f.FeesPaidPerParty)),
 		TotalFeesPaid:    f.TotalFeesPaid.String(),
 	}

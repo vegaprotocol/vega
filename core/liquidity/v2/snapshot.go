@@ -363,7 +363,7 @@ func (e *snapshotV2) serialiseFeeStats() ([]byte, error) {
 		Data: &snapshotpb.Payload_LiquidityV2PaidFeesStats{
 			LiquidityV2PaidFeesStats: &snapshotpb.LiquidityV2PaidFeesStats{
 				MarketId: e.market,
-				Stats:    e.allocatedFeesStats.ToProto(e.market, e.asset),
+				Stats:    e.allocatedFeesStats.ToProto(e.market, e.asset, 0), // I don't think it matters what the epoch is as this is just used for snapshots
 			},
 		},
 	}

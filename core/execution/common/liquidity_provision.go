@@ -304,13 +304,13 @@ func (m *MarketLiquidity) OnEpochStart(
 	m.syncPartyCommitmentWithBondAccount(ctx, appliedProvisions)
 }
 
-func (m *MarketLiquidity) OnEpochEnd(ctx context.Context, t time.Time) {
+func (m *MarketLiquidity) OnEpochEnd(ctx context.Context, t time.Time, epoch types.Epoch) {
 	m.calculateAndDistribute(ctx, t)
 
 	// report liquidity fees allocation stats
 	feeStats := m.liquidityEngine.PaidLiquidityFeesStats()
 	if !feeStats.TotalFeesPaid.IsZero() {
-		m.broker.Send(events.NewPaidLiquidityFeesStatsEvent(ctx, feeStats.ToProto(m.marketID, m.asset)))
+		m.broker.Send(events.NewPaidLiquidityFeesStatsEvent(ctx, feeStats.ToProto(m.marketID, m.asset, epoch.Seq)))
 	}
 }
 
