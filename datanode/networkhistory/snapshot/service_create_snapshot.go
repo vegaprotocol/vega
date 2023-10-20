@@ -16,7 +16,6 @@
 package snapshot
 
 import (
-	"archive/zip"
 	"context"
 	"errors"
 	"fmt"
@@ -227,30 +226,32 @@ func (b *Service) snapshotData(ctx context.Context, tx pgx.Tx, dbMetaData Databa
 	start := time.Now()
 	b.log.Infof("copying all table data....")
 
-	f, err := os.Create(seg.ZipFilePath())
+	currentStateDir := path.Join(seg.UnpublishedSnapshotDataDirectory(), "currentstate")
+	historyStateDir := path.Join(seg.UnpublishedSnapshotDataDirectory(), "history")
+
+	err := os.MkdirAll(currentStateDir, os.ModePerm)
 	if err != nil {
-		return fmt.Errorf("failed to create file:%w", err)
+		return fmt.Errorf("failed to create current state directory:%w", err)
 	}
 
-	countWriter := vio.NewCountWriter(f)
-	zipWriter := zip.NewWriter(countWriter)
-	defer zipWriter.Close()
+	err = os.MkdirAll(historyStateDir, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create history state directory:%w", err)
+	}
 
 	// Write Current State
 	currentSQL := currentStateCopySQL(dbMetaData)
-	currentRowsCopied, err := copyTableData(ctx, tx, currentSQL, zipWriter)
+	currentRowsCopied, currentStateBytesCopied, err := copyTablesData(ctx, tx, currentSQL, currentStateDir)
 	if err != nil {
 		return fmt.Errorf("failed to copy current state table data:%w", err)
 	}
-	compressedCurrentStateByteCount := countWriter.Count()
 
 	// Write History
 	historySQL := historyCopySQL(dbMetaData, seg)
-	historyRowsCopied, err := copyTableData(ctx, tx, historySQL, zipWriter)
+	historyRowsCopied, historyBytesCopied, err := copyTablesData(ctx, tx, historySQL, historyStateDir)
 	if err != nil {
 		return fmt.Errorf("failed to copy history table data:%w", err)
 	}
-	compressedHistoryByteCount := countWriter.Count() - compressedCurrentStateByteCount
 
 	err = tx.Commit(ctx)
 	if err != nil {
@@ -258,16 +259,16 @@ func (b *Service) snapshotData(ctx context.Context, tx pgx.Tx, dbMetaData Databa
 	}
 
 	metrics.SetLastSnapshotRowcount(float64(currentRowsCopied + historyRowsCopied))
-	metrics.SetLastSnapshotCurrentStateBytes(float64(compressedCurrentStateByteCount))
-	metrics.SetLastSnapshotHistoryBytes(float64(compressedHistoryByteCount))
+	metrics.SetLastSnapshotCurrentStateBytes(float64(currentStateBytesCopied))
+	metrics.SetLastSnapshotHistoryBytes(float64(historyBytesCopied))
 	metrics.SetLastSnapshotSeconds(time.Since(start).Seconds())
 
 	b.log.Info("finished creating snapshot for chain", logging.String("chain", seg.ChainID),
 		logging.Int64("from height", seg.HeightFrom),
 		logging.Int64("to height", seg.HeightTo), logging.Duration("time taken", time.Since(start)),
 		logging.Int64("rows copied", currentRowsCopied+historyRowsCopied),
-		logging.Int64("compressed current state data size", compressedCurrentStateByteCount),
-		logging.Int64("compressed history data size", compressedHistoryByteCount),
+		logging.Int64("current state data size", currentStateBytesCopied),
+		logging.Int64("history data size", historyBytesCopied),
 	)
 
 	return nil
@@ -309,27 +310,36 @@ func historyCopySQL(dbMetaData DatabaseMetadata, segment interface{ GetFromHeigh
 	return copySQL
 }
 
-func copyTableData(ctx context.Context, tx pgx.Tx, copySQL []TableCopySql, zipWriter *zip.Writer) (int64, error) {
+func copyTablesData(ctx context.Context, tx pgx.Tx, copySQL []TableCopySql, toDir string) (int64, int64, error) {
 	var totalRowsCopied int64
+	var totalBytesCopied int64
 	for _, tableSql := range copySQL {
-		dirName := "currentstate"
-		if tableSql.metaData.Hypertable {
-			dirName = "history"
-		}
-
-		fileWriter, err := zipWriter.Create(path.Join(dirName, tableSql.metaData.Name))
+		filePath := path.Join(toDir, tableSql.metaData.Name)
+		numRowsCopied, bytesCopied, err := writeTableToDataFile(ctx, tx, filePath, tableSql)
 		if err != nil {
-			return 0, fmt.Errorf("failed to create file in zip:%w", err)
-		}
-
-		numRowsCopied, err := executeCopy(ctx, tx, tableSql, fileWriter)
-		if err != nil {
-			return 0, fmt.Errorf("failed to execute copy: %w", err)
+			return 0, 0, fmt.Errorf("failed to write table %s to file %s:%w", tableSql.metaData.Name, filePath, err)
 		}
 		totalRowsCopied += numRowsCopied
+		totalBytesCopied += bytesCopied
 	}
 
-	return totalRowsCopied, nil
+	return totalRowsCopied, totalBytesCopied, nil
+}
+
+func writeTableToDataFile(ctx context.Context, tx pgx.Tx, filePath string, tableSql TableCopySql) (int64, int64, error) {
+	file, err := os.Create(filePath)
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to create file %s:%w", filePath, err)
+	}
+	defer file.Close()
+
+	fileWriter := vio.NewCountWriter(file)
+
+	numRowsCopied, err := executeCopy(ctx, tx, tableSql, fileWriter)
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to execute copy: %w", err)
+	}
+	return numRowsCopied, fileWriter.Count(), nil
 }
 
 func executeCopy(ctx context.Context, tx pgx.Tx, tableSql TableCopySql, w io.Writer) (int64, error) {
@@ -355,8 +365,8 @@ func (b *Service) GetUnpublishedSnapshots() ([]segment.Unpublished, error) {
 	segments := []segment.Unpublished{}
 	chainID := ""
 	for _, file := range files {
-		if !file.IsDir() {
-			baseSegment, err := segment.NewFromZipFileName(file.Name())
+		if file.IsDir() {
+			baseSegment, err := segment.NewFromSnapshotDataDirectory(file.Name())
 			if err != nil {
 				continue
 			}

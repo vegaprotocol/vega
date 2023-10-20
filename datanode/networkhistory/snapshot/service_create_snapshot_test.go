@@ -32,14 +32,14 @@ func TestGetHistorySnapshots(t *testing.T) {
 		panic(err)
 	}
 
-	os.Create(filepath.Join(snapshotsDir, "testnet-fde111-42-0-1000.zip"))
-	os.Create(filepath.Join(snapshotsDir, "testnet-fde111-42-1001-2000.zip"))
-	os.Create(filepath.Join(snapshotsDir, "testnet-fde111-42-3001-4000.zip"))
-	os.Create(filepath.Join(snapshotsDir, "testnet-fde111-42-4001-5000.zip"))
-	os.Create(filepath.Join(snapshotsDir, "testnet-fde111-42-5001-6000.zip"))
-	os.Create(filepath.Join(snapshotsDir, "testnet-fde111-42-6001-7000.zip"))
+	os.MkdirAll(filepath.Join(snapshotsDir, "testnet-fde111-42-0-1000"), os.ModePerm)
+	os.MkdirAll(filepath.Join(snapshotsDir, "testnet-fde111-42-1001-2000"), os.ModePerm)
+	os.MkdirAll(filepath.Join(snapshotsDir, "testnet-fde111-42-3001-4000"), os.ModePerm)
+	os.MkdirAll(filepath.Join(snapshotsDir, "testnet-fde111-42-4001-5000"), os.ModePerm)
+	os.MkdirAll(filepath.Join(snapshotsDir, "testnet-fde111-42-5001-6000"), os.ModePerm)
+	os.MkdirAll(filepath.Join(snapshotsDir, "testnet-fde111-42-6001-7000"), os.ModePerm)
 	os.Create(filepath.Join(snapshotsDir, "testnet-fde111-8000.snapshotinprogress"))
-	os.Create(filepath.Join(snapshotsDir, "testnet-fde111-42-7001-8000.zip"))
+	os.MkdirAll(filepath.Join(snapshotsDir, "testnet-fde111-42-7001-8000"), os.ModePerm)
 
 	ss, err := service.GetUnpublishedSnapshots()
 	assert.NoError(t, err)
