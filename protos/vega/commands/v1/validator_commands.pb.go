@@ -25,17 +25,17 @@ const (
 type NodeSignatureKind int32
 
 const (
-	// Represents an unspecified or missing value from the input
+	// Represents an unspecified or missing value from the input.
 	NodeSignatureKind_NODE_SIGNATURE_KIND_UNSPECIFIED NodeSignatureKind = 0
-	// Represents a signature for a new asset allow-listing
+	// Represents a signature for a new asset allow-listing.
 	NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW NodeSignatureKind = 1
-	// Represents a signature for an asset withdrawal
+	// Represents a signature for an asset withdrawal.
 	NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL NodeSignatureKind = 2
-	// Represents a signature for a new signer added to the erc20 multisig contract
+	// Represents a signature for a new signer added to the erc20 multisig contract.
 	NodeSignatureKind_NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_ADDED NodeSignatureKind = 3
-	// Represents a signature for a signer removed from the erc20 multisig contract
+	// Represents a signature for a signer removed from the erc20 multisig contract.
 	NodeSignatureKind_NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_REMOVED NodeSignatureKind = 4
-	// Represents a signature for an asset update allow-listing
+	// Represents a signature for an asset update allow-listing.
 	NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_UPDATE NodeSignatureKind = 5
 )
 
@@ -182,8 +182,8 @@ func (NodeVote_Type) EnumDescriptor() ([]byte, []int) {
 	return file_vega_commands_v1_validator_commands_proto_rawDescGZIP(), []int{2, 0}
 }
 
-// Message from a validator signalling they are still online and validating blocks
-// or ready to validate blocks when they are still a pending validator
+// A validator command which is sent automatically at regular intervals by any validator participating in the network.
+// It is used to allow the network to know whether a validator is active, or if they have shut down.
 type ValidatorHeartbeat struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -191,9 +191,9 @@ type ValidatorHeartbeat struct {
 
 	// Node ID of the validator emitting the heartbeat.
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	// Signature from the validator made using the ethereum wallet.
+	// Signature from the validator made using their Ethereum wallet.
 	EthereumSignature *Signature `protobuf:"bytes,2,opt,name=ethereum_signature,json=ethereumSignature,proto3" json:"ethereum_signature,omitempty"`
-	// Signature from the validator made using the vega wallet.
+	// Signature from the validator made using their Vega wallet.
 	VegaSignature *Signature `protobuf:"bytes,3,opt,name=vega_signature,json=vegaSignature,proto3" json:"vega_signature,omitempty"`
 	// Message which has been signed.
 	Message string `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
@@ -259,36 +259,35 @@ func (x *ValidatorHeartbeat) GetMessage() string {
 	return ""
 }
 
-// Used to announce a node as a new pending validator
+// A command that allows a new node operator to announce themselves to the network as a new validator.
 type AnnounceNode struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Vega public key, required field.
+	// Vega public key of the node being announced.
 	VegaPubKey string `protobuf:"bytes,1,opt,name=vega_pub_key,json=vegaPubKey,proto3" json:"vega_pub_key,omitempty"`
-	// Ethereum public key, required field.
+	// Ethereum public key of the node being announced.
 	EthereumAddress string `protobuf:"bytes,2,opt,name=ethereum_address,json=ethereumAddress,proto3" json:"ethereum_address,omitempty"`
-	// Public key for the blockchain, required field.
+	// Public key for the blockchain, currently the node's CometBFT key.
 	ChainPubKey string `protobuf:"bytes,3,opt,name=chain_pub_key,json=chainPubKey,proto3" json:"chain_pub_key,omitempty"`
-	// URL with more info on the node.
+	// URL to the node operators homepage allowing stake holders to make an informed decision when delegating.
 	InfoUrl string `protobuf:"bytes,4,opt,name=info_url,json=infoUrl,proto3" json:"info_url,omitempty"`
 	// Country code (ISO 3166-1 alpha-2) for the location of the node.
 	Country string `protobuf:"bytes,5,opt,name=country,proto3" json:"country,omitempty"`
-	// Node ID of the validator, i.e. the node's public master key.
+	// Node ID of the validator, which is the node's public master key.
 	Id string `protobuf:"bytes,6,opt,name=id,proto3" json:"id,omitempty"`
-	// Name of the validator.
+	// Human-readable name of the node.
 	Name string `protobuf:"bytes,7,opt,name=name,proto3" json:"name,omitempty"`
-	// AvatarURL of the validator.
+	// URL to the node operator's avatar.
 	AvatarUrl string `protobuf:"bytes,8,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
 	// Vega public key derivation index.
 	VegaPubKeyIndex uint32 `protobuf:"varint,9,opt,name=vega_pub_key_index,json=vegaPubKeyIndex,proto3" json:"vega_pub_key_index,omitempty"`
-	// Epoch from which the validator is expected
-	// to be ready to validate blocks.
+	// Epoch from which the node is expected to be ready to validate blocks.
 	FromEpoch uint64 `protobuf:"varint,10,opt,name=from_epoch,json=fromEpoch,proto3" json:"from_epoch,omitempty"`
-	// Signature from the validator made using the ethereum wallet.
+	// Signature from the node made using the ethereum wallet.
 	EthereumSignature *Signature `protobuf:"bytes,11,opt,name=ethereum_signature,json=ethereumSignature,proto3" json:"ethereum_signature,omitempty"`
-	// Signature from the validator made using the Vega wallet.
+	// Signature from the node made using the Vega wallet.
 	VegaSignature *Signature `protobuf:"bytes,12,opt,name=vega_signature,json=vegaSignature,proto3" json:"vega_signature,omitempty"`
 	// Ethereum public key to use as a submitter to allow automatic signature generation.
 	SubmitterAddress string `protobuf:"bytes,13,opt,name=submitter_address,json=submitterAddress,proto3" json:"submitter_address,omitempty"`
@@ -417,16 +416,15 @@ func (x *AnnounceNode) GetSubmitterAddress() string {
 	return ""
 }
 
-// Used when a node votes for validating that a given resource exists or is valid,
-// for example, an ERC20 deposit is valid and exists on ethereum.
+// A validator command which is sent automatically by a node when it has verified a resource external to the network.
 type NodeVote struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Reference identifying the resource making the vote, required field.
+	// Reference identifying the resource that has been verified.
 	Reference string `protobuf:"bytes,2,opt,name=reference,proto3" json:"reference,omitempty"`
-	// Type of NodeVote, also required.
+	// Type of external event that has been verified.
 	Type NodeVote_Type `protobuf:"varint,3,opt,name=type,proto3,enum=vega.commands.v1.NodeVote_Type" json:"type,omitempty"`
 }
 
@@ -476,15 +474,15 @@ func (x *NodeVote) GetType() NodeVote_Type {
 	return NodeVote_TYPE_UNSPECIFIED
 }
 
-// Represents a signature from a validator, to be used by a foreign chain in order to recognise a decision taken by the Vega network
+// A validator command sent automatically containing a signature that can be used on a foreign chain to process an action.
 type NodeSignature struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// ID of the resource being signed.
+	// ID of the resource that the signature relates to.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// The signature generated by the signer.
+	// Signature generated by the node.
 	Sig []byte `protobuf:"bytes,2,opt,name=sig,proto3" json:"sig,omitempty"`
 	// Kind of resource being signed.
 	Kind NodeSignatureKind `protobuf:"varint,3,opt,name=kind,proto3,enum=vega.commands.v1.NodeSignatureKind" json:"kind,omitempty"`
@@ -543,13 +541,13 @@ func (x *NodeSignature) GetKind() NodeSignatureKind {
 	return NodeSignatureKind_NODE_SIGNATURE_KIND_UNSPECIFIED
 }
 
-// Event forwarded to the Vega network to provide information on events happening on other networks
+// A validator command sent automatically that provides information of events that have happened on foreign chains.
 type ChainEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Transaction ID of the transaction in which the events happened, usually a hash.
+	// ID of the transaction on the foreign chain that caused the event.
 	TxId string `protobuf:"bytes,1,opt,name=tx_id,json=txId,proto3" json:"tx_id,omitempty"`
 	// Arbitrary one-time integer used to prevent replay attacks.
 	Nonce uint64 `protobuf:"varint,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
@@ -678,7 +676,7 @@ type ChainEvent_Erc20Multisig struct {
 }
 
 type ChainEvent_ContractCall struct {
-	// Arbitrary contract call
+	// Ethereum contract call event.
 	ContractCall *vega.EthContractCallEvent `protobuf:"bytes,1007,opt,name=contract_call,json=contractCall,proto3,oneof"`
 }
 
@@ -692,7 +690,7 @@ func (*ChainEvent_Erc20Multisig) isChainEvent_Event() {}
 
 func (*ChainEvent_ContractCall) isChainEvent_Event() {}
 
-// Transaction to allow a validator to rotate their Vega keys
+// A validator command sent manually that allows a node operator to indicate to the network that their node's Vega key will be rotated.
 type KeyRotateSubmission struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -700,11 +698,11 @@ type KeyRotateSubmission struct {
 
 	// New Vega public key derivation index.
 	NewPubKeyIndex uint32 `protobuf:"varint,1,opt,name=new_pub_key_index,json=newPubKeyIndex,proto3" json:"new_pub_key_index,omitempty"`
-	// Target block at which the key rotation will take effect on.
+	// Block height at which the key rotation will take effect.
 	TargetBlock uint64 `protobuf:"varint,2,opt,name=target_block,json=targetBlock,proto3" json:"target_block,omitempty"`
-	// New public key to rotate to.
+	// Vega public key that would be rotated to.
 	NewPubKey string `protobuf:"bytes,3,opt,name=new_pub_key,json=newPubKey,proto3" json:"new_pub_key,omitempty"`
-	// Hash of currently used public key.
+	// Hash of the node's current Vega public key.
 	CurrentPubKeyHash string `protobuf:"bytes,4,opt,name=current_pub_key_hash,json=currentPubKeyHash,proto3" json:"current_pub_key_hash,omitempty"`
 }
 
@@ -768,21 +766,21 @@ func (x *KeyRotateSubmission) GetCurrentPubKeyHash() string {
 	return ""
 }
 
-// Transaction to allow a validator to rotate their ethereum keys
+// A validator command sent manually that allows a node operator to indicate to the network that their node's Ethereum key will be rotated.
 type EthereumKeyRotateSubmission struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Target block at which the key rotation will take effect on.
+	// Block height at which the key rotation will take effect.
 	TargetBlock uint64 `protobuf:"varint,1,opt,name=target_block,json=targetBlock,proto3" json:"target_block,omitempty"`
-	// New address to rotate to.
+	// Ethereum address that is being rotated to.
 	NewAddress string `protobuf:"bytes,2,opt,name=new_address,json=newAddress,proto3" json:"new_address,omitempty"`
-	// Currently used public address.
+	// Ethereum address of the node's current Ethereum keys.
 	CurrentAddress string `protobuf:"bytes,3,opt,name=current_address,json=currentAddress,proto3" json:"current_address,omitempty"`
 	// Ethereum public key to use as a submitter to allow automatic signature generation.
 	SubmitterAddress string `protobuf:"bytes,4,opt,name=submitter_address,json=submitterAddress,proto3" json:"submitter_address,omitempty"`
-	// Signature that can be verified using the new ethereum address.
+	// Signature signed by the new Ethereum key that can be verified to prove ownership.
 	EthereumSignature *Signature `protobuf:"bytes,5,opt,name=ethereum_signature,json=ethereumSignature,proto3" json:"ethereum_signature,omitempty"`
 }
 
@@ -853,13 +851,13 @@ func (x *EthereumKeyRotateSubmission) GetEthereumSignature() *Signature {
 	return nil
 }
 
-// Transaction for a validator to submit a floating point value
+// A validator command sent automatically to reach consensus on floating point values.
 type StateVariableProposal struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// State value proposal details.
+	// Details of the state variable being proposed.
 	Proposal *vega.StateValueProposal `protobuf:"bytes,1,opt,name=proposal,proto3" json:"proposal,omitempty"`
 }
 
@@ -902,7 +900,7 @@ func (x *StateVariableProposal) GetProposal() *vega.StateValueProposal {
 	return nil
 }
 
-// Transaction for a validator to suggest a protocol upgrade
+// A validator command sent manually by a node operator to propose a protocol upgrade.
 type ProtocolUpgradeProposal struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

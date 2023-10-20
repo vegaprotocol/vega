@@ -24,7 +24,8 @@ const _ = grpc.SupportPackageIsVersion7
 type CoreServiceClient interface {
 	// Submit transaction
 	//
-	// Submit a signed transaction
+	// Submit a signed transaction to the network containing a command to be executed such that if the submission is successful then it will be included in the chain's mempool.
+	// The network will then attempt to execute the transaction in the next available block, where the results of its execution can be seen on the EventBus.
 	SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*SubmitTransactionResponse, error)
 	// Chain event
 	//
@@ -48,19 +49,22 @@ type CoreServiceClient interface {
 	ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (CoreService_ObserveEventBusClient, error)
 	// Submit raw transaction
 	//
-	// Submit a version agnostic signed transaction
+	// Submit a pre-serialised signed transaction containing a command to the network to be executed, such that if the submission is successful then it will be included in the chain's mempool.
+	// The network will then attempt to execute the transaction in the next available block, where the results of its execution can be seen on the EventBus.
 	SubmitRawTransaction(ctx context.Context, in *SubmitRawTransactionRequest, opts ...grpc.CallOption) (*SubmitRawTransactionResponse, error)
 	// Check transaction
 	//
-	// Check a signed transaction
+	// Send a signed transaction containing a command to the network to be checked, but not added to the chain's mempool.
+	// This is useful for checking the validity of a potential transaction before submitting it.
 	CheckTransaction(ctx context.Context, in *CheckTransactionRequest, opts ...grpc.CallOption) (*CheckTransactionResponse, error)
 	// Check raw transaction
 	//
-	// Check a raw signed transaction
+	// Send a pre-serialised transaction containing a command to the network to be checked, but then not added to the chain's mempool.
+	// This is useful for checking the validity of a potential transaction before submitting it.
 	CheckRawTransaction(ctx context.Context, in *CheckRawTransactionRequest, opts ...grpc.CallOption) (*CheckRawTransactionResponse, error)
 	// Get Spam statistics
 	//
-	// Get the spam statistics for a given party
+	// Get the spam statistics for a given party.
 	GetSpamStatistics(ctx context.Context, in *GetSpamStatisticsRequest, opts ...grpc.CallOption) (*GetSpamStatisticsResponse, error)
 }
 
@@ -190,7 +194,8 @@ func (c *coreServiceClient) GetSpamStatistics(ctx context.Context, in *GetSpamSt
 type CoreServiceServer interface {
 	// Submit transaction
 	//
-	// Submit a signed transaction
+	// Submit a signed transaction to the network containing a command to be executed such that if the submission is successful then it will be included in the chain's mempool.
+	// The network will then attempt to execute the transaction in the next available block, where the results of its execution can be seen on the EventBus.
 	SubmitTransaction(context.Context, *SubmitTransactionRequest) (*SubmitTransactionResponse, error)
 	// Chain event
 	//
@@ -214,19 +219,22 @@ type CoreServiceServer interface {
 	ObserveEventBus(CoreService_ObserveEventBusServer) error
 	// Submit raw transaction
 	//
-	// Submit a version agnostic signed transaction
+	// Submit a pre-serialised signed transaction containing a command to the network to be executed, such that if the submission is successful then it will be included in the chain's mempool.
+	// The network will then attempt to execute the transaction in the next available block, where the results of its execution can be seen on the EventBus.
 	SubmitRawTransaction(context.Context, *SubmitRawTransactionRequest) (*SubmitRawTransactionResponse, error)
 	// Check transaction
 	//
-	// Check a signed transaction
+	// Send a signed transaction containing a command to the network to be checked, but not added to the chain's mempool.
+	// This is useful for checking the validity of a potential transaction before submitting it.
 	CheckTransaction(context.Context, *CheckTransactionRequest) (*CheckTransactionResponse, error)
 	// Check raw transaction
 	//
-	// Check a raw signed transaction
+	// Send a pre-serialised transaction containing a command to the network to be checked, but then not added to the chain's mempool.
+	// This is useful for checking the validity of a potential transaction before submitting it.
 	CheckRawTransaction(context.Context, *CheckRawTransactionRequest) (*CheckRawTransactionResponse, error)
 	// Get Spam statistics
 	//
-	// Get the spam statistics for a given party
+	// Get the spam statistics for a given party.
 	GetSpamStatistics(context.Context, *GetSpamStatisticsRequest) (*GetSpamStatisticsResponse, error)
 	mustEmbedUnimplementedCoreServiceServer()
 }
