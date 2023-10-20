@@ -300,10 +300,18 @@ func (e *Engine) CalculateGovernanceTransferAmount(asset string, market string, 
 		return nil, err
 	}
 
+	a, err := e.assets.Get(asset)
+	if err != nil {
+		e.log.Debug("cannot transfer funds, invalid asset", logging.Error(err))
+		return nil, fmt.Errorf("could not transfer funds, %w", err)
+	}
+
+	quantum := a.Type().Details.Quantum
+	globalMaxAmount, _ := num.UintFromDecimal(quantum.Mul(e.maxGovTransferQunatumMultiplier))
 	amountFromMaxFraction, _ := num.UintFromDecimal(e.maxGovTransferFraction.Mul(balance.ToDecimal()))
 	amountFromProposalFraction, _ := num.UintFromDecimal(fraction.Mul(balance.ToDecimal()))
 	min1 := num.Min(amountFromMaxFraction, amountFromProposalFraction)
-	min2 := num.Min(amount, e.maxGovTransferAmount)
+	min2 := num.Min(amount, globalMaxAmount)
 	amt := num.Min(min1, min2)
 
 	if transferType == vegapb.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING && amt.NEQ(num.Min(amountFromProposalFraction, amount)) {

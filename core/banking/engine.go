@@ -177,8 +177,8 @@ type Engine struct {
 
 	minWithdrawQuantumMultiple num.Decimal
 
-	maxGovTransferAmount   *num.Uint
-	maxGovTransferFraction num.Decimal
+	maxGovTransferQunatumMultiplier num.Decimal
+	maxGovTransferFraction          num.Decimal
 }
 
 type withdrawalRef struct {
@@ -248,7 +248,7 @@ func (e *Engine) OnMaxFractionChanged(ctx context.Context, f num.Decimal) error 
 }
 
 func (e *Engine) OnMaxAmountChanged(ctx context.Context, f num.Decimal) error {
-	e.maxGovTransferAmount, _ = num.UintFromDecimal(f)
+	e.maxGovTransferQunatumMultiplier = f
 	return nil
 }
 

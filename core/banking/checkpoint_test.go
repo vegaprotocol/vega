@@ -202,7 +202,7 @@ func testSimpledScheduledTransfer(t *testing.T) {
 
 func TestGovernancedScheduledTransfer(t *testing.T) {
 	e := getTestEngine(t)
-
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
 		func() time.Time {
 			return time.Unix(10, 0)
@@ -238,6 +238,7 @@ func TestGovernancedScheduledTransfer(t *testing.T) {
 	// now second step, we start a new engine, and load the checkpoint
 	e2 := getTestEngine(t)
 	defer e2.ctrl.Finish()
+	e2.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
 
 	// load the checkpoint
 	e2.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
@@ -269,6 +270,7 @@ func TestGovernancedScheduledTransfer(t *testing.T) {
 
 func TestGovernanceRecurringTransfer(t *testing.T) {
 	e := getTestEngine(t)
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
 
 	ctx := context.Background()
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
@@ -304,6 +306,7 @@ func TestGovernanceRecurringTransfer(t *testing.T) {
 	// now second step, we start a new engine, and load the checkpoint
 	e2 := getTestEngine(t)
 	defer e2.ctrl.Finish()
+	e2.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(10)}), nil).AnyTimes()
 
 	// load the checkpoint
 	e2.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
@@ -315,7 +318,7 @@ func TestGovernanceRecurringTransfer(t *testing.T) {
 
 	// now lets end epoch 0 and 1 so that we can get the transfer out
 	e2.col.EXPECT().GetSystemAccountBalance(gomock.Any(), gomock.Any(), gomock.Any()).Return(num.NewUint(1000), nil).AnyTimes()
-	e2.OnMaxAmountChanged(context.Background(), num.DecimalFromInt64(100000))
+	e2.OnMaxAmountChanged(context.Background(), num.DecimalFromInt64(10000))
 	e2.OnMaxFractionChanged(context.Background(), num.DecimalFromFloat(0.5))
 	e2.col.EXPECT().GovernanceTransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	e2.OnEpoch(ctx, types.Epoch{Seq: 0, StartTime: time.Unix(10, 0), Action: vega.EpochAction_EPOCH_ACTION_END})
