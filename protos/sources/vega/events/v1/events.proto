@@ -13,6 +13,42 @@ import "vega/vega.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega/events/v1";
 
+// Summary of the vesting and locked balances for an epoch
+message VestingBalancesSummary {
+  // Epoch for which these balances are valid.
+  uint64 epoch_seq = 1;
+  // Parties' summaries.
+  repeated PartyVestingSummary parties_vesting_summary = 2;
+}
+
+// Summary of a party's vesting balances
+message PartyVestingSummary {
+  // Party ID.
+  string party = 1;
+  // List of locked balances.
+  repeated PartyLockedBalance party_locked_balances = 2;
+  // List of vesting balances.
+  repeated PartyVestingBalance party_vesting_balances = 3;
+}
+
+// A party's locked balance for a given asset.
+message PartyLockedBalance {
+  // Asset ID.
+  string asset = 1;
+  // Epoch in which the balance will be released.
+  uint64 until_epoch = 2;
+  // Locked balance.
+  string balance = 3;
+}
+
+// Balance that is being vested for the party.
+message PartyVestingBalance {
+  // Asset ID.
+  string asset = 1;
+  // Balance that is vested.
+  string balance = 2;
+}
+
 // Stats of all parties eligible for volume discount.
 message VolumeDiscountStatsUpdated {
   // Epoch at which the volume discount statistics are updated.
@@ -1171,6 +1207,9 @@ enum BusEventType {
   // Event used to report the updated paid liquidity fee statistics for the market at the end of the epoch
   BUS_EVENT_TYPE_PAID_LIQUIDITY_FEES_STATS_UPDATED = 81;
 
+  // Event used to report the summary of vesting and locked balances at the end of the epoch
+  BUS_EVENT_TYPE_VESTING_SUMMARY = 82;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1342,6 +1381,8 @@ message BusEvent {
     FundingPayments funding_payments = 178;
     // Event notifying of an update to the liqudity fees stats for a market.
     PaidLiquidityFeesStats paid_liquidity_fees_stats = 179;
+    // Event notifying of an update to the vesting and locked balances.
+    VestingBalancesSummary vesting_balances_summary = 180;
 
     // Market tick events
     MarketEvent market = 1001;

@@ -104,6 +104,8 @@ var defaultRetentionPolicies = map[RetentionPeriod][]RetentionPolicy{
 		{HypertableOrCaggName: "fees_stats", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "funding_payment", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "volume_discount_programs", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "party_locked_balances", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "party_vesting_balances", DataRetentionPeriod: "1 year"},
 	},
 	RetentionPeriodArchive: {
 		{HypertableOrCaggName: "*", DataRetentionPeriod: string(RetentionPeriodArchive)},

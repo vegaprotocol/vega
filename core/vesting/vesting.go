@@ -141,6 +141,7 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 		e.moveLocked()
 		e.distributeVested(ctx)
 		e.clearup()
+		e.broadcastSummary(ctx, epoch.Seq)
 	}
 }
 
@@ -333,6 +334,61 @@ func (e *Engine) clearup() {
 			delete(e.state, party)
 		}
 	}
+}
+
+func (e *Engine) broadcastSummary(ctx context.Context, seq uint64) {
+	evt := &eventspb.VestingBalancesSummary{
+		EpochSeq:              seq,
+		PartiesVestingSummary: []*eventspb.PartyVestingSummary{},
+	}
+
+	for p, pRewards := range e.state {
+		pSummary := &eventspb.PartyVestingSummary{
+			Party:                p,
+			PartyLockedBalances:  []*eventspb.PartyLockedBalance{},
+			PartyVestingBalances: []*eventspb.PartyVestingBalance{},
+		}
+
+		// doing vesting first
+		for asset, balance := range pRewards.Vesting {
+			pSummary.PartyVestingBalances = append(
+				pSummary.PartyVestingBalances,
+				&eventspb.PartyVestingBalance{
+					Asset:   asset,
+					Balance: balance.String(),
+				},
+			)
+		}
+
+		sort.Slice(pSummary.PartyVestingBalances, func(i, j int) bool {
+			return pSummary.PartyVestingBalances[i].Asset < pSummary.PartyVestingBalances[j].Asset
+		})
+
+		for asset, remainingEpochLockBalance := range pRewards.Locked {
+			for remainingEpochs, balance := range remainingEpochLockBalance {
+				pSummary.PartyLockedBalances = append(
+					pSummary.PartyLockedBalances,
+					&eventspb.PartyLockedBalance{
+						Asset:      asset,
+						Balance:    balance.String(),
+						UntilEpoch: seq + remainingEpochs,
+					},
+				)
+			}
+		}
+
+		sort.Slice(pSummary.PartyLockedBalances, func(i, j int) bool {
+			return pSummary.PartyLockedBalances[i].Asset < pSummary.PartyLockedBalances[j].Asset && pSummary.PartyLockedBalances[i].UntilEpoch < pSummary.PartyLockedBalances[j].UntilEpoch
+		})
+
+		evt.PartiesVestingSummary = append(evt.PartiesVestingSummary, pSummary)
+	}
+
+	sort.Slice(evt.PartiesVestingSummary, func(i, j int) bool {
+		return evt.PartiesVestingSummary[i].Party < evt.PartiesVestingSummary[j].Party
+	})
+
+	e.broker.Send(events.NewVestingBalancesSummaryEvent(ctx, evt))
 }
 
 func (e *Engine) broadcastRewardBonusMultipliers(ctx context.Context, seq uint64) {

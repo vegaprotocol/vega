@@ -704,3 +704,9 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PaidLiquidityFeesConnection
   PaidLiquidityFeesEdge:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PaidLiquidityFeesEdge
+  PartyVestingBalance:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.PartyVestingBalance
+  PartyLockedBalance:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.PartyLockedBalance
+  PartyVestingBalancesSummary:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GetVestingBalancesSummaryResponse

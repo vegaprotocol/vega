@@ -66,6 +66,12 @@ type (
 	PaidLiquidityFeesStats struct {
 		*sqlstore.PaidLiquidityFeesStats
 	}
+	PartyLockedBalances struct {
+		*sqlstore.PartyLockedBalance
+	}
+	PartyVestingBalances struct {
+		*sqlstore.PartyVestingBalance
+	}
 )
 
 type (
@@ -191,4 +197,12 @@ func NewVolumeDiscountPrograms(store *sqlstore.VolumeDiscountPrograms) *VolumeDi
 
 func NewPaidLiquidityFeesStats(store *sqlstore.PaidLiquidityFeesStats) *PaidLiquidityFeesStats {
 	return &PaidLiquidityFeesStats{PaidLiquidityFeesStats: store}
+}
+
+func NewPartyLockedBalances(store *sqlstore.PartyLockedBalance) *PartyLockedBalances {
+	return &PartyLockedBalances{PartyLockedBalance: store}
+}
+
+func NewPartyVestingBalances(store *sqlstore.PartyVestingBalance) *PartyVestingBalances {
+	return &PartyVestingBalances{PartyVestingBalance: store}
 }

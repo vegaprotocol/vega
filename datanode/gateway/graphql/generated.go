@@ -113,7 +113,10 @@ type ResolverRoot interface {
 	Party() PartyResolver
 	PartyActivityStreak() PartyActivityStreakResolver
 	PartyAmount() PartyAmountResolver
+	PartyLockedBalance() PartyLockedBalanceResolver
 	PartyStake() PartyStakeResolver
+	PartyVestingBalance() PartyVestingBalanceResolver
+	PartyVestingBalancesSummary() PartyVestingBalancesSummaryResolver
 	Perpetual() PerpetualResolver
 	PerpetualProduct() PerpetualProductResolver
 	Position() PositionResolver
@@ -1572,6 +1575,7 @@ type ComplexityRoot struct {
 		StakingSummary                func(childComplexity int, pagination *v2.Pagination) int
 		TradesConnection              func(childComplexity int, marketID *string, dataRange *v2.DateRange, pagination *v2.Pagination) int
 		TransfersConnection           func(childComplexity int, direction *TransferDirection, pagination *v2.Pagination) int
+		VestingBalancesSummary        func(childComplexity int, assetID *string) int
 		VotesConnection               func(childComplexity int, pagination *v2.Pagination) int
 		WithdrawalsConnection         func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
 	}
@@ -1602,9 +1606,26 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	PartyLockedBalance struct {
+		Asset      func(childComplexity int) int
+		Balance    func(childComplexity int) int
+		UntilEpoch func(childComplexity int) int
+	}
+
 	PartyStake struct {
 		CurrentStakeAvailable func(childComplexity int) int
 		Linkings              func(childComplexity int) int
+	}
+
+	PartyVestingBalance struct {
+		Asset   func(childComplexity int) int
+		Balance func(childComplexity int) int
+	}
+
+	PartyVestingBalancesSummary struct {
+		Epoch           func(childComplexity int) int
+		LockedBalances  func(childComplexity int) int
+		VestingBalances func(childComplexity int) int
 	}
 
 	PeggedOrder struct {
@@ -3003,6 +3024,7 @@ type PartyResolver interface {
 	RewardSummaries(ctx context.Context, obj *vega.Party, assetID *string) ([]*vega.RewardSummary, error)
 	TransfersConnection(ctx context.Context, obj *vega.Party, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
 	ActivityStreak(ctx context.Context, obj *vega.Party, epoch *int) (*v1.PartyActivityStreak, error)
+	VestingBalancesSummary(ctx context.Context, obj *vega.Party, assetID *string) (*v2.GetVestingBalancesSummaryResponse, error)
 }
 type PartyActivityStreakResolver interface {
 	ActiveFor(ctx context.Context, obj *v1.PartyActivityStreak) (int, error)
@@ -3015,8 +3037,19 @@ type PartyActivityStreakResolver interface {
 type PartyAmountResolver interface {
 	PartyID(ctx context.Context, obj *v1.PartyAmount) (string, error)
 }
+type PartyLockedBalanceResolver interface {
+	Asset(ctx context.Context, obj *v1.PartyLockedBalance) (*vega.Asset, error)
+
+	UntilEpoch(ctx context.Context, obj *v1.PartyLockedBalance) (int, error)
+}
 type PartyStakeResolver interface {
 	Linkings(ctx context.Context, obj *v2.GetStakeResponse) ([]*v1.StakeLinking, error)
+}
+type PartyVestingBalanceResolver interface {
+	Asset(ctx context.Context, obj *v1.PartyVestingBalance) (*vega.Asset, error)
+}
+type PartyVestingBalancesSummaryResolver interface {
+	Epoch(ctx context.Context, obj *v2.GetVestingBalancesSummaryResponse) (*int, error)
 }
 type PerpetualResolver interface {
 	SettlementAsset(ctx context.Context, obj *vega.Perpetual) (*vega.Asset, error)
@@ -9435,6 +9468,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Party.TransfersConnection(childComplexity, args["direction"].(*TransferDirection), args["pagination"].(*v2.Pagination)), true
 
+	case "Party.vestingBalancesSummary":
+		if e.complexity.Party.VestingBalancesSummary == nil {
+			break
+		}
+
+		args, err := ec.field_Party_vestingBalancesSummary_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Party.VestingBalancesSummary(childComplexity, args["assetId"].(*string)), true
+
 	case "Party.votesConnection":
 		if e.complexity.Party.VotesConnection == nil {
 			break
@@ -9557,6 +9602,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PartyEdge.Node(childComplexity), true
 
+	case "PartyLockedBalance.asset":
+		if e.complexity.PartyLockedBalance.Asset == nil {
+			break
+		}
+
+		return e.complexity.PartyLockedBalance.Asset(childComplexity), true
+
+	case "PartyLockedBalance.balance":
+		if e.complexity.PartyLockedBalance.Balance == nil {
+			break
+		}
+
+		return e.complexity.PartyLockedBalance.Balance(childComplexity), true
+
+	case "PartyLockedBalance.untilEpoch":
+		if e.complexity.PartyLockedBalance.UntilEpoch == nil {
+			break
+		}
+
+		return e.complexity.PartyLockedBalance.UntilEpoch(childComplexity), true
+
 	case "PartyStake.currentStakeAvailable":
 		if e.complexity.PartyStake.CurrentStakeAvailable == nil {
 			break
@@ -9570,6 +9636,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PartyStake.Linkings(childComplexity), true
+
+	case "PartyVestingBalance.asset":
+		if e.complexity.PartyVestingBalance.Asset == nil {
+			break
+		}
+
+		return e.complexity.PartyVestingBalance.Asset(childComplexity), true
+
+	case "PartyVestingBalance.balance":
+		if e.complexity.PartyVestingBalance.Balance == nil {
+			break
+		}
+
+		return e.complexity.PartyVestingBalance.Balance(childComplexity), true
+
+	case "PartyVestingBalancesSummary.epoch":
+		if e.complexity.PartyVestingBalancesSummary.Epoch == nil {
+			break
+		}
+
+		return e.complexity.PartyVestingBalancesSummary.Epoch(childComplexity), true
+
+	case "PartyVestingBalancesSummary.lockedBalances":
+		if e.complexity.PartyVestingBalancesSummary.LockedBalances == nil {
+			break
+		}
+
+		return e.complexity.PartyVestingBalancesSummary.LockedBalances(childComplexity), true
+
+	case "PartyVestingBalancesSummary.vestingBalances":
+		if e.complexity.PartyVestingBalancesSummary.VestingBalances == nil {
+			break
+		}
+
+		return e.complexity.PartyVestingBalancesSummary.VestingBalances(childComplexity), true
 
 	case "PeggedOrder.offset":
 		if e.complexity.PeggedOrder.Offset == nil {
@@ -14891,6 +14992,21 @@ func (ec *executionContext) field_Party_transfersConnection_args(ctx context.Con
 	return args, nil
 }
 
+func (ec *executionContext) field_Party_vestingBalancesSummary_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["assetId"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Party_votesConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -17452,6 +17568,8 @@ func (ec *executionContext) fieldContext_AccountBalance_party(ctx context.Contex
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -18062,6 +18180,8 @@ func (ec *executionContext) fieldContext_AccountEvent_party(ctx context.Context,
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -23796,6 +23916,8 @@ func (ec *executionContext) fieldContext_Delegation_party(ctx context.Context, f
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -24245,6 +24367,8 @@ func (ec *executionContext) fieldContext_Deposit_party(ctx context.Context, fiel
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -27643,6 +27767,8 @@ func (ec *executionContext) fieldContext_Entities_parties(ctx context.Context, f
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -36826,6 +36952,8 @@ func (ec *executionContext) fieldContext_LiquidityProviderFeeShare_party(ctx con
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -37084,6 +37212,8 @@ func (ec *executionContext) fieldContext_LiquidityProviderSLA_party(ctx context.
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -37559,6 +37689,8 @@ func (ec *executionContext) fieldContext_LiquidityProvision_party(ctx context.Co
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -40451,6 +40583,8 @@ func (ec *executionContext) fieldContext_MarginLevels_party(ctx context.Context,
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -53736,6 +53870,8 @@ func (ec *executionContext) fieldContext_Order_party(ctx context.Context, field 
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -57794,6 +57930,69 @@ func (ec *executionContext) fieldContext_Party_activityStreak(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Party_vestingBalancesSummary(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Party().VestingBalancesSummary(rctx, obj, fc.Args["assetId"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.GetVestingBalancesSummaryResponse)
+	fc.Result = res
+	return ec.marshalNPartyVestingBalancesSummary2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGetVestingBalancesSummaryResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Party_vestingBalancesSummary(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Party",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "epoch":
+				return ec.fieldContext_PartyVestingBalancesSummary_epoch(ctx, field)
+			case "vestingBalances":
+				return ec.fieldContext_PartyVestingBalancesSummary_vestingBalances(ctx, field)
+			case "lockedBalances":
+				return ec.fieldContext_PartyVestingBalancesSummary_lockedBalances(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PartyVestingBalancesSummary", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Party_vestingBalancesSummary_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PartyActivityStreak_activeFor(ctx context.Context, field graphql.CollectedField, obj *v1.PartyActivityStreak) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PartyActivityStreak_activeFor(ctx, field)
 	if err != nil {
@@ -58413,6 +58612,8 @@ func (ec *executionContext) fieldContext_PartyEdge_node(ctx context.Context, fie
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -58459,6 +58660,170 @@ func (ec *executionContext) fieldContext_PartyEdge_cursor(ctx context.Context, f
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PartyLockedBalance_asset(ctx context.Context, field graphql.CollectedField, obj *v1.PartyLockedBalance) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PartyLockedBalance_asset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PartyLockedBalance().Asset(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Asset)
+	fc.Result = res
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PartyLockedBalance_asset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PartyLockedBalance",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Asset_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Asset_name(ctx, field)
+			case "symbol":
+				return ec.fieldContext_Asset_symbol(ctx, field)
+			case "decimals":
+				return ec.fieldContext_Asset_decimals(ctx, field)
+			case "quantum":
+				return ec.fieldContext_Asset_quantum(ctx, field)
+			case "source":
+				return ec.fieldContext_Asset_source(ctx, field)
+			case "status":
+				return ec.fieldContext_Asset_status(ctx, field)
+			case "infrastructureFeeAccount":
+				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
+			case "globalRewardPoolAccount":
+				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
+			case "takerFeeRewardAccount":
+				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
+			case "makerFeeRewardAccount":
+				return ec.fieldContext_Asset_makerFeeRewardAccount(ctx, field)
+			case "lpFeeRewardAccount":
+				return ec.fieldContext_Asset_lpFeeRewardAccount(ctx, field)
+			case "marketProposerRewardAccount":
+				return ec.fieldContext_Asset_marketProposerRewardAccount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PartyLockedBalance_balance(ctx context.Context, field graphql.CollectedField, obj *v1.PartyLockedBalance) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PartyLockedBalance_balance(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Balance, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PartyLockedBalance_balance(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PartyLockedBalance",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PartyLockedBalance_untilEpoch(ctx context.Context, field graphql.CollectedField, obj *v1.PartyLockedBalance) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PartyLockedBalance_untilEpoch(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PartyLockedBalance().UntilEpoch(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PartyLockedBalance_untilEpoch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PartyLockedBalance",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -58564,6 +58929,263 @@ func (ec *executionContext) fieldContext_PartyStake_linkings(ctx context.Context
 				return ec.fieldContext_StakeLinking_blockHeight(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type StakeLinking", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PartyVestingBalance_asset(ctx context.Context, field graphql.CollectedField, obj *v1.PartyVestingBalance) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PartyVestingBalance_asset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PartyVestingBalance().Asset(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Asset)
+	fc.Result = res
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PartyVestingBalance_asset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PartyVestingBalance",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Asset_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Asset_name(ctx, field)
+			case "symbol":
+				return ec.fieldContext_Asset_symbol(ctx, field)
+			case "decimals":
+				return ec.fieldContext_Asset_decimals(ctx, field)
+			case "quantum":
+				return ec.fieldContext_Asset_quantum(ctx, field)
+			case "source":
+				return ec.fieldContext_Asset_source(ctx, field)
+			case "status":
+				return ec.fieldContext_Asset_status(ctx, field)
+			case "infrastructureFeeAccount":
+				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
+			case "globalRewardPoolAccount":
+				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "globalInsuranceAccount":
+				return ec.fieldContext_Asset_globalInsuranceAccount(ctx, field)
+			case "networkTreasuryAccount":
+				return ec.fieldContext_Asset_networkTreasuryAccount(ctx, field)
+			case "takerFeeRewardAccount":
+				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
+			case "makerFeeRewardAccount":
+				return ec.fieldContext_Asset_makerFeeRewardAccount(ctx, field)
+			case "lpFeeRewardAccount":
+				return ec.fieldContext_Asset_lpFeeRewardAccount(ctx, field)
+			case "marketProposerRewardAccount":
+				return ec.fieldContext_Asset_marketProposerRewardAccount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PartyVestingBalance_balance(ctx context.Context, field graphql.CollectedField, obj *v1.PartyVestingBalance) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PartyVestingBalance_balance(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Balance, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PartyVestingBalance_balance(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PartyVestingBalance",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PartyVestingBalancesSummary_epoch(ctx context.Context, field graphql.CollectedField, obj *v2.GetVestingBalancesSummaryResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PartyVestingBalancesSummary_epoch(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PartyVestingBalancesSummary().Epoch(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PartyVestingBalancesSummary_epoch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PartyVestingBalancesSummary",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PartyVestingBalancesSummary_vestingBalances(ctx context.Context, field graphql.CollectedField, obj *v2.GetVestingBalancesSummaryResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PartyVestingBalancesSummary_vestingBalances(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VestingBalances, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v1.PartyVestingBalance)
+	fc.Result = res
+	return ec.marshalOPartyVestingBalance2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐPartyVestingBalanceᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PartyVestingBalancesSummary_vestingBalances(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PartyVestingBalancesSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "asset":
+				return ec.fieldContext_PartyVestingBalance_asset(ctx, field)
+			case "balance":
+				return ec.fieldContext_PartyVestingBalance_balance(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PartyVestingBalance", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PartyVestingBalancesSummary_lockedBalances(ctx context.Context, field graphql.CollectedField, obj *v2.GetVestingBalancesSummaryResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PartyVestingBalancesSummary_lockedBalances(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LockedBalances, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v1.PartyLockedBalance)
+	fc.Result = res
+	return ec.marshalOPartyLockedBalance2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐPartyLockedBalanceᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PartyVestingBalancesSummary_lockedBalances(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PartyVestingBalancesSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "asset":
+				return ec.fieldContext_PartyLockedBalance_asset(ctx, field)
+			case "balance":
+				return ec.fieldContext_PartyLockedBalance_balance(ctx, field)
+			case "untilEpoch":
+				return ec.fieldContext_PartyLockedBalance_untilEpoch(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PartyLockedBalance", field.Name)
 		},
 	}
 	return fc, nil
@@ -59896,6 +60518,8 @@ func (ec *executionContext) fieldContext_Position_party(ctx context.Context, fie
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -62053,6 +62677,8 @@ func (ec *executionContext) fieldContext_Proposal_party(ctx context.Context, fie
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -62714,6 +63340,8 @@ func (ec *executionContext) fieldContext_ProposalDetail_party(ctx context.Contex
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -67781,6 +68409,8 @@ func (ec *executionContext) fieldContext_Query_party(ctx context.Context, field 
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -72192,6 +72822,8 @@ func (ec *executionContext) fieldContext_Reward_party(ctx context.Context, field
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -74684,6 +75316,8 @@ func (ec *executionContext) fieldContext_StakeLinking_party(ctx context.Context,
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -81064,6 +81698,8 @@ func (ec *executionContext) fieldContext_Trade_buyer(ctx context.Context, field 
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -81146,6 +81782,8 @@ func (ec *executionContext) fieldContext_Trade_seller(ctx context.Context, field
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -87396,6 +88034,8 @@ func (ec *executionContext) fieldContext_Vote_party(ctx context.Context, field g
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -87941,6 +88581,8 @@ func (ec *executionContext) fieldContext_Withdrawal_party(ctx context.Context, f
 				return ec.fieldContext_Party_transfersConnection(ctx, field)
 			case "activityStreak":
 				return ec.fieldContext_Party_activityStreak(ctx, field)
+			case "vestingBalancesSummary":
+				return ec.fieldContext_Party_vestingBalancesSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
 		},
@@ -103679,6 +104321,26 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 				return innerFunc(ctx)
 
 			})
+		case "vestingBalancesSummary":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Party_vestingBalancesSummary(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -103950,6 +104612,74 @@ func (ec *executionContext) _PartyEdge(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
+var partyLockedBalanceImplementors = []string{"PartyLockedBalance"}
+
+func (ec *executionContext) _PartyLockedBalance(ctx context.Context, sel ast.SelectionSet, obj *v1.PartyLockedBalance) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, partyLockedBalanceImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PartyLockedBalance")
+		case "asset":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PartyLockedBalance_asset(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "balance":
+
+			out.Values[i] = ec._PartyLockedBalance_balance(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "untilEpoch":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PartyLockedBalance_untilEpoch(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var partyStakeImplementors = []string{"PartyStake"}
 
 func (ec *executionContext) _PartyStake(ctx context.Context, sel ast.SelectionSet, obj *v2.GetStakeResponse) graphql.Marshaler {
@@ -103984,6 +104714,100 @@ func (ec *executionContext) _PartyStake(ctx context.Context, sel ast.SelectionSe
 				return innerFunc(ctx)
 
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var partyVestingBalanceImplementors = []string{"PartyVestingBalance"}
+
+func (ec *executionContext) _PartyVestingBalance(ctx context.Context, sel ast.SelectionSet, obj *v1.PartyVestingBalance) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, partyVestingBalanceImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PartyVestingBalance")
+		case "asset":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PartyVestingBalance_asset(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "balance":
+
+			out.Values[i] = ec._PartyVestingBalance_balance(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var partyVestingBalancesSummaryImplementors = []string{"PartyVestingBalancesSummary"}
+
+func (ec *executionContext) _PartyVestingBalancesSummary(ctx context.Context, sel ast.SelectionSet, obj *v2.GetVestingBalancesSummaryResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, partyVestingBalancesSummaryImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PartyVestingBalancesSummary")
+		case "epoch":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PartyVestingBalancesSummary_epoch(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "vestingBalances":
+
+			out.Values[i] = ec._PartyVestingBalancesSummary_vestingBalances(ctx, field, obj)
+
+		case "lockedBalances":
+
+			out.Values[i] = ec._PartyVestingBalancesSummary_lockedBalances(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -116604,6 +117428,40 @@ func (ec *executionContext) marshalNPartyEdge2ᚖcodeᚗvegaprotocolᚗioᚋvega
 	return ec._PartyEdge(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNPartyLockedBalance2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐPartyLockedBalance(ctx context.Context, sel ast.SelectionSet, v *v1.PartyLockedBalance) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PartyLockedBalance(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPartyVestingBalance2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐPartyVestingBalance(ctx context.Context, sel ast.SelectionSet, v *v1.PartyVestingBalance) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PartyVestingBalance(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPartyVestingBalancesSummary2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGetVestingBalancesSummaryResponse(ctx context.Context, sel ast.SelectionSet, v v2.GetVestingBalancesSummaryResponse) graphql.Marshaler {
+	return ec._PartyVestingBalancesSummary(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPartyVestingBalancesSummary2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGetVestingBalancesSummaryResponse(ctx context.Context, sel ast.SelectionSet, v *v2.GetVestingBalancesSummaryResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PartyVestingBalancesSummary(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNPeggedReference2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPeggedReference(ctx context.Context, v interface{}) (vega.PeggedReference, error) {
 	res, err := marshallers.UnmarshalPeggedReference(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -122030,6 +122888,100 @@ func (ec *executionContext) marshalOPartyConnection2ᚖcodeᚗvegaprotocolᚗio�
 		return graphql.Null
 	}
 	return ec._PartyConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOPartyLockedBalance2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐPartyLockedBalanceᚄ(ctx context.Context, sel ast.SelectionSet, v []*v1.PartyLockedBalance) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNPartyLockedBalance2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐPartyLockedBalance(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOPartyVestingBalance2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐPartyVestingBalanceᚄ(ctx context.Context, sel ast.SelectionSet, v []*v1.PartyVestingBalance) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNPartyVestingBalance2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐPartyVestingBalance(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOPeggedOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPeggedOrder(ctx context.Context, sel ast.SelectionSet, v *vega.PeggedOrder) graphql.Marshaler {
