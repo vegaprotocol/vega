@@ -5023,6 +5023,8 @@ type Reward {
   percentageOfTotal: String!
   "RFC3339Nano time when the rewards were received"
   receivedAt: Timestamp!
+  "The epoch when the reward is released"
+  lockedUntilEpoch: Epoch!
 }
 
 type RewardSummary {

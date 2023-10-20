@@ -2012,6 +2012,7 @@ type ComplexityRoot struct {
 		Amount            func(childComplexity int) int
 		Asset             func(childComplexity int) int
 		Epoch             func(childComplexity int) int
+		LockedUntilEpoch  func(childComplexity int) int
 		MarketId          func(childComplexity int) int
 		Party             func(childComplexity int) int
 		PercentageOfTotal func(childComplexity int) int
@@ -3191,6 +3192,8 @@ type RewardResolver interface {
 	RewardType(ctx context.Context, obj *vega.Reward) (vega.AccountType, error)
 	Party(ctx context.Context, obj *vega.Reward) (*vega.Party, error)
 	Epoch(ctx context.Context, obj *vega.Reward) (*vega.Epoch, error)
+
+	LockedUntilEpoch(ctx context.Context, obj *vega.Reward) (*vega.Epoch, error)
 }
 type RewardSummaryResolver interface {
 	Asset(ctx context.Context, obj *vega.RewardSummary) (*vega.Asset, error)
@@ -11686,6 +11689,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Reward.Epoch(childComplexity), true
+
+	case "Reward.lockedUntilEpoch":
+		if e.complexity.Reward.LockedUntilEpoch == nil {
+			break
+		}
+
+		return e.complexity.Reward.LockedUntilEpoch(childComplexity), true
 
 	case "Reward.marketId":
 		if e.complexity.Reward.MarketId == nil {
@@ -27751,6 +27761,8 @@ func (ec *executionContext) fieldContext_Entities_rewards(ctx context.Context, f
 				return ec.fieldContext_Reward_percentageOfTotal(ctx, field)
 			case "receivedAt":
 				return ec.fieldContext_Reward_receivedAt(ctx, field)
+			case "lockedUntilEpoch":
+				return ec.fieldContext_Reward_lockedUntilEpoch(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Reward", field.Name)
 		},
@@ -72373,6 +72385,60 @@ func (ec *executionContext) fieldContext_Reward_receivedAt(ctx context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _Reward_lockedUntilEpoch(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Reward_lockedUntilEpoch(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Reward().LockedUntilEpoch(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Epoch)
+	fc.Result = res
+	return ec.marshalNEpoch2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpoch(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Reward_lockedUntilEpoch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Reward",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Epoch_id(ctx, field)
+			case "timestamps":
+				return ec.fieldContext_Epoch_timestamps(ctx, field)
+			case "validatorsConnection":
+				return ec.fieldContext_Epoch_validatorsConnection(ctx, field)
+			case "delegationsConnection":
+				return ec.fieldContext_Epoch_delegationsConnection(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Epoch", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _RewardEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.RewardEdge) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_RewardEdge_node(ctx, field)
 	if err != nil {
@@ -72428,6 +72494,8 @@ func (ec *executionContext) fieldContext_RewardEdge_node(ctx context.Context, fi
 				return ec.fieldContext_Reward_percentageOfTotal(ctx, field)
 			case "receivedAt":
 				return ec.fieldContext_Reward_receivedAt(ctx, field)
+			case "lockedUntilEpoch":
+				return ec.fieldContext_Reward_lockedUntilEpoch(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Reward", field.Name)
 		},
@@ -108430,6 +108498,26 @@ func (ec *executionContext) _Reward(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "lockedUntilEpoch":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Reward_lockedUntilEpoch(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

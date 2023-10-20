@@ -377,6 +377,7 @@ message RewardPayoutEvent {
   int64 timestamp = 6;
   string reward_type = 7;
   string market = 8;
+  string locked_until_epoch = 9;
 }
 
 // ValidatorScoreEvent is the score a validator gets for a given epoch

@@ -68,10 +68,12 @@ func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
 			timestamp,
 			tx_hash,
 			vega_time,
-			seq_num)
-		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9, $10, $11);`,
+			seq_num,
+			locked_until_epoch_id
+		)
+		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9, $10, $11, $12);`,
 		r.PartyID, r.AssetID, r.MarketID, r.RewardType, r.EpochID, r.Amount, r.PercentOfTotal, r.Timestamp, r.TxHash,
-		r.VegaTime, r.SeqNum)
+		r.VegaTime, r.SeqNum, r.LockedUntilEpochID)
 	return err
 }
 
