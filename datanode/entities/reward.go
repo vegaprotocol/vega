@@ -40,17 +40,18 @@ import (
 )
 
 type Reward struct {
-	PartyID        PartyID
-	AssetID        AssetID
-	MarketID       MarketID
-	EpochID        int64
-	Amount         decimal.Decimal
-	PercentOfTotal float64
-	RewardType     string
-	Timestamp      time.Time
-	TxHash         TxHash
-	VegaTime       time.Time
-	SeqNum         uint64
+	PartyID            PartyID
+	AssetID            AssetID
+	MarketID           MarketID
+	EpochID            int64
+	Amount             decimal.Decimal
+	PercentOfTotal     float64
+	RewardType         string
+	Timestamp          time.Time
+	TxHash             TxHash
+	VegaTime           time.Time
+	SeqNum             uint64
+	LockedUntilEpochID int64
 }
 
 func (r Reward) String() string {
@@ -68,6 +69,7 @@ func (r Reward) ToProto() *vega.Reward {
 		ReceivedAt:        r.Timestamp.UnixNano(),
 		MarketId:          r.MarketID.String(),
 		RewardType:        r.RewardType,
+		LockedUntilEpoch:  uint64(r.LockedUntilEpochID),
 	}
 	return &protoReward
 }
@@ -111,18 +113,27 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent, txHash TxHash, vegaTime time
 		marketID = ""
 	}
 
+	lockedUntilEpochID := epochID
+	if len(pr.LockedUntilEpoch) > 0 {
+		lockedUntilEpochID, err = strconv.ParseInt(pr.LockedUntilEpoch, 10, 64)
+		if err != nil {
+			return Reward{}, fmt.Errorf("parsing locked until epoch  '%v': %w", pr.LockedUntilEpoch, err)
+		}
+	}
+
 	reward := Reward{
-		PartyID:        PartyID(pr.Party),
-		AssetID:        AssetID(pr.Asset),
-		EpochID:        epochID,
-		Amount:         amount,
-		PercentOfTotal: percentOfTotal,
-		Timestamp:      NanosToPostgresTimestamp(pr.Timestamp),
-		MarketID:       MarketID(marketID),
-		RewardType:     pr.RewardType,
-		TxHash:         txHash,
-		VegaTime:       vegaTime,
-		SeqNum:         seqNum,
+		PartyID:            PartyID(pr.Party),
+		AssetID:            AssetID(pr.Asset),
+		EpochID:            epochID,
+		Amount:             amount,
+		PercentOfTotal:     percentOfTotal,
+		Timestamp:          NanosToPostgresTimestamp(pr.Timestamp),
+		MarketID:           MarketID(marketID),
+		RewardType:         pr.RewardType,
+		TxHash:             txHash,
+		VegaTime:           vegaTime,
+		SeqNum:             seqNum,
+		LockedUntilEpochID: lockedUntilEpochID,
 	}
 
 	return reward, nil

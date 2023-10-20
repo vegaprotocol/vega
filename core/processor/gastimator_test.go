@@ -302,6 +302,7 @@ func (tx *testTx) Unmarshal(i interface{}) error { return tx.unmarshaller(i) }
 func (tx *testTx) GetPoWTID() string             { return "" }
 func (tx *testTx) GetVersion() uint32            { return 2 }
 func (tx *testTx) GetPoWNonce() uint64           { return 0 }
+func (tx *testTx) GetNonce() uint64              { return 0 }
 func (tx *testTx) Signature() []byte             { return []byte{} }
 func (tx *testTx) Payload() []byte               { return nil }
 func (tx *testTx) PubKey() []byte                { return []byte{} }

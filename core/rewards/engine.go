@@ -134,15 +134,16 @@ type globalRewardParams struct {
 }
 
 type payout struct {
-	rewardType      types.AccountType
-	fromAccount     string
-	asset           string
-	partyToAmount   map[string]*num.Uint
-	totalReward     *num.Uint
-	epochSeq        string
-	timestamp       int64
-	market          string
-	lockedForEpochs uint64
+	rewardType       types.AccountType
+	fromAccount      string
+	asset            string
+	partyToAmount    map[string]*num.Uint
+	totalReward      *num.Uint
+	epochSeq         string
+	timestamp        int64
+	market           string
+	lockedForEpochs  uint64
+	lockedUntilEpoch string
 }
 
 // New instantiate a new rewards engine.
@@ -330,6 +331,7 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 					po.timestamp = now.UnixNano()
 					payouts = append(payouts, po)
 					e.distributePayout(ctx, po)
+					po.lockedUntilEpoch = num.NewUint(po.lockedForEpochs + epoch.Seq).String()
 					e.emitEventsForPayout(ctx, now, po)
 				}
 			}
@@ -406,7 +408,7 @@ func (e *Engine) emitEventsForPayout(ctx context.Context, timeToSend time.Time, 
 	for party, amount := range po.partyToAmount {
 		proportion := amount.ToDecimal().Div(totalReward)
 		pct := proportion.Mul(num.DecimalFromInt64(100))
-		payoutEvents[party] = events.NewRewardPayout(ctx, timeToSend.UnixNano(), party, po.epochSeq, po.asset, amount, pct, po.rewardType, po.market)
+		payoutEvents[party] = events.NewRewardPayout(ctx, timeToSend.UnixNano(), party, po.epochSeq, po.asset, amount, pct, po.rewardType, po.market, po.lockedUntilEpoch)
 		parties = append(parties, party)
 	}
 	sort.Strings(parties)

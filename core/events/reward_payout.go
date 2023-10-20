@@ -34,9 +34,10 @@ type RewardPayout struct {
 	Amount                  *num.Uint
 	Timestamp               int64
 	RewardType              types.AccountType
+	LockedUntilEpoch        string
 }
 
-func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq, asset string, amount *num.Uint, percentageOfTotalReward num.Decimal, rewardType types.AccountType, market string) *RewardPayout {
+func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq, asset string, amount *num.Uint, percentageOfTotalReward num.Decimal, rewardType types.AccountType, market string, lockedUntilEpoch string) *RewardPayout {
 	return &RewardPayout{
 		Base:                    newBase(ctx, RewardPayoutEvent),
 		Party:                   party,
@@ -47,6 +48,7 @@ func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq, asse
 		Timestamp:               timestamp,
 		RewardType:              rewardType,
 		Market:                  market,
+		LockedUntilEpoch:        lockedUntilEpoch,
 	}
 }
 
@@ -64,6 +66,7 @@ func (rp RewardPayout) Proto() eventspb.RewardPayoutEvent {
 		Timestamp:            rp.Timestamp,
 		RewardType:           vegapb.AccountType_name[int32(rp.RewardType)],
 		Market:               rp.Market,
+		LockedUntilEpoch:     rp.LockedUntilEpoch,
 	}
 }
 
@@ -93,6 +96,7 @@ func RewardPayoutEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Re
 		Amount:                  amount,
 		Timestamp:               rp.Timestamp,
 		Market:                  rp.Market,
+		LockedUntilEpoch:        rp.LockedUntilEpoch,
 		RewardType:              types.AccountType(vegapb.AccountType_value[rp.RewardType]),
 	}
 }

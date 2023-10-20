@@ -48,6 +48,7 @@ func TestRewardFromProto(t *testing.T) {
 		Amount:               "123456789",
 		PercentOfTotalReward: "3.14",
 		Timestamp:            timestamp.UnixNano(),
+		LockedUntilEpoch:     "44",
 	}
 
 	vegaTime := entities.NanosToPostgresTimestamp(now.UnixNano())

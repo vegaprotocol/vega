@@ -44,11 +44,22 @@ func (e *Engine) serialise() ([]byte, error) {
 		bannedParties[k] = t.UnixNano()
 	}
 
+	nonceHeights := map[uint64][]*snapshot.NonceRef{}
+
+	for k, v := range e.heightToNonceRef {
+		refs := make([]*snapshot.NonceRef, 0, len(v))
+		for _, ref := range v {
+			refs = append(refs, &snapshot.NonceRef{Party: ref.party, Nonce: ref.nonce})
+		}
+		nonceHeights[k] = refs
+	}
+
 	payloadProofOfWork := &types.PayloadProofOfWork{
 		BlockHeight:      e.blockHeight[:ringSize],
 		BlockHash:        e.blockHash[:ringSize],
 		HeightToTx:       e.heightToTx,
 		HeightToTid:      e.heightToTid,
+		HeightToNonceRef: nonceHeights,
 		BannedParties:    bannedParties,
 		ActiveParams:     e.paramsToSnapshotParams(),
 		ActiveStates:     e.statesToSnapshotStates(),
@@ -176,6 +187,15 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	copy(e.blockHeight[:], pl.BlockHeight[:ringSize])
 	e.heightToTx = pl.HeightToTx
 	e.heightToTid = pl.HeightToTid
+
+	for k, v := range pl.HeightToNonceRef {
+		refs := make([]nonceRef, 0, len(v))
+		for _, ref := range v {
+			refs = append(refs, nonceRef{ref.Party, ref.Nonce})
+		}
+		e.heightToNonceRef[k] = refs
+	}
+
 	e.seenTx = map[string]struct{}{}
 	e.seenTid = map[string]struct{}{}
 	for _, block := range e.heightToTid {
@@ -186,6 +206,11 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	for _, block := range e.heightToTx {
 		for _, v := range block {
 			e.seenTx[v] = struct{}{}
+		}
+	}
+	for _, block := range e.heightToNonceRef {
+		for _, v := range block {
+			e.seenNonceRef[v] = struct{}{}
 		}
 	}
 	e.activeParams = e.snapshotParamsToParams(pl.ActiveParams)

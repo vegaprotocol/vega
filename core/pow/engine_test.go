@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -185,6 +186,61 @@ func TestMempoolTidRejection(t *testing.T) {
 	require.Equal(t, 0, len(e.mempoolSeenTid))
 
 	require.Error(t, e.CheckTx(tx1))
+}
+
+func TestDeliverTxDuplciateNonce(t *testing.T) {
+	ts := mocks.NewMockTimeService(gomock.NewController(t))
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), ts)
+	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(5))
+	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
+	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
+	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
+
+	e.currentBlock = 100
+	e.blockHeight[100] = 100
+	e.blockHash[100] = "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4"
+
+	require.Equal(t, 0, len(e.seenTid))
+	require.Equal(t, 0, len(e.heightToTid))
+	require.Equal(t, 0, len(e.heightToNonceRef))
+	party := crypto.RandomHash()
+
+	tx := &testTx{
+		party:       party,
+		blockHeight: 100,
+		powTxID:     "94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0",
+		powNonce:    431336,
+		nonce:       12,
+	}
+
+	require.NoError(t, e.DeliverTx(tx))
+	require.Equal(t, 1, len(e.seenTid))
+	require.Equal(t, 1, len(e.heightToTid))
+	require.Equal(t, 1, len(e.heightToNonceRef))
+	require.Equal(t, 1, len(e.heightToNonceRef[100]))
+
+	// now send it in again with a different pow
+	tx.powNonce = 100
+	tx.powTxID = "113EB390CBEB921433BDBA832CCDFD81AC4C77C3748A41B1AF08C96BC6C7BCD9"
+	tx.txID = crypto.RandomHash()
+	require.ErrorIs(t, ErrNonceAlreadyUsedByParty, e.DeliverTx(tx))
+
+	// but a different party can used that nonce at that height
+	tx.powTxID = "DC911C0EA95545441F3E1182DD25D973764395A7E75CBDBC086F1C6F7075AED6"
+	tx.powNonce = 523162
+	tx.party = crypto.RandomHash()
+	require.NoError(t, e.DeliverTx(tx))
+	require.Equal(t, 1, len(e.heightToNonceRef))
+	require.Equal(t, 2, len(e.heightToNonceRef[100]))
+
+	// check the maps are purged when we leave scope
+	ts.EXPECT().GetTimeNow().AnyTimes().Return(time.Unix(1000, 12))
+	e.BeginBlock(104, "2D2E4EC3DA3584F3FD4AD1BD1C0700E3C8DFB7BB1C307312AB35F18940836FC4")
+	e.EndOfBlock()
+	require.Equal(t, 0, len(e.seenTid))
+	require.Equal(t, 0, len(e.heightToTid))
+	require.Equal(t, 0, len(e.heightToNonceRef))
+	require.Equal(t, 0, len(e.seenNonceRef))
 }
 
 func TestExpectedDifficulty(t *testing.T) {
@@ -496,6 +552,7 @@ type testTx struct {
 	powNonce    uint64
 	powTxID     string
 	txID        string
+	nonce       uint64
 }
 
 type testValidatorTx struct {
@@ -506,16 +563,23 @@ func (tx *testTx) Unmarshal(interface{}) error { return nil }
 func (tx *testTx) GetPoWTID() string           { return tx.powTxID }
 func (tx *testTx) GetVersion() uint32          { return 2 }
 func (tx *testTx) GetPoWNonce() uint64         { return tx.powNonce }
-func (tx *testTx) Signature() []byte           { return []byte{} }
-func (tx *testTx) Payload() []byte             { return []byte{} }
-func (tx *testTx) PubKey() []byte              { return []byte{} }
-func (tx *testTx) PubKeyHex() string           { return "" }
-func (tx *testTx) Party() string               { return tx.party }
-func (tx *testTx) Hash() []byte                { return []byte(tx.txID) }
-func (tx *testTx) Command() txn.Command        { return txn.AmendOrderCommand }
-func (tx *testTx) BlockHeight() uint64         { return tx.blockHeight }
-func (tx *testTx) GetCmd() interface{}         { return nil }
-func (tx *testTx) Validate() error             { return nil }
+
+func (tx *testTx) Signature() []byte    { return []byte{} }
+func (tx *testTx) Payload() []byte      { return []byte{} }
+func (tx *testTx) PubKey() []byte       { return []byte{} }
+func (tx *testTx) PubKeyHex() string    { return "" }
+func (tx *testTx) Party() string        { return tx.party }
+func (tx *testTx) Hash() []byte         { return []byte(tx.txID) }
+func (tx *testTx) Command() txn.Command { return txn.AmendOrderCommand }
+func (tx *testTx) BlockHeight() uint64  { return tx.blockHeight }
+func (tx *testTx) GetCmd() interface{}  { return nil }
+func (tx *testTx) Validate() error      { return nil }
+func (tx *testTx) GetNonce() uint64 {
+	if tx.nonce != 0 {
+		return tx.nonce
+	}
+	return rand.Uint64()
+}
 
 func (tx *testValidatorTx) Command() txn.Command {
 	return txn.NodeSignatureCommand

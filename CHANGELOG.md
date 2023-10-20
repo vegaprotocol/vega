@@ -167,7 +167,7 @@
 - [8919](https://github.com/vegaprotocol/vega/issues/8919) - Add `CreatedAt` field to transaction type in the block explorer API.
 - [7248](https://github.com/vegaprotocol/vega/issues/7248) - Add transaction proof of work and version in block explorer API.
 - [9815](https://github.com/vegaprotocol/vega/issues/9815) - Introduce API to get fees statistics for a given party.
-
+- [9861](https://github.com/vegaprotocol/vega/issues/9861) - Add `lockedUntilEpoch` to rewards API
 ### 🐛 Fixes
 
 - [8417](https://github.com/vegaprotocol/vega/issues/8417) - Fix normalisation of Ethereum calls that return structures
@@ -326,6 +326,7 @@
 - [9762](https://github.com/vegaprotocol/vega/issues/9762) - Referral fees API not filtering by party correctly.
 - [9775](https://github.com/vegaprotocol/vega/issues/9775) - Do not pay discount if set is not eligible
 - [9788](https://github.com/vegaprotocol/vega/issues/9788) - Fix transfer account validation.
+- [9859](https://github.com/vegaprotocol/vega/issues/9859) - Cache nonces in `pow` engine to prevent reuse.
 - [9544](https://github.com/vegaprotocol/vega/issues/9544) - Fix race in visor restart logic.
 - [9797](https://github.com/vegaprotocol/vega/issues/9797) - Default pagination limits are not always correctly set.
 - [9813](https://github.com/vegaprotocol/vega/issues/9813) - Add validation for team scope vs individual scope
@@ -340,6 +341,7 @@
 - [9855](https://github.com/vegaprotocol/vega/issues/9855) - Use max governance transfer amount as a quantum multiplier
 - [9853](https://github.com/vegaprotocol/vega/issues/9853) - Data node crashing due to duplicate key violation in paid liquidity fees table.
 - [9843](https://github.com/vegaprotocol/vega/issues/9843) - Migration script `0039` down migration drops incorrect column.
+- [9858](https://github.com/vegaprotocol/vega/issues/9858) - Fix missing where statement in list referral set referees.
 
 ## 0.72.1
 
