@@ -254,8 +254,12 @@ func (e *Engine) processGovernanceTransfer(
 
 			resps = append(resps, tresps...)
 		}
-		e.broker.Send(events.NewLedgerMovements(ctx, resps))
-		return transferAmount, nil
+		if len(resps) > 0 {
+			e.broker.Send(events.NewLedgerMovements(ctx, resps))
+			return transferAmount, nil
+		}
+
+		return num.UintZero(), nil
 	}
 
 	fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, toMarket, transferAmount)
