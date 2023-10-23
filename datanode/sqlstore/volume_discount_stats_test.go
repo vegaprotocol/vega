@@ -159,6 +159,33 @@ func TestVolumeDiscountStats_GetVolumeDiscountStats(t *testing.T) {
 		require.NotNil(t, got)
 		assert.Equal(t, statsAtEpoch, got)
 	})
+	t.Run("Pagination for latest epoch", func(t *testing.T) {
+		lastStats := flattenVolumeDiscountStatsForEpoch(flattenStats, lastEpoch)
+
+		first := int32(2)
+		after := lastStats[2].Cursor().Encode()
+		cursor, _ := entities.NewCursorPagination(&first, &after, nil, nil, false)
+
+		want := lastStats[3:5]
+		got, _, err := vds.Stats(ctx, nil, nil, cursor)
+		require.NoError(t, err)
+		require.NotNil(t, got)
+		assert.Equal(t, want, got)
+	})
+	t.Run("Pagination for latest epoch with party ID", func(t *testing.T) {
+		partyID := flattenStats[0].PartyID
+		lastStats := flattenVolumeDiscountStatsForParty(flattenStats, partyID)
+
+		first := int32(2)
+		after := lastStats[2].Cursor().Encode()
+		cursor, _ := entities.NewCursorPagination(&first, &after, nil, nil, false)
+
+		want := lastStats[3:5]
+		got, _, err := vds.Stats(ctx, nil, &partyID, cursor)
+		require.NoError(t, err)
+		require.NotNil(t, got)
+		assert.Equal(t, want, got)
+	})
 }
 
 func flattenVolumeDiscountStatsForEpoch(flattenStats []entities.FlattenVolumeDiscountStats, epoch uint64) []entities.FlattenVolumeDiscountStats {

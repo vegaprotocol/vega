@@ -61,6 +61,8 @@ type ColumnOrdering struct {
 	// Prefix is the prefix to add to the column name in order to resolve duplicate
 	// column names that might be in the query
 	Prefix string
+	// If the column originates from parsing a JSON field, how it should be referenced in the query.
+	Ref string
 }
 
 func NewColumnOrdering(name string, sorting Sorting) ColumnOrdering {
@@ -89,10 +91,10 @@ func (t *TableOrdering) Reversed() TableOrdering {
 	reversed := make([]ColumnOrdering, len(*t))
 	for i, column := range *t {
 		if column.Sorting == DESC {
-			reversed[i] = ColumnOrdering{Name: column.Name, Sorting: ASC}
+			reversed[i] = ColumnOrdering{Name: column.Name, Sorting: ASC, Ref: column.Ref}
 		}
 		if column.Sorting == ASC {
-			reversed[i] = ColumnOrdering{Name: column.Name, Sorting: DESC}
+			reversed[i] = ColumnOrdering{Name: column.Name, Sorting: DESC, Ref: column.Ref}
 		}
 	}
 	return reversed
@@ -147,14 +149,18 @@ func CursorPredicate(args []interface{}, cursor interface{}, ordering TableOrder
 		}
 
 		bindVar := nextBindVar(&args, value)
-		inequalityPredicate := fmt.Sprintf("%s%s %s %s", prefix, column.Name, operator, bindVar)
+		ref := column.Name
+		if len(column.Ref) > 0 {
+			ref = column.Ref
+		}
+		inequalityPredicate := fmt.Sprintf("%s%s %s %s", prefix, ref, operator, bindVar)
 
 		colPredicates := append(equalPredicates, inequalityPredicate)
 		colPredicateString := strings.Join(colPredicates, " AND ")
 		colPredicateString = fmt.Sprintf("(%s)", colPredicateString)
 		cursorPredicates = append(cursorPredicates, colPredicateString)
 
-		equalityPredicate := fmt.Sprintf("%s%s = %s", prefix, column.Name, bindVar)
+		equalityPredicate := fmt.Sprintf("%s%s = %s", prefix, ref, bindVar)
 		equalPredicates = append(equalPredicates, equalityPredicate)
 	}
 
