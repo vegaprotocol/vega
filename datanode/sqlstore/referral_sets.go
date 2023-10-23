@@ -46,7 +46,7 @@ var (
 	referralSetStatsOrdering = TableOrdering{
 		ColumnOrdering{Name: "at_epoch", Sorting: DESC},
 		ColumnOrdering{Name: "set_id", Sorting: ASC},
-		ColumnOrdering{Name: "party_id", Sorting: ASC},
+		ColumnOrdering{Name: "party_id", Sorting: ASC, Ref: "referee_stats->>'party_id'"},
 	}
 
 	paidLiquidityFeesStatsCursorOrdering = TableOrdering{
