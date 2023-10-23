@@ -23,6 +23,7 @@ import (
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestApplyReferralCode(t *testing.T) {
@@ -31,11 +32,7 @@ func TestApplyReferralCode(t *testing.T) {
 }
 
 func testJoiningTeamSucceeds(t *testing.T) {
-	err := checkApplyReferralCode(t, &commandspb.ApplyReferralCode{
-		Id: vgtest.RandomVegaID(),
-	})
-
-	assert.Empty(t, err)
+	require.Contains(t, checkApplyReferralCode(t, &commandspb.ApplyReferralCode{Id: vgtest.RandomVegaID()}).Get("join_team"), commands.ErrIsNotSupported)
 }
 
 func testApplyReferralCodeWithoutTeamIDFails(t *testing.T) {

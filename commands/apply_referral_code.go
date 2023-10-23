@@ -32,5 +32,8 @@ func checkApplyReferralCode(cmd *commandspb.ApplyReferralCode) Errors {
 		errs.AddForProperty("join_team.team_id", ErrShouldBeAValidVegaID)
 	}
 
+	// temporarily disable joining a team
+	errs.AddForProperty("join_team", ErrIsNotSupported)
+
 	return errs
 }

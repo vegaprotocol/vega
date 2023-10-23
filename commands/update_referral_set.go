@@ -53,6 +53,9 @@ func checkUpdateReferralSet(cmd *commandspb.UpdateReferralSet) Errors {
 		if cmd.Team.TeamUrl != nil && len(*cmd.Team.TeamUrl) > 200 {
 			errs.AddForProperty("update_referral_set.team.team_url", ErrMustBeLessThan200Chars)
 		}
+
+		// temporarily disable team support
+		errs.AddForProperty("update_referral_set.team", ErrIsNotSupported)
 	}
 
 	return errs
