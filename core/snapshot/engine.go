@@ -644,8 +644,10 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 			delete(e.treeKeysToProviders, treeKeyStr)
 			delete(e.treeKeysToProviderKeys, treeKeyStr)
 
-			if !e.snapshotTree.RemoveKey(treeKey) {
-				e.log.Panic("failed to remove node from AVL tree", logging.String("key", treeKeyStr))
+			if removed, err := e.snapshotTree.RemoveKey(treeKey); err != nil {
+				e.log.Panic("failed to remove node from AVL tree", logging.String("key", treeKeyStr), logging.Error(err), logging.Bool("removed", removed))
+			} else if !removed {
+				e.log.Error("trying to remove a non-existent key from snapshot", logging.String("key", treeKeyStr))
 			}
 
 			e.namespacesToTreeKeys[ns] = append(e.namespacesToTreeKeys[ns][:i], e.namespacesToTreeKeys[ns][i+1:]...)
