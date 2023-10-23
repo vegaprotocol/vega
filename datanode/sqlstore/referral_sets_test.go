@@ -637,6 +637,21 @@ func TestReferralSets_GetReferralSetStats(t *testing.T) {
 		assert.Equal(t, statsAtEpoch, got)
 	})
 
+	t.Run("Should return the stats for the specified party for epoch with pagination", func(t *testing.T) {
+		partyIDStr := flattenStats[rand.Intn(len(flattenStats))].PartyID
+		partyID := entities.PartyID(partyIDStr)
+		statsAtEpoch := flattenReferralSetStatsForParty(flattenStats, partyIDStr)
+
+		first := int32(3)
+		after := statsAtEpoch[1].Cursor().Encode()
+		cursor, _ := entities.NewCursorPagination(&first, &after, nil, nil, false)
+
+		got, _, err := rs.GetReferralSetStats(ctx, &setID, nil, &partyID, cursor)
+		require.NoError(t, err)
+		require.NotNil(t, got)
+		assert.Equal(t, statsAtEpoch[2:5], got)
+	})
+
 	t.Run("Should return the stats for the specified party and epoch", func(t *testing.T) {
 		randomStats := flattenStats[rand.Intn(len(flattenStats))]
 		partyIDStr := randomStats.PartyID
