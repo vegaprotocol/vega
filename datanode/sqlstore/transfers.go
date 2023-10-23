@@ -110,7 +110,7 @@ func (t *Transfers) UpsertFees(ctx context.Context, tf *entities.TransferFees) e
 				amount,
 				epoch,
 				vega_time
-			) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING;` // conflicts shouldn't happen, so maybe we should error here?
+			) VALUES ($1, $2, $3, $4);` // conflicts shouldn't happen, so maybe we should error here?
 	if _, err := t.Connection.Exec(ctx, query, tf.TransferID, tf.Amount, tf.Epoch, tf.VegaTime); err != nil {
 		return err
 	}
