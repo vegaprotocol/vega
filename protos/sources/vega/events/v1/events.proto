@@ -445,6 +445,17 @@ message MarketEvent {
   string payload = 2;
 }
 
+message TransferFees {
+  // the transfer that triggered the colleciton of fees.
+  string transfer_id = 1;
+  // the asset in which the fee was paid.
+  string asset = 2;
+  // the amount of fees transferred.
+  string amount = 3;
+  // the party paying the fees.
+  string party_id = 4;
+}
+
 message TransactionResult {
   // Unique party ID for the related party
   string party_id = 1;
@@ -1210,6 +1221,9 @@ enum BusEventType {
   // Event used to report the summary of vesting and locked balances at the end of the epoch
   BUS_EVENT_TYPE_VESTING_SUMMARY = 82;
 
+  // Event used to link ledger entries to the transfer that triggered the fees being collected.
+  BUS_EVENT_TYPE_TRANSFER_FEES_PAID = 83;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1383,6 +1397,8 @@ message BusEvent {
     PaidLiquidityFeesStats paid_liquidity_fees_stats = 179;
     // Event notifying of an update to the vesting and locked balances.
     VestingBalancesSummary vesting_balances_summary = 180;
+    // Event notifying of fees being transferred related to a transfer.
+    TransferFees transfer_fees = 181;
 
     // Market tick events
     MarketEvent market = 1001;
