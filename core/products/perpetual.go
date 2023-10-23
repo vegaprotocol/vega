@@ -17,7 +17,6 @@ package products
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/datasource"
@@ -497,18 +496,13 @@ func (p *Perpetual) receiveDataPoint(ctx context.Context, data dscommon.Data) er
 		)
 		return err
 	}
-	// add price point with "eth-block-time" as time
-	pTime, err := strconv.ParseInt(data.MetaData["eth-block-time"], 10, 64)
+	pTime, err := data.GetDataTimestampNano()
 	if err != nil {
-		p.log.Error("Could not parse the eth block time",
-			logging.String("eth-block-time", data.MetaData["eth-block-time"]),
+		p.log.Error("No timestamp associated with data point",
 			logging.Error(err),
 		)
 		return err
 	}
-
-	// eth block time is seconds, make it nanoseconds
-	pTime = time.Unix(pTime, 0).UnixNano()
 
 	// now add the price
 	p.addExternalDataPoint(ctx, assetPrice, pTime)

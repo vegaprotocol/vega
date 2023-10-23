@@ -348,7 +348,7 @@
 - [9858](https://github.com/vegaprotocol/vega/issues/9858) - Fix missing where statement in list referral set referees.
 - [9868](https://github.com/vegaprotocol/vega/issues/9868) - Avoid empty ledger entries from governance transfers for metric when there is no activity.
 - [9871](https://github.com/vegaprotocol/vega/issues/9871) - Fix panic on snapshot after market termination following protocol upgrade. 
-
+- [8769](https://github.com/vegaprotocol/vega/issues/8769) - Support timestamp data from different oracle types.
 
 ## 0.72.1
 

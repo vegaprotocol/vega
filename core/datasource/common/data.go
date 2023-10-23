@@ -19,6 +19,8 @@ package common
 
 import (
 	"fmt"
+	"strconv"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
@@ -93,6 +95,35 @@ func (d Data) GetTimestamp(propertyName string) (int64, error) {
 		return 0, errPropertyNotFound(propertyName)
 	}
 	return ToTimestamp(value)
+}
+
+// GetDataTimestampNano gets the eth block time (or vega time) associated with the oracle data.
+func (d Data) GetDataTimestampNano() (int64, error) {
+	if ebt, ok := d.MetaData["eth-block-time"]; ok {
+		// add price point with "eth-block-time" as time
+		pt, err := strconv.ParseInt(ebt, 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		return time.Unix(pt, 0).UnixNano(), nil
+	}
+	// open oracle timestamp
+	if oot, ok := d.MetaData["open-oracle-timestamp"]; ok {
+		pt, err := strconv.ParseInt(oot, 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		return time.Unix(pt, 0).UnixNano(), nil
+	}
+	// fall back to vega time
+	if vt, ok := d.MetaData["vega-time"]; ok {
+		t, err := strconv.ParseInt(vt, 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		return time.Unix(t, 0).UnixNano(), nil
+	}
+	return 0, fmt.Errorf("data has no timestamp data")
 }
 
 // FromInternalOracle returns true if the oracle data has been emitted by an

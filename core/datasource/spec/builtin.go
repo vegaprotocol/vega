@@ -18,6 +18,7 @@ package spec
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/datasource/common"
@@ -44,12 +45,15 @@ func NewBuiltin(engine *Engine, ts TimeService) *Builtin {
 	return builtinOracle
 }
 
-func (b *Builtin) OnTick(ctx context.Context, _ time.Time) {
+func (b *Builtin) OnTick(ctx context.Context, t time.Time) {
 	data := common.Data{
 		Signers: nil,
 		Data: map[string]string{
-			BuiltinTimestamp:   fmt.Sprintf("%d", b.engine.timeService.GetTimeNow().Unix()),
-			BuiltinTimeTrigger: fmt.Sprintf("%d", b.engine.timeService.GetTimeNow().Unix()),
+			BuiltinTimestamp:   fmt.Sprintf("%d", t.Unix()),
+			BuiltinTimeTrigger: fmt.Sprintf("%d", t.Unix()),
+		},
+		MetaData: map[string]string{
+			"vega-time": strconv.FormatInt(t.Unix(), 10),
 		},
 	}
 
