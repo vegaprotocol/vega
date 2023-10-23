@@ -344,6 +344,7 @@
 - [9853](https://github.com/vegaprotocol/vega/issues/9853) - Data node crashing due to duplicate key violation in paid liquidity fees table.
 - [9843](https://github.com/vegaprotocol/vega/issues/9843) - Migration script `0039` down migration drops incorrect column.
 - [9858](https://github.com/vegaprotocol/vega/issues/9858) - Fix missing where statement in list referral set referees.
+- [9868](https://github.com/vegaprotocol/vega/issues/9868) - Avoid empty ledger entries from governance transfers for metric when there is no activity.
 
 ## 0.72.1
 
