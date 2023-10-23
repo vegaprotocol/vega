@@ -187,13 +187,14 @@ func (t Team) Cursor() *Cursor {
 
 func (t Team) ToProto() *v2.Team {
 	return &v2.Team{
-		TeamId:    string(t.ID),
-		Referrer:  string(t.Referrer),
-		Name:      t.Name,
-		TeamUrl:   t.TeamURL,
-		AvatarUrl: t.AvatarURL,
-		CreatedAt: t.CreatedAt.Unix(),
-		Closed:    t.Closed,
+		TeamId:         string(t.ID),
+		Referrer:       string(t.Referrer),
+		Name:           t.Name,
+		TeamUrl:        t.TeamURL,
+		AvatarUrl:      t.AvatarURL,
+		CreatedAt:      t.CreatedAt.UnixNano(),
+		Closed:         t.Closed,
+		CreatedAtEpoch: t.CreatedAtEpoch,
 	}
 }
 
@@ -215,7 +216,7 @@ func (t TeamMember) ToProto() *v2.TeamReferee {
 	return &v2.TeamReferee{
 		TeamId:        string(t.TeamID),
 		Referee:       string(t.PartyID),
-		JoinedAt:      t.JoinedAt.Unix(),
+		JoinedAt:      t.JoinedAt.UnixNano(),
 		JoinedAtEpoch: t.JoinedAtEpoch,
 	}
 }
