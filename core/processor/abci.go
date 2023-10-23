@@ -34,7 +34,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/referral"
 	"code.vegaprotocol.io/vega/core/snapshot"
-	"code.vegaprotocol.io/vega/core/teams"
 	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -2297,12 +2296,13 @@ func (app *App) ApplyReferralCode(ctx context.Context, tx abci.Tx) error {
 		return fmt.Errorf("could not apply the referral code: %w", err)
 	}
 
-	teamID := types.TeamID(params.Id)
-	err = app.teamsEngine.JoinTeam(ctx, partyID, params)
-	// This is ok as well, as not all referral sets are teams as well.
-	if err != nil && err.Error() != teams.ErrNoTeamMatchesID(teamID).Error() {
-		return fmt.Errorf("couldn't join team: %w", err)
-	}
+	// temporarily disable team support
+	// teamID := types.TeamID(params.Id)
+	// err = app.teamsEngine.JoinTeam(ctx, partyID, params)
+	// // This is ok as well, as not all referral sets are teams as well.
+	// if err != nil && err.Error() != teams.ErrNoTeamMatchesID(teamID).Error() {
+	// 	return fmt.Errorf("couldn't join team: %w", err)
+	// }
 
 	return nil
 }
