@@ -169,6 +169,7 @@
 - [9815](https://github.com/vegaprotocol/vega/issues/9815) - Introduce API to get fees statistics for a given party.
 - [9861](https://github.com/vegaprotocol/vega/issues/9861) - Add `lockedUntilEpoch` to rewards API
 - [9846](https://github.com/vegaprotocol/vega/issues/9846) - Add API for vesting and locked balances.
+- [9876](https://github.com/vegaprotocol/vega/issues/9876) - Disable teams support in transfers and referral sets. 
 
 ### 🐛 Fixes
 
