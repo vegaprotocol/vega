@@ -2400,11 +2400,13 @@ func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 		}
 	}
 	if err != nil {
+		t.log.Error("Something went wrong listing transfers", logging.Error(err))
 		return nil, formatE(ErrTransferServiceGet, errors.Wrapf(err, "pubkey: %s", ptr.UnBox(req.Pubkey)))
 	}
 
 	edges, err := makeEdges[*v2.TransferEdge](transfers, ctx, t.accountService)
 	if err != nil {
+		t.log.Error("Something went wrong making transfer edges", logging.Error(err))
 		return nil, formatE(err)
 	}
 

@@ -33,7 +33,6 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -76,7 +75,7 @@ type Transfer struct {
 type TransferFees struct {
 	TransferID TransferID
 	Epoch      uint64
-	Amount     num.Decimal
+	Amount     decimal.Decimal
 	VegaTime   time.Time
 }
 
@@ -149,7 +148,7 @@ func (f *TransferFees) ToProto() *eventspb.TransferFees {
 }
 
 func TransferFeesFromProto(f *eventspb.TransferFees, vegaTime time.Time) *TransferFees {
-	amt, _ := num.DecimalFromString(f.Amount)
+	amt, _ := decimal.NewFromString(f.Amount)
 	return &TransferFees{
 		TransferID: TransferID(f.TransferId),
 		Epoch:      f.Epoch,
@@ -272,34 +271,18 @@ func (t Transfer) Cursor() *Cursor {
 }
 
 func (d TransferDetails) ToProtoEdge(input ...any) (*v2.TransferEdge, error) {
-	if len(input) != 2 {
-		return nil, fmt.Errorf("expected account source and context argument")
-	}
-
-	ctx, ok := input[0].(context.Context)
-	if !ok {
-		return nil, fmt.Errorf("first argument must be a context.Context, got: %v", input[0])
-	}
-
-	as, ok := input[1].(AccountSource)
-	if !ok {
-		return nil, fmt.Errorf("second argument must be an AccountSource, got: %v", input[1])
-	}
-	tfProto, err := d.Transfer.ToProto(ctx, as)
+	te, err := d.Transfer.ToProtoEdge(input...)
 	if err != nil {
 		return nil, err
 	}
-	fees := make([]*eventspb.TransferFees, 0, len(d.Fees))
-	for _, f := range d.Fees {
-		fees = append(fees, f.ToProto())
+	if len(d.Fees) == 0 {
+		return te, nil
 	}
-	return &v2.TransferEdge{
-		Node: &v2.TransferNode{
-			Transfer: tfProto,
-			Fees:     fees,
-		},
-		Cursor: d.Transfer.Cursor().Encode(),
-	}, nil
+	te.Node.Fees = make([]*eventspb.TransferFees, 0, len(d.Fees))
+	for _, f := range d.Fees {
+		te.Node.Fees = append(te.Node.Fees, f.ToProto())
+	}
+	return te, nil
 }
 
 func (t Transfer) ToProtoEdge(input ...any) (*v2.TransferEdge, error) {
