@@ -108,7 +108,7 @@ func (t *Transfers) UpsertFees(ctx context.Context, tf *entities.TransferFees) e
 	query := `INSERT INTO  transfer_fees(
 				transfer_id,
 				amount,
-				epoch,
+				epoch_seq,
 				vega_time
 			) VALUES ($1, $2, $3, $4);` // conflicts shouldn't happen, so maybe we should error here?
 	if _, err := t.Connection.Exec(ctx, query, tf.TransferID, tf.Amount, tf.Epoch, tf.VegaTime); err != nil {
