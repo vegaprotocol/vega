@@ -25,9 +25,9 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
-	"github.com/tendermint/tendermint/libs/bytes"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
-	tmtypes "github.com/tendermint/tendermint/types"
+	"github.com/cometbft/cometbft/libs/bytes"
+	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
+	tmtypes "github.com/cometbft/cometbft/types"
 )
 
 var ErrClientNotReady = errors.New("tendermint client is not ready")
@@ -53,8 +53,9 @@ type ChainClientImpl interface {
 // Client abstract all communication to the blockchain.
 type Client struct {
 	*Config
-	clt ChainClientImpl
-	mu  sync.RWMutex
+	clt         ChainClientImpl
+	mempoolSize int64
+	mu          sync.RWMutex
 }
 
 // NewClient instantiate a new blockchain client.
@@ -70,10 +71,11 @@ func NewClientWithImpl(clt ChainClientImpl) *Client {
 	}
 }
 
-func (c *Client) Set(clt ChainClientImpl) {
+func (c *Client) Set(clt ChainClientImpl, mempoolSize int64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.clt = clt
+	c.mempoolSize = mempoolSize
 }
 
 func (c *Client) isReady() bool {
@@ -104,7 +106,7 @@ func (c *Client) CheckTransaction(ctx context.Context, tx *commandspb.Transactio
 
 	if _, err := commands.CheckTransaction(tx, chainID); err != nil {
 		return &tmctypes.ResultCheckTx{
-			ResponseCheckTx: NewResponseCheckTxError(AbciTxnDecodingFailure, err),
+			ResponseCheckTx: *NewResponseCheckTxError(AbciTxnDecodingFailure, err),
 		}, nil
 	}
 
@@ -149,7 +151,7 @@ func (c *Client) SubmitTransactionCommit(ctx context.Context, tx *commandspb.Tra
 
 	if _, err := commands.CheckTransaction(tx, chainID); err != nil {
 		return &tmctypes.ResultBroadcastTxCommit{
-			CheckTx: NewResponseCheckTxError(AbciTxnDecodingFailure, err),
+			CheckTx: *NewResponseCheckTxError(AbciTxnDecodingFailure, err),
 		}, nil
 	}
 
@@ -299,6 +301,10 @@ func (c *Client) GenesisValidators() ([]*tmtypes.Validator, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	return c.clt.GenesisValidators(ctx)
+}
+
+func (c *Client) MaxMempoolSize() int64 {
+	return c.mempoolSize
 }
 
 func (c *Client) Validators(height *int64) ([]*tmtypes.Validator, error) {

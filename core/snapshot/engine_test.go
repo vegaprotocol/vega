@@ -33,10 +33,10 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/version"
+	tmtypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
 func TestEngine(t *testing.T) {
@@ -287,7 +287,7 @@ func TestTakingSnapshotSucceeds(t *testing.T) {
 	vegaPaths := paths.New(t.TempDir())
 	log := logging.NewTestLogger()
 	ctx := vegactx.WithChainID(vegactx.WithTraceID(vegactx.WithBlockHeight(context.Background(),
-		int64(testSnapshot.appState.Height)), testSnapshot.appState.Block), testSnapshot.appState.ChainID,
+		testSnapshot.appState.Height), testSnapshot.appState.Block), testSnapshot.appState.ChainID,
 	)
 
 	// Some providers matching the snapshot payloads.

@@ -25,8 +25,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+	tmtypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/iavl"
-	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
 // Tree is a high-level structure that abstract the management of the AVL away

@@ -23,6 +23,7 @@
 
 ### 🛠 Improvements
 
+- [8051](https://github.com/vegaprotocol/vega/issues/8051) - Upgrade to comet `0.38.0`
 - [9484](https://github.com/vegaprotocol/vega/issues/9484) - Remove network parameters that only provide defaults for market liquidity settings.
 - [8718](https://github.com/vegaprotocol/vega/issues/8718) - Emit market data event after setting mark price prior to final settlement.
 - [8590](https://github.com/vegaprotocol/vega/issues/8590) - Improved Ethereum oracle support.

@@ -31,12 +31,12 @@ import (
 	"code.vegaprotocol.io/vega/libs/config"
 	"code.vegaprotocol.io/vega/logging"
 	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
+	tmTypes "github.com/cometbft/cometbft/abci/types"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/cenkalti/backoff"
 	"github.com/jackc/pgx/v4"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	tmTypes "github.com/tendermint/tendermint/abci/types"
 )
 
 var (

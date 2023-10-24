@@ -20,6 +20,16 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/activitystreak"
+	"code.vegaprotocol.io/vega/core/datasource"
+	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
+	"code.vegaprotocol.io/vega/core/datasource/external/ethverifier"
+	"code.vegaprotocol.io/vega/core/referral"
+	"code.vegaprotocol.io/vega/core/teams"
+	"code.vegaprotocol.io/vega/core/vesting"
+	"code.vegaprotocol.io/vega/core/volumediscount"
+
+	"code.vegaprotocol.io/vega/libs/subscribers"
+
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/banking"
 	"code.vegaprotocol.io/vega/core/blockchain"
@@ -31,9 +41,6 @@ import (
 	ethclient "code.vegaprotocol.io/vega/core/client/eth"
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/config"
-	"code.vegaprotocol.io/vega/core/datasource"
-	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
-	"code.vegaprotocol.io/vega/core/datasource/external/ethverifier"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/datasource/spec/adaptors"
 	oracleAdaptors "code.vegaprotocol.io/vega/core/datasource/spec/adaptors"
@@ -53,21 +60,16 @@ import (
 	"code.vegaprotocol.io/vega/core/pow"
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/protocolupgrade"
-	"code.vegaprotocol.io/vega/core/referral"
 	"code.vegaprotocol.io/vega/core/rewards"
 	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/spam"
 	"code.vegaprotocol.io/vega/core/staking"
 	"code.vegaprotocol.io/vega/core/statevar"
 	"code.vegaprotocol.io/vega/core/stats"
-	"code.vegaprotocol.io/vega/core/teams"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/erc20multisig"
 	"code.vegaprotocol.io/vega/core/vegatime"
-	"code.vegaprotocol.io/vega/core/vesting"
-	"code.vegaprotocol.io/vega/core/volumediscount"
-	"code.vegaprotocol.io/vega/libs/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/version"
@@ -378,11 +380,10 @@ func newServices(
 	svcs.snapshotEngine.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
 		svcs.notary, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar,
 		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier, svcs.vesting, svcs.activityStreak, svcs.referralProgram, svcs.volumeDiscount,
-		svcs.teamsEngine)
+		svcs.teamsEngine, svcs.spam)
 
-	svcs.snapshotEngine.AddProviders(svcs.spam)
+	pow := pow.New(svcs.log, svcs.conf.PoW)
 
-	pow := pow.New(svcs.log, svcs.conf.PoW, svcs.timeService)
 	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
 		pow.DisableVerification()
 	}
@@ -408,10 +409,6 @@ func newServices(
 		{
 			Param:   netparams.SpamPoWNumberOfTxPerBlock,
 			Watcher: pow.UpdateSpamPoWNumberOfTxPerBlock,
-		},
-		{
-			Param:   netparams.ValidatorsEpochLength,
-			Watcher: pow.OnEpochDurationChanged,
 		},
 	}
 
@@ -497,10 +494,6 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 	spamWatchers := []netparams.WatchParam{}
 	if svcs.spam != nil {
 		spamWatchers = []netparams.WatchParam{
-			{
-				Param:   netparams.ValidatorsEpochLength,
-				Watcher: svcs.spam.OnEpochDurationChanged,
-			},
 			{
 				Param:   netparams.SpamProtectionMaxVotes,
 				Watcher: svcs.spam.OnMaxVotesChanged,

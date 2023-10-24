@@ -17,7 +17,7 @@ package tree
 
 import (
 	cometbftdb "github.com/cometbft/cometbft-db"
-	tmtypes "github.com/tendermint/tendermint/abci/types"
+	tmtypes "github.com/cometbft/cometbft/abci/types"
 )
 
 type MetadataDatabase interface {
