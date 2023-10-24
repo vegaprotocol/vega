@@ -76,7 +76,7 @@ type Transfer struct {
 type TransferFees struct {
 	TransferID TransferID
 	Epoch      uint64
-	Amount     *num.Uint
+	Amount     num.Decimal
 	VegaTime   time.Time
 }
 
@@ -149,7 +149,7 @@ func (f *TransferFees) ToProto() *eventspb.TransferFees {
 }
 
 func TransferFeesFromProto(f *eventspb.TransferFees, vegaTime time.Time) *TransferFees {
-	amt, _ := num.UintFromString(f.Amount, 10)
+	amt, _ := num.DecimalFromString(f.Amount)
 	return &TransferFees{
 		TransferID: TransferID(f.TransferId),
 		Epoch:      f.Epoch,
