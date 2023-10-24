@@ -13,17 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package api
 
 import (
@@ -137,6 +126,27 @@ type TradingDataServiceV2 struct {
 	paidLiquidityFeesStatsService *service.PaidLiquidityFeesStats
 	partyLockedBalances           *service.PartyLockedBalances
 	partyVestingBalances          *service.PartyVestingBalances
+	vestingStats                  *service.VestingStats
+}
+
+func (t *TradingDataServiceV2) GetPartyVestingStats(
+	ctx context.Context,
+	req *v2.GetPartyVestingStatsRequest,
+) (*v2.GetPartyVestingStatsResponse, error) {
+	if !crypto.IsValidVegaPubKey(req.PartyId) {
+		return nil, formatE(ErrInvalidPartyID)
+	}
+
+	stats, err := t.vestingStats.GetByPartyID(ctx, req.PartyId)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.GetPartyVestingStatsResponse{
+		PartyId:               stats.PartyID.String(),
+		EpochSeq:              stats.AtEpoch,
+		RewardBonusMultiplier: stats.RewardBonusMultiplier.String(),
+	}, nil
 }
 
 func (t *TradingDataServiceV2) GetVestingBalancesSummary(

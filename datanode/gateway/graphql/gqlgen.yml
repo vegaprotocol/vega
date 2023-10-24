@@ -714,3 +714,5 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.PartyLockedBalance
   PartyVestingBalancesSummary:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GetVestingBalancesSummaryResponse
+  PartyVestingStats:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GetPartyVestingStatsResponse

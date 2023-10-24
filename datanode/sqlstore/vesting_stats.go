@@ -19,6 +19,8 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/metrics"
+	"github.com/georgysavva/scany/pgxscan"
 )
 
 type (
@@ -33,7 +35,37 @@ func NewVestingStats(connectionSource *ConnectionSource) *VestingStats {
 	}
 }
 
-func (t *VestingStats) Add(context.Context, *entities.VestingStatsUpdated) error {
-	// TODO Implement the API.
+func (vs *VestingStats) Add(ctx context.Context, stats *entities.VestingStatsUpdated) error {
+	defer metrics.StartSQLQuery("PartyVestingStats", "Add")()
+
+	for _, v := range stats.PartyVestingStats {
+		_, err := vs.Connection.Exec(ctx,
+			`INSERT INTO party_vesting_stats(party_id, at_epoch, reward_bonus_multiplier, vega_time)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (vega_time, party_id) DO NOTHING`,
+			v.PartyID,
+			stats.AtEpoch,
+			v.RewardBonusMultiplier,
+			stats.VegaTime,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+func (vs *VestingStats) GetByPartyID(
+	ctx context.Context, id string,
+) (entities.PartyVestingStats, error) {
+	defer metrics.StartSQLQuery("Parties", "GetByID")()
+
+	pvs := entities.PartyVestingStats{}
+	err := pgxscan.Get(ctx, vs.Connection, &pvs,
+		`SELECT party_id, at_epoch, reward_bonus_multiplier, vega_time
+		 FROM party_vesting_stats_current WHERE party_id=$1`,
+		entities.PartyID(id))
+
+	return pvs, vs.wrapE(err)
 }

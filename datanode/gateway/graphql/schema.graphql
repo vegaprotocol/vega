@@ -2616,6 +2616,19 @@ type Party {
     "An optional asset ID"
     assetId: ID
   ): PartyVestingBalancesSummary!
+
+  "The current statistics about a party's vesting rewards for the last epoch"
+  vestingStats: PartyVestingStats
+}
+
+"""
+Statistics about a party's vesting rewards
+"""
+type PartyVestingStats {
+  "Epoch for which the statistics are valid"
+  epochSeq: Int!
+  "The reward bonus multiplier"
+  rewardBonusMultiplier: String!
 }
 
 """
