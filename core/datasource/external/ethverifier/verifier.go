@@ -297,6 +297,7 @@ func (s *Verifier) OnTick(ctx context.Context, t time.Time) {
 				MetaData: map[string]string{
 					"eth-block-height": strconv.FormatUint(callResult.BlockHeight, 10),
 					"eth-block-time":   strconv.FormatUint(callResult.BlockTime, 10),
+					"vega-time":        strconv.FormatInt(t.Unix(), 10),
 				},
 			})
 		} else {
@@ -306,6 +307,12 @@ func (s *Verifier) OnTick(ctx context.Context, t time.Time) {
 						MatchedSpecIds: []string{callResult.SpecId},
 						BroadcastAt:    t.UnixNano(),
 						Error:          callResult.Error,
+						MetaData: []*datapb.Property{
+							{
+								Name:  "vega-time",
+								Value: strconv.FormatInt(t.Unix(), 10),
+							},
+						},
 					},
 				},
 			}

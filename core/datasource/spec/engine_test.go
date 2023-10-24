@@ -268,6 +268,10 @@ func testOracleEngineBroadcastingMatchingDataSucceeds(t *testing.T) {
 	engine.Subscribe(ctx, btcGreater100.spec, btcGreater100.subscriber.Cb)
 	errB := engine.BroadcastData(context.Background(), dataBTC42.data)
 
+	// ensure vega-time is set
+	dataBTC42.data.MetaData = map[string]string{
+		"vega-time": strconv.FormatInt(currentTime.Unix(), 10),
+	}
 	// then
 	require.NoError(t, errB)
 	assert.Equal(t, &dataBTC42.data, btcEquals42.subscriber.ReceivedData)
@@ -325,6 +329,10 @@ func testOracleEngineUnsubscribingKnownIDSucceeds(t *testing.T) {
 	engine.broker.expectMatchedDataEvent(currentTime, &dataETH42.proto, []string{
 		ethEquals42.spec.OriginalSpec.ID,
 	})
+	// vega-time will be set
+	dataETH42.data.MetaData = map[string]string{
+		"vega-time": strconv.FormatInt(currentTime.Unix(), 10),
+	}
 
 	// when
 	err := engine.BroadcastData(context.Background(), dataETH42.data)
@@ -605,5 +613,11 @@ func (b *testBroker) expectSpecSubscriptionDeactivation(currentTime time.Time, s
 func (b *testBroker) expectMatchedDataEvent(currentTime time.Time, data *vegapb.OracleData, specIDs []string) {
 	data.ExternalData.Data.MatchedSpecIds = specIDs
 	data.ExternalData.Data.BroadcastAt = currentTime.UnixNano()
+	data.ExternalData.Data.MetaData = []*datapb.Property{
+		{
+			Name:  "vega-time",
+			Value: strconv.FormatInt(currentTime.Unix(), 10),
+		},
+	}
 	b.EXPECT().Send(events.NewOracleDataEvent(b.ctx, *data)).Times(1)
 }
