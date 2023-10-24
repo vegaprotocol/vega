@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -129,6 +130,13 @@ func (e *Engine) BroadcastData(ctx context.Context, data common.Data) error {
 			)
 		}
 		return nil
+	}
+	// we have a match, ensure vega-time meta is set.
+	if _, err := data.GetDataTimestampNano(); err != nil {
+		if data.MetaData == nil {
+			data.MetaData = map[string]string{}
+		}
+		data.MetaData["vega-time"] = strconv.FormatInt(e.timeService.GetTimeNow().Unix(), 10)
 	}
 
 	for _, subscriber := range result.subscribers {
