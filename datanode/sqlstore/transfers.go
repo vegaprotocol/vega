@@ -111,7 +111,7 @@ func (t *Transfers) UpsertFees(ctx context.Context, tf *entities.TransferFees) e
 				epoch_seq,
 				vega_time
 			) VALUES ($1, $2, $3, $4) ON CONFLICT (vega_time, transfer_id) DO NOTHING;` // conflicts may occur on checkpoint restore.
-	if _, err := t.Connection.Exec(ctx, query, tf.TransferID, tf.Amount, tf.Epoch, tf.VegaTime); err != nil {
+	if _, err := t.Connection.Exec(ctx, query, tf.TransferID, tf.Amount, tf.EpochSeq, tf.VegaTime); err != nil {
 		return err
 	}
 	return nil
