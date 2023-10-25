@@ -38,7 +38,7 @@ import (
 	"github.com/dustin/go-humanize"
 	icore "github.com/ipfs/boxo/coreiface"
 	"github.com/ipfs/go-cid"
-	files "github.com/ipfs/go-ipfs-files"
+	files "github.com/ipfs/go-libipfs/files"
 	ipfslogging "github.com/ipfs/go-log"
 	"github.com/ipfs/interface-go-ipfs-core/path"
 	"github.com/ipfs/kubo/config"
@@ -752,7 +752,7 @@ func createIpfsNodeConfiguration(log *logging.Logger, identity config.Identity, 
 	cfg.Discovery.MDNS.Enabled = false
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to initiliase ipfs config:%w", err)
+		return nil, fmt.Errorf("failed to initialise ipfs config:%w", err)
 	}
 
 	const ipfsConfigDefaultSwarmPort = "4001"
