@@ -36,6 +36,7 @@ type (
 
 	LockedBalancesStore interface {
 		Add(ctx context.Context, balance entities.PartyLockedBalance) error
+		Prune(ctx context.Context, currentEpoch uint64) error
 	}
 
 	VestingBalancesSummary struct {
@@ -99,5 +100,5 @@ func (v *VestingBalancesSummary) consumeVestingBalancesSummaryEvent(ctx context.
 		}
 	}
 
-	return nil
+	return v.lockedStore.Prune(ctx, evt.EpochSeq)
 }

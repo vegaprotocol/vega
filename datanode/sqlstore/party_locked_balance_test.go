@@ -3,10 +3,12 @@ package sqlstore_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,6 +20,128 @@ func setupPartyLockedBalanceTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Part
 	plbs := sqlstore.NewPartyLockedBalances(connectionSource)
 
 	return bs, plbs
+}
+
+func TestPruneLockedBalance(t *testing.T) {
+	_, plbs := setupPartyLockedBalanceTest(t)
+
+	ctx := tempTransaction(t)
+
+	const (
+		party1 = "bd90685fffad262d60edafbf073c52769b1cf55c3d467a078cda117c3b05b677"
+		asset1 = "493eb5ee83ea22e45dfd29ef495b9292089dcf85ca9979069ede7d486d412d8f"
+		asset2 = "2ed862cde875ce32022fd7f1708c991744c266c616abe9d7bf3c8d7b61d7dec4"
+	)
+
+	now := time.Now().Truncate(time.Millisecond)
+
+	t.Run("insert multiple lock balance, for a party, asset and until epoch", func(t *testing.T) {
+		balances := []entities.PartyLockedBalance{
+			{
+				PartyID:    entities.PartyID(party1),
+				AssetID:    entities.AssetID(asset1),
+				AtEpoch:    10,
+				UntilEpoch: 15,
+				Balance:    num.MustDecimalFromString("100"),
+				VegaTime:   now,
+			},
+			{
+				PartyID:    entities.PartyID(party1),
+				AssetID:    entities.AssetID(asset1),
+				AtEpoch:    10,
+				UntilEpoch: 17,
+				Balance:    num.MustDecimalFromString("200"),
+				VegaTime:   now,
+			},
+			{
+				PartyID:    entities.PartyID(party1),
+				AssetID:    entities.AssetID(asset2),
+				AtEpoch:    10,
+				UntilEpoch: 19,
+				Balance:    num.MustDecimalFromString("100"),
+				VegaTime:   now,
+			},
+		}
+
+		for _, v := range balances {
+			require.NoError(t, plbs.Add(ctx, v))
+		}
+
+		// ensure we can still get them
+
+		entitis, err := plbs.Get(
+			ctx, ptr.From(entities.PartyID(party1)), nil)
+		require.NoError(t, err)
+		require.Len(t, entitis, 3)
+
+		// try prunce, should be no-op
+		err = plbs.Prune(ctx, 10)
+		assert.NoError(t, err)
+
+		// still same stuff in the DB
+		entitis, err = plbs.Get(
+			ctx, ptr.From(entities.PartyID(party1)), nil)
+		require.NoError(t, err)
+		require.Len(t, entitis, 3)
+	})
+
+	now = now.Add(24 * time.Hour).Truncate(time.Millisecond)
+
+	t.Run("insert same locked balance with different at epoch, for a party, asset and until epoch, should still keep 3 balances", func(t *testing.T) {
+		balances := []entities.PartyLockedBalance{
+			{
+				PartyID:    entities.PartyID(party1),
+				AssetID:    entities.AssetID(asset1),
+				AtEpoch:    11,
+				UntilEpoch: 15,
+				Balance:    num.MustDecimalFromString("100"),
+				VegaTime:   now,
+			},
+			{
+				PartyID:    entities.PartyID(party1),
+				AssetID:    entities.AssetID(asset1),
+				AtEpoch:    11,
+				UntilEpoch: 17,
+				Balance:    num.MustDecimalFromString("200"),
+				VegaTime:   now,
+			},
+			{
+				PartyID:    entities.PartyID(party1),
+				AssetID:    entities.AssetID(asset2),
+				AtEpoch:    11,
+				UntilEpoch: 19,
+				Balance:    num.MustDecimalFromString("100"),
+				VegaTime:   now,
+			},
+		}
+
+		for _, v := range balances {
+			require.NoError(t, plbs.Add(ctx, v))
+		}
+
+		// ensure we can still get them
+
+		entitis, err := plbs.Get(
+			ctx, ptr.From(entities.PartyID(party1)), nil)
+		require.NoError(t, err)
+		require.Len(t, entitis, 3)
+
+		// ensure we have the last version
+		for _, v := range entitis {
+			require.Equal(t, 11, int(v.AtEpoch))
+		}
+	})
+
+	t.Run("then try pruning", func(t *testing.T) {
+		// assume we are moving a couple of epoch later, we should have only
+		// 2 locked balances left
+
+		require.NoError(t, plbs.Prune(ctx, 16))
+		entitis, err := plbs.Get(
+			ctx, ptr.From(entities.PartyID(party1)), nil)
+		require.NoError(t, err)
+		require.Len(t, entitis, 2)
+	})
 }
 
 func TestPartyLockedBalance_Add(t *testing.T) {

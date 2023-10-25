@@ -8,7 +8,7 @@ create table if not exists party_locked_balances (
        until_epoch bigint not null,
        balance hugeint not null,
        vega_time timestamp with time zone not null,
-       primary key (vega_time, party_id, asset_id)
+       primary key (vega_time, party_id, asset_id, until_epoch)
 );
 
 select create_hypertable('party_locked_balances', 'vega_time', chunk_time_interval => INTERVAL '1 day');
@@ -20,7 +20,7 @@ create table if not exists party_locked_balances_current (
        until_epoch bigint not null,
        balance hugeint not null,
        vega_time timestamp with time zone not null,
-       primary key (party_id, asset_id)
+       primary key (party_id, asset_id, until_epoch)
 );
 
 create table if not exists party_vesting_balances (
@@ -52,7 +52,7 @@ as $$
    begin
         insert into party_locked_balances_current(party_id, asset_id, at_epoch, until_epoch, balance, vega_time)
         values (new.party_id, new.asset_id, new.at_epoch, new.until_epoch, new.balance, new.vega_time)
-        on conflict(party_id, asset_id)
+        on conflict(party_id, asset_id, until_epoch)
         do update set
            at_epoch = excluded.at_epoch,
            until_epoch = excluded.until_epoch,
