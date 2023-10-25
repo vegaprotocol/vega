@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
@@ -99,6 +100,8 @@ func (e *Engine) processTransfer(
 	fromAcc, toAcc types.AccountType,
 	amount *num.Uint,
 	reference string,
+	transferID string,
+	epoch uint64,
 	// optional oneoff transfer
 	// in case we need to schedule the delivery
 	oneoff *types.OneOffTransfer,
@@ -142,6 +145,7 @@ func (e *Engine) processTransfer(
 	if err != nil {
 		return nil, err
 	}
+	e.broker.Send(events.NewTransferFeesEvent(ctx, transferID, feeTransfer.Amount.Amount, epoch))
 
 	return tresps, nil
 }

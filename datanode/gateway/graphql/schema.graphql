@@ -5607,9 +5607,27 @@ type LiquidityProviderConnection {
   pageInfo: PageInfo
 }
 
+"A transfer fee record"
+type TransferFee {
+  "Transfer ID of the transfer for which the fee was paid"
+  transferId: ID!
+  "The fee amount"
+  amount: String!
+  "The epoch when this fee was paid"
+  epoch: Int!
+}
+
+"A transfer record with the fee payments associated with the transfer"
+type TransferNode {
+  "The transfer record"
+  transfer: Transfer!
+  "The list of fee payments made"
+  fees: [TransferFee]
+}
+
 "Edge type containing the transfer and cursor information returned by a TransferConnection"
 type TransferEdge {
-  node: Transfer!
+  node: TransferNode!
   cursor: String!
 }
 

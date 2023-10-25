@@ -2362,8 +2362,13 @@ func (t *TradingDataServiceV2) GetTransfer(ctx context.Context, req *v2.GetTrans
 	if err != nil {
 		return nil, formatE(err)
 	}
+	fees := make([]*eventspb.TransferFees, 0, len(transfer.Fees))
+	for _, f := range transfer.Fees {
+		fees = append(fees, f.ToProto())
+	}
 	return &v2.GetTransferResponse{
 		Transfer: tp,
+		Fees:     fees,
 	}, nil
 }
 
@@ -2377,7 +2382,7 @@ func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 	}
 
 	var (
-		transfers []entities.Transfer
+		transfers []entities.TransferDetails
 		pageInfo  entities.PageInfo
 	)
 	if req.Pubkey == nil {
@@ -2395,11 +2400,13 @@ func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 		}
 	}
 	if err != nil {
+		t.log.Error("Something went wrong listing transfers", logging.Error(err))
 		return nil, formatE(ErrTransferServiceGet, errors.Wrapf(err, "pubkey: %s", ptr.UnBox(req.Pubkey)))
 	}
 
 	edges, err := makeEdges[*v2.TransferEdge](transfers, ctx, t.accountService)
 	if err != nil {
+		t.log.Error("Something went wrong making transfer edges", logging.Error(err))
 		return nil, formatE(err)
 	}
 

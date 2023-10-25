@@ -1698,10 +1698,17 @@ message ListTransfersResponse {
   TransferConnection transfers = 1;
 }
 
+message TransferNode {
+  // Data relating to a transfer that has been made.
+  vega.events.v1.Transfer transfer = 1;
+  // Fees paid for this transfer.
+  repeated vega.events.v1.TransferFees fees = 2;
+}
+
 // Transfers data with the corresponding cursor.
 message TransferEdge {
   // Data relating to a transfer that has been made.
-  vega.events.v1.Transfer node = 1;
+  TransferNode node = 1;
   // Cursor that can be used to fetch further pages.
   string cursor = 2;
 }
@@ -1724,6 +1731,8 @@ message GetTransferRequest {
 message GetTransferResponse {
   // Transfer requested by ID.
   vega.events.v1.Transfer transfer = 1;
+  // Fees paid for this transfer.
+  repeated vega.events.v1.TransferFees fees = 2;
 }
 
 // -- Network Limits --

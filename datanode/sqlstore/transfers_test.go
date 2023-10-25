@@ -126,7 +126,7 @@ func TestTrasferByID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("f%s", err)
 	}
-	retrievedTransferProto, _ := retrieved.ToProto(ctx, accounts)
+	retrievedTransferProto, _ := retrieved.Transfer.ToProto(ctx, accounts)
 	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
 
 	retrievedByParty, _, err := transfers.GetTransfersToParty(ctx, accountTo.PartyID, entities.CursorPagination{})
@@ -788,14 +788,14 @@ func testTransferPaginationLastBefore(t *testing.T) {
 	}.String()).Encode(), pageInfo.EndCursor)
 }
 
-func addTransfers(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, transferStore *sqlstore.Transfers) []entities.Transfer {
+func addTransfers(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, transferStore *sqlstore.Transfers) []entities.TransferDetails {
 	t.Helper()
 	vegaTime := time.Now().Truncate(time.Microsecond)
 	block := addTestBlockForTime(t, ctx, bs, vegaTime)
 	accounts := sqlstore.NewAccounts(connectionSource)
 	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
 
-	transfers := make([]entities.Transfer, 0, 10)
+	transfers := make([]entities.TransferDetails, 0, 10)
 	for i := 0; i < 10; i++ {
 		vegaTime = vegaTime.Add(time.Second)
 		addTestBlockForTime(t, ctx, bs, vegaTime)
@@ -820,7 +820,7 @@ func addTransfers(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, transf
 
 		err := transferStore.Upsert(ctx, &transfer)
 		require.NoError(t, err)
-		transfers = append(transfers, transfer)
+		transfers = append(transfers, entities.TransferDetails{Transfer: transfer})
 	}
 
 	return transfers

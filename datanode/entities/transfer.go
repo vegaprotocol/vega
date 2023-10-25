@@ -48,6 +48,11 @@ type _Transfer struct{}
 
 type TransferID = ID[_Transfer]
 
+type TransferDetails struct {
+	Transfer
+	Fees []*TransferFees
+}
+
 type Transfer struct {
 	ID               TransferID
 	TxHash           TxHash
@@ -65,6 +70,13 @@ type Transfer struct {
 	Factor           *decimal.Decimal
 	DispatchStrategy *vega.DispatchStrategy
 	Reason           *string
+}
+
+type TransferFees struct {
+	TransferID TransferID
+	EpochSeq   uint64
+	Amount     decimal.Decimal
+	VegaTime   time.Time
 }
 
 func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*eventspb.Transfer, error) {
@@ -125,6 +137,24 @@ func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*e
 	}
 
 	return &proto, nil
+}
+
+func (f *TransferFees) ToProto() *eventspb.TransferFees {
+	return &eventspb.TransferFees{
+		TransferId: f.TransferID.String(),
+		Amount:     f.Amount.String(),
+		Epoch:      f.EpochSeq,
+	}
+}
+
+func TransferFeesFromProto(f *eventspb.TransferFees, vegaTime time.Time) *TransferFees {
+	amt, _ := decimal.NewFromString(f.Amount)
+	return &TransferFees{
+		TransferID: TransferID(f.TransferId),
+		EpochSeq:   f.Epoch,
+		Amount:     amt,
+		VegaTime:   vegaTime,
+	}
 }
 
 func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash, vegaTime time.Time, accountSource AccountSource) (*Transfer, error) {
@@ -240,6 +270,21 @@ func (t Transfer) Cursor() *Cursor {
 	return NewCursor(wc.String())
 }
 
+func (d TransferDetails) ToProtoEdge(input ...any) (*v2.TransferEdge, error) {
+	te, err := d.Transfer.ToProtoEdge(input...)
+	if err != nil {
+		return nil, err
+	}
+	if len(d.Fees) == 0 {
+		return te, nil
+	}
+	te.Node.Fees = make([]*eventspb.TransferFees, 0, len(d.Fees))
+	for _, f := range d.Fees {
+		te.Node.Fees = append(te.Node.Fees, f.ToProto())
+	}
+	return te, nil
+}
+
 func (t Transfer) ToProtoEdge(input ...any) (*v2.TransferEdge, error) {
 	if len(input) != 2 {
 		return nil, fmt.Errorf("expected account source and context argument")
@@ -260,7 +305,9 @@ func (t Transfer) ToProtoEdge(input ...any) (*v2.TransferEdge, error) {
 		return nil, err
 	}
 	return &v2.TransferEdge{
-		Node:   transferProto,
+		Node: &v2.TransferNode{
+			Transfer: transferProto,
+		},
 		Cursor: t.Cursor().Encode(),
 	}, nil
 }

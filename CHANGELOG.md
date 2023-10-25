@@ -170,6 +170,7 @@
 - [9861](https://github.com/vegaprotocol/vega/issues/9861) - Add `lockedUntilEpoch` to rewards API
 - [9846](https://github.com/vegaprotocol/vega/issues/9846) - Add API for vesting and locked balances.
 - [9876](https://github.com/vegaprotocol/vega/issues/9876) - Disable teams support in transfers and referral sets. 
+- [8056](https://github.com/vegaprotocol/vega/issues/8056) - Add transfer fees event.
 
 ### 🐛 Fixes
 
