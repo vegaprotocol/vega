@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
 	"golang.org/x/exp/slices"
 )
 
@@ -84,6 +85,7 @@ func (t ReferralSetStatsUpdated) Unwrap() *types.ReferralSetStats {
 	return &types.ReferralSetStats{
 		AtEpoch:                  t.e.AtEpoch,
 		SetID:                    types.ReferralSetID(t.e.SetId),
+		WasEligible:              t.e.WasEligible,
 		ReferralSetRunningVolume: volume,
 		RefereesStats:            stats,
 		RewardFactor:             rewardFactor,
@@ -124,6 +126,7 @@ func NewReferralSetStatsUpdatedEvent(ctx context.Context, update *types.Referral
 		e: eventspb.ReferralSetStatsUpdated{
 			SetId:                                 string(update.SetID),
 			AtEpoch:                               update.AtEpoch,
+			WasEligible:                           update.WasEligible,
 			ReferralSetRunningNotionalTakerVolume: update.ReferralSetRunningVolume.String(),
 			RefereesStats:                         refereesStats,
 			RewardFactor:                          update.RewardFactor.String(),

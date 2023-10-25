@@ -27,6 +27,7 @@ type (
 	ReferralSetStats struct {
 		SetID                                 ReferralSetID
 		AtEpoch                               uint64
+		WasEligible                           bool
 		ReferralSetRunningNotionalTakerVolume string
 		RefereesStats                         []*eventspb.RefereeStats
 		VegaTime                              time.Time
@@ -38,6 +39,7 @@ type (
 	FlattenReferralSetStats struct {
 		SetID                                 ReferralSetID
 		AtEpoch                               uint64
+		WasEligible                           bool
 		ReferralSetRunningNotionalTakerVolume string
 		VegaTime                              time.Time
 		PartyID                               string
@@ -101,6 +103,7 @@ func ReferralSetStatsFromProto(proto *eventspb.ReferralSetStatsUpdated, vegaTime
 	return &ReferralSetStats{
 		SetID:                                 ReferralSetID(proto.SetId),
 		AtEpoch:                               proto.AtEpoch,
+		WasEligible:                           proto.WasEligible,
 		ReferralSetRunningNotionalTakerVolume: proto.ReferralSetRunningNotionalTakerVolume,
 		RefereesStats:                         proto.RefereesStats,
 		VegaTime:                              vegaTime,
