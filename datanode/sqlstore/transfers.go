@@ -296,7 +296,7 @@ func (t *Transfers) getTransfers(ctx context.Context, pagination entities.Cursor
 	return transfers, pageInfo, nil
 }
 
-func (t *Transfers) GetAllRewards(ctx context.Context, pagination entities.CursorPagination) ([]entities.Transfer, entities.PageInfo, error) {
+func (t *Transfers) GetAllRewards(ctx context.Context, pagination entities.CursorPagination) ([]entities.TransferDetails, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("Transfers", "GetAllRewards")()
 	var (
 		pageInfo  entities.PageInfo
@@ -320,11 +320,15 @@ WHERE dispatch_strategy->>'metric' <> '0'`
 		return nil, pageInfo, fmt.Errorf("getting reward transfers: %w", err)
 	}
 	transfers, pageInfo = entities.PageEntities[*v2.TransferEdge](transfers, pagination)
+	details, err := t.getTransferDetails(ctx, transfers)
+	if err != nil || len(details) == 0 {
+		return nil, pageInfo, err
+	}
 
-	return transfers, pageInfo, nil
+	return details, pageInfo, nil
 }
 
-func (t *Transfers) GetRewardTransfersFromParty(ctx context.Context, partyID entities.PartyID, pagination entities.CursorPagination) ([]entities.Transfer,
+func (t *Transfers) GetRewardTransfersFromParty(ctx context.Context, partyID entities.PartyID, pagination entities.CursorPagination) ([]entities.TransferDetails,
 	entities.PageInfo, error,
 ) {
 	defer metrics.StartSQLQuery("Transfers", "GetRewardTransfersFromParty")()
@@ -353,5 +357,9 @@ AND dispatch_strategy->>'metric' <> '0'`
 		return nil, pageInfo, fmt.Errorf("getting party reward transfers: %w", err)
 	}
 	transfers, pageInfo = entities.PageEntities[*v2.TransferEdge](transfers, pagination)
-	return transfers, pageInfo, nil
+	details, err := t.getTransferDetails(ctx, transfers)
+	if err != nil || len(details) == 0 {
+		return nil, pageInfo, err
+	}
+	return details, pageInfo, nil
 }
