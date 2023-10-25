@@ -988,6 +988,8 @@ type Query {
     direction: TransferDirection
     "Pagination information"
     pagination: Pagination
+    "Filter for reward transfers only. Direction must be 'From' if a public key is used"
+    isReward: Boolean
   ): TransferConnection
 
   "Find a transfer using its ID"
@@ -2602,6 +2604,8 @@ type Party {
     direction: TransferDirection
     "Pagination information"
     pagination: Pagination
+    "Filter for reward transfers only. Direction must be 'From'"
+    isReward: Boolean
   ): TransferConnection
 
   "The activity streak"

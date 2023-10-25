@@ -2384,13 +2384,29 @@ func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 	var (
 		transfers []entities.TransferDetails
 		pageInfo  entities.PageInfo
+		isReward  bool
 	)
+	if req.IsReward != nil {
+		isReward = *req.IsReward
+	}
 	if req.Pubkey == nil {
-		transfers, pageInfo, err = t.transfersService.GetAll(ctx, pagination)
+		if !isReward {
+			transfers, pageInfo, err = t.transfersService.GetAll(ctx, pagination)
+		} else {
+			transfers, pageInfo, err = t.transfersService.GetAllRewards(ctx, pagination)
+		}
 	} else {
+		if isReward && req.Direction != v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_FROM {
+			err = errors.Errorf("invalid transfer direction for reward transfers: %v", req.Direction)
+			return nil, formatE(ErrTransferServiceGet, errors.Wrapf(err, "pubkey: %s", ptr.UnBox(req.Pubkey)))
+		}
 		switch req.Direction {
 		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_FROM:
-			transfers, pageInfo, err = t.transfersService.GetTransfersFromParty(ctx, entities.PartyID(*req.Pubkey), pagination)
+			if isReward {
+				transfers, pageInfo, err = t.transfersService.GetRewardTransfersFromParty(ctx, entities.PartyID(*req.Pubkey), pagination)
+			} else {
+				transfers, pageInfo, err = t.transfersService.GetTransfersFromParty(ctx, entities.PartyID(*req.Pubkey), pagination)
+			}
 		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO:
 			transfers, pageInfo, err = t.transfersService.GetTransfersToParty(ctx, entities.PartyID(*req.Pubkey), pagination)
 		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO_OR_FROM:

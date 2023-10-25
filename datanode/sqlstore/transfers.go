@@ -295,3 +295,71 @@ func (t *Transfers) getTransfers(ctx context.Context, pagination entities.Cursor
 
 	return transfers, pageInfo, nil
 }
+
+func (t *Transfers) GetAllRewards(ctx context.Context, pagination entities.CursorPagination) ([]entities.TransferDetails, entities.PageInfo, error) {
+	defer metrics.StartSQLQuery("Transfers", "GetAllRewards")()
+	var (
+		pageInfo  entities.PageInfo
+		err       error
+		transfers []entities.Transfer
+	)
+	query := `WITH recurring_transfers AS (
+	SELECT *
+	FROM transfers_current
+	WHERE jsonb_typeof(dispatch_strategy) != 'null' AND transfer_type IN ($1, $2)
+)
+SELECT *
+FROM recurring_transfers
+WHERE dispatch_strategy->>'metric' <> '0'`
+	params := []any{entities.Recurring, entities.GovernanceRecurring}
+	query, params, err = PaginateQuery[entities.TransferCursor](query, params, transfersOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
+	}
+	if err = pgxscan.Select(ctx, t.Connection, &transfers, query, params...); err != nil {
+		return nil, pageInfo, fmt.Errorf("getting reward transfers: %w", err)
+	}
+	transfers, pageInfo = entities.PageEntities[*v2.TransferEdge](transfers, pagination)
+	details, err := t.getTransferDetails(ctx, transfers)
+	if err != nil || len(details) == 0 {
+		return nil, pageInfo, err
+	}
+
+	return details, pageInfo, nil
+}
+
+func (t *Transfers) GetRewardTransfersFromParty(ctx context.Context, partyID entities.PartyID, pagination entities.CursorPagination) ([]entities.TransferDetails,
+	entities.PageInfo, error,
+) {
+	defer metrics.StartSQLQuery("Transfers", "GetRewardTransfersFromParty")()
+	var (
+		pageInfo  entities.PageInfo
+		err       error
+		transfers []entities.Transfer
+	)
+	query := `WITH recurring_transfers AS (
+	SELECT *
+	FROM transfers_current
+	WHERE jsonb_typeof(dispatch_strategy) != 'null' AND transfer_type IN ($1, $2)
+)
+SELECT *
+FROM recurring_transfers
+WHERE from_account_id IN (SELECT id FROM accounts WHERE accounts.party_id = $3)
+AND dispatch_strategy->>'metric' <> '0'`
+	params := []any{entities.Recurring, entities.GovernanceRecurring, partyID}
+
+	query, params, err = PaginateQuery[entities.TransferCursor](query, params, transfersOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
+	}
+
+	if err = pgxscan.Select(ctx, t.Connection, &transfers, query, params...); err != nil {
+		return nil, pageInfo, fmt.Errorf("getting party reward transfers: %w", err)
+	}
+	transfers, pageInfo = entities.PageEntities[*v2.TransferEdge](transfers, pagination)
+	details, err := t.getTransferDetails(ctx, transfers)
+	if err != nil || len(details) == 0 {
+		return nil, pageInfo, err
+	}
+	return details, pageInfo, nil
+}

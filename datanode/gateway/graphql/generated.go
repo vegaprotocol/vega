@@ -1575,7 +1575,7 @@ type ComplexityRoot struct {
 		RewardsConnection             func(childComplexity int, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) int
 		StakingSummary                func(childComplexity int, pagination *v2.Pagination) int
 		TradesConnection              func(childComplexity int, marketID *string, dataRange *v2.DateRange, pagination *v2.Pagination) int
-		TransfersConnection           func(childComplexity int, direction *TransferDirection, pagination *v2.Pagination) int
+		TransfersConnection           func(childComplexity int, direction *TransferDirection, pagination *v2.Pagination, isReward *bool) int
 		VestingBalancesSummary        func(childComplexity int, assetID *string) int
 		VotesConnection               func(childComplexity int, pagination *v2.Pagination) int
 		WithdrawalsConnection         func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
@@ -1926,7 +1926,7 @@ type ComplexityRoot struct {
 		Teams                              func(childComplexity int, teamID *string, partyID *string, pagination *v2.Pagination) int
 		Trades                             func(childComplexity int, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) int
 		Transfer                           func(childComplexity int, id string) int
-		TransfersConnection                func(childComplexity int, partyID *string, direction *TransferDirection, pagination *v2.Pagination) int
+		TransfersConnection                func(childComplexity int, partyID *string, direction *TransferDirection, pagination *v2.Pagination, isReward *bool) int
 		VolumeDiscountStats                func(childComplexity int, epoch *int, partyID *string, pagination *v2.Pagination) int
 		Withdrawal                         func(childComplexity int, id string) int
 		Withdrawals                        func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
@@ -3034,7 +3034,7 @@ type PartyResolver interface {
 	StakingSummary(ctx context.Context, obj *vega.Party, pagination *v2.Pagination) (*StakingSummary, error)
 	RewardsConnection(ctx context.Context, obj *vega.Party, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) (*v2.RewardsConnection, error)
 	RewardSummaries(ctx context.Context, obj *vega.Party, assetID *string) ([]*vega.RewardSummary, error)
-	TransfersConnection(ctx context.Context, obj *vega.Party, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
+	TransfersConnection(ctx context.Context, obj *vega.Party, direction *TransferDirection, pagination *v2.Pagination, isReward *bool) (*v2.TransferConnection, error)
 	ActivityStreak(ctx context.Context, obj *vega.Party, epoch *int) (*v1.PartyActivityStreak, error)
 	VestingBalancesSummary(ctx context.Context, obj *vega.Party, assetID *string) (*v2.GetVestingBalancesSummaryResponse, error)
 }
@@ -3194,7 +3194,7 @@ type QueryResolver interface {
 	TeamReferees(ctx context.Context, teamID string, pagination *v2.Pagination) (*v2.TeamRefereeConnection, error)
 	TeamRefereeHistory(ctx context.Context, referee string, pagination *v2.Pagination) (*v2.TeamRefereeHistoryConnection, error)
 	Trades(ctx context.Context, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) (*v2.TradeConnection, error)
-	TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
+	TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *v2.Pagination, isReward *bool) (*v2.TransferConnection, error)
 	Transfer(ctx context.Context, id string) (*v1.Transfer, error)
 	VolumeDiscountStats(ctx context.Context, epoch *int, partyID *string, pagination *v2.Pagination) (*v2.VolumeDiscountStatsConnection, error)
 	Withdrawal(ctx context.Context, id string) (*vega.Withdrawal, error)
@@ -9481,7 +9481,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.TransfersConnection(childComplexity, args["direction"].(*TransferDirection), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Party.TransfersConnection(childComplexity, args["direction"].(*TransferDirection), args["pagination"].(*v2.Pagination), args["isReward"].(*bool)), true
 
 	case "Party.vestingBalancesSummary":
 		if e.complexity.Party.VestingBalancesSummary == nil {
@@ -11376,7 +11376,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.TransfersConnection(childComplexity, args["partyId"].(*string), args["direction"].(*TransferDirection), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Query.TransfersConnection(childComplexity, args["partyId"].(*string), args["direction"].(*TransferDirection), args["pagination"].(*v2.Pagination), args["isReward"].(*bool)), true
 
 	case "Query.volumeDiscountStats":
 		if e.complexity.Query.VolumeDiscountStats == nil {
@@ -15039,6 +15039,15 @@ func (ec *executionContext) field_Party_transfersConnection_args(ctx context.Con
 		}
 	}
 	args["pagination"] = arg1
+	var arg2 *bool
+	if tmp, ok := rawArgs["isReward"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isReward"))
+		arg2, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["isReward"] = arg2
 	return args, nil
 }
 
@@ -16815,6 +16824,15 @@ func (ec *executionContext) field_Query_transfersConnection_args(ctx context.Con
 		}
 	}
 	args["pagination"] = arg2
+	var arg3 *bool
+	if tmp, ok := rawArgs["isReward"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isReward"))
+		arg3, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["isReward"] = arg3
 	return args, nil
 }
 
@@ -57866,7 +57884,7 @@ func (ec *executionContext) _Party_transfersConnection(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().TransfersConnection(rctx, obj, fc.Args["direction"].(*TransferDirection), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Party().TransfersConnection(rctx, obj, fc.Args["direction"].(*TransferDirection), fc.Args["pagination"].(*v2.Pagination), fc.Args["isReward"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -69643,7 +69661,7 @@ func (ec *executionContext) _Query_transfersConnection(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().TransfersConnection(rctx, fc.Args["partyId"].(*string), fc.Args["direction"].(*TransferDirection), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Query().TransfersConnection(rctx, fc.Args["partyId"].(*string), fc.Args["direction"].(*TransferDirection), fc.Args["pagination"].(*v2.Pagination), fc.Args["isReward"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
