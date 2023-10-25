@@ -92,18 +92,22 @@ Feature: Calculation of average position during closeout trades
       | aux1   | 0      | 0              | 890          |
       | aux2   | 0      | 0              | 0            |
       | lpprov | 0      | 0              | 0            |
+    Given the network moves ahead "1" epochs
     # Expect to see rewards as positions open at the start of the epoch
     Then parties should have the following vesting account balances:
       | party  | asset    | balance |
       | party1 | USD-1-10 | 5000    |
       | aux1   | USD-1-10 | 5000    |
+      | aux2   | USD-1-10 | 0       |
 
     Given the network moves ahead "1" epochs
     # Expect to see no rewards as no positions open at the start of the epoch
     Then parties should have the following vesting account balances:
       | party  | asset    | balance |
       | party1 | USD-1-10 | 0       |
-      | party1 | USD-1-10 | 0       |
+      | aux1   | USD-1-10 | 0       |
+      | aux2   | USD-1-10 | 0       |
+
 
     
 
