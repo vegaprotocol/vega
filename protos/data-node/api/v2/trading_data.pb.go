@@ -5086,9 +5086,9 @@ type ListTransfersRequest struct {
 	// Restrict transfers to those in the given direction from the supplied public key.
 	// When is_reward is true, and pubkey is set, then direction MUST be TRANSFER_DIRECTION_DIRECTION_FROM.
 	Direction TransferDirection `protobuf:"varint,2,opt,name=direction,proto3,enum=datanode.api.v2.TransferDirection" json:"direction,omitempty"`
-	// Optional pagination control
+	// Pagination controls.
 	Pagination *Pagination `protobuf:"bytes,3,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
-	// Optional filter to return only reward transfers.
+	// Restict transfers to those related to reward transfers.
 	IsReward *bool `protobuf:"varint,4,opt,name=is_reward,json=isReward,proto3,oneof" json:"is_reward,omitempty"`
 }
 
