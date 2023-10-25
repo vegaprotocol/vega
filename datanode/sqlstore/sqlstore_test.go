@@ -48,10 +48,8 @@ import (
 )
 
 var (
-	config           sqlstore.Config
 	connectionSource *sqlstore.ConnectionSource
 	testDBPort       int
-	testDBSocketDir  string
 )
 
 func TestMain(m *testing.M) {
@@ -66,9 +64,7 @@ func TestMain(m *testing.M) {
 		postgresLog *bytes.Buffer,
 	) {
 		testDBPort = cfg.ConnectionConfig.Port
-		testDBSocketDir = cfg.ConnectionConfig.SocketDir
 		connectionSource = source
-		config = cfg
 	}, postgresRuntimePath, sqlstore.EmbedMigrations)
 }
 

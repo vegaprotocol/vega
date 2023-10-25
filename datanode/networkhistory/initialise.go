@@ -244,14 +244,14 @@ func FetchHistoryBlocks(ctx context.Context, logInfo func(s string, args ...inte
 ) (int64, error) {
 	blocksFetched := int64(0)
 	for blocksFetched < numBlocksToFetch || numBlocksToFetch == -1 {
-		logInfo("fetching history for segment id:%s", historySegmentID)
+		logInfo("fetching history for segment id %q", historySegmentID)
 		indexEntry, err := fetchHistory(ctx, historySegmentID)
 		if err != nil {
 			return 0, fmt.Errorf("failed to fetch history:%w", err)
 		}
 		blocksFetched += indexEntry.HeightTo - indexEntry.HeightFrom + 1
 
-		logInfo("fetched history:%+v", indexEntry)
+		logInfo("fetched history: %+v", indexEntry)
 
 		if len(indexEntry.PreviousHistorySegmentID) == 0 {
 			break

@@ -54,8 +54,6 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 )
 
-var ErrBadID = errors.New("bad id (must be hex string)")
-
 //go:embed migrations/*.sql
 var EmbedMigrations embed.FS
 

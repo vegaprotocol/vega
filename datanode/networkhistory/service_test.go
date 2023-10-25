@@ -57,11 +57,10 @@ import (
 )
 
 const (
-	snapshotInterval     = int64(1000)
-	chainID              = "testnet-001"
-	compressedEventsFile = "testdata/smoketest_to_block_5000.evts.gz"
-	numSnapshots         = 6
-	testMigrationSQL     = "testdata/testmigration.sql"
+	snapshotInterval  = int64(1000)
+	chainID           = "testnet-001"
+	numSnapshots      = 6
+	testMigrationPath = "testdata/testmigration.sql"
 )
 
 var (
@@ -75,7 +74,6 @@ var (
 
 	snapshotsBackupDir string
 	eventsDir          string
-	eventsFile         string
 
 	goldenSourceHistorySegment map[int64]segment.Full
 
@@ -86,13 +84,17 @@ var (
 
 	postgresLog *bytes.Buffer
 
-	testMigrationsDir       string
-	highestMigrationNumber  int64
-	testMigrationVersionNum int64
-	sqlFs                   fs.FS
+	testMigrationsDir               string
+	highestOriginalMigrationVersion int64
+	testMigrationVersionNum         int64
+	sqlFs                           fs.FS
 )
 
-func TestMain(t *testing.M) {
+func TestMain(m *testing.M) {
+	var err error
+
+	log := logging.NewTestLogger()
+
 	outerCtx, cancelOuterCtx := context.WithCancel(context.Background())
 	defer cancelOuterCtx()
 
@@ -103,39 +105,43 @@ func TestMain(t *testing.M) {
 			panic(r) // propagate panic
 		}
 	}()
-	testMigrationVersionNum, sqlFs = setupTestSQLMigrations()
-	highestMigrationNumber = testMigrationVersionNum - 1
 
-	var err error
+	testMigrationVersion, clonedMigrationsFs, err := cloneSQLMigrationsForTests()
+	if err != nil {
+		exitErr(log, fmt.Errorf("an error occurred while setting up SQL migration: %w", err))
+	}
+	sqlFs = clonedMigrationsFs
+
+	highestOriginalMigrationVersion = testMigrationVersion - 1
+
 	snapshotsBackupDir, err = os.MkdirTemp("", "snapshotbackup")
 	if err != nil {
-		panic(err)
+		exitErr(log, fmt.Errorf("could not create temporary directory for snapshot backup: %w", err))
 	}
 	defer os.RemoveAll(snapshotsBackupDir)
 
 	eventsDir, err = os.MkdirTemp("", "eventsdir")
 	if err != nil {
-		panic(err)
+		exitErr(log, fmt.Errorf("could not create temporary directory for events: %w", err))
 	}
 	defer os.RemoveAll(eventsDir)
 
-	log := logging.NewTestLogger()
-
-	eventsFile = filepath.Join(eventsDir, "smoketest_to_block_5000_or_above.evts")
-	decompressEventFile()
-
-	tempDir, err := os.MkdirTemp("", "networkhistory")
-	if err != nil {
-		panic(err)
+	if err := cloneEventsArchiveForTests(eventsDir); err != nil {
+		exitErr(log, fmt.Errorf("could not clone the test events archive: %w", err))
 	}
-	postgresRuntimePath := filepath.Join(tempDir, "sqlstore")
-	defer os.RemoveAll(tempDir)
 
-	networkHistoryHome, err := os.MkdirTemp("", "networkhistoryhome")
+	networkHistoryDir, err := os.MkdirTemp("", "networkhistory")
 	if err != nil {
-		panic(err)
+		exitErr(log, fmt.Errorf("could not create temporary directory for network history: %w", err))
 	}
-	defer os.RemoveAll(networkHistoryHome)
+	sqlStoreDir := filepath.Join(networkHistoryDir, "sqlstore")
+	defer os.RemoveAll(networkHistoryDir)
+
+	networkHistoryHomeDir, err := os.MkdirTemp("", "networkhistoryhome")
+	if err != nil {
+		exitErr(log, fmt.Errorf("could not create temporary directory for network history home: %w", err))
+	}
+	defer os.RemoveAll(networkHistoryHomeDir)
 
 	defer func() {
 		if networkHistoryConnPool != nil {
@@ -143,29 +149,29 @@ func TestMain(t *testing.M) {
 		}
 	}()
 
-	exitCode := databasetest.TestMain(t, func(config sqlstore.Config, source *sqlstore.ConnectionSource,
-		pgLog *bytes.Buffer,
-	) {
+	exitCode := databasetest.TestMain(m, func(config sqlstore.Config, source *sqlstore.ConnectionSource, pgLog *bytes.Buffer) {
 		sqlConfig = config
-		log.Infof("DB Connection String: ", sqlConfig.ConnectionConfig.GetConnectionString())
+		log.Infof("DB Connection String: %s", sqlConfig.ConnectionConfig.GetConnectionString())
 
 		pool, err := sqlstore.CreateConnectionPool(sqlConfig.ConnectionConfig)
 		if err != nil {
-			panic(fmt.Errorf("failed to create connection pool: %w", err))
+			exitErr(log, fmt.Errorf("failed to create connection pool: %w", err))
 		}
 		networkHistoryConnPool = pool
 
 		postgresLog = pgLog
 
-		emptyDatabaseAndSetSchemaVersion(highestMigrationNumber)
+		if err := emptyDatabaseAndSetSchemaVersion(log, highestOriginalMigrationVersion); err != nil {
+			exitErr(log, err)
+		}
 
 		// Do initial run to get the expected state of the datanode from just event playback
 		ctx, cancel := context.WithCancel(outerCtx)
 		defer cancel()
 
-		snapshotCopyToPath := filepath.Join(networkHistoryHome, "snapshotsCopyTo")
+		snapshotCopyToPath := filepath.Join(networkHistoryHomeDir, "snapshotsCopyTo")
 
-		snapshotService := setupSnapshotService(snapshotCopyToPath)
+		snapshotService := setupSnapshotService(log, snapshotCopyToPath)
 
 		var snapshots []segment.Unpublished
 
@@ -175,12 +181,10 @@ func TestMain(t *testing.M) {
 		evtSource := newTestEventSourceWithProtocolUpdateMessage()
 
 		pus := service.NewProtocolUpgrade(nil, log)
-		puh := networkhistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context, chainID string,
-			toHeight int64,
-		) error {
+		puh := networkhistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context, chainID string, toHeight int64) error {
 			ss, err := snapshotService.CreateSnapshot(ctx, chainID, toHeight)
 			if err != nil {
-				panic(fmt.Errorf("failed to create snapshot: %w", err))
+				return fmt.Errorf("failed to create snapshot: %w", err)
 			}
 
 			waitForSnapshotToComplete(ss)
@@ -189,12 +193,14 @@ func TestMain(t *testing.M) {
 
 			md5Hash, err := fsutil.Md5Hash(ss.ZipFilePath())
 			if err != nil {
-				panic(fmt.Errorf("failed to get snapshot hash:%w", err))
+				return fmt.Errorf("failed to get snapshot hash: %w", err)
 			}
 
 			fromEventHashes = append(fromEventHashes, md5Hash)
 
-			updateAllContinuousAggregateData(ctx)
+			if err := updateAllContinuousAggregateData(ctx); err != nil {
+				return fmt.Errorf("could not update all continuous aggregate data: %w", err)
+			}
 			summary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
 
 			fromEventsDatabaseSummaries = append(fromEventsDatabaseSummaries, summary)
@@ -207,14 +213,14 @@ func TestMain(t *testing.M) {
 				if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
 					lastSnapshot, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 					if err != nil {
-						panic(fmt.Errorf("failed to create snapshot:%w", err))
+						panic(fmt.Errorf("failed to create snapshot: %w", err))
 					}
 
 					waitForSnapshotToComplete(lastSnapshot)
 					snapshots = append(snapshots, lastSnapshot)
 					md5Hash, err := fsutil.Md5Hash(lastSnapshot.ZipFilePath())
 					if err != nil {
-						panic(fmt.Errorf("failed to get snapshot hash:%w", err))
+						panic(fmt.Errorf("failed to get snapshot hash: %w", err))
 					}
 
 					fromEventHashes = append(fromEventHashes, md5Hash)
@@ -231,31 +237,28 @@ func TestMain(t *testing.M) {
 			},
 			evtSource, puh)
 		if err != nil {
-			panic(fmt.Errorf("failed to setup pre-protocol upgrade sqlbroker:%w", err))
+			exitErr(log, fmt.Errorf("failed to setup pre-protocol upgrade sqlbroker: %w", err))
 		}
 
 		err = preUpgradeBroker.Receive(ctxWithCancel)
 		if err != nil && !errors.Is(err, context.Canceled) {
-			panic(fmt.Errorf("failed to process events:%w", err))
+			exitErr(log, fmt.Errorf("failed to process events: %w", err))
 		}
 
 		protocolUpgradeStarted := pus.GetProtocolUpgradeStarted()
 		if !protocolUpgradeStarted {
-			panic("expected protocol upgrade to have started")
+			exitErr(log, errors.New("expected protocol upgrade to have started"))
 		}
 
 		// Here after exit of the broker because of protocol upgrade, we simulate a restart of the node by recreating
 		// the broker.
 		// First simulate a schema update
-		err = migrateUpToDatabaseVersion(testMigrationVersionNum)
-		if err != nil {
-			panic(err)
+		if err := migrateUpToDatabaseVersion(testMigrationVersion); err != nil {
+			exitErr(log, fmt.Errorf("could not migrate database to version %d: %w", testMigrationVersion, err))
 		}
 
 		pus = service.NewProtocolUpgrade(nil, log)
-		nonInterceptPuh := networkhistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context,
-			chainID string, toHeight int64,
-		) error {
+		nonInterceptPuh := networkhistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context, chainID string, toHeight int64) error {
 			return nil
 		})
 
@@ -264,14 +267,14 @@ func TestMain(t *testing.M) {
 				if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
 					lastSnapshot, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 					if err != nil {
-						panic(fmt.Errorf("failed to create snapshot:%w", err))
+						panic(fmt.Errorf("failed to create snapshot: %w", err))
 					}
 
 					waitForSnapshotToComplete(lastSnapshot)
 					snapshots = append(snapshots, lastSnapshot)
 					md5Hash, err := fsutil.Md5Hash(lastSnapshot.ZipFilePath())
 					if err != nil {
-						panic(fmt.Errorf("failed to get snapshot hash:%w", err))
+						panic(fmt.Errorf("failed to get snapshot hash: %w", err))
 					}
 
 					fromEventHashes = append(fromEventHashes, md5Hash)
@@ -288,27 +291,27 @@ func TestMain(t *testing.M) {
 			},
 			evtSource, nonInterceptPuh)
 		if err != nil {
-			panic(fmt.Errorf("failed to setup post protocol upgrade sqlbroker:%w", err))
+			exitErr(log, fmt.Errorf("failed to setup post protocol upgrade sqlbroker: %w", err))
 		}
 
 		err = postUpgradeBroker.Receive(ctxWithCancel)
 		if err != nil && !errors.Is(err, context.Canceled) {
-			panic(fmt.Errorf("failed to process events:%w", err))
+			exitErr(log, fmt.Errorf("failed to process events: %w", err))
 		}
 
 		if len(fromEventHashes) != numSnapshots {
-			panic(fmt.Errorf("expected 5 snapshots, got %d", len(fromEventHashes)))
+			exitErr(log, fmt.Errorf("expected 5 snapshots, got %d", len(fromEventHashes)))
 		}
 
 		if len(fromEventsDatabaseSummaries) != numSnapshots {
-			panic(fmt.Errorf("expected %d database summaries, got %d", numSnapshots, len(fromEventHashes)))
+			exitErr(log, fmt.Errorf("expected %d database summaries, got %d", numSnapshots, len(fromEventHashes)))
 		}
 
 		fromEventsIntervalToHistoryTableDelta = getSnapshotIntervalToHistoryTableDeltaSummary(ctx, sqlConfig.ConnectionConfig,
 			expectedHistorySegmentsFromHeights, expectedHistorySegmentsToHeights)
 
 		if len(fromEventsIntervalToHistoryTableDelta) != numSnapshots {
-			panic(fmt.Errorf("expected %d history table deltas, got %d", numSnapshots, len(fromEventHashes)))
+			exitErr(log, fmt.Errorf("expected %d history table deltas, got %d", numSnapshots, len(fromEventHashes)))
 		}
 
 		// Network history store setup
@@ -319,19 +322,16 @@ func TestMain(t *testing.M) {
 
 		storeLog := logging.NewTestLogger()
 		storeLog.SetLevel(logging.InfoLevel)
-		networkHistoryStore, err = store.New(outerCtx, storeLog, chainID, storeCfg, networkHistoryHome, 33)
+		networkHistoryStore, err = store.New(outerCtx, storeLog, chainID, storeCfg, networkHistoryHomeDir, 33)
 		if err != nil {
-			panic(err)
+			exitErr(log, fmt.Errorf("could not initialize the network history store: %w", err))
 		}
 
 		datanodeConfig := config2.NewDefaultConfig()
 		cfg := networkhistory.NewDefaultConfig()
 
-		_, err = networkhistory.New(outerCtx, log, chainID, cfg, networkHistoryConnPool, snapshotService,
-			networkHistoryStore, datanodeConfig.API.Port, snapshotCopyToPath)
-
-		if err != nil {
-			panic(err)
+		if _, err := networkhistory.New(outerCtx, log, chainID, cfg, networkHistoryConnPool, snapshotService, networkHistoryStore, datanodeConfig.API.Port, snapshotCopyToPath); err != nil {
+			exitErr(log, err)
 		}
 
 		startTime := time.Now()
@@ -339,14 +339,14 @@ func TestMain(t *testing.M) {
 
 		for {
 			if time.Now().After(startTime.Add(timeout)) {
-				panic(fmt.Sprintf("history not found in network store after %s", timeout))
+				exitErr(log, fmt.Errorf("history not found in network store after %s", timeout))
 			}
 
 			time.Sleep(10 * time.Millisecond)
 
 			storedSegments, err := networkHistoryStore.ListAllIndexEntriesOldestFirst()
 			if err != nil {
-				panic(err)
+				exitErr(log, fmt.Errorf("could not list all index entries: %w", err))
 			}
 
 			goldenSourceHistorySegment = map[int64]segment.Full{}
@@ -378,42 +378,43 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmXgWdrMeWY8hM7iVeNotPo1HiUUFi3URCVUEz6KPBHNGz", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmNawDbvs1t2KcUCq2t2gAThah2V8HfqtTfMyiP2uutmy2", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmdmiinHjzEdhE4g11QcWM9AJbD5LerNubQi5QaPHaKLZP", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmRGKD9UhAmqH1LWWCdnMGNTRncmm9yQ77bx15gAP9VjRq", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "Qmc3hauuxtGpA6whJuKNwCrgh5ggXkYuoQrjk5tLyExsnB", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmdqB6McGCgi8ye86AENdS7E1VL3Zirm9XSyLYRvNdZsSy", snapshots)
-	}, postgresRuntimePath, sqlFs)
+		assertIfHistorySegmentIdsNotEqual(log, goldenSourceHistorySegment[1000].HistorySegmentID, "QmXgWdrMeWY8hM7iVeNotPo1HiUUFi3URCVUEz6KPBHNGz", snapshots)
+		assertIfHistorySegmentIdsNotEqual(log, goldenSourceHistorySegment[2000].HistorySegmentID, "QmNawDbvs1t2KcUCq2t2gAThah2V8HfqtTfMyiP2uutmy2", snapshots)
+		assertIfHistorySegmentIdsNotEqual(log, goldenSourceHistorySegment[2500].HistorySegmentID, "QmdmiinHjzEdhE4g11QcWM9AJbD5LerNubQi5QaPHaKLZP", snapshots)
+		assertIfHistorySegmentIdsNotEqual(log, goldenSourceHistorySegment[3000].HistorySegmentID, "QmRGKD9UhAmqH1LWWCdnMGNTRncmm9yQ77bx15gAP9VjRq", snapshots)
+		assertIfHistorySegmentIdsNotEqual(log, goldenSourceHistorySegment[4000].HistorySegmentID, "Qmc3hauuxtGpA6whJuKNwCrgh5ggXkYuoQrjk5tLyExsnB", snapshots)
+		assertIfHistorySegmentIdsNotEqual(log, goldenSourceHistorySegment[5000].HistorySegmentID, "QmdqB6McGCgi8ye86AENdS7E1VL3Zirm9XSyLYRvNdZsSy", snapshots)
+	}, sqlStoreDir, sqlFs)
 
 	if exitCode != 0 {
-		log.Errorf("One or more tests failed, dumping postgres log:\n%s", postgresLog.String())
+		exitErr(log, fmt.Errorf("One or more tests failed, dumping postgres log:\n%s", postgresLog.String()))
 	}
 }
 
-func updateAllContinuousAggregateData(ctx context.Context) {
-	blockspan, err := sqlstore.GetDatanodeBlockSpan(ctx, networkHistoryConnPool)
+func updateAllContinuousAggregateData(ctx context.Context) error {
+	blockSpan, err := sqlstore.GetDatanodeBlockSpan(ctx, networkHistoryConnPool)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("could not get block span: %w", err)
 	}
 
-	err = snapshot.UpdateContinuousAggregateDataFromHighWaterMark(ctx, networkHistoryConnPool, blockspan.ToHeight)
+	err = snapshot.UpdateContinuousAggregateDataFromHighWaterMark(ctx, networkHistoryConnPool, blockSpan.ToHeight)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("could not update continuous aggregate to height %d : %w", blockSpan.ToHeight, err)
 	}
+	return nil
 }
 
 func TestLoadingDataFetchedAsynchronously(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	t.Cleanup(cancel)
 
 	log := logging.NewTestLogger()
 
 	require.NoError(t, networkHistoryStore.ResetIndex())
-	emptyDatabaseAndSetSchemaVersion(highestMigrationNumber)
+	emptyDatabaseAndSetSchemaVersion(log, highestOriginalMigrationVersion)
 
 	snapshotCopyToPath := t.TempDir()
-	snapshotService := setupSnapshotService(snapshotCopyToPath)
+	snapshotService := setupSnapshotService(log, snapshotCopyToPath)
 
 	fetched, err := fetchBlocks(ctx, log, networkHistoryStore, goldenSourceHistorySegment[4000].HistorySegmentID, 1000)
 	require.NoError(t, err)
@@ -478,7 +479,7 @@ func TestLoadingDataFetchedAsynchronously(t *testing.T) {
 
 	// Now simulate the situation where the previous history segments were fetched asynchronously during event processing
 	// and full history is then subsequently loaded
-	emptyDatabaseAndSetSchemaVersion(0)
+	emptyDatabaseAndSetSchemaVersion(log, 0)
 
 	fetched, err = fetchBlocks(ctx, log, networkHistoryStore, goldenSourceHistorySegment[3000].HistorySegmentID, 3000)
 	require.NoError(t, err)
@@ -507,10 +508,10 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 	log := logging.NewTestLogger()
 
 	require.NoError(t, networkHistoryStore.ResetIndex())
-	emptyDatabaseAndSetSchemaVersion(highestMigrationNumber)
+	emptyDatabaseAndSetSchemaVersion(log, highestOriginalMigrationVersion)
 
 	snapshotCopyToPath := t.TempDir()
-	snapshotService := setupSnapshotService(snapshotCopyToPath)
+	snapshotService := setupSnapshotService(log, snapshotCopyToPath)
 
 	ctxWithCancel, cancelFn := context.WithCancel(ctx)
 
@@ -545,7 +546,7 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 
 	snapshotCopyToPath = t.TempDir()
 
-	inputSnapshotService := setupSnapshotService(snapshotCopyToPath)
+	inputSnapshotService := setupSnapshotService(log, snapshotCopyToPath)
 
 	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyToPath)
 	segments, err := networkhistoryService.ListAllHistorySegments()
@@ -619,9 +620,9 @@ func TestRestoringNodeWithDataOlderAndNewerThanItContainsLoadsTheNewerData(t *te
 
 	snapshotCopyToPath := t.TempDir()
 
-	inputSnapshotService := setupSnapshotService(snapshotCopyToPath)
+	inputSnapshotService := setupSnapshotService(log, snapshotCopyToPath)
 
-	emptyDatabaseAndSetSchemaVersion(0)
+	emptyDatabaseAndSetSchemaVersion(log, 0)
 
 	historySegment := goldenSourceHistorySegment[4000]
 
@@ -646,7 +647,7 @@ func TestRestoringNodeWithDataOlderAndNewerThanItContainsLoadsTheNewerData(t *te
 	// Now try to load in history from 0 to 5000
 	require.NoError(t, networkHistoryStore.ResetIndex())
 	snapshotCopyToPath = t.TempDir()
-	inputSnapshotService = setupSnapshotService(snapshotCopyToPath)
+	inputSnapshotService = setupSnapshotService(log, snapshotCopyToPath)
 
 	historySegment = goldenSourceHistorySegment[5000]
 
@@ -683,9 +684,9 @@ func TestRestoringNodeWithHistoryOnlyFromBeforeTheNodesOldestBlockFails(t *testi
 
 	snapshotCopyToPath := t.TempDir()
 
-	inputSnapshotService := setupSnapshotService(snapshotCopyToPath)
+	inputSnapshotService := setupSnapshotService(log, snapshotCopyToPath)
 
-	emptyDatabaseAndSetSchemaVersion(0)
+	emptyDatabaseAndSetSchemaVersion(log, 0)
 
 	historySegment := goldenSourceHistorySegment[4000]
 
@@ -709,7 +710,7 @@ func TestRestoringNodeWithHistoryOnlyFromBeforeTheNodesOldestBlockFails(t *testi
 	// Now try to load in history from 1000 to 2000
 	require.NoError(t, networkHistoryStore.ResetIndex())
 	snapshotCopyToPath = t.TempDir()
-	inputSnapshotService = setupSnapshotService(snapshotCopyToPath)
+	inputSnapshotService = setupSnapshotService(log, snapshotCopyToPath)
 
 	historySegment = goldenSourceHistorySegment[1000]
 
@@ -735,10 +736,10 @@ func TestRestoringNodeWithExistingDataFailsWhenLoadingWouldResultInNonContiguous
 	log := logging.NewTestLogger()
 
 	require.NoError(t, networkHistoryStore.ResetIndex())
-	emptyDatabaseAndSetSchemaVersion(highestMigrationNumber)
+	emptyDatabaseAndSetSchemaVersion(log, highestOriginalMigrationVersion)
 
 	snapshotCopyToPath := t.TempDir()
-	snapshotService := setupSnapshotService(snapshotCopyToPath)
+	snapshotService := setupSnapshotService(log, snapshotCopyToPath)
 
 	ctxWithCancel, cancelFn := context.WithCancel(ctx)
 
@@ -775,7 +776,7 @@ func TestRestoringNodeWithExistingDataFailsWhenLoadingWouldResultInNonContiguous
 
 	snapshotCopyToPath = t.TempDir()
 
-	inputSnapshotService := setupSnapshotService(snapshotCopyToPath)
+	inputSnapshotService := setupSnapshotService(log, snapshotCopyToPath)
 
 	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyToPath)
 	segments, err := networkhistoryService.ListAllHistorySegments()
@@ -797,10 +798,10 @@ func TestRestoringFromDifferentHeightsWithFullHistory(t *testing.T) {
 
 	snapshotCopyToPath := t.TempDir()
 
-	inputSnapshotService := setupSnapshotService(snapshotCopyToPath)
+	inputSnapshotService := setupSnapshotService(log, snapshotCopyToPath)
 
 	for i := int64(0); i < numSnapshots; i++ {
-		emptyDatabaseAndSetSchemaVersion(0)
+		emptyDatabaseAndSetSchemaVersion(log, 0)
 		fromHeight := expectedHistorySegmentsFromHeights[i]
 		toHeight := expectedHistorySegmentsToHeights[i]
 
@@ -839,7 +840,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 	var err error
 	log := logging.NewTestLogger()
 
-	emptyDatabaseAndSetSchemaVersion(0)
+	emptyDatabaseAndSetSchemaVersion(log, 0)
 
 	fetched, err := fetchBlocks(ctx, log, networkHistoryStore, goldenSourceHistorySegment[3000].HistorySegmentID, 1000)
 	require.NoError(t, err)
@@ -847,7 +848,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 
 	snapshotCopyToPath := t.TempDir()
 
-	inputSnapshotService := setupSnapshotService(snapshotCopyToPath)
+	inputSnapshotService := setupSnapshotService(log, snapshotCopyToPath)
 
 	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyToPath)
 	segments, err := networkhistoryService.ListAllHistorySegments()
@@ -881,7 +882,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 	var ss segment.Unpublished
 	var newSnapshotFileHashAt4000 string
 
-	outputSnapshotService := setupSnapshotService(t.TempDir())
+	outputSnapshotService := setupSnapshotService(log, t.TempDir())
 	sqlBroker, err := setupSQLBroker(ctx, sqlConfig, outputSnapshotService,
 		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
 			if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
@@ -928,7 +929,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 	var err error
 	log := logging.NewTestLogger()
 
-	emptyDatabaseAndSetSchemaVersion(0)
+	emptyDatabaseAndSetSchemaVersion(log, 0)
 
 	fetched, err := fetchBlocks(ctx, log, networkHistoryStore, goldenSourceHistorySegment[2000].HistorySegmentID, 2000)
 	require.NoError(t, err)
@@ -936,7 +937,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 
 	snapshotCopyToPath := t.TempDir()
 
-	inputSnapshotService := setupSnapshotService(snapshotCopyToPath)
+	inputSnapshotService := setupSnapshotService(log, snapshotCopyToPath)
 
 	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyToPath)
 	segments, err := networkhistoryService.ListAllHistorySegments()
@@ -957,7 +958,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 	ctxWithCancel, cancelFn := context.WithCancel(ctx)
 
 	var snapshotFileHashAfterReloadAt2000AndEventReplayTo3000 string
-	outputSnapshotService := setupSnapshotService(t.TempDir())
+	outputSnapshotService := setupSnapshotService(log, t.TempDir())
 
 	evtSource := newTestEventSourceWithProtocolUpdateMessage()
 
@@ -1031,7 +1032,7 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 	var err error
 	log := logging.NewTestLogger()
 
-	emptyDatabaseAndSetSchemaVersion(0)
+	emptyDatabaseAndSetSchemaVersion(log, 0)
 
 	fetched, err := fetchBlocks(ctx, log, networkHistoryStore, goldenSourceHistorySegment[2000].HistorySegmentID, 2000)
 	require.NoError(t, err)
@@ -1039,7 +1040,7 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 
 	snapshotCopyToPath := t.TempDir()
 
-	inputSnapshotService := setupSnapshotService(snapshotCopyToPath)
+	inputSnapshotService := setupSnapshotService(log, snapshotCopyToPath)
 
 	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyToPath)
 	segments, err := networkhistoryService.ListAllHistorySegments()
@@ -1060,7 +1061,7 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 	ctxWithCancel, cancelFn := context.WithCancel(ctx)
 
 	var snapshotFileHashAfterReloadAt2000AndEventReplayTo3000 string
-	outputSnapshotService := setupSnapshotService(t.TempDir())
+	outputSnapshotService := setupSnapshotService(log, t.TempDir())
 
 	evtSource := newTestEventSourceWithProtocolUpdateMessage()
 
@@ -1146,7 +1147,7 @@ func fetchBlocks(ctx context.Context, log *logging.Logger, st *store.Store, root
 		}
 	}
 
-	return 0, fmt.Errorf("failed to fetch blocks:%w", err)
+	return 0, fmt.Errorf("failed to fetch blocks: %w", err)
 }
 
 func TestRollingBackToHeightAcrossSchemaUpdateBoundary(t *testing.T) {
@@ -1156,10 +1157,10 @@ func TestRollingBackToHeightAcrossSchemaUpdateBoundary(t *testing.T) {
 	log := logging.NewTestLogger()
 
 	require.NoError(t, networkHistoryStore.ResetIndex())
-	emptyDatabaseAndSetSchemaVersion(highestMigrationNumber)
+	emptyDatabaseAndSetSchemaVersion(log, highestOriginalMigrationVersion)
 
 	snapshotCopyToPath := t.TempDir()
-	snapshotService := setupSnapshotService(snapshotCopyToPath)
+	snapshotService := setupSnapshotService(log, snapshotCopyToPath)
 
 	ctxWithCancel, cancelFn := context.WithCancel(ctx)
 
@@ -1194,7 +1195,7 @@ func TestRollingBackToHeightAcrossSchemaUpdateBoundary(t *testing.T) {
 
 	snapshotCopyToPath = t.TempDir()
 
-	inputSnapshotService := setupSnapshotService(snapshotCopyToPath)
+	inputSnapshotService := setupSnapshotService(log, snapshotCopyToPath)
 
 	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyToPath)
 
@@ -1235,7 +1236,7 @@ type sqlStoreBroker interface {
 	Receive(ctx context.Context) error
 }
 
-func emptyDatabaseAndSetSchemaVersion(schemaVersion int64) {
+func emptyDatabaseAndSetSchemaVersion(log *logging.Logger, schemaVersion int64) error {
 	// For these we need a totally fresh database every time to ensure we model as closely as
 	// possible what happens in practice
 	var err error
@@ -1243,18 +1244,18 @@ func emptyDatabaseAndSetSchemaVersion(schemaVersion int64) {
 
 	poolConfig, err = sqlConfig.ConnectionConfig.GetPoolConfig()
 	if err != nil {
-		panic(fmt.Errorf("failed to get pool config: %w", err))
+		return fmt.Errorf("could not get SQL pool configuration: %w", err)
 	}
 
 	db := stdlib.OpenDB(*poolConfig.ConnConfig)
-
+	defer db.Close()
 	if _, err = db.Exec(`SELECT alter_job(job_id, scheduled => false) FROM timescaledb_information.jobs WHERE proc_name = 'policy_refresh_continuous_aggregate'`); err != nil {
-		panic(fmt.Errorf("failed to stop continuous aggregates: %w", err))
+		return fmt.Errorf("failed to stop continuous aggregates: %w", err)
 	}
 	db.Close()
 
 	for i := 0; i < 5; i++ {
-		err = sqlstore.WipeDatabaseAndMigrateSchemaToVersion(logging.NewTestLogger(), sqlConfig.ConnectionConfig, schemaVersion, sqlFs, false)
+		err = sqlstore.WipeDatabaseAndMigrateSchemaToVersion(log, sqlConfig.ConnectionConfig, schemaVersion, sqlFs, false)
 		if err == nil {
 			break
 		}
@@ -1262,18 +1263,20 @@ func emptyDatabaseAndSetSchemaVersion(schemaVersion int64) {
 	}
 
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("could not wipe and migrate database to version %d: %w", schemaVersion, err)
 	}
+
+	return nil
 }
 
-func panicIfHistorySegmentIdsNotEqual(actual, expected string, snapshots []segment.Unpublished) {
+func assertIfHistorySegmentIdsNotEqual(log *logging.Logger, actual, expected string, snapshots []segment.Unpublished) {
 	if expected != actual {
 		snapshotPaths := ""
 		for _, sn := range snapshots {
 			snapshotPaths += "," + sn.ZipFileName()
 		}
 
-		panic(fmt.Errorf("history segment ids are not equal, expected: %s  actual: %s\n"+
+		exitErr(log, fmt.Errorf("history segment ids are not equal, expected: %s  actual: %s\n"+
 			"If the database schema has changed or event file been updated the history segment ids "+
 			"will need updating.  Snapshot files: %s", expected, actual, snapshotPaths))
 	}
@@ -1288,9 +1291,9 @@ func assertIntervalHistoryIsEmpty(t *testing.T, historyTableDelta []map[string]t
 	assert.Equal(t, 0, totalRowCount, "expected interval history to be empty but found %d rows", totalRowCount)
 }
 
-func setupSnapshotService(snapshotCopyToPath string) *snapshot.Service {
+func setupSnapshotService(log *logging.Logger, snapshotCopyToPath string) *snapshot.Service {
 	snapshotServiceCfg := snapshot.NewDefaultConfig()
-	snapshotService, err := snapshot.NewSnapshotService(logging.NewTestLogger(), snapshotServiceCfg,
+	snapshotService, err := snapshot.NewSnapshotService(log, snapshotServiceCfg,
 		networkHistoryConnPool, networkHistoryStore, snapshotCopyToPath, migrateUpToDatabaseVersion,
 		migrateDownToDatabaseVersion)
 	if err != nil {
@@ -1305,9 +1308,13 @@ type ProtocolUpgradeHandler interface {
 	GetProtocolUpgradeStarted() bool
 }
 
-func setupSQLBroker(ctx context.Context, testDbConfig sqlstore.Config, snapshotService *snapshot.Service,
-	onBlockCommitted func(ctx context.Context, service *snapshot.Service, chainId string,
-		lastCommittedBlockHeight int64, snapshotTaken bool), evtSource eventSource, protocolUpdateHandler ProtocolUpgradeHandler,
+func setupSQLBroker(
+	ctx context.Context,
+	testDbConfig sqlstore.Config,
+	snapshotService *snapshot.Service,
+	onBlockCommitted func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool),
+	evtSource eventSource,
+	protocolUpdateHandler ProtocolUpgradeHandler,
 ) (sqlStoreBroker, error) {
 	transactionalConnectionSource, err := sqlstore.NewTransactionalConnectionSource(logging.NewTestLogger(), testDbConfig.ConnectionConfig)
 	if err != nil {
@@ -1405,19 +1412,19 @@ type tableDataSummary struct {
 	dataHash  string
 }
 
-func assertSummariesAreEqual(t *testing.T, expected map[string]tableDataSummary, actual map[string]tableDataSummary) {
+func assertSummariesAreEqual(t *testing.T, expected, actual map[string]tableDataSummary) {
 	t.Helper()
 	if len(expected) != len(actual) {
-		require.Equalf(t, len(expected), len(actual), "expected table count: %d actual: %d", len(expected), len(actual))
+		require.Equalf(t, len(expected), len(actual), "expected %d tables but got %d", len(expected), len(actual))
 	}
 
 	for k, v := range expected {
 		if v.rowCount != actual[k].rowCount {
-			assert.Equalf(t, v.rowCount, actual[k].rowCount, "expected table row count for %s: %d actual row count: %d", k, v.rowCount, actual[k].rowCount)
+			assert.Equalf(t, v.rowCount, actual[k].rowCount, "expected table %q to have %d rows but got %d", k, v.rowCount, actual[k].rowCount)
 		}
 
 		if v.dataHash != actual[k].dataHash {
-			assert.Equalf(t, v.dataHash, actual[k].dataHash, "expected data hash for %s: %s actual data hash: %s", k, v.dataHash, actual[k].dataHash)
+			assert.Equalf(t, v.dataHash, actual[k].dataHash, "expected table %q to have data hash %q but got %q", k, v.dataHash, actual[k].dataHash)
 		}
 	}
 }
@@ -1572,30 +1579,37 @@ func waitForSnapshotToComplete(sf segment.Unpublished) {
 	}
 }
 
-func decompressEventFile() {
-	sourceFile, err := os.Open(compressedEventsFile)
+func cloneEventsArchiveForTests(destDir string) error {
+	const originalArchive = "testdata/smoketest_to_block_5000.evts.gz"
+	const clonedArchive = "smoketest_to_block_5000_or_above.evts"
+
+	originalArchiveFile, err := os.Open(originalArchive)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("could not open original archive at %q: %w", originalArchive, err)
 	}
 
-	zr, err := gzip.NewReader(sourceFile)
+	originalArchiveReader, err := gzip.NewReader(originalArchiveFile)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("could not create gZIP reader for %q: %w", originalArchive, err)
 	}
 
-	fileToWrite, err := os.Create(eventsFile)
+	clonedArchivePath := filepath.Join(destDir, clonedArchive)
+
+	clonedArchiveFile, err := os.Create(clonedArchivePath)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("could not create cloned archive file at %q: %w", clonedArchivePath, err)
 	}
-	if _, err := io.Copy(fileToWrite, zr); err != nil {
-		panic(err)
+
+	if _, err := io.Copy(clonedArchiveFile, originalArchiveReader); err != nil {
+		return fmt.Errorf("could not copy the original archive into the cloned one: %w", err)
 	}
+	return nil
 }
 
-func setupTestSQLMigrations() (int64, fs.FS) {
+func cloneSQLMigrationsForTests() (int64, fs.FS, error) {
 	sourceMigrationsDir, err := os.Getwd()
 	if err != nil {
-		panic(err)
+		return 0, nil, fmt.Errorf("could not resolve the working directory: %w", err)
 	}
 
 	sourceMigrationsDir, _ = filepath.Split(sourceMigrationsDir)
@@ -1603,11 +1617,11 @@ func setupTestSQLMigrations() (int64, fs.FS) {
 
 	testMigrationsDir, err = os.MkdirTemp("", "migrations")
 	if err != nil {
-		panic(err)
+		return 0, nil, fmt.Errorf("could not create temporary parent migrations directory: %w", err)
 	}
 
 	if err := os.Mkdir(filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir), fs.ModePerm); err != nil {
-		panic(fmt.Errorf("failed to create migrations dir: %w", err))
+		return 0, nil, fmt.Errorf("could not create temporary migrations directory: %w", err)
 	}
 
 	var highestMigrationNumber int64
@@ -1615,15 +1629,16 @@ func setupTestSQLMigrations() (int64, fs.FS) {
 		if err != nil || (info != nil && info.IsDir()) {
 			return nil //nolint:nilerr
 		}
+
 		if strings.HasSuffix(info.Name(), ".sql") {
 			split := strings.Split(info.Name(), "_")
 			if len(split) < 2 {
-				return errors.New("expected sql filename of form <version>_<name>.sql")
+				return errors.New("expecting SQL filename of form <version>_<name>.sql")
 			}
 
 			migrationNum, err := strconv.Atoi(split[0])
 			if err != nil {
-				return fmt.Errorf("expected first part of file name to be integer, is %s", split[0])
+				return fmt.Errorf("expecting first part of file name to be integer but got %q", split[0])
 			}
 
 			if int64(migrationNum) > highestMigrationNumber {
@@ -1632,41 +1647,40 @@ func setupTestSQLMigrations() (int64, fs.FS) {
 
 			data, err := os.ReadFile(filepath.Join(sourceMigrationsDir, info.Name()))
 			if err != nil {
-				return fmt.Errorf("failed to read file:%w", err)
+				return fmt.Errorf("could not read original migration file: %w", err)
 			}
 
 			err = os.WriteFile(filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir, info.Name()), data, fs.ModePerm)
 			if err != nil {
-				return fmt.Errorf("failed to write file:%w", err)
+				return fmt.Errorf("could not write cloned migration file: %w", err)
 			}
 		}
 		return nil
 	})
 
 	if err != nil {
-		panic(err)
+		return 0, nil, fmt.Errorf("an error occurred while walking the original migrations directory: %w", err)
 	}
 
 	// Create a file with a new migration
-	sql, err := os.ReadFile(testMigrationSQL)
+	testMigrationFile, err := os.ReadFile(testMigrationPath)
 	if err != nil {
-		panic(err)
+		return 0, nil, fmt.Errorf("could not read the test migration file: %w", err)
 	}
 
 	testMigrationVersionNum := highestMigrationNumber + 1
-	err = os.WriteFile(filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir,
-		fmt.Sprintf("%04d_testmigration.sql", testMigrationVersionNum)), sql, fs.ModePerm)
+	err = os.WriteFile(filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir, fmt.Sprintf("%04d_testmigration.sql", testMigrationVersionNum)), testMigrationFile, fs.ModePerm)
 	if err != nil {
-		panic(err)
+		return 0, nil, fmt.Errorf("could not write the test migration file in cloned migrations directory: %w", err)
 	}
 
-	return testMigrationVersionNum, os.DirFS(testMigrationsDir)
+	return testMigrationVersionNum, os.DirFS(testMigrationsDir), nil
 }
 
 func migrateUpToDatabaseVersion(version int64) error {
 	poolConfig, err := sqlConfig.ConnectionConfig.GetPoolConfig()
 	if err != nil {
-		return fmt.Errorf("failed to get pool config:%w", err)
+		return fmt.Errorf("failed to get pool config: %w", err)
 	}
 
 	db := stdlib.OpenDB(*poolConfig.ConnConfig)
@@ -1675,7 +1689,7 @@ func migrateUpToDatabaseVersion(version int64) error {
 	goose.SetBaseFS(nil)
 	err = goose.UpTo(db, filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir), version)
 	if err != nil {
-		return fmt.Errorf("failed to migrate up to version %d:%w", version, err)
+		return fmt.Errorf("failed to migrate up to version %d: %w", version, err)
 	}
 
 	return nil
@@ -1684,7 +1698,7 @@ func migrateUpToDatabaseVersion(version int64) error {
 func migrateDownToDatabaseVersion(version int64) error {
 	poolConfig, err := sqlConfig.ConnectionConfig.GetPoolConfig()
 	if err != nil {
-		return fmt.Errorf("failed to get pool config:%w", err)
+		return fmt.Errorf("failed to get pool config: %w", err)
 	}
 
 	db := stdlib.OpenDB(*poolConfig.ConnConfig)
@@ -1693,7 +1707,7 @@ func migrateDownToDatabaseVersion(version int64) error {
 	goose.SetBaseFS(nil)
 	err = goose.DownTo(db, filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir), version)
 	if err != nil {
-		return fmt.Errorf("failed to migrate down to version %d:%w", version, err)
+		return fmt.Errorf("failed to migrate down to version %d: %w", version, err)
 	}
 
 	return nil
@@ -1729,4 +1743,9 @@ func newTestEventSourceWithProtocolUpdateMessage() *TestEventSource {
 		panic(err)
 	}
 	return evtSource
+}
+
+func exitErr(log *logging.Logger, err error) {
+	log.Error(err.Error())
+	os.Exit(1)
 }
