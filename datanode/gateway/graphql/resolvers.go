@@ -2541,6 +2541,14 @@ func (r *myTradeResolver) BuyerAuctionBatch(_ context.Context, obj *vegapb.Trade
 	return &i, nil
 }
 
+func setIfExists(v string) *string {
+	if len(v) <= 0 {
+		return nil
+	}
+
+	return ptr.From(v)
+}
+
 func (r *myTradeResolver) BuyerFee(_ context.Context, obj *vegapb.Trade) (*TradeFee, error) {
 	fee := TradeFee{
 		MakerFee:          "0",
@@ -2549,8 +2557,14 @@ func (r *myTradeResolver) BuyerFee(_ context.Context, obj *vegapb.Trade) (*Trade
 	}
 	if obj.BuyerFee != nil {
 		fee.MakerFee = obj.BuyerFee.MakerFee
+		fee.MakerFeeReferralDiscount = setIfExists(obj.BuyerFee.MakerFeeReferrerDiscount)
+		fee.MakerFeeVolumeDiscount = setIfExists(obj.BuyerFee.MakerFeeVolumeDiscount)
 		fee.InfrastructureFee = obj.BuyerFee.InfrastructureFee
+		fee.InfrastructureFeeReferralDiscount = setIfExists(obj.BuyerFee.InfrastructureFeeReferrerDiscount)
+		fee.InfrastructureFeeVolumeDiscount = setIfExists(obj.BuyerFee.InfrastructureFeeVolumeDiscount)
 		fee.LiquidityFee = obj.BuyerFee.LiquidityFee
+		fee.LiquidityFeeReferralDiscount = setIfExists(obj.BuyerFee.LiquidityFeeReferrerDiscount)
+		fee.LiquidityFeeReferralDiscount = setIfExists(obj.BuyerFee.LiquidityFeeVolumeDiscount)
 	}
 	return &fee, nil
 }
@@ -2568,8 +2582,14 @@ func (r *myTradeResolver) SellerFee(_ context.Context, obj *vegapb.Trade) (*Trad
 	}
 	if obj.SellerFee != nil {
 		fee.MakerFee = obj.SellerFee.MakerFee
+		fee.MakerFeeReferralDiscount = setIfExists(obj.SellerFee.MakerFeeReferrerDiscount)
+		fee.MakerFeeVolumeDiscount = setIfExists(obj.SellerFee.MakerFeeVolumeDiscount)
 		fee.InfrastructureFee = obj.SellerFee.InfrastructureFee
+		fee.InfrastructureFeeReferralDiscount = setIfExists(obj.SellerFee.InfrastructureFeeReferrerDiscount)
+		fee.InfrastructureFeeVolumeDiscount = setIfExists(obj.SellerFee.InfrastructureFeeVolumeDiscount)
 		fee.LiquidityFee = obj.SellerFee.LiquidityFee
+		fee.LiquidityFeeReferralDiscount = setIfExists(obj.SellerFee.LiquidityFeeReferrerDiscount)
+		fee.LiquidityFeeReferralDiscount = setIfExists(obj.SellerFee.LiquidityFeeVolumeDiscount)
 	}
 	return &fee, nil
 }

@@ -352,6 +352,7 @@
 - [9868](https://github.com/vegaprotocol/vega/issues/9868) - Avoid empty ledger entries from governance transfers for metric when there is no activity.
 - [9871](https://github.com/vegaprotocol/vega/issues/9871) - Fix panic on snapshot after market termination following protocol upgrade.
 - [8769](https://github.com/vegaprotocol/vega/issues/8769) - Support timestamp data from different oracle types.
+- [9895](https://github.com/vegaprotocol/vega/issues/9895) - Expose discounts on trades fees.
 
 ## 0.72.1
 
