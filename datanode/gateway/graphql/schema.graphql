@@ -988,7 +988,7 @@ type Query {
     direction: TransferDirection
     "Pagination information"
     pagination: Pagination
-    "Filter reward transfers only. Direction must be From if a public key is used"
+    "Filter for reward transfers only. Direction must be 'From' if a public key is used"
     isReward: Boolean
   ): TransferConnection
 
@@ -2604,7 +2604,7 @@ type Party {
     direction: TransferDirection
     "Pagination information"
     pagination: Pagination
-    "Filter reward transfers only. Direction must be From"
+    "Filter for reward transfers only. Direction must be 'From'"
     isReward: Boolean
   ): TransferConnection
 
