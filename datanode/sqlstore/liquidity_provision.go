@@ -364,7 +364,12 @@ func (lp *LiquidityProvision) buildLiquidityProvisionsSelect(partyID entities.Pa
 		sourceTable = "live_liquidity_provisions"
 	}
 
-	selectSQL := fmt.Sprintf(`with lps as (
+	selectSQL := fmt.Sprintf(`with last_active as (
+		select distinct on (id, version) *
+		FROM liquidity_provisions
+		WHERE status = 'STATUS_ACTIVE'
+		order by id, version, vega_time desc
+	), lps as (
 	select llp.id, llp.party_id, llp.created_at, llp.updated_at, llp.market_id,
 		   llp.commitment_amount, llp.fee, llp.sells, llp.buys, llp.version,
 		   llp.status, llp.reference, llp.tx_hash, llp.vega_time,
@@ -375,7 +380,7 @@ func (lp *LiquidityProvision) buildLiquidityProvisionsSelect(partyID entities.Pa
 		   lp.status previous_status, lp.reference previous_reference, lp.tx_hash previous_tx_hash,
 		   lp.vega_time previous_vega_time
 	from %s llp
-	left join liquidity_provisions lp on llp.id = lp.id and llp.version - 1 = lp.version and lp.status = 'STATUS_ACTIVE'
+	left join last_active lp on llp.id = lp.id and llp.version - 1 = lp.version
 )
 	select *
 	from lps
