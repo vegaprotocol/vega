@@ -488,7 +488,7 @@ func zipSegmentData(segmentDataDir string, zipWriter *zip.Writer) error {
 		return err
 	}
 
-	return filepath.Walk(segmentDataDir, func(path string, info os.FileInfo, err error) error {
+	return filepath.Walk(segmentDataDir, func(path string, info os.FileInfo, _ error) error {
 		if info.IsDir() {
 			return nil
 		}
