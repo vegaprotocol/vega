@@ -173,6 +173,7 @@
 - [8056](https://github.com/vegaprotocol/vega/issues/8056) - Add transfer fees event.
 - [9883](https://github.com/vegaprotocol/vega/issues/9883) - Add reward filter to transfer API.
 - [9886](https://github.com/vegaprotocol/vega/issues/9886) - Add party vesting statistics endpoint.
+- [9770](https://github.com/vegaprotocol/vega/issues/9770) - Fix `PnL` flickering bug on an already open position.
 
 ### 🐛 Fixes
 

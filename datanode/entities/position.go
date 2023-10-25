@@ -129,8 +129,8 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 
 func (p *Position) ApplyFundingPayment(amount *num.Int) {
 	da := num.DecimalFromInt(amount)
-	p.PendingUnrealisedPnl = p.PendingUnrealisedPnl.Add(da)
-	p.UnrealisedPnl = p.RealisedPnl.Add(da)
+	p.PendingRealisedPnl = p.PendingRealisedPnl.Add(da)
+	p.RealisedPnl = p.RealisedPnl.Add(da)
 }
 
 func (p *Position) UpdateOrdersClosed() {

@@ -140,11 +140,11 @@ Feature: Test funding payment triggering closeout for Perps market
 
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | aux    | -1     | -499500        | 634710       |
-      | aux2 | 0 | 0 | -2388999 |
-      | party1 | -2     | -1000000       | 0            |
-      | party2 | 1      | 1000000        | 0            |
-      | party3 | 1      | 0              | 0            |
+      | aux    | -1     | -499500        | 1754710      |
+      | aux2   | 0      | 0              | -2388999     |
+      | party1 | -2     | -1000000       | 1120000      |
+      | party2 | 1      | 1000000        | -560000      |
+      | party3 | 1      | 0              | -560000      |
       | lpprov | 1      | 1952000        | -817208      |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"

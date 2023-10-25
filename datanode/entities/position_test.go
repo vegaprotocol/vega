@@ -321,6 +321,46 @@ func TestPnLWithTradeDecimals(t *testing.T) {
 	assert.Equal(t, "50", pp.UnrealisedPnl)
 }
 
+func TestUpdateWithTradesAndFundingPayment(t *testing.T) {
+	ctx := context.Background()
+	market := "market-id"
+	party := "party1"
+	position := entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(party))
+	dp := num.DecimalFromFloat(3)
+	trades := []tradeStub{
+		{
+			size:  2,
+			price: num.NewUint(1200),
+		},
+		{
+			size:  3,
+			price: num.NewUint(1000),
+		},
+	}
+	// this is the order in which the events will be sent/received
+	position.UpdateWithTrade(trades[0].ToVega(dp), false, dp)
+	pp := position.ToProto()
+	assert.Equal(t, "0", pp.RealisedPnl)
+	assert.Equal(t, "0", pp.UnrealisedPnl)
+	position.ApplyFundingPayment(num.NewInt(100))
+	pp = position.ToProto()
+	assert.Equal(t, "100", pp.RealisedPnl)
+	assert.Equal(t, "0", pp.UnrealisedPnl, pp.AverageEntryPrice)
+	position.UpdateWithTrade(trades[1].ToVega(dp), false, dp)
+	pp = position.ToProto()
+	assert.Equal(t, "100", pp.RealisedPnl)
+	assert.Equal(t, "-133", pp.UnrealisedPnl, pp.AverageEntryPrice)
+	ps := events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1000), []events.TradeSettlement{trades[0], trades[1]}, 1, dp)
+	position.UpdateWithPositionSettlement(ps)
+	psp := position.ToProto()
+	assert.Equal(t, "100", psp.RealisedPnl)
+	assert.Equal(t, "-133", psp.UnrealisedPnl)
+	position.ApplyFundingPayment(num.NewInt(-50))
+	pp = position.ToProto()
+	assert.Equal(t, "50", pp.RealisedPnl)
+	assert.Equal(t, "-133", pp.UnrealisedPnl, pp.AverageEntryPrice)
+}
+
 type tradeStub struct {
 	size  int64
 	price *num.Uint
@@ -336,6 +376,19 @@ func (t tradeStub) Price() *num.Uint {
 
 func (t tradeStub) MarketPrice() *num.Uint {
 	return t.price.Clone()
+}
+
+func (t tradeStub) ToVega(dp num.Decimal) vega.Trade {
+	// dp = num.DecimalFromFloat(10).Pow(dp)
+	// size, _ := num.DecimalFromInt64(t.size).Abs().Mul(dp).Float64()
+	size := uint64(t.size)
+	if t.size < 0 {
+		size = uint64(-t.size)
+	}
+	return vega.Trade{
+		Size:  size,
+		Price: t.price.String(),
+	}
 }
 
 func TestCalculateOpenClosedVolume(t *testing.T) {
